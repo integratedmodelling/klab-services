@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -21,13 +22,18 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
 
+  private Map<Long, ObservationImpl> resolutionCache = new HashMap<>();
   private final ResolverService resolver;
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
+  private AtomicLong nextResolutionId = new AtomicLong(-1);
 
   public ResolutionCompiler(ResolverService service) {
     this.resolver = service;
@@ -363,6 +369,21 @@ public class ResolutionCompiler {
     return ret;
   }
 
+  //  /**
+  //   * This is used only by the resolver. TODO must work for resolution to work.
+  //   *
+  //   * @param observation
+  //   */
+  //  public void registerObservation(Observation observation) {
+  //    if (observation instanceof ObservationImpl observation1) {
+  //      if (observation.getId() == Observation.UNASSIGNED_ID) {
+  //        observation1.setId(nextResolutionId.decrementAndGet());
+  //      }
+  //      return;
+  //    }
+  //    throw new KlabInternalErrorException(
+  //        "ServiceContextScope::registerObservation: unexpected observation implementation");
+  //  }
   /**
    * If the runtime contains the observation, return it (in resolved or unresolved status but with a
    * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID,
@@ -375,12 +396,20 @@ public class ResolutionCompiler {
    */
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
-    var ret = scope.getObservation(observable.getSemantics());
+    for (var obs : resolutionCache.values()) {
+      // TODO check if this is good enough or we need an additional map
+      if (obs.getObservable().equals(observable)) {
+        return obs;
+      }
+    }
+    var ret =
+        (scope.getContextObservation() == null || scope.getContextObservation().getUrn() == null)
+            ? null
+            : scope.getObservation(observable.getSemantics());
+
     if (ret == null || ret.isEmpty()) {
       ret = DigitalTwin.createObservation(scope, observable, geometry);
-      if (scope instanceof ServiceContextScope serviceContextScope) {
-        serviceContextScope.registerObservation(ret);
-      }
+      ((ObservationImpl) ret).setId(nextResolutionId.decrementAndGet());
     }
     return ret;
   }

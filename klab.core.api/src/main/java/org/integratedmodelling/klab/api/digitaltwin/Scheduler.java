@@ -112,6 +112,7 @@ public interface Scheduler {
     Observation getEvent();
   }
 
+
   /**
    * Called when a new observation has been resolved. The scheduler will adapt its schedule to
    * include the new observation, possibly replaying events that concern it in the past. It will

@@ -90,14 +90,6 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       contextualizer =
           new RemoteResourceContextualizer(service.get(), res, observation, localNames);
     }
-
-    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
-      serviceContextScope.getCurrentTransaction().add(scanner.shard());
-      serviceContextScope
-          .getCurrentTransaction()
-          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
-    }
-
     return contextualizer.contextualize(scanner, event, scope);
   }
 

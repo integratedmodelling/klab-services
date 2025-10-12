@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -21,7 +20,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
-import org.integratedmodelling.klab.api.lang.TetraFunction;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -57,7 +55,7 @@ public class SchedulerImpl implements Scheduler {
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
    * as a provenance agent and is recorded as the agent for activities triggered by temporal events.
    */
-  private final Sinks.Many<EventImpl> processor = Sinks.many().replay().all();
+  private final Sinks.Many<EventImpl> processor;
 
   /*
    * Executors are loaded upon dataflow validation/compilation before registering the observations,
@@ -80,6 +78,7 @@ public class SchedulerImpl implements Scheduler {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
     this.timeEmitter = new TimeEmitter(this);
+    this.processor = Sinks.many().replay().all();
     initializeScheduler();
   }
 
@@ -104,12 +103,12 @@ public class SchedulerImpl implements Scheduler {
       var timeData = register(observation.getGeometry());
       var registration =
           new Registration(
-              observation.getId(),
+              observation,
               SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
               timeData.getFirst(),
               timeData.getSecond(),
               timeData.getThird(),
-              serviceContextScope.getActivity());
+              serviceContextScope);
       if (observation.getObservable().is(SemanticType.EVENT)) {
         // EVENT! Post iy
       } else if (observation.getObservable().is(SemanticType.PROCESS)) {
@@ -160,7 +159,7 @@ public class SchedulerImpl implements Scheduler {
     //                triggeringResolution);
     try {
       if (contextualize(observation, scale, scope, this.initializationEvent)) {
-//        scope.commit();
+        //        scope.commit();
       }
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
@@ -374,19 +373,19 @@ public class SchedulerImpl implements Scheduler {
    * observation events only affects it, given that contextualization actions are handled through
    * the influence diagram in the DT.
    *
-   * @param id
+   * @param observation
    * @param type
    * @param start
    * @param end
-   * @param activity the activity that made the registration
+   * @param scope the scope executing the activity that made the registration
    */
   public record Registration(
-      long id,
+      Observation observation,
       SemanticType type,
       long start,
       long end,
       Time.Resolution resolution,
-      Activity activity) {}
+      ServiceContextScope scope) {}
 
   /**
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
@@ -486,39 +485,37 @@ public class SchedulerImpl implements Scheduler {
     //    System.out.println(registration + " got event " + event);
     if (event.type == EventImpl.Type.INITIALIZATION) {
       // FIXME this should not be necessary when the filter works
-      var observation = rootScope.getObservation(registration.id());
-      if (observation != null) {
-        initialize(observation, rootScope.of(observation).executing(registration.activity(), true));
-      }
+      initialize(registration.observation(), registration.scope);
     }
   }
 
-  public static void main(String[] dio) {
-
-    var scheduler = new SchedulerImpl(null, null);
-    AtomicInteger obsId = new AtomicInteger(1);
-
-    Utils.Java.repl(
-        "> ",
-        s -> {
-          //          switch (s) {
-          //            // add a new observation and subscribe it to events
-          //            case "+" ->
-          //                scheduler.register(
-          //                    new Registration(
-          //                        "Obs" + obsId.getAndIncrement(),
-          //                        "Concept",
-          //                        SemanticType.AGENT,
-          //                        System.currentTimeMillis(),
-          //                        -1L));
-          //            // send init event
-          //            case "i" -> scheduler.post(new Event());
-          //            // send time event between now and 1s after
-          //            case "t" ->
-          //                scheduler.post(
-          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis() +
-          // 1000));
-          //          }
-        });
-  }
+  //  public static void main(String[] dio) {
+  //
+  //    var scheduler = new SchedulerImpl(null, null);
+  //    AtomicInteger obsId = new AtomicInteger(1);
+  //
+  //    Utils.Java.repl(
+  //        "> ",
+  //        s -> {
+  //          //          switch (s) {
+  //          //            // add a new observation and subscribe it to events
+  //          //            case "+" ->
+  //          //                scheduler.register(
+  //          //                    new Registration(
+  //          //                        "Obs" + obsId.getAndIncrement(),
+  //          //                        "Concept",
+  //          //                        SemanticType.AGENT,
+  //          //                        System.currentTimeMillis(),
+  //          //                        -1L));
+  //          //            // send init event
+  //          //            case "i" -> scheduler.post(new Event());
+  //          //            // send time event between now and 1s after
+  //          //            case "t" ->
+  //          //                scheduler.post(
+  //          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis()
+  // +
+  //          // 1000));
+  //          //          }
+  //        });
+  //  }
 }

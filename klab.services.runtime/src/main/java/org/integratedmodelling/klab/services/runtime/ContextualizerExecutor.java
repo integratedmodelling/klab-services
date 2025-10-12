@@ -51,13 +51,6 @@ public class ContextualizerExecutor extends AbstractExecutor
 
     var geometry = scanner == null ? observation.getGeometry() : scanner.shard().getGeometry();
 
-    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
-      serviceContextScope.getCurrentTransaction().add(scanner.shard());
-      serviceContextScope
-          .getCurrentTransaction()
-          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
-    }
-
     if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
       var implementation = componentRegistry.implementation(callInfo.serviceInfo());

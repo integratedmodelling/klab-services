@@ -822,7 +822,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         transaction == null
             ? query(
                 ("MATCH (n:{assetLabel}), (g:Geometry) WHERE n.id = $assetId AND g.definition = $geometryKey"
-                        + " CREATE (n)"
+                        + " CREATE (n)"//b
                         + "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r")
                     .replace("{assetLabel}", getLabel(asset)),
                 Map.of("assetId", getId(asset), "geometryKey", encoded, "properties", properties),

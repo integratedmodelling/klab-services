@@ -408,7 +408,8 @@ public class RuntimeService extends BaseService
               serviceContextScope.getActivity(),
               observation + " submitted");
 
-      var submissionScope = serviceContextScope.initializeResolution(submission);
+      //      var submissionScope = serviceContextScope.initializeResolution(submission);
+      var submissionScope = serviceContextScope.executing(submission);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -420,7 +421,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var resolutionScope = submissionScope.executing(resolution, true);
+      var resolutionScope = submissionScope.executing(resolution/*, true*/);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)

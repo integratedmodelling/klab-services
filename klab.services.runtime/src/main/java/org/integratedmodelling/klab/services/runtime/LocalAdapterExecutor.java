@@ -40,13 +40,6 @@ public class LocalAdapterExecutor extends AbstractExecutor
   @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
 
-    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
-      serviceContextScope.getCurrentTransaction().add(scanner.shard());
-      serviceContextScope
-          .getCurrentTransaction()
-          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
-    }
-
     var res = resource;
     if (adapter.hasContextualizer()) {
       res = adapter.contextualize(resource, scanner.shard().getGeometry(), scope);

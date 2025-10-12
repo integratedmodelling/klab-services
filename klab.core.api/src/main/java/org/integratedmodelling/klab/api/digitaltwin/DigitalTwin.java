@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -254,6 +255,13 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return a failed transaction that will throw the error at commit
      */
     Transaction fail(Throwable compilationError);
+
+    /**
+     * All the uncommitted assets in the transaction
+     *
+     * @return
+     */
+    Collection<RuntimeAsset> getAssets();
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and

@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
-import org.integratedmodelling.common.data.DoubleDataImpl;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.*;
@@ -9,7 +11,6 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -21,7 +22,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
@@ -32,10 +32,6 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
 
 /** TODO each digital twin should have its own logger */
 public class DigitalTwinImpl implements DigitalTwin {
@@ -365,6 +361,13 @@ public class DigitalTwinImpl implements DigitalTwin {
       //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
       // activity);
       return this;
+    }
+
+    @Override
+    public Collection<RuntimeAsset> getAssets() {
+      synchronized (graph) {
+        return new ArrayList<>(graph.vertexSet());
+      }
     }
 
     @Override
