@@ -94,6 +94,15 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     }
   }
 
+  /**
+   * Implement for the actual contextualization. NOTE: must also link the storage or
+   * sub-observations to the current transaction in the scope.
+   *
+   * @param event
+   * @param scanner
+   * @param scope
+   * @return
+   */
   protected abstract boolean run(
       Scheduler.Event event, Storage.Scanner scanner, ContextScope scope);
 

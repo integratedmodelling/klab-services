@@ -240,6 +240,10 @@ public class CompiledDataflow {
               actuator1.getResolvedGeometry(),
               actuator.getName(),
               scope.getContextObservation());
+        var transaction = scope.getCurrentTransaction();
+        if (transaction != null) {
+          transaction.add(ret);
+        }
       if (ret instanceof ObservationImpl obs) {
         var data = new ObservationImpl.ContextualizationDataImpl();
         data.setServiceUrl(runtimeService.getUrl());

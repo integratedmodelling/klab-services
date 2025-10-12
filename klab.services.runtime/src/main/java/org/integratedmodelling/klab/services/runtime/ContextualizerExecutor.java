@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.services.runtime;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -16,6 +18,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +51,13 @@ public class ContextualizerExecutor extends AbstractExecutor
 
     var geometry = scanner == null ? observation.getGeometry() : scanner.shard().getGeometry();
 
+    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
+      serviceContextScope.getCurrentTransaction().add(scanner.shard());
+      serviceContextScope
+          .getCurrentTransaction()
+          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
+    }
+
     if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
       var implementation = componentRegistry.implementation(callInfo.serviceInfo());
@@ -59,6 +69,7 @@ public class ContextualizerExecutor extends AbstractExecutor
 
       if (needsBuilder) {
         // TODO! MUST PROVIDE A BUILDER IF REQUESTED - for instantiators it's the only way
+        throw new KlabUnimplementedException("HOSTIA MAKE A BUILDER FOR THE INSTANTIATOR");
       }
 
       var arguments =

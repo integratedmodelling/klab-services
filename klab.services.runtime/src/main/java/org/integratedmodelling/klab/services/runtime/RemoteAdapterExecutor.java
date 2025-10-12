@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.data.RemoteResourceContextualizer;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.Map;
 
@@ -87,6 +89,13 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
       contextualizer =
           new RemoteResourceContextualizer(service.get(), res, observation, localNames);
+    }
+
+    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
+      serviceContextScope.getCurrentTransaction().add(scanner.shard());
+      serviceContextScope
+          .getCurrentTransaction()
+          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
     }
 
     return contextualizer.contextualize(scanner, event, scope);

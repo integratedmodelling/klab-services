@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.data.LocalResourceContextualizer;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.Map;
 
@@ -37,6 +39,13 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
+
+    if (scanner != null && scope instanceof ServiceContextScope serviceContextScope) {
+      serviceContextScope.getCurrentTransaction().add(scanner.shard());
+      serviceContextScope
+          .getCurrentTransaction()
+          .link(observation, scanner.shard(), GraphModel.Relationship.HAS_DATA);
+    }
 
     var res = resource;
     if (adapter.hasContextualizer()) {

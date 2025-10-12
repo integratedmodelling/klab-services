@@ -424,23 +424,18 @@ public class RuntimeService extends BaseService
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)
+          .exceptionally(
+              t -> {
+                resolutionScope.fail(t);
+                return Dataflow.empty();
+              })
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
                 if (!dataflow.isEmpty()) {
-                  /*
-                   * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
-                   */
-                  //                  var transaction =
-                  //                      scope
-                  //                          .getDigitalTwin()
-                  //                          .transaction(
-                  //                              resolution, runningScope, dataflow, observation,
-                  // storedAgent);
-
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit()) {
-                      // send the committed graph before submitting the observation to the
+                      // TODO add the resolved graph as metadata to the activity instead
                       // scheduler, TODO make this a debug action
                       //                      resolutionScope.send(
                       //                          Message.MessageClass.DigitalTwin,
@@ -450,28 +445,24 @@ public class RuntimeService extends BaseService
                     }
                   }
                 }
+                resolutionScope.fail();
                 return Observation.empty();
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
                 if (!o.isEmpty()) {
-                  //                 var contextualization =
-                  //                      Activity.of(
-                  //                          "Contextualization of " + observation,
-                  //                          Activity.Type.CONTEXTUALIZATION,
-                  //                          this,
-                  //                          agent,
-                  //                          submission,
-                  //                          contextScope);
-                  //                  var contextualizationScope =
-                  // contextScope.executing(contextualization, true);
                   submissionScope.contextualize(o);
                   submissionScope.commit();
                 } else {
                   submissionScope.fail();
                 }
                 return o;
+              })
+          .exceptionally(
+              t -> {
+                submissionScope.fail(t);
+                return Observation.empty();
               });
     }
     throw new KlabInternalErrorException(

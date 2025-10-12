@@ -351,7 +351,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           currentTransaction.link(
               parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
         }
-
       } else
         try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
           transaction.store(currentActivity);
@@ -632,6 +631,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public ServiceContextScope initializeResolution(Activity submission) {
     var ret = executing(submission, false);
     if (this.currentTransaction == null && this.currentActivity == null) {
+      this.currentTransaction = digitalTwin.transaction(submission, this);
       ret.nextResolutionId.set(-1L);
       ret.resolutionCache.clear();
     }

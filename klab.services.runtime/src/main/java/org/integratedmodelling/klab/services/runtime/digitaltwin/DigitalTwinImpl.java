@@ -223,9 +223,12 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       // if nothing was done, we just store the HAS_CHILD relationships that point to observations.
       // TODO/CHECK the logics here may require some attention
-      boolean trivial =
-          contextualizers.isEmpty()
-              && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
+      var trivial = false;
+      synchronized (graph) {
+        trivial =
+            contextualizers.isEmpty()
+                && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
+      }
 
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
