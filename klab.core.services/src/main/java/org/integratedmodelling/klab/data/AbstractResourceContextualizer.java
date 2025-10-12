@@ -36,24 +36,21 @@ public abstract class AbstractResourceContextualizer {
   protected Parameters<String> urnParameters;
   protected Observation observation;
   protected Observable observable;
-  protected ContextScope scope;
   protected final Map<String, Observable> localNames;
 
   protected AbstractResourceContextualizer(
       Resource resource,
       Observation observation,
-      Map<String, Observable> localNames,
-      ContextScope scope) {
+      Map<String, Observable> localNames) {
     this.resource = resource;
     this.urn = Urn.of(resource.getUrn());
     this.urnParameters = Parameters.create(this.urn.getParameters());
     this.observation = observation;
     this.localNames = localNames;
     this.observable = observation.getObservable();
-    this.scope = scope;
   }
 
-  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event) {
+  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
 
     if (observation.getContextualizationData()
         instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {

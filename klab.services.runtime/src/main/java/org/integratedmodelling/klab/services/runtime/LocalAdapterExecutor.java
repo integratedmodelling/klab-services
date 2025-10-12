@@ -36,7 +36,7 @@ public class LocalAdapterExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
+  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
 
     var res = resource;
     if (adapter.hasContextualizer()) {
@@ -45,9 +45,9 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
     // enqueue data extraction from adapter method TODO needs the scanner
     final var contextualizer =
-        new LocalResourceContextualizer(adapter, res, observation, localNames, scope);
+        new LocalResourceContextualizer(adapter, res, observation, localNames);
 
     // TODO this cannot be the simple executor, needs the scanner to be passed after
-    return contextualizer.contextualize(scanner, event);
+    return contextualizer.contextualize(scanner, event, scope);
   }
 }

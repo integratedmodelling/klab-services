@@ -26,8 +26,7 @@ public class ScalarOperationExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(
-      Scheduler.Event event, Storage.Scanner scanner) {
+  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
 
     return scalarMapper.execute(scanner.shard().getGeometry(), event, scope);
   }

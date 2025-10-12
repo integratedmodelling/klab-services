@@ -72,7 +72,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         for (var scanner :
             storage.scan(
                 event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
-          tasks.add(() -> run(event, scanner));
+          tasks.add(() -> run(event, scanner, contextScope));
         }
       } catch (Throwable t) {
         cause = t;
@@ -81,7 +81,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
     } else {
       // non-quality
-      tasks.add(() -> run(event, null));
+      tasks.add(() -> run(event, null, contextScope));
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -94,7 +94,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     }
   }
 
-  protected abstract boolean run(Scheduler.Event event, Storage.Scanner scanner);
+  protected abstract boolean run(
+      Scheduler.Event event, Storage.Scanner scanner, ContextScope scope);
 
   @Override
   public Throwable getCause() {

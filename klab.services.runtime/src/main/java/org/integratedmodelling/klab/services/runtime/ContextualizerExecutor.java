@@ -44,7 +44,7 @@ public class ContextualizerExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
+  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
 
     var geometry = scanner == null ? observation.getGeometry() : scanner.shard().getGeometry();
 

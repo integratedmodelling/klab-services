@@ -244,7 +244,7 @@ public interface DigitalTwin extends RuntimeAsset {
      * @param activity
      * @return
      */
-    Transaction getChild(Activity activity);
+    Transaction getChild(Activity activity, ContextScope scope);
 
     /**
      * Signal compilation failure. Return a transaction that will throw the same exception at

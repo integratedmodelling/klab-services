@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -343,7 +342,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       ret.currentTransaction =
           currentTransaction == null
               ? getDigitalTwin().transaction(currentActivity, this, parentActivity)
-              : currentTransaction.getChild(currentActivity);
+              : currentTransaction.getChild(currentActivity, ret);
     } else {
       // TODO VERIFY LOGIC
       if (currentTransaction != null) {
@@ -653,7 +652,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public Activity getActivity() {
-    return currentTransaction == null ? currentActivity : currentTransaction.getActivity();
+    return currentActivity != null
+        ? currentActivity
+        : (currentTransaction == null ? null : currentTransaction.getActivity());
   }
 
   public void contextualize(Observation observation) {

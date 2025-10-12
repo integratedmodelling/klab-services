@@ -56,7 +56,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
+  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
 
     if (resource == null) {
       cause = new KlabResourceAccessException("Resource not found " + resource.getUrn());
@@ -86,10 +86,10 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
       contextualizer =
-          new RemoteResourceContextualizer(service.get(), res, observation, localNames, scope);
+          new RemoteResourceContextualizer(service.get(), res, observation, localNames);
     }
 
-    return contextualizer.contextualize(scanner, event);
+    return contextualizer.contextualize(scanner, event, scope);
   }
 
   @Override

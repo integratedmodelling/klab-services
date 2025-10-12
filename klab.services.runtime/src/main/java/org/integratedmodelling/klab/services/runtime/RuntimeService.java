@@ -405,9 +405,10 @@ public class RuntimeService extends BaseService
               observation,
               scope,
               storedAgent,
+              serviceContextScope.getActivity(),
               observation + " submitted");
 
-      var contextScope = serviceContextScope.initializeResolution(submission);
+      var submissionScope = serviceContextScope.initializeResolution(submission);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -417,9 +418,9 @@ public class RuntimeService extends BaseService
               agent,
               submission,
               "Resolution of " + observation,
-              contextScope);
+              submissionScope);
 
-      var resolutionScope = contextScope.executing(resolution, true);
+      var resolutionScope = submissionScope.executing(resolution, true);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)
@@ -441,10 +442,10 @@ public class RuntimeService extends BaseService
                     if (resolutionScope.commit()) {
                       // send the committed graph before submitting the observation to the
                       // scheduler, TODO make this a debug action
-//                      resolutionScope.send(
-//                          Message.MessageClass.DigitalTwin,
-//                          Message.MessageType.KnowledgeGraphCommitted,
-//                          resolutionScope.getResolvedGraph());
+                      //                      resolutionScope.send(
+                      //                          Message.MessageClass.DigitalTwin,
+                      //                          Message.MessageType.KnowledgeGraphCommitted,
+                      //                          resolutionScope.getResolvedGraph());
                       return observation;
                     }
                   }
@@ -455,19 +456,20 @@ public class RuntimeService extends BaseService
           .thenApply(
               o -> {
                 if (!o.isEmpty()) {
-//                 var contextualization =
-//                      Activity.of(
-//                          "Contextualization of " + observation,
-//                          Activity.Type.CONTEXTUALIZATION,
-//                          this,
-//                          agent,
-//                          submission,
-//                          contextScope);
-//                  var contextualizationScope = contextScope.executing(contextualization, true);
-                  contextScope.contextualize(o);
-                  contextScope.commit();
+                  //                 var contextualization =
+                  //                      Activity.of(
+                  //                          "Contextualization of " + observation,
+                  //                          Activity.Type.CONTEXTUALIZATION,
+                  //                          this,
+                  //                          agent,
+                  //                          submission,
+                  //                          contextScope);
+                  //                  var contextualizationScope =
+                  // contextScope.executing(contextualization, true);
+                  submissionScope.contextualize(o);
+                  submissionScope.commit();
                 } else {
-                    contextScope.fail();
+                  submissionScope.fail();
                 }
                 return o;
               });
@@ -477,8 +479,7 @@ public class RuntimeService extends BaseService
   }
 
   private boolean compile(
-      Observation rootObservation, Dataflow dataflow, ServiceContextScope scope /*,
-      DigitalTwin.Transaction transaction*/) {
+      Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
 
     scope.getCurrentTransaction().add(rootObservation);
     scope

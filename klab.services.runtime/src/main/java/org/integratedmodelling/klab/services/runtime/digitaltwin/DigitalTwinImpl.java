@@ -328,7 +328,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public Transaction getChild(Activity activity) {
+    public Transaction getChild(Activity activity, ContextScope scope) {
       return new TransactionImpl(this, activity);
     }
 
