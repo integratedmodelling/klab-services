@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -44,7 +45,7 @@ public class StorageManagerImpl implements StorageManager {
   private final File longBackupFile;
   private final File booleanBackupFile;
   private final int histogramBinSize = 20;
-  private final Map<String, Storage> storage = new HashMap<>();
+  private final Map<Observation, Storage> storage = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(0);
 
   public boolean isRecordHistogram() {
@@ -177,7 +178,7 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   public Storage getStorage(Observation observation) {
-    var ret = this.storage.get(observation.getUrn());
+    var ret = this.storage.get(observation);
     if (ret == null) {
       throw new KlabIllegalStateException(
           "cannot create storage: no storage found for " + observation);
@@ -186,11 +187,10 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public synchronized Storage createStorage(
+  public Storage createStorage(
       Observation observation, Data.ShardingStrategy shardingStrategy) {
     return this.storage.computeIfAbsent(
-        observation.getUrn(),
-        urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));
+        observation, urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));
   }
 
   @Override
