@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -320,16 +321,16 @@ public interface ContextScope extends SessionScope {
    * Retrieve all links from the graph or the current transaction that match the passed types. If
    * nothing is passed, all links are returned.
    *
-   * @param affecting
+   * @param asset
    * @param relationship
    * @return
    */
-  Collection<RuntimeAsset.Link> getLinks(
-      Observation affecting, GraphModel.Relationship... relationship);
+  Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset asset, GraphModel.Relationship... relationship);
 
   /**
-   * Inspect the network graph of the current context, returning all relationships that have the
-   * passed subject as target.
+   * Inspect the network graph of the current context, returning all <code>relationship</code>
+   * observations that have the passed subject as source.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
@@ -337,8 +338,8 @@ public interface ContextScope extends SessionScope {
   Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset asset);
 
   /**
-   * Inspect the network graph of the current context, returning all relationships that have the
-   * passed subject as target.
+   * Inspect the network graph of the current context, returning all <code>relationship</code>
+   * observations that have the passed subject as target.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.

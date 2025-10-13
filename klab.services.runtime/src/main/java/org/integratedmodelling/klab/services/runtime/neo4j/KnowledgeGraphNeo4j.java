@@ -130,6 +130,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         };
   }
 
+  /** Links for stored objects (not in a DT transaction) */
   class LinkImpl implements Link {
 
     private long id = 0;
@@ -147,6 +148,30 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public Parameters<String> properties() {
       return properties;
+    }
+
+    @Override
+    public RuntimeAsset source() {
+      // TODO extract from the graph
+      throw new KlabUnimplementedException(
+          "source of links in KnowledgeGraphNeo4j is not yet implemented");
+    }
+
+    @Override
+    public RuntimeAsset target() {
+        // TODO extract from the graph
+        throw new KlabUnimplementedException(
+                "target of links in KnowledgeGraphNeo4j is not yet implemented");
+    }
+
+    @Override
+    public int sequence() {
+      return properties.containsKey("sequence") ? properties.get("sequence", Integer.class) : -1;
+    }
+
+    @Override
+    public Geometry geometry() {
+      return null;
     }
 
     @Override
@@ -822,7 +847,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         transaction == null
             ? query(
                 ("MATCH (n:{assetLabel}), (g:Geometry) WHERE n.id = $assetId AND g.definition = $geometryKey"
-                        + " CREATE (n)"//b
+                        + " CREATE (n)" // b
                         + "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r")
                     .replace("{assetLabel}", getLabel(asset)),
                 Map.of("assetId", getId(asset), "geometryKey", encoded, "properties", properties),

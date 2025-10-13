@@ -190,6 +190,9 @@ public interface DigitalTwin extends RuntimeAsset {
    * <p>The transaction hosts the portion of the knowledge graph being created and modified. The
    * scope inspection functions must be aware of any transaction and find the observations in it by
    * reference before consulting the committed graph.
+   *
+   * TODO storage allocation must also be transactional, calling "release" on failure and finalizing the
+   *  storage commitment on commit.
    */
   interface Transaction {
 
@@ -267,9 +270,9 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     Collection<RuntimeAsset> assets();
 
-    Collection<Link> incoming(RuntimeAsset asset);
+    Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset);
 
-    Collection<Link> outgoing(RuntimeAsset asset);
+    Collection<KnowledgeGraph.Link> outgoing(RuntimeAsset asset);
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and

@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -179,6 +180,12 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
         .source(observation)
         .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
+  }
+
+  @Override
+  public Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset affecting, GraphModel.Relationship... relationship) {
+    throw new KlabUnimplementedException("getLinks in ClientContextScope is not yet implemented");
   }
 
   @Override

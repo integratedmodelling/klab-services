@@ -27,19 +27,6 @@ public interface RuntimeAsset {
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
 
-  /** A relationship between two assets in the knowledge graph. TODO add metadata */
-  interface Link {
-    GraphModel.Relationship getRelationship();
-
-    RuntimeAsset getSource();
-
-    RuntimeAsset getTarget();
-
-    int getSequence();
-
-    Geometry getGeometry();
-  }
-
   /** The status of an asset, which may be added to the metadata using the "status" property. */
   enum Status {
     UNRESOLVED,

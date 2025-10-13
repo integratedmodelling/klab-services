@@ -292,8 +292,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
       ret.addAll(
           currentTransaction.outgoing(observation).stream()
-              .filter(edge -> edge.getRelationship() == GraphModel.Relationship.HAS_CHILD)
-              .map(RuntimeAsset.Link::getTarget)
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_CHILD)
+              .map(KnowledgeGraph.Link::target)
               .toList());
     }
 
@@ -311,23 +311,71 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset asset, GraphModel.Relationship... relationship) {
+
+    var ret = new ArrayList<KnowledgeGraph.Link>();
+    var types = EnumSet.noneOf(GraphModel.Relationship.class);
+    if (relationship != null) {
+      types.addAll(List.of(relationship));
+    }
+    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
+      ret.addAll(
+          currentTransaction.outgoing(asset).stream()
+              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
+              .toList());
+    }
+
+    if (asset.getId() > 0) {
+        // TODO the actual ones from the persistent KG
+
+    }
+
+    return ret;
+  }
+
+  @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .source(observation)
-        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run(this);
+    var ret = new ArrayList<RuntimeAsset>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .map(KnowledgeGraph.Link::target)
+              .toList());
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .run(this));
+    }
+    return ret;
   }
 
   @Override
   public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .target(observation)
-        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run(this);
+    var ret = new ArrayList<RuntimeAsset>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.incoming(observation).stream()
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .map(KnowledgeGraph.Link::target)
+              .toList());
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .target(observation)
+              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .run(this));
+    }
+    return ret;
   }
 
   @Override
@@ -339,9 +387,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           currentTransaction.incoming(observation).stream()
               .filter(
                   edge ->
-                      edge.getRelationship() == GraphModel.Relationship.AFFECTS
-                          && edge.getSource() instanceof Observation)
-              .map(edge -> (Observation) edge.getSource())
+                      edge.type() == GraphModel.Relationship.AFFECTS
+                          && edge.source() instanceof Observation)
+              .map(edge -> (Observation) edge.source())
               .toList());
     }
     if (observation.getId() > 0) {
@@ -365,9 +413,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           currentTransaction.outgoing(observation).stream()
               .filter(
                   edge ->
-                      edge.getRelationship() == GraphModel.Relationship.AFFECTS
-                          && edge.getTarget() instanceof Observation)
-              .map(edge -> (Observation) edge.getTarget())
+                      edge.type() == GraphModel.Relationship.AFFECTS
+                          && edge.target() instanceof Observation)
+              .map(edge -> (Observation) edge.target())
               .toList());
     }
 

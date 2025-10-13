@@ -197,11 +197,11 @@ public class SchedulerImpl implements Scheduler {
       }
 
       // FIXME switch to scope.outgoing with a filter; add the transaction management in scope
-      var relationship =
-          knowledgeGraph
-              .query(KnowledgeGraph.Link.class, scope)
-              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
-              .peek(scope);
+//      var relationship =
+//          knowledgeGraph
+//              .query(KnowledgeGraph.Link.class, scope)
+//              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
+//              .peek(scope);
 
       var affectingRelationship =
           scope.getLinks(affecting, GraphModel.Relationship.AFFECTS).stream()
@@ -219,9 +219,9 @@ public class SchedulerImpl implements Scheduler {
               GraphModel.Relationship.CONTEXTUALIZED);
 
       var sequence = 0;
-      if (relationship.isPresent()) { // it must be
+      if (affectingRelationship != null) { // it must be
         sequence =
-            relationship.get().properties().get(/* TODO use formal property */ "sequence", 0);
+            affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
       }
 
       tasks
