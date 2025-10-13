@@ -323,7 +323,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
 
-        var notifications = loadKnowledge(resources.retrieveWorldview(), serviceScope());
+        Worldview worldview = null;
+        int maxAttempts = 5;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+          worldview = resources.retrieveWorldview();
+          if (worldview != null) {
+            serviceScope().info("Worldview retrieved after " + attempt + " attempts");
+            break;
+          }
+          try {
+            Thread.sleep(1000); // wait 1 second before retry
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Retry interrupted", e);
+          }
+        }
+        var notifications = loadKnowledge(worldview, serviceScope());
 
         if (!Utils.Resources.hasErrors(notifications)) {
           //                    setOperational(false);
