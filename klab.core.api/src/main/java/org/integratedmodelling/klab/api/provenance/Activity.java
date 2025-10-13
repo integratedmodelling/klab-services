@@ -178,13 +178,7 @@ public interface Activity extends Provenance.Node {
       } else if (o instanceof Activity activity) {
         ret.setTriggeringActivityUrn(activity.getUrn());
         ret.setParentTransientId(activity.getTransientId());
-      } /*else if (o instanceof ContextScope contextScope
-          && contextScope.getCurrentTransaction() != null) {
-        ret.getMetadata()
-            .put(
-                ActivityImpl.PARENT_ACTIVITY_TRANSIENT_ID_KEY,
-                contextScope.getActivity().getTransientId());
-      }*/
+      }
     }
     return ret;
   }

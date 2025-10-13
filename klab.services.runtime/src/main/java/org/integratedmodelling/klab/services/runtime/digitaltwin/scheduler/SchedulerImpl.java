@@ -63,13 +63,13 @@ public class SchedulerImpl implements Scheduler {
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Long, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
+  private LoadingCache<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
       CacheBuilder.newBuilder()
           .maximumSize(200)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
           .build(
-              new CacheLoader<Long, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
-                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Long key) {
+              new CacheLoader<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
+                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Observation key) {
                   // TODO reconstruct the executor from actuator in the knowledge graph.
                   return (g, e, s) -> true;
                 }
@@ -125,7 +125,7 @@ public class SchedulerImpl implements Scheduler {
   @Override
   public void registerExecutor(
       Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor) {
-    executors.put(observation.getId(), executor);
+    executors.put(observation, executor);
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
@@ -197,11 +197,11 @@ public class SchedulerImpl implements Scheduler {
       }
 
       // FIXME switch to scope.outgoing with a filter; add the transaction management in scope
-//      var relationship =
-//          knowledgeGraph
-//              .query(KnowledgeGraph.Link.class, scope)
-//              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
-//              .peek(scope);
+      //      var relationship =
+      //          knowledgeGraph
+      //              .query(KnowledgeGraph.Link.class, scope)
+      //              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
+      //              .peek(scope);
 
       var affectingRelationship =
           scope.getLinks(affecting, GraphModel.Relationship.AFFECTS).stream()
@@ -262,7 +262,7 @@ public class SchedulerImpl implements Scheduler {
     /*
      * The actual execution for self
      */
-    var executor = executors.getIfPresent(observation.getId());
+    var executor = executors.getIfPresent(observation);
     if (executor != null) {
       return execute(executor, observation, geometry, causingEvent, scope);
     }

@@ -191,12 +191,14 @@ public interface DigitalTwin extends RuntimeAsset {
    * scope inspection functions must be aware of any transaction and find the observations in it by
    * reference before consulting the committed graph.
    *
-   * TODO storage allocation must also be transactional, calling "release" on failure and finalizing the
-   *  storage commitment on commit.
+   * <p>TODO storage allocation must also be transactional, calling "release" on failure and
+   * finalizing the storage commitment on commit.
    */
   interface Transaction {
 
-    /**
+      void registerExecutors();
+
+      /**
      * Each transaction represents a provenance activity that cannot be null.
      *
      * @return the activity

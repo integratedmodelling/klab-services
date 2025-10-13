@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
@@ -196,8 +198,17 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final ServiceContextScope scope;
     private final List<Throwable> failures = new ArrayList<>();
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
-    private final Map<Observation, Executor> contextualizers = new HashMap<>();
+    private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
+
+    /** Call this before contextualization to commit to register any new executors. */
+    @Override
+    public void registerExecutors() {
+      for (var observation : contextualizers.keySet()) {
+        scheduler.registerExecutor(
+            observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
+      }
+    }
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
 
@@ -205,6 +216,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.graphReference = new GraphModel.KnowledgeGraph();
       this.activity = activity;
       this.scope = scope;
+      this.contextualizers = new ConcurrentHashMap<>();
+
       synchronized (graph) {
         this.graph.addVertex(activity);
 
@@ -239,6 +252,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.scope = parent.scope; // TODO careful with executing() being called outside
       this.graphReference = parent.graphReference;
       this.parent = parent;
+      this.contextualizers = parent.contextualizers;
+
       synchronized (graph) {
         this.graph.addVertex(activity);
         this.graph.addEdge(
@@ -327,38 +342,40 @@ public class DigitalTwinImpl implements DigitalTwin {
 
           Map<String, GraphModel.KnowledgeGraph.Node> nodes = new HashMap<>();
 
-          for (var asset : graph.vertexSet()) {
-            if (setupForStorage(asset, trivial)) {
-              kgTransaction.store(asset);
+          synchronized (graph) {
+            for (var asset : graph.vertexSet()) {
+              if (setupForStorage(asset, trivial)) {
+                kgTransaction.store(asset);
+              }
+              if (!nodes.containsKey(asset.getId() + "")) {
+                var node = encodeRuntimeAsset(asset, nodes);
+                this.graphReference.getNodes().put(node.getLabel(), node);
+              }
             }
-            if (!nodes.containsKey(asset.getId() + "")) {
-              var node = encodeRuntimeAsset(asset, nodes);
-              this.graphReference.getNodes().put(node.getLabel(), node);
-            }
-          }
 
-          for (var asset : modified) {
-            kgTransaction.update(asset);
-            if (!nodes.containsKey(asset.getId() + "")) {
-              var node = encodeRuntimeAsset(asset, nodes);
-              // TODO set flag to indicate that the asset was modified
-              this.graphReference.getNodes().put(node.getLabel(), node);
+            for (var asset : modified) {
+              kgTransaction.update(asset);
+              if (!nodes.containsKey(asset.getId() + "")) {
+                var node = encodeRuntimeAsset(asset, nodes);
+                // TODO set flag to indicate that the asset was modified
+                this.graphReference.getNodes().put(node.getLabel(), node);
+              }
             }
-          }
 
-          for (var edge : graph.edgeSet()) {
-            var source = graph.getEdgeSource(edge);
-            var target = graph.getEdgeTarget(edge);
-            if (trivial
-                && !(target instanceof Observation)
-                && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
-              continue;
+            for (var edge : graph.edgeSet()) {
+              var source = graph.getEdgeSource(edge);
+              var target = graph.getEdgeTarget(edge);
+              if (trivial
+                  && !(target instanceof Observation)
+                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+                continue;
+              }
+              var relationshipData = getRelationshipData(edge);
+              kgTransaction.link(source, target, edge.relationship, relationshipData);
+              this.graphReference
+                  .getEdges()
+                  .add(encodeLink(source, target, edge.relationship, relationshipData));
             }
-            var relationshipData = getRelationshipData(edge);
-            kgTransaction.link(source, target, edge.relationship, relationshipData);
-            this.graphReference
-                .getEdges()
-                .add(encodeLink(source, target, edge.relationship, relationshipData));
           }
 
           if (!trivial) {
@@ -377,9 +394,6 @@ public class DigitalTwinImpl implements DigitalTwin {
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-          //          scope.send(
-          //              Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
-          // activity);
           return false;
         } finally {
           // dio sanguinaccio
@@ -389,11 +403,6 @@ public class DigitalTwinImpl implements DigitalTwin {
             Logging.INSTANCE.error(e);
           }
         }
-      }
-
-      for (var observation : contextualizers.keySet()) {
-        scheduler.registerExecutor(
-            observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
       }
 
       /* Upon successful commit, establish the ID for any target that was passed in the initialization

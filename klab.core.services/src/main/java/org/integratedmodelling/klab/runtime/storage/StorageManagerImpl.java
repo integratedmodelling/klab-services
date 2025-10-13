@@ -81,21 +81,21 @@ public class StorageManagerImpl implements StorageManager {
   BufferArray.MappedFileFactory longMappedArrayFactory = null;
   BufferArray.MappedFileFactory booleanMappedArrayFactory = null;
 
-  private BufferArray.MappedFileFactory getFloatFactory() {
+  private synchronized BufferArray.MappedFileFactory getFloatFactory() {
     if (this.floatMappedArrayFactory == null) {
       this.floatMappedArrayFactory = BufferArray.R032.newMapped(this.floatBackupFile);
     }
     return this.floatMappedArrayFactory;
   }
 
-  private BufferArray.MappedFileFactory getLongFactory() {
+  private synchronized BufferArray.MappedFileFactory getLongFactory() {
     if (this.longMappedArrayFactory == null) {
       this.longMappedArrayFactory = BufferArray.Z032.newMapped(this.longBackupFile);
     }
     return this.longMappedArrayFactory;
   }
 
-  private BufferArray.MappedFileFactory getDoubleFactory() {
+  private synchronized BufferArray.MappedFileFactory getDoubleFactory() {
     if (this.doubleMappedArrayFactory == null) {
       this.doubleMappedArrayFactory = BufferArray.R064.newMapped(this.doubleBackupFile);
     }
@@ -105,7 +105,7 @@ public class StorageManagerImpl implements StorageManager {
   /*
   SHORT int. For now we use floats to encode longs
    */
-  private BufferArray.MappedFileFactory getIntFactory() {
+  private synchronized BufferArray.MappedFileFactory getIntFactory() {
     if (this.intMappedArrayFactory == null) {
       this.intMappedArrayFactory = BufferArray.Z016.newMapped(this.intBackupFile);
     }
@@ -118,7 +118,7 @@ public class StorageManagerImpl implements StorageManager {
    *
    * @return
    */
-  private BufferArray.MappedFileFactory getBooleanFactory() {
+  private synchronized BufferArray.MappedFileFactory getBooleanFactory() {
     if (this.booleanMappedArrayFactory == null) {
       this.booleanMappedArrayFactory = BufferArray.Z008.newMapped(this.booleanBackupFile);
     }
@@ -152,23 +152,23 @@ public class StorageManagerImpl implements StorageManager {
     }
   }
 
-  public BufferArray getIntBuffer(long sliceSize) {
+  public synchronized BufferArray getIntBuffer(long sliceSize) {
     return getIntFactory().make(sliceSize);
   }
 
-  public BufferArray getLongBuffer(long sliceSize) {
+  public synchronized BufferArray getLongBuffer(long sliceSize) {
     return getLongFactory().make(sliceSize);
   }
 
-  public BufferArray getFloatBuffer(long sliceSize) {
+  public synchronized BufferArray getFloatBuffer(long sliceSize) {
     return getFloatFactory().make(sliceSize);
   }
 
-  public BufferArray getBooleanBuffer(long sliceSize) {
+  public synchronized BufferArray getBooleanBuffer(long sliceSize) {
     return getBooleanFactory().make(sliceSize);
   }
 
-  public BufferArray getDoubleBuffer(long sliceSize) {
+  public synchronized BufferArray getDoubleBuffer(long sliceSize) {
     return getDoubleFactory().make(sliceSize);
   }
 
@@ -186,7 +186,8 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
+  public synchronized Storage createStorage(
+      Observation observation, Data.ShardingStrategy shardingStrategy) {
     return this.storage.computeIfAbsent(
         observation.getUrn(),
         urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));

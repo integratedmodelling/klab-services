@@ -421,7 +421,17 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var resolutionScope = submissionScope.executing(resolution/*, true*/);
+      submissionScope.getCurrentTransaction().add(observation);
+      submissionScope
+          .getCurrentTransaction()
+          .link(
+              scope.getContextObservation() == null
+                  ? RuntimeAsset.CONTEXT_ASSET
+                  : scope.getContextObservation(),
+              observation,
+              GraphModel.Relationship.HAS_CHILD);
+
+      var resolutionScope = submissionScope.executing(resolution /*, true*/);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)
@@ -453,6 +463,7 @@ public class RuntimeService extends BaseService
           .thenApply(
               o -> {
                 if (!o.isEmpty()) {
+                  submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
                   submissionScope.commit();
                 } else {

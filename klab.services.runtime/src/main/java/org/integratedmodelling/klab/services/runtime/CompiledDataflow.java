@@ -240,10 +240,10 @@ public class CompiledDataflow {
               actuator1.getResolvedGeometry(),
               actuator.getName(),
               scope.getContextObservation());
-        var transaction = scope.getCurrentTransaction();
-        if (transaction != null) {
-          transaction.add(ret);
-        }
+      var transaction = scope.getCurrentTransaction();
+      if (transaction != null) {
+        transaction.add(ret);
+      }
       if (ret instanceof ObservationImpl obs) {
         var data = new ObservationImpl.ContextualizationDataImpl();
         data.setServiceUrl(runtimeService.getUrl());
@@ -613,12 +613,13 @@ public class CompiledDataflow {
               contextScope.getActivity(),
               "Contextualization of " + observation.getObservable());
 
-      var contextualizationScope = contextScope.executing(contextualization/*, true*/);
-
+      var contextualizationScope = contextScope.executing(contextualization);
+      Throwable failure = null;
       boolean ret = true;
       for (var executor : executors) {
         if (!executor.execute(event, contextualizationScope)) {
           ret = false;
+          failure = executor.getCause();
           break;
         }
       }
@@ -626,7 +627,7 @@ public class CompiledDataflow {
       if (ret) {
         contextualizationScope.commit();
       } else {
-        contextualizationScope.fail();
+        contextualizationScope.fail(failure);
       }
 
       return ret;
