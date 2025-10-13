@@ -196,9 +196,9 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   interface Transaction {
 
-      void registerExecutors();
+    void registerExecutors();
 
-      /**
+    /**
      * Each transaction represents a provenance activity that cannot be null.
      *
      * @return the activity
@@ -278,10 +278,9 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and
-     * their structure in the graph. The incremental graph structure is sent using a {@link
-     * org.integratedmodelling.klab.api.services.runtime.Message.MessageType#KnowledgeGraphCommitted}
-     * message. Upon reception, the parent of each root observation should be looked up in the scope
-     * for proper bookkeeping if a global KG is kept at client side.
+     * their structure in the graph after resolution. Assets in it are not yet committed, so their
+     * IDs and URNs will not be set. The incremental graph structure is sent in the metadata of a
+     * successful resolution action.
      *
      * @return the runtime asset graph for this transaction
      */

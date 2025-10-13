@@ -7,7 +7,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -65,8 +64,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
-  //  private Map<Long, Observation> resolutionCache;
-
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
    * basis but must be the same within a context. They are reassigned to undefined (-1) at each
@@ -77,7 +74,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   LoadingCache<Long, Observation> observationCache;
   private DigitalTwin.Transaction currentTransaction;
-  private Activity currentActivity;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
@@ -90,10 +86,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observationCache = parent.observationCache;
     this.serviceMap.putAll(parent.serviceMap);
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
-    //    this.resolutionCache = parent.resolutionCache;
-    //    this.nextResolutionId = parent.nextResolutionId;
     this.currentTransaction = parent.currentTransaction;
-    this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
   }
@@ -134,7 +127,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                     return ret;
                   }
                 });
-    //    this.nextResolutionId = new AtomicLong(-1L);
   }
 
   @Override
@@ -191,22 +183,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return null;
     }
 
-    //    if (id <= Observation.UNASSIGNED_ID) {
-    //      var ret = resolutionCache.get(id);
-    //      if (ret == null && !(this.service instanceof RuntimeService)) {
-    //        var obs = digitalTwin.getKnowledgeGraph().query(Observation.class,
-    // this).id(id).peek(this);
-    //        if (obs.isPresent()) {
-    //          ret = (ObservationImpl) obs.get();
-    //          resolutionCache.put(id, ret);
-    //          return ret;
-    //        }
-    //      }
-    //      return ret;
-    //      //      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this
-    // should
-    //      // no longer happen");
-    //    }
     try {
       return observationCache.get(id);
     } catch (ExecutionException e) {
@@ -327,7 +303,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     if (asset.getId() > 0) {
-        // TODO the actual ones from the persistent KG
+      // TODO the actual ones from the persistent KG
 
     }
 
@@ -457,33 +433,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public ServiceContextScope executing(Activity currentActivity /*, boolean isTransaction*/) {
+
     ServiceContextScope ret = new ServiceContextScope(this);
-    var parentActivity = this.currentActivity;
-    ret.currentActivity = currentActivity;
-    //    if (isTransaction) {
-    //      // create a transaction in the child scope
+    var parentActivity = this.getActivity();
     ret.currentTransaction =
         currentTransaction == null
             ? getDigitalTwin().transaction(currentActivity, this, parentActivity)
             : currentTransaction.getChild(currentActivity, ret);
-    //    } else {
-    //      // TODO VERIFY LOGIC
-    //      if (currentTransaction != null) {
-    //        currentTransaction.add(currentActivity);
-    //        if (parentActivity != null) {
-    //          currentTransaction.link(
-    //              parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
-    //        }
-    //      } else
-    //        try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
-    //          transaction.store(currentActivity);
-    //          if (parentActivity != null) {
-    //            transaction.link(parentActivity, currentActivity,
-    // GraphModel.Relationship.TRIGGERED);
-    //          }
-    //        } catch (Exception e) {
-    //        }
-    //    }
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
@@ -670,18 +626,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return obs;
       }
     }
-    //    if (contextObservation.getId() < 0) {
-    //      // This situation happens during uncommitted resolution chains and would mess up the
-    // knowledge
-    //      // graph at the runtime side.
-    //      for (var obs : resolutionCache.values()) {
-    //        // TODO check if this is good enough or we need an additional map
-    //        if (obs.getObservable().equals(observable)) {
-    //          return obs;
-    //        }
-    //      }
-    //      return null;
-    //    }
 
     var ret =
         digitalTwin
@@ -750,44 +694,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this;
   }
 
-  //  /**
-  //   * This is used only by the resolver. TODO must work for resolution to work.
-  //   *
-  //   * @param observation
-  //   */
-  //  public void registerObservation(Observation observation) {
-  //    if (observation instanceof ObservationImpl observation1) {
-  //      if (observation.getId() == Observation.UNASSIGNED_ID) {
-  //        observation1.setId(nextResolutionId.decrementAndGet());
-  //      }
-  //      return;
-  //    }
-  //    throw new KlabInternalErrorException(
-  //        "ServiceContextScope::registerObservation: unexpected observation implementation");
-  //  }
-
   @Override
   public Data.ShardingStrategy getShardingStrategy(Observation observation) {
     return shardingStrategy;
   }
-
-  //  /**
-  //   * Create a scope tuned on a submission and ready for resolution and contextualization. If
-  // this is
-  //   * a root-level submission, initialize the resolution cache and counters.
-  //   *
-  //   * @param submission
-  //   * @return
-  //   */
-  //  public ServiceContextScope initializeResolution(Activity submission) {
-  //    var ret = executing(submission, false);
-  //    if (this.currentTransaction == null && this.currentActivity == null) {
-  //      this.currentTransaction = digitalTwin.transaction(submission, this);
-  //      ret.nextResolutionId.set(-1L);
-  //      ret.resolutionCache.clear();
-  //    }
-  //    return ret;
-  //  }
 
   public boolean commit() {
     var ret = this.currentTransaction != null && this.currentTransaction.commit();
@@ -803,9 +713,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public Activity getActivity() {
-    return currentActivity != null
-        ? currentActivity
-        : (currentTransaction == null ? null : currentTransaction.getActivity());
+    return currentTransaction == null ? null : currentTransaction.getActivity();
   }
 
   public void contextualize(Observation observation) {

@@ -140,11 +140,6 @@ public interface Message extends Serializable {
      */
     ScenariosSelected(Queue.Events, String[].class),
     /**
-     * Sent by the runtime when a new portion of the knowledge graph has been committed after a new
-     * successful resolution.
-     */
-    KnowledgeGraphCommitted(Queue.Events, GraphModel.KnowledgeGraph.class),
-    /**
      * Sent after a new individual agent observation tagged as an observer has been explicitly
      * resolved, or when the user selects an observation from the graph as observer.
      */

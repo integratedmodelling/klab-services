@@ -108,37 +108,35 @@ public interface RuntimeService extends KlabService {
 
   /**
    * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in
-   * the passed scope and start its resolution. The return value is a future for the resolved
-   * observation, whose resolution may cause other observations to be made. If resolution fails, the
-   * future will complete exceptionally and the observation ID will be {@link
-   * Observation#UNASSIGNED_ID}, which signals that the digital twin has rejected the observation
-   * (for example because one was already present). If resolution succeeds, the finished observation
-   * will have its {@link Observation#getId()} set to a valid ID (>0L).
+   * the given scope and start its resolution. The return value is a future for the resolved
+   * observation, whose contextualization may cause other observations to be made. If the resolution
+   * fails, the future completes with an empty observation. If resolution succeeds, the finished
+   * observation will have its {@link Observation#getId()} set to a valid ID (>0) and a valid URN.
    *
    * <p>If the observation submitted is resolved (its ID is valid when submitted), the submission is
    * ignored and the completed future for the submitted observation is returned.
    *
-   * <p>Successful resolution means that the knowledge needed to properly represent the observable
-   * in the DT is resolved and consistent. It does not mean that the observation has been
-   * contextualized, i.e. that its computation is finished. Contextualization is started
-   * automatically by the scheduler for the resolved observation upon submission, and may happen
-   * again as events such as relevant temporal transitions, behavior-induced changes or dependence
-   * collisions trigger the calculations again. Contextualization cannot be controlled through the
-   * API and all events related to it are transmitted to the context scope through messaging.
-   *
-   * <p>The submit operation is transactional, i.e. a failed submission will leave the knowledge
+   * <p>The submit operation is transactional, i.e., a failed submission will leave the knowledge
    * graph unaltered. Note that observations of individual substantials, i.e. non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
-   * resolver, i.e. the ID will be valid and the knowledge graph will contain the observation, whose
-   * {@link Observation} will be unresolved (no URN, id == {@link Observation#UNASSIGNED_ID}). All
-   * other observations will complete exceptionally if no dataflow can be built for them, and the
-   * knowledge graph will not contain the observation submitted after completion.
+   * resolver, i.e., the ID/URN will be valid and the knowledge graph will contain the observation.
+   * All other observations will complete exceptionally if no dataflow can be built for them, and
+   * the knowledge graph will not contain the observation submitted after completion.
    *
-   * @param observation the observation to submit
-   * @param scope the context scope in which to submit the observation
-   * @return a future that completes with the resolved observation when resolution is complete
+   * <p>During submission, all activities generated will be sent to the scope and can be intercepted
+   * for monitoring. Upon successful completion, all activities, plans and observations will also be
+   * committed to the knowledge graph.
+   *
+   * @param observation the observation to submit. If a resolved observation is submitted, the
+   *     result will be a completed future containing it.
+   * @param scope the context scope in which to submit the observation. Must be compatible with the
+   *     observation's semantics.
+   * @return a future that completes with the resolved observation when resolution is complete. The
+   *     observation returned in the future may be an empty one if resolution has failed. If
+   *     successful, it will be the same object submitted, completed with its URN and ID, along with
+   *     possible metadata.
    */
-  CompletableFuture<Observation> submit(@Mutable Observation observation, ContextScope scope);
+  CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.

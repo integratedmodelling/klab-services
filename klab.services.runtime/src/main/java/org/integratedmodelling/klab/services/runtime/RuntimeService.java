@@ -304,7 +304,7 @@ public class RuntimeService extends BaseService
    *
    * @param observation the observation to submit
    * @param scope the context scope in which to submit the observation
-   * @return
+   * @return the submission task
    */
   @Override
   public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
