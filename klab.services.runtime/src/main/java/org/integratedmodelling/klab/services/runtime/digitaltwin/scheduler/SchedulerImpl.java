@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -201,6 +202,14 @@ public class SchedulerImpl implements Scheduler {
               .query(KnowledgeGraph.Link.class, scope)
               .between(affecting, observation, GraphModel.Relationship.AFFECTS)
               .peek(scope);
+
+      var affectingRelationship =
+          scope.getLinks(affecting, GraphModel.Relationship.AFFECTS).stream()
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new KlabIllegalStateException(
+                          "Inconsistent AFFECT relationship in knowledge graph"));
 
       scope
           .getCurrentTransaction()

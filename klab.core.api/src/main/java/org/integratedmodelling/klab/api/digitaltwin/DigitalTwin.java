@@ -193,18 +193,6 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   interface Transaction {
 
-    interface Link {
-        GraphModel.Relationship getRelationship();
-
-        RuntimeAsset getSource();
-
-      RuntimeAsset getTarget();
-
-      int getSequence();
-
-      Geometry getGeometry();
-    }
-
     /**
      * Each transaction represents a provenance activity that cannot be null.
      *

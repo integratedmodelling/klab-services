@@ -175,10 +175,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (id == Observation.UNASSIGNED_ID) {
       return null;
     }
-    // look first in the currentTransaction graph if there is a transaction
-    for (var obs : getTransactingObservations()) {
-      if (obs.getId() == id) {
-        return obs;
+
+    if (currentTransaction != null) {
+      // look first in the currentTransaction graph if there is a transaction
+      for (var obs :
+          currentTransaction.assets().stream().filter(o -> o instanceof Observation).toList()) {
+        if (obs.getId() == id) {
+          return (Observation) obs;
+        }
       }
     }
 
@@ -289,7 +293,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       ret.addAll(
           currentTransaction.outgoing(observation).stream()
               .filter(edge -> edge.getRelationship() == GraphModel.Relationship.HAS_CHILD)
-              .map(DigitalTwin.Transaction.Link::getTarget)
+              .map(RuntimeAsset.Link::getTarget)
               .toList());
     }
 

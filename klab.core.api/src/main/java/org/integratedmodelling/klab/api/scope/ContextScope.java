@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.scope;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -314,6 +315,17 @@ public interface ContextScope extends SessionScope {
    * @return the parent, or an empty collection if no children
    */
   Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset);
+
+  /**
+   * Retrieve all links from the graph or the current transaction that match the passed types. If
+   * nothing is passed, all links are returned.
+   *
+   * @param affecting
+   * @param relationship
+   * @return
+   */
+  Collection<RuntimeAsset.Link> getLinks(
+      Observation affecting, GraphModel.Relationship... relationship);
 
   /**
    * Inspect the network graph of the current context, returning all relationships that have the

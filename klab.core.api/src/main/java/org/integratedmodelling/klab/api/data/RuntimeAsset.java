@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.api.data;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -24,6 +26,19 @@ public interface RuntimeAsset {
   ContextAsset CONTEXT_ASSET = new ContextAsset();
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
+
+  /** A relationship between two assets in the knowledge graph. TODO add metadata */
+  interface Link {
+    GraphModel.Relationship getRelationship();
+
+    RuntimeAsset getSource();
+
+    RuntimeAsset getTarget();
+
+    int getSequence();
+
+    Geometry getGeometry();
+  }
 
   /** The status of an asset, which may be added to the metadata using the "status" property. */
   enum Status {
