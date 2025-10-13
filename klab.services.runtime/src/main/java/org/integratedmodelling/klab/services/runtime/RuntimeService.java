@@ -295,41 +295,15 @@ public class RuntimeService extends BaseService
   }
 
   /**
-   * The structure of the graph will be:
+   * Submission is entirely within a transaction, created new at the root submission. Observations
+   * are directly used as keys for everything, so the object must never be substituted by another.
+   * All observations created upon submissions remain without URN or ID until committed. Each
+   * submission creates a submission activity followed by resolution and, if successful,
+   * contextualization of all resolved observations. Instantiators cause other submissions within
+   * the same transaction.
    *
-   * <ul>
-   *   <li>The RESOLUTION activity as top node, linking to ALL the observations created by a
-   *       RESOLVED link. The dataflow source code is also attached to it. Pre-existing observations
-   *       referenced are not linked to the activity but will get any additional AFFECTS
-   *       relationship. Activity is attached to the agent and the provenance, timestamped for
-   *       reconstruction
-   *   <li>The link to each observation contains the sequence number (0-based) to reconstruct the
-   *       contextualization order. -1 flags links to pre-existing referenced observations.
-   *   <li>AFFECTS relationships are added for all causal links
-   *   <li>The actuator is linked to each observation. Activities can reconstruct the dataflow by
-   *       following the observations.
-   *   <li>HAS_CHILD relationships are added between dependents and substantials and between
-   *       instantiated substantials and their collective observations
-   *   <li>Any other observation is linked to the context
-   *   <li>All observations are linked to their observer if any
-   *   <li>Contextualization will add data buffers for qualities and set the computation time
-   *       (incrementally) and the latest contextualization update time, with -1 before
-   *       contextualization
-   *   <li>The INIT CONTEXTUALIZATION activity is added by the scheduler when the initialization
-   *       event is scheduled on the submitted root observation. The activity is TRIGGERED by
-   *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
-   * </ul>
-   *
-   * TODO revise as follows: remove the transaction from all calls - use
-   * scope.getCurrentTransaction() and close the scope with a commit at the end. Use one main
-   * SUBMISSION activity (w/o transaction) and implement independent child activities for resolution
-   * and contextualization, each with an independent transaction committed at the end. Within
-   * scheduler.submit() the transaction used for an instantiator must allow further
-   * contextualizations to come back into this submit() with the already transacting scope. That
-   * requires the only transaction generation to be done by scope.executing().
-   *
-   * @param observation
-   * @param scope
+   * @param observation the observation to submit
+   * @param scope the context scope in which to submit the observation
    * @return
    */
   @Override
@@ -430,6 +404,9 @@ public class RuntimeService extends BaseService
                   : scope.getContextObservation(),
               observation,
               GraphModel.Relationship.HAS_CHILD);
+      submissionScope
+          .getCurrentTransaction()
+          .link(submission, observation, GraphModel.Relationship.CREATED);
 
       var resolutionScope = submissionScope.executing(resolution /*, true*/);
       return resolver
