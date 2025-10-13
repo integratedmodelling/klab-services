@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -66,7 +68,12 @@ public interface ContextScope extends SessionScope {
    */
   URL getUrl();
 
-  Activity getCurrentActivity();
+  /**
+   * The scope may be executing a DT transaction, implementing a provenance {@link Activity}.
+   *
+   * @return the current transaction or null if none is active.
+   */
+  DigitalTwin.Transaction getCurrentTransaction();
 
   /**
    * Return the observer for this context. This should normally not be null even if the context is
@@ -224,7 +231,7 @@ public interface ContextScope extends SessionScope {
    * @param observation
    * @return
    */
-  Collection<Observation> affects(Observation observation);
+  Collection<Observation> affecting(Observation observation);
 
   /**
    * Return all observations that the passed one affects in this scope, either through model
@@ -311,8 +318,19 @@ public interface ContextScope extends SessionScope {
   Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset);
 
   /**
-   * Inspect the network graph of the current context, returning all relationships that have the
-   * passed subject as target.
+   * Retrieve all links from the graph or the current transaction that match the passed types. If
+   * nothing is passed, all links are returned.
+   *
+   * @param asset
+   * @param relationship
+   * @return
+   */
+  Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset asset, GraphModel.Relationship... relationship);
+
+  /**
+   * Inspect the network graph of the current context, returning all <code>relationship</code>
+   * observations that have the passed subject as source.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
@@ -320,8 +338,8 @@ public interface ContextScope extends SessionScope {
   Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset asset);
 
   /**
-   * Inspect the network graph of the current context, returning all relationships that have the
-   * passed subject as target.
+   * Inspect the network graph of the current context, returning all <code>relationship</code>
+   * observations that have the passed subject as target.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.

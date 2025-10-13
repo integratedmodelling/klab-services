@@ -320,9 +320,13 @@ public class RuntimeService extends BaseService
    *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
    * </ul>
    *
-   * TODO the observation may come with resolution informations added from the outside, in the form
-   * of metadata that point to an adapter configuration. That needs to be validated and ingested by
-   * the DT before assigning an ID and returning.
+   * TODO revise as follows: remove the transaction from all calls - use
+   * scope.getCurrentTransaction() and close the scope with a commit at the end. Use one main
+   * SUBMISSION activity (w/o transaction) and implement independent child activities for resolution
+   * and contextualization, each with an independent transaction committed at the end. Within
+   * scheduler.submit() the transaction used for an instantiator must allow further
+   * contextualizations to come back into this submit() with the already transacting scope. That
+   * requires the only transaction generation to be done by scope.executing().
    *
    * @param observation
    * @param scope
@@ -394,54 +398,83 @@ public class RuntimeService extends BaseService
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
 
-      /*
-       * TODO put the master DT transaction in this; have all other transaction use a pattern
-       *  masterTransaction == null ? null : masterTransaction.getChild() and put that in the scope
-       *  as transaction(). The only commit should be at the end of submit(). Child transactions
-       *  commit nothing to the KG but do return true or false.
-       */
-      var contextScope = serviceContextScope.initializeResolution();
+      var submission =
+          Activity.of(
+              Activity.Type.SUBMISSION,
+              this,
+              observation,
+              scope,
+              storedAgent,
+              serviceContextScope.getActivity(),
+              observation + " submitted");
+
+      //      var submissionScope = serviceContextScope.initializeResolution(submission);
+      var submissionScope = serviceContextScope.executing(submission);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
-              "Resolution of " + observation, Activity.Type.RESOLUTION, this, agent, contextScope);
+              "Resolution of " + observation,
+              Activity.Type.RESOLUTION,
+              this,
+              agent,
+              submission,
+              "Resolution of " + observation,
+              submissionScope);
 
-      var runningScope = contextScope.executing(resolution);
+      submissionScope.getCurrentTransaction().add(observation);
+      submissionScope
+          .getCurrentTransaction()
+          .link(
+              scope.getContextObservation() == null
+                  ? RuntimeAsset.CONTEXT_ASSET
+                  : scope.getContextObservation(),
+              observation,
+              GraphModel.Relationship.HAS_CHILD);
+
+      var resolutionScope = submissionScope.executing(resolution /*, true*/);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
-          .resolve(observation, contextScope)
+          .resolve(observation, resolutionScope)
+          .exceptionally(
+              t -> {
+                resolutionScope.fail(t);
+                return Dataflow.empty();
+              })
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
                 if (!dataflow.isEmpty()) {
-                  /*
-                   * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
-                   */
-                  var transaction =
-                      scope
-                          .getDigitalTwin()
-                          .transaction(
-                              resolution, runningScope, dataflow, observation, storedAgent);
-
-                  if (compile(observation, dataflow, runningScope, transaction)) {
-                    if (transaction.commit()) {
-                      // send the committed graph before submitting the observation to the
-                      // scheduler,
-                      runningScope.send(
-                          Message.MessageClass.DigitalTwin,
-                          Message.MessageType.KnowledgeGraphCommitted,
-                          transaction.getGraph());
+                  if (compile(observation, dataflow, resolutionScope)) {
+                    if (resolutionScope.commit()) {
+                      // TODO add the resolved graph as metadata to the activity instead
+                      // scheduler, TODO make this a debug action
+                      //                      resolutionScope.send(
+                      //                          Message.MessageClass.DigitalTwin,
+                      //                          Message.MessageType.KnowledgeGraphCommitted,
+                      //                          resolutionScope.getResolvedGraph());
                       return observation;
                     }
                   }
                 }
+                resolutionScope.fail();
                 return Observation.empty();
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
-                runningScope.getDigitalTwin().getScheduler().submit(o, resolution);
+                if (!o.isEmpty()) {
+                  submissionScope.getCurrentTransaction().registerExecutors();
+                  submissionScope.contextualize(o);
+                  submissionScope.commit();
+                } else {
+                  submissionScope.fail();
+                }
                 return o;
+              })
+          .exceptionally(
+              t -> {
+                submissionScope.fail(t);
+                return Observation.empty();
               });
     }
     throw new KlabInternalErrorException(
@@ -449,34 +482,37 @@ public class RuntimeService extends BaseService
   }
 
   private boolean compile(
-      Observation rootObservation,
-      Dataflow dataflow,
-      ServiceContextScope scope,
-      DigitalTwin.Transaction transaction) {
+      Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
 
-    transaction.add(rootObservation);
-    transaction.link(
-        scope.getContextObservation() == null
-            ? scope.getDigitalTwin().getKnowledgeGraph().scope()
-            : scope.getContextObservation(),
-        rootObservation,
-        GraphModel.Relationship.HAS_CHILD);
+    scope.getCurrentTransaction().add(rootObservation);
+    scope
+        .getCurrentTransaction()
+        .link(
+            scope.getContextObservation() == null
+                ? scope.getDigitalTwin().getKnowledgeGraph().scope()
+                : scope.getContextObservation(),
+            rootObservation,
+            GraphModel.Relationship.HAS_CHILD);
 
-    transaction.link(
-        transaction.getActivity(),
-        rootObservation,
-        rootObservation.getId() < 0
-            ? GraphModel.Relationship.CREATED
-            : GraphModel.Relationship.RESOLVED);
+    scope
+        .getCurrentTransaction()
+        .link(
+            scope.getCurrentTransaction().getActivity(),
+            rootObservation,
+            rootObservation.getId() < 0
+                ? GraphModel.Relationship.CREATED
+                : GraphModel.Relationship.RESOLVED);
 
-    if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
+    if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new CompiledDataflow(this, rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
-          transaction.fail(
-              new KlabCompilationError(
-                  "Could not compile execution sequence for target observation "
-                      + rootObservation));
+          scope
+              .getCurrentTransaction()
+              .fail(
+                  new KlabCompilationError(
+                      "Could not compile execution sequence for target observation "
+                          + rootObservation));
           return false;
         }
 

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,10 +186,19 @@ public interface DigitalTwin extends RuntimeAsset {
   /**
    * Operations that modify the digital twin are transactional and use this object, which guarantees
    * that all operations are linked to an activity that gets recorded in provenance.
+   *
+   * <p>The transaction hosts the portion of the knowledge graph being created and modified. The
+   * scope inspection functions must be aware of any transaction and find the observations in it by
+   * reference before consulting the committed graph.
+   *
+   * <p>TODO storage allocation must also be transactional, calling "release" on failure and
+   * finalizing the storage commitment on commit.
    */
   interface Transaction {
 
-    /**
+      void registerExecutors();
+
+      /**
      * Each transaction represents a provenance activity that cannot be null.
      *
      * @return the activity
@@ -237,6 +247,16 @@ public interface DigitalTwin extends RuntimeAsset {
     boolean commit();
 
     /**
+     * Get a child transaction for the given activity. The child transaction must be committed
+     * normally but won't cause knowledge graph updates until the root transaction is committed. If
+     * a child transaction fails, the whole transaction tree fails.
+     *
+     * @param activity
+     * @return
+     */
+    Transaction getChild(Activity activity, ContextScope scope);
+
+    /**
      * Signal compilation failure. Return a transaction that will throw the same exception at
      * commit() with as much tracking info as practical.
      *
@@ -244,6 +264,17 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return a failed transaction that will throw the error at commit
      */
     Transaction fail(Throwable compilationError);
+
+    /**
+     * All the uncommitted assets in the transaction.
+     *
+     * @return
+     */
+    Collection<RuntimeAsset> assets();
+
+    Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset);
+
+    Collection<KnowledgeGraph.Link> outgoing(RuntimeAsset asset);
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and
@@ -267,7 +298,11 @@ public interface DigitalTwin extends RuntimeAsset {
 
   /**
    * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
-   * {@link Transaction#commit()} is invoked on the returned object and returns true.
+   * {@link Transaction#commit()} is invoked on the root-level transaction and returns true.
+   *
+   * <p>NOTE: this should not be called as a rule. It should only be called within the service-side
+   * {@link ContextScope}, which will manage the transaction tree and commit after resolution and
+   * contextualization.
    *
    * @param activity
    * @param scope

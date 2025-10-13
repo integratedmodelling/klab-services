@@ -7,7 +7,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
@@ -24,12 +23,11 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -67,8 +65,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
-  private Map<Long, Observation> resolutionCache;
-  private AtomicLong nextResolutionId;
+  //  private Map<Long, Observation> resolutionCache;
 
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
@@ -79,6 +76,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private int splits = -1;
 
   LoadingCache<Long, Observation> observationCache;
+  private DigitalTwin.Transaction currentTransaction;
   private Activity currentActivity;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
@@ -92,8 +90,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observationCache = parent.observationCache;
     this.serviceMap.putAll(parent.serviceMap);
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
-    this.resolutionCache = parent.resolutionCache;
-    this.nextResolutionId = parent.nextResolutionId;
+    //    this.resolutionCache = parent.resolutionCache;
+    //    this.nextResolutionId = parent.nextResolutionId;
+    this.currentTransaction = parent.currentTransaction;
     this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
@@ -109,7 +108,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-    this.resolutionCache = new HashMap<>();
+    //    this.resolutionCache = new HashMap<>();
     this.configuration = configuration;
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy
@@ -135,7 +134,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                     return ret;
                   }
                 });
-    this.nextResolutionId = new AtomicLong(-1L);
+    //    this.nextResolutionId = new AtomicLong(-1L);
   }
 
   @Override
@@ -147,8 +146,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Activity getCurrentActivity() {
-    return currentActivity;
+  public DigitalTwin.Transaction getCurrentTransaction() {
+    return currentTransaction;
   }
 
   @Override
@@ -172,23 +171,42 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    * @return
    */
   public Observation getObservation(long id) {
+
     if (id == Observation.UNASSIGNED_ID) {
       return null;
     }
-    if (id <= Observation.UNASSIGNED_ID) {
-      var ret = resolutionCache.get(id);
-      if (ret == null && !(this.service instanceof RuntimeService)) {
-        var obs = digitalTwin.getKnowledgeGraph().query(Observation.class, this).id(id).peek(this);
-        if (obs.isPresent()) {
-          ret = (ObservationImpl) obs.get();
-          resolutionCache.put(id, ret);
-          return ret;
+
+    if (currentTransaction != null) {
+      // look first in the currentTransaction graph if there is a transaction
+      for (var obs :
+          currentTransaction.assets().stream().filter(o -> o instanceof Observation).toList()) {
+        if (obs.getId() == id) {
+          return (Observation) obs;
         }
       }
-      return ret;
-      //      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this should
-      // no longer happen");
     }
+
+    // at this point if it's unresolved we can't find it in the DT
+    if (id <= Observation.UNASSIGNED_ID) {
+      return null;
+    }
+
+    //    if (id <= Observation.UNASSIGNED_ID) {
+    //      var ret = resolutionCache.get(id);
+    //      if (ret == null && !(this.service instanceof RuntimeService)) {
+    //        var obs = digitalTwin.getKnowledgeGraph().query(Observation.class,
+    // this).id(id).peek(this);
+    //        if (obs.isPresent()) {
+    //          ret = (ObservationImpl) obs.get();
+    //          resolutionCache.put(id, ret);
+    //          return ret;
+    //        }
+    //      }
+    //      return ret;
+    //      //      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this
+    // should
+    //      // no longer happen");
+    //    }
     try {
       return observationCache.get(id);
     } catch (ExecutionException e) {
@@ -268,44 +286,150 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .source(observation)
-        .along(GraphModel.Relationship.HAS_CHILD)
-        .run(this);
+
+    var ret = new ArrayList<RuntimeAsset>();
+
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_CHILD)
+              .map(KnowledgeGraph.Link::target)
+              .toList());
+    }
+
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.HAS_CHILD)
+              .run(this));
+    }
+
+    return ret;
+  }
+
+  @Override
+  public Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset asset, GraphModel.Relationship... relationship) {
+
+    var ret = new ArrayList<KnowledgeGraph.Link>();
+    var types = EnumSet.noneOf(GraphModel.Relationship.class);
+    if (relationship != null) {
+      types.addAll(List.of(relationship));
+    }
+    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
+      ret.addAll(
+          currentTransaction.outgoing(asset).stream()
+              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
+              .toList());
+    }
+
+    if (asset.getId() > 0) {
+        // TODO the actual ones from the persistent KG
+
+    }
+
+    return ret;
   }
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .source(observation)
-        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run(this);
+    var ret = new ArrayList<RuntimeAsset>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .map(KnowledgeGraph.Link::target)
+              .toList());
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .run(this));
+    }
+    return ret;
   }
 
   @Override
   public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .target(observation)
-        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run(this);
+    var ret = new ArrayList<RuntimeAsset>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.incoming(observation).stream()
+              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .map(KnowledgeGraph.Link::target)
+              .toList());
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .target(observation)
+              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
+              .run(this));
+    }
+    return ret;
   }
 
   @Override
-  public Collection<Observation> affects(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+  public Collection<Observation> affecting(Observation observation) {
+
+    var ret = new ArrayList<Observation>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.incoming(observation).stream()
+              .filter(
+                  edge ->
+                      edge.type() == GraphModel.Relationship.AFFECTS
+                          && edge.source() instanceof Observation)
+              .map(edge -> (Observation) edge.source())
+              .toList());
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(Observation.class, this)
+              .target(observation)
+              .along(GraphModel.Relationship.AFFECTS)
+              .run(this));
+    }
+
+    return ret;
   }
 
   @Override
   public Collection<Observation> affected(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+    var ret = new ArrayList<Observation>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(
+                  edge ->
+                      edge.type() == GraphModel.Relationship.AFFECTS
+                          && edge.target() instanceof Observation)
+              .map(edge -> (Observation) edge.target())
+              .toList());
+    }
+
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(Observation.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.AFFECTS)
+              .run(this));
+    }
+
+    return ret;
   }
 
   @Override
@@ -332,9 +456,37 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  public ServiceContextScope executing(Activity currentActivity) {
+  public ServiceContextScope executing(Activity currentActivity /*, boolean isTransaction*/) {
     ServiceContextScope ret = new ServiceContextScope(this);
+    var parentActivity = this.currentActivity;
     ret.currentActivity = currentActivity;
+    //    if (isTransaction) {
+    //      // create a transaction in the child scope
+    ret.currentTransaction =
+        currentTransaction == null
+            ? getDigitalTwin().transaction(currentActivity, this, parentActivity)
+            : currentTransaction.getChild(currentActivity, ret);
+    //    } else {
+    //      // TODO VERIFY LOGIC
+    //      if (currentTransaction != null) {
+    //        currentTransaction.add(currentActivity);
+    //        if (parentActivity != null) {
+    //          currentTransaction.link(
+    //              parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
+    //        }
+    //      } else
+    //        try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
+    //          transaction.store(currentActivity);
+    //          if (parentActivity != null) {
+    //            transaction.link(parentActivity, currentActivity,
+    // GraphModel.Relationship.TRIGGERED);
+    //          }
+    //        } catch (Exception e) {
+    //        }
+    //    }
+
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
+
     return ret;
   }
 
@@ -512,17 +664,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Observation getObservation(Semantics observable) {
 
-    if (contextObservation.getId() < 0) {
-      // This situation happens during uncommitted resolution chains and would mess up the knowledge
-      // graph at the runtime side.
-      for (var obs : resolutionCache.values()) {
-        // TODO check if this is good enough or we need an additional map
-        if (obs.getObservable().equals(observable)) {
-          return obs;
-        }
+    // look first in the currentTransaction graph if there is a transaction
+    for (var obs : getTransactingObservations()) {
+      if (obs.getObservable().equals(observable)) {
+        return obs;
       }
-      return null;
     }
+    //    if (contextObservation.getId() < 0) {
+    //      // This situation happens during uncommitted resolution chains and would mess up the
+    // knowledge
+    //      // graph at the runtime side.
+    //      for (var obs : resolutionCache.values()) {
+    //        // TODO check if this is good enough or we need an additional map
+    //        if (obs.getObservable().equals(observable)) {
+    //          return obs;
+    //        }
+    //      }
+    //      return null;
+    //    }
 
     var ret =
         digitalTwin
@@ -535,6 +694,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .run(this);
     // TODO may need to adapt units or the like if the request is an observable
     return ret.isEmpty() ? null : ret.getFirst();
+  }
+
+  private List<Observation> getTransactingObservations() {
+    List<Observation> ret = new ArrayList<>();
+    if (currentTransaction != null) {
+      for (var asset : currentTransaction.assets()) {
+        if (asset instanceof Observation observation) {
+          if (contextObservation != null) {
+            // TODO must go over the children of the current context observation if one is there
+          }
+          ret.add(observation);
+        }
+      }
+    }
+    return ret;
   }
 
   @Override
@@ -576,27 +750,81 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this;
   }
 
-  public void registerObservation(Observation observation) {
-    if (observation instanceof ObservationImpl observation1) {
-      if (observation.getId() == Observation.UNASSIGNED_ID) {
-        observation1.setId(nextResolutionId.decrementAndGet());
-        resolutionCache.put(observation1.getId(), observation1);
-      }
-      return;
-    }
-    throw new KlabInternalErrorException(
-        "ServiceContextScope::registerObservation: unexpected observation implementation");
-  }
+  //  /**
+  //   * This is used only by the resolver. TODO must work for resolution to work.
+  //   *
+  //   * @param observation
+  //   */
+  //  public void registerObservation(Observation observation) {
+  //    if (observation instanceof ObservationImpl observation1) {
+  //      if (observation.getId() == Observation.UNASSIGNED_ID) {
+  //        observation1.setId(nextResolutionId.decrementAndGet());
+  //      }
+  //      return;
+  //    }
+  //    throw new KlabInternalErrorException(
+  //        "ServiceContextScope::registerObservation: unexpected observation implementation");
+  //  }
 
   @Override
   public Data.ShardingStrategy getShardingStrategy(Observation observation) {
     return shardingStrategy;
   }
 
-  public ServiceContextScope initializeResolution() {
-    ServiceContextScope ret = new ServiceContextScope(this);
-    ret.nextResolutionId.set(-1L);
-    ret.resolutionCache.clear();
+  //  /**
+  //   * Create a scope tuned on a submission and ready for resolution and contextualization. If
+  // this is
+  //   * a root-level submission, initialize the resolution cache and counters.
+  //   *
+  //   * @param submission
+  //   * @return
+  //   */
+  //  public ServiceContextScope initializeResolution(Activity submission) {
+  //    var ret = executing(submission, false);
+  //    if (this.currentTransaction == null && this.currentActivity == null) {
+  //      this.currentTransaction = digitalTwin.transaction(submission, this);
+  //      ret.nextResolutionId.set(-1L);
+  //      ret.resolutionCache.clear();
+  //    }
+  //    return ret;
+  //  }
+
+  public boolean commit() {
+    var ret = this.currentTransaction != null && this.currentTransaction.commit();
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.SUCCESS);
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     return ret;
+  }
+
+  public GraphModel.KnowledgeGraph getResolvedGraph() {
+    return this.currentTransaction.getGraph();
+  }
+
+  public Activity getActivity() {
+    return currentActivity != null
+        ? currentActivity
+        : (currentTransaction == null ? null : currentTransaction.getActivity());
+  }
+
+  public void contextualize(Observation observation) {
+    this.digitalTwin.getScheduler().submit(observation, this);
+  }
+
+  public void fail(Throwable t) {
+    this.currentTransaction.fail(t);
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+  }
+
+  public void fail() {
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.FAILURE);
+    }
+    this.currentTransaction.fail(null);
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 }

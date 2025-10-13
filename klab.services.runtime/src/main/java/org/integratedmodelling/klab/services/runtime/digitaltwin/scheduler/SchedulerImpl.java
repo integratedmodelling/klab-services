@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
-import org.integratedmodelling.klab.api.lang.TetraFunction;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -57,20 +56,20 @@ public class SchedulerImpl implements Scheduler {
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
    * as a provenance agent and is recorded as the agent for activities triggered by temporal events.
    */
-  private final Sinks.Many<EventImpl> processor = Sinks.many().replay().all();
+  private final Sinks.Many<EventImpl> processor;
 
   /*
    * Executors are loaded upon dataflow validation/compilation before registering the observations,
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Long, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
+  private LoadingCache<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
       CacheBuilder.newBuilder()
           .maximumSize(200)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
           .build(
-              new CacheLoader<Long, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
-                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Long key) {
+              new CacheLoader<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
+                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Observation key) {
                   // TODO reconstruct the executor from actuator in the knowledge graph.
                   return (g, e, s) -> true;
                 }
@@ -80,6 +79,7 @@ public class SchedulerImpl implements Scheduler {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
     this.timeEmitter = new TimeEmitter(this);
+    this.processor = Sinks.many().replay().all();
     initializeScheduler();
   }
 
@@ -92,38 +92,40 @@ public class SchedulerImpl implements Scheduler {
   }
 
   @Override
-  public void submit(Observation observation, Activity triggeringActivity) {
+  public void submit(Observation observation, ContextScope scope) {
 
     // TODO we should not register observations that are unaffected by others unless they're events
-
     if (observation.isEmpty()) {
       return;
     }
 
-    var timeData = register(observation.getGeometry());
-    var registration =
-        new Registration(
-            observation.getId(),
-            SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
-            timeData.getFirst(),
-            timeData.getSecond(),
-            timeData.getThird(),
-            triggeringActivity);
-    if (observation.getObservable().is(SemanticType.EVENT)) {
-      // EVENT! Post iy
-    } else if (observation.getObservable().is(SemanticType.PROCESS)) {
-      // PROCESS! Time events will affect it
+    if (scope instanceof ServiceContextScope serviceContextScope) {
+
+      var timeData = register(observation.getGeometry());
+      var registration =
+          new Registration(
+              observation,
+              SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
+              timeData.getFirst(),
+              timeData.getSecond(),
+              timeData.getThird(),
+              serviceContextScope);
+      if (observation.getObservable().is(SemanticType.EVENT)) {
+        // EVENT! Post iy
+      } else if (observation.getObservable().is(SemanticType.PROCESS)) {
+        // PROCESS! Time events will affect it
+      }
+      processor
+          .asFlux()
+          .filterWhen(event -> Mono.just(checkApplies(registration, event)))
+          .subscribe(e -> handleEvent(registration, e));
     }
-    processor
-        .asFlux()
-        .filterWhen(event -> Mono.just(checkApplies(registration, event)))
-        .subscribe(e -> handleEvent(registration, e));
   }
 
   @Override
   public void registerExecutor(
       Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor) {
-    executors.put(observation.getId(), executor);
+    executors.put(observation, executor);
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
@@ -138,33 +140,31 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl,
-   * DigitalTwin.Transaction)}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl)}
    *
    * @param observation
    */
-  private void initialize(
-      Observation observation, ServiceContextScope scope, Activity triggeringResolution) {
+  private void initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
-    var transaction =
-        scope
-            .getDigitalTwin()
-            .transaction(
-                Activity.of(
-                    Activity.Type.INITIALIZATION,
-                    observation,
-                    triggeringResolution,
-                    scope,
-                    "Initialization of " + observation),
-                scope,
-                triggeringResolution);
+    //    var transaction =
+    //        scope
+    //            .getDigitalTwin()
+    //            .transaction(
+    //                Activity.of(
+    //                    Activity.Type.INITIALIZATION,
+    //                    observation,
+    //                    scope.getCurrentTransaction().getActivity(),
+    //                    scope,
+    //                    "Initialization of " + observation),
+    //                scope,
+    //                triggeringResolution);
     try {
-      if (contextualize(observation, scale, scope, this.initializationEvent, transaction)) {
-        transaction.commit();
+      if (contextualize(observation, scale, scope, this.initializationEvent)) {
+        //        scope.commit();
       }
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
-      transaction.fail(t);
+      scope.fail(t);
     }
   }
 
@@ -176,49 +176,57 @@ public class SchedulerImpl implements Scheduler {
    * @param geometry
    * @param scope
    * @param causingEvent
-   * @param transaction
    * @return
    */
   private boolean contextualize(
       Observation observation,
       Geometry geometry,
       ServiceContextScope scope,
-      EventImpl causingEvent,
-      DigitalTwin.Transaction transaction) {
+      EventImpl causingEvent) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
+    // FIXME must use scope functions instead of KG queries, using the transaction as well as the KG
+
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
-    for (var affecting :
-        knowledgeGraph
-            .query(Observation.class, scope)
-            .target(observation)
-            .along(GraphModel.Relationship.AFFECTS)
-            .run(scope)) {
+    for (var affecting : scope.affecting(observation)) {
 
       if (checkEvent(affecting, causingEvent)) {
         continue;
       }
 
-      var relationship =
-          knowledgeGraph
-              .query(KnowledgeGraph.Link.class, scope)
-              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
-              .peek(scope);
+      // FIXME switch to scope.outgoing with a filter; add the transaction management in scope
+      //      var relationship =
+      //          knowledgeGraph
+      //              .query(KnowledgeGraph.Link.class, scope)
+      //              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
+      //              .peek(scope);
 
-      transaction.link(
-          transaction.getActivity(), affecting, GraphModel.Relationship.CONTEXTUALIZED);
+      var affectingRelationship =
+          scope.getLinks(affecting, GraphModel.Relationship.AFFECTS).stream()
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new KlabIllegalStateException(
+                          "Inconsistent AFFECT relationship in knowledge graph"));
+
+      scope
+          .getCurrentTransaction()
+          .link(
+              scope.getCurrentTransaction().getActivity(),
+              affecting,
+              GraphModel.Relationship.CONTEXTUALIZED);
 
       var sequence = 0;
-      if (relationship.isPresent()) { // it must be
+      if (affectingRelationship != null) { // it must be
         sequence =
-            relationship.get().properties().get(/* TODO use formal property */ "sequence", 0);
+            affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
       }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affecting, geometry, scope, causingEvent, transaction));
+          .add(() -> contextualize(affecting, geometry, scope, causingEvent));
     }
 
     var sortedTasks =
@@ -254,9 +262,9 @@ public class SchedulerImpl implements Scheduler {
     /*
      * The actual execution for self
      */
-    var executor = executors.getIfPresent(observation.getId());
+    var executor = executors.getIfPresent(observation);
     if (executor != null) {
-      return execute(executor, observation, geometry, causingEvent, scope, transaction);
+      return execute(executor, observation, geometry, causingEvent, scope);
     }
     return true;
   }
@@ -266,19 +274,20 @@ public class SchedulerImpl implements Scheduler {
       Observation observation,
       Geometry geometry,
       Scheduler.Event event,
-      ServiceContextScope scope,
-      DigitalTwin.Transaction transaction) {
+      ServiceContextScope scope) {
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
           for (var buffer : storage.getNativeShards(event)) {
-            transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+            scope
+                .getCurrentTransaction()
+                .link(observation, buffer, GraphModel.Relationship.HAS_DATA);
           }
         }
       }
       var geometryTime = GeometryRepository.INSTANCE.scale(geometry).getTime();
-      recordEvent(observation, event, geometryTime, transaction);
+      recordEvent(observation, event, geometryTime, scope.getCurrentTransaction());
       return true;
     }
     return false;
@@ -371,19 +380,19 @@ public class SchedulerImpl implements Scheduler {
    * observation events only affects it, given that contextualization actions are handled through
    * the influence diagram in the DT.
    *
-   * @param id
+   * @param observation
    * @param type
    * @param start
    * @param end
-   * @param activity the activity that made the registration
+   * @param scope the scope executing the activity that made the registration
    */
   public record Registration(
-      long id,
+      Observation observation,
       SemanticType type,
       long start,
       long end,
       Time.Resolution resolution,
-      Activity activity) {}
+      ServiceContextScope scope) {}
 
   /**
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
@@ -481,45 +490,39 @@ public class SchedulerImpl implements Scheduler {
    */
   private void handleEvent(Registration registration, EventImpl event) {
     //    System.out.println(registration + " got event " + event);
-    if (event.type
-        == EventImpl.Type
-            .INITIALIZATION) { // FIXME this should not be necessary when the filter works
-      var observation = rootScope.getObservation(registration.id());
-      if (observation != null) {
-        initialize(
-            observation,
-            rootScope.of(observation).executing(registration.activity()),
-            registration.activity());
-      }
+    if (event.type == EventImpl.Type.INITIALIZATION) {
+      // FIXME this should not be necessary when the filter works
+      initialize(registration.observation(), registration.scope);
     }
   }
 
-  public static void main(String[] dio) {
-
-    var scheduler = new SchedulerImpl(null, null);
-    AtomicInteger obsId = new AtomicInteger(1);
-
-    Utils.Java.repl(
-        "> ",
-        s -> {
-          //          switch (s) {
-          //            // add a new observation and subscribe it to events
-          //            case "+" ->
-          //                scheduler.register(
-          //                    new Registration(
-          //                        "Obs" + obsId.getAndIncrement(),
-          //                        "Concept",
-          //                        SemanticType.AGENT,
-          //                        System.currentTimeMillis(),
-          //                        -1L));
-          //            // send init event
-          //            case "i" -> scheduler.post(new Event());
-          //            // send time event between now and 1s after
-          //            case "t" ->
-          //                scheduler.post(
-          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis() +
-          // 1000));
-          //          }
-        });
-  }
+  //  public static void main(String[] dio) {
+  //
+  //    var scheduler = new SchedulerImpl(null, null);
+  //    AtomicInteger obsId = new AtomicInteger(1);
+  //
+  //    Utils.Java.repl(
+  //        "> ",
+  //        s -> {
+  //          //          switch (s) {
+  //          //            // add a new observation and subscribe it to events
+  //          //            case "+" ->
+  //          //                scheduler.register(
+  //          //                    new Registration(
+  //          //                        "Obs" + obsId.getAndIncrement(),
+  //          //                        "Concept",
+  //          //                        SemanticType.AGENT,
+  //          //                        System.currentTimeMillis(),
+  //          //                        -1L));
+  //          //            // send init event
+  //          //            case "i" -> scheduler.post(new Event());
+  //          //            // send time event between now and 1s after
+  //          //            case "t" ->
+  //          //                scheduler.post(
+  //          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis()
+  // +
+  //          // 1000));
+  //          //          }
+  //        });
+  //  }
 }

@@ -55,7 +55,8 @@ public class ResolverService extends BaseService implements Resolver {
 
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private ResolverConfiguration configuration;
-  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
+
+  //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
   public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RESOLVER, options);
@@ -153,7 +154,7 @@ public class ResolverService extends BaseService implements Resolver {
   public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     return CompletableFuture.supplyAsync(
         () -> {
-          var ret = resolutionCompiler.resolve(observation, contextScope);
+          var ret = new ResolutionCompiler(this).resolve(observation, contextScope);
           if (!ret.isEmpty()) {
             return new DataflowCompiler(observation, ret, contextScope).compile();
           }

@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -48,13 +49,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   @Override
-  public boolean execute(Scheduler.Event event) {
+  public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
       if (storage == null) {
-        storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
       }
       if (storage == null) {
         cause = new KlabIllegalStateException("No storage available for " + observation);
@@ -71,7 +72,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         for (var scanner :
             storage.scan(
                 event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
-          tasks.add(() -> run(event, scanner));
+          tasks.add(() -> run(event, scanner, contextScope));
         }
       } catch (Throwable t) {
         cause = t;
@@ -80,7 +81,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
     } else {
       // non-quality
-      tasks.add(() -> run(event, null));
+      tasks.add(() -> run(event, null, contextScope));
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -93,7 +94,17 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     }
   }
 
-  protected abstract boolean run(Scheduler.Event event, Storage.Scanner scanner);
+  /**
+   * Implement for the actual contextualization. NOTE: must also link the storage or
+   * sub-observations to the current transaction in the scope.
+   *
+   * @param event
+   * @param scanner
+   * @param scope
+   * @return
+   */
+  protected abstract boolean run(
+      Scheduler.Event event, Storage.Scanner scanner, ContextScope scope);
 
   @Override
   public Throwable getCause() {

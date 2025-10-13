@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.data;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -41,6 +42,14 @@ public interface KnowledgeGraph {
     GraphModel.Relationship type();
 
     Parameters<String> properties();
+
+    RuntimeAsset source();
+
+    RuntimeAsset target();
+
+    int sequence();
+
+    Geometry geometry();
   }
 
   /**

@@ -33,9 +33,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
       Adapter adapter,
       Resource resource,
       Observation observation,
-      Map<String, Observable> localNames,
-      ContextScope scope) {
-    super(resource, observation, localNames, scope);
+      Map<String, Observable> localNames) {
+    super(resource, observation, localNames);
     this.adapter = adapter;
   }
 

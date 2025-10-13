@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
@@ -63,7 +64,7 @@ public class StorageImpl implements Storage {
    * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
    * linear indexing and come from the scheduler event that serves as an index.
    */
-  private NavigableMap<ComparableLongList, List<Shard>> shards = new TreeMap<>();
+  private NavigableMap<ComparableLongList, List<Shard>> shards = new ConcurrentSkipListMap<>();
 
   /**
    * Create the storage container for the observation according to the observation's own sharding
@@ -154,7 +155,7 @@ public class StorageImpl implements Storage {
     return shards.computeIfAbsent(new ComparableLongList(key), k -> createShards(scale, timeStart));
   }
 
-  private List<Shard> createShards(Scale scale, long timeStart) {
+  private synchronized List<Shard> createShards(Scale scale, long timeStart) {
 
     if (scale.size() == 1) {
       return List.of(ShardImpl.trivial(nativeShardingStrategy.getDataType()));

@@ -359,12 +359,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       var ret = new HistogramImpl();
       ret.setMin(histogram.getMin());
       ret.setMax(histogram.getMax());
-      for (var bin : histogram.nonEmptyBinsAscending()) {
-        var hBin = new HistogramImpl.BinImpl();
-        hBin.setCount(bin.getBinCount());
-        hBin.setMax(bin.getUpperBound());
-        hBin.setMin(bin.getLowerBound());
-        ret.getBins().add(hBin);
+      try {
+        for (var bin : histogram.nonEmptyBinsAscending()) {
+          var hBin = new HistogramImpl.BinImpl();
+          hBin.setCount(bin.getBinCount());
+          hBin.setMax(bin.getUpperBound());
+          hBin.setMin(bin.getLowerBound());
+          ret.getBins().add(hBin);
+        }
+      } catch (Throwable e) {
+        Logging.INSTANCE.error("adaptHistogram failed: " + e.toString());
       }
       return ret;
     }

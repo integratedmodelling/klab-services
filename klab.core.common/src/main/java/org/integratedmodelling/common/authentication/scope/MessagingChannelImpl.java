@@ -1,7 +1,7 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import java.util.*;
-import java.util.function.Consumer;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -57,11 +57,11 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
       var message = Message.create(this, args);
       if (this instanceof ContextScope contextScope
           && message instanceof MessageImpl message1
-          && contextScope.getCurrentActivity() != null) {
+          && contextScope.getCurrentTransaction() != null) {
         message1.setTaskId(
-            contextScope.getCurrentActivity() == null
+            contextScope.getCurrentTransaction() == null
                 ? null
-                : contextScope.getCurrentActivity().getUrn());
+                : contextScope.getCurrentTransaction().getActivity().getUrn());
       }
       this.amqpChannel.post(message);
     }
