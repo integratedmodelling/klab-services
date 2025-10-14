@@ -423,12 +423,11 @@ public class RuntimeService extends BaseService
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit()) {
-                      // TODO add the resolved graph as metadata to the activity instead
-                      // scheduler, TODO make this a debug action
-                      //                      resolutionScope.send(
-                      //                          Message.MessageClass.DigitalTwin,
-                      //                          Message.MessageType.KnowledgeGraphCommitted,
-                      //                          resolutionScope.getResolvedGraph());
+                      // add the resolved graph as metadata to the activity instead
+                      resolutionScope
+                          .getActivity()
+                          .getMetadata()
+                          .put(Metadata.IM_RESOLUTION_GRAPH, resolutionScope.getResolvedGraph());
                       return observation;
                     }
                   }
@@ -442,6 +441,7 @@ public class RuntimeService extends BaseService
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
+                  // TODO add info about the contextualization to the action's metadata
                   submissionScope.commit();
                 } else {
                   submissionScope.fail();

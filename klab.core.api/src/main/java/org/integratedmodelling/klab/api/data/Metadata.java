@@ -199,6 +199,8 @@ public interface Metadata extends Parameters<String> {
 
   public static String IM_OBSERVATION_COST = "im:observation-cost";
 
+  public static String IM_RESOLUTION_GRAPH = "im:resolution-graph";
+
   /** For legacy resources */
   public static String IM_ORIGINAL_URN = "im:original-urn";
 
@@ -269,9 +271,9 @@ public interface Metadata extends Parameters<String> {
   /** The Constant KLAB_OPACITY. */
   public static final String KLAB_OPACITY = "klab:opacity";
 
-//  String KLAB_SERVICE_ID = "klab:service.id";
-//  String KLAB_SERVICE_URL = "klab:service.url";
-//  String KLAB_ADAPTER_URNS = "klab:adapter.urns";
+  //  String KLAB_SERVICE_ID = "klab:service.id";
+  //  String KLAB_SERVICE_URL = "klab:service.url";
+  //  String KLAB_ADAPTER_URNS = "klab:adapter.urns";
 
   @SuppressWarnings("unchecked")
   public static Metadata create(Object... o) {

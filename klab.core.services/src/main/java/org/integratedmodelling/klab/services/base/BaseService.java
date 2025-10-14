@@ -457,7 +457,9 @@ public abstract class BaseService implements KlabService {
       var adapterId = observation.getContextualizationData().getAdapterId();
       if (adapterId != null) {
         var adapter = getComponentRegistry().getAdapter(adapterId, Version.ANY_VERSION, scope);
-        if (adapter != null) {}
+        if (adapter != null) {
+            // TODO
+        }
       }
     }
 
