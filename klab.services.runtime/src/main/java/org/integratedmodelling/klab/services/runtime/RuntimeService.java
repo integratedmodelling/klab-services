@@ -395,7 +395,6 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      submissionScope.getCurrentTransaction().add(observation);
       submissionScope
           .getCurrentTransaction()
           .link(

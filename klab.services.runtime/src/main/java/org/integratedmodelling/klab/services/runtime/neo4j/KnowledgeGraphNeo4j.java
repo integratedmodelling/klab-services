@@ -761,6 +761,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Scope scope,
       Object... additionalProperties) {
 
+    if (source == RuntimeAsset.CONTEXT_ASSET) {
+      System.out.println("DIO CARAVELLA");
+    }
+
     // find out if the internal ID or what stored ID should be used
     var sourceQuery = matchAsset(source, "n", "sourceId");
     var targetQuery = matchAsset(destination, "c", "targetId");
@@ -1671,25 +1675,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String depthPattern = "*0.." + depth;
 
     String cypher =
-        "MATCH (ctx:Context {id: $scopeId}) "
-            + "MATCH (center) "
+        "MATCH (center) "
             + "WHERE center.id = $centerId AND all(l IN labels(center) WHERE l IN $labels) "
             + "OPTIONAL MATCH p = (center)-["
             + depthPattern
             + "]-(n) "
             + "WHERE all(x IN nodes(p) WHERE any(l IN labels(x) WHERE l IN $labels)) "
-            + "WITH ctx, center, collect(DISTINCT n) AS ns, collect(DISTINCT relationships(p)) AS rels "
-            + "WITH ctx, ns + [center] AS nodes, rels "
+            + "WITH center, collect(DISTINCT n) AS ns, collect(DISTINCT relationships(p)) AS rels "
+            + "WITH ns + [center] AS nodes, rels "
             +
             // Flatten relationship lists and remove nulls
-            "WITH ctx, [x IN nodes WHERE x IS NOT NULL] AS nodes, [rlist IN rels WHERE rlist IS NOT NULL] AS rels "
-            + "WITH ctx, nodes, CASE WHEN size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
-            + "WITH ctx, nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
+            "WITH [x IN nodes WHERE x IS NOT NULL] AS nodes, [rlist IN rels WHERE rlist IS NOT NULL] AS rels "
+            + "WITH nodes, CASE WHEN size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
+            + "WITH nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
             +
-            // Ensure all required ids are included (if any) and that all nodes descend from the
-            // context
-            "WHERE ($requiredIds IS NULL OR size($requiredIds) = 0 OR all(x IN $requiredIds WHERE any(n IN nodes WHERE n.id = x))) "
-            + "  AND all(n IN nodes WHERE (ctx)-[:HAS_CHILD*0..]->(n)) "
+            // Ensure all required ids are included (if any)
+            "WHERE $requiredIds IS NULL OR size($requiredIds) = 0 OR all(x IN $requiredIds WHERE any(n IN nodes WHERE n.id = x)) "
             +
             // Return plain maps to simplify Java mapping
             "RETURN [n IN nodes | {id: n.id, labels: labels(n), properties: properties(n)}] AS nodes, "
