@@ -370,6 +370,8 @@ public interface ServicesAPI {
 
     String CONNECT = "/connect";
 
+    String RETRIEVE_SUBGRAPH = "/subgraph";
+
     /**
      * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.
      */

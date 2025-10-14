@@ -49,7 +49,6 @@ import org.integratedmodelling.klab.runtime.storage.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
-import org.neo4j.driver.exceptions.TransientException;
 
 /**
  * TODO check spatial queries:
@@ -159,9 +158,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public RuntimeAsset target() {
-        // TODO extract from the graph
-        throw new KlabUnimplementedException(
-                "target of links in KnowledgeGraphNeo4j is not yet implemented");
+      // TODO extract from the graph
+      throw new KlabUnimplementedException(
+          "target of links in KnowledgeGraphNeo4j is not yet implemented");
     }
 
     @Override
@@ -1520,5 +1519,206 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return Cypher.node(getLabel(asset.getType()))
         // TODO any conditions
         .withProperties(Map.of(searchField, searchValue));
+  }
+
+  public static class KGNode {
+    private final long id;
+    private final List<String> labels;
+    private final Map<String, Object> properties;
+
+    public KGNode(long id, List<String> labels, Map<String, Object> properties) {
+      this.id = id;
+      this.labels = labels == null ? List.of() : List.copyOf(labels);
+      this.properties = properties == null ? Map.of() : Map.copyOf(properties);
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    public List<String> getLabels() {
+      return labels;
+    }
+
+    public Map<String, Object> getProperties() {
+      return properties;
+    }
+  }
+
+  public static class KGRelationship {
+    private final long id;
+    private final String type;
+    private final long sourceId;
+    private final long targetId;
+    private final Map<String, Object> properties;
+
+    public KGRelationship(
+        long id, String type, long sourceId, long targetId, Map<String, Object> properties) {
+      this.id = id;
+      this.type = type;
+      this.sourceId = sourceId;
+      this.targetId = targetId;
+      this.properties = properties == null ? Map.of() : Map.copyOf(properties);
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    public String getType() {
+      return type;
+    }
+
+    public long getSourceId() {
+      return sourceId;
+    }
+
+    public long getTargetId() {
+      return targetId;
+    }
+
+    public Map<String, Object> getProperties() {
+      return properties;
+    }
+  }
+
+  public static class Subgraph {
+    private final List<KGNode> nodes;
+    private final List<KGRelationship> relationships;
+
+    public Subgraph(List<KGNode> nodes, List<KGRelationship> relationships) {
+      this.nodes = nodes == null ? List.of() : List.copyOf(nodes);
+      this.relationships = relationships == null ? List.of() : List.copyOf(relationships);
+    }
+
+    public List<KGNode> getNodes() {
+      return nodes;
+    }
+
+    public List<KGRelationship> getRelationships() {
+      return relationships;
+    }
+  }
+
+  @Override
+  public GraphModel.KnowledgeGraph subgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope) {
+
+    var ret = new GraphModel.KnowledgeGraph();
+
+    var labels =
+        acceptedTypes.isEmpty()
+            ? Arrays.stream(RuntimeAsset.Type.values()).map(this::getLabel).toList()
+            : acceptedTypes.stream().map(this::getLabel).toList();
+
+    Map<Long, RuntimeAsset.Type> nodeMap = new HashMap<>();
+    var subgraph = fetchSubgraph(labels, focalNodeId, depth, requiredNodes, scope);
+    if (subgraph != null) {
+      for (var node : subgraph.getNodes()) {}
+
+      for (var relationship : subgraph.getRelationships()) {}
+    }
+
+    return ret;
+  }
+
+  /**
+   * Retrieve a connected, depth-limited subgraph centered on a node id, restricted to accepted
+   * labels, ensuring that all required node ids (if any) are contained. Performs a single Cypher
+   * query.
+   *
+   * @param acceptedLabels set of allowed node labels (must match at least one label on the node)
+   * @param centerId the id property of the center node
+   * @param depth maximum path length from the center (0 includes only the center)
+   * @param requiredIds collection of ids that must appear in the result (may be null or empty)
+   * @param scope scope for logging/error reporting
+   * @return Subgraph with matching nodes and relationships (with source/target node ids)
+   */
+  public Subgraph fetchSubgraph(
+      Collection<String> acceptedLabels,
+      long centerId,
+      int depth,
+      Collection<Long> requiredIds,
+      Scope scope) {
+
+    if (acceptedLabels == null || acceptedLabels.isEmpty()) {
+      return new Subgraph(List.of(), List.of());
+    }
+    if (depth < 0) {
+      depth = 0;
+    }
+
+    // Build the depth pattern as a literal (Neo4j does not accept parameters in variable-length
+    // patterns)
+    String depthPattern = "*0.." + depth;
+
+    String cypher =
+        "MATCH (center) "
+            + "WHERE center.id = $centerId AND all(l IN labels(center) WHERE l IN $labels) "
+            + "OPTIONAL MATCH p = (center)-["
+            + depthPattern
+            + "]-(n) "
+            + "WHERE all(x IN nodes(p) WHERE any(l IN labels(x) WHERE l IN $labels)) "
+            + "WITH collect(DISTINCT n) + center AS nodes, collect(DISTINCT relationships(p)) AS rels "
+            +
+            // Flatten relationship lists and remove nulls
+            "WITH nodes, CASE WHEN rels IS NULL OR size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
+            + "WITH nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
+            +
+            // Ensure all required ids are included (if any)
+            "WHERE $requiredIds IS NULL OR size($requiredIds) = 0 OR all(x IN $requiredIds WHERE any(n IN nodes WHERE n.id = x)) "
+            +
+            // Return plain maps to simplify Java mapping
+            "RETURN [n IN nodes | {id: n.id, labels: labels(n), properties: properties(n)}] AS nodes, "
+            + "       [r IN relationships | {id: id(r), type: type(r), sourceId: startNode(r).id, targetId: endNode(r).id, properties: properties(r)}] AS relationships";
+
+    Map<String, Object> params = new HashMap<>();
+    params.put("centerId", centerId);
+    params.put("labels", new ArrayList<>(acceptedLabels));
+    params.put("requiredIds", requiredIds == null ? List.of() : new ArrayList<>(requiredIds));
+
+    var result = query(cypher, params, scope);
+    if (result == null || result.records().isEmpty()) {
+      return new Subgraph(List.of(), List.of());
+    }
+
+    var record = result.records().get(0);
+
+    // Map nodes
+    List<KGNode> nodes =
+        record
+            .get("nodes")
+            .asList(
+                v -> {
+                  Map<String, Object> m = v.asMap();
+                  long id = ((Number) m.get("id")).longValue();
+                  @SuppressWarnings("unchecked")
+                  List<String> labels = (List<String>) m.get("labels");
+                  @SuppressWarnings("unchecked")
+                  Map<String, Object> properties = (Map<String, Object>) m.get("properties");
+                  return new KGNode(id, labels, properties);
+                });
+
+    // Map relationships
+    List<KGRelationship> relationships =
+        record
+            .get("relationships")
+            .asList(
+                v -> {
+                  Map<String, Object> m = v.asMap();
+                  long rid = ((Number) m.get("id")).longValue();
+                  String type = (String) m.get("type");
+                  long sourceId = ((Number) m.get("sourceId")).longValue();
+                  long targetId = ((Number) m.get("targetId")).longValue();
+                  @SuppressWarnings("unchecked")
+                  Map<String, Object> properties = (Map<String, Object>) m.get("properties");
+                  return new KGRelationship(rid, type, sourceId, targetId, properties);
+                });
+
+    return new Subgraph(nodes, relationships);
   }
 }

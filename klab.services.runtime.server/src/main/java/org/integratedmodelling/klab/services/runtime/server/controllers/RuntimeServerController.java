@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -522,5 +523,36 @@ public class RuntimeServerController {
       }
     }
     return false;
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_SUBGRAPH)
+  public @ResponseBody GraphModel.KnowledgeGraph retrieveSubgraph(
+      @RequestParam(name = "focus") long focalNodeId,
+      @RequestParam(name = "depth") int depth,
+      @RequestParam(name = "include", required = false) String included,
+      @RequestParam(name = "types", required = false) String types,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+
+      var contextScope = authorization.getScope(ContextScope.class);
+      if (contextScope != null) {
+
+        List<RuntimeAsset.Type> acceptedTypes = List.of();
+        List<Long> requiredNodes = List.of();
+
+        if (included != null && !included.equals("none")) {
+          requiredNodes = Arrays.stream(included.split(",")).map(Long::parseLong).toList();
+        }
+
+        if (types != null && !types.equals("all")) {
+          acceptedTypes = Arrays.stream(types.split(",")).map(RuntimeAsset.Type::valueOf).toList();
+        }
+
+        return runtimeService
+            .klabService()
+            .retrieveSubgraph(focalNodeId, depth, requiredNodes, acceptedTypes, contextScope);
+      }
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 }

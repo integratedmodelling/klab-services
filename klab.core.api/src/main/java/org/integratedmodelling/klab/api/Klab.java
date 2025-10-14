@@ -137,12 +137,6 @@ public enum Klab {
 
     Model.Builder getModelLearner(String outputResourceUrn);
 
-//    Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
-//
-    //        Data.Builder getDataBuilderObsolete();
-    //
-    //        Data.Builder getDataBuilderObsolete(String name, Geometry geometry);
-
     Quantity parseQuantity(String quantityDescription);
 
     /**
@@ -154,17 +148,6 @@ public enum Klab {
     Extent<?> createExtentCopy(Extent<?> extent);
 
     Concept getNonSemanticConcept(SemanticType semanticType);
-
-//    /**
-//     * Return offset mappers (direct and inverse) for the passed space filling curve in the passed
-//     * geometry.
-//     *
-//     * @param geometry
-//     * @param spaceFillingCurve
-//     * @return
-//     */
-//    Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
-//        Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
 
     Envelope getSpatialEnvelope(
         double minX, double minY, double maxX, double maxY, Projection projection);

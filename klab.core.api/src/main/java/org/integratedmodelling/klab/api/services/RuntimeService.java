@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -17,10 +18,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -219,6 +217,25 @@ public interface RuntimeService extends KlabService {
    * @return
    */
   boolean releaseContext(ContextScope scope);
+
+  /**
+   * Extract a subgraph at a specified depth and level of detail for visualization and reporting.
+   * The graph must be contextualized.
+   *
+   * @param focalNodeId the ID of the center node
+   * @param depth the depth of the subgraph, 0 for the center node only
+   * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
+   *     empty or null.
+   * @param acceptedTypes the type of assets that can be present in the subgraph.
+   * @param scope the scope for the query
+   * @return
+   */
+  GraphModel.KnowledgeGraph retrieveSubgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope);
 
   /**
    * Send a query to the knowledge graph identified by the passed scope and return the result.

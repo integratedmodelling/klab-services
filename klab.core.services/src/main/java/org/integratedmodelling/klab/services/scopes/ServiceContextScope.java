@@ -12,6 +12,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -700,10 +701,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public boolean commit() {
-    var ret = this.currentTransaction != null && this.currentTransaction.commit();
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
     }
+    if (getActivity().getType() == Activity.Type.RESOLUTION
+        && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
+      // add the resolved graph as metadata to the activity instead
+      getActivity()
+          .getMetadata()
+          .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
+    }
+    var ret = this.currentTransaction != null && this.currentTransaction.commit();
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     return ret;
   }

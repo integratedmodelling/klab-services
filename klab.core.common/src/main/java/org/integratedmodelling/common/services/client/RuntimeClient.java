@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -143,6 +145,32 @@ public class RuntimeClient extends BaseServiceClient
       // just return false
     }
     return false;
+  }
+
+  @Override
+  public GraphModel.KnowledgeGraph retrieveSubgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RUNTIME.RETRIEVE_SUBGRAPH,
+            GraphModel.KnowledgeGraph.class,
+            "focus",
+            focalNodeId,
+            "depth",
+            depth,
+            "types",
+            (acceptedTypes == null || acceptedTypes.isEmpty()
+                ? "all"
+                : Utils.Strings.join(acceptedTypes, ",")),
+            "include",
+            (requiredNodes == null || requiredNodes.isEmpty()
+                ? "none"
+                : Utils.Strings.join(requiredNodes, ",")));
   }
 
   @SuppressWarnings("unchecked")

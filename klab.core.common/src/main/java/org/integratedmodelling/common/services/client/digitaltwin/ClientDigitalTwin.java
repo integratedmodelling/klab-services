@@ -94,27 +94,27 @@ public class ClientDigitalTwin implements DigitalTwin {
       return ret;
     }
 
-    public boolean connect(Observation observation, Message.MessageType messageType) {
-      if (assets.containsKey(observation.getTransientId())
-          || observation.getParentTransientId() <= 0) {
-        // this one has the finalized
-        assets.put(observation.getTransientId(), observation);
-        success = messageType == Message.MessageType.ContextualizationSuccessful;
-        // TODO we can add an error notification to the transaction to explain what failed
-        return true;
-      } else if (assets.containsKey(observation.getParentTransientId())) {
-        assets.put(observation.getTransientId(), observation);
-        success = messageType == Message.MessageType.ContextualizationSuccessful;
-        // TODO info notifications with time etc., although the activities are the reference
-        graph.addVertex(observation.getTransientId());
-        graph.addEdge(
-            observation.getParentTransientId(),
-            observation.getTransientId(),
-            new ClientKnowledgeGraph.Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
-        return true;
-      }
-      return false;
-    }
+//    public boolean connect(Observation observation, Message.MessageType messageType) {
+//      if (assets.containsKey(observation.getTransientId())
+//          || observation.getParentTransientId() <= 0) {
+//        // this one has the finalized
+//        assets.put(observation.getTransientId(), observation);
+//        success = messageType == Message.MessageType.ContextualizationSuccessful;
+//        // TODO we can add an error notification to the transaction to explain what failed
+//        return true;
+//      } else if (assets.containsKey(observation.getParentTransientId())) {
+//        assets.put(observation.getTransientId(), observation);
+//        success = messageType == Message.MessageType.ContextualizationSuccessful;
+//        // TODO info notifications with time etc., although the activities are the reference
+//        graph.addVertex(observation.getTransientId());
+//        graph.addEdge(
+//            observation.getParentTransientId(),
+//            observation.getTransientId(),
+//            new ClientKnowledgeGraph.Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
+//        return true;
+//      }
+//      return false;
+//    }
   }
 
   public ClientDigitalTwin(ContextScope scope, String id) {
@@ -182,14 +182,14 @@ public class ClientDigitalTwin implements DigitalTwin {
           transaction.commit(event.getPayload(Observation.class), success);
         }
       }
-      case ContextualizationAborted, ContextualizationSuccessful -> {
-        for (var transaction : transactions.values()) {
-          // TODO skip finalized? Events may come from outside at some point.
-          if (transaction.connect(event.getPayload(Observation.class), event.getMessageType())) {
-            break;
-          }
-        }
-      }
+//      case ContextualizationAborted, ContextualizationSuccessful -> {
+//        for (var transaction : transactions.values()) {
+//          // TODO skip finalized? Events may come from outside at some point.
+//          if (transaction.connect(event.getPayload(Observation.class), event.getMessageType())) {
+//            break;
+//          }
+//        }
+//      }
     }
 
     for (var consumer : eventConsumers) {

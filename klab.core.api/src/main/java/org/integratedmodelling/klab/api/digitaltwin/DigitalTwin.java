@@ -278,9 +278,8 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and
-     * their structure in the graph after resolution. Assets in it are not yet committed, so their
-     * IDs and URNs will not be set. The incremental graph structure is sent in the metadata of a
-     * successful resolution action.
+     * their structure, using only what has been produced within the individual transition. Should
+     * be called after commit, so that the assets in the graph are finalized.
      *
      * @return the runtime asset graph for this transaction
      */

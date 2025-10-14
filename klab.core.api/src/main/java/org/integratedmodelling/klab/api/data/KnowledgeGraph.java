@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 import java.io.Closeable;
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -252,6 +253,25 @@ public interface KnowledgeGraph {
    * @return
    */
   RuntimeAsset dataflow();
+
+  /**
+   * Extract a subgraph at a specified depth and level of detail for visualization and reporting.
+   * The graph must be contextualized.
+   *
+   * @param focalNodeId the ID of the center node
+   * @param depth the depth of the subgraph, 0 for the center node only
+   * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
+   *     empty or null.
+   * @param acceptedTypes the type of assets that can be present in the subgraph.
+   * @param scope the scope for the query
+   * @return
+   */
+  GraphModel.KnowledgeGraph subgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope);
 
   /**
    * Extract and return the one asset that has the specified ID from the graph, ensuring it is of

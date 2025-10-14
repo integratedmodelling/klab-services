@@ -295,6 +295,16 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
+  public GraphModel.KnowledgeGraph subgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope) {
+    return runtimeClient.retrieveSubgraph(focalNodeId, depth, requiredNodes, acceptedTypes, scope);
+  }
+
+  @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {
     return List.of();
   }

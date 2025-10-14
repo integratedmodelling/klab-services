@@ -423,11 +423,6 @@ public class RuntimeService extends BaseService
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit()) {
-                      // add the resolved graph as metadata to the activity instead
-                      resolutionScope
-                          .getActivity()
-                          .getMetadata()
-                          .put(Metadata.IM_RESOLUTION_GRAPH, resolutionScope.getResolvedGraph());
                       return observation;
                     }
                   }
@@ -686,6 +681,19 @@ public class RuntimeService extends BaseService
       // shut up
     }
     return false;
+  }
+
+  @Override
+  public GraphModel.KnowledgeGraph retrieveSubgraph(
+      long focalNodeId,
+      int depth,
+      Collection<Long> requiredNodes,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      ContextScope scope) {
+    return scope
+        .getDigitalTwin()
+        .getKnowledgeGraph()
+        .subgraph(focalNodeId, depth, requiredNodes, acceptedTypes, scope);
   }
 
   @Override

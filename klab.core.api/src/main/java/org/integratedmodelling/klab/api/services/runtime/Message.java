@@ -179,23 +179,24 @@ public interface Message extends Serializable {
     TestStarted(Queue.Events, ActionStatistics.class),
     TestFinished(Queue.Events, ActionStatistics.class),
 
-    /**
-     * Notify the successful completion of the contextualization process according to the resolution
-     * stored in the knowledge graph.
-     */
-    ContextualizationSuccessful(Queue.Events, Observation.class),
-
-    /**
-     * Notify the abnormal end of contextualization. The resolved observation remains in the
-     * knowledge graph.
-     */
-    ContextualizationAborted(Queue.Events, Observation.class),
-
-    /**
-     * Notify the start of the contextualization process for a resolved observation which is
-     * included in the knowledge graph.
-     */
-    ContextualizationStarted(Queue.Events, Observation.class),
+    //    /**
+    //     * Notify the successful completion of the contextualization process according to the
+    // resolution
+    //     * stored in the knowledge graph.
+    //     */
+    //    ContextualizationSuccessful(Queue.Events, Observation.class),
+    //
+    //    /**
+    //     * Notify the abnormal end of contextualization. The resolved observation remains in the
+    //     * knowledge graph.
+    //     */
+    //    ContextualizationAborted(Queue.Events, Observation.class),
+    //
+    //    /**
+    //     * Notify the start of the contextualization process for a resolved observation which is
+    //     * included in the knowledge graph.
+    //     */
+    //    ContextualizationStarted(Queue.Events, Observation.class),
 
     ContextClosed(Queue.Events, DigitalTwin.Configuration.class),
 
@@ -214,7 +215,8 @@ public interface Message extends Serializable {
 
     /**
      * Explicit submission of a single observation to the digital twin. The observation in the
-     * message is UNRESOLVED and NOT in the knowledge graph. Its ID is -1.
+     * message is UNRESOLVED and NOT in the knowledge graph. Its ID is -1. This message is confined
+     * to the client side, for the sole benefit of UIs.
      *
      * <p>TODO add the current context path and the user to the metadata in case it comes from a
      * linked DT.
@@ -222,13 +224,15 @@ public interface Message extends Serializable {
     ObservationSubmissionStarted(Queue.Events, Observation.class),
     /**
      * Failure (with an exception) after submission of a single observation to the digital twin.
+     * This message is confined to the client side, for the sole benefit of UIs.
      *
      * <p>TODO add the exception to the metadata.
      */
     ObservationSubmissionAborted(Queue.Events, Observation.class),
     /**
      * Regular termination of a single observation to the digital twin. The observation may be
-     * empty! If not, the observation is in the knowledge graph and has a valid ID and URN.
+     * empty! If not, the observation is in the knowledge graph and has a valid ID and URN. This
+     * message is confined to the client side, for the sole benefit of UIs.
      *
      * <p>TODO add the current context path and the user to the metadata in case it comes from a
      * linked DT.

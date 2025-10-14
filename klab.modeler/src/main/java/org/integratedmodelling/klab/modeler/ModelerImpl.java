@@ -229,7 +229,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         Message.MessageClass.DigitalTwin,
         Message.MessageType.ObservationSubmissionStarted,
         observation);
-    // for the UI - TODO deprecate, we should just need the actual messages
     dispatch(
         this,
         UIEvent.ObservationSubmissionStarted,

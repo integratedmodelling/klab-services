@@ -82,7 +82,15 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   public class TransactionImpl implements Transaction {
 
-    private final GraphModel.KnowledgeGraph graphReference;
+    private final Set<RuntimeAsset> modified = new HashSet<>();
+    private final Set<RuntimeAsset> added = new HashSet<>();
+    private Observation target;
+    private final Activity activity;
+    private final ServiceContextScope scope;
+    private final List<Throwable> failures = new ArrayList<>();
+    private final Graph<RuntimeAsset, RelationshipEdge> graph;
+    private final Map<Observation, Executor> contextualizers;
+    private TransactionImpl parent; // null in the root activity
 
     static class LinkImpl implements KnowledgeGraph.Link {
       private RuntimeAsset source;
@@ -192,15 +200,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
-    private final Set<RuntimeAsset> modified = new HashSet<>();
-    private Observation target;
-    private final Activity activity;
-    private final ServiceContextScope scope;
-    private final List<Throwable> failures = new ArrayList<>();
-    private final Graph<RuntimeAsset, RelationshipEdge> graph;
-    private final Map<Observation, Executor> contextualizers;
-    private TransactionImpl parent; // null in the root activity
-
     /** Call this before contextualization to commit to register any new executors. */
     @Override
     public void registerExecutors() {
@@ -213,7 +212,6 @@ public class DigitalTwinImpl implements DigitalTwin {
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
 
       this.graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
-      this.graphReference = new GraphModel.KnowledgeGraph();
       this.activity = activity;
       this.scope = scope;
       this.contextualizers = new ConcurrentHashMap<>();
@@ -247,10 +245,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     private TransactionImpl(TransactionImpl parent, Activity activity) {
+
       this.graph = parent.graph;
       this.activity = activity;
       this.scope = parent.scope; // TODO careful with executing() being called outside
-      this.graphReference = parent.graphReference;
       this.parent = parent;
       this.contextualizers = parent.contextualizers;
 
@@ -280,6 +278,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       synchronized (graph) {
         graph.addVertex(asset);
       }
+      added.add(asset);
     }
 
     @Override
@@ -293,6 +292,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         graph.addVertex(destination);
         graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
       }
+
       // TODO do this for all others as well
       if (source instanceof ObservationImpl sourceObs
           && destination instanceof ObservationImpl targetObs
@@ -338,33 +338,34 @@ public class DigitalTwinImpl implements DigitalTwin {
        */
       if (parent == null) {
         var kgTransaction = knowledgeGraph.createTransaction();
+        var stored = new ArrayList<RuntimeAsset>();
+
         try (kgTransaction) {
 
-          Map<String, GraphModel.KnowledgeGraph.Node> nodes = new HashMap<>();
+          Set<RuntimeAsset> skipped = new HashSet<>();
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, trivial)) {
                 kgTransaction.store(asset);
-              }
-              if (!nodes.containsKey(asset.getId() + "")) {
-                var node = encodeRuntimeAsset(asset, nodes);
-                this.graphReference.getNodes().put(node.getLabel(), node);
+                if (asset instanceof Observation observation) {
+                  stored.add(asset);
+                }
+              } else {
+                skipped.add(asset);
               }
             }
 
             for (var asset : modified) {
               kgTransaction.update(asset);
-              if (!nodes.containsKey(asset.getId() + "")) {
-                var node = encodeRuntimeAsset(asset, nodes);
-                // TODO set flag to indicate that the asset was modified
-                this.graphReference.getNodes().put(node.getLabel(), node);
-              }
             }
 
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
+              if (skipped.contains(source) || skipped.contains(target)) {
+                continue;
+              }
               if (trivial
                   && !(target instanceof Observation)
                   && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
@@ -372,20 +373,12 @@ public class DigitalTwinImpl implements DigitalTwin {
               }
               var relationshipData = getRelationshipData(edge);
               kgTransaction.link(source, target, edge.relationship, relationshipData);
-              this.graphReference
-                  .getEdges()
-                  .add(encodeLink(source, target, edge.relationship, relationshipData));
             }
           }
 
           if (!trivial) {
             kgTransaction.link(
                 knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
-            this.graphReference
-                .getEdges()
-                .add(
-                    encodeLink(
-                        knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD));
           }
 
         } catch (Exception e) {
@@ -399,6 +392,13 @@ public class DigitalTwinImpl implements DigitalTwin {
           // dio sanguinaccio
           try {
             kgTransaction.close();
+            if (!stored.isEmpty()) {
+              activity
+                  .getMetadata()
+                  .put(
+                      Metadata.IM_NEW_OBSERVATIONS,
+                      Utils.Strings.join(stored.stream().map(RuntimeAsset::getId).toList(), ","));
+            }
           } catch (IOException e) {
             Logging.INSTANCE.error(e);
           }
@@ -442,7 +442,23 @@ public class DigitalTwinImpl implements DigitalTwin {
       return switch (asset) {
         case Observation observation -> observation.getId() < 0;
         case Actuator actuator -> !trivial;
-        case Activity activity -> activity.getId() < 0 && !trivial;
+        case Activity activity -> {
+          var ret = activity.getId() < 0 && !trivial;
+          if (ret
+              && activity.getType() == Activity.Type.RESOLUTION
+              && activity.getMetadata().containsKey(Metadata.IM_RESOLUTION_GRAPH)) {
+            ret =
+                // don't store resolutions that produced nothing, i.e. just the observation is in
+                // the graph
+                activity
+                        .getMetadata()
+                        .get(Metadata.IM_RESOLUTION_GRAPH, GraphModel.KnowledgeGraph.class)
+                        .getNodes()
+                        .size()
+                    > 1;
+          }
+          yield ret;
+        }
         case Storage.Shard ignored -> true;
         default -> false;
       };
@@ -500,7 +516,25 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public GraphModel.KnowledgeGraph getGraph() {
-      return graphReference;
+      var ret = new GraphModel.KnowledgeGraph();
+      synchronized (graph) {
+        // the graph has everything; add only the nodes that correspond to the assets added in the
+        // transaction.
+        for (var asset : graph.vertexSet()) {
+          if (added.contains(asset)) {
+            ret.getNodes().put(asset.getId() + "", encodeRuntimeAsset(asset, ret.getNodes()));
+          }
+        }
+        for (var edge : graph.edgeSet()) {
+          var source = graph.getEdgeSource(edge);
+          var target = graph.getEdgeTarget(edge);
+          if (added.contains(source) && added.contains(target)) {
+            ret.getEdges()
+                .add(encodeLink(source, target, edge.relationship, getRelationshipData(edge)));
+          }
+        }
+      }
+      return ret;
     }
   }
 
@@ -510,8 +544,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       GraphModel.Relationship relationship,
       Object... relationshipData) {
     return new GraphModel.KnowledgeGraph.Edge(
-        source.getId() + "",
-        target.getId() + "",
+        (source.getId() < 0 ? source.getTransientId() : source.getId()) + "",
+        (target.getId() < 0 ? target.getTransientId() : target.getId()) + "",
         relationship.name(),
         true,
         relationship.name(),
@@ -521,7 +555,8 @@ public class DigitalTwinImpl implements DigitalTwin {
   private GraphModel.KnowledgeGraph.Node encodeRuntimeAsset(
       RuntimeAsset asset, Map<String, GraphModel.KnowledgeGraph.Node> nodes) {
     return nodes.computeIfAbsent(
-        asset.getId() + "", id -> new GraphModel.KnowledgeGraph.Node(asset));
+        (asset.getId() < 0 ? asset.getTransientId() : asset.getId()) + "",
+        id -> new GraphModel.KnowledgeGraph.Node(asset));
   }
 
   public DigitalTwinImpl(
