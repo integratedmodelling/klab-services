@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -78,7 +79,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     if (asset != null) {
       switch (asset) {
         case Observation observation -> {
-          ret.putAll(observation.getMetadata());
+          ret.putAll(sanitizeMetadata(observation.getMetadata()));
           ret.put(
               "name",
               observation.getName() == null
@@ -106,7 +107,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           }
         }
         case Agent agent -> {
-          ret.putAll(agent.getMetadata());
+          ret.putAll(sanitizeMetadata(agent.getMetadata()));
           ret.put("name", agent.getName());
           // TODO
         }
@@ -121,7 +122,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("strategy", actuator.getStrategyUrn());
         }
         case Activity activity -> {
-          ret.putAll(activity.getMetadata());
+          ret.putAll(sanitizeMetadata(activity.getMetadata()));
           ret.put("credits", activity.getCredits());
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
@@ -167,5 +168,19 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     }
 
     return Utils.Maps.removeNullValues(ret);
+  }
+
+  private Map<String, ?> sanitizeMetadata(Metadata metadata) {
+    if (metadata == null) {
+      return Map.of();
+    }
+    Map<String, Object> ret = new HashMap<>();
+    metadata.forEach(
+        (k, v) -> {
+          if (Utils.Data.isPOD(v)) {
+            ret.put(k, v);
+          }
+        });
+    return ret;
   }
 }
