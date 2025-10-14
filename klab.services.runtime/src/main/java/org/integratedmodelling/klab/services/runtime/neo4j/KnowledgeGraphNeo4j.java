@@ -1725,7 +1725,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .asList(
                 v -> {
                   Map<String, Object> m = v.asMap();
-                  long id = ((Number) m.get("id")).longValue();
+                  long id = getId(m, "id");
                   @SuppressWarnings("unchecked")
                   List<String> labels = (List<String>) m.get("labels");
                   @SuppressWarnings("unchecked")
@@ -1740,15 +1740,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .asList(
                 v -> {
                   Map<String, Object> m = v.asMap();
-                  long rid = ((Number) m.get("id")).longValue();
+                  long rid = getId(m, "id");
                   String type = (String) m.get("type");
-                  long sourceId = ((Number) m.get("sourceId")).longValue();
-                  long targetId = ((Number) m.get("targetId")).longValue();
+                  long sourceId = getId(m, "sourceId");
+                  long targetId = getId(m, "targetId");
                   @SuppressWarnings("unchecked")
                   Map<String, Object> properties = (Map<String, Object>) m.get("properties");
                   return new KGRelationship(rid, type, sourceId, targetId, properties);
                 });
 
     return new Subgraph(nodes, relationships);
+  }
+
+  private long getId(Map<String, Object> properties, String var) {
+      if (properties.get(var) instanceof Number) {
+          return ((Number) properties.get(var)).longValue();
+      }
+      // TODO check type!
+      return RuntimeAsset.CONTEXT_ASSET.getId();
   }
 }

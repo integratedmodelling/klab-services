@@ -342,7 +342,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         try (kgTransaction) {
 
-          Set<RuntimeAsset> skipped = new HashSet<>();
+//          Set<RuntimeAsset> skipped = new HashSet<>();
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
@@ -351,9 +351,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                 if (asset instanceof Observation observation) {
                   stored.add(asset);
                 }
-              } else {
+              }/* else {
                 skipped.add(asset);
-              }
+              }*/
             }
 
             for (var asset : modified) {
@@ -363,9 +363,9 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
-              if (skipped.contains(source) || skipped.contains(target)) {
-                continue;
-              }
+//              if (skipped.contains(source) || skipped.contains(target)) {
+//                continue;
+//              }
               if (trivial
                   && !(target instanceof Observation)
                   && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
