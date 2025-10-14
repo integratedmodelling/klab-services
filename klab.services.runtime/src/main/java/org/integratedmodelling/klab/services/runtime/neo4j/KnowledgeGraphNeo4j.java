@@ -1624,21 +1624,43 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       int depth,
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
       ContextScope scope) {
 
     var ret = new GraphModel.KnowledgeGraph();
 
     var labels =
-        acceptedTypes.isEmpty()
+        acceptedTypes == null || acceptedTypes.isEmpty()
             ? List.of("Context", "Observation")
             : acceptedTypes.stream().map(this::getLabel).toList();
 
-    Map<Long, RuntimeAsset.Type> nodeMap = new HashMap<>();
+    // subgraph contains all relationship types, or the query will kill us
     var subgraph = fetchSubgraph(labels, focalNodeId, depth, requiredNodes, scope);
-    if (subgraph != null) {
-      for (var node : subgraph.getNodes()) {}
 
-      for (var relationship : subgraph.getRelationships()) {}
+    if (subgraph != null) {
+      // select the nodes we want to keep
+      var nodeIds = new HashSet<Long>();
+      var relsToKeep = new ArrayList<KGRelationship>();
+      for (var relationship : subgraph.getRelationships()) {
+        if (acceptedRelationships == null
+            || acceptedRelationships.isEmpty()
+            || acceptedRelationships.contains(
+                GraphModel.Relationship.valueOf(relationship.getType()))) {
+          nodeIds.add(relationship.getSourceId());
+          nodeIds.add(relationship.getTargetId());
+          relsToKeep.add(relationship);
+        }
+      }
+
+      for (var node : subgraph.getNodes()) {
+        if (nodeIds.contains(node.getId())) {
+          System.out.println("ZOZ");
+        }
+      }
+
+      for (var relationship : relsToKeep) {
+        System.out.println("ZAZ");
+      }
     }
 
     return ret;

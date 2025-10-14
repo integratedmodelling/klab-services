@@ -529,6 +529,7 @@ public class RuntimeServerController {
   public @ResponseBody GraphModel.KnowledgeGraph retrieveSubgraph(
       @RequestParam(name = "focus") long focalNodeId,
       @RequestParam(name = "depth") int depth,
+      @RequestParam(name = "links", required = false) String links,
       @RequestParam(name = "include", required = false) String included,
       @RequestParam(name = "types", required = false) String types,
       Principal principal) {
@@ -537,6 +538,7 @@ public class RuntimeServerController {
       var contextScope = authorization.getScope(ContextScope.class);
       if (contextScope != null) {
 
+        List<GraphModel.Relationship> acceptedRelationships = List.of();
         List<RuntimeAsset.Type> acceptedTypes = List.of();
         List<Long> requiredNodes = List.of();
 
@@ -548,9 +550,20 @@ public class RuntimeServerController {
           acceptedTypes = Arrays.stream(types.split(",")).map(RuntimeAsset.Type::valueOf).toList();
         }
 
+        if (links != null && !links.equals("all")) {
+          acceptedRelationships =
+              Arrays.stream(links.split(",")).map(GraphModel.Relationship::valueOf).toList();
+        }
+
         return runtimeService
             .klabService()
-            .retrieveSubgraph(focalNodeId, depth, requiredNodes, acceptedTypes, contextScope);
+            .retrieveSubgraph(
+                focalNodeId,
+                depth,
+                requiredNodes,
+                acceptedTypes,
+                acceptedRelationships,
+                contextScope);
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");

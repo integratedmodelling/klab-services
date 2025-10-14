@@ -153,6 +153,7 @@ public class RuntimeClient extends BaseServiceClient
       int depth,
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
       ContextScope scope) {
     return client
         .withScope(scope)
@@ -163,6 +164,10 @@ public class RuntimeClient extends BaseServiceClient
             focalNodeId,
             "depth",
             depth,
+            "links",
+            (acceptedRelationships == null || acceptedRelationships.isEmpty()
+                ? "all"
+                : Utils.Strings.join(acceptedRelationships, ",")),
             "types",
             (acceptedTypes == null || acceptedTypes.isEmpty()
                 ? "all"

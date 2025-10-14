@@ -300,8 +300,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       int depth,
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
       ContextScope scope) {
-    return runtimeClient.retrieveSubgraph(focalNodeId, depth, requiredNodes, acceptedTypes, scope);
+    return runtimeClient.retrieveSubgraph(
+        focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, scope);
   }
 
   @Override

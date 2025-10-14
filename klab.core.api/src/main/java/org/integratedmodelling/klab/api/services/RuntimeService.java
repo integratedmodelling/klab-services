@@ -235,6 +235,7 @@ public interface RuntimeService extends KlabService {
       int depth,
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
       ContextScope scope);
 
   /**

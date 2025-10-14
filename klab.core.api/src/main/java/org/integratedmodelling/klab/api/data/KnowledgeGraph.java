@@ -263,6 +263,8 @@ public interface KnowledgeGraph {
    * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
    *     empty or null.
    * @param acceptedTypes the type of assets that can be present in the subgraph.
+   * @param acceptedRelationships the relationships that can be present in the subgraph. Can be
+   *     empty or null.
    * @param scope the scope for the query
    * @return
    */
@@ -271,6 +273,7 @@ public interface KnowledgeGraph {
       int depth,
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
       ContextScope scope);
 
   /**
