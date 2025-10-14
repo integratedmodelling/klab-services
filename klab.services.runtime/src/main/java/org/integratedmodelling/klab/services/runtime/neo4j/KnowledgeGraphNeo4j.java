@@ -1671,22 +1671,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String depthPattern = "*0.." + depth;
 
     String cypher =
-        "MATCH (center) "
+        "MATCH (ctx:Context {id: $scopeId}) "
+            + "MATCH (center) "
             + "WHERE center.id = $centerId AND all(l IN labels(center) WHERE l IN $labels) "
             + "OPTIONAL MATCH p = (center)-["
             + depthPattern
             + "]-(n) "
             + "WHERE all(x IN nodes(p) WHERE any(l IN labels(x) WHERE l IN $labels)) "
-            + "WITH center, collect(DISTINCT n) AS ns, collect(DISTINCT relationships(p)) AS rels "
-            + "WITH ns + [center] AS nodes, rels "
+            + "WITH ctx, center, collect(DISTINCT n) AS ns, collect(DISTINCT relationships(p)) AS rels "
+            + "WITH ctx, ns + [center] AS nodes, rels "
             +
             // Flatten relationship lists and remove nulls
-            "WITH [x IN nodes WHERE x IS NOT NULL] AS nodes, [rlist IN rels WHERE rlist IS NOT NULL] AS rels "
-            + "WITH nodes, CASE WHEN size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
-            + "WITH nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
+            "WITH ctx, [x IN nodes WHERE x IS NOT NULL] AS nodes, [rlist IN rels WHERE rlist IS NOT NULL] AS rels "
+            + "WITH ctx, nodes, CASE WHEN size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
+            + "WITH ctx, nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
             +
-            // Ensure all required ids are included (if any)
-            "WHERE $requiredIds IS NULL OR size($requiredIds) = 0 OR all(x IN $requiredIds WHERE any(n IN nodes WHERE n.id = x)) "
+            // Ensure all required ids are included (if any) and that all nodes descend from the
+            // context
+            "WHERE ($requiredIds IS NULL OR size($requiredIds) = 0 OR all(x IN $requiredIds WHERE any(n IN nodes WHERE n.id = x))) "
+            + "  AND all(n IN nodes WHERE (ctx)-[:HAS_CHILD*0..]->(n)) "
             +
             // Return plain maps to simplify Java mapping
             "RETURN [n IN nodes | {id: n.id, labels: labels(n), properties: properties(n)}] AS nodes, "
@@ -1696,6 +1699,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     params.put("centerId", centerId);
     params.put("labels", new ArrayList<>(acceptedLabels));
     params.put("requiredIds", requiredIds == null ? List.of() : new ArrayList<>(requiredIds));
+
+    String scopeIdParam = rootContextId;
+    if (scope instanceof ContextScope contextScope) {
+      try {
+        scopeIdParam = contextScope.getRootContextScope().getId();
+      } catch (Throwable t) {
+        scopeIdParam = contextScope.getId();
+      }
+    }
+    params.put("scopeId", scopeIdParam);
 
     var result = query(cypher, params, scope);
     if (result == null || result.records().isEmpty()) {
