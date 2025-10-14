@@ -1725,7 +1725,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .asList(
                 v -> {
                   Map<String, Object> m = v.asMap();
-                  long id = getId(m, "id");
+                  long id = getId(m, "id", ((List<String>) m.get("labels")).getFirst());
                   @SuppressWarnings("unchecked")
                   List<String> labels = (List<String>) m.get("labels");
                   @SuppressWarnings("unchecked")
@@ -1740,10 +1740,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .asList(
                 v -> {
                   Map<String, Object> m = v.asMap();
-                  long rid = getId(m, "id");
+                  long rid = getId(m, "id", null);
                   String type = (String) m.get("type");
-                  long sourceId = getId(m, "sourceId");
-                  long targetId = getId(m, "targetId");
+                  long sourceId = getId(m, "sourceId", null);
+                  long targetId = getId(m, "targetId", null);
                   @SuppressWarnings("unchecked")
                   Map<String, Object> properties = (Map<String, Object>) m.get("properties");
                   return new KGRelationship(rid, type, sourceId, targetId, properties);
@@ -1752,11 +1752,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return new Subgraph(nodes, relationships);
   }
 
-  private long getId(Map<String, Object> properties, String var) {
-      if (properties.get(var) instanceof Number) {
-          return ((Number) properties.get(var)).longValue();
-      }
-      // TODO check type!
-      return RuntimeAsset.CONTEXT_ASSET.getId();
+  private long getId(Map<String, Object> properties, String var, String label) {
+
+    if (properties.get(var) instanceof Number) {
+      return ((Number) properties.get(var)).longValue();
+    }
+
+    return label == null
+        ? -1
+        : switch (label) {
+          case "Context" -> RuntimeAsset.CONTEXT_ASSET.getId();
+          case "Provenance" -> RuntimeAsset.PROVENANCE_ASSET.getId();
+          case "Dataflow" -> RuntimeAsset.DATAFLOW_ASSET.getId();
+          default ->
+              throw new KlabInternalErrorException("Unexpected value in ID extraction: " + label);
+        };
   }
 }
