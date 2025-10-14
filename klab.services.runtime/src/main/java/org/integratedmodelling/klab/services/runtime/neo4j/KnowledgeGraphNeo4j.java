@@ -1005,6 +1005,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private String getLabel(Object target) {
 
+    if (target instanceof RuntimeAsset.Type asset) {
+      return switch (asset) {
+        case OBSERVATION -> "Observation";
+        case ACTUATOR -> "Actuator";
+        case CONTEXT -> "Context";
+        case DATAFLOW -> "Dataflow";
+        case PROVENANCE -> "Provenance";
+        case ACTIVITY -> "Activity";
+        case AGENT -> "Agent";
+        case DATA -> "Data";
+        default -> throw new KlabInternalErrorException("Cannot find a KG node label for " + asset);
+      };
+    }
+
     if (target instanceof KnowledgeGraphQuery.AssetType assetType) {
       return switch (assetType) {
         case SCOPE -> "Context";
@@ -1612,7 +1626,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var labels =
         acceptedTypes.isEmpty()
-            ? Arrays.stream(RuntimeAsset.Type.values()).map(this::getLabel).toList()
+            ? List.of("Context", "Observation")
             : acceptedTypes.stream().map(this::getLabel).toList();
 
     Map<Long, RuntimeAsset.Type> nodeMap = new HashMap<>();
@@ -1663,10 +1677,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             + depthPattern
             + "]-(n) "
             + "WHERE all(x IN nodes(p) WHERE any(l IN labels(x) WHERE l IN $labels)) "
-            + "WITH collect(DISTINCT n) + center AS nodes, collect(DISTINCT relationships(p)) AS rels "
+            + "WITH center, collect(DISTINCT n) AS ns, collect(DISTINCT relationships(p)) AS rels "
+            + "WITH ns + [center] AS nodes, rels "
             +
             // Flatten relationship lists and remove nulls
-            "WITH nodes, CASE WHEN rels IS NULL OR size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
+            "WITH [x IN nodes WHERE x IS NOT NULL] AS nodes, [rlist IN rels WHERE rlist IS NOT NULL] AS rels "
+            + "WITH nodes, CASE WHEN size(rels) = 0 THEN [] ELSE reduce(acc = [], rlist IN rels | acc + rlist) END AS relationships "
             + "WITH nodes, [r IN relationships WHERE r IS NOT NULL] AS relationships "
             +
             // Ensure all required ids are included (if any)

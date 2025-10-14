@@ -703,13 +703,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public boolean commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
-    }
-    if (getActivity().getType() == Activity.Type.RESOLUTION
-        && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
-      // add the resolved graph as metadata to the activity instead
-      getActivity()
-          .getMetadata()
-          .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
+      if (getActivity().getType() == Activity.Type.RESOLUTION
+          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
+        // add the resolved graph as metadata to the activity instead
+        getActivity()
+            .getMetadata()
+            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
+      }
     }
     var ret = this.currentTransaction != null && this.currentTransaction.commit();
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());

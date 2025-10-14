@@ -438,6 +438,13 @@ public class RuntimeService extends BaseService
                   submissionScope.contextualize(o);
                   // TODO add info about the contextualization to the action's metadata
                   submissionScope.commit();
+                  var newObservations =
+                      submissionScope.getActivity().getMetadata().get(Metadata.IM_NEW_OBSERVATIONS);
+                  if (newObservations != null) {
+                    // this will go to any clients waiting so that they can request the relevant
+                    // knowledge graph
+                    o.getMetadata().put(Metadata.IM_NEW_OBSERVATIONS, newObservations);
+                  }
                 } else {
                   submissionScope.fail();
                 }
