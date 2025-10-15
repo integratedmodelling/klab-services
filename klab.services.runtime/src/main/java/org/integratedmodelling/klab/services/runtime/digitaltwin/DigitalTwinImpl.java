@@ -3,16 +3,21 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
+import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -46,6 +51,11 @@ public class DigitalTwinImpl implements DigitalTwin {
   private Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
+  private Cache<String, KnowledgeGraph.Commit> commitCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(/* TODO initialize from service settings */ 200)
+          .expireAfterAccess(/* TODO this too */ 10, TimeUnit.MINUTES)
+          .build();
 
   @Override
   public long getId() {
@@ -343,27 +353,23 @@ public class DigitalTwinImpl implements DigitalTwin {
                 && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
       }
 
+      var ret = Transaction.INTERMEDIATE_COMMIT_ID;
+
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       if (parent == null) {
         var kgTransaction = knowledgeGraph.createTransaction();
-        var stored = new ArrayList<RuntimeAsset>();
-
+        var stored = new ArrayList<Long>();
+        var linked = new ArrayList<Triple<Long, Long, GraphModel.Relationship>>();
         try (kgTransaction) {
-
-          //          Set<RuntimeAsset> skipped = new HashSet<>();
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, trivial)) {
                 kgTransaction.store(asset);
-                if (asset instanceof Observation observation) {
-                  stored.add(asset);
-                }
-              } /* else {
-                  skipped.add(asset);
-                }*/
+                stored.add(asset.getId());
+              }
             }
 
             for (var asset : modified) {
@@ -373,9 +379,9 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
-              //              if (skipped.contains(source) || skipped.contains(target)) {
-              //                continue;
-              //              }
+
+              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship));
+
               if (trivial
                   && !(target instanceof Observation)
                   && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
@@ -389,6 +395,11 @@ public class DigitalTwinImpl implements DigitalTwin {
           if (!trivial) {
             kgTransaction.link(
                 knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
+            linked.add(
+                Triple.of(
+                    knowledgeGraph.provenance().getId(),
+                    activity.getId(),
+                    GraphModel.Relationship.HAS_CHILD));
           }
 
         } catch (Exception e) {
@@ -397,18 +408,18 @@ public class DigitalTwinImpl implements DigitalTwin {
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-          return false;
+          return null;
         } finally {
           // dio sanguinaccio
           try {
             kgTransaction.close();
-//            if (!stored.isEmpty()) {
-//              activity
-//                  .getMetadata()
-//                  .put(
-//                      Metadata.IM_NEW_OBSERVATIONS,
-//                      Utils.Strings.join(stored.stream().map(RuntimeAsset::getId).toList(), ","));
-//            }
+            var commit = new CommitImpl();
+            commit.setId(Utils.Names.shortUUID());
+            commit.setTimestamp(System.currentTimeMillis());
+            commit.getNewAssets().addAll(stored);
+            commit.getNewLinks().addAll(linked);
+            commitCache.put(commit.getId(), commit);
+            ret = commit.getId();
           } catch (IOException e) {
             Logging.INSTANCE.error(e);
           }
@@ -431,7 +442,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
-      return true;
+      return ret;
     }
 
     @Override
@@ -613,6 +624,10 @@ public class DigitalTwinImpl implements DigitalTwin {
   @Override
   public Dataflow getDataflowGraph(ContextScope context) {
     return new DataflowGraph(this.knowledgeGraph, this.rootScope);
+  }
+
+  public KnowledgeGraph.Commit getCommit(String id) {
+    return commitCache.getIfPresent(id);
   }
 
   @Override

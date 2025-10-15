@@ -296,7 +296,10 @@ public class RuntimeService extends BaseService
 
   @Override
   public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
-    return scope.getDigitalTwin().getKnowledgeGraph().getCommit(commitId);
+    if (scope.getDigitalTwin() instanceof DigitalTwinImpl dt) {
+      return dt.getCommit(commitId);
+    }
+    return null;
   }
 
   /**
@@ -440,11 +443,11 @@ public class RuntimeService extends BaseService
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
-                  // TODO add info about the contextualization to the action's metadata
+                  // TODO add more info about the contextualization to the action's metadata
                   var commitId = submissionScope.commit();
-                  if (commitId != null) {
-
-                  }
+                  if (commitId != null
+                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {}
+                    o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                 } else {
                   submissionScope.fail();
                 }

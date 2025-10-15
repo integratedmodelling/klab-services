@@ -2,8 +2,6 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
@@ -31,7 +29,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -78,11 +75,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from service settings */ 1000)
           .expireAfterAccess(/* TODO this too */ 3, TimeUnit.HOURS)
-          .build();
-  private Cache<String, Commit> commitCache =
-      CacheBuilder.newBuilder()
-          .maximumSize(/* TODO initialize from service settings */ 200)
-          .expireAfterAccess(/* TODO this too */ 10, TimeUnit.MINUTES)
           .build();
 
   protected void startMaintenanceThread(int periodInSeconds) {
@@ -1870,9 +1862,4 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   // label);
   //        };
   //  }
-
-  @Override
-  public Commit getCommit(String commitId) {
-    return commitCache.getIfPresent(commitId);
-  }
 }

@@ -528,44 +528,13 @@ public class RuntimeServerController {
 
   @GetMapping(ServicesAPI.RUNTIME.GET_COMMIT_INFO)
   public @ResponseBody KnowledgeGraph.Commit retrieveCommit(
-      @RequestParam(name = "id") long id, Principal principal) {
+      @RequestParam(name = "id") String id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-
       var contextScope = authorization.getScope(ContextScope.class);
-      if (contextScope != null) {
-
-        List<GraphModel.Relationship> acceptedRelationships = List.of();
-        List<RuntimeAsset.Type> acceptedTypes = List.of();
-        List<Long> requiredNodes = List.of();
-        if (detail == null) {
-          detail = GraphModel.KnowledgeGraph.Detail.FULL;
-        }
-
-        if (included != null && !included.equals("none")) {
-          requiredNodes = Arrays.stream(included.split(",")).map(Long::parseLong).toList();
-        }
-
-        if (types != null && !types.equals("all")) {
-          acceptedTypes = Arrays.stream(types.split(",")).map(RuntimeAsset.Type::valueOf).toList();
-        }
-
-        if (links != null && !links.equals("all")) {
-          acceptedRelationships =
-              Arrays.stream(links.split(",")).map(GraphModel.Relationship::valueOf).toList();
-        }
-
-        return runtimeService
-            .klabService()
-            .retrieveSubgraph(
-                focalNodeId,
-                depth,
-                requiredNodes,
-                acceptedTypes,
-                acceptedRelationships,
-                detail,
-                contextScope);
+      if (contextScope != null && contextScope.getDigitalTwin() instanceof DigitalTwinImpl dt) {
+        return dt.getCommit(id);
       }
     }
-    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+    throw new KlabInternalErrorException("Request authorization doesn't carry a context scope");
   }
 }

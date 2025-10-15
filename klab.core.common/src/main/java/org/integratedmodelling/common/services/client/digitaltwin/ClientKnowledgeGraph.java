@@ -95,36 +95,35 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     assetCache.put(observation.getId(), observation);
 
-    if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
-    }
+    if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {}
 
-//    if (!graph.vertexSet().containsAll(requiredNodes)) {
+    //    if (!graph.vertexSet().containsAll(requiredNodes)) {
 
-      // NO -- use the commit
+    // NO -- use the commit
 
-      //      var subgraph =
-      //          runtimeClient.retrieveSubgraph(
-      //              observation.getId(),
-      //              DEFAULT_QUERY_DEPTH,
-      //              requiredNodes,
-      //              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-      //              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-      //              GraphModel.KnowledgeGraph.Detail.RAW,
-      //              scope);
-      //
-      //      for (var link : subgraph.getEdges()) {
-      //        graph.addVertex(Long.parseLong(link.getSource()));
-      //        graph.addVertex(Long.parseLong(link.getTarget()));
-      //        graph.addEdge(
-      //            Long.parseLong(link.getSource()),
-      //            Long.parseLong(link.getTarget()),
-      //            new Relationship(
-      //                GraphModel.Relationship.HAS_CHILD,
-      //                Long.parseLong(link.getSource()),
-      //                Long.parseLong(link.getTarget()),
-      //                link.getProperties() == null ? Map.of() : link.getProperties()));
-      //      }
-//    }
+    //      var subgraph =
+    //          runtimeClient.retrieveSubgraph(
+    //              observation.getId(),
+    //              DEFAULT_QUERY_DEPTH,
+    //              requiredNodes,
+    //              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+    //              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+    //              GraphModel.KnowledgeGraph.Detail.RAW,
+    //              scope);
+    //
+    //      for (var link : subgraph.getEdges()) {
+    //        graph.addVertex(Long.parseLong(link.getSource()));
+    //        graph.addVertex(Long.parseLong(link.getTarget()));
+    //        graph.addEdge(
+    //            Long.parseLong(link.getSource()),
+    //            Long.parseLong(link.getTarget()),
+    //            new Relationship(
+    //                GraphModel.Relationship.HAS_CHILD,
+    //                Long.parseLong(link.getSource()),
+    //                Long.parseLong(link.getTarget()),
+    //                link.getProperties() == null ? Map.of() : link.getProperties()));
+    //      }
+    //    }
   }
 
   /**
@@ -293,30 +292,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public RuntimeAsset dataflow() {
     return null;
   }
-
-  @Override
-  public Commit getCommit(String commitId) {
-    return runtimeClient.getCommit(commitId, scope);
-  }
-
-//  @Override
-//  public GraphModel.KnowledgeGraph subgraph(
-//      long focalNodeId,
-//      int depth,
-//      Collection<Long> requiredNodes,
-//      Collection<RuntimeAsset.Type> acceptedTypes,
-//      Collection<GraphModel.Relationship> acceptedRelationships,
-//      GraphModel.KnowledgeGraph.Detail detail,
-//      ContextScope scope) {
-//    return runtimeClient.retrieveSubgraph(
-//        focalNodeId,
-//        DEFAULT_QUERY_DEPTH,
-//        requiredNodes,
-//        EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-//        EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-//        GraphModel.KnowledgeGraph.Detail.RAW,
-//        scope);
-//  }
 
   @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {
