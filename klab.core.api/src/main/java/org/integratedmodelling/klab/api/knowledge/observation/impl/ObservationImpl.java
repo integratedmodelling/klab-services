@@ -45,6 +45,7 @@ public class ObservationImpl implements Observation {
   private List<Notification> notifications = new ArrayList<>();
   private ContextualizationData contextualizationData;
   private int childrenCount;
+  private long parentId = -1;
 
   public static class ContextualizationDataImpl implements ContextualizationData {
 
@@ -196,6 +197,15 @@ public class ObservationImpl implements Observation {
   public boolean isArchetype() {
     // TODO Auto-generated method stub
     return false;
+  }
+
+  @Override
+  public long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
   }
 
   @Override

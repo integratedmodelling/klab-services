@@ -2750,6 +2750,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       var list = Collections.flatCollection(names);
       var orig = Collections.chooseOne(list);
       var related = findRelated(orig, Relation.KindOf);
+      if (related == null) {
+        // API didn't work. Just put some gibberish after a chosen name.
+        return orig + " " + Collections.chooseOne(list);
+      }
       if (related.isEmpty()) {
         related = findRelated(orig, Relation.MoreGeneralThan);
       }

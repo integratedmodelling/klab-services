@@ -134,16 +134,21 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
       }
 
       @Override
+      public long getParentId() {
+        return -1000;
+      }
+
+      @Override
       public long getTransientId() {
         return 0;
       }
 
-        @Override
-        public int getChildrenCount() {
-            return 0;
-        }
+      @Override
+      public int getChildrenCount() {
+        return 0;
+      }
 
-        @Override
+      @Override
       public long getParentTransientId() {
         return -1000;
       }

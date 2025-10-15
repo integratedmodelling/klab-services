@@ -49,6 +49,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public long getId() {
+    return CONTEXT_ASSET.getId();
+  }
+
+  @Override
+  public long getParentId() {
     return 0;
   }
 
@@ -159,6 +164,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       @Override
       public long getId() {
+        return -1;
+      }
+
+      @Override
+      public long getParentId() {
         return -1;
       }
 
@@ -342,7 +352,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         try (kgTransaction) {
 
-//          Set<RuntimeAsset> skipped = new HashSet<>();
+          //          Set<RuntimeAsset> skipped = new HashSet<>();
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
@@ -351,9 +361,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                 if (asset instanceof Observation observation) {
                   stored.add(asset);
                 }
-              }/* else {
-                skipped.add(asset);
-              }*/
+              } /* else {
+                  skipped.add(asset);
+                }*/
             }
 
             for (var asset : modified) {
@@ -363,9 +373,9 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
-//              if (skipped.contains(source) || skipped.contains(target)) {
-//                continue;
-//              }
+              //              if (skipped.contains(source) || skipped.contains(target)) {
+              //                continue;
+              //              }
               if (trivial
                   && !(target instanceof Observation)
                   && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
@@ -548,7 +558,6 @@ public class DigitalTwinImpl implements DigitalTwin {
         (target.getId() < 0 ? target.getTransientId() : target.getId()) + "",
         relationship.name(),
         true,
-        relationship.name(),
         Utils.Maps.makeStringMap(relationshipData));
   }
 

@@ -42,80 +42,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
   private int childrenCount = 0;
-
-  private Map<Long, RemoteTransaction> transactions =
-      Collections.synchronizedMap(new LinkedHashMap<>());
-
-  /**
-   * Each transaction is only for the client-initiated activity during the lifetime of the current
-   * client. The transient IDs are used to organize observations (and later other assets) into a
-   * temporary graph that gets dumped into the overall graph when successful. If a transaction
-   * fails, it remains in the client where it can be retrieved for inspection.
-   *
-   * <p>Each transaction has at most two levels of inheritance between the involved assets. If a
-   * child has children, its nChildrenCount will be > 1 for user-initiated expansion.
-   */
-  class RemoteTransaction {
-    final long id;
-    boolean success = false;
-    boolean finalized = false;
-    // used to establish if an observation belongs to the transaction
-    Map<Long, RuntimeAsset> assets = new HashMap<>();
-    Graph<Long, ClientKnowledgeGraph.Relationship> graph =
-        new DefaultDirectedGraph<>(ClientKnowledgeGraph.Relationship.class);
-
-    public RemoteTransaction(Observation observation) {
-      this.id = observation.getTransientId();
-      this.assets.put(observation.getTransientId(), observation);
-      graph.addVertex(observation.getTransientId());
-    }
-
-    public void commit(RuntimeAsset asset, boolean success) {
-      this.success = success;
-      this.assets.put(asset.getTransientId(), asset);
-      this.finalized = true;
-      if (success) {
-        knowledgeGraph.ingest(toGraph());
-      }
-    }
-
-    private Graph<RuntimeAsset, ClientKnowledgeGraph.Relationship> toGraph() {
-      Graph<RuntimeAsset, ClientKnowledgeGraph.Relationship> ret =
-          new DefaultDirectedGraph<>(ClientKnowledgeGraph.Relationship.class);
-      for (var asset : assets.values()) {
-        ret.addVertex(asset);
-      }
-      for (var edge : graph.edgeSet()) {
-        ret.addEdge(
-            assets.get(graph.getEdgeSource(edge)),
-            assets.get(graph.getEdgeTarget(edge)),
-            new ClientKnowledgeGraph.Relationship(edge.relationship, edge.metadata));
-      }
-      return ret;
-    }
-
-//    public boolean connect(Observation observation, Message.MessageType messageType) {
-//      if (assets.containsKey(observation.getTransientId())
-//          || observation.getParentTransientId() <= 0) {
-//        // this one has the finalized
-//        assets.put(observation.getTransientId(), observation);
-//        success = messageType == Message.MessageType.ContextualizationSuccessful;
-//        // TODO we can add an error notification to the transaction to explain what failed
-//        return true;
-//      } else if (assets.containsKey(observation.getParentTransientId())) {
-//        assets.put(observation.getTransientId(), observation);
-//        success = messageType == Message.MessageType.ContextualizationSuccessful;
-//        // TODO info notifications with time etc., although the activities are the reference
-//        graph.addVertex(observation.getTransientId());
-//        graph.addEdge(
-//            observation.getParentTransientId(),
-//            observation.getTransientId(),
-//            new ClientKnowledgeGraph.Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
-//        return true;
-//      }
-//      return false;
-//    }
-  }
+  private long parentId = -1000;
 
   public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
@@ -152,44 +79,20 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   /**
-   * Main function that constructs the client-side KG structure. Not all elements in the remote KG
-   * will be present, but those that are must be coherently linked.
-   *
-   * <p>From a UI perspective we can just show the root observations that get here and use queries
-   * to show the graph on demand according to the level of detail chosen.
-   *
-   * <p>Resolved observations MUST contain their n. of children so we can show it without
-   * downloading them.
-   *
-   * <p>Keep the failed observations with their contexts at the client side so that we can check for
-   * previous failures.
+   * Main function that constructs the client-side KG structure after a successful submission. Not
+   * all elements in the remote KG will be present, but those that are must be coherently linked.
+   * The graph is kept in sync for what pertains to the known observations and those implied or
+   * connected to them, but seeing the entire graph requires an explicit action that triggers a new
+   * server query. If all submission messages are received, federated graphs should remain complete.
    *
    * @param event
    */
   public synchronized void ingest(Message event) {
 
+    // only the finished submission events are relevant for now.
     switch (event.getMessageType()) {
-      case ObservationSubmissionStarted -> {
-        transactions.put(
-            event.getPayload(Observation.class).getTransientId(),
-            new RemoteTransaction(event.getPayload(Observation.class)));
-      }
-      case ObservationSubmissionAborted, ObservationSubmissionFinished -> {
-        var transaction = transactions.get(event.getPayload(Observation.class).getTransientId());
-        if (transaction != null) {
-          boolean success =
-              event.getMessageType() == Message.MessageType.ObservationSubmissionFinished;
-          transaction.commit(event.getPayload(Observation.class), success);
-        }
-      }
-//      case ContextualizationAborted, ContextualizationSuccessful -> {
-//        for (var transaction : transactions.values()) {
-//          // TODO skip finalized? Events may come from outside at some point.
-//          if (transaction.connect(event.getPayload(Observation.class), event.getMessageType())) {
-//            break;
-//          }
-//        }
-//      }
+      case ObservationSubmissionFinished ->
+          getKnowledgeGraph().ingest(event.getPayload(Observation.class));
     }
 
     for (var consumer : eventConsumers) {
@@ -257,5 +160,10 @@ public class ClientDigitalTwin implements DigitalTwin {
   public Configuration getOptions() {
     // TODO
     return null;
+  }
+
+  @Override
+  public long getParentId() {
+    return parentId;
   }
 }

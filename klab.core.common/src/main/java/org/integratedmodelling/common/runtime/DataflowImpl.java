@@ -23,6 +23,7 @@ public class DataflowImpl implements Dataflow {
   private List<Actuator> computation = new ArrayList<>();
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
+  private long parentId = -1000;
   private double resolvedCoverage;
   private int childrenCount = -1;
   @Deprecated private long id;
@@ -127,14 +128,14 @@ public class DataflowImpl implements Dataflow {
     // TODO Auto-generated method stub
   }
 
-  //    @Override
-  //    public Observation getTarget() {
-  //        return target;
-  //    }
-  //
-  //    public void setTarget(Observation target) {
-  //        this.target = target;
-  //    }
+  @Override
+  public long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
+  }
 
   @Override
   public long getId() {

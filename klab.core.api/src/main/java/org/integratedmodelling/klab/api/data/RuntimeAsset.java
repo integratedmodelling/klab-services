@@ -101,10 +101,24 @@ public interface RuntimeAsset {
   long getId();
 
   /**
+   * Also only available after insertion into the knowledge graph, -1 otherwise. Used at client side
+   * when the graph must be reconstructed piecewise but efficiently, and the parent observation may
+   * be already cached at client side.
+   *
+   * <p>The parent ID of the CONTEXT_ASSET is always 0 and nothing else should have it.
+   *
+   * @return the primary ID of the parent observation, or -1 if the object has not yet been inserted
+   *     into the knowledge graph. Root-level objects will contain the fixed IDs of the
+   *     CONTEXT_ASSET, DATAFLOW_ASSET or PROVENANCE_ASSET.
+   * @return
+   */
+  long getParentId();
+
+  /**
    * The transientId is assigned on creation but is not stored in the knowledge graph. It is used to
-   * track the lifetime of an object only from the time of creation to the time of last use. When
-   * retrieved from the knowledge graph, the objectId will be different from that of the object that
-   * was stored.
+   * track the lifetime of an object only from the time of creation to the end of the {@link
+   * DigitalTwin.Transaction} in which it is created. When retrieved from the knowledge graph, the
+   * objectId will be different from that of the object that was stored.
    *
    * <p>The transient ID differs from the simple object hash as it is transmitted through serialized
    * objects and can be used to track ownership when objects are created on another service.
@@ -140,6 +154,11 @@ public interface RuntimeAsset {
     }
 
     @Override
+    public long getParentId() {
+      return 0;
+    }
+
+    @Override
     public long getTransientId() {
       return -1000;
     }
@@ -168,6 +187,11 @@ public interface RuntimeAsset {
     }
 
     @Override
+    public long getParentId() {
+      return -1000;
+    }
+
+    @Override
     public long getTransientId() {
       return -1001;
     }
@@ -193,6 +217,11 @@ public interface RuntimeAsset {
     @Override
     public long getId() {
       return -1002;
+    }
+
+    @Override
+    public long getParentId() {
+      return -1000;
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
@@ -13,7 +14,9 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
@@ -270,6 +273,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   Message.MessageType.ObservationSubmissionFinished,
                   obs);
               // for the UI
+                if (currentContext.getDigitalTwin().getKnowledgeGraph() instanceof ClientKnowledgeGraph clientKnowledgeGraph)  {
+                    clientKnowledgeGraph.ingest(obs);
+                }
               dispatch(
                   this,
                   UIEvent.ObservationSubmissionFinished,

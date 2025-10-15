@@ -274,19 +274,19 @@ public interface KnowledgeGraph {
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships,
+      GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope);
 
   /**
-   * Extract and return the one asset that has the specified ID from the graph, ensuring it is of
-   * the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
-   * therefore available besides the more general {@link #query(Class, Scope)}. The scope must be
-   * passed to ensure that cached objects that may not yet be committed to the graph can be
-   * retrieved.
+   * Extract and return the committed asset that has the specified ID from the graph, ensuring it is
+   * of the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
+   * therefore available besides the more general {@link #query(Class, Scope)}. Implementations
+   * should use a properly configured cache to avoid repeated lookups.
    *
    * @param id
    * @param resultClass
    * @param <T>
-   * @return
+   * @return the asset or null if not found or not of the passed class
    */
   <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass);
 

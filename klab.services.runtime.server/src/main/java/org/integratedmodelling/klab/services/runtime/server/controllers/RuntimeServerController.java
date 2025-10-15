@@ -532,6 +532,7 @@ public class RuntimeServerController {
       @RequestParam(name = "links", required = false) String links,
       @RequestParam(name = "include", required = false) String included,
       @RequestParam(name = "types", required = false) String types,
+      @RequestParam(name = "detail", required = false) GraphModel.KnowledgeGraph.Detail detail,
       Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
 
@@ -541,6 +542,9 @@ public class RuntimeServerController {
         List<GraphModel.Relationship> acceptedRelationships = List.of();
         List<RuntimeAsset.Type> acceptedTypes = List.of();
         List<Long> requiredNodes = List.of();
+        if (detail == null) {
+          detail = GraphModel.KnowledgeGraph.Detail.FULL;
+        }
 
         if (included != null && !included.equals("none")) {
           requiredNodes = Arrays.stream(included.split(",")).map(Long::parseLong).toList();
@@ -563,6 +567,7 @@ public class RuntimeServerController {
                 requiredNodes,
                 acceptedTypes,
                 acceptedRelationships,
+                detail,
                 contextScope);
       }
     }

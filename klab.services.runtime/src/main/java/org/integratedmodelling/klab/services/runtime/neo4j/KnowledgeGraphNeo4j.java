@@ -1,11 +1,14 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +20,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -69,18 +73,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private final RuntimeAsset provenanceNode = RuntimeAsset.PROVENANCE_ASSET;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   protected String serviceId;
-
-  private LoadingCache<Long, Observation> observationCache =
+  private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
-          .maximumSize(200)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<Long, Observation>() {
-                public Observation load(Long key) {
-                  var ret = retrieve(key, Observation.class, userScope);
-                  return ret == null ? Observation.empty() : ret;
-                }
-              });
+          .maximumSize(/* TODO initialize from service settings */ 1000)
+          .expireAfterAccess(/* TODO this too */ 3, TimeUnit.HOURS)
+          .build();
 
   protected void startMaintenanceThread(int periodInSeconds) {
     executor.scheduleAtFixedRate(() -> maintenanceThread(), 0, periodInSeconds, TimeUnit.SECONDS);
@@ -98,6 +95,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
     String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
     String UPDATE_PROPERTIES = "MATCH (n:{type} {id: $id}) SET n += $properties RETURN n";
+    String UPDATE_PROPERTIES_GENERIC = "MATCH (n {id: $id}) SET n += $properties RETURN n";
     String[] INITIALIZATION_QUERIES =
         new String[] {
           //          "MERGE (user:Agent {name: $username, type: 'USER'})",
@@ -137,6 +135,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private GraphModel.Relationship type;
     private long transientId = Klab.getNextId();
     private long parentTransientId;
+    private long parentId;
     private int childrenCount = 0;
 
     @Override
@@ -217,6 +216,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.childrenCount = childrenCount;
     }
 
+    @Override
+    public long getParentId() {
+      return parentId;
+    }
+
+    public void setParentId(long parentId) {
+      this.parentId = parentId;
+    }
+
     public void setTransientId(long transientId) {
       this.transientId = transientId;
     }
@@ -234,7 +242,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   class TransactionImpl implements Transaction {
 
     private final org.neo4j.driver.Transaction transaction;
-
+    private final Set<RuntimeAsset> stored = new HashSet<>();
+    private final Map<Long, RuntimeAsset> idCache = new HashMap<>();
+    private final List<Pair<Long, Long>> links = new ArrayList<>();
     private boolean closed;
 
     TransactionImpl() {
@@ -250,7 +260,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return;
       }
       try {
-        KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
+        var id =
+            KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
+        if (id > 0) {
+          stored.add(asset);
+          idCache.put(id, asset);
+        }
       } catch (Exception e) {
         closed = true;
         Logging.INSTANCE.error(e);
@@ -282,6 +297,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       try {
         KnowledgeGraphNeo4j.this.link(
             transaction, source, destination, relationship, userScope, additionalProperties);
+        if (relationship == GraphModel.Relationship.HAS_CHILD) {
+          links.add(Pair.of(source.getId(), destination.getId()));
+        }
       } catch (Exception e) {
         closed = true;
         Logging.INSTANCE.error("DIO CARAMBOLA LINK", e);
@@ -293,6 +311,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.closed = true;
       if (transaction.isOpen()) {
         transaction.rollback();
+        stored.clear();
       }
     }
 
@@ -303,6 +322,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return;
       }
       this.closed = true;
+
+      // create parent IDs
+      for (var link : links) {
+        var asset = idCache.get(link.getSecond());
+        if (asset != null) {
+          var props = Map.of("parentId", link.getFirst());
+          query(
+              transaction,
+              Queries.UPDATE_PROPERTIES_GENERIC,
+              Map.of("id", asset.getId(), "properties", props),
+              userScope);
+        }
+      }
 
       // update time of last successful operation
       var props = Map.of("lastUpdate", System.currentTimeMillis());
@@ -327,6 +359,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       while (retryCount < maxRetries) {
         try {
           transaction.commit();
+          stored.forEach(asset -> assetCache.put(asset.getId(), asset));
+          stored.clear();
+          links.clear();
+          idCache.clear();
           return; // Success
         } catch (Throwable e) {
           retryCount++;
@@ -542,6 +578,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setName(node.get("name").asString());
         instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
         instance.setId(node.get("id").asLong());
+        instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
 
@@ -595,6 +632,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ? "No description"
                 : node.get("description").asString());
         instance.setId(node.get("id").asLong());
+        instance.setParentId(node.get("parentId").asLong());
         ret.add((T) instance);
       } else if (Actuator.class.isAssignableFrom(cls)) {
         var instance = new ActuatorImpl();
@@ -662,8 +700,32 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
   }
 
+  private RuntimeAsset retrieveFromGraph(
+      long key, Class<? extends RuntimeAsset> assetClass, Scope scope) {
+    var result =
+        assetClass == RuntimeAsset.class
+            ? query("MATCH (n {id: $id}) return n", Map.of("id", key), null)
+            : query(
+                "MATCH (n:{assetLabel} {id: $id}) return n"
+                    .replace("{assetLabel}", getLabel(assetClass)),
+                Map.of("id", key),
+                null);
+    var adapted = adapt(result, assetClass, scope);
+    return adapted.isEmpty() ? null : adapted.getFirst();
+  }
+
   @Override
   protected <T extends RuntimeAsset> T retrieve(Object key, Class<T> assetClass, Scope scope) {
+
+    if (key instanceof Long id) {
+      try {
+        return (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
+      } catch (ExecutionException e) {
+        // fall back to other strategy
+        Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
+      }
+    }
+
     var result =
         assetClass == RuntimeAsset.class
             ? query("MATCH (n {id: $id}) return n", Map.of("id", key), null)
@@ -705,10 +767,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
     }
 
-    if (asset instanceof Observation observation) {
-      observationCache.put(observation.getId(), observation);
-    }
-
     return ret;
   }
 
@@ -744,10 +802,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
       }
-
-      if (asset instanceof Observation observation) {
-        observationCache.put(observation.getId(), observation);
-      }
     }
 
     return ret;
@@ -760,10 +814,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties) {
-
-    if (source == RuntimeAsset.CONTEXT_ASSET) {
-      System.out.println("DIO CARAVELLA");
-    }
 
     // find out if the internal ID or what stored ID should be used
     var sourceQuery = matchAsset(source, "n", "sourceId");
@@ -1625,6 +1675,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships,
+      GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope) {
 
     var ret = new GraphModel.KnowledgeGraph();
@@ -1670,6 +1721,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    * Retrieve a connected, depth-limited subgraph centered on a node id, restricted to accepted
    * labels, ensuring that all required node ids (if any) are contained. Performs a single Cypher
    * query.
+   *
+   * <p>Retrieves the internal {@link Subgraph} object, containing all the node and relationship
+   * contents, to be translated into a GraphModel.KnowledgeGraph upstream.
    *
    * @param acceptedLabels set of allowed node labels (must match at least one label on the node)
    * @param centerId the id property of the center node

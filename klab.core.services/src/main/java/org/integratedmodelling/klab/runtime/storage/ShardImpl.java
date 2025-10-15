@@ -31,6 +31,7 @@ public class ShardImpl /*extends CursorImpl*/ implements Storage.Shard {
   private long transientId = Klab.getNextId();
   private long parentTransientId;
   private final BufferArray data;
+  private long parentId = -1;
 
   /**
    * @param geometry
@@ -153,6 +154,15 @@ public class ShardImpl /*extends CursorImpl*/ implements Storage.Shard {
 
   public long getTimestamp() {
     return timestamp;
+  }
+
+  @Override
+  public long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
   }
 
   class BaseScanner implements Storage.Scanner {

@@ -104,16 +104,21 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       }
 
       @Override
+      public long getParentId() {
+        return -1000;
+      }
+
+      @Override
       public long getTransientId() {
         return 0;
       }
 
-        @Override
-        public int getChildrenCount() {
-            return 0;
-        }
+      @Override
+      public int getChildrenCount() {
+        return 0;
+      }
 
-        @Override
+      @Override
       public long getParentTransientId() {
         return -1000;
       }
@@ -155,6 +160,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       @Override
       public long getId() {
         return 0;
+      }
+
+      @Override
+      public long getParentId() {
+        return -1000;
       }
 
       @Override

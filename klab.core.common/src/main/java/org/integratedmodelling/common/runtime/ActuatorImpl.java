@@ -33,6 +33,7 @@ public class ActuatorImpl implements Actuator {
   private long transientId = Klab.getNextId();
   private Data.ShardingStrategy shardingStrategy;
   private long parentTransientId;
+  private long parentId = -1;
   private int childrenCount = 0;
 
   @Override
@@ -189,5 +190,14 @@ public class ActuatorImpl implements Actuator {
 
   public void setParentTransientId(long parentTransientId) {
     this.parentTransientId = parentTransientId;
+  }
+
+  @Override
+  public long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
   }
 }

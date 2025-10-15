@@ -12,6 +12,7 @@ public abstract class ProvenanceNodeImpl implements Provenance.Node {
   private Metadata metadata = Metadata.create();
   private long transientId = Klab.getNextId();
   private long parentTransientId;
+  private long parentId = -1;
 
   @Override
   public long getId() {
@@ -20,6 +21,15 @@ public abstract class ProvenanceNodeImpl implements Provenance.Node {
 
   public void setId(long id) {
     this.id = id;
+  }
+
+  @Override
+  public long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
   }
 
   @Override

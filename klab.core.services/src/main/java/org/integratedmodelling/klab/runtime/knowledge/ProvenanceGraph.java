@@ -78,6 +78,11 @@ public class ProvenanceGraph implements Provenance {
 
   @Override
   public long getId() {
-    return 0;
+    return PROVENANCE_ASSET.getId();
+  }
+
+  @Override
+  public long getParentId() {
+    return PROVENANCE_ASSET.getParentId();
   }
 }

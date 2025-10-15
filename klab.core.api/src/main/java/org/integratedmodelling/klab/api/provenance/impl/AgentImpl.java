@@ -7,8 +7,13 @@ import org.integratedmodelling.klab.api.provenance.Agent;
 
 public class AgentImpl extends ProvenanceNodeImpl implements Agent {
 
-    @Override
-    public int getChildrenCount() {
-        return 0;
-    }
+  @Override
+  public long getParentId() {
+    return PROVENANCE_ASSET.getId();
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return 0;
+  }
 }

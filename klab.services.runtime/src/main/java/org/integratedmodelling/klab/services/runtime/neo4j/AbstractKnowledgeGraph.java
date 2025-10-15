@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -16,9 +18,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.runtime.storage.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
@@ -94,6 +93,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("semantics", observation.getObservable().getSemantics().getUrn());
           ret.put("observable", observation.getObservable().getUrn());
           ret.put("id", observation.getId());
+          ret.put("parentId", observation.getParentId());
           ret.put("eventTimestamps", observation.getEventTimestamps());
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
@@ -119,6 +119,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               actuator.getComputation().stream()
                   .map(call -> call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE))
                   .toList());
+          ret.put("parentId", actuator.getParentId());
           ret.put("strategy", actuator.getStrategyUrn());
         }
         case Activity activity -> {
@@ -127,11 +128,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
           ret.put("start", activity.getStart());
+          ret.put("parentId", activity.getParentId());
           ret.put("schedulerTime", activity.getSchedulerTime());
           ret.put("size", activity.getSize());
           ret.put("type", activity.getType().name());
           ret.put("name", activity.getName());
           ret.put("id", activity.getId());
+          ret.put("parentId", activity.getParentId());
           ret.put("urn", activity.getUrn());
           ret.put("observationUrn", activity.getObservationUrn());
           ret.put("serviceName", activity.getServiceName());

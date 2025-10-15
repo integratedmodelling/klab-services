@@ -2,12 +2,18 @@ package org.integratedmodelling.common.services.client.digitaltwin;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -47,10 +53,16 @@ import org.jgrapht.graph.DefaultEdge;
  */
 public class ClientKnowledgeGraph implements KnowledgeGraph {
 
+  private static final int DEFAULT_QUERY_DEPTH = 2;
+
   private final ContextScope scope;
   private final RuntimeClient runtimeClient;
   private Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
-  private Map<Long, RuntimeAsset> catalog = new LinkedHashMap<>();
+  private Cache<Long, RuntimeAsset> assetCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(/* TODO initialize from engine settings */ 500)
+          .expireAfterAccess(/* TODO this too */ 3, TimeUnit.HOURS)
+          .build();
 
   public ClientKnowledgeGraph(ContextScope scope, RuntimeClient runtimeClient) {
     this.scope = scope;
@@ -58,66 +70,48 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     this.graph.addVertex(RuntimeAsset.CONTEXT_ASSET.getId());
     this.graph.addVertex(RuntimeAsset.PROVENANCE_ASSET.getId());
     this.graph.addVertex(RuntimeAsset.DATAFLOW_ASSET.getId());
-    this.catalog.put(RuntimeAsset.CONTEXT_ASSET.getId(), RuntimeAsset.CONTEXT_ASSET);
-    this.catalog.put(RuntimeAsset.PROVENANCE_ASSET.getId(), RuntimeAsset.PROVENANCE_ASSET);
-    this.catalog.put(RuntimeAsset.DATAFLOW_ASSET.getId(), RuntimeAsset.DATAFLOW_ASSET);
+    this.assetCache.put(RuntimeAsset.CONTEXT_ASSET.getId(), RuntimeAsset.CONTEXT_ASSET);
+    this.assetCache.put(RuntimeAsset.PROVENANCE_ASSET.getId(), RuntimeAsset.PROVENANCE_ASSET);
+    this.assetCache.put(RuntimeAsset.DATAFLOW_ASSET.getId(), RuntimeAsset.DATAFLOW_ASSET);
     this.graph.addEdge(
         RuntimeAsset.CONTEXT_ASSET.getId(),
         RuntimeAsset.PROVENANCE_ASSET.getId(),
-        new Relationship(GraphModel.Relationship.HAS_PROVENANCE, Map.of()));
+        new Relationship(
+            GraphModel.Relationship.HAS_PROVENANCE,
+            RuntimeAsset.CONTEXT_ASSET.getId(),
+            RuntimeAsset.PROVENANCE_ASSET.getId(),
+            Map.of()));
     this.graph.addEdge(
         RuntimeAsset.CONTEXT_ASSET.getId(),
         RuntimeAsset.DATAFLOW_ASSET.getId(),
-        new Relationship(GraphModel.Relationship.HAS_DATAFLOW, Map.of()));
+        new Relationship(
+            GraphModel.Relationship.HAS_DATAFLOW,
+            RuntimeAsset.CONTEXT_ASSET.getId(),
+            RuntimeAsset.DATAFLOW_ASSET.getId(),
+            Map.of()));
   }
 
-  private String dump() {
-    StringBuilder sb = new StringBuilder();
-    for (var key : catalog.keySet()) {
-      sb.append(key).append(" ").append(catalog.get(key)).append("\n");
-    }
-    for (var edge : graph.edgeSet()) {
-      var source = catalog.get(graph.getEdgeSource(edge));
-      var target = catalog.get(graph.getEdgeTarget(edge));
-      sb.append(source)
-          .append(" -")
-          .append(edge.relationship)
-          .append("->")
-          .append(target)
-          .append("\n");
-    }
-    return sb.toString();
-  }
+  public void ingest(Observation observation) {
 
-  /**
-   * Called when a new resolution produces new assets to pre-cache the server-side objects.
-   *
-   * @param graph
-   */
-  public void ingest(Graph<RuntimeAsset, ClientKnowledgeGraph.Relationship> graph) {
+    assetCache.put(observation.getId(), observation);
 
-    graph
-        .vertexSet()
-        .forEach(
-            asset -> {
-              this.graph.addVertex(asset.getId());
-              catalog.put(asset.getId(), asset);
-              if (asset.getParentTransientId() <= 0) {
-                this.graph.addEdge(
-                    RuntimeAsset.CONTEXT_ASSET.getId(),
-                    asset.getId(),
-                    new Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
-              }
-            });
-    graph
-        .edgeSet()
-        .forEach(
-            e -> {
-              var source = graph.getEdgeSource(e);
-              var target = graph.getEdgeTarget(e);
-              this.graph.addEdge(
-                  source.getId(), target.getId(), new Relationship(e.relationship, e.metadata));
-            });
+    List<Long> requiredNodes = List.of();
+    if (observation.getMetadata().containsKey(Metadata.IM_NEW_OBSERVATIONS)) {
+      requiredNodes =
+          Utils.Data.parseList(
+              observation.getMetadata().get(Metadata.IM_NEW_OBSERVATIONS, String.class),
+              Long.class,
+              ",");
+    }
+//    var graph =
+//        subgraph(
+//            observation.getId(),
+//            DEFAULT_QUERY_DEPTH,
+//            requiredNodes,
+//            EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+//            EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+//            GraphModel.KnowledgeGraph.Detail.RAW,
+//            scope);
   }
 
   /**
@@ -139,12 +133,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       graph.removeAllEdges(toRemove);
       children = new ArrayList<>();
       for (var child : scope.getChildrenOf(asset)) {
-        catalog.put(child.getId(), child);
+        assetCache.put(child.getId(), child);
         graph.addVertex(child.getId());
         graph.addEdge(
             asset.getId(),
             child.getId(),
-            new Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
+            new Relationship(
+                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
         children.add(child);
       }
     }
@@ -153,16 +148,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   public Graph<Long, Relationship> getGraph() {
     return graph;
-  }
-
-  /**
-   * Retrieve asset by URN
-   *
-   * @param id
-   * @return
-   */
-  public RuntimeAsset getAsset(long id) {
-    return catalog.get(id);
   }
 
   @Override
@@ -196,10 +181,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    * @return a list of {@link RuntimeAsset} nodes that are incoming to the source node
    */
   public List<RuntimeAsset> incoming(RuntimeAsset target, GraphModel.Relationship relationship) {
-    var asset = catalog.get(target.getId());
+    var asset = assetCache.getIfPresent(target.getId());
     return graph.incomingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> catalog.get(graph.getEdgeSource(defaultEdge)))
+        .map(defaultEdge -> assetCache.getIfPresent(graph.getEdgeSource(defaultEdge)))
         .toList();
   }
 
@@ -225,14 +210,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       rels.addAll(List.of(relationships));
     }
 
-    var asset = catalog.get(target.getId());
+    var asset = assetCache.getIfPresent(target.getId());
     var incoming =
         graph.incomingEdgesOf(asset.getId()).stream()
             .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
             .map(
                 defaultEdge ->
                     Pair.of(
-                        catalog.get(graph.getEdgeSource(defaultEdge)), defaultEdge.relationship))
+                        assetCache.getIfPresent(graph.getEdgeSource(defaultEdge)),
+                        defaultEdge.relationship))
             .toList();
     var outgoing =
         graph.outgoingEdgesOf(asset.getId()).stream()
@@ -240,7 +226,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             .map(
                 defaultEdge ->
                     Pair.of(
-                        catalog.get(graph.getEdgeTarget(defaultEdge)), defaultEdge.relationship))
+                        assetCache.getIfPresent(graph.getEdgeTarget(defaultEdge)),
+                        defaultEdge.relationship))
             .toList();
     return Utils.Collections.join(incoming, outgoing);
   }
@@ -255,15 +242,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    *     <p>TODO improve with multiple relationships from a set
    */
   public List<RuntimeAsset> outgoing(RuntimeAsset source, GraphModel.Relationship relationship) {
-    var asset = catalog.get(source.getId());
+    var asset = assetCache.getIfPresent(source.getId());
     return graph.outgoingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> catalog.get(graph.getEdgeTarget(defaultEdge)))
+        .map(defaultEdge -> assetCache.getIfPresent(graph.getEdgeTarget(defaultEdge)))
         .toList();
   }
 
   public List<RuntimeAsset> assets() {
-    return List.copyOf(catalog.values());
+    return List.copyOf(assetCache.asMap().values());
   }
 
   @Override
@@ -301,9 +288,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships,
+      GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope) {
     return runtimeClient.retrieveSubgraph(
-        focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, scope);
+        focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail, scope);
   }
 
   @Override
@@ -314,10 +302,23 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   @Override
   public void clear() {}
 
+  private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
+    var ret = query(assetClass, scope).id(id).peek(scope);
+    var result = ret.orElse(null);
+    return result == null
+        ? null
+        : (assetClass.isAssignableFrom(result.getClass()) ? assetClass.cast(result) : null);
+  }
+
   @Override
   public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
-    var ret = query(resultClass, scope).id(id).peek(scope);
-    return (T) ret.orElse(null);
+    try {
+      return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
+    } catch (ExecutionException e) {
+      // fall back to other strategy
+      scope.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
+    }
+    return null;
   }
 
   @Override
@@ -355,14 +356,40 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return List.of();
   }
 
+  /**
+   * Relationship for the client graph has equals() and hashCode() so that no duplicated
+   * relationships can be inserted when the graph is updated.
+   */
   public static class Relationship extends DefaultEdge {
 
     public GraphModel.Relationship relationship;
     public Map<String, String> metadata;
+    public long sourceId;
+    public long targetId;
 
-    public Relationship(GraphModel.Relationship relationship, Map<String, String> metadata) {
+    public Relationship(
+        GraphModel.Relationship relationship,
+        long sourceId,
+        long targetId,
+        Map<String, String> metadata) {
       this.relationship = relationship;
       this.metadata = metadata;
+      this.sourceId = sourceId;
+      this.targetId = targetId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) return false;
+      Relationship that = (Relationship) o;
+      return sourceId == that.sourceId
+          && targetId == that.targetId
+          && relationship == that.relationship;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(relationship, sourceId, targetId);
     }
 
     public String toString() {

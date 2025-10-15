@@ -696,11 +696,13 @@ public class RuntimeService extends BaseService
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships,
+      GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope) {
     return scope
         .getDigitalTwin()
         .getKnowledgeGraph()
-        .subgraph(focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, scope);
+        .subgraph(
+            focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail, scope);
   }
 
   @Override

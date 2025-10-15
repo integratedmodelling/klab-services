@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
-import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -250,22 +249,23 @@ public interface GraphModel {
    * due to JSON serialization having hard times with them.
    */
   public static class KnowledgeGraph {
-    private Map<String, String> metadata;
+    private Map<String, String> properties;
     private Map<String, Node> nodes;
     private List<Edge> edges;
+    private Detail detail;
 
     public KnowledgeGraph() {
-      this.metadata = new LinkedHashMap<>();
+      this.properties = new LinkedHashMap<>();
       this.nodes = new LinkedHashMap<>();
       this.edges = new ArrayList<>();
     }
 
-    public Map<String, String> getMetadata() {
-      return metadata;
+    public Map<String, String> getProperties() {
+      return properties;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
-      this.metadata = metadata;
+    public void setProperties(Map<String, String> properties) {
+      this.properties = properties;
     }
 
     public Map<String, Node> getNodes() {
@@ -284,35 +284,65 @@ public interface GraphModel {
       this.edges = edges;
     }
 
+    public enum Detail {
+      /** The tree only contains the ID and a type label in each node and relationship. */
+      RAW,
+      /**
+       * The tree contains the ID, label, and essential properties in each node and relationship.
+       */
+      MINIMAL,
+      /** The tree contains the ID, label and full properties in each node. */
+      FULL,
+      /**
+       * The tree contains the ID, label and the actual asset in each node. Properties may be added
+       * if the asset does not contain all the info in the knowledge graph.
+       */
+      ASSETS
+    }
+
     public static class Node {
-      private String label;
-      private Map<String, String> metadata;
+      private String type;
+      private String id;
+      private Map<String, String> properties;
       private RuntimeAsset asset;
 
       public Node() {
-        this.metadata = new LinkedHashMap<>();
+        this.properties = new LinkedHashMap<>();
       }
 
       public Node(RuntimeAsset asset) {
-        this.label = asset.getId() + "";
-        this.metadata = new LinkedHashMap<>();
+        this.type = asset.getId() + "";
+        this.properties = new LinkedHashMap<>();
         this.asset = asset;
       }
 
-      public String getLabel() {
-        return label;
+      public String getType() {
+        return type;
       }
 
-      public void setLabel(String label) {
-        this.label = label;
+      public void setType(String type) {
+        this.type = type;
       }
 
-      public Map<String, String> getMetadata() {
-        return metadata;
+      public Map<String, String> getProperties() {
+        return properties;
       }
 
-      public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+      /**
+       * The ID is a string for full generality, even when RuntimeAsset normally uses a long ID.
+       *
+       * @return
+       */
+      public String getId() {
+        return id;
+      }
+
+      public void setId(String id) {
+        this.id = id;
+      }
+
+      public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
       }
 
       public RuntimeAsset getAsset() {
@@ -327,13 +357,12 @@ public interface GraphModel {
     public static class Edge {
       private String source;
       private String target;
-      private String relationship;
+      private String type;
       private boolean directed;
-      private String label;
-      private Map<String, String> metadata;
+      private Map<String, String> properties;
 
       public Edge() {
-        this.metadata = new LinkedHashMap<>();
+        this.properties = new LinkedHashMap<>();
       }
 
       public Edge(
@@ -341,14 +370,12 @@ public interface GraphModel {
           String target,
           String relationship,
           boolean directed,
-          String label,
           Map<String, String> metadata) {
         this.source = source;
         this.target = target;
-        this.relationship = relationship;
+        this.type = relationship;
         this.directed = directed;
-        this.label = label;
-        this.metadata = metadata != null ? metadata : new LinkedHashMap<>();
+        this.properties = metadata != null ? metadata : new LinkedHashMap<>();
       }
 
       public String getSource() {
@@ -367,12 +394,12 @@ public interface GraphModel {
         this.target = target;
       }
 
-      public String getRelationship() {
-        return relationship;
+      public String getType() {
+        return type;
       }
 
-      public void setRelationship(String relationship) {
-        this.relationship = relationship;
+      public void setType(String type) {
+        this.type = type;
       }
 
       public boolean isDirected() {
@@ -383,28 +410,20 @@ public interface GraphModel {
         this.directed = directed;
       }
 
-      public String getLabel() {
-        return label;
+      public Map<String, String> getProperties() {
+        return properties;
       }
 
-      public void setLabel(String label) {
-        this.label = label;
-      }
-
-      public Map<String, String> getMetadata() {
-        return metadata;
-      }
-
-      public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+      public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
       }
     }
   }
 
   /**
    * Digital twin descriptor for JSON communication. This is returned by the {@link
-   * org.integratedmodelling.klab.api.ServicesAPI.RUNTIME#DIGITAL_TWIN} call, with depth of
-   * info depending on call parameters.
+   * org.integratedmodelling.klab.api.ServicesAPI.RUNTIME#DIGITAL_TWIN} call, with depth of info
+   * depending on call parameters.
    */
   class DigitalTwin {
 
@@ -412,6 +431,7 @@ public interface GraphModel {
     private KnowledgeGraph knowledgeGraph;
     private Schedule schedule;
     private List<Notification> notifications = new ArrayList<>();
+
     public org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration
         getConfiguration() {
       return configuration;

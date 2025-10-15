@@ -58,12 +58,12 @@ public class DataflowGraph implements Dataflow {
     return transientId;
   }
 
-    @Override
-    public int getChildrenCount() {
-        return -1;
-    }
+  @Override
+  public int getChildrenCount() {
+    return -1;
+  }
 
-    public void setTransientId(long transientId) {
+  public void setTransientId(long transientId) {
     this.transientId = transientId;
   }
 
@@ -73,6 +73,11 @@ public class DataflowGraph implements Dataflow {
 
   @Override
   public long getId() {
-    return 0;
+    return DATAFLOW_ASSET.getId();
+  }
+
+  @Override
+  public long getParentId() {
+    return DATAFLOW_ASSET.getParentId();
   }
 }

@@ -154,6 +154,7 @@ public class RuntimeClient extends BaseServiceClient
       Collection<Long> requiredNodes,
       Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships,
+      GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope) {
     return client
         .withScope(scope)
@@ -164,6 +165,8 @@ public class RuntimeClient extends BaseServiceClient
             focalNodeId,
             "depth",
             depth,
+            "detail",
+            detail,
             "links",
             (acceptedRelationships == null || acceptedRelationships.isEmpty()
                 ? "all"
