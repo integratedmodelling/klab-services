@@ -21,6 +21,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -525,15 +526,9 @@ public class RuntimeServerController {
     return false;
   }
 
-  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_SUBGRAPH)
-  public @ResponseBody GraphModel.KnowledgeGraph retrieveSubgraph(
-      @RequestParam(name = "focus") long focalNodeId,
-      @RequestParam(name = "depth") int depth,
-      @RequestParam(name = "links", required = false) String links,
-      @RequestParam(name = "include", required = false) String included,
-      @RequestParam(name = "types", required = false) String types,
-      @RequestParam(name = "detail", required = false) GraphModel.KnowledgeGraph.Detail detail,
-      Principal principal) {
+  @GetMapping(ServicesAPI.RUNTIME.GET_COMMIT_INFO)
+  public @ResponseBody KnowledgeGraph.Commit retrieveCommit(
+      @RequestParam(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
 
       var contextScope = authorization.getScope(ContextScope.class);

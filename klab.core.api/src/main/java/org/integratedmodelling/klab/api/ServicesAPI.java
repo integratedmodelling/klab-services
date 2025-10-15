@@ -370,7 +370,7 @@ public interface ServicesAPI {
 
     String CONNECT = "/connect";
 
-    String RETRIEVE_SUBGRAPH = "/subgraph";
+    String GET_COMMIT_INFO = "/commit";
 
     /**
      * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.

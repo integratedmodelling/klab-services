@@ -294,6 +294,11 @@ public class RuntimeService extends BaseService
     return ScalarComputationGroovy.builder(observation, scope, actuator);
   }
 
+  @Override
+  public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
+    return scope.getDigitalTwin().getKnowledgeGraph().getCommit(commitId);
+  }
+
   /**
    * Submission is entirely within a transaction, created new at the root submission. Observations
    * are directly used as keys for everything, so the object must never be substituted by another.
@@ -421,7 +426,7 @@ public class RuntimeService extends BaseService
               dataflow -> {
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
-                    if (resolutionScope.commit()) {
+                    if (resolutionScope.commit() != null) {
                       return observation;
                     }
                   }
@@ -436,13 +441,9 @@ public class RuntimeService extends BaseService
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
                   // TODO add info about the contextualization to the action's metadata
-                  submissionScope.commit();
-                  var newObservations =
-                      submissionScope.getActivity().getMetadata().get(Metadata.IM_NEW_OBSERVATIONS);
-                  if (newObservations != null) {
-                    // this will go to any clients waiting so that they can request the relevant
-                    // knowledge graph
-                    o.getMetadata().put(Metadata.IM_NEW_OBSERVATIONS, newObservations);
+                  var commitId = submissionScope.commit();
+                  if (commitId != null) {
+
                   }
                 } else {
                   submissionScope.fail();
@@ -689,21 +690,23 @@ public class RuntimeService extends BaseService
     return false;
   }
 
-  @Override
-  public GraphModel.KnowledgeGraph retrieveSubgraph(
-      long focalNodeId,
-      int depth,
-      Collection<Long> requiredNodes,
-      Collection<RuntimeAsset.Type> acceptedTypes,
-      Collection<GraphModel.Relationship> acceptedRelationships,
-      GraphModel.KnowledgeGraph.Detail detail,
-      ContextScope scope) {
-    return scope
-        .getDigitalTwin()
-        .getKnowledgeGraph()
-        .subgraph(
-            focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail, scope);
-  }
+  //
+  //  @Override
+  //  public GraphModel.KnowledgeGraph retrieveSubgraph(
+  //      long focalNodeId,
+  //      int depth,
+  //      Collection<Long> requiredNodes,
+  //      Collection<RuntimeAsset.Type> acceptedTypes,
+  //      Collection<GraphModel.Relationship> acceptedRelationships,
+  //      GraphModel.KnowledgeGraph.Detail detail,
+  //      ContextScope scope) {
+  //    return scope
+  //        .getDigitalTwin()
+  //        .getKnowledgeGraph()
+  //        .subgraph(
+  //            focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail,
+  // scope);
+  //  }
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(

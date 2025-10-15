@@ -700,7 +700,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public boolean commit() {
+  public String commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
       if (getActivity().getType() == Activity.Type.RESOLUTION
@@ -711,7 +711,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
       }
     }
-    var ret = this.currentTransaction != null && this.currentTransaction.commit();
+
+    if (this.currentTransaction == null) {
+      return null;
+    }
+
+    var ret = this.currentTransaction.commit();
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     return ret;
   }

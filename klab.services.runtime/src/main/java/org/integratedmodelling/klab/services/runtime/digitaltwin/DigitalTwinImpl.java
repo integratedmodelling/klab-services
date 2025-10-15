@@ -323,11 +323,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public boolean commit() {
+    public String commit() {
 
       if (!failures.isEmpty()) {
         failures.forEach(t -> scope.error(t));
-        return false;
+        return null;
       }
 
       if (activity instanceof ActivityImpl activity1) {
@@ -402,13 +402,13 @@ public class DigitalTwinImpl implements DigitalTwin {
           // dio sanguinaccio
           try {
             kgTransaction.close();
-            if (!stored.isEmpty()) {
-              activity
-                  .getMetadata()
-                  .put(
-                      Metadata.IM_NEW_OBSERVATIONS,
-                      Utils.Strings.join(stored.stream().map(RuntimeAsset::getId).toList(), ","));
-            }
+//            if (!stored.isEmpty()) {
+//              activity
+//                  .getMetadata()
+//                  .put(
+//                      Metadata.IM_NEW_OBSERVATIONS,
+//                      Utils.Strings.join(stored.stream().map(RuntimeAsset::getId).toList(), ","));
+//            }
           } catch (IOException e) {
             Logging.INSTANCE.error(e);
           }

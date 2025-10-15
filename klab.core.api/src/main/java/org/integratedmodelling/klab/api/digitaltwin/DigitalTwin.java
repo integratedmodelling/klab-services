@@ -196,6 +196,8 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   interface Transaction {
 
+    String INTERMEDIATE_COMMIT_ID = "intermediate_commit_id";
+
     void registerExecutors();
 
     /**
@@ -240,11 +242,13 @@ public interface DigitalTwin extends RuntimeAsset {
     void resolveWith(Observation observation, Executor executor);
 
     /**
-     * Commit the transaction and return true if it was successful.
+     * Commit the transaction and return the commit ID if it was successful. In intermediate
+     * transactions, this should always return INTERMEDIATE_COMMIT_ID or null. The root transaction
+     * must return a valid commit ID or null.
      *
-     * @return true if the commit succeeded
+     * @return a valid string
      */
-    boolean commit();
+    String commit();
 
     /**
      * Get a child transaction for the given activity. The child transaction must be committed

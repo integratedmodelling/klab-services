@@ -201,7 +201,7 @@ public interface Metadata extends Parameters<String> {
 
   public static String IM_RESOLUTION_GRAPH = "im:resolution-graph";
 
-  public static String IM_NEW_OBSERVATIONS = "im:new-observations";
+  public static String IM_COMMIT_ID = "im:commit-id";
 
   /** For legacy resources */
   public static String IM_ORIGINAL_URN = "im:original-urn";

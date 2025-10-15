@@ -147,39 +147,39 @@ public class RuntimeClient extends BaseServiceClient
     return false;
   }
 
-  @Override
-  public GraphModel.KnowledgeGraph retrieveSubgraph(
-      long focalNodeId,
-      int depth,
-      Collection<Long> requiredNodes,
-      Collection<RuntimeAsset.Type> acceptedTypes,
-      Collection<GraphModel.Relationship> acceptedRelationships,
-      GraphModel.KnowledgeGraph.Detail detail,
-      ContextScope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RUNTIME.RETRIEVE_SUBGRAPH,
-            GraphModel.KnowledgeGraph.class,
-            "focus",
-            focalNodeId,
-            "depth",
-            depth,
-            "detail",
-            detail,
-            "links",
-            (acceptedRelationships == null || acceptedRelationships.isEmpty()
-                ? "all"
-                : Utils.Strings.join(acceptedRelationships, ",")),
-            "types",
-            (acceptedTypes == null || acceptedTypes.isEmpty()
-                ? "all"
-                : Utils.Strings.join(acceptedTypes, ",")),
-            "include",
-            (requiredNodes == null || requiredNodes.isEmpty()
-                ? "none"
-                : Utils.Strings.join(requiredNodes, ",")));
-  }
+//  @Override
+//  public GraphModel.KnowledgeGraph retrieveSubgraph(
+//      long focalNodeId,
+//      int depth,
+//      Collection<Long> requiredNodes,
+//      Collection<RuntimeAsset.Type> acceptedTypes,
+//      Collection<GraphModel.Relationship> acceptedRelationships,
+//      GraphModel.KnowledgeGraph.Detail detail,
+//      ContextScope scope) {
+//    return client
+//        .withScope(scope)
+//        .get(
+//            ServicesAPI.RUNTIME.RETRIEVE_SUBGRAPH,
+//            GraphModel.KnowledgeGraph.class,
+//            "focus",
+//            focalNodeId,
+//            "depth",
+//            depth,
+//            "detail",
+//            detail,
+//            "links",
+//            (acceptedRelationships == null || acceptedRelationships.isEmpty()
+//                ? "all"
+//                : Utils.Strings.join(acceptedRelationships, ",")),
+//            "types",
+//            (acceptedTypes == null || acceptedTypes.isEmpty()
+//                ? "all"
+//                : Utils.Strings.join(acceptedTypes, ",")),
+//            "include",
+//            (requiredNodes == null || requiredNodes.isEmpty()
+//                ? "none"
+//                : Utils.Strings.join(requiredNodes, ",")));
+//  }
 
   @SuppressWarnings("unchecked")
   @Override
@@ -225,6 +225,18 @@ public class RuntimeClient extends BaseServiceClient
   @Override
   public Map<String, String> getExceptionTestcases(Scope scope, boolean deleteExisting) {
     return Map.of();
+  }
+
+  @Override
+  public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RUNTIME.GET_COMMIT_INFO,
+            KnowledgeGraph.Commit.class,
+            scope,
+            "id",
+            commitId);
   }
 
   //  public GraphQLClient graphClient() {

@@ -95,16 +95,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     assetCache.put(observation.getId(), observation);
 
-    List<Long> requiredNodes = List.of();
-    if (observation.getMetadata().containsKey(Metadata.IM_NEW_OBSERVATIONS)) {
-      requiredNodes =
-          Utils.Data.parseList(
-              observation.getMetadata().get(Metadata.IM_NEW_OBSERVATIONS, String.class),
-              Long.class,
-              ",");
+    if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
     }
 
-    if (!graph.vertexSet().containsAll(requiredNodes)) {
+//    if (!graph.vertexSet().containsAll(requiredNodes)) {
 
       // NO -- use the commit
 
@@ -130,7 +124,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       //                Long.parseLong(link.getTarget()),
       //                link.getProperties() == null ? Map.of() : link.getProperties()));
       //      }
-    }
+//    }
   }
 
   /**
@@ -301,23 +295,28 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public GraphModel.KnowledgeGraph subgraph(
-      long focalNodeId,
-      int depth,
-      Collection<Long> requiredNodes,
-      Collection<RuntimeAsset.Type> acceptedTypes,
-      Collection<GraphModel.Relationship> acceptedRelationships,
-      GraphModel.KnowledgeGraph.Detail detail,
-      ContextScope scope) {
-    return runtimeClient.retrieveSubgraph(
-        focalNodeId,
-        DEFAULT_QUERY_DEPTH,
-        requiredNodes,
-        EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-        EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-        GraphModel.KnowledgeGraph.Detail.RAW,
-        scope);
+  public Commit getCommit(String commitId) {
+    return runtimeClient.getCommit(commitId, scope);
   }
+
+//  @Override
+//  public GraphModel.KnowledgeGraph subgraph(
+//      long focalNodeId,
+//      int depth,
+//      Collection<Long> requiredNodes,
+//      Collection<RuntimeAsset.Type> acceptedTypes,
+//      Collection<GraphModel.Relationship> acceptedRelationships,
+//      GraphModel.KnowledgeGraph.Detail detail,
+//      ContextScope scope) {
+//    return runtimeClient.retrieveSubgraph(
+//        focalNodeId,
+//        DEFAULT_QUERY_DEPTH,
+//        requiredNodes,
+//        EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+//        EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+//        GraphModel.KnowledgeGraph.Detail.RAW,
+//        scope);
+//  }
 
   @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {

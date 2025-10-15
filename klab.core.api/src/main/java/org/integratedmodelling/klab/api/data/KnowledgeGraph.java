@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -50,21 +51,21 @@ public interface KnowledgeGraph {
    */
   interface Commit {
 
-    String id();
+    String getId();
 
     /**
      * Server-side timestamp can be used to provide sequencing.
      *
      * @return
      */
-    long timestamp();
+    long getTimestamp();
 
     /**
      * IDs of all the assets that were created in the transaction.
      *
      * @return
      */
-    Set<Long> newAssets();
+    Set<Long> getNewAssets();
 
     /**
      * IDs of all the links that were created in the transaction. Each link is a triple with the
@@ -73,7 +74,7 @@ public interface KnowledgeGraph {
      *
      * @return
      */
-    Set<Triple<Long, Long, GraphModel.Relationship>> newLinks();
+    Set<Triple<Long, Long, GraphModel.Relationship>> getNewLinks();
   }
 
   /**
@@ -297,28 +298,37 @@ public interface KnowledgeGraph {
   RuntimeAsset dataflow();
 
   /**
-   * Extract a subgraph at a specified depth and level of detail for visualization and reporting.
-   * The graph must be contextualized.
+   * Retrieve the data relative to a commit. The commit ID is part of the metadata in all
+   * successfully contextualized observation.
    *
-   * @param focalNodeId the ID of the center node
-   * @param depth the depth of the subgraph, 0 for the center node only
-   * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
-   *     empty or null.
-   * @param acceptedTypes the type of assets that can be present in the subgraph.
-   * @param acceptedRelationships the relationships that can be present in the subgraph. Can be
-   *     empty or null.
-   * @param scope the scope for the query
-   * @deprecated change to bookkeeping done via commits
+   * @param commitId
    * @return
    */
-  GraphModel.KnowledgeGraph subgraph(
-      long focalNodeId,
-      int depth,
-      Collection<Long> requiredNodes,
-      Collection<RuntimeAsset.Type> acceptedTypes,
-      Collection<GraphModel.Relationship> acceptedRelationships,
-      GraphModel.KnowledgeGraph.Detail detail,
-      ContextScope scope);
+  Commit getCommit(String commitId);
+
+//  /**
+//   * Extract a subgraph at a specified depth and level of detail for visualization and reporting.
+//   * The graph must be contextualized.
+//   *
+//   * @param focalNodeId the ID of the center node
+//   * @param depth the depth of the subgraph, 0 for the center node only
+//   * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
+//   *     empty or null.
+//   * @param acceptedTypes the type of assets that can be present in the subgraph.
+//   * @param acceptedRelationships the relationships that can be present in the subgraph. Can be
+//   *     empty or null.
+//   * @param scope the scope for the query
+//   * @deprecated change to bookkeeping done via commits
+//   * @return
+//   */
+//  GraphModel.KnowledgeGraph subgraph(
+//      long focalNodeId,
+//      int depth,
+//      Collection<Long> requiredNodes,
+//      Collection<RuntimeAsset.Type> acceptedTypes,
+//      Collection<GraphModel.Relationship> acceptedRelationships,
+//      GraphModel.KnowledgeGraph.Detail detail,
+//      ContextScope scope);
 
   /**
    * Extract and return the committed asset that has the specified ID from the graph, ensuring it is
