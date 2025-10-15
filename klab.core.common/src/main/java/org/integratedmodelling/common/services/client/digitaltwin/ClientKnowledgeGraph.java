@@ -103,15 +103,32 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
               Long.class,
               ",");
     }
-//    var graph =
-//        subgraph(
-//            observation.getId(),
-//            DEFAULT_QUERY_DEPTH,
-//            requiredNodes,
-//            EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-//            EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-//            GraphModel.KnowledgeGraph.Detail.RAW,
-//            scope);
+
+    if (!graph.vertexSet().containsAll(requiredNodes)) {
+
+      var subgraph =
+          runtimeClient.retrieveSubgraph(
+              observation.getId(),
+              DEFAULT_QUERY_DEPTH,
+              requiredNodes,
+              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+              GraphModel.KnowledgeGraph.Detail.RAW,
+              scope);
+
+      for (var link : subgraph.getEdges()) {
+        graph.addVertex(Long.parseLong(link.getSource()));
+        graph.addVertex(Long.parseLong(link.getTarget()));
+        graph.addEdge(
+            Long.parseLong(link.getSource()),
+            Long.parseLong(link.getTarget()),
+            new Relationship(
+                GraphModel.Relationship.HAS_CHILD,
+                Long.parseLong(link.getSource()),
+                Long.parseLong(link.getTarget()),
+                link.getProperties() == null ? Map.of() : link.getProperties()));
+      }
+    }
   }
 
   /**
@@ -146,9 +163,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return children;
   }
 
-  public Graph<Long, Relationship> getGraph() {
-    return graph;
-  }
+  //  public Graph<Long, Relationship> getGraph() {
+  //    return graph;
+  //  }
 
   @Override
   public Transaction createTransaction() {
@@ -291,7 +308,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       GraphModel.KnowledgeGraph.Detail detail,
       ContextScope scope) {
     return runtimeClient.retrieveSubgraph(
-        focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail, scope);
+        focalNodeId,
+        DEFAULT_QUERY_DEPTH,
+        requiredNodes,
+        EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+        EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+        GraphModel.KnowledgeGraph.Detail.RAW,
+        scope);
   }
 
   @Override

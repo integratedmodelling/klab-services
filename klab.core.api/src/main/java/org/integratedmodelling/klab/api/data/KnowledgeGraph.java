@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.api.data;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -17,6 +19,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A persistent knowledge graph instrumented for k.LAB operation, hosting all the runtime assets
@@ -33,6 +36,45 @@ import java.util.Optional;
  * service calls.
  */
 public interface KnowledgeGraph {
+
+  /**
+   * Each transaction produces a commit that details the changes made in the transaction. These are
+   * kept in a temporary cache and can be retrieved for a short time after the transaction has
+   * produced a committed observation. The commit is intended for clients that want to keep the
+   * knowledge graph updated without transferring too much information, and should be queried
+   * immediately after the new observation comes out of {@link ContextScope#submit(Observation)}.
+   * The client side of the knowledge graph can do this in interactive applications.
+   *
+   * <p>The commit ID is available as part of the metadata of the committed observation and it can
+   * be used to obtain the commit through the digital twin API.
+   */
+  interface Commit {
+
+    String id();
+
+    /**
+     * Server-side timestamp can be used to provide sequencing.
+     *
+     * @return
+     */
+    long timestamp();
+
+    /**
+     * IDs of all the assets that were created in the transaction.
+     *
+     * @return
+     */
+    Set<Long> newAssets();
+
+    /**
+     * IDs of all the links that were created in the transaction. Each link is a triple with the
+     * source asset ID, the target asset ID and the relationship type. The IDs may refer to assets
+     * previously seen in the graph and not present in #newAssets().
+     *
+     * @return
+     */
+    Set<Triple<Long, Long, GraphModel.Relationship>> newLinks();
+  }
 
   /**
    * A runtime asset representing a relationship. Used when submitting queries whose return value is
@@ -266,6 +308,7 @@ public interface KnowledgeGraph {
    * @param acceptedRelationships the relationships that can be present in the subgraph. Can be
    *     empty or null.
    * @param scope the scope for the query
+   * @deprecated change to bookkeeping done via commits
    * @return
    */
   GraphModel.KnowledgeGraph subgraph(

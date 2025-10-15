@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -328,6 +329,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var asset = idCache.get(link.getSecond());
         if (asset != null) {
           var props = Map.of("parentId", link.getFirst());
+          // update parent ID in the asset that gets out of the transaction
+          setParentId(asset, link.getFirst());
           query(
               transaction,
               Queries.UPDATE_PROPERTIES_GENERIC,
@@ -345,6 +348,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           userScope);
 
       commitTransaction();
+    }
+
+    private void setParentId(RuntimeAsset asset, Long first) {
+      switch (asset) {
+        case ObservationImpl observation -> observation.setParentId(first);
+        case PlanImpl plan -> plan.setParentId(first);
+        case ActuatorImpl actuator -> actuator.setParentId(first);
+        default -> {}
+      }
     }
 
     public void commitTransaction() {
