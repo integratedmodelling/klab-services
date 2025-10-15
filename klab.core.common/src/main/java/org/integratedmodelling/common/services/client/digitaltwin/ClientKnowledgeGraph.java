@@ -106,28 +106,30 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     if (!graph.vertexSet().containsAll(requiredNodes)) {
 
-      var subgraph =
-          runtimeClient.retrieveSubgraph(
-              observation.getId(),
-              DEFAULT_QUERY_DEPTH,
-              requiredNodes,
-              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-              GraphModel.KnowledgeGraph.Detail.RAW,
-              scope);
+      // NO -- use the commit
 
-      for (var link : subgraph.getEdges()) {
-        graph.addVertex(Long.parseLong(link.getSource()));
-        graph.addVertex(Long.parseLong(link.getTarget()));
-        graph.addEdge(
-            Long.parseLong(link.getSource()),
-            Long.parseLong(link.getTarget()),
-            new Relationship(
-                GraphModel.Relationship.HAS_CHILD,
-                Long.parseLong(link.getSource()),
-                Long.parseLong(link.getTarget()),
-                link.getProperties() == null ? Map.of() : link.getProperties()));
-      }
+      //      var subgraph =
+      //          runtimeClient.retrieveSubgraph(
+      //              observation.getId(),
+      //              DEFAULT_QUERY_DEPTH,
+      //              requiredNodes,
+      //              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
+      //              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
+      //              GraphModel.KnowledgeGraph.Detail.RAW,
+      //              scope);
+      //
+      //      for (var link : subgraph.getEdges()) {
+      //        graph.addVertex(Long.parseLong(link.getSource()));
+      //        graph.addVertex(Long.parseLong(link.getTarget()));
+      //        graph.addEdge(
+      //            Long.parseLong(link.getSource()),
+      //            Long.parseLong(link.getTarget()),
+      //            new Relationship(
+      //                GraphModel.Relationship.HAS_CHILD,
+      //                Long.parseLong(link.getSource()),
+      //                Long.parseLong(link.getTarget()),
+      //                link.getProperties() == null ? Map.of() : link.getProperties()));
+      //      }
     }
   }
 
