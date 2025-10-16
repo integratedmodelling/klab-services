@@ -1,13 +1,11 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
@@ -154,7 +152,37 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       Collection<GraphModel.Relationship> acceptedRelationships,
       Collection<RuntimeAsset> compresent) {
 
-    return null;
+    Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
+    addAsset(focus, depth, ret);
+    compresent.forEach(asset -> addAsset(asset, depth, ret));
+    while (hasMultipleRoots(ret)) {}
+
+    return ret;
+  }
+
+  private void addAsset(RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
+    ret.addVertex(focus);
+    if (depth > 0) {
+      for (var others : getChildren(focus)) {
+        addAsset(others.getFirst(), depth - 1, ret);
+        ret.addEdge(focus, others.getFirst(), others.getSecond());
+      }
+    }
+  }
+
+  private boolean hasMultipleRoots(Graph<RuntimeAsset, Relationship> graph) {
+    return graph.vertexSet().stream().filter(v -> graph.inDegreeOf(v) == 0).count() > 1;
+  }
+
+  /**
+   * Return children and relationships for the passed asset, using only the configured types and
+   * relationship types.
+   *
+   * @param asset
+   * @return
+   */
+  List<Pair<RuntimeAsset, Relationship>> getChildren(RuntimeAsset asset) {
+    return List.of();
   }
 
   /**
