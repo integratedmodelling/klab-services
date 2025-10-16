@@ -424,14 +424,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return ret;
     }
 
-    //        /**
-    //         * Show the dependency graph in the loader.
-    //         */
-    //        public static void showDependencies() {
-    //            show(((KimLoader) Resources.INSTANCE.getLoader()).getDependencyGraph(),
-    //            "Dependencies", DefaultEdge.class);
-    //        }
-
     /**
      * Return whether precursor has a directed edge to dependent in graph.
      *
