@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -179,25 +180,6 @@ public interface Message extends Serializable {
     TestStarted(Queue.Events, ActionStatistics.class),
     TestFinished(Queue.Events, ActionStatistics.class),
 
-    //    /**
-    //     * Notify the successful completion of the contextualization process according to the
-    // resolution
-    //     * stored in the knowledge graph.
-    //     */
-    //    ContextualizationSuccessful(Queue.Events, Observation.class),
-    //
-    //    /**
-    //     * Notify the abnormal end of contextualization. The resolved observation remains in the
-    //     * knowledge graph.
-    //     */
-    //    ContextualizationAborted(Queue.Events, Observation.class),
-    //
-    //    /**
-    //     * Notify the start of the contextualization process for a resolved observation which is
-    //     * included in the knowledge graph.
-    //     */
-    //    ContextualizationStarted(Queue.Events, Observation.class),
-
     ContextClosed(Queue.Events, DigitalTwin.Configuration.class),
 
     CurrentContextModified(Queue.UI, Void.class),
@@ -237,7 +219,14 @@ public interface Message extends Serializable {
      * <p>TODO add the current context path and the user to the metadata in case it comes from a
      * linked DT.
      */
-    ObservationSubmissionFinished(Queue.Events, Observation.class);
+    ObservationSubmissionFinished(Queue.Events, Observation.class),
+
+    /**
+     * Sent within the client with class UserInterface to communicate a list of IDs that should be
+     * brought into focus in any visualization of the knowledge graph. The payload is a string of
+     * comma-separated observation IDs.
+     */
+    ObservationsInFocus(Queue.UI, String.class);
 
     public final Class<?> payloadClass;
     public final Queue queue;
@@ -318,11 +307,13 @@ public interface Message extends Serializable {
   long getId();
 
   /**
-   * If the message is emitted during the execution of an activity, the activity URN is returned.
+   * If the message is emitted during the execution of an activity, the activity transient ID is
+   * returned. We must use the transient ID because the activity can only be within a transaction,
+   * i.e. not in the knowledge graph yet.
    *
    * @return
    */
-  String getActivityUrn();
+  long getActivityTransientId();
 
   /**
    * Return this or a new message with the response ID set to that of the passed message, so that

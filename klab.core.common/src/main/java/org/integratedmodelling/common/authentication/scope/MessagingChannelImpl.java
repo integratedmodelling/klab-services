@@ -58,10 +58,10 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
       if (this instanceof ContextScope contextScope
           && message instanceof MessageImpl message1
           && contextScope.getCurrentTransaction() != null) {
-        message1.setTaskId(
+        message1.setActivityTransientId(
             contextScope.getCurrentTransaction() == null
                 ? null
-                : contextScope.getCurrentTransaction().getActivity().getUrn());
+                : contextScope.getCurrentTransaction().getActivity().getTransientId());
       }
       this.amqpChannel.post(message);
     }

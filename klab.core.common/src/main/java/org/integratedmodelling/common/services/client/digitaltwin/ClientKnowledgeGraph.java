@@ -18,7 +18,6 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -95,35 +94,67 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     assetCache.put(observation.getId(), observation);
 
-    if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {}
+    Set<Long> focusIds = new HashSet<>();
+    focusIds.add(observation.getId());
 
-    //    if (!graph.vertexSet().containsAll(requiredNodes)) {
+    if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
 
-    // NO -- use the commit
+      var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, String.class);
+      var commit = runtimeClient.getCommit(commitId, scope);
+      if (commit != null) {
+        /** Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
+        commit.getAddedAssets().forEach(assetId -> graph.addVertex(assetId));
 
-    //      var subgraph =
-    //          runtimeClient.retrieveSubgraph(
-    //              observation.getId(),
-    //              DEFAULT_QUERY_DEPTH,
-    //              requiredNodes,
-    //              EnumSet.of(RuntimeAsset.Type.CONTEXT, RuntimeAsset.Type.OBSERVATION),
-    //              EnumSet.of(GraphModel.Relationship.HAS_CHILD),
-    //              GraphModel.KnowledgeGraph.Detail.RAW,
-    //              scope);
-    //
-    //      for (var link : subgraph.getEdges()) {
-    //        graph.addVertex(Long.parseLong(link.getSource()));
-    //        graph.addVertex(Long.parseLong(link.getTarget()));
-    //        graph.addEdge(
-    //            Long.parseLong(link.getSource()),
-    //            Long.parseLong(link.getTarget()),
-    //            new Relationship(
-    //                GraphModel.Relationship.HAS_CHILD,
-    //                Long.parseLong(link.getSource()),
-    //                Long.parseLong(link.getTarget()),
-    //                link.getProperties() == null ? Map.of() : link.getProperties()));
-    //      }
-    //    }
+        for (var link : commit.getAddedLinks()) {
+          graph.addVertex(link.getFirst());
+          graph.addVertex(link.getSecond());
+          graph.addEdge(
+              link.getFirst(),
+              link.getSecond(),
+              new Relationship(
+                  GraphModel.Relationship.valueOf(link.getThird()),
+                  link.getFirst(),
+                  link.getSecond(),
+                  Map.of("commit", commit.getId())));
+          if (!commit.getAddedObservations().contains(link.getFirst())
+              && commit.getAddedObservations().contains(link.getSecond())
+              && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
+            // this isn't linked to the observation, record it for the UI
+            focusIds.add(link.getSecond());
+          }
+        }
+      }
+
+      /** Notify the UI of the new observations. */
+      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+        clientDigitalTwin.ingest(
+            Message.create(
+                scope,
+                Message.MessageClass.UserInterface,
+                Message.MessageType.ObservationsInFocus,
+                Utils.Strings.join(focusIds, ",")));
+      }
+    }
+  }
+
+  /**
+   * Extract a subgraph from the current graph.
+   *
+   * @param focus
+   * @param depth
+   * @param acceptedTypes
+   * @param acceptedRelationships
+   * @param compresent
+   * @return
+   */
+  public Graph<RuntimeAsset, Relationship> getSubgraph(
+      RuntimeAsset focus,
+      int depth,
+      Collection<RuntimeAsset.Type> acceptedTypes,
+      Collection<GraphModel.Relationship> acceptedRelationships,
+      Collection<RuntimeAsset> compresent) {
+
+    return null;
   }
 
   /**

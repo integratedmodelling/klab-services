@@ -65,7 +65,15 @@ public interface KnowledgeGraph {
      *
      * @return
      */
-    Set<Long> getNewAssets();
+    Set<Long> getAddedAssets();
+
+    /**
+     * Separately list the IDs of all new assets that are observations. These are also included in
+     * the result of #getAddedAssets().
+     *
+     * @return
+     */
+    Set<Long> getAddedObservations();
 
     /**
      * IDs of all the links that were created in the transaction. Each link is a triple with the
@@ -74,7 +82,21 @@ public interface KnowledgeGraph {
      *
      * @return
      */
-    Set<Triple<Long, Long, GraphModel.Relationship>> getNewLinks();
+    Set<Triple<Long, Long, String>> getAddedLinks();
+
+    /**
+     * Deleted assets are those agents that become inoperative.
+     *
+     * @return
+     */
+    Set<Long> getDeletedAssets();
+
+    /**
+     * Inoperative agents will lose causal links to their processes
+     *
+     * @return
+     */
+    Set<Triple<Long, Long, String>> getDeletedLinks();
   }
 
   /**

@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
-import com.sun.jdi.PrimitiveValue;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,8 +10,11 @@ public class CommitImpl implements KnowledgeGraph.Commit {
 
   private String id;
   private long timestamp;
-  private Set<Long> newAssets = new HashSet<>();
-  private Set<Triple<Long, Long, GraphModel.Relationship>> newLinks = new HashSet<>();
+  private Set<Long> addedAssets = new HashSet<>();
+  private Set<Triple<Long, Long, String>> addedLinks = new HashSet<>();
+  private Set<Long> deletedAssets = new HashSet<>();
+  private Set<Triple<Long, Long, String>> deletedLinks = new HashSet<>();
+  private Set<Long> addedObservations = new HashSet<>();
 
   @Override
   public String getId() {
@@ -34,20 +35,47 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   }
 
   @Override
-  public Set<Long> getNewAssets() {
-    return newAssets;
+  public Set<Long> getAddedAssets() {
+    return addedAssets;
   }
 
-  public void setNewAssets(Set<Long> newAssets) {
-    this.newAssets = newAssets;
+  public void setAddedAssets(Set<Long> addedAssets) {
+    this.addedAssets = addedAssets;
   }
 
   @Override
-  public Set<Triple<Long, Long, GraphModel.Relationship>> getNewLinks() {
-    return newLinks;
+  public Set<Long> getAddedObservations() {
+    return addedObservations;
   }
 
-  public void setNewLinks(Set<Triple<Long, Long, GraphModel.Relationship>> newLinks) {
-    this.newLinks = newLinks;
+  public void setAddedObservations(Set<Long> addedObservations) {
+    this.addedObservations = addedObservations;
+  }
+
+  @Override
+  public Set<Triple<Long, Long, String>> getAddedLinks() {
+    return addedLinks;
+  }
+
+  public void setAddedLinks(Set<Triple<Long, Long, String>> addedLinks) {
+    this.addedLinks = addedLinks;
+  }
+
+  @Override
+  public Set<Long> getDeletedAssets() {
+    return deletedAssets;
+  }
+
+  public void setDeletedAssets(Set<Long> deletedAssets) {
+    this.deletedAssets = deletedAssets;
+  }
+
+  @Override
+  public Set<Triple<Long, Long, String>> getDeletedLinks() {
+    return deletedLinks;
+  }
+
+  public void setDeletedLinks(Set<Triple<Long, Long, String>> deletedLinks) {
+    this.deletedLinks = deletedLinks;
   }
 }

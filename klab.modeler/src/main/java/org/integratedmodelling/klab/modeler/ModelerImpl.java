@@ -272,10 +272,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   Message.MessageClass.DigitalTwin,
                   Message.MessageType.ObservationSubmissionFinished,
                   obs);
-              // for the UI
-                if (currentContext.getDigitalTwin().getKnowledgeGraph() instanceof ClientKnowledgeGraph clientKnowledgeGraph)  {
-                    clientKnowledgeGraph.ingest(obs);
-                }
               dispatch(
                   this,
                   UIEvent.ObservationSubmissionFinished,

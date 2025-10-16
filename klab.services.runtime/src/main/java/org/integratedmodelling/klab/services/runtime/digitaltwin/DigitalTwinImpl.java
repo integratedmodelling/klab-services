@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -360,15 +359,15 @@ public class DigitalTwinImpl implements DigitalTwin {
        */
       if (parent == null) {
         var kgTransaction = knowledgeGraph.createTransaction();
-        var stored = new ArrayList<Long>();
-        var linked = new ArrayList<Triple<Long, Long, GraphModel.Relationship>>();
+        var stored = new ArrayList<RuntimeAsset>();
+        var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, trivial)) {
                 kgTransaction.store(asset);
-                stored.add(asset.getId());
+                stored.add(asset);
               }
             }
 
@@ -380,7 +379,7 @@ public class DigitalTwinImpl implements DigitalTwin {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
 
-              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship));
+              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
 
               if (trivial
                   && !(target instanceof Observation)
@@ -399,7 +398,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                 Triple.of(
                     knowledgeGraph.provenance().getId(),
                     activity.getId(),
-                    GraphModel.Relationship.HAS_CHILD));
+                    GraphModel.Relationship.HAS_CHILD.name()));
           }
 
         } catch (Exception e) {
@@ -416,9 +415,19 @@ public class DigitalTwinImpl implements DigitalTwin {
             var commit = new CommitImpl();
             commit.setId(Utils.Names.shortUUID());
             commit.setTimestamp(System.currentTimeMillis());
-            commit.getNewAssets().addAll(stored);
-            commit.getNewLinks().addAll(linked);
+            commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
+            commit
+                .getAddedObservations()
+                .addAll(
+                    stored.stream()
+                        .filter(a -> a instanceof Observation)
+                        .map(RuntimeAsset::getId)
+                        .toList());
+            commit.getAddedLinks().addAll(linked);
+            // TODO add modified and deleted assets. Also we may need to notify changed n. of
+            //  children
             commitCache.put(commit.getId(), commit);
+
             ret = commit.getId();
           } catch (IOException e) {
             Logging.INSTANCE.error(e);

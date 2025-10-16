@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
-
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -49,7 +48,7 @@ public class MessageImpl implements Message, Serializable {
   private long inResponseTo;
   private long timestamp = System.currentTimeMillis();
   private Message.Queue queue;
-  private String taskId;
+  private long activityTransientId;
 
   private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
 
@@ -191,11 +190,11 @@ public class MessageImpl implements Message, Serializable {
   }
 
   @Override
-  public String getActivityUrn() {
-    return taskId;
+  public long getActivityTransientId() {
+    return activityTransientId;
   }
 
-  public void setTaskId(String taskId) {
-    this.taskId = taskId;
+  public void setActivityTransientId(long activityTransientId) {
+    this.activityTransientId = activityTransientId;
   }
 }
