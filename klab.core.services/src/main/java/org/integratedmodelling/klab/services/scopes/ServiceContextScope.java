@@ -433,7 +433,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  public ServiceContextScope executing(Activity currentActivity /*, boolean isTransaction*/) {
+  public ServiceContextScope executing(Activity currentActivity) {
 
     ServiceContextScope ret = new ServiceContextScope(this);
     var parentActivity = this.getActivity();

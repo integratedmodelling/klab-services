@@ -185,17 +185,19 @@ public interface DigitalTwin extends RuntimeAsset {
 
   /**
    * Operations that modify the digital twin are transactional and use this object, which guarantees
-   * that all operations are linked to an activity that gets recorded in provenance.
-   *
-   * <p>The transaction hosts the portion of the knowledge graph being created and modified. The
-   * scope inspection functions must be aware of any transaction and find the observations in it by
-   * reference before consulting the committed graph.
+   * that all operations on the knowledge graph are linked to an activity that gets recorded in
+   * provenance.
    *
    * <p>TODO storage allocation must also be transactional, calling "release" on failure and
    * finalizing the storage commitment on commit.
    */
   interface Transaction {
 
+    /**
+     * The ID returned when a commit was done successfully on a non-root transition. In recursive
+     * code the commit result should be checked against this to know if the transaction was a
+     * root-level one, the only one that .
+     */
     String INTERMEDIATE_COMMIT_ID = "intermediate_commit_id";
 
     void registerExecutors();
@@ -252,7 +254,7 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /**
      * Get a child transaction for the given activity. The child transaction must be committed
-     * normally but won't cause knowledge graph updates until the root transaction is committed. If
+     * normally but won't cause knowledge graph commits until the root transaction is committed. If
      * a child transaction fails, the whole transaction tree fails.
      *
      * @param activity
@@ -282,8 +284,10 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and
-     * their structure, using only what has been produced within the individual transition. Should
-     * be called after commit, so that the assets in the graph are finalized.
+     * their structure, using only what has been produced within the individual transition. If
+     * called before the root transaction is committed, the assets in the graph will be unresolved,
+     * with ID == -1 and no URN, so the ID will be the transient ID, and users must be aware of
+     * this.
      *
      * @return the runtime asset graph for this transaction
      */
@@ -299,8 +303,8 @@ public interface DigitalTwin extends RuntimeAsset {
   Configuration getOptions();
 
   /**
-   * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
-   * {@link Transaction#commit()} is invoked on the root-level transaction and returns true.
+   * Get a new transaction to make changes in the knowledge graph. Nothing is modified until {@link
+   * Transaction#commit()} is invoked on the root-level transaction and returns true.
    *
    * <p>NOTE: this should not be called as a rule. It should only be called within the service-side
    * {@link ContextScope}, which will manage the transaction tree and commit after resolution and

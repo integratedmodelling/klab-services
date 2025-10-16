@@ -34,9 +34,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RuntimeService extends KlabService {
 
-    KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope);
+  KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope);
 
-    /**
+  /**
    * The core functors for k.LAB dataflow supporting the primary k.IM constructs such as inline
    * expressions, lookup tables and the like. The runtime must support all of these.
    *
@@ -219,27 +219,6 @@ public interface RuntimeService extends KlabService {
    * @return
    */
   boolean releaseContext(ContextScope scope);
-
-//  /**
-//   * Extract a subgraph at a specified depth and level of detail for visualization and reporting.
-//   * The graph must be contextualized.
-//   *
-//   * @param focalNodeId the ID of the center node
-//   * @param depth the depth of the subgraph, 0 for the center node only
-//   * @param requiredNodes optional list of IDs of nodes that must be present in the subgraph. Can be
-//   *     empty or null.
-//   * @param acceptedTypes the type of assets that can be present in the subgraph.
-//   * @param scope the scope for the query
-//   * @return
-//   */
-//  GraphModel.KnowledgeGraph retrieveSubgraph(
-//      long focalNodeId,
-//      int depth,
-//      Collection<Long> requiredNodes,
-//      Collection<RuntimeAsset.Type> acceptedTypes,
-//      Collection<GraphModel.Relationship> acceptedRelationships,
-//      GraphModel.KnowledgeGraph.Detail detail,
-//      ContextScope scope);
 
   /**
    * Send a query to the knowledge graph identified by the passed scope and return the result.

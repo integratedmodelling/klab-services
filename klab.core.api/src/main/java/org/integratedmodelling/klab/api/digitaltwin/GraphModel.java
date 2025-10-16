@@ -248,7 +248,7 @@ public interface GraphModel {
    * translation is compatible with existing representational "standards" for graphs. Not a record
    * due to JSON serialization having hard times with them.
    */
-  public static class KnowledgeGraph {
+  class KnowledgeGraph {
     private Map<String, String> properties;
     private Map<String, Node> nodes;
     private List<Edge> edges;
@@ -311,7 +311,7 @@ public interface GraphModel {
       }
 
       public Node(RuntimeAsset asset) {
-        this.type = asset.getId() + "";
+        this.type = (asset.getId() == -1 ? asset.getTransientId() : asset.getId()) + "";
         this.properties = new LinkedHashMap<>();
         this.asset = asset;
       }
