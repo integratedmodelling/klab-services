@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
@@ -283,6 +284,68 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   }
 
   public static class Graphs {
+
+    public static <T, E> List<List<T>> findPathsToCommonAncestor(
+            List<T> graphNodes, Graph<T, E> graph, Function<T, T> parentFinder) {
+        // Validate inputs
+        if (graphNodes == null || graphNodes.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        if (parentFinder == null) {
+            throw new IllegalArgumentException("parentFinder must not be null");
+        }
+
+        // Find lowest common ancestor (LCA) among all nodes using only parentFinder
+        T commonAncestor = graphNodes.get(0);
+        // For nodes beyond the first, refine the common ancestor
+        for (int i = 1; i < graphNodes.size(); i++) {
+            T node = graphNodes.get(i);
+            // Build ancestor set (including the node itself) for current node
+            Set<T> ancestors = new HashSet<>();
+            T cur = node;
+            while (cur != null && !ancestors.contains(cur)) {
+                ancestors.add(cur);
+                cur = parentFinder.apply(cur);
+            }
+            // Move up from current commonAncestor until it is in ancestors
+            T walker = commonAncestor;
+            // Protect against cycles by tracking visited during this ascent
+            Set<T> visited = new HashSet<>();
+            while (walker != null && !ancestors.contains(walker)) {
+                if (!visited.add(walker)) {
+                    // cycle detected; should not happen if a common ancestor exists
+                    throw new IllegalStateException("Cycle detected while searching for common ancestor");
+                }
+                walker = parentFinder.apply(walker);
+            }
+            if (walker == null) {
+                throw new IllegalStateException("No common ancestor found (unexpected)");
+            }
+            commonAncestor = walker;
+        }
+
+        // Build per-node paths from each node up to (but excluding) the common ancestor
+        List<List<T>> paths = new ArrayList<>(graphNodes.size());
+        for (T start : graphNodes) {
+            List<T> path = new ArrayList<>();
+            T cur = start;
+            Set<T> visited = new HashSet<>();
+            while (cur != null && !Objects.equals(cur, commonAncestor)) {
+                if (!visited.add(cur)) {
+                    throw new IllegalStateException("Cycle detected while building path to common ancestor");
+                }
+                path.add(cur);
+                cur = parentFinder.apply(cur);
+            }
+            if (cur == null && !Objects.equals(start, commonAncestor)) {
+                throw new IllegalStateException("Broken hierarchy: reached null before common ancestor");
+            }
+            paths.add(path);
+        }
+
+        return paths;
+    }
+
 
     public enum Layout {
       HIERARCHICAL,
@@ -2341,26 +2404,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return ret;
     }
 
-//    /**
-//     * Create a key->value map by pairing keys with the object that follows them.
-//     *
-//     * @param parameters
-//     * @return a key-value map
-//     * @throws KlabIllegalArgumentException if keys aren't matched
-//     */
-//    public static Map<String, Object> makeKeyMap(Object[] parameters) {
-//      var ret = new LinkedHashMap<String, Object>();
-//      if (parameters != null) {
-//        for (int i = 0; i < parameters.length; i++) {
-//          if (i == parameters.length - 1) {
-//            throw new KlabIllegalArgumentException(
-//                "Utils.Maps.makeKeyMap: unmatched keys " + "in " + "argument list");
-//          }
-//          ret.put(parameters[i].toString(), parameters[++i]);
-//        }
-//      }
-//      return ret;
-//    }
+    //    /**
+    //     * Create a key->value map by pairing keys with the object that follows them.
+    //     *
+    //     * @param parameters
+    //     * @return a key-value map
+    //     * @throws KlabIllegalArgumentException if keys aren't matched
+    //     */
+    //    public static Map<String, Object> makeKeyMap(Object[] parameters) {
+    //      var ret = new LinkedHashMap<String, Object>();
+    //      if (parameters != null) {
+    //        for (int i = 0; i < parameters.length; i++) {
+    //          if (i == parameters.length - 1) {
+    //            throw new KlabIllegalArgumentException(
+    //                "Utils.Maps.makeKeyMap: unmatched keys " + "in " + "argument list");
+    //          }
+    //          ret.put(parameters[i].toString(), parameters[++i]);
+    //        }
+    //      }
+    //      return ret;
+    //    }
 
     /**
      * Create a key->value map by pairing keys with the object that follows them.
