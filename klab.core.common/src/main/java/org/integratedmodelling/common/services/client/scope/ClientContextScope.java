@@ -136,16 +136,6 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
-  public Collection<Observation> affecting(Observation observation) {
-    return List.of();
-  }
-
-  @Override
-  public Collection<Observation> affected(Observation observation) {
-    return List.of();
-  }
-
-  @Override
   public Provenance getProvenance() {
     return null;
   }
@@ -161,11 +151,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
-  public Observation getParentOf(Observation observation) {
+  public RuntimeAsset getParentOf(RuntimeAsset observation) {
     var ret =
         digitalTwin
             .getKnowledgeGraph()
-            .query(Observation.class, this)
+            .query(RuntimeAsset.class, this)
             .target(observation)
             .along(GraphModel.Relationship.HAS_CHILD)
             .run(this);
@@ -180,12 +170,6 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
         .source(observation)
         .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
-  }
-
-  @Override
-  public Collection<KnowledgeGraph.Link> getLinks(
-      RuntimeAsset affecting, GraphModel.Relationship... relationship) {
-    throw new KlabUnimplementedException("getLinks in ClientContextScope is not yet implemented");
   }
 
   @Override

@@ -5,9 +5,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -116,6 +114,16 @@ public interface KnowledgeGraph {
     int sequence();
 
     Geometry geometry();
+  }
+
+  interface LinkInfo {
+    GraphModel.Relationship getType();
+
+    Parameters<String> getProperties();
+
+    long getSourceId();
+
+    long getTargetId();
   }
 
   /**
@@ -320,27 +328,46 @@ public interface KnowledgeGraph {
   RuntimeAsset dataflow();
 
   /**
-   * Extract and return the committed asset that has the specified ID from the graph, ensuring it is
-   * of the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
-   * therefore available besides the more general {@link #query(Class, Scope)}. Implementations
-   * should use a properly configured cache to avoid repeated lookups.
+   * Directly retrieve the committed asset that has the specified ID from the graph, ensuring it is
+   * of the passed class (pass <code>RuntimeAsset.class</code> if the class isn't known). Expected
+   * to be the fastest way to retrieve a node when the ID is known, therefore available besides the
+   * more general {@link #query(Class, Scope)}. Implementations should use a properly configured
+   * cache to avoid repeated lookups.
    *
    * @param id
    * @param resultClass
    * @param <T>
    * @return the asset or null if not found or not of the passed class
    */
-  <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass);
+  <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass);
 
   /**
-   * Called when an observation has been contextualized
+   * Retrieve all links from the graph or the current transaction that match the arguments. This one
+   * is the generic way to retrieve anything from the graph when a single link is involved.
    *
-   * @param observation
-   * @param scope
-   * @param arguments additional parameters to add to the observation or to override existing ones
-   * @deprecated remove from API and move to {@link Transaction}
+   * <p>If the context scope is executing a transaction, the links in the transaction must also be
+   * returned.
+   *
+   * @param asset the source or target asset
+   * @param direction if OUTGOING, the <code>asset</code> is the source, otherwise the target.
+   * @param relationship choose the relationship; if none is passed, all links are returned.
+   * @return
    */
-  void update(RuntimeAsset observation, Scope scope, Object... arguments);
+  Collection<KnowledgeGraph.Link> getLinks(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope scope,
+      GraphModel.Relationship... relationship);
+
+  //  /**
+  //   * Called to quickly update an object
+  //   *
+  //   * @param observation
+  //   * @param scope
+  //   * @param arguments additional parameters to add to the observation or to override existing
+  // ones
+  //   */
+  //  void update(RuntimeAsset observation, Scope scope, Object... arguments);
 
   /**
    * Find an agent by name. If the agent is not found, create it with the passed name. If the name

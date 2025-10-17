@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -232,6 +233,33 @@ public class RuntimeClient extends BaseServiceClient
     return client
         .withScope(scope)
         .get(ServicesAPI.RUNTIME.GET_COMMIT_INFO, KnowledgeGraph.Commit.class, "id", commitId);
+  }
+
+  public <T extends RuntimeAsset> T getAsset(long id, Class<T> assetClass, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET, assetClass, "id", id);
+  }
+
+  public Collection<KnowledgeGraph.LinkInfo> getLinkInfo(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope scope,
+      GraphModel.Relationship[] relationship) {
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_LINKS,
+            KnowledgeGraph.LinkInfo.class,
+            "sourceId",
+            asset.getId(),
+            "direction",
+            direction,
+            "types",
+            relationship == null || relationship.length == 0
+                ? null
+                : org.integratedmodelling.common.utils.Utils.Strings.join(
+                    Arrays.asList(relationship), ","));
   }
 
   //  public GraphQLClient graphClient() {

@@ -62,7 +62,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
       Object... additionalProperties);
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
+  public <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass) {
     return retrieve(id, resultClass, scope);
   }
 

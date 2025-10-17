@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -24,6 +25,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
+import org.integratedmodelling.klab.api.view.modeler.panels.KnowledgeEditor;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -217,10 +219,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return children;
   }
 
-  //  public Graph<Long, Relationship> getGraph() {
-  //    return graph;
-  //  }
-
   @Override
   public Transaction createTransaction() {
     throw new KlabIllegalStateException(
@@ -320,9 +318,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         .toList();
   }
 
-  public List<RuntimeAsset> assets() {
-    return List.copyOf(assetCache.asMap().values());
-  }
+  //  public List<RuntimeAsset> assets() {
+  //    return List.copyOf(assetCache.asMap().values());
+  //  }
 
   @Override
   public void deleteContext() {}
@@ -361,15 +359,11 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void clear() {}
 
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
-    var ret = query(assetClass, scope).id(id).peek(scope);
-    var result = ret.orElse(null);
-    return result == null
-        ? null
-        : (assetClass.isAssignableFrom(result.getClass()) ? assetClass.cast(result) : null);
+    return runtimeClient.getAsset(id, assetClass, scope);
   }
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
+  public <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass) {
     try {
       return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
     } catch (ExecutionException e) {
@@ -380,9 +374,22 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public void update(RuntimeAsset observation, Scope scope, Object... arguments) {
-    throw new KlabIllegalStateException(
-        "Modifying operations not allowed on the client-side knowledge graph");
+  public Collection<Link> getLinks(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope scope,
+      GraphModel.Relationship... relationship) {
+    return runtimeClient.getLinkInfo(asset, direction, scope, relationship).stream()
+        .map(
+            info -> {
+              var ret = new LinkImpl();
+              ret.setSource(getAsset(info.getSourceId(), scope, RuntimeAsset.class));
+              ret.setTarget(getAsset(info.getTargetId(), scope, RuntimeAsset.class));
+              ret.setRelationship(info.getType());
+              ret.setProperties(info.getProperties());
+              return (Link) ret;
+            })
+        .toList();
   }
 
   @Override
@@ -417,11 +424,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   /**
    * Relationship for the client graph has equals() and hashCode() so that no duplicated
    * relationships can be inserted when the graph is updated.
+   *
+   * <p>TODO can use LinkInfo now
    */
   public static class Relationship extends DefaultEdge {
 
     public GraphModel.Relationship relationship;
-    public Map<String, String> metadata;
+    public Map<String, Object> metadata;
     public long sourceId;
     public long targetId;
 
@@ -429,11 +438,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         GraphModel.Relationship relationship,
         long sourceId,
         long targetId,
-        Map<String, String> metadata) {
+        Map<String, Object> metadata) {
       this.relationship = relationship;
       this.metadata = metadata;
       this.sourceId = sourceId;
       this.targetId = targetId;
+    }
+
+    public Relationship(KnowledgeGraph.Link link) {
+      this(link.type(), link.source().getId(), link.target().getId(), link.properties().asMap());
     }
 
     @Override

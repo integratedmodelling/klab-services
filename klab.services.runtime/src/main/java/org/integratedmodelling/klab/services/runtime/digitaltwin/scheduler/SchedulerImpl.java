@@ -186,25 +186,32 @@ public class SchedulerImpl implements Scheduler {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
-    // FIXME must use scope functions instead of KG queries, using the transaction as well as the KG
-
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
-    for (var affecting : scope.affecting(observation)) {
+    for (var affecting :
+        scope
+            .getDigitalTwin()
+            .getKnowledgeGraph()
+            .getLinks(
+                observation,
+                GraphModel.Relationship.Direction.INCOMING,
+                scope,
+                GraphModel.Relationship.AFFECTS)) {
 
-      if (checkEvent(affecting, causingEvent)) {
+      if (checkEvent((Observation) affecting.source(), causingEvent)) {
         continue;
       }
 
-      // FIXME switch to scope.outgoing with a filter; add the transaction management in scope
-      //      var relationship =
-      //          knowledgeGraph
-      //              .query(KnowledgeGraph.Link.class, scope)
-      //              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
-      //              .peek(scope);
-
       var affectingRelationship =
-          scope.getLinks(affecting, GraphModel.Relationship.AFFECTS).stream()
+          scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .getLinks(
+                  affecting.source(),
+                  GraphModel.Relationship.Direction.OUTGOING,
+                  scope,
+                  GraphModel.Relationship.AFFECTS)
+              .stream()
               .findFirst()
               .orElseThrow(
                   () ->
@@ -215,18 +222,19 @@ public class SchedulerImpl implements Scheduler {
           .getCurrentTransaction()
           .link(
               scope.getCurrentTransaction().getActivity(),
-              affecting,
+              affecting.source(),
               GraphModel.Relationship.CONTEXTUALIZED);
 
-      var sequence = 0;
-      if (affectingRelationship != null) { // it must be
-        sequence =
-            affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
-      }
+      //      var sequence = 0;
+      //      if (affectingRelationship != null) { // it must be
+      var sequence =
+          affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
+      //      }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affecting, geometry, scope, causingEvent));
+          .add(
+              () -> contextualize((Observation) affecting.source(), geometry, scope, causingEvent));
     }
 
     var sortedTasks =

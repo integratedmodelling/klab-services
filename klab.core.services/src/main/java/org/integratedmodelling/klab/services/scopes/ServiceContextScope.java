@@ -117,7 +117,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                     var ret =
                         digitalTwin
                             .getKnowledgeGraph()
-                            .get(key, ServiceContextScope.this, Observation.class);
+                            .getAsset(key, ServiceContextScope.this, Observation.class);
                     if (ret == null) {
                       Logging.INSTANCE.error(
                           "CATXO null observation retrieved for key "
@@ -250,7 +250,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Observation getParentOf(Observation observation) {
+  public RuntimeAsset getParentOf(RuntimeAsset observation) {
+    // FIXME reimplement using KG get() and links()
     var ret =
         digitalTwin
             .getKnowledgeGraph()
@@ -264,6 +265,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
 
+    // FIXME reimplement using KG get() and links()
     var ret = new ArrayList<RuntimeAsset>();
 
     if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
@@ -287,29 +289,29 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  @Override
-  public Collection<KnowledgeGraph.Link> getLinks(
-      RuntimeAsset asset, GraphModel.Relationship... relationship) {
-
-    var ret = new ArrayList<KnowledgeGraph.Link>();
-    var types = EnumSet.noneOf(GraphModel.Relationship.class);
-    if (relationship != null) {
-      types.addAll(List.of(relationship));
-    }
-    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
-      ret.addAll(
-          currentTransaction.outgoing(asset).stream()
-              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
-              .toList());
-    }
-
-    if (asset.getId() > 0) {
-      // TODO the actual ones from the persistent KG
-
-    }
-
-    return ret;
-  }
+  //  @Override
+//  public Collection<KnowledgeGraph.Link> getLinks(
+//      RuntimeAsset asset, GraphModel.Relationship... relationship) {
+//
+//    var ret = new ArrayList<KnowledgeGraph.Link>();
+//    var types = EnumSet.noneOf(GraphModel.Relationship.class);
+//    if (relationship != null) {
+//      types.addAll(List.of(relationship));
+//    }
+//    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
+//      ret.addAll(
+//          currentTransaction.outgoing(asset).stream()
+//              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
+//              .toList());
+//    }
+//
+//    if (asset.getId() > 0) {
+//      // TODO the actual ones from the persistent KG
+//
+//    }
+//
+//    return ret;
+//  }
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
@@ -355,59 +357,59 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  @Override
-  public Collection<Observation> affecting(Observation observation) {
-
-    var ret = new ArrayList<Observation>();
-    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
-      ret.addAll(
-          currentTransaction.incoming(observation).stream()
-              .filter(
-                  edge ->
-                      edge.type() == GraphModel.Relationship.AFFECTS
-                          && edge.source() instanceof Observation)
-              .map(edge -> (Observation) edge.source())
-              .toList());
-    }
-    if (observation.getId() > 0) {
-      ret.addAll(
-          digitalTwin
-              .getKnowledgeGraph()
-              .query(Observation.class, this)
-              .target(observation)
-              .along(GraphModel.Relationship.AFFECTS)
-              .run(this));
-    }
-
-    return ret;
-  }
-
-  @Override
-  public Collection<Observation> affected(Observation observation) {
-    var ret = new ArrayList<Observation>();
-    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
-      ret.addAll(
-          currentTransaction.outgoing(observation).stream()
-              .filter(
-                  edge ->
-                      edge.type() == GraphModel.Relationship.AFFECTS
-                          && edge.target() instanceof Observation)
-              .map(edge -> (Observation) edge.target())
-              .toList());
-    }
-
-    if (observation.getId() > 0) {
-      ret.addAll(
-          digitalTwin
-              .getKnowledgeGraph()
-              .query(Observation.class, this)
-              .source(observation)
-              .along(GraphModel.Relationship.AFFECTS)
-              .run(this));
-    }
-
-    return ret;
-  }
+  //  @Override
+  //  public Collection<Observation> affecting(Observation observation) {
+  //
+  //    var ret = new ArrayList<Observation>();
+  //    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+  //      ret.addAll(
+  //          currentTransaction.incoming(observation).stream()
+  //              .filter(
+  //                  edge ->
+  //                      edge.type() == GraphModel.Relationship.AFFECTS
+  //                          && edge.source() instanceof Observation)
+  //              .map(edge -> (Observation) edge.source())
+  //              .toList());
+  //    }
+  //    if (observation.getId() > 0) {
+  //      ret.addAll(
+  //          digitalTwin
+  //              .getKnowledgeGraph()
+  //              .query(Observation.class, this)
+  //              .target(observation)
+  //              .along(GraphModel.Relationship.AFFECTS)
+  //              .run(this));
+  //    }
+  //
+  //    return ret;
+  //  }
+  //
+  //  @Override
+  //  public Collection<Observation> affected(Observation observation) {
+  //    var ret = new ArrayList<Observation>();
+  //    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+  //      ret.addAll(
+  //          currentTransaction.outgoing(observation).stream()
+  //              .filter(
+  //                  edge ->
+  //                      edge.type() == GraphModel.Relationship.AFFECTS
+  //                          && edge.target() instanceof Observation)
+  //              .map(edge -> (Observation) edge.target())
+  //              .toList());
+  //    }
+  //
+  //    if (observation.getId() > 0) {
+  //      ret.addAll(
+  //          digitalTwin
+  //              .getKnowledgeGraph()
+  //              .query(Observation.class, this)
+  //              .source(observation)
+  //              .along(GraphModel.Relationship.AFFECTS)
+  //              .run(this));
+  //    }
+  //
+  //    return ret;
+  //  }
 
   @Override
   public URL getUrl() {
@@ -678,16 +680,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public ServiceContextScope of(Observation observation) {
 
     var observer = getObserverOf(observation);
-    Observation contextobs = null;
+    Observation contextObs = null;
     if (observation.getObservable().is(SemanticType.QUALITY)
         || (observation.getObservable().is(SemanticType.COUNTABLE)
             && !observation.getObservable().asConcept().isCollective())) {
-      contextobs = getParentOf(observation);
+      var parent = getParentOf(observation);
+      contextObs = parent instanceof Observation ? (Observation) parent : null;
     }
 
-    if (observer != null || contextobs != null) {
+    if (observer != null || contextObs != null) {
       var ret = new ServiceContextScope(this);
-      ret.contextObservation = contextobs;
+      ret.contextObservation = contextObs;
       ret.observer = observer;
       return ret;
     }

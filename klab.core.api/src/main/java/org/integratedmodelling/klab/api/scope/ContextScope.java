@@ -192,7 +192,7 @@ public interface ContextScope extends SessionScope {
   /**
    * Pass a connected ContextScope (possibly the result of {@link #connect(URL)} or {@link
    * #connect(DigitalTwin.Configuration)}) and return a new ContextScope that merges this
-   * ContextScope with the passed one. Permissions must allow the merge.
+   * ContextScope with the passed one. Permissions must align with the request.
    *
    * @param remoteContext
    * @return
@@ -201,19 +201,27 @@ public interface ContextScope extends SessionScope {
 
   /**
    * Submit an observation for inclusion into the knowledge graph at the point implied by the
-   * current scope, starting its resolution and/or validation, returning a future for the resolved
-   * observation or for an {@link Observation#isEmpty() empty} one in case of failure. This method
-   * is the key operation to operate on a digital twin in k.LAB.
+   * current scope, starting its resolution and/or validation and returning a future for the
+   * resolved observation or for an {@link Observation#isEmpty() empty} one in case of failure. This
+   * method is the key operation to operate on a digital twin in k.LAB.
    *
    * <p>The scope is notified of any events related to the resolution. Messages will be sent for
    * each activity undertaken, including resolution and initialization of any secondary
    * observations. Any connected scope will receive all messages related to the same digital twin.
    *
-   * <p>The observation may contain resolution metadata (still TBD) which can be used to resolve it
-   * from an existing, possibly remote, storage. The resolution metadata must contain an adapter ID
-   * and all the necessary information for it. If validation and ingestion at the appropriate
-   * position in the knowledge graph succeeds, the resolved observation, now part of the knowledge
-   * graph, is returned.
+   * <p>If the observation contains {@link
+   * org.integratedmodelling.klab.api.knowledge.observation.Observation.ContextualizationData},
+   * these are used to resolve it from existing services or artifacts instead of using the {@link
+   * org.integratedmodelling.klab.api.services.Resolver} linked to the scope. The object must
+   * contain a valid adapter ID and all the necessary parameters for it to be used to contextualize
+   * the observation. If validation and ingestion at the appropriate position in the knowledge graph
+   * succeeds, the resolved observation, now part of the knowledge graph, is returned.
+   *
+   * <p>If resolution has been performed normally, the contextualization data in the resolved
+   * observation will be present. The resolved observation has a valid ID (strictly >0) and URN
+   * where the unresolved one always has UNASSIGNED_ID and UNASSIGNED_URN (null). Besides these
+   * signals, the result observation should always be checked for {@link Observation#isEmpty()}
+   * which means resolution has failed and the observation could not be accepted without resolution.
    *
    * @param observation an unresolved observation to be resolved by the runtime and added to the
    *     knowledge graph.
@@ -222,26 +230,6 @@ public interface ContextScope extends SessionScope {
    *     the future will be {@link Observation#isEmpty() empty}.
    */
   CompletableFuture<Observation> submit(Observation observation);
-
-  /**
-   * Return all observations affected by the passed one in this scope, either through model
-   * dependencies or behaviors. "Affected" is any kind of reaction, not necessarily implied by
-   * semantics.
-   *
-   * @param observation
-   * @return
-   */
-  Collection<Observation> affecting(Observation observation);
-
-  /**
-   * Return all observations that the passed one affects in this scope, either through model
-   * dependencies or behaviors. "Affected" is any kind of reaction, not necessarily implied by
-   * semantics.
-   *
-   * @param observation
-   * @return
-   */
-  Collection<Observation> affected(Observation observation);
 
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an
@@ -299,34 +287,24 @@ public interface ContextScope extends SessionScope {
   ContextScope getRootContextScope();
 
   /**
-   * Return the parent observation of the passed observation. The runtime context maintains the
-   * logical structure graph (ignores grouping of artifacts).
+   * Return the parent observation of the passed observation. Synonym for a longer * <code>
+   * getChildrenOf(RuntimeAsset...)</code> call.
    *
-   * @param observation
+   * @param asset
    * @return the parent, or null if root subject
    */
-  Observation getParentOf(Observation observation);
+  RuntimeAsset getParentOf(RuntimeAsset asset);
 
   /**
    * Return all children of the passed observation, using the logical structure (i.e. skipping
-   * observation groups). The runtime context maintains the structure graph.
+   * observation groups). The runtime context maintains the structure graph. Synonym for a longer
+   * <code>getChildrenOf(RuntimeAsset...)</code> call.
    *
    * @param asset an observation. Quality observations have no children but no error should be
    *     raised.
    * @return the parent, or an empty collection if no children
    */
   Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset);
-
-  /**
-   * Retrieve all links from the graph or the current transaction that match the passed types. If
-   * nothing is passed, all links are returned.
-   *
-   * @param asset
-   * @param relationship
-   * @return
-   */
-  Collection<KnowledgeGraph.Link> getLinks(
-      RuntimeAsset asset, GraphModel.Relationship... relationship);
 
   /**
    * Inspect the network graph of the current context, returning all <code>relationship</code>

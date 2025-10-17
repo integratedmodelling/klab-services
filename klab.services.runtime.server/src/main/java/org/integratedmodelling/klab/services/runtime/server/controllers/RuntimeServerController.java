@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.services.runtime.server.controllers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -16,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
@@ -43,6 +40,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRe
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -319,6 +317,48 @@ public class RuntimeServerController {
       return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET)
+  public @ResponseBody RuntimeAsset retrieveAsset(
+      @PathVariable(name = "id") long id, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      return contextScope
+          .getDigitalTwin()
+          .getKnowledgeGraph()
+          .getAsset(id, contextScope, RuntimeAsset.class);
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_LINKS)
+  public @ResponseBody Collection<KnowledgeGraph.LinkInfo> retrieveLinks(
+      @RequestParam(name = "sourceId") long sourceId,
+      @RequestParam(name = "direction") GraphModel.Relationship.Direction direction,
+      @RequestParam(name = "types", required = false) String relationshipTypes,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      var sourceAsset =
+          contextScope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .getAsset(sourceId, contextScope, RuntimeAsset.class);
+      if (sourceAsset == null) {
+        return List.of();
+      }
+      // TODO this should be more general but not in the API
+      if (contextScope.getDigitalTwin().getKnowledgeGraph() instanceof KnowledgeGraphNeo4j kg) {
+        List<GraphModel.Relationship> types = List.of();
+        if (relationshipTypes != null) {
+          types = Utils.Data.parseList(relationshipTypes, GraphModel.Relationship.class);
+        }
+        return kg.getLinkInfo(
+            sourceAsset, direction, contextScope, types.toArray(GraphModel.Relationship[]::new));
+      }
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of scope or knowledge graph");
   }
 
   @Operation(

@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -125,117 +126,125 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         };
   }
 
-  /** Links for stored objects (not in a DT transaction) */
-  class LinkImpl implements Link {
-
-    private long id = 0;
-    private Parameters<String> properties = Parameters.create();
-    private GraphModel.Relationship type;
-    private long transientId = Klab.getNextId();
-    private long parentTransientId;
-    private long parentId;
-    private int childrenCount = 0;
-
-    @Override
-    public GraphModel.Relationship type() {
-      return type;
-    }
-
-    @Override
-    public Parameters<String> properties() {
-      return properties;
-    }
-
-    @Override
-    public RuntimeAsset source() {
-      // TODO extract from the graph
-      throw new KlabUnimplementedException(
-          "source of links in KnowledgeGraphNeo4j is not yet implemented");
-    }
-
-    @Override
-    public RuntimeAsset target() {
-      // TODO extract from the graph
-      throw new KlabUnimplementedException(
-          "target of links in KnowledgeGraphNeo4j is not yet implemented");
-    }
-
-    @Override
-    public int sequence() {
-      return properties.containsKey("sequence") ? properties.get("sequence", Integer.class) : -1;
-    }
-
-    @Override
-    public Geometry geometry() {
-      return null;
-    }
-
-    @Override
-    public long getId() {
-      return id;
-    }
-
-    @Override
-    public Type classify() {
-      return Type.LINK;
-    }
-
-    public void setId(long id) {
-      this.id = id;
-    }
-
-    public Parameters<String> getProperties() {
-      return properties;
-    }
-
-    public void setProperties(Parameters<String> properties) {
-      this.properties = properties;
-    }
-
-    public GraphModel.Relationship getType() {
-      return type;
-    }
-
-    public void setType(GraphModel.Relationship type) {
-      this.type = type;
-    }
-
-    @Override
-    public long getTransientId() {
-      return transientId;
-    }
-
-    @Override
-    public int getChildrenCount() {
-      return childrenCount;
-    }
-
-    public void setChildrenCount(int childrenCount) {
-      this.childrenCount = childrenCount;
-    }
-
-    @Override
-    public long getParentId() {
-      return parentId;
-    }
-
-    public void setParentId(long parentId) {
-      this.parentId = parentId;
-    }
-
-    public void setTransientId(long transientId) {
-      this.transientId = transientId;
-    }
-
-    @Override
-    public long getParentTransientId() {
-      return parentTransientId;
-    }
-
-    public void setParentTransientId(long parentTransientId) {
-      this.parentTransientId = parentTransientId;
-    }
-  }
+  //  /** Links for stored objects (not in a DT transaction) */
+  //  class LinkImpl implements Link {
+  //
+  //    private long id = 0;
+  //    private Parameters<String> properties = Parameters.create();
+  //    private GraphModel.Relationship type;
+  //    private long transientId = Klab.getNextId();
+  //    private long parentTransientId;
+  //    private long parentId;
+  //    private int childrenCount = 0;
+  //
+  //    @Override
+  //    public GraphModel.Relationship type() {
+  //      return type;
+  //    }
+  //
+  //    @Override
+  //    public Parameters<String> properties() {
+  //      return properties;
+  //    }
+  //
+  //    private RuntimeAsset source;
+  //    private RuntimeAsset target;
+  //
+  //    @Override
+  //    public RuntimeAsset source() {
+  //      return source;
+  //    }
+  //
+  //    @Override
+  //    public RuntimeAsset target() {
+  //      return target;
+  //    }
+  //
+  //    public void setSource(RuntimeAsset source) {
+  //      this.source = source;
+  //    }
+  //
+  //    public void setTarget(RuntimeAsset target) {
+  //      this.target = target;
+  //    }
+  //
+  ////    @Override
+  ////    public int sequence() {
+  ////      return properties.containsKey("sequence") ? properties.get("sequence", Integer.class) :
+  // -1;
+  ////    }
+  ////
+  ////    @Override
+  ////    public Geometry geometry() {
+  ////      return null;
+  ////    }
+  //
+  //    @Override
+  //    public long getId() {
+  //      return id;
+  //    }
+  //
+  //    @Override
+  //    public Type classify() {
+  //      return Type.LINK;
+  //    }
+  //
+  //    public void setId(long id) {
+  //      this.id = id;
+  //    }
+  //
+  //    public Parameters<String> getProperties() {
+  //      return properties;
+  //    }
+  //
+  //    public void setProperties(Parameters<String> properties) {
+  //      this.properties = properties;
+  //    }
+  //
+  //    public GraphModel.Relationship getType() {
+  //      return type;
+  //    }
+  //
+  //    public void setType(GraphModel.Relationship type) {
+  //      this.type = type;
+  //    }
+  //
+  //    @Override
+  //    public long getTransientId() {
+  //      return transientId;
+  //    }
+  //
+  //    @Override
+  //    public int getChildrenCount() {
+  //      return childrenCount;
+  //    }
+  //
+  //    public void setChildrenCount(int childrenCount) {
+  //      this.childrenCount = childrenCount;
+  //    }
+  //
+  //    @Override
+  //    public long getParentId() {
+  //      return parentId;
+  //    }
+  //
+  //    public void setParentId(long parentId) {
+  //      this.parentId = parentId;
+  //    }
+  //
+  //    public void setTransientId(long transientId) {
+  //      this.transientId = transientId;
+  //    }
+  //
+  //    @Override
+  //    public long getParentTransientId() {
+  //      return parentTransientId;
+  //    }
+  //
+  //    public void setParentTransientId(long parentTransientId) {
+  //      this.parentTransientId = parentTransientId;
+  //    }
+  //  }
 
   class TransactionImpl implements Transaction {
 
@@ -710,7 +719,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   private RuntimeAsset retrieveFromGraph(
-      long key, Class<? extends RuntimeAsset> assetClass, Scope scope) {
+      Object key, Class<? extends RuntimeAsset> assetClass, Scope scope) {
     var result =
         assetClass == RuntimeAsset.class
             ? query("MATCH (n {id: $id}) return n", Map.of("id", key), null)
@@ -735,16 +744,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
     }
 
-    var result =
-        assetClass == RuntimeAsset.class
-            ? query("MATCH (n {id: $id}) return n", Map.of("id", key), null)
-            : query(
-                "MATCH (n:{assetLabel} {id: $id}) return n"
-                    .replace("{assetLabel}", getLabel(assetClass)),
-                Map.of("id", key),
-                null);
-    var adapted = adapt(result, assetClass, scope);
-    return adapted.isEmpty() ? null : adapted.getFirst();
+    // this only happens in case of cache error or if the ID is not a long
+    return (T) retrieveFromGraph(key, assetClass, scope);
   }
 
   @Override
@@ -1162,7 +1163,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             scope);
   }
 
-  @Override
+  //  @Override
   public void update(RuntimeAsset runtimeAsset, Scope scope, Object... parameters) {
     var props = asParameters(runtimeAsset, parameters);
     props.remove("id");
@@ -1596,5 +1597,199 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return Cypher.node(getLabel(asset.getType()))
         // TODO any conditions
         .withProperties(Map.of(searchField, searchValue));
+  }
+
+  /**
+   * Return a much leaner structure optimized for web transfer and used when the assets may be
+   * already cached at the requesting side. Linked to the KNOWLEDGE_GRAPH_GET_LINKS API endpoint.
+   *
+   * @param asset
+   * @param direction
+   * @param scope
+   * @param relationship
+   * @return
+   */
+  public Collection<LinkInfo> getLinkInfo(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope scope,
+      GraphModel.Relationship... relationship) {
+
+    // works only on committed observations
+    if (asset.getId() == -1) {
+      return List.of();
+    }
+
+    // Build the most selective match possible: use the node label and its stored id
+    var sourceLabel = getLabel(asset);
+    var idValue = getId(asset);
+    if (!(idValue instanceof Long sourceId)) {
+      // Only numeric IDs are supported by LinkInfoImpl
+      return List.of();
+    }
+
+    // Relationship type filter
+    String relTypeFilter = null;
+    if (relationship != null && relationship.length > 0) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < relationship.length; i++) {
+        if (i > 0) sb.append("|");
+        sb.append(relationship[i].name());
+      }
+      relTypeFilter = sb.toString();
+    }
+
+    // Directional pattern
+    String pattern;
+    if (direction == GraphModel.Relationship.Direction.OUTGOING) {
+      pattern = relTypeFilter == null ? "(n)-[r]->(m)" : "(n)-[r:" + relTypeFilter + "]->(m)";
+    } else {
+      pattern = relTypeFilter == null ? "(n)<-[r]-(m)" : "(n)<-[r:" + relTypeFilter + "]-(m)";
+    }
+
+    String query =
+        ("MATCH (n:{label} {id: $id}) MATCH "
+                + pattern
+                + " RETURN type(r) AS rtype, properties(r) AS rprops, m.id AS mid")
+            .replace("{label}", sourceLabel);
+
+    var result = query(query, Map.of("id", sourceId), scope);
+    if (result == null || result.records().isEmpty()) {
+      return List.of();
+    }
+
+    List<LinkInfo> links = new ArrayList<>();
+    for (var rec : result.records()) {
+      String rtype = rec.get("rtype").asString();
+      Map<String, Object> props = rec.get("rprops").asMap();
+
+      var midValue = rec.get("mid");
+      if (midValue.isNull()) {
+        continue;
+      }
+      Long targetId;
+      if (midValue.type().name().equalsIgnoreCase("INTEGER")) {
+        targetId = midValue.asLong();
+      } else if (midValue.type().name().equalsIgnoreCase("STRING")) {
+        // LinkInfoImpl can only carry numeric IDs, skip non-numeric targets
+        continue;
+      } else {
+        continue;
+      }
+
+      var link = new org.integratedmodelling.klab.api.data.impl.LinkInfoImpl();
+      link.setType(GraphModel.Relationship.valueOf(rtype));
+      Parameters<String> p = Parameters.create();
+      if (props != null) {
+        for (var e : props.entrySet()) {
+          p.put(e.getKey(), e.getValue());
+        }
+      }
+      link.setProperties(p);
+      link.setSourceId(sourceId);
+      link.setTargetId(targetId);
+      links.add(link);
+    }
+
+    return links;
+  }
+
+  @Override
+  public Collection<Link> getLinks(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope scope,
+      GraphModel.Relationship... relationship) {
+
+    List<Link> ret = new ArrayList<>();
+
+    if (scope.getCurrentTransaction() != null
+        && scope.getCurrentTransaction().assets().contains(asset)) {
+      // this will never match an object coming from the network
+      var types = EnumSet.noneOf(GraphModel.Relationship.class);
+      if (relationship != null) {
+        types.addAll(List.of(relationship));
+      }
+      ret.addAll(
+          (direction == GraphModel.Relationship.Direction.OUTGOING
+                  ? scope.getCurrentTransaction().outgoing(asset)
+                  : scope.getCurrentTransaction().incoming(asset))
+              .stream().filter(edge -> types.isEmpty() || types.contains(edge.type())).toList());
+    }
+
+    if (asset.getId() == -1) {
+      return ret;
+    }
+
+    // Build the most selective match possible: use the node label and its stored id
+    var sourceLabel = getLabel(asset);
+    var idValue = getId(asset);
+
+    // Relationship type filter
+    String relTypeFilter = null;
+    if (relationship != null && relationship.length > 0) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < relationship.length; i++) {
+        if (i > 0) sb.append("|");
+        sb.append(relationship[i].name());
+      }
+      relTypeFilter = sb.toString();
+    }
+
+    // Directional pattern
+    String pattern =
+        direction == GraphModel.Relationship.Direction.OUTGOING
+            ? (relTypeFilter == null ? "(n)-[r]->(m)" : "(n)-[r:" + relTypeFilter + "]->(m)")
+            : (relTypeFilter == null ? "(n)<-[r]-(m)" : "(n)<-[r:" + relTypeFilter + "]-(m)");
+
+    String query =
+        ("MATCH (n:{label} {id: $id}) MATCH "
+                + pattern
+                + " RETURN type(r) AS rtype, properties(r) AS rprops, m.id AS mid")
+            .replace("{label}", sourceLabel);
+
+    var result = query(query, Map.of("id", idValue), scope);
+    if (result == null || result.records().isEmpty()) {
+      return ret;
+    }
+
+    for (var rec : result.records()) {
+      String rtype = rec.get("rtype").asString();
+      Map<String, Object> props = rec.get("rprops").asMap();
+      // Target id is expected to be numeric in most cases; skip if not
+      Object targetKeyObj;
+      var value = rec.get("mid");
+      if (value.isNull()) {
+        continue;
+      }
+      if (value.type().name().equalsIgnoreCase("INTEGER")) {
+        targetKeyObj = value.asLong();
+      } else if (value.type().name().equalsIgnoreCase("STRING")) {
+        // If IDs are strings for some node types, we cannot use the public get(long,...) method;
+        // skip such links as per the method contract.
+        continue;
+      } else {
+        continue;
+      }
+
+      long targetId = (Long) targetKeyObj;
+
+      var link = new LinkImpl();
+      link.setRelationship(GraphModel.Relationship.valueOf(rtype));
+      Parameters<String> p = Parameters.create();
+      if (props != null) {
+        for (var e : props.entrySet()) {
+          p.put(e.getKey(), e.getValue());
+        }
+      }
+      link.setProperties(p);
+      // source is the passed asset; target is the opposite node
+      link.setSource(asset);
+      var targetAsset = getAsset(targetId, scope, RuntimeAsset.class);
+      link.setTarget(targetAsset);
+      ret.add(link);
+    }
+
+    return ret;
   }
 }

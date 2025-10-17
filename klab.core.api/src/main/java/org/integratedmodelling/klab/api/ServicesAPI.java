@@ -388,6 +388,18 @@ public interface ServicesAPI {
     String QUERY = "/query";
 
     /**
+     * GET endpoint to quickly retrieve a specific asset from the knowledge graph by using its long
+     * ID.
+     */
+    String RETRIEVE_KNOWLEDGE_GRAPH_ASSET = "/asset/{id}";
+
+    /**
+     * GET endpoint to retrieve the links between assets in the knowledge graph, returning only the
+     * asset IDs as per {@link org.integratedmodelling.klab.api.data.KnowledgeGraph.LinkInfo}.
+     */
+    String RETRIEVE_KNOWLEDGE_GRAPH_LINKS = "/links";
+
+    /**
      * POST or GET endpoint for visualization of a URN, including the "adapter" identifier and the
      * URN of the visualized asset. GET will return the full visualization with the standard
      * geometry and options. POST will enable specifying different options and geometry.
