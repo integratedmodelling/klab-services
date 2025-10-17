@@ -157,7 +157,26 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
     addAsset(focus, depth, ret);
     compresent.forEach(asset -> addAsset(asset, depth, ret));
-    while (hasMultipleRoots(ret)) {}
+    if (hasMultipleRoots(ret)) {
+      var set = new HashSet<RuntimeAsset>();
+      set.add(focus);
+      set.addAll(compresent);
+      var paths =
+          Utils.Graphs.findPathsToCommonAncestor(
+              set.stream().map(RuntimeAsset::getId).toList(),
+              childId ->
+                  graph.incomingEdgesOf(childId).stream()
+                      .filter(e -> e.relationship == GraphModel.Relationship.HAS_CHILD)
+                      .findAny()
+                      .map(r -> r.sourceId)
+                      .orElse(null));
+      for (var path : paths) {
+        for (var asset :
+            path.stream().map(id -> getAsset(id, scope, RuntimeAsset.class)).toList()) {
+          System.out.println("DIOCAN");
+        }
+      }
+    }
 
     return ret;
   }
@@ -165,7 +184,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private void addAsset(RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
     ret.addVertex(focus);
     if (depth > 0) {
-      for (var others : getChildren(focus)) {
+      for (var others : getChildren(focus)) { // NO OSTIA use links with the admitted rels
         addAsset(others.getFirst(), depth - 1, ret);
         ret.addEdge(focus, others.getFirst(), others.getSecond());
       }
