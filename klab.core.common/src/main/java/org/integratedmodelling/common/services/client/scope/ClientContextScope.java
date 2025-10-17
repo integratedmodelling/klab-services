@@ -152,24 +152,39 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public RuntimeAsset getParentOf(RuntimeAsset observation) {
-    var ret =
-        digitalTwin
-            .getKnowledgeGraph()
-            .query(RuntimeAsset.class, this)
-            .target(observation)
-            .along(GraphModel.Relationship.HAS_CHILD)
-            .run(this);
-    return ret.isEmpty() ? null : ret.getFirst();
+    if (observation.getParentId() > 0) {
+      return digitalTwin
+          .getKnowledgeGraph()
+          .getAsset(observation.getParentId(), this, RuntimeAsset.class);
+    }
+    return digitalTwin
+        .getKnowledgeGraph()
+        .getLinks(
+            observation,
+            GraphModel.Relationship.Direction.INCOMING,
+            this,
+            GraphModel.Relationship.HAS_CHILD)
+        .stream()
+        .map(KnowledgeGraph.Link::source)
+        .findAny()
+        .orElse(null);
   }
 
   @Override
-  public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
-    return getDigitalTwin()
+  public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset) {
+
+    // TODO use the client graph if the children # is the same as the existing relationships
+
+    return digitalTwin
         .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .source(observation)
-        .along(GraphModel.Relationship.HAS_CHILD)
-        .run(this);
+        .getLinks(
+            asset,
+            GraphModel.Relationship.Direction.OUTGOING,
+            this,
+            GraphModel.Relationship.HAS_CHILD)
+        .stream()
+        .map(KnowledgeGraph.Link::target)
+        .toList();
   }
 
   @Override

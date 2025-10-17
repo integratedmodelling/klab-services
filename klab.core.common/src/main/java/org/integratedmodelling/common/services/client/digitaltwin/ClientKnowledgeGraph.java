@@ -398,6 +398,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       GraphModel.Relationship.Direction direction,
       ContextScope scope,
       GraphModel.Relationship... relationship) {
+
     return runtimeClient.getLinkInfo(asset, direction, scope, relationship).stream()
         .map(
             info -> {
