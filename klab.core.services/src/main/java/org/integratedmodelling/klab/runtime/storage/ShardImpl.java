@@ -16,22 +16,31 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
 
-/** Base buffer provides the histogram and the geometry indexing/merging */
-public class ShardImpl /*extends CursorImpl*/ implements Storage.Shard {
+/**
+ * Base buffer provides the histogram and the geometry indexing/merging.
+ *
+ * <p>FIXME this ends up in the knowledge graph but it's not serializable, so it will create
+ * problems at client side. Must externalize the data buffers and all non-serializable information
+ * to the StorageManager. This class should keep the serialized k.LAB histogram and the raw geometry
+ * while the storage manager must manage the data buffer and true histogram and keep a reference
+ * (also serializable) to its URN. The SM must also have low-priority threads to maintain and
+ * restore the buffers as persistent storage when the persistence strategy requires it.
+ */
+public class ShardImpl implements Storage.Shard {
 
   private final Persistence persistence;
   private final Data.ShardingStrategy shardingStrategy;
   private final int shardIndex;
   private final long timestamp;
-  private final Geometry geometry;
+  private final Geometry geometry; // TODO must be a real Geometry, not a scale
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
-  private final StorageManagerImpl storage;
-  protected com.dynatrace.dynahist.Histogram histogram;
+  private final StorageManagerImpl storage; // TODO remove
+  protected com.dynatrace.dynahist.Histogram histogram; // TODO nah
   private long transientId = Klab.getNextId();
-  private long parentTransientId;
-  private final BufferArray data;
-  private long parentId = -1;
+  private long parentTransientId; // manage
+  private final BufferArray data; // TODO remove
+  private long parentId = -1; // TODO manage
 
   /**
    * @param geometry

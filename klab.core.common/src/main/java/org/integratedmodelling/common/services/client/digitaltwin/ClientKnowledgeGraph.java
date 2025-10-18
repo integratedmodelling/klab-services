@@ -154,9 +154,20 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       Collection<GraphModel.Relationship> acceptedRelationships,
       Collection<RuntimeAsset> compresent) {
 
+    /// NO - logic is:
+    ///
+    /// 1. pass only one arg with all the compresent;
+    /// 2. set focus to first, actualDepth to depth;
+    /// 3. if arg.size() > 1, call graph common ancestor function; set actualDepth actual depth +
+    ///    CA.maxPathLength; set focus to CA.commonAncestor; walk the paths upwards in the graph
+    /// adding inverse HAS_CHILD relationships until the focus is reached;
+    /// 4. Then create new graph result and follow the graph from focus, retrieving the assets with
+    /// the desired relationships to the desired depth.
+    ///    Mind the relationship direction and the number of children, which may have changed.
+
     Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
-    addAsset(focus, depth, ret);
-    compresent.forEach(asset -> addAsset(asset, depth, ret));
+    addAsset(focus, depth, ret, acceptedRelationships);
+    compresent.forEach(asset -> addAsset(asset, depth, ret, acceptedRelationships));
     if (hasMultipleRoots(ret)) {
       var set = new HashSet<RuntimeAsset>();
       set.add(focus);
@@ -181,29 +192,26 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return ret;
   }
 
-  private void addAsset(RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
+  private void addAsset(
+      RuntimeAsset focus,
+      int depth,
+      Graph<RuntimeAsset, Relationship> ret,
+      Collection<GraphModel.Relationship> acceptedRelationships) {
     ret.addVertex(focus);
     if (depth > 0) {
-      for (var others : getChildren(focus)) { // NO OSTIA use links with the admitted rels
-        addAsset(others.getFirst(), depth - 1, ret);
-        ret.addEdge(focus, others.getFirst(), others.getSecond());
+      for (var others :
+          getLinks(
+              focus,
+              GraphModel.Relationship.Direction.OUTGOING,
+              scope)) { // NO OSTIA use links with the admitted rels
+        addAsset(others.target(), depth - 1, ret, acceptedRelationships);
+        ret.addEdge(focus, others.source(), new Relationship(others));
       }
     }
   }
 
   private boolean hasMultipleRoots(Graph<RuntimeAsset, Relationship> graph) {
     return graph.vertexSet().stream().filter(v -> graph.inDegreeOf(v) == 0).count() > 1;
-  }
-
-  /**
-   * Return children and relationships for the passed asset, using only the configured types and
-   * relationship types.
-   *
-   * @param asset
-   * @return
-   */
-  List<Pair<RuntimeAsset, Relationship>> getChildren(RuntimeAsset asset) {
-    return List.of();
   }
 
   /**

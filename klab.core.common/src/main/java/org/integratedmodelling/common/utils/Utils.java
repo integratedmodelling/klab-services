@@ -347,6 +347,106 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return paths;
     }
 
+    public static class CommonAncestry<T> {
+
+      private final T commonAncestor;
+      private final List<List<T>> paths;
+      private final int maxDistance;
+
+      public CommonAncestry(T commonAncestor, List<List<T>> paths, int maxDistance) {
+        this.commonAncestor = commonAncestor;
+        this.paths = paths;
+        this.maxDistance = maxDistance;
+      }
+
+      public T getCommonAncestor() {
+        return commonAncestor;
+      }
+
+      public List<List<T>> getPaths() {
+        return paths;
+      }
+
+      public int getMaxDistance() {
+        return maxDistance;
+      }
+
+      @Override
+      public String toString() {
+        return "CommonAncestry{" +
+            "commonAncestor=" + commonAncestor +
+            ", maxDistance=" + maxDistance +
+            ", paths=" + paths +
+            '}';
+      }
+    }
+
+    public static <T> CommonAncestry<T> findCommonAncestry(
+        List<T> graphNodes, Function<T, T> parentFinder) {
+      // Validate inputs
+      if (graphNodes == null || graphNodes.isEmpty()) {
+        return new CommonAncestry<>(null, java.util.Collections.emptyList(), 0);
+      }
+      if (parentFinder == null) {
+        throw new IllegalArgumentException("parentFinder must not be null");
+      }
+
+      // Find lowest common ancestor (LCA) among all nodes using only parentFinder
+      T commonAncestor = graphNodes.get(0);
+      // For nodes beyond the first, refine the common ancestor
+      for (int i = 1; i < graphNodes.size(); i++) {
+        T node = graphNodes.get(i);
+        // Build ancestor set (including the node itself) for current node
+        Set<T> ancestors = new HashSet<>();
+        T cur = node;
+        while (cur != null && !ancestors.contains(cur)) {
+          ancestors.add(cur);
+          cur = parentFinder.apply(cur);
+        }
+        // Move up from current commonAncestor until it is in ancestors
+        T walker = commonAncestor;
+        // Protect against cycles by tracking visited during this ascent
+        Set<T> visited = new HashSet<>();
+        while (walker != null && !ancestors.contains(walker)) {
+          if (!visited.add(walker)) {
+            // cycle detected; should not happen if a common ancestor exists
+            throw new IllegalStateException("Cycle detected while searching for common ancestor");
+          }
+          walker = parentFinder.apply(walker);
+        }
+        if (walker == null) {
+          throw new IllegalStateException("No common ancestor found (unexpected)");
+        }
+        commonAncestor = walker;
+      }
+
+      // Build per-node paths from each node up to (but excluding) the common ancestor
+      List<List<T>> paths = new ArrayList<>(graphNodes.size());
+      int maxDistance = 0;
+      for (T start : graphNodes) {
+        List<T> path = new ArrayList<>();
+        T cur = start;
+        Set<T> visited = new HashSet<>();
+        while (cur != null && !Objects.equals(cur, commonAncestor)) {
+          if (!visited.add(cur)) {
+            throw new IllegalStateException(
+                "Cycle detected while building path to common ancestor");
+          }
+          path.add(cur);
+          cur = parentFinder.apply(cur);
+        }
+        if (cur == null && !Objects.equals(start, commonAncestor)) {
+          throw new IllegalStateException("Broken hierarchy: reached null before common ancestor");
+        }
+        paths.add(path);
+        if (path.size() > maxDistance) {
+          maxDistance = path.size();
+        }
+      }
+
+      return new CommonAncestry<>(commonAncestor, paths, maxDistance);
+    }
+
     public enum Layout {
       HIERARCHICAL,
       RADIALTREE,

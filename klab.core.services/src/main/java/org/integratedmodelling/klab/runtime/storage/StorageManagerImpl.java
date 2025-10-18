@@ -187,10 +187,17 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage createStorage(
-      Observation observation, Data.ShardingStrategy shardingStrategy) {
+  public Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
     return this.storage.computeIfAbsent(
-        observation, urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));
+        observation, urn -> createShard(observation, shardingStrategy, contextScope));
+  }
+
+  private Storage createShard(
+      Observation observation,
+      Data.ShardingStrategy shardingStrategy,
+      ServiceContextScope contextScope) {
+    // TODO set up a persistable peer object for the shard and expose it into the maintenance thread
+    return new StorageImpl(observation, shardingStrategy, contextScope, this);
   }
 
   @Override

@@ -143,8 +143,9 @@ public class JacksonConfiguration {
           ret = interfaceClass.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException ex) {
 
-          // TODO if this persists, we could build the object here after registering the
-          //  implementation and populate it using the object mapper
+          // This error seems gone.
+          // if this persists, we could build the object here after registering the
+          // implementation and populate it using the object mapper
 
           Logging.INSTANCE.error(
               "Class loading problem with "
@@ -346,6 +347,7 @@ public class JacksonConfiguration {
           Actuator.class,
           KnowledgeGraph.Commit.class,
           Adapter.class,
+          KnowledgeGraph.LinkInfo.class,
           Adapter.Parameter.class,
           Notification.LexicalContext.class,
           ResolutionConstraint.class,
