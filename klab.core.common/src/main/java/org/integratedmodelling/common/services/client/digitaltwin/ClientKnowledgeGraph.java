@@ -225,24 +225,25 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    */
   public List<RuntimeAsset> getChildAssets(RuntimeAsset asset) {
     var children = outgoing(asset, GraphModel.Relationship.HAS_CHILD);
-    if (asset instanceof Observation && asset.getChildrenCount() != children.size()) {
-      var toRemove =
-          graph.outgoingEdgesOf(asset.getId()).stream()
-              .filter(e -> e.relationship == GraphModel.Relationship.HAS_CHILD)
-              .toList();
-      graph.removeAllEdges(toRemove);
-      children = new ArrayList<>();
-      for (var child : scope.getChildrenOf(asset)) {
-        assetCache.put(child.getId(), child);
-        graph.addVertex(child.getId());
-        graph.addEdge(
-            asset.getId(),
-            child.getId(),
-            new Relationship(
-                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
-        children.add(child);
-      }
-    }
+    // TODO revise
+//    if (asset instanceof Observation && asset.getChildrenCount() != children.size()) {
+//      var toRemove =
+//          graph.outgoingEdgesOf(asset.getId()).stream()
+//              .filter(e -> e.relationship == GraphModel.Relationship.HAS_CHILD)
+//              .toList();
+//      graph.removeAllEdges(toRemove);
+//      children = new ArrayList<>();
+//      for (var child : scope.getChildrenOf(asset)) {
+//        assetCache.put(child.getId(), child);
+//        graph.addVertex(child.getId());
+//        graph.addEdge(
+//            asset.getId(),
+//            child.getId(),
+//            new Relationship(
+//                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
+//        children.add(child);
+//      }
+//    }
     return children;
   }
 
