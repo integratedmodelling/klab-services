@@ -374,8 +374,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   "code",
                   "planet",
                   "environment",
+                  "chicken",
+                  "blasphemy",
+                  "enema",
                   "pain",
                   "knowledge",
+                  "wisdom",
                   "suffering",
                   "sausage",
                   "cucumber"));

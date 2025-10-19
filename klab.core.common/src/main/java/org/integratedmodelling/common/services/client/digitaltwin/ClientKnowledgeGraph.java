@@ -175,7 +175,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       actualDepth += tca.getMaxDistance();
     }
 
-    getChildHierarchy(focalAsset, actualDepth, ret);
+    ret.addVertex(focalAsset);
+    addChildren(focalAsset, actualDepth, ret);
 
     // add the non-recursive relationships at depth 1
     EnumSet<GraphModel.Relationship> nonRecursive = EnumSet.copyOf(acceptedRelationships);
@@ -195,21 +196,18 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return ret;
   }
 
-  private RuntimeAsset getChildHierarchy(
-      RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
-    ret.addVertex(focus);
+  private void addChildren(RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
     if (depth > 0) {
-      for (var link :
-          getLinks(
-              focus,
-              GraphModel.Relationship.Direction.OUTGOING,
-              scope,
-              GraphModel.Relationship.HAS_CHILD)) {
-        getChildHierarchy(link.target(), depth - 1, ret);
-        ret.addEdge(focus, link.source(), new Relationship(link));
+      for (var child : getChildAssets(focus)) {
+        ret.addVertex(child);
+        ret.addEdge(
+            focus,
+            child,
+            new Relationship(
+                GraphModel.Relationship.HAS_CHILD, focus.getId(), child.getId(), Map.of()));
+        addChildren(child, depth - 1, ret);
       }
     }
-    return focus;
   }
 
   private boolean hasMultipleRoots(Graph<RuntimeAsset, Relationship> graph) {
@@ -282,7 +280,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     var asset = assetCache.getIfPresent(target.getId());
     return graph.incomingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> assetCache.getIfPresent(graph.getEdgeSource(defaultEdge)))
+        .map(defaultEdge -> getAsset(graph.getEdgeSource(defaultEdge), scope, RuntimeAsset.class))
         .toList();
   }
 
@@ -343,7 +341,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     var asset = assetCache.getIfPresent(source.getId());
     return graph.outgoingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> assetCache.getIfPresent(graph.getEdgeTarget(defaultEdge)))
+        .map(defaultEdge -> getAsset(graph.getEdgeTarget(defaultEdge), scope, RuntimeAsset.class))
         .toList();
   }
 
