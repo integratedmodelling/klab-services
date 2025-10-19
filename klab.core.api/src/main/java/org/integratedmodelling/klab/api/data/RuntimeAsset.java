@@ -23,6 +23,10 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  */
 public interface RuntimeAsset {
 
+  long CONTEXT_ASSET_ID = -1000;
+  long PROVENANCE_ASSET_ID = -1001;
+  long DATAFLOW_ASSET_ID = -1002;
+
   ContextAsset CONTEXT_ASSET = new ContextAsset();
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();

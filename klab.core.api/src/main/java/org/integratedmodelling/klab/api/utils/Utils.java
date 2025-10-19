@@ -3786,9 +3786,7 @@ public class Utils {
    *
    * @author Ferdinando Villa, Ecoinformatics Collaboratory, UVM
    */
-  public class Names {
-
-    static long index = 0;
+  public static class Names {
 
     public static String newName() {
       return "_uu_" + System.nanoTime();
@@ -4682,7 +4680,6 @@ public class Utils {
       throwable.printStackTrace(new PrintWriter(sw));
       return sw.toString();
     }
-
   }
 
   public static class URLs {

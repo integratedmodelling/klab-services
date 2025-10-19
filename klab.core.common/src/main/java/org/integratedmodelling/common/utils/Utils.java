@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.uuid.Generators;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -55,15 +56,12 @@ import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -373,11 +371,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       @Override
       public String toString() {
-        return "CommonAncestry{" +
-            "commonAncestor=" + commonAncestor +
-            ", maxDistance=" + maxDistance +
-            ", paths=" + paths +
-            '}';
+        return "CommonAncestry{"
+            + "commonAncestor="
+            + commonAncestor
+            + ", maxDistance="
+            + maxDistance
+            + ", paths="
+            + paths
+            + '}';
       }
     }
 
@@ -2453,6 +2454,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   }
 
   public static class Markdown {}
+
+  public static class Names extends org.integratedmodelling.klab.api.utils.Utils.Names {
+
+    public static String fastName() {
+      return Generators.timeBasedEpochGenerator().generate().toString();
+    }
+  }
 
   public static class Maps {
 

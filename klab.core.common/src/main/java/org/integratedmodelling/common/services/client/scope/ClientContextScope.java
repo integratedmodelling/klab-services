@@ -152,11 +152,24 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public RuntimeAsset getParentOf(RuntimeAsset observation) {
+
+    if (observation.getParentId() <= 1000) {
+      // switching on long would be so much better
+      return observation.getParentId() == RuntimeAsset.CONTEXT_ASSET_ID
+          ? RuntimeAsset.CONTEXT_ASSET
+          : (observation.getParentId() == RuntimeAsset.PROVENANCE_ASSET_ID
+              ? RuntimeAsset.PROVENANCE_ASSET
+              : RuntimeAsset.DATAFLOW_ASSET);
+    }
+
     if (observation.getParentId() > 0) {
       return digitalTwin
           .getKnowledgeGraph()
           .getAsset(observation.getParentId(), this, RuntimeAsset.class);
     }
+
+    // FIXME this only happens with parentId == -1, which is probably an error. Observations
+    //  that are being resolved should never be in the client-side KG.
     return digitalTwin
         .getKnowledgeGraph()
         .getLinks(

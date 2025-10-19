@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -42,4 +44,8 @@ public interface Histogram extends Serializable {
   double getMissingCount();
 
   List<Bin> getBins();
+
+  public static Histogram empty() {
+    return new HistogramImpl();
+  }
 }

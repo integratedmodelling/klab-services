@@ -144,15 +144,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    * @param depth
    * @param acceptedTypes
    * @param acceptedRelationships
-   * @param compresent
-   * @return
+   * @return the graph with the desired options
    */
   public Graph<RuntimeAsset, Relationship> getSubgraph(
-      RuntimeAsset focus,
+      List<RuntimeAsset> focus,
       int depth,
       Collection<RuntimeAsset.Type> acceptedTypes,
-      Collection<GraphModel.Relationship> acceptedRelationships,
-      Collection<RuntimeAsset> compresent) {
+      Collection<GraphModel.Relationship> acceptedRelationships) {
 
     /// NO - logic is:
     ///
@@ -166,28 +164,17 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     ///    Mind the relationship direction and the number of children, which may have changed.
 
     Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
-    addAsset(focus, depth, ret, acceptedRelationships);
-    compresent.forEach(asset -> addAsset(asset, depth, ret, acceptedRelationships));
-    if (hasMultipleRoots(ret)) {
-      var set = new HashSet<RuntimeAsset>();
-      set.add(focus);
-      set.addAll(compresent);
-      var paths =
-          Utils.Graphs.findPathsToCommonAncestor(
-              set.stream().map(RuntimeAsset::getId).toList(),
-              childId ->
-                  graph.incomingEdgesOf(childId).stream()
-                      .filter(e -> e.relationship == GraphModel.Relationship.HAS_CHILD)
-                      .findAny()
-                      .map(r -> r.sourceId)
-                      .orElse(null));
-      for (var path : paths) {
-        for (var asset :
-            path.stream().map(id -> getAsset(id, scope, RuntimeAsset.class)).toList()) {
-          System.out.println("DIOCAN");
-        }
-      }
+
+    var focalAsset = focus.iterator().next();
+    var actualDepth = depth;
+
+    if (focus.size() > 1) {
+      var tca = Utils.Graphs.findCommonAncestry(focus, scope::getParentOf);
+      focalAsset = tca.getCommonAncestor();
+      actualDepth += tca.getMaxDistance();
     }
+
+    addAsset(focalAsset, actualDepth, ret, acceptedRelationships);
 
     return ret;
   }

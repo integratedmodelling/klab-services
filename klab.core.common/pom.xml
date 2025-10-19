@@ -51,6 +51,13 @@
     </properties>
     <dependencies>
 
+        <!-- must use these instead of Java's native shite -->
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
         <!-- media type/file extensions and file introspection -->
         <dependency>
             <groupId>org.apache.tika</groupId>
@@ -72,7 +79,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>

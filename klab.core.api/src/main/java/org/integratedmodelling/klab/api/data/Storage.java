@@ -171,8 +171,6 @@ public interface Storage {
      * @return
      */
     Histogram getHistogram();
-
-    Scanner getNativeScanner();
   }
 
   /**
@@ -185,6 +183,8 @@ public interface Storage {
    * @return a list of buffers, possibly empty.
    */
   List<Shard> getNativeShards(Scheduler.Event event);
+
+  Scanner getNativeScanner(Shard shard);
 
   /**
    * Create or retrieve scanners for the observation we represent, honoring any requests in terms of

@@ -356,6 +356,19 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
   public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
 
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
+
+      /*
+       * TO ADAPT TO FIXED BIN NUMBER (slow, only use once in low-priority thread):
+       *
+       * double[] boundaries = {0.0, 1.0, 2.0, ..., 10.0}; // Example boundaries for 10 bins (11 values)
+       * HistogramLayout layout = new CustomLayout(boundaries);
+       * Histogram histogram = new DynamicHistogram.Builder().layout(layout).create();
+       */
+
+      if (histogram.getMax() <= histogram.getMin()) {
+        return Histogram.empty();
+      }
+
       var ret = new HistogramImpl();
       ret.setMin(histogram.getMin());
       ret.setMax(histogram.getMax());

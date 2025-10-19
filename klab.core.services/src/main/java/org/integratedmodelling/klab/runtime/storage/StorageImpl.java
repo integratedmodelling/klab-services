@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import com.dynatrace.dynahist.layout.Layout;
+import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
+import org.glassfish.grizzly.compression.lzma.impl.Base;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
@@ -17,11 +17,13 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.ojalgo.array.BufferArray;
 
 public class StorageImpl implements Storage {
 
@@ -60,6 +62,33 @@ public class StorageImpl implements Storage {
     }
   }
 
+  class ShardStorage {
+    private final Shard shard;
+    private final StorageManagerImpl storage;
+    private final com.dynatrace.dynahist.Histogram histogram;
+    private final BufferArray data;
+
+    ShardStorage(Shard shard, StorageManagerImpl storage) {
+      this.shard = shard;
+      this.storage = storage;
+      this.histogram =
+          storage.isRecordHistogram()
+              ? com.dynatrace.dynahist.Histogram.createDynamic(
+                  histogramLayout(observation.getObservable()))
+              : null;
+      this.data =
+          switch (shard.getShardingStrategy().getDataType()) {
+            case DOUBLE -> storage.getDoubleBuffer(shard.getGeometry().size());
+            case FLOAT -> storage.getFloatBuffer(shard.getGeometry().size());
+            // TODO use size/int32.size for booleans and adapt the scanners
+            case INTEGER, KEYED, BOOLEAN -> storage.getIntBuffer(shard.getGeometry().size());
+            case LONG -> storage.getLongBuffer(shard.getGeometry().size());
+          };
+    }
+  }
+
+  private Map<String, ShardStorage> shardStorage = new HashMap<>();
+
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
    * linear indexing and come from the scheduler event that serves as an index.
@@ -71,6 +100,8 @@ public class StorageImpl implements Storage {
    * strategy, which determines the specific native type for numeric observations, and all options
    * related to storage and distribution. Shards are created upon first access and reinterpreted
    * according to the requesting sharding strategy.
+   *
+   * <p>TODO this must have a persistence strategy
    *
    * @param observation
    * @param contextScope
@@ -176,8 +207,9 @@ public class StorageImpl implements Storage {
               nativeShardingStrategy,
               index++,
               timeStart,
-              storageManager,
               scope.getConfiguration().getPersistence());
+
+      shardStorage.put(shard.getUrn(), new ShardStorage(shard, storageManager));
 
       shards.add(shard);
     }
@@ -192,12 +224,26 @@ public class StorageImpl implements Storage {
       Class<T> scannerClass,
       boolean readOnly) {
     if (this.nativeShardingStrategy.equals(shardingStrategy)) {
-      return getNativeShards(locator).stream().map(shard -> (T) shard.getNativeScanner()).toList();
+      return getNativeShards(locator).stream().map(shard -> (T) getNativeScanner(shard)).toList();
     }
     return remapScanners(
-        getNativeShards(locator).stream().map(shard -> shard.getNativeScanner()).toList(),
+        getNativeShards(locator).stream().map(shard -> getNativeScanner(shard)).toList(),
         shardingStrategy,
         scannerClass);
+  }
+
+  @Override
+  public Storage.Scanner getNativeScanner(Shard shard) {
+
+    var st = shardStorage.get(((ShardImpl) shard).getUrn());
+
+    return switch (shard.getShardingStrategy().getDataType()) {
+      case DOUBLE -> new LocalDoubleScanner(shard, st.data, st.histogram);
+      case FLOAT -> new LocalFloatScanner(shard, st.data, st.histogram);
+      case INTEGER, KEYED, BOOLEAN ->
+          new LocalIntScanner(shard, st.data, st.histogram); // TODO needs to implement KEYED
+      case LONG -> new LocalLongScanner(shard, st.data, st.histogram);
+    };
   }
 
   /**
@@ -228,19 +274,25 @@ public class StorageImpl implements Storage {
     return ret;
   }
 
+  private Layout histogramLayout(Observable observable) {
+    // TODO use sensible types and values for the observable
+    return OpenTelemetryExponentialBucketsLayout.create(10);
+  }
+
   public com.dynatrace.dynahist.Histogram histogram() {
 
     var allBuffers = allShards();
     if (allBuffers.size() == 1) {
-      return ((ShardImpl) allBuffers.getFirst()).histogram;
+      ;
+      return shardStorage.get(((ShardImpl) allBuffers.getFirst()).getUrn()).histogram;
     } else if (allBuffers.size() > 1) {
       com.dynatrace.dynahist.Histogram ret = null;
-      var first = ((ShardImpl) allBuffers.getFirst()).histogram;
+      var first = shardStorage.get(((ShardImpl) allBuffers.getFirst()).getUrn()).histogram;
       if (first != null) {
         ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
         for (var buffer : allBuffers) {
-          if (((ShardImpl) buffer).histogram != null) {
-            ret.addHistogram(((ShardImpl) buffer).histogram);
+          if (shardStorage.get(((ShardImpl) buffer).getUrn()).histogram != null) {
+            ret.addHistogram(shardStorage.get(((ShardImpl) buffer).getUrn()).histogram);
           }
         }
       }
@@ -265,6 +317,147 @@ public class StorageImpl implements Storage {
     var original = Geometry.create(Geometries.CENTRAL_COLOMBIA);
     for (var g : s.getGeometries(original, -1, 65600, Long.MAX_VALUE)) {
       System.out.println(g);
+    }
+  }
+
+  class BaseScanner implements Storage.Scanner {
+
+    protected final Shard shard;
+    protected final long size;
+    protected final BufferArray data;
+    protected final com.dynatrace.dynahist.Histogram histogram;
+    protected long index = 0L;
+
+    public BaseScanner(Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+      this.shard = shard;
+      this.size = shard.getGeometry().size();
+      this.data = data;
+      this.histogram = histogram;
+    }
+
+    @Override
+    public Storage.Shard shard() {
+      return shard;
+    }
+
+    @Override
+    public long size() {
+      return size;
+    }
+
+    @Override
+    public long nextLong() {
+      return index++;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return index < size;
+    }
+  }
+
+  /* TODO handle the histogram */
+  class LocalDoubleScanner extends BaseScanner implements Storage.DoubleScanner {
+
+    public LocalDoubleScanner(
+        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+      super(shard, data, histogram);
+    }
+
+    @Override
+    public double get() {
+      return data.get(index++);
+    }
+
+    @Override
+    public double peek() {
+      return data.get(index);
+    }
+
+    @Override
+    public void add(double value) {
+      if (histogram != null) {
+        histogram.addValue(value);
+      }
+      data.set(index++, value);
+    }
+  }
+
+  class LocalFloatScanner extends BaseScanner implements Storage.FloatScanner {
+
+    public LocalFloatScanner(
+        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+      super(shard, data, histogram);
+    }
+
+    @Override
+    public float get() {
+      return data.get(index++).floatValue();
+    }
+
+    @Override
+    public float peek() {
+      return data.get(index).floatValue();
+    }
+
+    @Override
+    public void add(float value) {
+      if (histogram != null) {
+        histogram.addValue(value);
+      }
+      data.set(index++, value);
+    }
+  }
+
+  class LocalIntScanner extends BaseScanner implements Storage.IntScanner {
+
+    public LocalIntScanner(
+        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+      super(shard, data, histogram);
+    }
+
+    @Override
+    public int get() {
+      return data.get(index++).intValue();
+    }
+
+    @Override
+    public int peek() {
+      return data.get(index).intValue();
+    }
+
+    @Override
+    public void add(int value) {
+      if (histogram != null) {
+        histogram.addValue(value);
+      }
+      data.set(index++, value);
+    }
+  }
+
+  class LocalLongScanner extends BaseScanner implements Storage.LongScanner {
+
+    public LocalLongScanner(
+        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+      super(shard, data, histogram);
+    }
+
+    @Override
+    public long get() {
+      return data.get(index++).longValue();
+    }
+
+    @Override
+    public long peek() {
+      return data.get(index).longValue();
+    }
+
+    @Override
+    public void add(long value) {
+      if (histogram != null) {
+        histogram.addValue(value);
+      }
+      data.set(index++, value);
     }
   }
 }
