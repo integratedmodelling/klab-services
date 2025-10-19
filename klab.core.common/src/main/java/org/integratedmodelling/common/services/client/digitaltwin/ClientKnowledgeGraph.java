@@ -25,7 +25,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.view.modeler.panels.KnowledgeEditor;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -56,7 +55,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   private final ContextScope scope;
   private final RuntimeClient runtimeClient;
-  private Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
+  private final Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from engine settings */ 500)
@@ -102,25 +101,27 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, String.class);
       var commit = runtimeClient.getCommit(commitId, scope);
       if (commit != null) {
-        /** Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
-        commit.getAddedAssets().forEach(assetId -> graph.addVertex(assetId));
 
-        for (var link : commit.getAddedLinks()) {
-          graph.addVertex(link.getFirst());
-          graph.addVertex(link.getSecond());
-          graph.addEdge(
-              link.getFirst(),
-              link.getSecond(),
-              new Relationship(
-                  GraphModel.Relationship.valueOf(link.getThird()),
-                  link.getFirst(),
-                  link.getSecond(),
-                  Map.of("commit", commit.getId())));
-          if (!commit.getAddedObservations().contains(link.getFirst())
-              && commit.getAddedObservations().contains(link.getSecond())
-              && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
-            // this isn't linked to the observation, record it for the UI
-            focusIds.add(link.getSecond());
+        synchronized (graph) {
+          /* Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
+          commit.getAddedAssets().forEach(graph::addVertex);
+          for (var link : commit.getAddedLinks()) {
+            graph.addVertex(link.getFirst());
+            graph.addVertex(link.getSecond());
+            graph.addEdge(
+                link.getFirst(),
+                link.getSecond(),
+                new Relationship(
+                    GraphModel.Relationship.valueOf(link.getThird()),
+                    link.getFirst(),
+                    link.getSecond(),
+                    Map.of("commit", commit.getId())));
+            if (!commit.getAddedObservations().contains(link.getFirst())
+                && commit.getAddedObservations().contains(link.getSecond())
+                && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
+              // this isn't linked to the observation, record it for the UI
+              focusIds.add(link.getSecond());
+            }
           }
         }
       }
@@ -174,27 +175,41 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       actualDepth += tca.getMaxDistance();
     }
 
-    addAsset(focalAsset, actualDepth, ret, acceptedRelationships);
+    getChildHierarchy(focalAsset, actualDepth, ret);
+
+    // add the non-recursive relationships at depth 1
+    EnumSet<GraphModel.Relationship> nonRecursive = EnumSet.copyOf(acceptedRelationships);
+    nonRecursive.remove(GraphModel.Relationship.HAS_CHILD);
+    for (var relationship : nonRecursive) {
+      for (var asset : ret.vertexSet()) {
+        for (var link : getLinks(asset, relationship.direction(), scope, relationship)) {
+          ret.addVertex(
+              relationship.direction() == GraphModel.Relationship.Direction.OUTGOING
+                  ? link.target()
+                  : link.source());
+          ret.addEdge(link.source(), link.target(), new Relationship(link));
+        }
+      }
+    }
 
     return ret;
   }
 
-  private void addAsset(
-      RuntimeAsset focus,
-      int depth,
-      Graph<RuntimeAsset, Relationship> ret,
-      Collection<GraphModel.Relationship> acceptedRelationships) {
+  private RuntimeAsset getChildHierarchy(
+      RuntimeAsset focus, int depth, Graph<RuntimeAsset, Relationship> ret) {
     ret.addVertex(focus);
     if (depth > 0) {
-      for (var others :
+      for (var link :
           getLinks(
               focus,
               GraphModel.Relationship.Direction.OUTGOING,
-              scope)) { // NO OSTIA use links with the admitted rels
-        addAsset(others.target(), depth - 1, ret, acceptedRelationships);
-        ret.addEdge(focus, others.source(), new Relationship(others));
+              scope,
+              GraphModel.Relationship.HAS_CHILD)) {
+        getChildHierarchy(link.target(), depth - 1, ret);
+        ret.addEdge(focus, link.source(), new Relationship(link));
       }
     }
+    return focus;
   }
 
   private boolean hasMultipleRoots(Graph<RuntimeAsset, Relationship> graph) {
@@ -394,17 +409,66 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       ContextScope scope,
       GraphModel.Relationship... relationship) {
 
-    return runtimeClient.getLinkInfo(asset, direction, scope, relationship).stream()
-        .map(
-            info -> {
-              var ret = new LinkImpl();
-              ret.setSource(getAsset(info.getSourceId(), scope, RuntimeAsset.class));
-              ret.setTarget(getAsset(info.getTargetId(), scope, RuntimeAsset.class));
-              ret.setRelationship(info.getType());
-              ret.setProperties(info.getProperties());
-              return (Link) ret;
-            })
-        .toList();
+    if (relationship == null || relationship.length == 0) {
+      return List.of();
+    }
+
+    // fffff
+    var ret = new ArrayList<Link>();
+    var out =
+        Arrays.stream(relationship)
+            .filter(r -> r.direction() == GraphModel.Relationship.Direction.OUTGOING)
+            .toList();
+    EnumSet<GraphModel.Relationship> outgoing =
+        out.isEmpty() ? EnumSet.noneOf(GraphModel.Relationship.class) : EnumSet.copyOf(out);
+    var in =
+        Arrays.stream(relationship)
+            .filter(r -> r.direction() == GraphModel.Relationship.Direction.INCOMING)
+            .toList();
+    EnumSet<GraphModel.Relationship> incoming =
+        in.isEmpty() ? EnumSet.noneOf(GraphModel.Relationship.class) : EnumSet.copyOf(in);
+
+    synchronized (graph) {
+      if (!outgoing.isEmpty()) {
+        for (var rel : graph.outgoingEdgesOf(asset.getId())) {
+          if (outgoing.contains(rel.relationship)) {
+            var l = new LinkImpl();
+            l.setSource(getAsset(rel.sourceId, scope, RuntimeAsset.class));
+            l.setTarget(getAsset(rel.targetId, scope, RuntimeAsset.class));
+            l.setRelationship(rel.relationship);
+            l.getProperties().putAll(rel.metadata);
+            ret.add(l);
+          }
+        }
+      }
+
+      if (!incoming.isEmpty()) {
+        for (var rel : graph.incomingEdgesOf(asset.getId())) {
+          if (incoming.contains(rel.relationship)) {
+            var l = new LinkImpl();
+            l.setSource(getAsset(rel.sourceId, scope, RuntimeAsset.class));
+            l.setTarget(getAsset(rel.targetId, scope, RuntimeAsset.class));
+            l.setRelationship(rel.relationship);
+            l.getProperties().putAll(rel.metadata);
+            ret.add(l);
+          }
+        }
+      }
+    }
+
+    return ret;
+    // TODO should we do this? Or just use the graph we have collected so far?
+    //    return runtimeClient.getLinkInfo(asset, direction, scope, relationship).stream()
+    //        .map(
+    //            info -> {
+    //              var ret = new LinkImpl();
+    //              ret.setSource(getAsset(info.getSourceId(), scope, RuntimeAsset.class));
+    //              ret.setTarget(getAsset(info.getTargetId(), scope, RuntimeAsset.class));
+    //              ret.setRelationship(info.getType());
+    //              ret.setProperties(info.getProperties());
+    //              return (Link) ret;
+    //            })
+    //        .toList();
   }
 
   @Override

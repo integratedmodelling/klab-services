@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -99,18 +97,15 @@ public interface GraphModel {
    * defined.
    */
   enum Relationship {
-    HAS_PARENT,
     AFFECTS,
     CONTEXTUALIZED_BY,
     CONTEXTUALIZED,
     EMERGED_FROM,
     HAS_OBSERVER,
-    HAS_SIBLING,
     HAS_RELATIONSHIP_TARGET,
     HAS_PLAN,
     BY_AGENT,
     HAS_GEOMETRY,
-    HAS_COVERAGE,
     CREATED,
     HAS_DATAFLOW,
     HAS_PROVENANCE,
@@ -125,8 +120,11 @@ public interface GraphModel {
       OUTGOING
     }
 
+    public static final Set<Relationship> PASSIVE_RELATIONSHIPS =
+        EnumSet.of(CONTEXTUALIZED_BY, EMERGED_FROM, AFFECTS);
+
     public Direction direction() {
-      return this == HAS_PARENT || this == HAS_SIBLING ? Direction.INCOMING : Direction.OUTGOING;
+      return PASSIVE_RELATIONSHIPS.contains(this) ? Direction.INCOMING : Direction.OUTGOING;
     }
   }
 

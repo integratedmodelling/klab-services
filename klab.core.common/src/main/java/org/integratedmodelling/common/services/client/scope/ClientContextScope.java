@@ -168,8 +168,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
           .getAsset(observation.getParentId(), this, RuntimeAsset.class);
     }
 
-    // FIXME this only happens with parentId == -1, which is probably an error. Observations
-    //  that are being resolved should never be in the client-side KG.
+    // this only happens with parentId == -1, which is probably an error. Observations
+    // that are being resolved should never be in the client-side KG.
     return digitalTwin
         .getKnowledgeGraph()
         .getLinks(
@@ -187,7 +187,6 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset) {
 
     // TODO use the client graph if the children # is the same as the existing relationships
-
     return digitalTwin
         .getKnowledgeGraph()
         .getLinks(
