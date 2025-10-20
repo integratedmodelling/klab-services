@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 
+import org.apache.http.HttpHeaders;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -209,11 +210,10 @@ public class ResourcesClient extends BaseServiceClient
   public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
     return client
         .withScope(scope)
+        .withHeader(HttpHeaders.ACCEPT, mediaType)
         .get(
             ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
             ResourceSet.class,
-            "mediaType",
-            mediaType,
             "geometry",
             (geometry == null ? null : geometry.encode()));
   }
