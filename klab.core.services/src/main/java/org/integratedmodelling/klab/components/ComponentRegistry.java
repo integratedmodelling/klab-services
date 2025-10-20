@@ -517,9 +517,7 @@ public class ComponentRegistry {
         componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
       }
       for (var service : library.exporters()) {
-        // these are found via their media type only, so no need to be in the service (which could
-        // also confuse with importers in case they - legitimately - have the same name).
-        //        serviceFinder.put(service.getFirst().getName(), componentDescriptor);
+        serviceFinder.put(service.getFirst().getName(), componentDescriptor);
         for (var mediaType : service.getFirst().getMediaTypes()) {
           exporterFinder.put(mediaType, componentDescriptor);
           componentDescriptor.exporters().add(Pair.of(service.getFirst(), service.getSecond()));
@@ -1296,6 +1294,11 @@ public class ComponentRegistry {
       }
       // we need these to be findable by URN
       for (var service : library.importers()) {
+        serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
+        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+      }
+      // we need these to be findable by URN as well, dio carciofo
+      for (var service : library.exporters()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
       }
