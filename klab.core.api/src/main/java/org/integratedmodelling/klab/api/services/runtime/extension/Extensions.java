@@ -1,18 +1,16 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /** Holder of descriptive records for extensions of all kinds. */
 public interface Extensions {
@@ -25,13 +23,17 @@ public interface Extensions {
    * @param services
    * @param annotations
    * @param verbs
+   * @param exporters
+   * @param importers
    */
   record LibraryDescriptor(
       String name,
       String description,
       List<Pair<ServiceInfo, FunctionDescriptor>> services,
       List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
-      List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {}
+      List<Pair<ServiceInfo, FunctionDescriptor>> verbs,
+      List<Pair<ServiceInfo, FunctionDescriptor>> exporters,
+      List<Pair<ServiceInfo, FunctionDescriptor>> importers) {}
 
   /**
    * Describes a component which may bring with itself libraries and adapters with their content.
@@ -68,7 +70,9 @@ public interface Extensions {
       List<AdapterDescriptor> adapters,
       Map<String, FunctionDescriptor> services,
       Map<String, FunctionDescriptor> annotations,
-      Map<String, FunctionDescriptor> verbs) {
+      Map<String, FunctionDescriptor> verbs,
+      List<Pair<ServiceInfo, FunctionDescriptor>> exporters,
+      List<Pair<ServiceInfo, FunctionDescriptor>> importers) {
 
     @Override
     public boolean equals(Object o) {

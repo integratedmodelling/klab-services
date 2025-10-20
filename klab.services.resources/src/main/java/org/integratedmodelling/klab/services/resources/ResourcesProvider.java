@@ -456,8 +456,31 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
-    // TODO
-    return null;
+      ResourceSet ret = new ResourceSet();
+      boolean empty = true;
+      for (var component : getComponentRegistry().resolveExportSchemata(mediaType, geometry)) {
+          if (
+              /*component.permissions().checkAuthorization(scope)*/ true /* TODO check permissions */) {
+              empty = false;
+              ret.getResults()
+                 .add(
+                         new ResourceSet.Resource(
+                                 this.serviceId(),
+                                 component.id(),
+                                 null,
+                                 component.version(),
+                                 KnowledgeClass.COMPONENT,
+                                 false));
+          }
+      }
+
+      if (!empty) {
+          ret.getServices().put(this.serviceId(), this.getUrl());
+      }
+
+      ret.setEmpty(empty);
+
+      return ret;
   }
 
   @Override

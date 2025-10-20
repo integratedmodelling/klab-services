@@ -59,7 +59,6 @@ import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdap
 import org.integratedmodelling.klab.api.services.resources.impl.ParameterImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
-import org.integratedmodelling.klab.common.data.Level;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
@@ -92,7 +91,9 @@ public class ComponentRegistry {
           new ArrayList<>(),
           new HashMap<>(),
           new HashMap<>(),
-          new HashMap<>());
+          new HashMap<>(),
+          new ArrayList<>(),
+          new ArrayList<>());
 
   /** Component descriptors, uniquely identified by id + version */
   private MultiValuedMap<String, Extensions.ComponentDescriptor> components =
@@ -111,6 +112,11 @@ public class ComponentRegistry {
       new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> verbFinder =
       new HashSetValuedHashMap<>();
+  // these are found by media type, not URN
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> exporterFinder =
+      new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> importerFinder =
+      new HashSetValuedHashMap<>();
   /*
    * Adapter descriptors include those registered from other services.
    */
@@ -125,23 +131,23 @@ public class ComponentRegistry {
     this.service = service;
   }
 
-//  /**
-//   * Call passing the capabilities of any service whose components we want to index.
-//   *
-//   * @param capabilities
-//   */
-//  public void registerService(KlabService.ServiceCapabilities capabilities) {
-//    if (capabilities != null) {
-//      for (var component : capabilities.getComponents()) {
-//        for (var adapter : component.adapters()) {
-//          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
-//        }
-//      }
-//    } else {
-//      throw new KlabServiceAccessException(
-//          "The service capabilities are not available. Is the service online?");
-//    }
-//  }
+  //  /**
+  //   * Call passing the capabilities of any service whose components we want to index.
+  //   *
+  //   * @param capabilities
+  //   */
+  //  public void registerService(KlabService.ServiceCapabilities capabilities) {
+  //    if (capabilities != null) {
+  //      for (var component : capabilities.getComponents()) {
+  //        for (var adapter : component.adapters()) {
+  //          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+  //        }
+  //      }
+  //    } else {
+  //      throw new KlabServiceAccessException(
+  //          "The service capabilities are not available. Is the service online?");
+  //    }
+  //  }
 
   public MavenComponentCache getComponentCache() {
     return this.cache;
@@ -244,6 +250,20 @@ public class ComponentRegistry {
   private void saveConfiguration() {
     Utils.Json.save(
         components.values().toArray(new Extensions.ComponentDescriptor[] {}), this.catalogFile);
+  }
+
+  public List<Extensions.ComponentDescriptor> resolveExportSchemata(
+      String mediaType, Geometry geometry) {
+    List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
+    Extensions.ComponentDescriptor target = null;
+    var empty = true;
+    for (var component : exporterFinder.get(mediaType)) {
+      if (geometry != null) {
+        // TODO check geometry applies; continue otherwise
+      }
+      ret.add(component);
+    }
+    return ret;
   }
 
   public List<Extensions.ComponentDescriptor> resolveServiceCall(String name, Version version) {
@@ -478,7 +498,9 @@ public class ComponentRegistry {
             adapters,
             new HashMap<>(),
             new HashMap<>(),
-            new HashMap<>());
+            new HashMap<>(),
+            new ArrayList<>(),
+            new ArrayList<>());
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {
@@ -493,6 +515,23 @@ public class ComponentRegistry {
       for (var service : library.verbs()) {
         verbFinder.put(service.getFirst().getName(), componentDescriptor);
         componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+      }
+      for (var service : library.exporters()) {
+        // these are found via their media type only, so no need to be in the service (which could
+        // also confuse with importers in case they - legitimately - have the same name).
+        //        serviceFinder.put(service.getFirst().getName(), componentDescriptor);
+        for (var mediaType : service.getFirst().getMediaTypes()) {
+          exporterFinder.put(mediaType, componentDescriptor);
+          componentDescriptor.exporters().add(Pair.of(service.getFirst(), service.getSecond()));
+        }
+      }
+      for (var service : library.importers()) {
+        // we need it as a service, too
+        serviceFinder.put(service.getFirst().getName(), componentDescriptor);
+        for (var mediaType : service.getFirst().getMediaTypes()) {
+          importerFinder.put(mediaType, componentDescriptor);
+          componentDescriptor.importers().add(Pair.of(service.getFirst(), service.getSecond()));
+        }
       }
     }
 
@@ -511,6 +550,8 @@ public class ComponentRegistry {
     var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var verbs = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var exporters = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var importers = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
 
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
@@ -525,6 +566,7 @@ public class ComponentRegistry {
             createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       }
+      // TODO class-level still unsupported for extensions that should be available as classes
     }
 
     // annotated methods
@@ -542,20 +584,18 @@ public class ComponentRegistry {
       } else if (method.isAnnotationPresent(Verb.class)) {
         var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
         verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-      } else if (method.isAnnotationPresent(Importer.class)) {
-        var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
-        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-        ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
-      } else if (method.isAnnotationPresent(Exporter.class)) {
-        var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
-        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-        ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
       }
     }
 
     libraries.add(
         new Extensions.LibraryDescriptor(
-            annotation.name(), annotation.description(), prototypes, annotations, verbs));
+            annotation.name(),
+            annotation.description(),
+            prototypes,
+            annotations,
+            verbs,
+            exporters,
+            importers));
   }
 
   private void registerLibrary(
@@ -567,6 +607,8 @@ public class ComponentRegistry {
     var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var verbs = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var importers = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var exporters = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
 
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
@@ -600,18 +642,24 @@ public class ComponentRegistry {
         verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(Importer.class)) {
         var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
-        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        importers.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
         ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
       } else if (method.isAnnotationPresent(Exporter.class)) {
         var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
-        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        exporters.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
         ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
       }
     }
 
     libraries.add(
         new Extensions.LibraryDescriptor(
-            annotation.name(), annotation.description(), prototypes, annotations, verbs));
+            annotation.name(),
+            annotation.description(),
+            prototypes,
+            annotations,
+            verbs,
+            exporters,
+            importers));
   }
 
   private Extensions.FunctionDescriptor createFunctionDescriptor(
@@ -1243,6 +1291,11 @@ public class ComponentRegistry {
     // update catalog
     for (var library : localComponentDescriptor.libraries()) {
       for (var service : library.services()) {
+        serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
+        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+      }
+      // we need these to be findable by URN
+      for (var service : library.importers()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
       }

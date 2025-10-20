@@ -178,8 +178,6 @@ public interface ServiceInfo extends Serializable {
      */
     String getLabel();
 
-    //  List<Annotation> getAnnotations();
-
     /**
      * The types of knowledge this prototype applies to. Only used for annotations at the moment. If
      * empty, no validation is required.

@@ -149,11 +149,12 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     }
   }
 
-  /// Extract a subgraph from the current graph.
+  /// Extract a subgraph from the current graph at a given hierarchy depth and showing a specified
+  /// set of relationships.
   ///
   /// Logic is:
   ///
-  /// 1. pass only one arg with all the compresent;
+  /// 1. pass only one arg with all the observations that must be visible in the graph;
   /// 2. set focus to first, actualDepth to depth;
   /// 3. if arg.size() > 1, call graph common ancestor function; set actualDepth = actualDepth +
   ///    CA.maxPathLength; set focus to CA.commonAncestor;
@@ -348,10 +349,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         .toList();
   }
 
-  //  public List<RuntimeAsset> assets() {
-  //    return List.copyOf(assetCache.asMap().values());
-  //  }
-
   @Override
   public void deleteContext() {}
 
@@ -414,7 +411,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       return List.of();
     }
 
-    // fffff
+    // TODO create a set.split(predicate) method to avoid this pain
     var ret = new ArrayList<Link>();
     var out =
         Arrays.stream(relationship)
@@ -456,20 +453,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         }
       }
     }
-
     return ret;
-    // TODO should we do this? Or just use the graph we have collected so far?
-    //    return runtimeClient.getLinkInfo(asset, direction, scope, relationship).stream()
-    //        .map(
-    //            info -> {
-    //              var ret = new LinkImpl();
-    //              ret.setSource(getAsset(info.getSourceId(), scope, RuntimeAsset.class));
-    //              ret.setTarget(getAsset(info.getTargetId(), scope, RuntimeAsset.class));
-    //              ret.setRelationship(info.getType());
-    //              ret.setProperties(info.getProperties());
-    //              return (Link) ret;
-    //            })
-    //        .toList();
   }
 
   @Override
