@@ -132,8 +132,10 @@ public interface RuntimeAsset {
   long getTransientId();
 
   /**
-   * When a new child is added, this is increased. Only meaningful during contextualization - always
-   * use the knowledge graph for any other purpose. This may report -1, meaning "unknown".
+   * When a new child is added, this is increased and maintained at service side. At client side,
+   * it's used as a invalidation flag: if < 0, the system knows that the asset has been modified and
+   * its child count must be reassessed. If greater than 0, the system knows that the asset has
+   * children in the client-side knowledge graph and can use that information for visualization.
    *
    * @return
    */

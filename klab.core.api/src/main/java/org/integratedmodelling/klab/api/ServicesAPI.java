@@ -3,7 +3,11 @@ package org.integratedmodelling.klab.api;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
-/** TODO add accepted http requests and payload types for both input (POST) and output */
+/**
+ * TODO add accepted http requests and payload types for both input (POST) and output
+ *
+ * <p>TODO make this an enum hierarchy with all those
+ */
 public interface ServicesAPI {
 
   String API_BASE = "/api/v2";
@@ -408,8 +412,7 @@ public interface ServicesAPI {
 
     /**
      * POST endpoint that takes a list of contextualizer references and returns the ResourceSet that
-     * specifies whether those will be available to the runtime. Could just return a boolean but we
-     * use the isEmpty() and insert the
+     * specifies whether those will be available to the runtime and upon which conditions.
      */
     String RESOLVE_CONTEXTUALIZERS = "/resolve";
   }
@@ -508,10 +511,5 @@ public interface ServicesAPI {
     interface ADMIN {}
 
     String RESOLVE_OBSERVATION = "/resolve";
-  }
-
-  interface COMMUNITY {
-
-    interface ADMIN {}
   }
 }
