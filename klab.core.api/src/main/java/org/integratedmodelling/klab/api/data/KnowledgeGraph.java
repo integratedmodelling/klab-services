@@ -95,6 +95,8 @@ public interface KnowledgeGraph {
      * @return
      */
     Set<Triple<Long, Long, String>> getDeletedLinks();
+
+      Set<Long> getModifiedAssets();
   }
 
   /**

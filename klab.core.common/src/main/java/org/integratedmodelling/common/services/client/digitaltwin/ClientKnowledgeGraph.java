@@ -43,6 +43,12 @@ import org.jgrapht.graph.DefaultEdge;
  * additional graph data, updates to asset metadata, and querying of assets and relationships. It
  * also exposes local methods for querying that do not require a round-trip to the runtime.
  *
+ * <p>The finalizedAsset field is a set of IDs for all assets whose child structure in the client
+ * graph reflects the service-level graph. When an asset's ID is not in the set, the client will ask
+ * the service for the structure of the asset's children at any request, then put it back in the
+ * set. When a KG commit comes with a modification notice, the ID is removed to invalidate the
+ * graph's structure relative to that asset.
+ *
  * <p>If the local methods are used instead of querying the remote graph, the contents of the
  * client-side KG may be incomplete w.r.t. the service-side graph. The presence of observations is
  * only guaranteed for those submitted and resolved within the same client. This implementation will
@@ -56,6 +62,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private final ContextScope scope;
   private final RuntimeClient runtimeClient;
   private final Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
+  private final Set<Long> finalizedAssets = new HashSet<>();
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from engine settings */ 500)
@@ -105,6 +112,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         synchronized (graph) {
           /* Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
           commit.getAddedAssets().forEach(graph::addVertex);
+          graph.removeAllVertices(commit.getDeletedAssets());
+          finalizedAssets.addAll(commit.getAddedAssets());
+          finalizedAssets.removeAll(commit.getDeletedAssets());
+          finalizedAssets.removeAll(commit.getModifiedAssets());
           for (var link : commit.getAddedLinks()) {
             graph.addVertex(link.getFirst());
             graph.addVertex(link.getSecond());
@@ -138,31 +149,31 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     }
   }
 
-  /**
-   * Extract a subgraph from the current graph.
-   *
-   * @param focus
-   * @param depth
-   * @param acceptedTypes
-   * @param acceptedRelationships
-   * @return the graph with the desired options
-   */
+  /// Extract a subgraph from the current graph.
+  ///
+  /// Logic is:
+  ///
+  /// 1. pass only one arg with all the compresent;
+  /// 2. set focus to first, actualDepth to depth;
+  /// 3. if arg.size() > 1, call graph common ancestor function; set actualDepth = actualDepth +
+  ///    CA.maxPathLength; set focus to CA.commonAncestor;
+  /// 4. Then create new graph result and follow the graph from focus, retrieving the assets with
+  ///    the desired relationships to the desired depth.
+  ///
+  /// The relationship direction is taken into account. The only relationships that is followed at
+  /// depth is HAS_CHILD. Note that as most other relationships have a known type of asset as
+  /// a target or source, assets of all types will be returned. They can be removed from the
+  /// vertices, and the links will also disappear.
+  ///
+  /// @param focus
+  /// @param depth
+  /// @param acceptedRelationships
+  /// @return the graph with the desired options
+  ///
   public Graph<RuntimeAsset, Relationship> getSubgraph(
       List<RuntimeAsset> focus,
       int depth,
-      Collection<RuntimeAsset.Type> acceptedTypes,
       Collection<GraphModel.Relationship> acceptedRelationships) {
-
-    /// NO - logic is:
-    ///
-    /// 1. pass only one arg with all the compresent;
-    /// 2. set focus to first, actualDepth to depth;
-    /// 3. if arg.size() > 1, call graph common ancestor function; set actualDepth actual depth +
-    ///    CA.maxPathLength; set focus to CA.commonAncestor; walk the paths upwards in the graph
-    /// adding inverse HAS_CHILD relationships until the focus is reached;
-    /// 4. Then create new graph result and follow the graph from focus, retrieving the assets with
-    /// the desired relationships to the desired depth.
-    ///    Mind the relationship direction and the number of children, which may have changed.
 
     Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
 
@@ -210,41 +221,32 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     }
   }
 
-  private boolean hasMultipleRoots(Graph<RuntimeAsset, Relationship> graph) {
-    return graph.vertexSet().stream().filter(v -> graph.inDegreeOf(v) == 0).count() > 1;
-  }
-
   /**
-   * Get all the HAS_CHILD children of the passed asset, revising the hierarchy by querying the
-   * server-side KG whenever the number of children reported in the observation is different from
-   * the number of relationships in the local graph.
-   *
-   * <p>TODO improve with multiple relationships from a set
+   * Get the children of the passed asset, revising the hierarchy by querying the server-side KG
+   * whenever the asset is not in the finalizedAssets set, meaning it does not come from a commit or
+   * has been modified at service side.
    *
    * @return
    */
   public List<RuntimeAsset> getChildAssets(RuntimeAsset asset) {
-    var children = outgoing(asset, GraphModel.Relationship.HAS_CHILD);
-    // TODO revise
-//    if (asset instanceof Observation && asset.getChildrenCount() != children.size()) {
-//      var toRemove =
-//          graph.outgoingEdgesOf(asset.getId()).stream()
-//              .filter(e -> e.relationship == GraphModel.Relationship.HAS_CHILD)
-//              .toList();
-//      graph.removeAllEdges(toRemove);
-//      children = new ArrayList<>();
-//      for (var child : scope.getChildrenOf(asset)) {
-//        assetCache.put(child.getId(), child);
-//        graph.addVertex(child.getId());
-//        graph.addEdge(
-//            asset.getId(),
-//            child.getId(),
-//            new Relationship(
-//                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
-//        children.add(child);
-//      }
-//    }
-    return children;
+    if (!finalizedAssets.contains(asset.getId())) {
+      var children = new ArrayList<RuntimeAsset>();
+      // do NOT add the children! If this is from a commit, they will have been added when ingesting
+      // it
+      finalizedAssets.add(asset.getId());
+      for (var child : scope.getChildrenOf(asset)) {
+        assetCache.put(child.getId(), child);
+        graph.addVertex(child.getId());
+        graph.addEdge(
+            asset.getId(),
+            child.getId(),
+            new Relationship(
+                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
+        children.add(child);
+      }
+      return children;
+    }
+    return outgoing(asset, GraphModel.Relationship.HAS_CHILD);
   }
 
   @Override
