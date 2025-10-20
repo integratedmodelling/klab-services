@@ -402,10 +402,10 @@ public class ResourcesProviderController {
   })
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA)
   public @ResponseBody ResourceSet resolveExportSchema(
-      @Parameter(description = "Name of the service call") @PathVariable("mediaType")
+      @Parameter(description = "Name of the service call") @RequestParam("mediaType")
           String mediaType,
       @Parameter(description = "Optional version of the service call")
-          @PathVariable(value = "geometry", required = false)
+          @RequestParam(value = "geometry", required = false)
           String geometry,
       Principal principal) {
     Geometry g =
@@ -432,10 +432,10 @@ public class ResourcesProviderController {
   })
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA)
   public @ResponseBody ResourceSet resolveImportSchema(
-      @Parameter(description = "Name of the service call") @PathVariable("mediaType")
+      @Parameter(description = "Name of the service call") @RequestParam("mediaType")
           String mediaType,
       @Parameter(description = "Optional version of the service call")
-          @PathVariable(value = "geometry", required = false)
+          @RequestParam(value = "geometry", required = false)
           String geometry,
       Principal principal) {
     Geometry g =

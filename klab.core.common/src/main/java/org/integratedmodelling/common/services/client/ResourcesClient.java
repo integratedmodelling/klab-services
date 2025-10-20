@@ -210,10 +210,11 @@ public class ResourcesClient extends BaseServiceClient
   public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
     return client
         .withScope(scope)
-        .withHeader(HttpHeaders.ACCEPT, mediaType)
         .get(
             ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
             ResourceSet.class,
+            "mediaType",
+            mediaType,
             "geometry",
             (geometry == null ? null : geometry.encode()));
   }

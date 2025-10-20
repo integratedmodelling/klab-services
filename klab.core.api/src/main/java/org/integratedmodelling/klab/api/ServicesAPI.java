@@ -435,8 +435,8 @@ public interface ServicesAPI {
     String RETRIEVE_RESOURCE = "/retrieveResource";
     String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
     String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
-    String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema/{mediaType}";
-    String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema/{mediaType}";
+    String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema";
+    String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema";
     String RESOURCE_INFO = "/resourceInfo/{urn}";
     String RETRIEVE_OBSERVABLE = "/retrieveObservable";
     String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
