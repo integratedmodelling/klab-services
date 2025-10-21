@@ -202,7 +202,7 @@ public class StorageImpl implements Storage {
             nativeShardingStrategy.getMaxBufferSize())) {
       var shard =
           new ShardImpl(
-              geometry,
+              GeometryRepository.INSTANCE.geometry(geometry),
               observation,
               nativeShardingStrategy,
               index++,

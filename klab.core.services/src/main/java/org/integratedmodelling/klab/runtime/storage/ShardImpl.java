@@ -35,15 +35,24 @@ public class ShardImpl implements Storage.Shard {
   private final int shardIndex;
   private final long timestamp;
   private final Geometry geometry; // TODO must be a real Geometry, not a scale
-  private long id; // for reference in the knowledge graoh
-  private final String urn; // for persistent reference in storage manager
+  private long id; // for reference in the knowledge graph
+  private final String urn; // for persistent reference in the storage manager
   private long transientId = Klab.getNextId();
   private long parentTransientId; // manage
   private long parentId = -1; // TODO manage
   private Histogram histogram;
 
+  public ShardImpl() {
+    geometry = null;
+    shardingStrategy = null;
+    shardIndex = -1;
+    timestamp = -1;
+    urn = null;
+    persistence = null;
+  }
+
   /**
-   * @param geometry
+   * @param geometry MUST be an actual Geometry, not a Scale.
    * @param observation
    * @param shardingStrategy
    * @param shardIndex

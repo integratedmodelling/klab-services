@@ -4,12 +4,11 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -25,12 +24,10 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -38,10 +35,8 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -447,7 +442,7 @@ public class RuntimeService extends BaseService
                   var commitId = submissionScope.commit();
                   if (commitId != null
                       && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {}
-                    o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
+                  o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                 } else {
                   submissionScope.fail();
                 }
@@ -666,7 +661,8 @@ public class RuntimeService extends BaseService
     if (session == null) {
       session = userScope.getUserSession(this);
     }
-    var ret = new ServiceContextScope((ServiceSessionScope) session, configuration, userScope.getUser());
+    var ret =
+        new ServiceContextScope((ServiceSessionScope) session, configuration, userScope.getUser());
     declareContextScope(ret, session);
     return ret;
   }
