@@ -306,6 +306,11 @@ public class ScopeManager {
             ret.setId(scopeId);
             ret.setHostServiceId(runtimeId);
             service.declareContextScope((ContextScope) ret, sessionScope);
+
+            if (!sessionScope.getUser().getUsername().equals(authorization.getUsername())) {
+              ret = ((ServiceContextScope) ret).withIdentity(userScope.getIdentity());
+            }
+
             return (T) ret;
           }
         }
