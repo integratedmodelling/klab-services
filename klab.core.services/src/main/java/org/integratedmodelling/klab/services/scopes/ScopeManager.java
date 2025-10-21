@@ -299,7 +299,7 @@ public class ScopeManager {
         if (originalService != null) {
           var configuration = originalService.getConfiguration(scopeId, userScope);
           if (configuration != null) {
-            ret = new ServiceContextScope(sessionScope, configuration);
+            ret = new ServiceContextScope(sessionScope, configuration, userScope.getUser());
             for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
             }

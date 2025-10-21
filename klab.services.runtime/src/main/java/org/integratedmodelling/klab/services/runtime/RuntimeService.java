@@ -666,7 +666,7 @@ public class RuntimeService extends BaseService
     if (session == null) {
       session = userScope.getUserSession(this);
     }
-    var ret = new ServiceContextScope((ServiceSessionScope) session, configuration);
+    var ret = new ServiceContextScope((ServiceSessionScope) session, configuration, userScope.getUser());
     declareContextScope(ret, session);
     return ret;
   }

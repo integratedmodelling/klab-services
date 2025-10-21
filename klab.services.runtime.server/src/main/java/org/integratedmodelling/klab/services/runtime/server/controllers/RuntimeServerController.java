@@ -505,7 +505,7 @@ public class RuntimeServerController {
 
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-          var ret = new ServiceContextScope(serviceSessionScope, request.getConfiguration(), identity);
+          var ret = new ServiceContextScope(serviceSessionScope, request.getConfiguration(), userScope.getUser());
           for (var service : userScope.getServices(KlabService.class)) {
             if (request.getServiceIds().contains(service.serviceId())) {
               ret.addService(service);
