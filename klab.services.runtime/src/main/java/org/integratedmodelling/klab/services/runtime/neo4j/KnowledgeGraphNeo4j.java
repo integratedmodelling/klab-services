@@ -1376,7 +1376,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   scope);
           case UserScope userScope ->
               query(
-                  "match(c:Context {user: $user}) return (c)",
+                  "MATCH (c:Context) WHERE c.user = $user OR c.rights = $user RETURN c",
                   Map.of("user", userScope.getUser().getUsername()),
                   scope);
           default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
