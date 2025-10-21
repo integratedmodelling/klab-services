@@ -99,7 +99,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return new ServiceContextScope(this);
   }
 
-  public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration, UserIdentity userIdentity) {
+  public ServiceContextScope(
+      ServiceSessionScope parent,
+      DigitalTwin.Configuration configuration,
+      UserIdentity userIdentity) {
     super(parent);
     // for remotes services, different user create a context using the session
     if (userIdentity != null) {
@@ -221,6 +224,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  public ServiceContextScope withIdentity(Identity identity) {
+    ServiceContextScope ret = new ServiceContextScope(this);
+    ret.setIdentity(identity);
+    if (identity instanceof UserIdentity userIdentity) {
+      ret.setUser(userIdentity);
+    }
+    return ret;
+  }
+
   @Override
   public CompletableFuture<Observation> submit(Observation observation) {
     if (!isOperative()) {
@@ -296,28 +308,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   //  @Override
-//  public Collection<KnowledgeGraph.Link> getLinks(
-//      RuntimeAsset asset, GraphModel.Relationship... relationship) {
-//
-//    var ret = new ArrayList<KnowledgeGraph.Link>();
-//    var types = EnumSet.noneOf(GraphModel.Relationship.class);
-//    if (relationship != null) {
-//      types.addAll(List.of(relationship));
-//    }
-//    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
-//      ret.addAll(
-//          currentTransaction.outgoing(asset).stream()
-//              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
-//              .toList());
-//    }
-//
-//    if (asset.getId() > 0) {
-//      // TODO the actual ones from the persistent KG
-//
-//    }
-//
-//    return ret;
-//  }
+  //  public Collection<KnowledgeGraph.Link> getLinks(
+  //      RuntimeAsset asset, GraphModel.Relationship... relationship) {
+  //
+  //    var ret = new ArrayList<KnowledgeGraph.Link>();
+  //    var types = EnumSet.noneOf(GraphModel.Relationship.class);
+  //    if (relationship != null) {
+  //      types.addAll(List.of(relationship));
+  //    }
+  //    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
+  //      ret.addAll(
+  //          currentTransaction.outgoing(asset).stream()
+  //              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
+  //              .toList());
+  //    }
+  //
+  //    if (asset.getId() > 0) {
+  //      // TODO the actual ones from the persistent KG
+  //
+  //    }
+  //
+  //    return ret;
+  //  }
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {

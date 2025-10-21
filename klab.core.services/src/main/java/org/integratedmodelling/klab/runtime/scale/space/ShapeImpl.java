@@ -77,7 +77,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
   // to avoid multiple rounds of simplification
   private boolean simplified = false;
 
-  private ShapeImpl() {
+  public ShapeImpl() {
     setShape(List.of(1L));
   }
 
