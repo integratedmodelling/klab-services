@@ -1362,6 +1362,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public List<SessionInfo> getSessionInfo(Scope scope) {
 
     var sessionIds = new LinkedHashMap<String, SessionInfo>();
+
     EagerResult contexts =
         switch (scope) {
           case ContextScope contextScope ->
@@ -1374,11 +1375,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   "match (c:Context) WHERE c.id STARTS WITH $sessionId return c",
                   Map.of("sessionId", sessionScope.getId() + "."),
                   scope);
-          case UserScope userScope ->
-              query(
-                  "MATCH (c:Context) WHERE c.user = $user OR c.rights = $user RETURN c",
-                  Map.of("user", userScope.getUser().getUsername()),
+          case UserScope userScope -> {
+              String federation = Klab.INSTANCE.getFederationData(userScope.getUser()).getId();
+              Map<String, Object> params = new HashMap<>();
+              params.put("user", userScope.getUser().getUsername());
+              if (federation != null) params.put("federation", federation);
+              yield query(
+                  "MATCH (c:Context) WHERE c.user = $user OR c.federation = $federation RETURN c",
+                  params,
                   scope);
+          }
           default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
         };
 
