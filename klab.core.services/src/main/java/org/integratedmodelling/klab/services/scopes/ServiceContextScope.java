@@ -19,6 +19,8 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -97,8 +99,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return new ServiceContextScope(this);
   }
 
-  public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {
+  public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration, UserIdentity userIdentity) {
     super(parent);
+    // for remotes services, different user create a context using the session
+    if (userIdentity != null) {
+      this.setUser(userIdentity);
+    }
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);

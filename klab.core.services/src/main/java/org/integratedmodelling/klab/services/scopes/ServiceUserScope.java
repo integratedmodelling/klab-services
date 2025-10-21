@@ -222,6 +222,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return this.user;
   }
 
+  protected void setUser(UserIdentity user) {
+    this.user = user;
+  }
+
   @Override
   public Parameters<String> getData() {
     return this.data;

@@ -492,7 +492,7 @@ public class RuntimeServerController {
                 .getScopeManager()
                 .getScope(
                     authorization, UserScope.class, null, runtimeService.klabService().serviceId());
-        var identity = userScope.getIdentity();
+        var identity = (UserIdentity) userScope.getIdentity();
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
 
         if (federation != null
@@ -505,7 +505,7 @@ public class RuntimeServerController {
 
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-          var ret = new ServiceContextScope(serviceSessionScope, request.getConfiguration());
+          var ret = new ServiceContextScope(serviceSessionScope, request.getConfiguration(), identity);
           for (var service : userScope.getServices(KlabService.class)) {
             if (request.getServiceIds().contains(service.serviceId())) {
               ret.addService(service);
