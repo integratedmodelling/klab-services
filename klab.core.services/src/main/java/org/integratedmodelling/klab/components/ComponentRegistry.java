@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.components;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -998,7 +996,7 @@ public class ComponentRegistry {
               KlabAsset.KnowledgeClass.COMPONENT,
               mediaType,
               null,
-              service.capabilities(scope),
+              service,
               scope);
       if (schemata.isEmpty()) {
         throw new KlabAuthorizationException(

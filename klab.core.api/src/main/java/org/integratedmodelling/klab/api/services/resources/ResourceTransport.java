@@ -345,9 +345,10 @@ public enum ResourceTransport {
       KlabAsset.KnowledgeClass knowledgeClass,
       String mediaType,
       Geometry geometry,
-      KlabService.ServiceCapabilities serviceCapabilities,
+      KlabService service,
       Scope scope) {
 
+    var serviceCapabilities = service.capabilities(scope);
     var ret = new ArrayList<Schema>();
     for (var schemaId : serviceCapabilities.getExportSchemata().keySet()) {
       for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
@@ -363,7 +364,17 @@ public enum ResourceTransport {
       // TODO only search if not searched before or services have changed
       var result =
           scope.getService(ResourcesService.class).resolveExportSchema(mediaType, geometry, scope);
-      if (!result.isEmpty()) {}
+      if (!result.isEmpty() && service.loadResources(result, scope)) {
+        // do it again
+        for (var schemaId : serviceCapabilities.getExportSchemata().keySet()) {
+          for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
+            if (schema.mediaTypes.contains(mediaType)
+                && (knowledgeClass == null || schema.knowledgeClass == knowledgeClass)) {
+              ret.add(schema);
+            }
+          }
+        }
+      }
     }
 
     return ret;

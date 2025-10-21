@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -342,5 +343,12 @@ public abstract class BaseServiceClient implements KlabService {
 
   public boolean isAlive() {
     return client.isAlive();
+  }
+
+  @Override
+  public boolean loadResources(ResourceSet resourceSet, Scope scope) {
+    // TODO this can be done through the API so it should be provided, although there are so far
+    //  no use cases for it. It's definitely an admin endpoint.
+    throw new KlabUnimplementedException("loadResources() is not implemented on clients yet");
   }
 }

@@ -418,6 +418,17 @@ public interface KlabService extends Service {
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope);
 
   /**
+   * Load any resources that can be hosted in this service and are referenced in the resource set.
+   * Ignore anything that the service does not know how to handle. Return true if no errors in the
+   * resource set, all pertinent resources were loaded, and the resource set is not empty.
+   *
+   * @param resourceSet
+   * @param scope
+   * @return
+   */
+  boolean loadResources(ResourceSet resourceSet, Scope scope);
+
+  /**
    * This will find any export schema installed at service side to honor the request.
    *
    * @param urn

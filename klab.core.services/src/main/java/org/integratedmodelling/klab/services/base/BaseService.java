@@ -78,7 +78,7 @@ public abstract class BaseService implements KlabService {
   private ScopeManager _scopeManager;
   private boolean initialized;
   private boolean operational;
-  private ComponentRegistry componentRegister;
+  private ComponentRegistry componentRegistry;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
   protected Settings settings;
@@ -119,11 +119,11 @@ public abstract class BaseService implements KlabService {
       throw new KlabIllegalStateException(e);
     }
     createServiceSecret();
-    componentRegister = new ComponentRegistry(this, options);
+    componentRegistry = new ComponentRegistry(this, options);
   }
 
   public ComponentRegistry getComponentRegistry() {
-    return componentRegister;
+    return componentRegistry;
   }
 
   protected ServiceStartupOptions getStartupOptions() {
@@ -402,6 +402,11 @@ public abstract class BaseService implements KlabService {
     return true;
   }
 
+  @Override
+  public boolean loadResources(ResourceSet resourceSet, Scope scope) {
+    return ingestResources(resourceSet, scope, true);
+  }
+
   /**
    * Can be overridden in each service to take what the service can handle from a ResourceSet. The
    * default ingests all documents into the {@link KnowledgeRepository} and loads any components in
@@ -458,14 +463,14 @@ public abstract class BaseService implements KlabService {
       if (adapterId != null) {
         var adapter = getComponentRegistry().getAdapter(adapterId, Version.ANY_VERSION, scope);
         if (adapter != null) {
-            // TODO
+          // TODO
         }
       }
     }
 
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
-            knowledgeClass, mediaType, geometry, capabilities(scope), scope);
+            knowledgeClass, mediaType, geometry, this, scope);
 
     if (schemata.isEmpty()) {
       throw new KlabAuthorizationException(
