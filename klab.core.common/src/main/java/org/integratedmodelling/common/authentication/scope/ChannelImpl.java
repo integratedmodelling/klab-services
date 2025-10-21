@@ -35,7 +35,7 @@ public abstract class ChannelImpl implements Channel {
     public Persistence persistence = Persistence.ONE_OFF;
   }
 
-  private final Identity identity;
+  private Identity identity;
   private AtomicBoolean interrupted = new AtomicBoolean(false);
   private final AtomicBoolean errors = new AtomicBoolean(false);
   private final Map<Message.Queue, Map<String, BiConsumer<Channel, Message>>> messageListeners =
@@ -46,6 +46,10 @@ public abstract class ChannelImpl implements Channel {
   public ChannelImpl(Identity identity) {
     this.identity = identity;
     //    this.eventMatchers = ArrayListMultimap.create();
+  }
+
+  protected void setIdentity(Identity identity) {
+    this.identity = identity;
   }
 
   protected ChannelImpl(ChannelImpl other) {

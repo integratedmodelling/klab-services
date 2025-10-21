@@ -409,7 +409,9 @@ public class ResourcesProviderController {
           String geometry,
       Principal principal) {
     Geometry g =
-        geometry == null ? null : GeometryRepository.INSTANCE.get(geometry, Geometry.class);
+        geometry == null
+            ? Geometry.EMPTY
+            : GeometryRepository.INSTANCE.get(geometry, Geometry.class);
     return resourcesServer
         .klabService()
         .resolveExportSchema(

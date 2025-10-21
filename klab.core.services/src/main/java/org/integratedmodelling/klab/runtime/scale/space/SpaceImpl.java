@@ -151,6 +151,6 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
     } else if (shape != null) {
       return shape;
     }
-    return null;
+    return dimension.isRegular() ? new TileImpl() : new ShapeImpl();
   }
 }

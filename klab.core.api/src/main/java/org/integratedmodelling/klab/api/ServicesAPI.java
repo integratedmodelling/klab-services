@@ -6,10 +6,11 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 /**
  * TODO add accepted http requests and payload types for both input (POST) and output
  *
- * <p>TODO make this an enum hierarchy with all those
+ * <p>TODO make this an enum hierarchy with all those, use method for the path
  */
 public interface ServicesAPI {
 
+  /** ACHTUNG this should be v1 for 1.0 at production, but the HUB endpoints also use it */
   String API_BASE = "/api/v2";
 
   /**
@@ -112,7 +113,7 @@ public interface ServicesAPI {
 
   /**
    * Asset stream download for all services that have assets to download, using URN and content
-   * negotiation for specifics
+   * negotiation for specifics.
    */
   String EXPORT = "/export/{class}/{urn}";
 
