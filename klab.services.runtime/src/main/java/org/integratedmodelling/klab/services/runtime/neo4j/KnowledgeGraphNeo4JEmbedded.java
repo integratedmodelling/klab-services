@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.HttpConnector;
+import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.driver.GraphDatabase;
@@ -64,14 +65,16 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
               .setConfig(GraphDatabaseSettings.transaction_timeout, Duration.ofSeconds(60))
               .setConfig(GraphDatabaseSettings.preallocate_logical_logs, true)
               .setConfig(BoltConnector.enabled, true) // for the driver
-              .setConfig(HttpConnector.enabled, true) // for debugging (?)
+              .setConfig(BoltConnector.listen_address, new SocketAddress("0.0.0.0", 7687)) // docker fix
+              .setConfig(HttpConnector.enabled, true) // for debugging ?
+              .setConfig(HttpConnector.listen_address, new SocketAddress("0.0.0.0", 7474)) // docker fix
               .build();
 
       this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
 
       // TODO this could just reimplement query() to use the DB directly and not expose the
       //  connectors, losing debugging access outside the application
-      this.driver = GraphDatabase.driver("bolt://localhost:7687");
+      this.driver = GraphDatabase.driver("bolt://0.0.0.0:7687");
 
       this.driver.verifyConnectivity();
 
