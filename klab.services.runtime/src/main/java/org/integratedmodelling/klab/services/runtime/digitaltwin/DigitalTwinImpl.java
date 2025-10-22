@@ -107,7 +107,6 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
 
-
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
       Geometry geometry;
@@ -140,6 +139,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.activity = activity;
       this.scope = scope;
       this.contextualizers = new ConcurrentHashMap<>();
+      boolean activityLinked = false;
 
       synchronized (graph) {
         this.graph.addVertex(activity);
@@ -154,6 +154,7 @@ public class DigitalTwinImpl implements DigitalTwin {
               this.graph.addVertex(activity1);
               this.graph.addEdge(
                   activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+              activityLinked = true;
             } else if (datum instanceof Observation observation) {
               setTarget(observation);
             } else if (datum instanceof Dataflow dataflow) {
@@ -164,9 +165,14 @@ public class DigitalTwinImpl implements DigitalTwin {
             }
           }
         }
+
+        if (!activityLinked) {
+          this.graph.addEdge(
+              RuntimeAsset.PROVENANCE_ASSET,
+              activity,
+              new RelationshipEdge(GraphModel.Relationship.HAS_CHILD));
+        }
       }
-      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted,
-      // activity);
     }
 
     private TransactionImpl(TransactionImpl parent, Activity activity) {

@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -51,10 +52,12 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
     this.setHostServiceId(runtimeService.serviceId());
+    // user in the session may be different from the user owning the engine
+    var userScope = getParentScope(Type.USER, UserScope.class);
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
-            ResolutionConstraint.Type.Provenance, Agent.create(parent.getUser().getUsername())));
+            ResolutionConstraint.Type.Provenance, Agent.create(userScope.getUser().getUsername())));
   }
 
   /**

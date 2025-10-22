@@ -453,13 +453,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  public ServiceContextScope executing(Activity currentActivity) {
+  public ServiceContextScope executing(Activity currentActivity, Object... runtimeAssets) {
 
     ServiceContextScope ret = new ServiceContextScope(this);
     var parentActivity = this.getActivity();
+    var assets = new ArrayList<>();
+    assets.add(parentActivity);
+    if (runtimeAssets != null) {
+      assets.addAll(Arrays.asList(runtimeAssets));
+    }
     ret.currentTransaction =
         currentTransaction == null
-            ? getDigitalTwin().transaction(currentActivity, this, parentActivity)
+            ? getDigitalTwin().transaction(currentActivity, this, assets.toArray())
             : currentTransaction.getChild(currentActivity, ret);
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);

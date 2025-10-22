@@ -383,12 +383,11 @@ public class RuntimeService extends BaseService
               this,
               observation,
               scope,
-              storedAgent,
               serviceContextScope.getActivity(),
               observation + " submitted");
 
       //      var submissionScope = serviceContextScope.initializeResolution(submission);
-      var submissionScope = serviceContextScope.executing(submission);
+      var submissionScope = serviceContextScope.executing(submission, storedAgent);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -412,7 +411,7 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
-      var resolutionScope = submissionScope.executing(resolution /*, true*/);
+      var resolutionScope = submissionScope.executing(resolution);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)
