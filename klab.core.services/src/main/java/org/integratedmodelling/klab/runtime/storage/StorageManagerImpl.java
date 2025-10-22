@@ -192,6 +192,12 @@ public class StorageManagerImpl implements StorageManager {
         observation, urn -> createShard(observation, shardingStrategy, contextScope));
   }
 
+  @Override
+  public <T extends Storage.Scanner> T getTemporaryScanner(long size, Class<T> scannerClass) {
+    // TODO
+    return null;
+  }
+
   private Storage createShard(
       Observation observation,
       Data.ShardingStrategy shardingStrategy,

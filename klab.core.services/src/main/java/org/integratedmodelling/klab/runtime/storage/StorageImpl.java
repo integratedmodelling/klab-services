@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -31,6 +32,7 @@ public class StorageImpl implements Storage {
   private final ContextScope scope;
   private final Data.ShardingStrategy nativeShardingStrategy;
   private final StorageManagerImpl storageManager;
+  private DataKey dataKey;
 
   /**
    * Used as a key for the geometry-aware shard cache. In all current implementations, the key will
@@ -308,6 +310,11 @@ public class StorageImpl implements Storage {
   @Override
   public Histogram getHistogram() {
     return Utils.Data.adaptHistogram(histogram());
+  }
+
+  @Override
+  public DataKey getKey() {
+    return dataKey;
   }
 
   public static void main(String[] args) {

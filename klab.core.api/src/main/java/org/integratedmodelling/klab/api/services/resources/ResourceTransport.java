@@ -366,6 +366,7 @@ public enum ResourceTransport {
           scope.getService(ResourcesService.class).resolveExportSchema(mediaType, geometry, scope);
       if (!result.isEmpty() && service.loadResources(result, scope)) {
         // do it again
+        serviceCapabilities = service.capabilities(scope);
         for (var schemaId : serviceCapabilities.getExportSchemata().keySet()) {
           for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
             if (schema.mediaTypes.contains(mediaType)

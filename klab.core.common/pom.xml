@@ -51,6 +51,13 @@
     </properties>
     <dependencies>
 
+        <!-- colormap utils -->
+        <dependency>
+            <groupId>net.mahdilamb</groupId>
+            <artifactId>colormap</artifactId>
+            <version>0.9.511</version>
+        </dependency>
+
         <!-- must use these instead of Java's native shite -->
         <dependency>
             <groupId>com.fasterxml.uuid</groupId>

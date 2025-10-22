@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.PrimitiveIterator;
 
+import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -135,8 +136,7 @@ public interface Storage {
   }
 
   /**
-   * New shard API to substitute Storage.Buffer. Shards are just storage and may be implemented in
-   * different ways by the adopted {@link
+   * Shards are just storage and may be implemented in different ways by the adopted {@link
    * org.integratedmodelling.klab.api.digitaltwin.StorageManager}. They are not normally used
    * directly at the API level; interaction happens through scanners retrieved from Storage#scan(),
    * which can adapt the shards to any compatible choice of parallelism and fill curve. The scanners
@@ -230,4 +230,12 @@ public interface Storage {
    * @return
    */
   Histogram getHistogram();
+
+  /**
+   * If there is a data key, return it. This must collect all the mappings from all shards and be
+   * kept up to date.
+   *
+   * @return the data key, or null.
+   */
+  DataKey getKey();
 }

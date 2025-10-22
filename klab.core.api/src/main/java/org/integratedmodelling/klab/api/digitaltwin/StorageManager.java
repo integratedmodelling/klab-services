@@ -11,8 +11,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
  * close or delete its data. Specific storages may be marked as temporary (normally only
  * intermediate values kept for debugging) so that they can be deleted on context close even when
  * the storage is persistent.
- *
- * <p>TODO rename to something more idiomatic (e.g. manager) - StateStorage vs. Storage is confusing
  */
 public interface StorageManager {
 
@@ -36,6 +34,18 @@ public interface StorageManager {
    * @return the newly created storage
    */
   Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
+
+  /**
+   * Get a temporary scanner for a transparently managed chunk of storage of the passed size and
+   * scanner class. The storage linked to the scanner is deleted after the scanner goes out of
+   * scope.
+   *
+   * @param size
+   * @param scannerClass
+   * @return
+   * @param <T>
+   */
+  <T extends Storage.Scanner> T getTemporaryScanner(long size, Class<T> scannerClass);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

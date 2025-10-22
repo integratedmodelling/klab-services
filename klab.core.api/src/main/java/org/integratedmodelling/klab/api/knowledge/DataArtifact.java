@@ -28,6 +28,8 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * only contain the time dimensions where change has happened.
  * <p>
  *
+ * TODO unused at the moment. Revise and incorporate the logic into the modern API.
+ *
  * @author Ferd
  * @version $Id: $Id
  */
@@ -77,21 +79,6 @@ public interface DataArtifact extends Artifact {
      */
     <T> T get(Locator index, Class<T> cls);
 
-//    /**
-//     * Set the value(s) at given index. Improper values or locators cause an unchecked exception.
-//     *
-//     * @param index a locator for the state. If the locator implies mediation, propagation or
-//     *        aggregation should be done.
-//     * @param value a compatible value. Usually of type T, but can be others - e.g. a probability
-//     *        distribution for it. The state is expected to quickly promote itself to a different
-//     *        underlying implementation if a compatible value of a new type is expected.
-//     * @return the linear offset corresponding to the locator in storage (for checking and debugging
-//     *         only)
-//     * @throws java.lang.IllegalArgumentException if value is incompatible with type or locator is
-//     *         not compatible with the geometry.
-//     */
-//    long set(Locator index, Object value);
-
     /**
      * Total number of values. Must be compatible with the size of the dimensions of the underlying geometry.
      *
@@ -116,14 +103,5 @@ public interface DataArtifact extends Artifact {
      *                                  geometry.
      */
     <T> T aggregate(Locator geometry, Class<? extends T> cls);
-
-//    /**
-//     * Get the form that the value will present itself in this artifact. This should be VALUE for
-//     * all artifacts that aren't qualities, and may be a distribution or a table for numeric and
-//     * categorical artifacts.
-//     *
-//     * @return the value presentation
-//     */
-//    ValuePresentation getValuePresentation();
 
 }
