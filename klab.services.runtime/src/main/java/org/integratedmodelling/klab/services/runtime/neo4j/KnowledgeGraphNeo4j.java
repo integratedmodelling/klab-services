@@ -1353,7 +1353,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     } else if (user != null && user.getName().equals(agentName)) {
       return user;
     } else if (agentName != null) {
-      // TODO create agent
+      getOrCreateAgent(agentName, "USER");
     }
     return user;
   }
