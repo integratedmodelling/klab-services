@@ -263,7 +263,7 @@ public interface Data {
       this.dimensions = dimensions;
     }
 
-    static class Mapper {
+    public static class Mapper {
       private final FillCurve curveFrom;
       private final FillCurve curveTo;
       private final long[] sizes;

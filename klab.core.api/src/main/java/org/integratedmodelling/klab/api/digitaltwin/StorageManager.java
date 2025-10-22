@@ -44,11 +44,13 @@ public interface StorageManager {
    * so this should be used as a heap variable, within the scope of a single method.
    *
    * @param geometry
+   * @param fillCurve
    * @param scannerClass
    * @return
    * @param <T>
    */
-  <T extends Storage.Scanner> T getTemporaryScanner(Geometry geometry, Class<T> scannerClass);
+  <T extends Storage.Scanner> T getTemporaryScanner(
+      Geometry geometry, Data.FillCurve fillCurve, Class<T> scannerClass);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

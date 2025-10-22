@@ -195,7 +195,7 @@ public class StorageManagerImpl implements StorageManager {
 
   @Override
   public <T extends Storage.Scanner> T getTemporaryScanner(
-      Geometry geometry, Class<T> scannerClass) {
+      Geometry geometry, Data.FillCurve fillCurve, Class<T> scannerClass) {
     // TODO
     return null;
   }
