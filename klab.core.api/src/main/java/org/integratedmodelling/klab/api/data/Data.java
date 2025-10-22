@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * The <code>Data</code> object encapsulates the network-transmissible data package specified
@@ -260,6 +261,42 @@ public interface Data {
 
     FillCurve(int dimensions) {
       this.dimensions = dimensions;
+    }
+
+    static class Mapper {
+      private final FillCurve curveFrom;
+      private final FillCurve curveTo;
+      private final long[] sizes;
+
+      public Mapper(Geometry.Dimension commonGeometry, FillCurve curveFrom, FillCurve curveTo) {
+        this.curveFrom = curveFrom;
+        this.curveTo = curveTo;
+        this.sizes = Utils.Numbers.longArrayFromCollection(commonGeometry.getShape());
+      }
+
+      /**
+       * Return the number at the offsets mapped to the target curve
+       *
+       * @param original
+       * @return
+       */
+      public long[] offsets(long original) {
+        return curveTo.offsets(curveFrom.offset(original, sizes), sizes);
+      }
+
+      /**
+       * Return the original linear offset for the given coordinate offsets in the target curve
+       *
+       * @param offsets coordinate array in the source curve's coordinate system
+       * @return original linear offset in the target curve's coordinate system
+       */
+      public long offset(long[] offsets) {
+        return curveTo.map((int) curveFrom.flattenRowMajor(offsets, sizes), sizes, curveTo);
+      }
+    }
+
+    public Mapper mapperTo(FillCurve curveTo, Geometry.Dimension commonGeometry) {
+      return new Mapper(commonGeometry, this, curveTo);
     }
 
     /**
