@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
@@ -37,15 +38,17 @@ public interface StorageManager {
 
   /**
    * Get a temporary scanner for a transparently managed chunk of storage of the passed size and
-   * scanner class. The storage linked to the scanner is deleted after the scanner goes out of
-   * scope.
+   * scanner class. A mock-up {@link org.integratedmodelling.klab.api.data.Storage.Shard} is
+   * connected to it so that the API remains consistent and the geometry is accessible. The storage
+   * linked to the scanner is deleted after the scanner goes out of scope or the service shuts down,
+   * so this should be used as a heap variable, within the scope of a single method.
    *
-   * @param size
+   * @param geometry
    * @param scannerClass
    * @return
    * @param <T>
    */
-  <T extends Storage.Scanner> T getTemporaryScanner(long size, Class<T> scannerClass);
+  <T extends Storage.Scanner> T getTemporaryScanner(Geometry geometry, Class<T> scannerClass);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

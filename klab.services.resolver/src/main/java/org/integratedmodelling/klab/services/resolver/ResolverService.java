@@ -328,10 +328,11 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
+  public String declareContextScope(
+      ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
     // instrument the scope for resolving observations and keeping resolution results across calls.
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
-    return super.declareContextScope(contextScope, userScope);
+    return super.declareContextScope(contextScope, sessionScope, userScope);
   }
 
   private StringBuffer encodeActuator(

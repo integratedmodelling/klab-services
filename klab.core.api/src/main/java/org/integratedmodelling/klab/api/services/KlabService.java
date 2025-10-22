@@ -356,10 +356,13 @@ public interface KlabService extends Service {
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
-   * @param userScope used to set up federated behavior
+   * @param sessionScope used to set up federated behavior
+   * @param userScope used to establish the agent making changes (same as sessionScope's unless
+   *     federated)
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  String declareContextScope(ContextScope contextScope, SessionScope userScope);
+  String declareContextScope(
+      ContextScope contextScope, SessionScope sessionScope, UserScope userScope);
 
   /**
    * Get the access rights for the passed resource. If the resource does not exist or is

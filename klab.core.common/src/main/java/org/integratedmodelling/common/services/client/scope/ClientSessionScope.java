@@ -99,7 +99,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      * that hosts it.
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
-    var id = runtime.declareContextScope(ret, this);
+    var id = runtime.declareContextScope(ret, this, userScope);
 
     if (id != null) {
       ret.setId(id);

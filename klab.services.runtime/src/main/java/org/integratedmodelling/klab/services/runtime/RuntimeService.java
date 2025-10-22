@@ -227,14 +227,16 @@ public class RuntimeService extends BaseService
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
+   * @param sessionScope used to set up federated behavior
    * @param userScope used to set up federated behavior
    * @return
    */
   @Override
-  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
+  public String declareContextScope(
+      ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     if (!serviceId().equals(contextScope.getHostServiceId())) {
-      return super.declareContextScope(contextScope, userScope);
+      return super.declareContextScope(contextScope, sessionScope, userScope);
     }
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
@@ -663,11 +665,11 @@ public class RuntimeService extends BaseService
     }
     var ret =
         new ServiceContextScope((ServiceSessionScope) session, configuration, userScope.getUser());
-    declareContextScope(ret, session);
-
     if (!userScope.getUser().getUsername().equals(ret.getUser().getUsername())) {
       ret = ret.withIdentity(userScope.getIdentity());
     }
+
+    declareContextScope(ret, session, userScope);
 
     return ret;
   }

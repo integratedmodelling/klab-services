@@ -578,11 +578,12 @@ public abstract class BaseService implements KlabService {
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
-   * @param userScope used to set up federated behavior
+   * @param sessionScope used to set up federated behavior
    * @return
    */
   @Override
-  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
+  public String declareContextScope(
+      ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 

@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -193,7 +194,8 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public <T extends Storage.Scanner> T getTemporaryScanner(long size, Class<T> scannerClass) {
+  public <T extends Storage.Scanner> T getTemporaryScanner(
+      Geometry geometry, Class<T> scannerClass) {
     // TODO
     return null;
   }

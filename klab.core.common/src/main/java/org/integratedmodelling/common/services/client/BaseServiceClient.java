@@ -153,7 +153,8 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
-  public String declareContextScope(ContextScope contextScope, SessionScope sessionScope) {
+  public String declareContextScope(
+      ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(contextScope.getConfiguration());

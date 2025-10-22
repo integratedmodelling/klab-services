@@ -527,7 +527,7 @@ public class RuntimeServerController {
           }
 
           // this creates the DT and registers the scope
-          var id = runtimeService.klabService().declareContextScope(ret, sessionScope);
+          var id = runtimeService.klabService().declareContextScope(ret, sessionScope, userScope);
           var queuesAvailable = ret.setupQueues(queuesHeader);
           Logging.INSTANCE.info("Queues set up for digital twin " + id + ": " + queuesAvailable);
 

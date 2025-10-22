@@ -279,7 +279,8 @@ public class ScopeManager {
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
 
-        if (scopeData.type() == Scope.Type.CONTEXT && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
+        if (scopeData.type() == Scope.Type.CONTEXT
+            && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
           ret = ((ServiceContextScope) ret).withIdentity(userScope.getIdentity());
         }
 
@@ -312,7 +313,7 @@ public class ScopeManager {
             }
             ret.setId(scopeId);
             ret.setHostServiceId(runtimeId);
-            service.declareContextScope((ContextScope) ret, sessionScope);
+            service.declareContextScope((ContextScope) ret, sessionScope, userScope);
             if (!sessionScope.getUser().getUsername().equals(authorization.getUsername())) {
               ret =
                   ((ServiceContextScope) ret)
