@@ -274,10 +274,12 @@ public class ScopeManager {
 
     if (scopeId != null && userScope != null) {
 
+      var scopeData = ContextScope.parseScopeId(scopeId);
+
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
 
-        if (!ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
+        if (scopeData.type() == Scope.Type.CONTEXT && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
           ret = ((ServiceContextScope) ret).withIdentity(userScope.getIdentity());
         }
 
