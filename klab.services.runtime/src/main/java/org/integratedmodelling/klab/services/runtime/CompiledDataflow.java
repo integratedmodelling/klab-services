@@ -613,7 +613,7 @@ public class CompiledDataflow {
               contextScope.getActivity(),
               "Contextualization of " + observation.getObservable());
 
-      var contextualizationScope = contextScope.executing(contextualization);
+      var contextualizationScope = contextScope.executing(contextualization, observation);
       Throwable failure = null;
       boolean ret = true;
       for (var executor : executors) {

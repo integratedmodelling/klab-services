@@ -218,12 +218,12 @@ public class SchedulerImpl implements Scheduler {
                       new KlabIllegalStateException(
                           "Inconsistent AFFECT relationship in knowledge graph"));
 
-      scope
-          .getCurrentTransaction()
-          .link(
-              scope.getCurrentTransaction().getActivity(),
-              affecting.source(),
-              GraphModel.Relationship.CONTEXTUALIZED);
+//      scope
+//          .getCurrentTransaction()
+//          .link(
+//              scope.getCurrentTransaction().getActivity(),
+//              affecting.source(),
+//              GraphModel.Relationship.CONTEXTUALIZED);
 
       //      var sequence = 0;
       //      if (affectingRelationship != null) { // it must be

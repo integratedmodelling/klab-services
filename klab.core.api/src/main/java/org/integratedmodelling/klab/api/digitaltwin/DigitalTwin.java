@@ -258,9 +258,12 @@ public interface DigitalTwin extends RuntimeAsset {
      * a child transaction fails, the whole transaction tree fails.
      *
      * @param activity
+     * @param scope in a federated session, may have a different owner every time
+     * @param runtimeAssets any other assets related to the transaction that may be relevant (e.g.
+     *     agent)
      * @return
      */
-    Transaction getChild(Activity activity, ContextScope scope);
+    Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets);
 
     /**
      * Signal compilation failure. Return a transaction that will throw the same exception at

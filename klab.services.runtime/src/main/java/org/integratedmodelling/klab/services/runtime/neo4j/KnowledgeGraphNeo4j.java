@@ -461,6 +461,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     this.rootContextId = scopeId;
     this.userScope = scope;
     this.serviceId = scope.getHostServiceId();
+    this.klab = getOrCreateAgent("k.LAB", "AI");
+    this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
     var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scopeId), scope);
 
@@ -468,9 +470,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       long timestamp = System.currentTimeMillis();
       var activityId = nextKey();
-
-      this.klab = getOrCreateAgent("k.LAB", "AI");
-      this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
       var federation = Klab.INSTANCE.getFederationData(scope.getUser());
       if (rights == null) {
@@ -506,7 +505,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
   }
 
-  private Agent getOrCreateAgent(String name, String ai) {
+  protected Agent getOrCreateAgent(String name, String ai) {
     var result =
         adapt(
             query(
@@ -677,12 +676,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public Agent user() {
-    return user;
+    return this.user;
   }
 
   @Override
   public Agent klab() {
-    return klab;
+    return this.klab;
   }
 
   @Override

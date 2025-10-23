@@ -7,6 +7,7 @@ import java.time.Duration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
@@ -31,20 +32,14 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
   private GraphDatabaseService graphDb;
   private boolean online = true;
 
-  private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, ContextScope scope) {
-    this.managementService = parent.managementService;
-    this.graphDb = parent.graphDb;
-    this.online = parent.online;
-    this.userScope = scope;
-    this.driver = parent.driver;
-    this.serviceId = scope.getHostServiceId();
-  }
-
-  private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, String scopeId) {
+  private KnowledgeGraphNeo4JEmbedded(
+      KnowledgeGraphNeo4JEmbedded parent, String scopeId, UserIdentity user) {
     this.managementService = parent.managementService;
     this.graphDb = parent.graphDb;
     this.online = parent.online;
     this.driver = parent.driver;
+    this.klab = getOrCreateAgent("k.LAB", "AI");
+    this.user = getOrCreateAgent(user.getUsername(), "USER");
     this.rootContextId = scopeId;
     this.serviceId = parent.serviceId;
   }
@@ -65,9 +60,11 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
               .setConfig(GraphDatabaseSettings.transaction_timeout, Duration.ofSeconds(60))
               .setConfig(GraphDatabaseSettings.preallocate_logical_logs, true)
               .setConfig(BoltConnector.enabled, true) // for the driver
-              .setConfig(BoltConnector.listen_address, new SocketAddress("0.0.0.0", 7687)) // docker fix
+              .setConfig(
+                  BoltConnector.listen_address, new SocketAddress("0.0.0.0", 7687)) // docker fix
               .setConfig(HttpConnector.enabled, true) // for debugging ?
-              .setConfig(HttpConnector.listen_address, new SocketAddress("0.0.0.0", 7474)) // docker fix
+              .setConfig(
+                  HttpConnector.listen_address, new SocketAddress("0.0.0.0", 7474)) // docker fix
               .build();
 
       this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
@@ -115,31 +112,6 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     //        }
   }
 
-  //  @Override
-  //  public KnowledgeGraph contextualize(ContextScope scope) {
-  //
-  //    if (this.scope != null) {
-  //
-  //      // idempotence
-  //      if (rootContextId.equals(scope.getId())) {
-  //        return this;
-  //      }
-  //
-  //      throw new KlabIllegalStateException(
-  //          "cannot recontextualize a previously contextualized graph " + "database");
-  //    }
-  //
-  //    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
-  //
-  //    ret.initializeContext(
-  //        scope.getId(),
-  //        scope.getName(),
-  //        scope,
-  //        scope.getDigitalTwinConfiguration().getAccessRights());
-  //
-  //    return ret;
-  //  }
-
   @Override
   public KnowledgeGraph contextualize(
       DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
@@ -149,7 +121,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
       return this;
     }
 
-    var ret = new KnowledgeGraphNeo4JEmbedded(this, digitalTwinConfig.getId());
+    var ret = new KnowledgeGraphNeo4JEmbedded(this, digitalTwinConfig.getId(), userScope.getUser());
 
     ret.initializeContext(
         digitalTwinConfig.getId(),

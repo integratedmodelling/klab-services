@@ -367,6 +367,7 @@ public class RuntimeService extends BaseService
         observationImpl.setContextualizationData(contextualizationData);
       }
 
+      var isRoot = serviceContextScope.getActivity() == null;
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var storedAgent =
@@ -386,8 +387,7 @@ public class RuntimeService extends BaseService
               serviceContextScope.getActivity(),
               observation + " submitted");
 
-      //      var submissionScope = serviceContextScope.initializeResolution(submission);
-      var submissionScope = serviceContextScope.executing(submission, storedAgent);
+      var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -410,7 +410,11 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
-      var resolutionScope = submissionScope.executing(resolution, knowledgeGraph.klab());
+      // keep the k.LAB ownership for the resolution only if we're the root action
+      var resolutionScope =
+          submissionScope.executing(
+              resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null);
+
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)
@@ -439,11 +443,14 @@ public class RuntimeService extends BaseService
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
                   // TODO add more info about the contextualization to the action's metadata
+                  submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId != null
-                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {}
-                  o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
+                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
+                    o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
+                  }
                 } else {
+                  submission.setName("SUB FAIL");
                   submissionScope.fail();
                 }
                 return o;

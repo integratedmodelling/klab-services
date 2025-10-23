@@ -179,7 +179,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
-    private TransactionImpl(TransactionImpl parent, Activity activity) {
+    private TransactionImpl(TransactionImpl parent, Activity activity, Object... data) {
 
       this.graph = parent.graph;
       this.activity = activity;
@@ -191,6 +191,25 @@ public class DigitalTwinImpl implements DigitalTwin {
         this.graph.addVertex(activity);
         this.graph.addEdge(
             parent.activity, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+
+        this.graph.addVertex(activity);
+        if (data != null) {
+          for (Object datum : data) {
+            if (datum instanceof Agent agent) {
+              this.graph.addVertex(agent);
+              this.graph.addEdge(
+                  activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
+            } else if (datum instanceof Observation observation) {
+              // only link contextualization to the contextualized observation
+              if (activity.getType() == Activity.Type.CONTEXTUALIZATION) {
+                this.graph.addEdge(
+                    activity,
+                    observation,
+                    new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+              }
+            } // TODO see if we need anything else
+          }
+        }
       }
     }
 
@@ -307,20 +326,23 @@ public class DigitalTwinImpl implements DigitalTwin {
             }
           }
 
-//          if (!trivial) {
-//            kgTransaction.link(
-//                knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
-//            linked.add(
-//                Triple.of(
-//                    knowledgeGraph.provenance().getId(),
-//                    activity.getId(),
-//                    GraphModel.Relationship.HAS_CHILD.name()));
-//          }
+          //          if (!trivial) {
+          //            kgTransaction.link(
+          //                knowledgeGraph.provenance(), activity,
+          // GraphModel.Relationship.HAS_CHILD);
+          //            linked.add(
+          //                Triple.of(
+          //                    knowledgeGraph.provenance().getId(),
+          //                    activity.getId(),
+          //                    GraphModel.Relationship.HAS_CHILD.name()));
+          //          }
 
         } catch (Exception e) {
           scope.error(e);
           kgTransaction.fail(e);
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+          ((ActivityImpl) activity)
+              .setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
           return null;
@@ -365,14 +387,15 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
 
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
+      ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " OK");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
       return ret;
     }
 
     @Override
-    public Transaction getChild(Activity activity, ContextScope scope) {
-      return new TransactionImpl(this, activity);
+    public Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets) {
+      return new TransactionImpl(this, activity, runtimeAssets);
     }
 
     private Object[] getRelationshipData(RelationshipEdge edge) {
@@ -413,6 +436,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public Transaction fail(Throwable compilationError) {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
+      ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " FAIL");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
       if (compilationError != null) {
         this.failures.add(compilationError);

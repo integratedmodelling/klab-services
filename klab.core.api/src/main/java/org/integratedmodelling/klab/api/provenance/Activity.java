@@ -180,6 +180,7 @@ public interface Activity extends Provenance.Node {
         ret.setParentTransientId(activity.getTransientId());
       }
     }
+
     return ret;
   }
 }

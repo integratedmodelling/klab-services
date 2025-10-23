@@ -467,7 +467,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ret.currentTransaction =
         currentTransaction == null
             ? getDigitalTwin().transaction(currentActivity, this, assets.toArray())
-            : currentTransaction.getChild(currentActivity, ret);
+            : currentTransaction.getChild(currentActivity, ret, assets.toArray());
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
@@ -731,6 +731,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public String commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
+      activity.setName(activity.getType().name().substring(0, 3) + " OK");
       if (getActivity().getType() == Activity.Type.RESOLUTION
           && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
         // add the resolved graph as metadata to the activity instead
@@ -765,6 +766,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.currentTransaction.fail(t);
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
     }
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
@@ -772,6 +774,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public void fail() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
     }
     this.currentTransaction.fail(null);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
