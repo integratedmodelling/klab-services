@@ -423,7 +423,22 @@ public class ComponentRegistry {
         target = component;
       }
     }
-    return target == null ? null : target.services().get(call.getUrn());
+    if (target == null) { return null; }
+    var ret = target.services().get(call.getUrn());
+    if (ret != null) {
+        return ret;
+    }
+    ret = target.verbs().get(call.getUrn());
+    if (ret != null) {
+        return ret;
+    }
+    ret = target.annotations().get(call.getUrn());
+    if (ret != null) {
+        return ret;
+    }
+    // FIXME lookup of exporters and importers is different
+//    ret = target.exporters().get(call.getUrn());
+    return null;
   }
 
   /**

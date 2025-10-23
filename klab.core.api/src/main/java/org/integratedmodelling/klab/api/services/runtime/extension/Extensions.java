@@ -68,9 +68,12 @@ public interface Extensions {
       ResourcePrivileges usageRights,
       List<LibraryDescriptor> libraries,
       List<AdapterDescriptor> adapters,
+      // FIXME these must be able to list multiple descriptors per URN, selected based on parameter
+      //  types
       Map<String, FunctionDescriptor> services,
       Map<String, FunctionDescriptor> annotations,
       Map<String, FunctionDescriptor> verbs,
+      // FIXME why are these different?
       List<Pair<ServiceInfo, FunctionDescriptor>> exporters,
       List<Pair<ServiceInfo, FunctionDescriptor>> importers) {
 
