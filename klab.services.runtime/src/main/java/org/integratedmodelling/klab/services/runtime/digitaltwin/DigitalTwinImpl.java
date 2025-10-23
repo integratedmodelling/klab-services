@@ -146,7 +146,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         if (data != null) {
           for (Object datum : data) {
-            if (datum instanceof Agent agent) {
+            if (datum == RuntimeAsset.PROVENANCE_ASSET
+                || datum == RuntimeAsset.CONTEXT_ASSET
+                || datum == RuntimeAsset.DATAFLOW_ASSET) {
+              this.graph.addVertex((RuntimeAsset) datum);
+            } else if (datum instanceof Agent agent) {
               this.graph.addVertex(agent);
               this.graph.addEdge(
                   activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));

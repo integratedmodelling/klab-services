@@ -266,6 +266,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (closed) {
         return;
       }
+      if (asset == RuntimeAsset.CONTEXT_ASSET
+          || asset == RuntimeAsset.PROVENANCE_ASSET
+          || asset == RuntimeAsset.DATAFLOW_ASSET) {
+        return;
+      }
+
       try {
         var id =
             KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
@@ -984,7 +990,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           };
     }
 
-    return ret == null ? (ret = name + ".id = $" + queryVariable) : ret;
+    return ret;
   }
 
   private Object getId(RuntimeAsset asset) {
@@ -1377,14 +1383,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   Map.of("sessionId", sessionScope.getId() + "."),
                   scope);
           case UserScope userScope -> {
-              String federation = Klab.INSTANCE.getFederationData(userScope.getUser()).getId();
-              Map<String, Object> params = new HashMap<>();
-              params.put("user", userScope.getUser().getUsername());
-              if (federation != null) params.put("federation", federation);
-              yield query(
-                  "MATCH (c:Context) WHERE c.user = $user OR c.federation = $federation RETURN c",
-                  params,
-                  scope);
+            String federation = Klab.INSTANCE.getFederationData(userScope.getUser()).getId();
+            Map<String, Object> params = new HashMap<>();
+            params.put("user", userScope.getUser().getUsername());
+            if (federation != null) params.put("federation", federation);
+            yield query(
+                "MATCH (c:Context) WHERE c.user = $user OR c.federation = $federation RETURN c",
+                params,
+                scope);
           }
           default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
         };
