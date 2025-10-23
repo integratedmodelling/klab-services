@@ -307,15 +307,15 @@ public class DigitalTwinImpl implements DigitalTwin {
             }
           }
 
-          if (!trivial) {
-            kgTransaction.link(
-                knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
-            linked.add(
-                Triple.of(
-                    knowledgeGraph.provenance().getId(),
-                    activity.getId(),
-                    GraphModel.Relationship.HAS_CHILD.name()));
-          }
+//          if (!trivial) {
+//            kgTransaction.link(
+//                knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
+//            linked.add(
+//                Triple.of(
+//                    knowledgeGraph.provenance().getId(),
+//                    activity.getId(),
+//                    GraphModel.Relationship.HAS_CHILD.name()));
+//          }
 
         } catch (Exception e) {
           scope.error(e);

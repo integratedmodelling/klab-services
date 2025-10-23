@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources.adapters;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 
@@ -29,8 +30,7 @@ public @interface Exporter {
   /// is used with the library's namespace to build the complete ID as a dot-separated path. The
   /// leading path ([org.integratedmodelling.klab.api.services.runtime.extension.Library]'s
   /// namespace is the "class" of the import and this schema ID specifies the import source or
-  // method
-  /// (e.g. <code>component.jar</code>).
+  // method (e.g. <code>component.jar</code>).
   String schema();
 
   ///  A geometry specification that the data must be compatible with. Default applies to any
@@ -45,6 +45,14 @@ public @interface Exporter {
   ///
   /// @return
   KlabFunction.Argument[] properties() default {};
+
+  /**
+   * Fill curve if one is needed by the implementation. This ensures that any scanner passed to the
+   * function can be used with the stated fill curve while mapping to the one in the storage.
+   *
+   * @return
+   */
+  Data.FillCurve fillCurve() default Data.FillCurve.UNSPECIFIED;
 
   /// Mandatory media type that will be sent along with the exported byte stream.
   ///

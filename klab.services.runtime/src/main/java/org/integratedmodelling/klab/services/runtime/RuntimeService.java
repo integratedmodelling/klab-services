@@ -394,7 +394,6 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               Activity.Type.RESOLUTION,
               this,
-              knowledgeGraph.klab(),
               submission,
               "Resolution of " + observation,
               submissionScope);
@@ -411,7 +410,7 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
-      var resolutionScope = submissionScope.executing(resolution);
+      var resolutionScope = submissionScope.executing(resolution, knowledgeGraph.klab());
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, resolutionScope)

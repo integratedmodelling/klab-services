@@ -559,10 +559,6 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     Time.Type type =
         representation == null ? null : Time.Type.valueOf(representation.toUpperCase());
 
-    if (type == Time.Type.INITIALIZATION) {
-      return initialization((Scale) null);
-    }
-
     if (type == Time.Type.TERMINATION) {
       return termination((Scale) null);
     }
