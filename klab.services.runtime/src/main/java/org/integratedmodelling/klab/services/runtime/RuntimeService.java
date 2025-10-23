@@ -394,7 +394,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               Activity.Type.RESOLUTION,
               this,
-              agent,
+              knowledgeGraph.klab(),
               submission,
               "Resolution of " + observation,
               submissionScope);

@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -44,7 +45,8 @@ import org.ojalgo.concurrent.Parallelism;
  * through the services chosen by the session scope. Uses agents as needed. Relies on external
  * instrumentation after creation.
  *
- * <p>Instrumented by {@link KlabService#declareContextScope(ContextScope, SessionScope)}.
+ * <p>Instrumented by {@link KlabService#declareContextScope(ContextScope, SessionScope,
+ * UserScope)}}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -458,7 +460,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ServiceContextScope ret = new ServiceContextScope(this);
     var parentActivity = this.getActivity();
     var assets = new ArrayList<>();
-    assets.add(parentActivity);
+    assets.add(parentActivity == null ? RuntimeAsset.PROVENANCE_ASSET : parentActivity);
     if (runtimeAssets != null) {
       assets.addAll(Arrays.asList(runtimeAssets));
     }
