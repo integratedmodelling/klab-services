@@ -13,6 +13,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.*;
+import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -799,11 +800,15 @@ public class RuntimeService extends BaseService
         0; // appropriateness of scanner parameter w.r.t. observable type & scope prefs
     var geometryScore = 0; // appropriateness of geometry parameter w.r.t. observation geometry
     var eventScore = 0; // appropriateness of scheduler parameters w.r.t. observation geometry
+
     // TODO match geometry to fill curve and geometry in service info
-    for (var parameter :
-        (implementation.constructor == null
-            ? implementation.method.getParameterTypes()
-            : implementation.constructor.getParameterTypes())) {
+    if (serviceInfo.getGeometry() != null && !serviceInfo.getGeometry().isUniversal()) {
+
+    }
+      for (var parameter :
+          (implementation.constructor == null
+              ? implementation.method.getParameterTypes()
+              : implementation.constructor.getParameterTypes())) {
       if (Scanner.class.isAssignableFrom(parameter)) {
         if (SemanticType.isNumeric(observation.getObservable().getSemantics().getType())) {
           var preferredType = configuration.getNumericStorageType();
@@ -828,7 +833,15 @@ public class RuntimeService extends BaseService
           scannerScore = 1;
         }
       } // TODO match the rest!
+
+      if (DataKey.class.isAssignableFrom(parameter)) {
+        var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        if (storage == null || storage.getKey() == null) {
+          return -1;
+        }
+      }
     }
+
     if (scannerScore < 0 || geometryScore < 0 || eventScore < 0) {
       return -1;
     }
