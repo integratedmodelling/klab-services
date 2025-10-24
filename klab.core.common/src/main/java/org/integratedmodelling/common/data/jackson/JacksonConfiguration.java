@@ -299,6 +299,8 @@ public class JacksonConfiguration {
 
     // needed to avoid some shit, provided we add and risk even more shit
     mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
+    mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+
     SimpleModule module = new SimpleModule();
     for (var cls :
         new Class<?>[] {
