@@ -70,12 +70,11 @@ public interface Extensions {
       List<AdapterDescriptor> adapters,
       // FIXME these must be able to list multiple descriptors per URN, selected based on parameter
       //  types
-      Map<String, FunctionDescriptor> services,
-      Map<String, FunctionDescriptor> annotations,
-      Map<String, FunctionDescriptor> verbs,
-      // FIXME why are these different?
-      List<Pair<ServiceInfo, FunctionDescriptor>> exporters,
-      List<Pair<ServiceInfo, FunctionDescriptor>> importers) {
+      Map<String, List<FunctionDescriptor>> services,
+      Map<String, List<FunctionDescriptor>> annotations,
+      Map<String, List<FunctionDescriptor>> verbs,
+      Map<String, List<FunctionDescriptor>> exporters,
+      Map<String, List<FunctionDescriptor>> importers) {
 
     @Override
     public boolean equals(Object o) {

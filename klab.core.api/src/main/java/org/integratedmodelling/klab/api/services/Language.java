@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -46,7 +47,8 @@ public interface Language extends Service {
     return "klab.language.service";
   }
 
-  interface LanguageProcessor {
+
+    interface LanguageProcessor {
 
     /**
      * To compile an expression within a given scope, the scope should be passed for analysis and

@@ -24,6 +24,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -35,6 +37,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -770,5 +773,65 @@ public class RuntimeService extends BaseService
     }
 
     return ret;
+  }
+
+  /**
+   * Matches the provided service implementation with the specified service call and observation.
+   * Typically used to determine compatibility or processing suitability between a service
+   * implementation, a service call, and an observation. Matches parameters to best scanner types,
+   * fill curve w.r.t. observation geometry, and scope preferences.
+   *
+   * @param serviceInfo the service info to be matched, which may contain additional information
+   * @param implementation the service implementation to be matched
+   * @param call the service call to be matched
+   * @param observation the observation used in the matching process
+   * @return an integer representing the match result, where the specific value and its meaning
+   *     depend on the context of the matching logic
+   */
+  public int matchImplementation(
+      ServiceInfo serviceInfo,
+      ComponentRegistry.ServiceImplementation implementation,
+      ServiceCall call,
+      Observation observation,
+      ContextScope scope) {
+    // TODO
+    var scannerScore =
+        0; // appropriateness of scanner parameter w.r.t. observable type & scope prefs
+    var geometryScore = 0; // appropriateness of geometry parameter w.r.t. observation geometry
+    var eventScore = 0; // appropriateness of scheduler parameters w.r.t. observation geometry
+    // TODO match geometry to fill curve and geometry in service info
+    for (var parameter :
+        (implementation.constructor == null
+            ? implementation.method.getParameterTypes()
+            : implementation.constructor.getParameterTypes())) {
+      if (Scanner.class.isAssignableFrom(parameter)) {
+        if (SemanticType.isNumeric(observation.getObservable().getSemantics().getType())) {
+          var preferredType = configuration.getNumericStorageType();
+          if (Storage.DoubleScanner.class.isAssignableFrom(parameter)) {
+            scannerScore = preferredType == Storage.Type.DOUBLE ? 0 : 1;
+          } else if (Storage.FloatScanner.class.isAssignableFrom(parameter)) {
+            scannerScore = preferredType == Storage.Type.FLOAT ? 0 : 1;
+          }
+        } else if (observation
+            .getObservable()
+            .getSemantics()
+            .getType()
+            .contains(SemanticType.CLASS)) {
+          scannerScore = Storage.KeyScanner.class.isAssignableFrom(parameter) ? 0 : -1;
+        } else if (observation
+            .getObservable()
+            .getSemantics()
+            .getType()
+            .contains(SemanticType.PRESENCE)) {
+          scannerScore = Storage.BooleanScanner.class.isAssignableFrom(parameter) ? 0 : -1;
+        } else {
+          scannerScore = 1;
+        }
+      } // TODO match the rest!
+    }
+    if (scannerScore < 0 || geometryScore < 0 || eventScore < 0) {
+      return -1;
+    }
+    return Math.max(Math.max(scannerScore, geometryScore), eventScore);
   }
 }

@@ -90,8 +90,8 @@ public class ComponentRegistry {
           new HashMap<>(),
           new HashMap<>(),
           new HashMap<>(),
-          new ArrayList<>(),
-          new ArrayList<>());
+          new HashMap<>(),
+          new HashMap<>());
 
   /** Component descriptors, uniquely identified by id + version */
   private MultiValuedMap<String, Extensions.ComponentDescriptor> components =
@@ -411,7 +411,7 @@ public class ComponentRegistry {
    * @param call
    * @return
    */
-  public Extensions.FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
+  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(ServiceCall call) {
     var version = call.getRequiredVersion();
     Extensions.ComponentDescriptor target = null;
     for (var component : serviceFinder.get(call.getUrn())) {
@@ -423,21 +423,29 @@ public class ComponentRegistry {
         target = component;
       }
     }
-    if (target == null) { return null; }
+    if (target == null) {
+      return null;
+    }
     var ret = target.services().get(call.getUrn());
     if (ret != null) {
-        return ret;
+      return ret;
     }
     ret = target.verbs().get(call.getUrn());
     if (ret != null) {
-        return ret;
+      return ret;
     }
     ret = target.annotations().get(call.getUrn());
     if (ret != null) {
-        return ret;
+      return ret;
     }
-    // FIXME lookup of exporters and importers is different
-//    ret = target.exporters().get(call.getUrn());
+    ret = target.exporters().get(call.getUrn());
+    if (ret != null) {
+      return ret;
+    }
+    ret = target.importers().get(call.getUrn());
+    if (ret != null) {
+      return ret;
+    }
     return null;
   }
 
@@ -512,28 +520,40 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            new ArrayList<>(),
-            new ArrayList<>());
+            new HashMap<>(),
+            new HashMap<>());
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {
       for (var service : library.services()) {
         serviceFinder.put(service.getFirst().getName(), componentDescriptor);
-        componentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+        componentDescriptor
+            .services()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       for (var service : library.annotations()) {
         annotationFinder.put(service.getFirst().getName(), componentDescriptor);
-        componentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
+        componentDescriptor
+            .annotations()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       for (var service : library.verbs()) {
         verbFinder.put(service.getFirst().getName(), componentDescriptor);
-        componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+        componentDescriptor
+            .verbs()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       for (var service : library.exporters()) {
         serviceFinder.put(service.getFirst().getName(), componentDescriptor);
         for (var mediaType : service.getFirst().getMediaTypes()) {
           exporterFinder.put(mediaType, componentDescriptor);
-          componentDescriptor.exporters().add(Pair.of(service.getFirst(), service.getSecond()));
+          componentDescriptor
+              .exporters()
+              .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+              .add(service.getSecond());
         }
       }
       for (var service : library.importers()) {
@@ -541,7 +561,10 @@ public class ComponentRegistry {
         serviceFinder.put(service.getFirst().getName(), componentDescriptor);
         for (var mediaType : service.getFirst().getMediaTypes()) {
           importerFinder.put(mediaType, componentDescriptor);
-          componentDescriptor.importers().add(Pair.of(service.getFirst(), service.getSecond()));
+          componentDescriptor
+              .importers()
+              .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+              .add(service.getSecond());
         }
       }
     }
@@ -1008,11 +1031,7 @@ public class ComponentRegistry {
       final String mediaType = "application/java-archive";
       var schemata =
           ResourceTransport.INSTANCE.findExportSchemata(
-              KlabAsset.KnowledgeClass.COMPONENT,
-              mediaType,
-              null,
-              service,
-              scope);
+              KlabAsset.KnowledgeClass.COMPONENT, mediaType, null, service, scope);
       if (schemata.isEmpty()) {
         throw new KlabAuthorizationException(
             "No authorized export schema with media type " + mediaType + " is available");
@@ -1303,27 +1322,40 @@ public class ComponentRegistry {
     for (var library : localComponentDescriptor.libraries()) {
       for (var service : library.services()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
-        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+        localComponentDescriptor
+            .services()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       // we need these to be findable by URN
       for (var service : library.importers()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
-        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+        localComponentDescriptor
+            .services()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       // we need these to be findable by URN as well, dio carciofo
       for (var service : library.exporters()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
-        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+        localComponentDescriptor
+            .services()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       for (var service : library.annotations()) {
         annotationFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor
             .annotations()
-            .put(service.getFirst().getName(), service.getSecond());
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
       for (var service : library.verbs()) {
         verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
-        localComponentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+        localComponentDescriptor
+            .verbs()
+            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+            .add(service.getSecond());
       }
     }
   }

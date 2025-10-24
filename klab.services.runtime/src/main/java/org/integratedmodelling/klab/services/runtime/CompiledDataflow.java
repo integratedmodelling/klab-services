@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -31,6 +32,7 @@ import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
@@ -138,7 +140,7 @@ public class CompiledDataflow {
   }
 
   // use the cache to return the call info
-  private CallDescriptors getCallInfo(ServiceCall call) {
+  private CallDescriptors getCallInfo(ServiceCall call, Observation observation) {
     var ret = callInfo.get(call.getUrn());
     if (ret == null) {
       var preset = RuntimeService.CoreFunctor.classify(call);
@@ -176,7 +178,7 @@ public class CompiledDataflow {
       } else {
         // TODO this should return a list of candidates, to match based on the parameters. For
         //  numeric there may be a float and double version.
-        serviceInfo = componentRegistry.getFunctionDescriptor(call);
+        serviceInfo = choosePrototype(call, observation);
       }
 
       if (adapterDescriptor != null || serviceInfo != null) {
@@ -186,6 +188,29 @@ public class CompiledDataflow {
     }
 
     return ret;
+  }
+
+  private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {
+    List<Pair<Extensions.FunctionDescriptor, Integer>> candidates = new ArrayList<>();
+    for (var prototype : componentRegistry.getFunctionDescriptor(call)) {
+      // match parameters, types, fill curve w.r.t. observation geometry; choose best fit
+      var implementation = componentRegistry.implementation(prototype);
+      if (implementation != null) {
+        var score =
+            runtimeService.matchImplementation(
+                prototype.serviceInfo, implementation, call, observation, scope);
+        if (score >= 0) {
+          candidates.add(Pair.of(prototype, score));
+        }
+      }
+    }
+    return candidates.isEmpty()
+        ? null
+        : candidates.stream()
+            .sorted(Comparator.comparingInt(Pair::getSecond))
+            .toList()
+            .getFirst()
+            .getFirst();
   }
 
   /**
@@ -469,7 +494,7 @@ public class CompiledDataflow {
       if (observation.getObservable().is(SemanticType.QUALITY) && nativeShardingStrategy == null) {
         for (var call : actuator.getComputation()) {
           // set to the strategy for the computation adjusted by the actuator's
-          var callInfo = getCallInfo(call);
+          var callInfo = getCallInfo(call, observation);
           var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
           nativeShardingStrategy =
               nativeShardingStrategy == null
@@ -497,14 +522,13 @@ public class CompiledDataflow {
        * Now actually compile each computation, adapting the sharding strategy to whatever the
        * specific computation requires.
        *
-       * <p>TODO the calls should be for one shard at a time. Ingestion in the DT, when needed,
-       * should happen AFTER all shards have computed. If there is >1 shard, we should keep the
-       * executor functions and wrap them into another one that runs the shard executors in
-       * parallel.
+       * <p>The calls refer to one shard at a time. Ingestion in the DT, when needed, happens AFTER
+       * all shards have computed. If there are multiple shards, we must keep the executor functions
+       * and wrap them into another one that runs the shard executors in parallel.
        */
       for (var call : actuator.getComputation()) {
 
-        var callInfo = getCallInfo(call);
+        var callInfo = getCallInfo(call, observation);
         Expression expression = null;
         LookupTable lookupTable = null;
 

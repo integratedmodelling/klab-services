@@ -60,8 +60,8 @@ public class LanguageService implements Language {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass) {
-    Extensions.FunctionDescriptor descriptor = this.componentRegistry.getFunctionDescriptor(call);
-    if (descriptor == null) {
+    var descriptors = this.componentRegistry.getFunctionDescriptor(call);
+    if (descriptors == null) {
       /*
       check the resource service in the scope to see if we can find a component that supports this call
        */
@@ -71,35 +71,51 @@ public class LanguageService implements Language {
               .resolveServiceCall(call.getUrn(), call.getRequiredVersion(), scope);
       if (!resourceSet.isEmpty()) {
         componentRegistry.loadComponents(resourceSet, scope);
-        descriptor = this.componentRegistry.getFunctionDescriptor(call);
+        descriptors = this.componentRegistry.getFunctionDescriptor(call);
       }
     }
-    if (descriptor != null && !descriptor.error) {
-      if (componentRegistry.implementation(descriptor).method != null) {
-        // can't be null
-        try {
-          return (T)
-              componentRegistry
-                  .implementation(descriptor)
-                  .method
-                  .invoke(
-                      descriptor.staticMethod
-                          ? null
-                          : componentRegistry.implementation(descriptor).mainClassInstance,
-                      getParameters(descriptor, call, scope, false));
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-          scope.error("runtime error when invoking function " + call.getUrn(), e);
-          return null;
-        }
-      } else if (componentRegistry.implementation(descriptor).constructor != null) {
-        Object[] args = getParameters(descriptor, call, scope, true);
-        try {
-          return (T) componentRegistry.implementation(descriptor).constructor.newInstance(args);
-        } catch (Throwable e) {
-          throw new KlabIllegalStateException(e);
+    if (descriptors != null) {
+      for (var descriptor : descriptors) {
+        if (!descriptor.error) {
+          if (componentRegistry.implementation(descriptor).method != null) {
+            // adapt the parameters to the function call
+            var parameters = getParameters(descriptor, call, scope, false);
+            if (parameters == null) {
+              continue;
+            }
+            try {
+              return (T)
+                  componentRegistry
+                      .implementation(descriptor)
+                      .method
+                      .invoke(
+                          descriptor.staticMethod
+                              ? null
+                              : componentRegistry.implementation(descriptor).mainClassInstance,
+                          parameters);
+            } catch (IllegalAccessException
+                | IllegalArgumentException
+                | InvocationTargetException e) {
+              scope.error("runtime error when invoking function " + call.getUrn(), e);
+              return null;
+            }
+          } else if (componentRegistry.implementation(descriptor).constructor != null) {
+            Object[] args = getParameters(descriptor, call, scope, true);
+            if (args == null) {
+              continue;
+            }
+            try {
+              return (T) componentRegistry.implementation(descriptor).constructor.newInstance(args);
+            } catch (Throwable e) {
+              throw new KlabIllegalStateException(e);
+            }
+          }
         }
       }
     }
+
+    scope.error("no suitable function implementation found for " + call.getUrn());
+
     return null;
   }
 
@@ -228,7 +244,7 @@ public class LanguageService implements Language {
     return "k.LAB Language Service";
   }
 
-    //    public void declare(ServiceInfo serviceInfo) {
+  //    public void declare(ServiceInfo serviceInfo) {
   //        FunctionDescriptor descriptor = createFunctionDescriptor(serviceInfo);
   //        switch (serviceInfo.getFunctionType()) {
   //            case ANNOTATION:
