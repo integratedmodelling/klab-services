@@ -1831,7 +1831,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new KlabIllegalArgumentException(e);
           }
         }
-        return Json.parseObject(body, resultClass);
+        try {
+            return Utils.parseWithJackson(body, resultClass);
+        } catch (IOException e) {
+            throw new KlabIOException(e);
+        }
       }
 
       @Override
@@ -3607,5 +3611,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     public File getFile() {
       return file;
     }
+  }
+
+  /**
+   * Add an option to avoid problem if Lists are serialized as empty arryas
+   * @param body the body
+   * @param resultClass the resutl class
+   * @return
+   * @param <T> Parsed object
+   * @throws IOException
+   */
+  public static <T> T parseWithJackson(String body, Class<T> resultClass) throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+    return mapper.readValue(body, resultClass);
   }
 }
