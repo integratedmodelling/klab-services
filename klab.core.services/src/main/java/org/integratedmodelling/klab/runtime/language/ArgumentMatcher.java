@@ -44,6 +44,21 @@ public class ArgumentMatcher {
     List<Object> payload = new ArrayList<>(call.getParameters().getUnnamedArguments());
     payload.add(call);
     payload.add(scope);
+
+    Resource resource = null;
+    Geometry geometry = null;
+    Data.Builder builder = null;
+    Observation observation = null;
+    Observable observable = null;
+    Urn urn = null;
+    Parameters<String> urnParameters = null;
+    ServiceCall serviceCall = call;
+    Storage.Scanner scanner = null;
+    Expression expression = null;
+    LookupTable lookupTable = null;
+    Data inputData = null;
+    Scheduler.Event schedulerEvent = null;
+
     if (scope instanceof ServiceUserScope serviceUserScope) {
       // add the service and the user identity
       payload.add(serviceUserScope.getService());
