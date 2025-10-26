@@ -47,8 +47,7 @@ public interface Language extends Service {
     return "klab.language.service";
   }
 
-
-    interface LanguageProcessor {
+  interface LanguageProcessor {
 
     /**
      * To compile an expression within a given scope, the scope should be passed for analysis and
@@ -88,12 +87,13 @@ public interface Language extends Service {
 
   /**
    * To compile an expression within a given scope, the scope should be passed for analysis and the
-   * descriptor used to compile into an expression. Normally used for expressions that exists outside
-   * contextualization as it passes empty inputs and outputs.
+   * descriptor used to compile into an expression. Normally used for expressions that exists
+   * outside contextualization as it passes empty inputs and outputs.
    *
-   * TODO this modality of use should check the scope and if it's a ContextScope it may automatically
-   *  bind observations to the relevant IDs, assuming full visibility. This could be done by adding a
-   *  compiler option that scans the observations in the scope if no input/output list is passed.
+   * <p>TODO this modality of use should check the scope and if it's a ContextScope it may
+   * automatically bind observations to the relevant IDs, assuming full visibility. This could be
+   * done by adding a compiler option that scans the observations in the scope if no input/output
+   * list is passed.
    *
    * @param code
    * @param scope
@@ -163,5 +163,5 @@ public interface Language extends Service {
    * @param resultClass
    * @return
    */
-  <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass);
+  <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass, Object... furtherArgs);
 }

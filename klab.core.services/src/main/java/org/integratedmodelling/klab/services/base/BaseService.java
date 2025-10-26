@@ -493,7 +493,7 @@ public abstract class BaseService implements KlabService {
     serviceCall.getParameters().putUnnamed(urn);
     serviceCall.getParameters().putUnnamed(this);
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
-    return languageService.execute(serviceCall, scope, InputStream.class);
+    return languageService.execute(serviceCall, scope, InputStream.class, asset);
   }
 
   public RuntimeAsset resolveUrn(String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {

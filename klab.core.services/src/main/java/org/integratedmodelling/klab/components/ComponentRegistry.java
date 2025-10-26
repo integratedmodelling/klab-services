@@ -60,6 +60,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
+import org.integratedmodelling.klab.runtime.language.ArgumentMatcher;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -1901,7 +1902,7 @@ public class ComponentRegistry {
     // functions and adapters
 
     var arguments =
-        matchArguments(
+        ArgumentMatcher.matchArguments(
             implementation.method,
             resource,
             geometry,
@@ -1927,116 +1928,5 @@ public class ComponentRegistry {
     } catch (Exception e) {
       return new KlabCompilationError(e);
     }
-  }
-
-  /**
-   * Painful argument matcher for method using or inferring all possible arguments. Scanners come
-   * through the data builder.
-   *
-   * @param method
-   * @param resource
-   * @param geometry
-   * @param builder
-   * @param observation
-   * @param observable
-   * @param urn
-   * @param urnParameters
-   * @param serviceCall // * @param storage
-   * @param expression
-   * @param lookupTable
-   * @param schedulerEvent
-   * @param scope
-   * @return
-   */
-  public static List<Object> matchArguments(
-      Method method,
-      Resource resource,
-      Geometry geometry,
-      Data.Builder builder,
-      Observation observation,
-      Observable observable,
-      Urn urn,
-      Parameters<String> urnParameters,
-      ServiceCall serviceCall,
-      Storage.Scanner scanner,
-      Expression expression,
-      LookupTable lookupTable,
-      Data inputData,
-      Scheduler.Event schedulerEvent,
-      Scope scope) {
-    List<Object> runArguments = new ArrayList<>();
-    DigitalTwin digitalTwin = null;
-    if (scope instanceof ContextScope contextScope) {
-      digitalTwin = contextScope.getDigitalTwin();
-    }
-    Scale scale = geometry instanceof Scale scale1 ? scale1 : null;
-
-    // TODO HERE match inputs to scanners through the data builder
-
-    if (method != null) {
-      for (var argument : method.getParameterTypes()) {
-        if (ContextScope.class.isAssignableFrom(argument)) {
-          // TODO consider wrapping into read-only delegating wrappers
-          runArguments.add(scope);
-        } else if (Scope.class.isAssignableFrom(argument)) {
-          runArguments.add(scope);
-        } else if (Observation.class.isAssignableFrom(argument)) {
-          runArguments.add(observation);
-        } else if (Data.Builder.class.isAssignableFrom(argument)) {
-          runArguments.add(builder);
-        } else if (Data.class.isAssignableFrom(argument)) {
-          runArguments.add(inputData);
-        } else if (ServiceCall.class.isAssignableFrom(argument)) {
-          runArguments.add(serviceCall);
-        } else if (Parameters.class.isAssignableFrom(argument)) {
-          runArguments.add(urnParameters);
-        } else if (Storage.Shard.class.isAssignableFrom(argument)) {
-          runArguments.add(scanner == null ? null : scanner.shard());
-        } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
-          runArguments.add(scanner);
-        } else if (Scale.class.isAssignableFrom(argument)) {
-          if (scale == null && geometry != null) {
-            scale = GeometryRepository.INSTANCE.scale(geometry);
-          }
-          runArguments.add(scale);
-        } else if (Geometry.class.isAssignableFrom(argument)) {
-          runArguments.add(geometry);
-        } else if (Observable.class.isAssignableFrom(argument)) {
-          runArguments.add(observable);
-        } else if (Space.class.isAssignableFrom(argument)) {
-          if (scale == null && geometry != null) {
-            scale = GeometryRepository.INSTANCE.scale(geometry);
-          }
-          runArguments.add(scale == null ? null : scale.getSpace());
-        } else if (Time.class.isAssignableFrom(argument)) {
-          if (schedulerEvent != null) {
-            runArguments.add(schedulerEvent.getTime());
-          } else if (scale == null && geometry != null) {
-            scale = GeometryRepository.INSTANCE.scale(geometry);
-          }
-          runArguments.add(scale == null ? null : scale.getTime());
-        } else if (Scheduler.Event.class.isAssignableFrom(argument)) {
-          runArguments.add(schedulerEvent);
-        } else if (Resource.class.isAssignableFrom(argument) && resource != null) {
-          runArguments.add(resource);
-        } else if (Expression.class.isAssignableFrom(argument) && expression != null) {
-          runArguments.add(expression);
-        } else if (Urn.class.isAssignableFrom(argument) && urn != null) {
-          runArguments.add(urn);
-        } else if (LookupTable.class.isAssignableFrom(argument) && lookupTable != null) {
-          runArguments.add(lookupTable);
-        } else {
-          scope.error(
-              "Cannot map argument of type "
-                  + argument.getCanonicalName()
-                  + " to known objects in call to "
-                  + method);
-          runArguments.add(null);
-        }
-      }
-      return runArguments;
-    }
-
-    return null;
   }
 }
