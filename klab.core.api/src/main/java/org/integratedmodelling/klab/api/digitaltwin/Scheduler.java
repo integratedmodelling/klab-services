@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.digitaltwin.impl.EventImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -110,6 +111,11 @@ public interface Scheduler {
      * @return
      */
     Observation getEvent();
+
+    static Event initialization() {
+        return new EventImpl();
+    }
+
   }
 
 

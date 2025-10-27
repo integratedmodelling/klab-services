@@ -169,6 +169,7 @@ public class LanguageService implements Language {
         }
       case FREEFORM:
         return ArgumentMatcher.matchParametersFreeform(
+            descriptor.serviceInfo,
             componentRegistry.implementation(descriptor).method.getParameterTypes(),
             call,
             scope,

@@ -1097,6 +1097,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public <T extends Locator> T as(Class<T> cls) {
+
+    if (cls.isAssignableFrom(this.getClass())) {
+      return (T) this;
+    }
     if (cls.equals(org.integratedmodelling.klab.api.geometry.Geometry.class)) {
       return (T) org.integratedmodelling.klab.api.geometry.Geometry.create(encode());
     }

@@ -1216,6 +1216,14 @@ public class ComponentRegistry {
     ret.setDescription(annotation.description());
     ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
     ret.getTargets().add(annotation.knowledgeClass());
+    if (annotation.geometry() != null) {
+      ret.setGeometry(Geometry.create(annotation.geometry()));
+    }
+    if (annotation.fillCurve() != null) {
+      var distribution = new Data.ShardingStrategy();
+      distribution.setCurve(annotation.fillCurve());
+      ret.setShardingStrategy(distribution);
+    }
     if (annotation.mediaType() != null) {
       ret.getMediaTypes().add(annotation.mediaType());
     }

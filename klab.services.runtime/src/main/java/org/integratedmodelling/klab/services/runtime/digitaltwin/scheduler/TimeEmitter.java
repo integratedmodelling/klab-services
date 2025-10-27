@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 
@@ -21,7 +22,7 @@ public class TimeEmitter {
    *
    * <p>TODO this should be synchronized
    */
-  private Map<Long, SchedulerImpl.EventImpl> incoming = new HashMap<>();
+  private Map<Long, Scheduler.Event> incoming = new HashMap<>();
 
   public TimeEmitter(SchedulerImpl scheduler) {
     this.scheduler = scheduler;
@@ -29,6 +30,7 @@ public class TimeEmitter {
 
   /**
    * Update the schedule configuration and return if anything has changed.
+   *
    * @param tStart
    * @param end
    * @param resolution
@@ -41,7 +43,8 @@ public class TimeEmitter {
 
   /**
    * TODO retrieve a serializable object containing a summary of the overall schedule, including
-   *  start/end times and resolutions.
+   * start/end times and resolutions.
+   *
    * @return
    */
   public static Schedule getSchedule() {

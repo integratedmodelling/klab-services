@@ -9,15 +9,13 @@ import org.integratedmodelling.klab.api.data.mediation.classification.LookupTabl
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
@@ -25,6 +23,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /** k.LAB-aware argument matching functions. */
 public class ArgumentMatcher {
@@ -40,24 +39,90 @@ public class ArgumentMatcher {
    * @return
    */
   public static Object[] matchParametersFreeform(
-      Class<?>[] parameterTypes, ServiceCall call, Scope scope, Object... furtherArgs) {
+      ServiceInfo descriptor,
+      Class<?>[] parameterTypes,
+      ServiceCall call,
+      Scope scope,
+      Object... furtherArgs) {
     List<Object> payload = new ArrayList<>(call.getParameters().getUnnamedArguments());
     payload.add(call);
     payload.add(scope);
 
-    Resource resource = null;
-    Geometry geometry = null;
-    Data.Builder builder = null;
-    Observation observation = null;
-    Observable observable = null;
-    Urn urn = null;
-    Parameters<String> urnParameters = null;
-    ServiceCall serviceCall = call;
-    Storage.Scanner scanner = null;
-    Expression expression = null;
-    LookupTable lookupTable = null;
-    Data inputData = null;
-    Scheduler.Event schedulerEvent = null;
+    /* check what we need and how the method's needs map to sharding, geometry and storage.
+     */
+    for (var parameterType : parameterTypes) {
+      if (Storage.Scanner.class.isAssignableFrom(parameterType)) {
+
+        // first check if we have a scanner in the additional args. If so, check for adaptation
+        var scannerArgument = findArgument(Storage.Scanner.class, furtherArgs);
+        if (scannerArgument != null) {
+          if (parameterType.isAssignableFrom(scannerArgument.getClass())) {
+            payload.add(scannerArgument);
+          } else {
+            // TODO adapt scannerArgument to the required type
+          }
+
+        } else {
+          var observationArgument = findArgument(Observation.class, furtherArgs);
+
+          // if not, we may be able to provide an observation-wide scanner as long as we have a
+          // workable geometry.
+          if (observationArgument != null
+              && observationArgument.getObservable().is(SemanticType.QUALITY)
+              && scope instanceof ContextScope contextScope) {
+            var observation = observationArgument;
+            // get an overall scanner, adapting to the requested class
+            var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
+            var event = findArgument(Scheduler.Event.class, furtherArgs);
+            if (event == null
+                && (observation.getGeometry().dimension(Geometry.Dimension.Type.TIME) == null
+                    || observation.getGeometry().dimension(Geometry.Dimension.Type.TIME).size()
+                        == 1)) {
+              event = Scheduler.Event.initialization();
+            }
+            if (event != null) {
+              var shards = storage.getNativeShards(event);
+              var scanners = shards.stream().map(shard -> storage.getNativeScanner(shard)).toList();
+              if (!scanners.isEmpty()) {
+                payload.add(
+                    ScannerAdapters.mergeScanners(
+                        scanners, (Class<? extends Storage.Scanner>) parameterType));
+              }
+            }
+          }
+        }
+      } else if (Resource.class.isAssignableFrom(parameterType)) {
+
+      } else if (Geometry.class.isAssignableFrom(parameterType)) {
+
+      } else if (Data.Builder.class.isAssignableFrom(parameterType)) {
+
+      } else if (Data.class.isAssignableFrom(parameterType)) {
+
+      } else if (ServiceCall.class.isAssignableFrom(parameterType)) {
+
+      } else if (Parameters.class.isAssignableFrom(parameterType)) {
+
+      } else if (Observable.class.isAssignableFrom(parameterType)) {
+
+        var observable = findArgument(Observable.class, furtherArgs);
+        if (observable == null) {
+
+          var observation = findArgument(Observation.class, furtherArgs);
+          if (observation == null) {
+            return null;
+          }
+          payload.add(observation.getObservable());
+        }
+
+      } else if (Observation.class.isAssignableFrom(parameterType)) {
+        var observation = findArgument(Observation.class, furtherArgs);
+        if (observation == null) {
+          return null;
+        }
+        payload.add(observation);
+      }
+    }
 
     if (scope instanceof ServiceUserScope serviceUserScope) {
       // add the service and the user identity
@@ -72,6 +137,17 @@ public class ArgumentMatcher {
       return null;
     }
     return args;
+  }
+
+  private static <T> T findArgument(Class<T> scannerClass, Object[] furtherArgs) {
+    if (furtherArgs != null) {
+      for (var arg : furtherArgs) {
+        if (scannerClass.isAssignableFrom(arg.getClass())) {
+          return scannerClass.cast(arg);
+        }
+      }
+    }
+    return null;
   }
 
   /**

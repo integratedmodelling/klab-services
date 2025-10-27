@@ -5,7 +5,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -20,13 +19,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.lang.TriFunction;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import reactor.core.publisher.Mono;
@@ -49,14 +45,14 @@ public class SchedulerImpl implements Scheduler {
   private Time.Resolution resolution = null;
   private KnowledgeGraph knowledgeGraph;
   private TimeEmitter timeEmitter;
-  private EventImpl initializationEvent;
+  private Event initializationEvent;
 
   /*
    * The event processor is a fully replayable, multicasting one with synchronized behavior.
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
    * as a provenance agent and is recorded as the agent for activities triggered by temporal events.
    */
-  private final Sinks.Many<EventImpl> processor;
+  private final Sinks.Many<Event> processor;
 
   /*
    * Executors are loaded upon dataflow validation/compilation before registering the observations,
@@ -86,7 +82,7 @@ public class SchedulerImpl implements Scheduler {
   private void initializeScheduler() {
     // The INIT event is created before anything happens and applies to every new observation
     // registered.
-    post(this.initializationEvent = new EventImpl(), rootScope);
+    post(this.initializationEvent = Event.initialization(), rootScope);
     // TODO read the existing context state from the knowledge graph and rebuild all relevant past
     //  events
   }
@@ -140,7 +136,7 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl)}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, Event)}
    *
    * @param observation
    */
@@ -179,10 +175,7 @@ public class SchedulerImpl implements Scheduler {
    * @return
    */
   private boolean contextualize(
-      Observation observation,
-      Geometry geometry,
-      ServiceContextScope scope,
-      EventImpl causingEvent) {
+      Observation observation, Geometry geometry, ServiceContextScope scope, Event causingEvent) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
@@ -218,12 +211,12 @@ public class SchedulerImpl implements Scheduler {
                       new KlabIllegalStateException(
                           "Inconsistent AFFECT relationship in knowledge graph"));
 
-//      scope
-//          .getCurrentTransaction()
-//          .link(
-//              scope.getCurrentTransaction().getActivity(),
-//              affecting.source(),
-//              GraphModel.Relationship.CONTEXTUALIZED);
+      //      scope
+      //          .getCurrentTransaction()
+      //          .link(
+      //              scope.getCurrentTransaction().getActivity(),
+      //              affecting.source(),
+      //              GraphModel.Relationship.CONTEXTUALIZED);
 
       //      var sequence = 0;
       //      if (affectingRelationship != null) { // it must be
@@ -402,75 +395,7 @@ public class SchedulerImpl implements Scheduler {
       Time.Resolution resolution,
       ServiceContextScope scope) {}
 
-  /**
-   * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
-   * new DT is connected for example).
-   */
-  public static class EventImpl implements Event {
-
-    private long start;
-    private long end;
-    private final Type type;
-    private final Observation event;
-
-    private EventImpl() {
-      type = Type.INITIALIZATION;
-      event = null;
-    }
-
-    public EventImpl(long start, long end, Time.Resolution resolution) {
-      type = Type.TEMPORAL_TRANSITION;
-      this.start = start;
-      this.end = end;
-      event = null;
-    }
-
-    public long getStart() {
-      return start;
-    }
-
-    public void setStart(long start) {
-      this.start = start;
-    }
-
-    public long getEnd() {
-      return end;
-    }
-
-    public void setEnd(long end) {
-      this.end = end;
-    }
-
-    @Override
-    public Time getTime() {
-      return TimePeriod.create(
-          start,
-          end,
-          this.type == Type.INITIALIZATION ? Time.Type.INITIALIZATION : Time.Type.PHYSICAL);
-    }
-
-    @Override
-    public Type getType() {
-      return type;
-    }
-
-    @Override
-    public String toKey() {
-      return start + "-" + end;
-    }
-
-    @Override
-    public Observation getEvent() {
-      return event;
-    }
-
-    @Override
-    public String toString() {
-      return type.toString();
-    }
-  }
-
-  private void post(EventImpl event, Scope scope) {
+  private void post(Event event, Scope scope) {
     processor.emitNext(
         event,
         new Sinks.EmitFailureHandler() {
@@ -483,7 +408,7 @@ public class SchedulerImpl implements Scheduler {
         });
   }
 
-  private Boolean checkApplies(Registration observation, EventImpl event) {
+  private Boolean checkApplies(Registration observation, Event event) {
     // TODO filter INITIALIZATION for substantials and their qualities
     // TODO check observed event based on 'affects' semantics
     return true;
@@ -496,9 +421,9 @@ public class SchedulerImpl implements Scheduler {
    * @param registration
    * @param event
    */
-  private void handleEvent(Registration registration, EventImpl event) {
+  private void handleEvent(Registration registration, Event event) {
     //    System.out.println(registration + " got event " + event);
-    if (event.type == EventImpl.Type.INITIALIZATION) {
+    if (event.getType() == Event.Type.INITIALIZATION) {
       // FIXME this should not be necessary when the filter works
       initialize(registration.observation(), registration.scope);
     }

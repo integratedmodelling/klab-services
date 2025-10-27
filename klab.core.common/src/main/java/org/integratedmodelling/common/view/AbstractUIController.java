@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.view;
 
+import org.apache.commons.compress.utils.Lists;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
@@ -653,10 +654,24 @@ public abstract class AbstractUIController implements UIController {
                               contextScope));
         }
 
-        // TODO invoke the visualization handler and return the result, turning it into a
-        //  InputStream if needed.
-        //          Utils.Java.runWithMatchedParameters();
-
+        if (cachedFile != null && visualization.method() != null) {
+          try {
+            var ret =
+                Utils.Java.runWithMatchedParameters(
+                    visualization.method(),
+                    visualization.reactor(),
+                    contextScope,
+                    Arrays.asList(
+                        contextScope,
+                        asset,
+                        event,
+                        visualizationOptions,
+                        cachedFile,
+                        cachedFile.toURI().toURL()));
+          } catch (Throwable t) {
+            contextScope.error(t);
+          }
+        }
       }
     }
 

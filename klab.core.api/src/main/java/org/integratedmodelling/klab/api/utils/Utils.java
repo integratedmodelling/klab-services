@@ -3866,8 +3866,27 @@ public class Utils {
   }
 
   public static class Java {
+
     public static Object runWithMatchedParameters(
-        Method method, Object instance, List<Object> parameters) {
+        Method method, Object instance, Scope scope, List<Object> parameters) {
+      var arguments = new ArrayList<>();
+      for (var pClass : method.getParameterTypes()) {
+        arguments.add(findParameter(parameters, pClass));
+      }
+      try {
+        return method.invoke(instance, parameters);
+      } catch (Throwable e) {
+        scope.error(e);
+      }
+      return null;
+    }
+
+    private static Object findParameter(List<Object> parameters, Class<?> pClass) {
+      for (var p : parameters) {
+        if (p != null && pClass.isAssignableFrom(p.getClass())) {
+          return p;
+        }
+      }
       return null;
     }
 
