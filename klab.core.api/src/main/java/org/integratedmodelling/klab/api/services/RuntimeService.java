@@ -127,8 +127,8 @@ public interface RuntimeService extends KlabService {
    * for monitoring. Upon successful completion, all activities, plans and observations will also be
    * committed to the knowledge graph.
    *
-   * @param observation the observation to submit. If a resolved observation is submitted, the
-   *     result will be a completed future containing it.
+   * @param observation the observation to submit. If a resolved observation (or one that resolves
+   *     to one) is submitted, the result will be a completed future containing it.
    * @param scope the context scope in which to submit the observation. Must be compatible with the
    *     observation's semantics.
    * @return a future that completes with the resolved observation when resolution is complete. The

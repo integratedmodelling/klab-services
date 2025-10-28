@@ -633,9 +633,17 @@ public abstract class AbstractUIController implements UIController {
 
           var extension = "dat";
           try {
-            var type =
-                MimeTypes.getDefaultMimeTypes().forName(visualization.visualization.requires());
+            // remove any application stuff so that it's more likely that we understand the
+            // extension. This is very painful and not very robust.
+            var mimeType = visualization.visualization.requires();
+            if (mimeType.contains(";")) {
+              mimeType = mimeType.substring(0, mimeType.indexOf(";"));
+            }
+            var type = MimeTypes.getDefaultMimeTypes().forName(mimeType);
             extension = type.getExtension();
+            if (extension == null || extension.isEmpty()) {
+              extension = "dat";
+            }
           } catch (MimeTypeException e) {
             // just leave "dat" in
           }

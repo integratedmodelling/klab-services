@@ -327,6 +327,8 @@ public class RuntimeService extends BaseService
       /*
        * Pre-existing observations are checked unless it's an acknowledged single subject, which can
        * always be added.
+       *
+       * TODO handle any observation coming from a definition
        */
       var existing =
           observation.getObservable().is(SemanticType.SUBJECT)
@@ -802,13 +804,12 @@ public class RuntimeService extends BaseService
     var eventScore = 0; // appropriateness of scheduler parameters w.r.t. observation geometry
 
     // TODO match geometry to fill curve and geometry in service info
-    if (serviceInfo.getGeometry() != null && !serviceInfo.getGeometry().isUniversal()) {
+    if (serviceInfo.getGeometry() != null && !serviceInfo.getGeometry().isUniversal()) {}
 
-    }
-      for (var parameter :
-          (implementation.constructor == null
-              ? implementation.method.getParameterTypes()
-              : implementation.constructor.getParameterTypes())) {
+    for (var parameter :
+        (implementation.constructor == null
+            ? implementation.method.getParameterTypes()
+            : implementation.constructor.getParameterTypes())) {
       if (Scanner.class.isAssignableFrom(parameter)) {
         if (SemanticType.isNumeric(observation.getObservable().getSemantics().getType())) {
           var preferredType = configuration.getNumericStorageType();

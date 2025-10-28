@@ -68,6 +68,9 @@ public class ExportFileCache {
   public ExportFileCache withExtension(String fileExtension) {
     var ret = new ExportFileCache(this);
     ret.fileExtension = fileExtension;
+    if (ret.fileExtension.startsWith(".")) {
+      ret.fileExtension = ret.fileExtension.substring(1);
+    }
     return ret;
   }
 

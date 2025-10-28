@@ -24,32 +24,30 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The digital twin is a graph model composed of observations and all their history. Each {@link
- * org.integratedmodelling.klab.api.scope.ContextScope} points to a digital twin and contains the
- * methods to access it. Digital twins can be built from pairing others in a federated fashion.
+ * ContextScope} points to a digital twin and contains the methods to access it. Digital twins can
+ * be built from pairing others in a federated fashion.
  */
 public interface DigitalTwin extends RuntimeAsset {
 
   /**
    * A Configuration object is passed when the digital twin is created. The Configuration object is
-   * also the payload of all {@link org.integratedmodelling.klab.api.services.runtime.Message}s
-   * regarding digital twin creation, deletion or connection.
+   * also the payload of all {@link Message}s regarding digital twin creation, deletion or
+   * connection.
    */
   interface Configuration {
 
     /**
      * The URL does not need to be filled in if the configuration is passed to a {@link
-     * org.integratedmodelling.klab.api.scope.SessionScope#createContext(Configuration)}. Otherwise,
-     * the URL should be that of the chosen runtime, with or without the <code>/dt/<id>
+     * SessionScope#createContext(Configuration)}. Otherwise, the URL should be that of the chosen
+     * runtime, with or without the <code>/dt/<id>
      * </code> path.
      *
      * @return
@@ -421,6 +419,7 @@ public interface DigitalTwin extends RuntimeAsset {
     Metadata metadata = Metadata.create();
     boolean isObserver = false;
     long id = Observation.UNASSIGNED_ID;
+    String instanceUrn = null;
 
     Geometry ogeom = null;
     if (resolvables != null) {
@@ -450,6 +449,7 @@ public interface DigitalTwin extends RuntimeAsset {
               && symbol.getValue() instanceof Map<?, ?> definition) {
 
             isObserver = "observer".equals(symbol.getDefineClass());
+            instanceUrn = symbol.getUrn();
 
             name = symbol.getName();
             if (definition.containsKey("semantics")) {
@@ -520,6 +520,13 @@ public interface DigitalTwin extends RuntimeAsset {
       ret.setName(name);
       ret.setId(id);
       ret.setType(observable.getArtifactType());
+
+      if (instanceUrn != null) {
+        // this notifies that the observation represents a specific instance, so it will only be
+        // added once in the scope
+        ret.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+      }
+
       return ret;
     }
 

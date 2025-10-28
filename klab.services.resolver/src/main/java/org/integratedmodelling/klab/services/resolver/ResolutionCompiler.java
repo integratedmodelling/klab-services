@@ -369,21 +369,6 @@ public class ResolutionCompiler {
     return ret;
   }
 
-  //  /**
-  //   * This is used only by the resolver. TODO must work for resolution to work.
-  //   *
-  //   * @param observation
-  //   */
-  //  public void registerObservation(Observation observation) {
-  //    if (observation instanceof ObservationImpl observation1) {
-  //      if (observation.getId() == Observation.UNASSIGNED_ID) {
-  //        observation1.setId(nextResolutionId.decrementAndGet());
-  //      }
-  //      return;
-  //    }
-  //    throw new KlabInternalErrorException(
-  //        "ServiceContextScope::registerObservation: unexpected observation implementation");
-  //  }
   /**
    * If the runtime contains the observation, return it (in resolved or unresolved status but with a
    * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID,
@@ -397,14 +382,17 @@ public class ResolutionCompiler {
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
     for (var obs : resolutionCache.values()) {
-      // TODO check if this is good enough or we need an additional map
+      // TODO this isn't good enough: we also need to check the insertion point in the graph. The
+      //  resolution cache MUST be a graph and can incorporate resolved observations from the remote KG.
       if (obs.getObservable().equals(observable)) {
         return obs;
       }
     }
+
     var ret =
         (scope.getContextObservation() == null || scope.getContextObservation().getUrn() == null)
             ? null
+            // TODO we need to see if this observation was previously resolved at this scope point.
             : scope.getObservation(observable.getSemantics());
 
     if (ret == null || ret.isEmpty()) {

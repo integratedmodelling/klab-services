@@ -59,7 +59,6 @@ public interface ResolutionConstraint extends Serializable {
     Geometry(Geometry.class, false),
     ResolutionNamespace(String.class, false),
     ResolutionProject(String.class, false),
-    ResolutionData(ResolutionData.class, false),
     /**
      * this is used when communicating a scope whose context observation is not in the remote
      * knowledge graph yet
@@ -73,7 +72,12 @@ public interface ResolutionConstraint extends Serializable {
     Blacklist(String.class, false),
     Parameters(Parameters.class, true),
     Provenance(org.integratedmodelling.klab.api.provenance.Provenance.Node.class, false),
-    UseAsObserver(Void.class, false);
+    UseAsObserver(Void.class, false),
+    /**
+     * If this is present, the instance comes from a definition whose URN is reported. No such
+     * instance can appear in the same scope more than once.
+     */
+    InstanceUrn(String.class, false);
 
     /** Class of intended data types, used for runtime validation */
     public final Class<?> dataClass;

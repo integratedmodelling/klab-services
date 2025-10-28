@@ -22,12 +22,20 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.*;
+
+import gg.jte.ContentType;
+import gg.jte.TemplateEngine;
+import gg.jte.output.StringOutput;
+import gg.jte.resolve.DirectoryCodeResolver;
+import gg.jte.resolve.ResourceCodeResolver;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -1831,11 +1839,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new KlabIllegalArgumentException(e);
           }
         }
-//        try {
-            return Json.parseObject(body, resultClass);
-//        } catch (IOException e) {
-//            throw new KlabIOException(e);
-//        }
+        //        try {
+        return Json.parseObject(body, resultClass);
+        //        } catch (IOException e) {
+        //            throw new KlabIOException(e);
+        //        }
       }
 
       @Override
@@ -2584,6 +2592,46 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   }
 
   public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {
+
+    static Map<String, TemplateEngine> plainEngines = new ConcurrentHashMap<>();
+    static Map<String, TemplateEngine> htmlEngines = new ConcurrentHashMap<>();
+    static File templatesDir = Files.getTemporaryDirectory();
+    static File htmlTemplatesDir = Files.getTemporaryDirectory();
+
+    /**
+     * Render a JTE template from a URL with a plain text engine. The engine will precompile all
+     * templates in the same classpath and persist across calls for efficiency.
+     *
+     * @param data
+     * @return
+     */
+    public static String renderJTEPlain(URL jteTemplate, Map<String, Object> data) {
+      var output = new StringOutput();
+      var path = URLs.getURLBaseName(jteTemplate);
+      var file = URLs.copy(jteTemplate, new File(templatesDir + "/" + path));
+      plainEngines
+          .computeIfAbsent(
+              path,
+              pth ->
+                  TemplateEngine.create(
+                      new DirectoryCodeResolver(templatesDir.toPath()), ContentType.Plain))
+          .render(path, data, output);
+      return output.toString();
+    }
+
+    public static String renderJTEHtml(URL jteTemplate, Map<String, Object> data) {
+      var output = new StringOutput();
+      var path = URLs.getURLBaseName(jteTemplate);
+      var file = URLs.copy(jteTemplate, new File(htmlTemplatesDir + "/" + path));
+      htmlEngines
+          .computeIfAbsent(
+              path,
+              pth ->
+                  TemplateEngine.create(
+                      new DirectoryCodeResolver(htmlTemplatesDir.toPath()), ContentType.Html))
+          .render(path, data, output);
+      return output.toString();
+    }
 
     /**
      * Return all the substituted templates after substituting the passed variables. The
@@ -3613,17 +3661,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
-//  /**
-//   * Add an option to avoid problem if Lists are serialized as empty arryas
-//   * @param body the body
-//   * @param resultClass the resutl class
-//   * @return
-//   * @param <T> Parsed object
-//   * @throws IOException
-//   */
-//  public static <T> T parseWithJackson(String body, Class<T> resultClass) throws IOException {
-//    ObjectMapper mapper = new ObjectMapper();
-//    mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
-//    return mapper.readValue(body, resultClass);
-//  }
+  //  /**
+  //   * Add an option to avoid problem if Lists are serialized as empty arryas
+  //   * @param body the body
+  //   * @param resultClass the resutl class
+  //   * @return
+  //   * @param <T> Parsed object
+  //   * @throws IOException
+  //   */
+  //  public static <T> T parseWithJackson(String body, Class<T> resultClass) throws IOException {
+  //    ObjectMapper mapper = new ObjectMapper();
+  //    mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+  //    return mapper.readValue(body, resultClass);
+  //  }
 }

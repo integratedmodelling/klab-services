@@ -43,6 +43,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -3523,6 +3524,14 @@ public class Utils {
 
   public static class Files {
 
+      public static File getTemporaryDirectory() {
+          try {
+              return java.nio.file.Files.createTempDirectory("klab").toFile();
+          } catch (IOException e) {
+              throw new KlabIOException(e);
+          }
+      }
+
     /**
      * Return the path of a file relative to another
      *
@@ -3874,7 +3883,7 @@ public class Utils {
         arguments.add(findParameter(parameters, pClass));
       }
       try {
-        return method.invoke(instance, parameters);
+        return method.invoke(instance, arguments.toArray());
       } catch (Throwable e) {
         scope.error(e);
       }
