@@ -30,12 +30,12 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   private Observation observer;
   private Observation contextObservation;
-  private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
+  private final Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   private ClientDigitalTwin digitalTwin;
   private DigitalTwin.Transaction transaction;
-  private DigitalTwin.Configuration configuration;
-  private Data.ShardingStrategy shardingStrategy;
+  private final DigitalTwin.Configuration configuration;
+  private final Data.ShardingStrategy shardingStrategy;
 
   /**
    * The default client scope has the user as the embedded agent.

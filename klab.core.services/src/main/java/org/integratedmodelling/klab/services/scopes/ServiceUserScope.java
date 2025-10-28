@@ -144,6 +144,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.local = parent.local;
     this.id = parent.id;
     this.jobManager = parent.jobManager;
+    this.serviceMap.putAll(parent.serviceMap);
   }
 
   public KlabService getService() {
