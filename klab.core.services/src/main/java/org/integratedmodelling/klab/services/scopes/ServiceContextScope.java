@@ -648,6 +648,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Observation getObservation(Semantics observable) {
 
+      /**
+       * FIXME
+       *
+       * 1. Must use the graph in the transaction, not a flattened list, and check within the scope only.
+       * 2. Match semantics, not observable;
+       * 3. Should evolve into a query that can match URNs, metadata, semantics and more without complicating
+       *    the API
+       */
+
     // look first in the currentTransaction graph if there is a transaction
     for (var obs : getTransactingObservations()) {
       if (obs.getObservable().equals(observable)) {
