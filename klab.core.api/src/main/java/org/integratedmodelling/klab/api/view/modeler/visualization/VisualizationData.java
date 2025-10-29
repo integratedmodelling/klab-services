@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * Bean that is passed to templates and report generators to create configurable visualization
- * pages. Full content and API TBD.
+ * pages. Full content and API TBD. Also, probably useless.
  */
 public class VisualizationData {
 

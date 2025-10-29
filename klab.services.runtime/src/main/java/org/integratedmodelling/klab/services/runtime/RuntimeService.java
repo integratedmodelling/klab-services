@@ -325,17 +325,10 @@ public class RuntimeService extends BaseService
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
       /*
-       * Pre-existing observations are checked unless it's an acknowledged single subject, which can
-       * always be added.
-       *
-       * TODO handle any observation coming from a definition
+       * Pre-existing observations, either from the KG or transaction, or instances from a
+       * definition in the same scope.
        */
-      var existing =
-          observation.getObservable().is(SemanticType.SUBJECT)
-                  && !observation.getObservable().getSemantics().isCollective()
-              ? null
-              : scope.getObservation(observation);
-
+      var existing = scope.getObservation(observation);
       if (existing != null) {
         return CompletableFuture.completedFuture(existing);
       }

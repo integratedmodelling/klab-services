@@ -651,21 +651,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
 
     // look first in the currentTransaction graph if there is a transaction
-    for (var obs :
-        currentTransaction
-            .outgoing(contextObservation == null ? RuntimeAsset.CONTEXT_ASSET : contextObservation)
-            .stream()
-            .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
-            .toList()) {
-      if (obs.target() instanceof Observation o
-              && (instanceUrn != null
-                  && instanceUrn.equals(o.getMetadata().get(Metadata.IM_FEATURE_URN)))
-          || (observation
-              .getObservable()
-              .getSemantics()
-              .getUrn()
-              .equals(observation.getObservable().getSemantics().getUrn()))) {
-        return (Observation) obs.target();
+    if (currentTransaction != null) {
+      for (var obs :
+          currentTransaction
+              .outgoing(
+                  contextObservation == null ? RuntimeAsset.CONTEXT_ASSET : contextObservation)
+              .stream()
+              .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
+              .toList()) {
+        if (obs.target() instanceof Observation o
+            && ((instanceUrn != null
+                    && instanceUrn.equals(o.getMetadata().get(Metadata.IM_FEATURE_URN)))
+                || (observation
+                    .getObservable()
+                    .getSemantics()
+                    .getUrn()
+                    .equals(observation.getObservable().getSemantics().getUrn())))) {
+          return o;
+        }
       }
     }
 
