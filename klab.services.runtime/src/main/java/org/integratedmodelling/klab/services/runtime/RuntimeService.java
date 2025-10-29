@@ -334,7 +334,7 @@ public class RuntimeService extends BaseService
           observation.getObservable().is(SemanticType.SUBJECT)
                   && !observation.getObservable().getSemantics().isCollective()
               ? null
-              : scope.getObservation(observation.getObservable());
+              : scope.getObservation(observation);
 
       if (existing != null) {
         return CompletableFuture.completedFuture(existing);

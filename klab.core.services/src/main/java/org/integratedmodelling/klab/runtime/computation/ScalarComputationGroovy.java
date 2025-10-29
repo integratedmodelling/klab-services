@@ -28,7 +28,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
  * compiled Java class for execution.
  *
- * TODO FIXME update for using Scanner on independent shards and not Storage
+ * <p>TODO FIXME update for using Scanner on independent shards and not Storage
  */
 public class ScalarComputationGroovy implements ScalarComputation {
 
@@ -82,11 +82,11 @@ public class ScalarComputationGroovy implements ScalarComputation {
             groovyProcessor.analyze(
                 expressionCode,
                 scope,
-                List.of(actuator.getObservable()),
-                actuator.getChildren().stream().map(Actuator::getObservable).toList());
+                List.of(actuator.getObservation()),
+                actuator.getChildren().stream().map(Actuator::getObservation).toList());
         step.scalar =
             step.expressionDescriptor.getIdentifiers().values().stream()
-                .anyMatch(id -> id.observable() != null && id.scalarReferenceCount() > 0);
+                .anyMatch(id -> id.observation() != null && id.scalarReferenceCount() > 0);
 
         if (Utils.Notifications.hasErrors(step.expressionDescriptor.getNotifications())) {
           return false;
@@ -154,7 +154,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
             codeStatements.add(groovyDescriptor.getProcessedCode());
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
-              var observation = scope.getObservation(desc.observable());
+              var observation = scope.getObservation(desc.observation());
               if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
                 args.add(observation);
               }

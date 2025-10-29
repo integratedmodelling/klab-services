@@ -116,7 +116,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           // TODO
         }
         case ActuatorImpl actuator -> {
-          ret.put("semantics", actuator.getObservable().getUrn());
+          ret.put("semantics", actuator.getObservation().getObservable().getUrn());
           ret.put(
               "computation",
               // TODO skip any recursive resolution calls and prepare for linking later

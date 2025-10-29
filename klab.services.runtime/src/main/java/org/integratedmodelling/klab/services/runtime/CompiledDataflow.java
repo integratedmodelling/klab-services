@@ -264,7 +264,7 @@ public class CompiledDataflow {
       var ret =
           DigitalTwin.createObservation(
               scope,
-              actuator.getObservable(),
+              actuator.getObservation().getObservable(),
               actuator1.getResolvedGeometry(),
               actuator.getName(),
               scope.getContextObservation());

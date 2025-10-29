@@ -7,6 +7,7 @@ import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalT
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -330,17 +331,30 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
-  public Observation getObservation(Semantics observable) {
-    var ret =
+  public Observation getObservation(Observation observation) {
+      
+    var query =
         digitalTwin
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(contextObservation == null ? this : contextObservation)
-            .along(GraphModel.Relationship.HAS_CHILD)
-            .where(
-                "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
-            .run(this);
-    // TODO may need to adapt units or the like if the request is an observable
+            .along(GraphModel.Relationship.HAS_CHILD);
+    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+      query =
+          query.where(
+              "instanceUrn",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+    } else {
+      query =
+          query.where(
+              "semantics",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getObservable().asConcept().getUrn());
+    }
+
+    var ret = query.run(this);
+
     return ret.isEmpty() ? null : ret.getFirst();
   }
 

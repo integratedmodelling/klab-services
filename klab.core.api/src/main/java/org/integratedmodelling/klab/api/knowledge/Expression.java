@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -199,14 +200,6 @@ public interface Expression extends Serializable {
       String name();
 
       /**
-       * Observable is filled if this identifier matches the code name of a known observation in the
-       * context of compilation.
-       *
-       * @return
-       */
-      Observable observable();
-
-      /**
        * The runtime class may be filled with a k.LAB known entity if the identifier matches a
        * conventional name for the scope, scale, time, space, observer or other automatically bound
        * object from the execution scope.
@@ -240,6 +233,14 @@ public interface Expression extends Serializable {
        * @return
        */
       List<String> methodsCalled();
+
+      /**
+       * Filled in if this identifier matches the code name of a known observation in the context of
+       * compilation.
+       *
+       * @return
+       */
+      Observation observation();
     }
 
     /**
@@ -250,12 +251,6 @@ public interface Expression extends Serializable {
      */
     Map<String, Identifier> getIdentifiers();
 
-    //    /**
-    //     * Return all identifiers detected.
-    //     *
-    //     * @return set of identifiers
-    //     */
-    //    Collection<String> getIdentifiers();
 
     //    /**
     //     * Return all contextualizers encountered (in expressions such as "elevation@nw")

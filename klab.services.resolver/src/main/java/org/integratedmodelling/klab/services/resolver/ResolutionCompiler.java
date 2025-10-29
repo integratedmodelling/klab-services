@@ -408,14 +408,14 @@ public class ResolutionCompiler {
       }
     }
 
+    var candidate = DigitalTwin.createObservation(scope, observable, geometry);
     var ret =
         (scope.getContextObservation() == null || scope.getContextObservation().getUrn() == null)
             ? null
-            : scope.getObservation(observable.getSemantics());
+            : scope.getObservation(candidate);
 
     if (ret == null || ret.isEmpty()) {
-
-      ret = DigitalTwin.createObservation(scope, observable, geometry);
+      ret = candidate;
       resolutionCache.addVertex(ret);
       var parent =
           scope.getContextObservation() == null
@@ -425,6 +425,7 @@ public class ResolutionCompiler {
 
       ((ObservationImpl) ret).setId(nextResolutionId.decrementAndGet());
     }
+
     return ret;
   }
 }

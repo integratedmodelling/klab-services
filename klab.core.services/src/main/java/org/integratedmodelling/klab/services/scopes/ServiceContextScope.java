@@ -646,51 +646,68 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Observation getObservation(Semantics observable) {
+  public Observation getObservation(Observation observation) {
 
-      /**
-       * FIXME
-       *
-       * 1. Must use the graph in the transaction, not a flattened list, and check within the scope only.
-       * 2. Match semantics, not observable;
-       * 3. Should evolve into a query that can match URNs, metadata, semantics and more without complicating
-       *    the API
-       */
+    var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
 
     // look first in the currentTransaction graph if there is a transaction
-    for (var obs : getTransactingObservations()) {
-      if (obs.getObservable().equals(observable)) {
-        return obs;
+    for (var obs :
+        currentTransaction
+            .outgoing(contextObservation == null ? RuntimeAsset.CONTEXT_ASSET : contextObservation)
+            .stream()
+            .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
+            .toList()) {
+      if (obs.target() instanceof Observation o
+              && (instanceUrn != null
+                  && instanceUrn.equals(o.getMetadata().get(Metadata.IM_FEATURE_URN)))
+          || (observation
+              .getObservable()
+              .getSemantics()
+              .getUrn()
+              .equals(observation.getObservable().getSemantics().getUrn()))) {
+        return (Observation) obs.target();
       }
     }
 
-    var ret =
+    var query =
         digitalTwin
             .getKnowledgeGraph()
             .query(Observation.class, this)
-            .source(this)
-            .along(GraphModel.Relationship.HAS_CHILD)
-            .where(
-                "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
-            .run(this);
-    // TODO may need to adapt units or the like if the request is an observable
+            .source(contextObservation == null ? this : contextObservation)
+            .along(GraphModel.Relationship.HAS_CHILD);
+    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+      query =
+          query.where(
+              "instanceUrn",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+    } else {
+      query =
+          query.where(
+              "semantics",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getObservable().asConcept().getUrn());
+    }
+
+    var ret = query.run(this);
+
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
-  private List<Observation> getTransactingObservations() {
-    List<Observation> ret = new ArrayList<>();
-    if (currentTransaction != null) {
-      for (var asset : currentTransaction.assets()) {
-        if (asset instanceof Observation observation) {
-          if (contextObservation != null) {
-            // TODO must go over the children of the current context observation if one is there
-          }
-          ret.add(observation);
-        }
-      }
-    }
-    return ret;
-  }
+  //  private List<Observation> getTransactingObservations() {
+  //    List<Observation> ret = new ArrayList<>();
+  //    if (currentTransaction != null) {
+  //      for (var asset : currentTransaction.assets()) {
+  //        if (asset instanceof Observation observation) {
+  //          if (contextObservation != null) {
+  //            // TODO must go over the children of the current context observation if one is there
+  //          }
+  //          ret.add(observation);
+  //        }
+  //      }
+  //    }
+  //    return ret;
+  //  }
 
   @Override
   public Data getData(Observation... observations) {
