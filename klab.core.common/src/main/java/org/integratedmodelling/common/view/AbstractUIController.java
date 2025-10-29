@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.view;
 
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -610,12 +612,13 @@ public abstract class AbstractUIController implements UIController {
     return null;
   }
 
-  public InputStream visualize(
+  public <T> T visualize(
       KlabAsset asset,
       Scheduler.Event event,
       String mediaType,
       ContextScope contextScope,
-      Map<String, Object> visualizationOptions) {
+      Map<String, Object> visualizationOptions,
+      Class<T> outputType) {
 
     var service = getServiceHosting(asset);
     if (service == null) {
@@ -626,12 +629,11 @@ public abstract class AbstractUIController implements UIController {
         visualizationDescriptors.stream()
             .filter(v -> v.visualization().provides().equals(mediaType))
             .toList()) {
+      var extension = "dat";
       if (visualization.appliesTo(asset)) {
         // retrieve a cached file if possible, otherwise export the asset and cache it.
         File cachedFile = null;
         if (visualization.visualization.requires() != null) {
-
-          var extension = "dat";
           try {
             // remove any application stuff so that it's more likely that we understand the
             // extension. This is very painful and not very robust.
@@ -644,11 +646,15 @@ public abstract class AbstractUIController implements UIController {
             if (extension == null || extension.isEmpty()) {
               extension = "dat";
             }
+            if (extension.startsWith(".")) {
+              extension = extension.substring(1);
+            }
+
           } catch (MimeTypeException e) {
             // just leave "dat" in
           }
           cachedFile =
-              ExportFileCache.temporary()
+              ExportFileCache.temporary(asset)
                   .withExtension(extension)
                   .get(
                       asset.getUrn(),
@@ -669,13 +675,20 @@ public abstract class AbstractUIController implements UIController {
                     visualization.method(),
                     visualization.reactor(),
                     contextScope,
-                    Arrays.asList(
-                        contextScope,
-                        asset,
-                        event,
-                        visualizationOptions,
-                        cachedFile,
-                        cachedFile.toURI().toURL()));
+                    Arrays.asList(contextScope, asset, event, visualizationOptions, cachedFile));
+
+            if (outputType.isAssignableFrom(ret.getClass())) {
+              return (T) ret;
+            } else if (InputStream.class.isAssignableFrom(ret.getClass())
+                && outputType == File.class) {
+              var out = Files.createTempFile("klab", "." + extension);
+              Files.copy((InputStream) ret, out);
+            } else {
+              throw new KlabInternalErrorException(
+                  "Visualization method returned unexpected type "
+                      + ret.getClass().getCanonicalName());
+            }
+
           } catch (Throwable t) {
             contextScope.error(t);
           }

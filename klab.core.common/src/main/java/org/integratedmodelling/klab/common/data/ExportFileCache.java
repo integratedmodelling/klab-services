@@ -9,8 +9,10 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.MemoryUnit;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -210,14 +212,16 @@ public class ExportFileCache {
   }
 
   public static ExportFileCache temporary() {
+    return temporary(null);
+  }
+
+  public static ExportFileCache temporary(KlabAsset asset) {
     if (_temporary == null) {
-      Path tdir = null;
-      try {
-        tdir = Files.createTempDirectory("kexport");
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      _temporary = new ExportFileCache(tdir.toFile(), "temporary", DEFAULT_MAX_OCCUPANCY_MB);
+      var tDir =
+          asset instanceof RuntimeAsset runtimeAsset
+              ? Utils.Files.getTemporaryDirectory(runtimeAsset)
+              : Utils.Files.createNewTemporaryDirectory();
+      _temporary = new ExportFileCache(tDir, "temporary", DEFAULT_MAX_OCCUPANCY_MB);
     }
     return _temporary;
   }

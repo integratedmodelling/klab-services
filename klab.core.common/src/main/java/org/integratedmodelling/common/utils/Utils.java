@@ -22,8 +22,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -35,7 +33,6 @@ import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.DirectoryCodeResolver;
-import gg.jte.resolve.ResourceCodeResolver;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -59,7 +56,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -2595,8 +2591,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     static Map<String, TemplateEngine> plainEngines = new ConcurrentHashMap<>();
     static Map<String, TemplateEngine> htmlEngines = new ConcurrentHashMap<>();
-    static File templatesDir = Files.getTemporaryDirectory();
-    static File htmlTemplatesDir = Files.getTemporaryDirectory();
+    static File templatesDir = Files.createNewTemporaryDirectory();
+    static File htmlTemplatesDir = Files.createNewTemporaryDirectory();
 
     /**
      * Render a JTE template from a URL with a plain text engine. The engine will precompile all
