@@ -256,6 +256,9 @@ public class CompiledDataflow {
     }
   }
 
+  // CHECK this seems correct but triple-checking is in order. The obs comes from the dataflow
+  // with either an id < 0 (i.e., must be created) or > 0 (i.e., the peer obs in the KG/cache must
+  // be used).
   private Observation requireObservation(Actuator actuator) {
     if (actuator.getId() < 0 && actuator instanceof ActuatorImpl actuator1) {
       var ret =

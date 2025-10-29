@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -20,6 +21,9 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,9 +34,11 @@ import java.util.concurrent.atomic.AtomicLong;
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
 
-  private Map<Long, ObservationImpl> resolutionCache = new HashMap<>();
+  private Graph<RuntimeAsset, DefaultEdge> resolutionCache =
+      new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
+  // FIXME this weak strategy can probably be removed, just using the objects from the graph as keys
   private AtomicLong nextResolutionId = new AtomicLong(-1);
 
   public ResolutionCompiler(ResolverService service) {
@@ -51,6 +57,15 @@ public class ResolutionCompiler {
   }
 
   private Geometry getObservationGeometry(Observation observation, ContextScope scope) {
+
+    var parent =
+        scope.getContextObservation() == null
+            ? RuntimeAsset.CONTEXT_ASSET
+            : scope.getContextObservation();
+
+    resolutionCache.addVertex(observation);
+    resolutionCache.addVertex(parent);
+    resolutionCache.addEdge(parent, observation);
 
     var geometry = observation.getGeometry();
     if (geometry == null) {
@@ -381,22 +396,33 @@ public class ResolutionCompiler {
    */
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
-    for (var obs : resolutionCache.values()) {
-      // TODO this isn't good enough: we also need to check the insertion point in the graph. The
-      //  resolution cache MUST be a graph and can incorporate resolved observations from the remote KG.
-      if (obs.getObservable().equals(observable)) {
-        return obs;
+
+    for (var obs :
+        resolutionCache.outgoingEdgesOf(
+            scope.getContextObservation() == null
+                ? RuntimeAsset.CONTEXT_ASSET
+                : scope.getContextObservation())) {
+      if (obs instanceof Observation observation
+          && observation.getObservable().getSemantics().equals(observable.getSemantics())) {
+        return observation;
       }
     }
 
     var ret =
         (scope.getContextObservation() == null || scope.getContextObservation().getUrn() == null)
             ? null
-            // TODO we need to see if this observation was previously resolved at this scope point.
             : scope.getObservation(observable.getSemantics());
 
     if (ret == null || ret.isEmpty()) {
+
       ret = DigitalTwin.createObservation(scope, observable, geometry);
+      resolutionCache.addVertex(ret);
+      var parent =
+          scope.getContextObservation() == null
+              ? RuntimeAsset.CONTEXT_ASSET
+              : scope.getContextObservation();
+      resolutionCache.addEdge(parent, ret);
+
       ((ObservationImpl) ret).setId(nextResolutionId.decrementAndGet());
     }
     return ret;

@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.impl.LinkImpl;
@@ -604,7 +605,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
-
+        var instanceUrn = node.get("urn").asString();
+        if (instanceUrn != null) {
+          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+        }
         var cData = new ObservationImpl.ContextualizationDataImpl();
         var service = scope.getService(RuntimeService.class);
         cData.setServiceUrl(service.getUrl());

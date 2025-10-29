@@ -3,7 +3,6 @@ package org.integratedmodelling.common.services.client.scope;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
@@ -13,7 +12,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -337,7 +335,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
         digitalTwin
             .getKnowledgeGraph()
             .query(Observation.class, this)
-            .source(this)
+            .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD)
             .where(
                 "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())

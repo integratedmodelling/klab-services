@@ -182,7 +182,7 @@ public interface ContextScope extends SessionScope {
   ContextScope between(Observation source, Observation target);
 
   /**
-   * Each scope manages a digital twin. At client side or on slave servers this may be null or
+   * Each scope manages a digital twin. At client side or on slave servers this may be null orkn
    * limited in functionality.
    *
    * @return
