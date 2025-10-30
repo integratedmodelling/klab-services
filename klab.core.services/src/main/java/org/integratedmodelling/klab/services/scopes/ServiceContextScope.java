@@ -80,7 +80,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   LoadingCache<Long, Observation> observationCache;
   private DigitalTwin.Transaction currentTransaction;
 
-  // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
     super(parent);
     this.parent = parent;
@@ -308,30 +307,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     return ret;
   }
-
-  //  @Override
-  //  public Collection<KnowledgeGraph.Link> getLinks(
-  //      RuntimeAsset asset, GraphModel.Relationship... relationship) {
-  //
-  //    var ret = new ArrayList<KnowledgeGraph.Link>();
-  //    var types = EnumSet.noneOf(GraphModel.Relationship.class);
-  //    if (relationship != null) {
-  //      types.addAll(List.of(relationship));
-  //    }
-  //    if (currentTransaction != null && currentTransaction.assets().contains(asset)) {
-  //      ret.addAll(
-  //          currentTransaction.outgoing(asset).stream()
-  //              .filter(edge -> types.isEmpty() || types.contains(edge.type()))
-  //              .toList());
-  //    }
-  //
-  //    if (asset.getId() > 0) {
-  //      // TODO the actual ones from the persistent KG
-  //
-  //    }
-  //
-  //    return ret;
-  //  }
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
@@ -672,7 +647,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       }
     }
 
-    if (observation.getId() > 0) {
+//    if (observation.getId() > 0) {
 
       var query =
           digitalTwin
@@ -695,25 +670,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       }
       var ret = query.run(this);
       return ret.isEmpty() ? null : ret.getFirst();
-    }
-
-    return null;
+//    }
+//
+//    return null;
   }
-
-  //  private List<Observation> getTransactingObservations() {
-  //    List<Observation> ret = new ArrayList<>();
-  //    if (currentTransaction != null) {
-  //      for (var asset : currentTransaction.assets()) {
-  //        if (asset instanceof Observation observation) {
-  //          if (contextObservation != null) {
-  //            // TODO must go over the children of the current context observation if one is there
-  //          }
-  //          ret.add(observation);
-  //        }
-  //      }
-  //    }
-  //    return ret;
-  //  }
 
   @Override
   public Data getData(Observation... observations) {
