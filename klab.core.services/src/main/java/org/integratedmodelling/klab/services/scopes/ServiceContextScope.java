@@ -672,29 +672,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       }
     }
 
-    var query =
-        digitalTwin
-            .getKnowledgeGraph()
-            .query(Observation.class, this)
-            .source(contextObservation == null ? this : contextObservation)
-            .along(GraphModel.Relationship.HAS_CHILD);
-    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
-      query =
-          query.where(
-              "instanceUrn",
-              KnowledgeGraph.Query.Operator.EQUALS,
-              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
-    } else {
-      query =
-          query.where(
-              "semantics",
-              KnowledgeGraph.Query.Operator.EQUALS,
-              observation.getObservable().asConcept().getUrn());
+    if (observation.getId() > 0) {
+
+      var query =
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(Observation.class, this)
+              .source(contextObservation == null ? this : contextObservation)
+              .along(GraphModel.Relationship.HAS_CHILD);
+      if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+        query =
+            query.where(
+                "instanceUrn",
+                KnowledgeGraph.Query.Operator.EQUALS,
+                observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+      } else {
+        query =
+            query.where(
+                "semantics",
+                KnowledgeGraph.Query.Operator.EQUALS,
+                observation.getObservable().asConcept().getUrn());
+      }
+      var ret = query.run(this);
+      return ret.isEmpty() ? null : ret.getFirst();
     }
 
-    var ret = query.run(this);
-
-    return ret.isEmpty() ? null : ret.getFirst();
+    return null;
   }
 
   //  private List<Observation> getTransactingObservations() {
