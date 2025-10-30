@@ -6,11 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -110,6 +114,17 @@ public class RuntimeClient extends BaseServiceClient
 
       ret = new ClientContextScope(sessionScope, this, configuration);
       ret.setId(descriptor.getId());
+      var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+      if (federation != null && sessionScope instanceof MessagingChannelImpl messagingChannel) {
+        var queues =
+                getQueuesFromHeader(
+                        sessionScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        if (queues == null) {
+          // TODO error recovery
+          Logging.INSTANCE.error("no queues found in messaging header");
+        }
+        messagingChannel.setupMessaging(federation, ret.getId(), queues);
+      }
       ret.createDigitalTwin(descriptor.getId());
       return ret;
     }
