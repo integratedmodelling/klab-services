@@ -325,19 +325,19 @@ public class RuntimeService extends BaseService
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
       /*
-       * Pre-existing observations are checked unless it's an acknowledged single subject, which can
-       * always be added.
-       *
-       * TODO handle any observation coming from a definition
+       * Check for pre-existing observations, either from the KG or transaction, or instances from a
+       * definition in the same scope. Only checked if we're not submitting the children of
+       * an instantiator, which must be submitted no matter what.
        */
-      var existing =
-          observation.getObservable().is(SemanticType.SUBJECT)
-                  && !observation.getObservable().getSemantics().isCollective()
-              ? null
-              : scope.getObservation(observation.getObservable());
+      var instantiating =
+          scope.getContextObservation() != null
+              && scope.getContextObservation().getObservable().getSemantics().isCollective();
 
-      if (existing != null) {
-        return CompletableFuture.completedFuture(existing);
+      if (!instantiating) {
+        var existing = scope.getObservation(observation);
+        if (existing != null) {
+          return CompletableFuture.completedFuture(existing);
+        }
       }
 
       if (observation.getObservable().is(SemanticType.QUALITY)
@@ -384,6 +384,7 @@ public class RuntimeService extends BaseService
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
 
+      // TODO add any scenarios as metadata (or maybe as first-class in activity?)
       var submission =
           Activity.of(
               Activity.Type.SUBMISSION,

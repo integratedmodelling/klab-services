@@ -98,6 +98,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
+          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
+          if (instanceUrn != null) {
+            ret.put("instanceUrn", instanceUrn);
+          }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
             ret.put("adapterId", data.getAdapterId());
@@ -112,7 +116,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           // TODO
         }
         case ActuatorImpl actuator -> {
-          ret.put("semantics", actuator.getObservable().getUrn());
+          ret.put("semantics", actuator.getObservation().getObservable().getUrn());
           ret.put(
               "computation",
               // TODO skip any recursive resolution calls and prepare for linking later

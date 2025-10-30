@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
-import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -23,10 +22,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
 
 /**
  * A Compiler is instantiated in context. TODO should also take a parent Dataflow and fill the
@@ -37,7 +32,8 @@ public class DataflowCompiler {
   private final ResolutionGraph resolutionGraph;
   private final ContextScope scope;
   private final Observation observation;
-  private Map<Observable, Observation> catalog = new HashMap<>();
+  // NO this must be a graph as in the RG
+  private Set<Long> catalog = new HashSet<>();
 
   /**
    * TODO add the context dataflow.
@@ -101,16 +97,17 @@ public class DataflowCompiler {
   List<Actuator> compileObservation(
       Observation observation, Geometry coverage, ObservationStrategy strategy) {
 
-    if (catalog.containsKey(observation.getObservable())) {
+    // compile references for any obs with ID > 0 (coming from the remote KG) or already compiled
+    if (observation.getId() > 0 || catalog.contains(observation.getId())) {
       var ret = new ActuatorImpl();
-      ret.setObservable(observation.getObservable());
+      ret.setObservation(observation);
       ret.setId(observation.getId());
       ret.setCoverage(coverage.as(Geometry.class));
       ret.setActuatorType(Actuator.Type.REFERENCE);
       return List.of(ret);
     }
 
-    catalog.put(observation.getObservable(), observation);
+    catalog.add(observation.getId());
 
     var ret = new ArrayList<Actuator>();
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {
@@ -120,7 +117,7 @@ public class DataflowCompiler {
 
       if (child instanceof ObservationStrategy observationStrategy) {
         var actuator = new ActuatorImpl();
-        actuator.setObservable(observation.getObservable());
+        actuator.setObservation(observation);
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
         actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
@@ -186,9 +183,11 @@ public class DataflowCompiler {
             .getChildren()
             .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
       } else if (child instanceof Observable observable) {
-        observationActuator
-            .getChildren()
-            .add(compileReference(observable, coverage, edge.observationId));
+          // TODO remove after testing
+          throw new KlabIllegalStateException("Observables should not appear here");
+//        observationActuator
+//            .getChildren()
+//            .add(compileReference(observable, coverage, edge.observationId));
       }
     }
 
@@ -229,9 +228,10 @@ public class DataflowCompiler {
     ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
   }
 
-  private Actuator compileReference(Observable observable, Coverage coverage, long observationId) {
+  private Actuator compileReference(
+      Observation observation, Coverage coverage, long observationId) {
     var ret = new ActuatorImpl();
-    ret.setObservable(observable);
+    ret.setObservation(observation);
     ret.setId(observationId);
     ret.setCoverage(coverage.as(Geometry.class));
     ret.setActuatorType(Actuator.Type.REFERENCE);

@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -128,12 +129,11 @@ public interface Actuator extends Serializable, RuntimeAsset {
   Artifact.Type getType();
 
   /**
-   * Although actuators belong to the runtime and use no reasoning, they have an observable, which
-   * in case of pure non-semantic computations will be a non-semantic observable.
+   * Actuators carry the observation they explain.
    *
    * @return
    */
-  Observable getObservable();
+  Observation getObservation();
 
   /**
    * Return all child actuators in order of declaration in the dataflow. This may not correspond to

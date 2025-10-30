@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -24,7 +25,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * FIXME this uses Groovy 3.0 lexer - and the implementation uses 4.0. No conflict but it's not
- *  nice.
+ * nice.
  */
 public class GroovyProcessor implements Language.LanguageProcessor {
 
@@ -45,8 +46,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
   public Expression.Descriptor analyze(
       ExpressionCode expression,
       Scope scope,
-      List<Observable> outputs,
-      List<Observable> inputs,
+      List<Observation> outputs,
+      List<Observation> inputs,
       Expression.CompilerOption... options) {
     return new GroovyDescriptor(expression, scope, outputs, inputs, options);
   }
@@ -60,7 +61,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
   static class IdImpl implements Expression.Descriptor.Identifier {
 
     private String name;
-    private Observable observable;
+    private Observation observation;
     private Class<?> runtimeClass;
     private int scalarReferenceCount;
     private int nonScalarReferenceCount;
@@ -77,8 +78,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     }
 
     @Override
-    public Observable observable() {
-      return this.observable;
+    public Observation observation() {
+      return this.observation;
     }
 
     @Override
@@ -109,12 +110,12 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       this.name = name;
     }
 
-    public Observable getObservable() {
-      return observable;
+    public Observation getObservation() {
+      return observation;
     }
 
-    public void setObservable(Observable observable) {
-      this.observable = observable;
+    public void setObservation(Observation observation) {
+      this.observation = observation;
     }
 
     public Class<?> getRuntimeClass() {
@@ -167,14 +168,14 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     private Set<Expression.CompilerOption> options;
     private final boolean forceScalar;
     private Map<String, Expression.Descriptor.Identifier> identifiers = new LinkedHashMap<>();
-    private final Map<String, Observable> knownObservables = new HashMap<>();
+    private final Map<String, Observation> knownObservations = new HashMap<>();
     private final List<String> templateFields = new ArrayList<>();
 
     GroovyDescriptor(
         ExpressionCode expression,
         Scope scope,
-        List<Observable> knownOutputs,
-        List<Observable> knownInputs,
+        List<Observation> knownOutputs,
+        List<Observation> knownInputs,
         Expression.CompilerOption... options) {
 
       this.options =
@@ -184,19 +185,21 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       for (int i = 0; i < knownOutputs.size(); i++) {
         var output = knownOutputs.get(i);
         var identifier =
-            output.getStatedName() == null
-                ? output.getSemantics().codeName()
-                : output.getStatedName();
-        knownObservables.put(identifier, output);
+            output.getObservable().getStatedName() == null
+                ? output.getObservable().getSemantics().codeName()
+                : output.getObservable().getStatedName();
+        knownObservations.put(identifier, output);
         if (i == 0) {
-          knownObservables.put("self", output);
+          knownObservations.put("self", output);
         }
       }
 
-      for (Observable input : knownInputs) {
+      for (Observation input : knownInputs) {
         var identifier =
-            input.getStatedName() == null ? input.getSemantics().codeName() : input.getStatedName();
-        knownObservables.put(identifier, input);
+            input.getObservable().getStatedName() == null
+                ? input.getObservable().getSemantics().codeName()
+                : input.getObservable().getStatedName();
+        knownObservations.put(identifier, input);
       }
       this.processedCode = preprocess(expression.getCode());
     }
@@ -206,13 +209,13 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       String code;
       String encoding;
       String translation;
-      Observable observable;
+      Observation observation;
 
-      TokenInfo(String code, String encoding, String translation, Observable observable) {
+      TokenInfo(String code, String encoding, String translation, Observation observable) {
         this.code = code;
         this.encoding = encoding;
         this.translation = translation;
-        this.observable = observable;
+        this.observation = observable;
       }
     }
 
@@ -220,8 +223,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return processedCode;
     }
 
-    public Map<String, Observable> getKnownObservables() {
-      return knownObservables;
+    public Map<String, Observation> getKnownObservables() {
+      return knownObservations;
     }
 
     public List<String> getTemplateFields() {
@@ -322,7 +325,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
                               buffer.append(
                                   switch (p.charAt(i)) {
                                     case 'I' ->
-                                        knownObservables.containsKey(token.code)
+                                        knownObservations.containsKey(token.code)
                                             ? token.code + "Obs"
                                             : token.code;
                                     case 'U' -> token.code;
@@ -344,9 +347,10 @@ public class GroovyProcessor implements Language.LanguageProcessor {
               var identifier =
                   (IdImpl) identifiers.computeIfAbsent(tokenInfo.translation, IdImpl::new);
 
-              var observable = knownObservables.get(tokenInfo.code);
-              identifier.setObservable(observable);
-              if (observable == null || observable.getSemantics().is(SemanticType.QUALITY)) {
+              var observation = knownObservations.get(tokenInfo.code);
+              identifier.setObservation(observation);
+              if (observation == null
+                  || observation.getObservable().getSemantics().is(SemanticType.QUALITY)) {
                 identifier.scalarReferenceCount++;
               } else {
                 identifier.nonScalarReferenceCount++;
@@ -438,7 +442,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       String code = token.getText();
       String encoding = null;
       String translation = null;
-      Observable observable = null;
+      Observation observation = null;
 
       if (code.startsWith("__L__")) {
         encoding = "L";
@@ -450,8 +454,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         encoding = "C";
         translation = substitutions.get(code);
       } else if (token.getType() == GroovyLexer.IDENT) {
-        if (knownObservables.containsKey(code)) {
-          observable = knownObservables.get(code);
+        if (knownObservations.containsKey(code)) {
+          observation = knownObservations.get(code);
           encoding = "I";
         } else {
           encoding = "U";
@@ -465,7 +469,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         translation = code;
       }
 
-      return new TokenInfo(code, encoding, translation, observable);
+      return new TokenInfo(code, encoding, translation, observation);
     }
 
     private String performSubstitutions(String code, Map<String, String> substitutions) {

@@ -63,8 +63,8 @@ public interface Language extends Service {
     Expression.Descriptor analyze(
         ExpressionCode expression,
         Scope scope,
-        List<Observable> outputs,
-        List<Observable> inputs,
+        List<Observation> outputs,
+        List<Observation> inputs,
         CompilerOption... options);
 
     /**

@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -19,7 +20,7 @@ public class ActuatorImpl implements Actuator {
   @Serial private static final long serialVersionUID = 2500101522003062757L;
   private String name;
   private Artifact.Type type;
-  private Observable observable;
+  private Observation observation;
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();
@@ -44,11 +45,6 @@ public class ActuatorImpl implements Actuator {
   @Override
   public Artifact.Type getType() {
     return this.type;
-  }
-
-  @Override
-  public Observable getObservable() {
-    return this.observable;
   }
 
   @Override
@@ -88,8 +84,13 @@ public class ActuatorImpl implements Actuator {
     this.type = type;
   }
 
-  public void setObservable(Observable observable) {
-    this.observable = observable;
+  @Override
+  public Observation getObservation() {
+    return observation;
+  }
+
+  public void setObservation(Observation observation) {
+    this.observation = observation;
   }
 
   public void setChildren(List<Actuator> children) {
@@ -171,7 +172,7 @@ public class ActuatorImpl implements Actuator {
 
   @Override
   public String toString() {
-    return "A(" + this.getId() + ", " + this.observable + ")";
+    return "A(" + this.getId() + ", " + this.observation.getObservable() + ")";
   }
 
   @Override

@@ -93,19 +93,25 @@ public interface ContextScope extends SessionScope {
   List<Observation> getObservations();
 
   /**
-   * Retrieve the observation with the passed observable in this scope from the knowledge graph.
-   * This will only retrieve one observation. Calling this one with a countable observable may
-   * produce a singular observation or a collective whose children are the requested observation in
-   * case there are multiple observations in this scope. To retrieve all the instances of the
-   * collective, retrieve the collective and then call {@link #getChildrenOf(RuntimeAsset)} on it.
-   * The API user is responsible for checking the collective status of the result.
+   * Return the <em>known</em> observation from the scope that corresponds to the passed one at the
+   * scope point (i.e., as child of the current scope context observation or the DT root), or null.
+   * The observation may be an already known object (either an existing, cached observation or an
+   * instance created from a definition) or just a submitted, unresolved one with the same
+   * observable at the same scope point. In all cases, null should be returned if the observation is
+   * not in the knowledge graph OR in the current transaction. If an observation is returned, it
+   * must be the very object cached at the scope side and contain the current state of the
+   * resolution. Unique among the query functions, this one must also return any matching unresolved
+   * observation from the current transaction.
    *
-   * @param observable can pass an observable, but the result will be insensitive to units, name or
-   *     anything not related to semantics.
-   * @return the observation (possibly a collective) or null. The resulting observation may be
-   *     unresolved; the implementation decides what to do with it and is responsible for checking.
+   * <p>This method is critical to the working of the resolver and dataflow compiler. Observations
+   * that are not found by this method will be created; those that are in the transaction will be
+   * skipped as their resolution is ongoing; those that are resolved at the time of the call will
+   * satisfy a query and returned with no further processing.
+   *
+   * @param observation
+   * @return
    */
-  Observation getObservation(Semantics observable);
+  Observation getObservation(Observation observation);
 
   /**
    * Return all the known observation perspectives for the passed observable. These are the
@@ -120,8 +126,8 @@ public interface ContextScope extends SessionScope {
   <T extends Observation> Collection<T> getPerspectives(Observable observable);
 
   /**
-   * Return the observer that has made the observation passed. It should never be null. This is done
-   * by inspecting the observation graph.
+   * Return the observer for the passed observation, or null. The observer of a dependent
+   * observation can be inherited from its context observation if not specified directly.
    *
    * @param observation
    * @return
@@ -182,7 +188,7 @@ public interface ContextScope extends SessionScope {
   ContextScope between(Observation source, Observation target);
 
   /**
-   * Each scope manages a digital twin. At client side or on slave servers this may be null or
+   * Each scope manages a digital twin. At client side or on slave servers this may be null orkn
    * limited in functionality.
    *
    * @return

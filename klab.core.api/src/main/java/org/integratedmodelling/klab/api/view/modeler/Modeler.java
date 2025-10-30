@@ -103,12 +103,13 @@ public interface Modeler extends UIController {
    * @param visualizationOptions
    * @return
    */
-  InputStream visualize(
+  <T> T visualize(
       KlabAsset asset,
       Scheduler.Event event,
       String mediaType,
       ContextScope contextScope,
-      Map<String, Object> visualizationOptions);
+      Map<String, Object> visualizationOptions,
+      Class<T> outputType);
 
   /**
    * Return all the open sessions for the current user.

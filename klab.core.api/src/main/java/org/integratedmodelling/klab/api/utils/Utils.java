@@ -3,8 +3,7 @@ package org.integratedmodelling.klab.api.utils;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.data.PODDataType;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -38,12 +36,9 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -3524,13 +3519,35 @@ public class Utils {
 
   public static class Files {
 
-      public static File getTemporaryDirectory() {
-          try {
-              return java.nio.file.Files.createTempDirectory("klab").toFile();
-          } catch (IOException e) {
-              throw new KlabIOException(e);
-          }
+    /**
+     * Create a new, temporary directory.
+     *
+     * @return
+     */
+    public static File createNewTemporaryDirectory() {
+      try {
+        return java.nio.file.Files.createTempDirectory("klab").toFile();
+      } catch (IOException e) {
+        throw new KlabIOException(e);
       }
+    }
+
+    /**
+     * Retrieve a temporary directory dedicated to a specific {@link RuntimeAsset}, ensuring that
+     * repeated calls with the same asset return the same directory.
+     *
+     * @param runtimeAsset
+     * @return
+     */
+    public static File getTemporaryDirectory(RuntimeAsset runtimeAsset) {
+      var id = runtimeAsset.getId() < 0 ? runtimeAsset.getTransientId() : runtimeAsset.getId();
+      var tempDir = new File(System.getProperty("java.io.tmpdir"));
+      var assetDir = new File(tempDir, "klab_asset_" + id);
+      if (!assetDir.exists()) {
+        assetDir.mkdirs();
+      }
+      return assetDir;
+    }
 
     /**
      * Return the path of a file relative to another
