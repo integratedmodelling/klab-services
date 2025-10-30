@@ -54,17 +54,19 @@ public class ResolutionGraph {
       new DefaultDirectedGraph<>(ResolutionEdge.class);
   private ResolutionGraph parent;
   private long internalObservationId = -1;
+  private Map<Long, Observation> observations;
 
   // these are only used in the root graph. They collect the merged dependencies of all
   // strategies and models, added only after the runtime has successfully resolved them.
   private ResourceSet dependencies = new ResourceSet();
 
-  /**
-   * A catalog per observable of all resolving sources seen, used by merging their native coverage
-   * with any resolving candidate before new strategies are attempted. Includes resolved
-   * observations, resolved models and (eventually) resolved external dataflows.
-   */
-  private final Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
+  //  /**
+  //   * A catalog per observable of all resolving sources seen, used by merging their native
+  // coverage
+  //   * with any resolving candidate before new strategies are attempted. Includes resolved
+  //   * observations, resolved models and (eventually) resolved external dataflows.
+  //   */
+  //  private final Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
 
   /**
    * Setting this one in an otherwise null graph means that the observation being resolved has been
@@ -76,6 +78,7 @@ public class ResolutionGraph {
 
   private ResolutionGraph(ContextScope rootScope) {
     this.rootScope = rootScope;
+    this.observations = new HashMap<>();
   }
 
   public Graph<Resolvable, ResolutionEdge> graph() {
@@ -93,6 +96,7 @@ public class ResolutionGraph {
     }
 
     this.parent = parent;
+    this.observations = parent.observations;
 
     /**
      * Models are resolved from full down, intersecting the coverage of the dependencies. Everything
@@ -109,7 +113,7 @@ public class ResolutionGraph {
     }
 
     this.rootScope = parent.rootScope;
-    this.resolutionCatalog.putAll(parent.resolutionCatalog);
+    //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
   private ResolutionGraph(
@@ -120,11 +124,14 @@ public class ResolutionGraph {
     }
 
     this.parent = parent;
+    this.observations = parent.observations;
     this.resolved = resolvedObservation;
     this.target = target;
-    this.targetCoverage = Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
+    this.targetCoverage =
+        Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
-    this.resolutionCatalog.putAll(parent.resolutionCatalog);
+    this.observations.put(resolvedObservation.getId(), resolvedObservation);
+    //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
   private Scale getCoverage(Resolvable target) {
@@ -145,6 +152,10 @@ public class ResolutionGraph {
       ret = ret.parent;
     }
     return ret;
+  }
+
+  public Observation getResolved(long id) {
+    return observations.get(id);
   }
 
   /**
@@ -190,7 +201,7 @@ public class ResolutionGraph {
     if (childGraph.getResolved() != null) {
       edge.observationId = childGraph.getResolved().getId();
     } else {
-      edge.observationId = -- internalObservationId;
+      edge.observationId = --internalObservationId;
     }
     this.graph.addEdge(this.target, childGraph.target, edge);
 

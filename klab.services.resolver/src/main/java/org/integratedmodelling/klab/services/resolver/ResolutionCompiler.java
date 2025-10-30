@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -7,7 +10,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -20,16 +22,9 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
@@ -390,6 +385,13 @@ public class ResolutionCompiler {
    * without submitting it to the runtime. The unresolved ID will tell us that it's an internally
    * created, provisional observation that the runtime does not have.
    *
+   * <p>TODO/FIXME: the most challenging situation isn't handled yet: the observer's context has
+   * shifted and a previous collective observation no longer covers it entirely or at all, so
+   * existing obs will CONTRIBUTE to the resolution and the one to be resolved needs to cover the
+   * remaining geometry. The issue of instance identity is very hard to address here, and we may
+   * need a strategy to swap objects (repeating any resolution that involved them) or recognize them
+   * as candidates for the same instance.
+   *
    * @param observable
    * @param scope
    * @return a non-null observation
@@ -397,34 +399,49 @@ public class ResolutionCompiler {
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
 
-    for (var obs :
-        resolutionCache.outgoingEdgesOf(
-            scope.getContextObservation() == null
-                ? RuntimeAsset.CONTEXT_ASSET
-                : scope.getContextObservation())) {
-      if (obs instanceof Observation observation
-          && observation.getObservable().getSemantics().equals(observable.getSemantics())) {
-        return observation;
+    /*
+     * We must check for existing observations in the local or remote knowledge graph iif:
+     *
+     * <p>1. the observable is a dependent and the context observation is resolved, OR 2. the
+     * observation is a collective (check in root scope).
+     *
+     * <p>Otherwise we just keep the one we created and resolve it locally.
+     */
+    var candidateScope = observable.getSemantics().isCollective() ? scope.within(null) : scope;
+    var ret = DigitalTwin.createObservation(scope, observable, geometry);
+    var mayAlreadyExist =
+        (!SemanticType.isSubstantial(observable.getSemantics().getType())
+                && candidateScope.getContextObservation() != null
+                && candidateScope.getContextObservation().getId() > 0)
+            || observable.getSemantics().isCollective();
+
+    if (mayAlreadyExist) {
+
+      for (var obs :
+          resolutionCache.outgoingEdgesOf(
+              candidateScope.getContextObservation() == null
+                  ? RuntimeAsset.CONTEXT_ASSET
+                  : candidateScope.getContextObservation())) {
+        if (obs instanceof Observation observation
+            && observation.getObservable().getSemantics().equals(observable.getSemantics())) {
+          return observation;
+        }
+      }
+
+      var existing = candidateScope.getObservation(ret);
+      if (existing != null && !existing.isEmpty()) {
+        return existing;
       }
     }
 
-    var candidate = DigitalTwin.createObservation(scope, observable, geometry);
-    var ret =
-        (scope.getContextObservation() == null || scope.getContextObservation().getUrn() == null)
-            ? null
-            : scope.getObservation(candidate);
+    resolutionCache.addVertex(ret);
+    var parent =
+        candidateScope.getContextObservation() == null
+            ? RuntimeAsset.CONTEXT_ASSET
+            : scope.getContextObservation();
+    resolutionCache.addEdge(parent, ret);
 
-    if (ret == null || ret.isEmpty()) {
-      ret = candidate;
-      resolutionCache.addVertex(ret);
-      var parent =
-          scope.getContextObservation() == null
-              ? RuntimeAsset.CONTEXT_ASSET
-              : scope.getContextObservation();
-      resolutionCache.addEdge(parent, ret);
-
-      ((ObservationImpl) ret).setId(nextResolutionId.decrementAndGet());
-    }
+    ret.setId(nextResolutionId.decrementAndGet());
 
     return ret;
   }

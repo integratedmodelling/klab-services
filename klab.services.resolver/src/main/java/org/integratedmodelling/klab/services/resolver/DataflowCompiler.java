@@ -183,11 +183,9 @@ public class DataflowCompiler {
             .getChildren()
             .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
       } else if (child instanceof Observable observable) {
-          // TODO remove after testing
-          throw new KlabIllegalStateException("Observables should not appear here");
-//        observationActuator
-//            .getChildren()
-//            .add(compileReference(observable, coverage, edge.observationId));
+        observationActuator
+            .getChildren()
+            .add(compileReference(resolutionGraph.getResolved(edge.observationId), coverage));
       }
     }
 
@@ -228,11 +226,10 @@ public class DataflowCompiler {
     ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
   }
 
-  private Actuator compileReference(
-      Observation observation, Coverage coverage, long observationId) {
+  private Actuator compileReference(Observation observation, Coverage coverage) {
     var ret = new ActuatorImpl();
     ret.setObservation(observation);
-    ret.setId(observationId);
+    ret.setId(observation.getId());
     ret.setCoverage(coverage.as(Geometry.class));
     ret.setActuatorType(Actuator.Type.REFERENCE);
     return ret;
