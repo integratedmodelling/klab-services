@@ -115,15 +115,16 @@ public class RuntimeClient extends BaseServiceClient
       ret = new ClientContextScope(sessionScope, this, configuration);
       ret.setId(descriptor.getId());
       var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-      if (federation != null && sessionScope instanceof MessagingChannelImpl messagingChannel) {
+      if (federation != null && ret instanceof MessagingChannelImpl messagingChannel) {
         var queues =
                 getQueuesFromHeader(
-                        sessionScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+                        ret, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
         if (queues == null) {
           // TODO error recovery
           Logging.INSTANCE.error("no queues found in messaging header");
         }
         messagingChannel.setupMessaging(federation, ret.getId(), queues);
+        Logging.INSTANCE.info("Connected to queue for context scope " + ret.getId());
       }
       ret.createDigitalTwin(descriptor.getId());
       return ret;
