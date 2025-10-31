@@ -80,24 +80,25 @@ pipeline {
                         [name: "${RUNTIME_SERVICE}",  container: "${RUNTIME_CONTAINER}"],
                         [name: "${RESOURCE_SERVICE}", container: "${RESOURCES_CONTAINER}"]
                     ]
+                    sshagent(["bc3-im-services"]) {
+                        services.each { svc ->
+                            sh """
+                            ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} '
+                                echo "Updating ${svc.name} service..."
+                                docker pull ${REGISTRY}/${svc.container}:${TAG}
+                            '
+                            """
+                        }
 
-                    services.each { svc ->
+                        // Once all images are pulled, recreate containers via docker compose
                         sh """
                         ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} '
-                            echo "Updating ${svc.name} service..."
-                            docker pull ${REGISTRY}/${svc.container}:${TAG}
+                            cd ~/repos/klab-services-infrastructure/docker || exit 1
+                            echo "Bringing up updated containers..."
+                            docker compose up -d
                         '
                         """
                     }
-
-                    // Once all images are pulled, recreate containers via docker compose
-                    sh """
-                    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} '
-                        cd ~/repos/klab-services-infrastructure/docker || exit 1
-                        echo "Bringing up updated containers..."
-                        docker compose up -d
-                    '
-                    """
                 }
             }
         }
