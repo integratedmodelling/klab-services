@@ -16,13 +16,13 @@ pipeline {
                     script: "date '+%Y-%m-%dT%H:%M:%S'",
                     returnStdout: true).trim()
         RESOURCES_CONTAINER = "resources-service-21"
-        RESOURCE_SERVICE = "resources"
+        RESOURCE_SERVICE = "resources-main"
         RUNTIME_CONTAINER = "runtime-service-21"
-        RUNTIME_SERVICE = "runtime"
+        RUNTIME_SERVICE = "runtime-main"
         RESOLVER_CONTAINER = "resolver-service-21"
-        RESOLVER_SERVICE = "resolver"
+        RESOLVER_SERVICE = "resolver-main"
         REASONER_CONTAINER = "reasoner-service-21"
-        REASONER_SERVICE = "reasoner"
+        REASONER_SERVICE = "reasoner-main"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
         DOCKER_HOST = "192.168.250.215"
         DOCKER_STACK = "klab"
@@ -72,11 +72,32 @@ pipeline {
                 expression { env.JIB != '' }
             }
             steps {
-                sshagent(["bc3-im-services"]) {
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${REASONER_SERVICE} --image ${REGISTRY}/${REASONER_CONTAINER}:${TAG} --with-registry-auth"
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOLVER_SERVICE} --image ${REGISTRY}/${RESOLVER_CONTAINER}:${TAG} --with-registry-auth"
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RUNTIME_SERVICE} --image ${REGISTRY}/${RUNTIME_CONTAINER}:${TAG} --with-registry-auth"
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}/${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
+                script {
+                    // Each service image to pull and update
+                    def services = [
+                        [name: "${REASONER_SERVICE}", container: "${REASONER_CONTAINER}"],
+                        [name: "${RESOLVER_SERVICE}", container: "${RESOLVER_CONTAINER}"],
+                        [name: "${RUNTIME_SERVICE}",  container: "${RUNTIME_CONTAINER}"],
+                        [name: "${RESOURCE_SERVICE}", container: "${RESOURCES_CONTAINER}"]
+                    ]
+
+                    services.each { svc ->
+                        sh """
+                        ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} '
+                            echo "Updating ${svc.name} service..."
+                            docker pull ${REGISTRY}/${svc.container}:${TAG}
+                        '
+                        """
+                    }
+
+                    // Once all images are pulled, recreate containers via docker compose
+                    sh """
+                    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} '
+                        cd ~/repos/klab-services-infrastructure/docker || exit 1
+                        echo "Bringing up updated containers..."
+                        docker compose up -d
+                    '
+                    """
                 }
             }
         }
