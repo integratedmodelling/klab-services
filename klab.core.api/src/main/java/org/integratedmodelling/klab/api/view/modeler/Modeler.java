@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
@@ -143,9 +144,24 @@ public interface Modeler extends UIController {
   /**
    * Return the innermost current scope available.
    *
+   * @deprecated this should be an IDE issue, not a Modeler issue
    * @return
    */
   Scope getCurrentScope();
+
+  /**
+   * Transparently create (if needed) a local web server and publish the passed file so that it can
+   * be accessed in a browser using the returned URL. The workspace argument may be null; if passed,
+   * it guarantees that all assets published within the same workspace are accessible at the same
+   * URL prefix.
+   *
+   * @param inputFile
+   * @param workspace
+   * @param additionalFiles any other file that needs to be locally available at the same web
+   *     address
+   * @return the URL serving inputFile
+   */
+  URL publishLocally(File inputFile, String workspace, File... additionalFiles);
 
   /**
    * Make the passed context the current one. The context must belong to the current session or an

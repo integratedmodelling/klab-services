@@ -3756,6 +3756,10 @@ public class Utils {
         throw new KlabIOException(e);
       }
     }
+
+    public static void touch(File file) {
+      file.setLastModified(System.currentTimeMillis());
+    }
   }
 
   public static class Templates {
@@ -4733,6 +4737,19 @@ public class Utils {
   }
 
   public static class URLs {
+
+    /**
+     * Find an available port on the local host.
+     *
+     * @return
+     */
+    public static int findAvailablePort() {
+      try (ServerSocket socket = new ServerSocket(0)) {
+        return socket.getLocalPort();
+      } catch (IOException e) {
+        throw new KlabInternalErrorException("Could not find available port", e);
+      }
+    }
 
     /** Pattern to validate a RFC 2141-compliant URN. */
     public static final Pattern URN_PATTERN =

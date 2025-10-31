@@ -1,9 +1,16 @@
 package org.integratedmodelling.klab.modeler;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.SimpleWebServer;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph;
@@ -21,6 +28,8 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -63,6 +72,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   private ContextScope currentContext;
   private List<SessionScope> sessions = new ArrayList<>();
   private Map<String, ContextScope> contexts = new LinkedHashMap();
+  private SimpleWebServer httpServer = null;
+  private File tempDirectory;
+  private int serverPort;
 
   EngineConfiguration workbench;
   File workbenchDefinition;
@@ -627,6 +639,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public boolean shutdown(boolean shutdownLocalServices) {
 
+    if (httpServer != null) {
+      httpServer.stop();
+    }
+
     if (shutdownLocalServices) {
       try {
         return shutdownLocalServices().thenApply(b -> engine().shutdown()).get();
@@ -674,5 +690,49 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     //      return currentSession;
     //    }
     return user();
+  }
+
+  @Override
+  public URL publishLocally(File inputFile, String workspace, File... additionalFiles) {
+    if (this.httpServer == null) {
+      try {
+        this.tempDirectory = Files.createTempDirectory("klab-local").toFile();
+        if (workspace != null) {
+          new File(tempDirectory, workspace).mkdirs();
+        }
+        this.serverPort = Utils.URLs.findAvailablePort();
+        this.httpServer = new SimpleWebServer("localhost", serverPort, tempDirectory, false);
+        Utils.Files.touch(new File(tempDirectory + File.separator + "favicon.ico")); // JFC
+        Logging.INSTANCE.info("Starting local web server on port " + serverPort);
+        this.httpServer.start();
+      } catch (IOException e) {
+        throw new RuntimeException("Could not initialize local web server", e);
+      }
+    }
+
+    List<File> files = new ArrayList<>();
+    files.add(inputFile);
+    if (additionalFiles != null) {
+      files.addAll(Arrays.asList(additionalFiles));
+    }
+
+    try {
+      for (var file : files) {
+        Files.copy(
+            file.toPath(),
+            new File(
+                    tempDirectory,
+                    workspace == null ? inputFile.getName() : workspace + "/" + file.getName())
+                .toPath());
+      }
+      return new URL(
+          "http://localhost:"
+              + serverPort
+              + "/"
+              + (workspace == null ? "" : workspace + "/")
+              + inputFile.getName());
+    } catch (IOException e) {
+      throw new KlabIOException("Error publishing file " + inputFile);
+    }
   }
 }

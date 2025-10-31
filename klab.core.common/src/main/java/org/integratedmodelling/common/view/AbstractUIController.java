@@ -684,6 +684,7 @@ public abstract class AbstractUIController implements UIController {
               var out = Files.createTempFile("klab", "." + extension);
               Files.copy((InputStream) ret, out);
             } else {
+                // TODO support URL outputType through local webserver when the result is File or InputStream
               throw new KlabInternalErrorException(
                   "Visualization method returned unexpected type "
                       + ret.getClass().getCanonicalName());
