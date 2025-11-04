@@ -9,198 +9,188 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Result of a status git (or other SCMs) call on a repository. Comes with a Project when it's first retrieved
- * and with a ResourceSet when updates to a document or repository operations are invoked on the
- * {@link org.integratedmodelling.klab.api.services.ResourcesService} API.
- * {@link org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer}s can use the repo
+ * Result of a status git (or other SCMs) call on a repository. Comes with a {@link
+ * org.integratedmodelling.klab.api.knowledge.organization.Project} when it's retrieved and with a
+ * {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} when updates to a
+ * document or repository operations are made through the {@link
+ * org.integratedmodelling.klab.api.services.ResourcesService} API. {@link
+ * org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer}s can use the repo
  * metadata to (re-)assess the status of each document and container for display or notification.
  */
 public class RepositoryState {
 
-    public enum Status {
+  public enum Status {
 
-        /**
-         *
-         */
-        CLEAN,
+    /** */
+    CLEAN,
 
-        /**
-         *
-         */
-        UNTRACKED,
-
-        /**
-         * Conflicts are present. At the folder or project level, this takes precedence as the overall status
-         * over CHANGED.
-         */
-        CONFLICTED,
-
-        /**
-         *
-         */
-        MODIFIED,
-        /**
-         * When returned as overall project status, means that the project is connected to a repository but
-         * has never been committed.
-         */
-        ADDED,
-
-        /**
-         * Won't apply to anything other than documents
-         */
-        REMOVED,
-
-        /**
-         * The caller has no authorization to inquire or perform the requested operation on the repository.
-         */
-        UNAUTHORIZED
-    }
+    /** */
+    UNTRACKED,
 
     /**
-     * Basic compound operations that should be supported through server requests. For now implementing Git
-     * command sequences, meant to be usable easily and safely by untrained or minimally trained users. When
-     * these can't run due to conflict, they should report the problem without causing changes and advice
-     * users to use the full Git implementation.
-     * <p>
-     * TODO add descriptions to each case for display, one day multi-lingual.
-     * <p>
-     * For now only COMMIT_AND_SWITCH expects a parameter, which will be passed in the parameters array.
+     * Conflicts are present. At the folder or project level, this takes precedence as the overall
+     * status over CHANGED.
      */
-    public enum Operation {
-        /**
-         * Fetch any remote changes, if no conflicts merge them, then commit the current changes and pull
-         */
-        FETCH_COMMIT_AND_PUSH,
+    CONFLICTED,
 
-        /**
-         * Fetch remote changes and merge them if no conflicts arise
-         */
-        FETCH_AND_MERGE,
-        /**
-         * Switch to another branch (possibly new) after locally committing any pending changes
-         */
-        COMMIT_AND_SWITCH,
-        /**
-         * Hard reset head deleting all uncommitted changes
-         */
-        HARD_RESET,
+    /** */
+    MODIFIED,
+    /**
+     * When returned as overall project status, means that the project is connected to a repository
+     * but has never been committed.
+     */
+    ADDED,
 
-        MERGE_CHANGES_FROM
-    }
-
-    private Status overallStatus = Status.UNTRACKED;
-    private Set<String> modifiedPaths = new HashSet<>();
-    private Set<String> addedPaths = new HashSet<>();
-    private Set<String> untrackedPaths = new HashSet<>();
-    private Set<String> removedPaths = new HashSet<>();
-    private Set<String> untrackedFolders = new HashSet<>();
-    private Set<String> conflictingPaths = new HashSet<>();
-    private Set<String> uncommittedPaths = new HashSet<>();
-    private List<String> branchNames = new ArrayList<>();
-    private List<Notification> notifications = new ArrayList<>();
-    private String currentBranch;
-    private URL repositoryUrl;
-
-    public Set<String> getModifiedPaths() {
-        return this.modifiedPaths;
-    }
-
-    public Set<String> getAddedPaths() {
-        return addedPaths;
-    }
-
-    public void setAddedPaths(Set<String> addedPaths) {
-        this.addedPaths = addedPaths;
-    }
-
-    public Set<String> getConflictingPaths() {
-        return conflictingPaths;
-    }
-
-    public void setConflictingPaths(Set<String> conflictingPaths) {
-        this.conflictingPaths = conflictingPaths;
-    }
-
-    public void setModifiedPaths(Set<String> modifiedPaths) {
-        this.modifiedPaths = modifiedPaths;
-    }
+    /** Won't apply to anything other than documents */
+    REMOVED,
 
     /**
-     * In normal situations this should only return one of UNTRACKED, UNAUTHORIZED, CLEAN, MODIFIED or
-     * CONFLICTED.
-     *
-     * @return
+     * The caller has no authorization to inquire or perform the requested operation on the
+     * repository.
      */
-    public Status getOverallStatus() {
-        return overallStatus;
-    }
+    UNAUTHORIZED
+  }
 
-    public void setOverallStatus(Status overallStatus) {
-        this.overallStatus = overallStatus;
-    }
+  /**
+   * Basic compound operations that should be supported through server requests. For now
+   * implementing Git command sequences, meant to be usable easily and safely by untrained or
+   * minimally trained users. When these can't run due to conflict, they should report the problem
+   * without causing changes and advice users to use the full Git implementation.
+   *
+   * <p>TODO add labels and descriptions to each case for display, one day multi-lingual.
+   *
+   * <p>For now only COMMIT_AND_SWITCH and MERGE_CHANGES_FROM expects a parameter, which will be
+   * passed in the parameter array.
+   */
+  public enum Operation {
+    /**
+     * Fetch any remote changes, if no conflicts merge them, then commit the current changes and
+     * pull
+     */
+    FETCH_COMMIT_AND_PUSH,
 
-    public Set<String> getRemovedPaths() {
-        return removedPaths;
-    }
+    /** Fetch remote changes and merge them if no conflicts arise */
+    FETCH_AND_MERGE,
+    /** Switch to another branch (possibly new) after locally committing any pending changes */
+    COMMIT_AND_SWITCH,
+    /** Hard reset head deleting all uncommitted changes */
+    HARD_RESET,
 
-    public void setRemovedPaths(Set<String> removedPaths) {
-        this.removedPaths = removedPaths;
-    }
+    MERGE_CHANGES_FROM
+  }
 
-    public Set<String> getUncommittedPaths() {
-        return uncommittedPaths;
-    }
+  private Status overallStatus = Status.UNTRACKED;
+  private Set<String> modifiedPaths = new HashSet<>();
+  private Set<String> addedPaths = new HashSet<>();
+  private Set<String> untrackedPaths = new HashSet<>();
+  private Set<String> removedPaths = new HashSet<>();
+  private Set<String> untrackedFolders = new HashSet<>();
+  private Set<String> conflictingPaths = new HashSet<>();
+  private Set<String> uncommittedPaths = new HashSet<>();
+  private List<String> branchNames = new ArrayList<>();
+  private List<Notification> notifications = new ArrayList<>();
+  private String currentBranch;
+  private URL repositoryUrl;
 
-    public void setUncommittedPaths(Set<String> uncommittedPaths) {
-        this.uncommittedPaths = uncommittedPaths;
-    }
+  public Set<String> getModifiedPaths() {
+    return this.modifiedPaths;
+  }
 
-    public Set<String> getUntrackedFolders() {
-        return untrackedFolders;
-    }
+  public Set<String> getAddedPaths() {
+    return addedPaths;
+  }
 
-    public void setUntrackedFolders(Set<String> untrackedFolders) {
-        this.untrackedFolders = untrackedFolders;
-    }
+  public void setAddedPaths(Set<String> addedPaths) {
+    this.addedPaths = addedPaths;
+  }
 
-    public Set<String> getUntrackedPaths() {
-        return untrackedPaths;
-    }
+  public Set<String> getConflictingPaths() {
+    return conflictingPaths;
+  }
 
-    public void setUntrackedPaths(Set<String> untrackedPaths) {
-        this.untrackedPaths = untrackedPaths;
-    }
+  public void setConflictingPaths(Set<String> conflictingPaths) {
+    this.conflictingPaths = conflictingPaths;
+  }
 
-    public List<String> getBranchNames() {
-        return branchNames;
-    }
+  public void setModifiedPaths(Set<String> modifiedPaths) {
+    this.modifiedPaths = modifiedPaths;
+  }
 
-    public void setBranchNames(List<String> branchNames) {
-        this.branchNames = branchNames;
-    }
+  /**
+   * In normal situations this should only return one of UNTRACKED, UNAUTHORIZED, CLEAN, MODIFIED or
+   * CONFLICTED.
+   *
+   * @return
+   */
+  public Status getOverallStatus() {
+    return overallStatus;
+  }
 
-    public String getCurrentBranch() {
-        return currentBranch;
-    }
+  public void setOverallStatus(Status overallStatus) {
+    this.overallStatus = overallStatus;
+  }
 
-    public void setCurrentBranch(String currentBranch) {
-        this.currentBranch = currentBranch;
-    }
+  public Set<String> getRemovedPaths() {
+    return removedPaths;
+  }
 
-    public URL getRepositoryUrl() {
-        return repositoryUrl;
-    }
+  public void setRemovedPaths(Set<String> removedPaths) {
+    this.removedPaths = removedPaths;
+  }
 
-    public void setRepositoryUrl(URL repositoryUrl) {
-        this.repositoryUrl = repositoryUrl;
-    }
+  public Set<String> getUncommittedPaths() {
+    return uncommittedPaths;
+  }
 
-    public List<Notification> getNotifications() {
-        return notifications;
-    }
+  public void setUncommittedPaths(Set<String> uncommittedPaths) {
+    this.uncommittedPaths = uncommittedPaths;
+  }
 
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
+  public Set<String> getUntrackedFolders() {
+    return untrackedFolders;
+  }
 
+  public void setUntrackedFolders(Set<String> untrackedFolders) {
+    this.untrackedFolders = untrackedFolders;
+  }
+
+  public Set<String> getUntrackedPaths() {
+    return untrackedPaths;
+  }
+
+  public void setUntrackedPaths(Set<String> untrackedPaths) {
+    this.untrackedPaths = untrackedPaths;
+  }
+
+  public List<String> getBranchNames() {
+    return branchNames;
+  }
+
+  public void setBranchNames(List<String> branchNames) {
+    this.branchNames = branchNames;
+  }
+
+  public String getCurrentBranch() {
+    return currentBranch;
+  }
+
+  public void setCurrentBranch(String currentBranch) {
+    this.currentBranch = currentBranch;
+  }
+
+  public URL getRepositoryUrl() {
+    return repositoryUrl;
+  }
+
+  public void setRepositoryUrl(URL repositoryUrl) {
+    this.repositoryUrl = repositoryUrl;
+  }
+
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
 }

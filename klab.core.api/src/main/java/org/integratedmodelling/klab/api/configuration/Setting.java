@@ -147,6 +147,11 @@ public enum Setting {
           + Product.ProductType.RUNTIME_SERVICE.getDebugPort(),
       Boolean.class,
       false),
+  LAUNCH_DEBUG_GUI(
+      Page.DEBUGGING,
+      "Launch a DevToolsFX debugging tool for the GUI when in graphical mode",
+      Map.class,
+      false),
   CLEAR_WORKSPACE(
       Page.RESOURCES,
       "Execute to remove all workspaces from the service. This is a destructive operation.",
@@ -157,7 +162,6 @@ public enum Setting {
       "Execute to remove one or more components from the service",
       Map.class,
       Map.of("component", String.class, "result", Boolean.class));
-  ;
 
   //  private Setting<Double> minModelCoverage = new Setting<Double>();
   //  private Setting<Double> minTotalCoverage = new Setting<Double>();
