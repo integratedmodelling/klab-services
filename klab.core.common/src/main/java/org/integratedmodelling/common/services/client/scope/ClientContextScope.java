@@ -48,6 +48,10 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
+    if (configuration.getUrl() == null
+        && configuration instanceof ConfigurationImpl configurationImpl) {
+        configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + getId()));
+    }
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
     this.setHostServiceId(runtimeService.serviceId());
@@ -79,7 +83,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public URL getUrl() {
-    return null;
+    return configuration.getUrl();
   }
 
   @Override
@@ -332,7 +336,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public Observation getObservation(Observation observation) {
-      
+
     var query =
         digitalTwin
             .getKnowledgeGraph()
