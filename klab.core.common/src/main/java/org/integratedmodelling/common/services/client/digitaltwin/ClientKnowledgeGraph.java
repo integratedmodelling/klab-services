@@ -485,6 +485,22 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return List.of();
   }
 
+  public void populate(RuntimeAsset contextAsset, GraphModel.Relationship relationship, int i) {
+
+    if (i > 0) {
+      for (var node :
+          query(Observation.class, scope).source(contextAsset).along(relationship).run(scope)) {
+        graph.addVertex(node.getId());
+        assetCache.put(node.getId(), node);
+        graph.addEdge(
+            contextAsset.getId(),
+            node.getId(),
+            new Relationship(relationship, contextAsset.getId(), node.getId(), Map.of()));
+        populate(node, relationship, i - 1);
+      }
+    }
+  }
+
   /**
    * Relationship for the client graph has equals() and hashCode() so that no duplicated
    * relationships can be inserted when the graph is updated.

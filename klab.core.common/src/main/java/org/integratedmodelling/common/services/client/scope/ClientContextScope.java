@@ -50,7 +50,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     this.configuration = configuration;
     if (configuration.getUrl() == null
         && configuration instanceof ConfigurationImpl configurationImpl) {
-        configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + getId()));
+      configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + getId()));
     }
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
@@ -384,6 +384,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   public void createDigitalTwin(String id) {
     this.digitalTwin = new ClientDigitalTwin(this, id);
+    this.digitalTwin
+        .getKnowledgeGraph()
+        .populate(RuntimeAsset.CONTEXT_ASSET, GraphModel.Relationship.HAS_CHILD, 2);
   }
 
   @Override
