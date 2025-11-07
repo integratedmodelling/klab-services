@@ -56,7 +56,7 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl
 
   @Override
   public <T extends Scope> T getParentScope(Type type, Class<T> scopeClass) {
-    Scope scope = this;
+    Scope scope = this.getParentScope();
     while (scope != null) {
       if (scope.getType() == type) {
         return (T) scope;
