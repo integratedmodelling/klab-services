@@ -602,6 +602,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setName(node.get("name").asString());
         instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
         instance.setId(node.get("id").asLong());
+        instance.setChildrenCount(node.get("childrenCount").asInt());
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
