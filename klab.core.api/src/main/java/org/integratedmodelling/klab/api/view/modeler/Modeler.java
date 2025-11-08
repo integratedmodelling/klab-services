@@ -1,29 +1,24 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement
@@ -59,8 +54,8 @@ public interface Modeler extends UIController {
    */
   UserScope authenticate();
 
-  @Deprecated
-  Distribution.Status getDistributionStatus();
+  //  @Deprecated
+  //  Distribution.Status getDistributionStatus();
 
   /**
    * If the associated engine has a k.LAB distribution available, return it.
@@ -93,7 +88,7 @@ public interface Modeler extends UIController {
       value = UIAction.ObserveAsset,
       label = "Observe asset",
       tooltip = "Select a k.LAB " + "asset to create a new context or add to the current one.")
-  CompletableFuture<Observation> observe(Object asset, boolean adding);
+  CompletableFuture<Observation> observe(ContextScope contextScope, Object asset, boolean adding);
 
   /**
    * Find an appropriate visualization method for the passed asset and media type. Return the result
@@ -112,42 +107,45 @@ public interface Modeler extends UIController {
       Map<String, Object> visualizationOptions,
       Class<T> outputType);
 
-  /**
-   * Return all the open sessions for the current user.
-   *
-   * @return
-   */
-  List<SessionScope> getOpenSessions();
+  //  /**
+  //   * Return all the open sessions for the current user.
+  //   *
+  //   * <p>FIXME we should just get the DTs as info
+  //   *
+  //   * @return
+  //   */
+  //  List<SessionScope> getOpenSessions();
 
   /**
    * Return all the open contexts for the current session.
    *
+   * @deprecated this should be an IDE issue, not a Modeler issue
    * @return
    */
   List<ContextScope> getOpenContexts();
 
   /**
-   * Return the current context scope if set, or create a default session and a default digital twin
-   * if not.
+   * Return a new scope with any engine defaults set by the implementation and its configuration.
    *
    * @return
    */
-  ContextScope requireContext();
+  ContextScope createDefaultContext();
 
-  /**
-   * Return the current context, or null if there is no current context or session.
-   *
-   * @return
-   */
-  ContextScope getCurrentContext();
+  //  /**
+  //   * Return the current context, or null if there is no current context or session.
+  //   *
+  //   * @deprecated this should be an IDE issue, not a Modeler issue
+  //   * @return
+  //   */
+  //  ContextScope getCurrentContext();
 
-  /**
-   * Return the innermost current scope available.
-   *
-   * @deprecated this should be an IDE issue, not a Modeler issue
-   * @return
-   */
-  Scope getCurrentScope();
+  //  /**
+  //   * Return the innermost current scope available.
+  //   *
+  //   * @deprecated this should be an IDE issue, not a Modeler issue
+  //   * @return
+  //   */
+  //  Scope getCurrentScope();
 
   /**
    * Transparently create (if needed) a local web server and publish the passed file so that it can
@@ -163,13 +161,15 @@ public interface Modeler extends UIController {
    */
   URL publishLocally(File inputFile, String workspace, File... additionalFiles);
 
-  /**
-   * Make the passed context the current one. The context must belong to the current session or an
-   * exception will be thrown.
-   *
-   * @param context
-   */
-  void setCurrentContext(ContextScope context);
+  //  /**
+  //   * Make the passed context the current one. The context must belong to the current session or
+  // an
+  //   * exception will be thrown.
+  //   *
+  //   * @deprecated this should be an IDE issue, not a Modeler issue
+  //   * @param context
+  //   */
+  //  void setCurrentContext(ContextScope context);
 
   boolean shutdown(boolean shutdownLocalServices);
 

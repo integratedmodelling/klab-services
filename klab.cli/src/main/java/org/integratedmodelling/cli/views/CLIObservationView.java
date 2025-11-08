@@ -76,6 +76,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
   @Override
   public void run() {
+    ContextScope currentContext = null; // TODO
 
     PrintWriter out = commandSpec.commandLine().getOut();
     PrintWriter err = commandSpec.commandLine().getErr();
@@ -94,7 +95,6 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
     }
 
     String urn = Utils.Strings.join(observables, " ");
-
     if (Utils.Numbers.encodesInteger(urn)) {
       int n = Integer.parseInt(urn) - 1;
       //            if (n < 0 || observationsMade.size() >= n) {
@@ -120,7 +120,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
         out.println(
             CommandLine.Help.Ansi.AUTO.string(
                 "Observation of @|yellow " + urn + "|@ " + " started"));
-        KlabCLI.INSTANCE.modeler().observe(resolved, addToContext);
+        KlabCLI.INSTANCE.modeler().observe(currentContext, resolved, addToContext);
       } else {
         err.println(
             CommandLine.Help.Ansi.AUTO.string(
@@ -142,7 +142,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
                     + "|@ "
                     + "started in "
                     + results.getFirst().getUrn()));
-        KlabCLI.INSTANCE.modeler().observe(results.getFirst(), addToContext);
+        KlabCLI.INSTANCE.modeler().observe(currentContext, results.getFirst(), addToContext);
       }
 
     } else {
@@ -203,7 +203,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
       PrintWriter err = commandSpec.commandLine().getErr();
 
       boolean isSession = false;
-      Channel context = KlabCLI.INSTANCE.modeler().getCurrentContext();
+      Channel context = null; // TODO KlabCLI.INSTANCE.modeler().getCurrentContext();
       //      if (context == null) {
       //        context = KlabCLI.INSTANCE.modeler().getCurrentSession();
       //        isSession = true;
@@ -228,7 +228,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
                 + " has been permanently closed and all "
                 + "data have been deleted");
 
-        KlabCLI.INSTANCE.modeler().setCurrentContext(null);
+        //        KlabCLI.INSTANCE.modeler().setCurrentContext(null);
         //        if (isSession) {
         //          KlabCLI.INSTANCE.modeler().setCurrentSession(null);
         //        }
@@ -281,14 +281,14 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
         // FIXME below is the wrong way. Engine should only have a current session, the selected
         //  runtime knows the rest.
         int n = 1;
-        if (KlabCLI.INSTANCE.modeler().getOpenSessions().isEmpty()) {
-          out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No sessions|@ "));
-        }
-        for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
-          out.println(
-              CommandLine.Help.Ansi.AUTO.string(
-                  "@|green " + n + ". " + displaySession(session) + "|@"));
-        }
+        //        if (KlabCLI.INSTANCE.modeler().getOpenSessions().isEmpty()) {
+        //          out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No sessions|@ "));
+        //        }
+        //        for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
+        //          out.println(
+        //              CommandLine.Help.Ansi.AUTO.string(
+        //                  "@|green " + n + ". " + displaySession(session) + "|@"));
+        //        }
         return;
 
       } else {
@@ -297,17 +297,17 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
         if (Utils.Numbers.encodesInteger(sessionNumberOrId)) {
           int n = Integer.parseInt(sessionNumberOrId) - 1;
-          if (n > 0 && KlabCLI.INSTANCE.modeler().getOpenSessions().size() < n) {
-            selected = KlabCLI.INSTANCE.modeler().getOpenSessions().get(n);
-          }
+          //          if (n > 0 && KlabCLI.INSTANCE.modeler().getOpenSessions().size() < n) {
+          //            selected = KlabCLI.INSTANCE.modeler().getOpenSessions().get(n);
+          //          }
         } else
-          for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
-            if (sessionNumberOrId.equals(session.getName())
-                || sessionNumberOrId.equals(session.getId())) {
-              selected = session;
-              break;
-            }
-          }
+        //          for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
+        //            if (sessionNumberOrId.equals(session.getName())
+        //                || sessionNumberOrId.equals(session.getId())) {
+        //              selected = session;
+        //              break;
+        //            }
+        //          }
 
         // select the session with the passed number or name/ID
         if (selected != null) {
@@ -340,10 +340,9 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
         PrintWriter out = commandSpec.commandLine().getOut();
         PrintWriter err = commandSpec.commandLine().getErr();
 
-        String sessionName =
-            "__NULL__".equals(this.sessionName)
+        String sessionName = /*            "__NULL__".equals(this.sessionName)
                 ? ("Session " + (KlabCLI.INSTANCE.modeler().getOpenSessions().size() + 1))
-                : this.sessionName;
+                :*/ this.sessionName;
         //        var ret = KlabCLI.INSTANCE.modeler().openNewSession(sessionName);
         //        out.println(
         //            CommandLine.Help.Ansi.AUTO.string("@|green New session " +
@@ -407,7 +406,9 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
       var newContext =
           KlabCLI.INSTANCE
               .modeler()
-              .openNewContext(DigitalTwin.Configuration.builder().name(name).persistence(persistence).build());
+              .openNewContext(
+                  DigitalTwin.Configuration.builder().name(name).persistence(persistence).build(),
+                  false);
       out.println(
           CommandLine.Help.Ansi.AUTO.string(
               "@|green New context " + newContext.getName() + " created|@"));

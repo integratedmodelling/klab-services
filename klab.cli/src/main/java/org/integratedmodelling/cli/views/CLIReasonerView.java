@@ -129,9 +129,11 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       ContextScope ctx =
-          context == null
-              ? KlabCLI.INSTANCE.modeler().getCurrentContext()
-              : KlabCLI.INSTANCE.modeler().openNewContext(defaultDigitalTwinConfiguration());
+          /* context == null
+          ? KlabCLI.INSTANCE.modeler().getCurrentContext()
+          : */ KlabCLI.INSTANCE
+              .modeler()
+              .openNewContext(defaultDigitalTwinConfiguration(), false);
 
       if (within != null) {
         // TODO find the context observation and switch the context to it. If a dot,
@@ -154,7 +156,7 @@ public class CLIReasonerView {
 
       var observation =
           DigitalTwin.createObservation(
-              KlabCLI.INSTANCE.modeler().getCurrentScope(), observable, geometry);
+              ctx /*KlabCLI.INSTANCE.modeler().getCurrentScope()*/, observable, geometry);
 
       out.println(
           AUTO.string(

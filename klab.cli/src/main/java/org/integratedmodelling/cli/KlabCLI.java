@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
-
 import org.integratedmodelling.cli.utils.Message;
 import org.integratedmodelling.cli.views.CLIObservationView;
 import org.integratedmodelling.cli.views.CLIReasonerView;
@@ -21,7 +20,6 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
@@ -100,18 +98,18 @@ public enum KlabCLI {
 
   private String getContextPrompt() {
     String ret = null;
-    if (modeler.getCurrentContext() != null) {
-      ret = /*modeler.user().getUserSession().getName() + "/" + */
-          modeler.getCurrentContext().getName();
-      if (modeler.getCurrentContext().getContextObservation() != null) {
-        ret += "/" + modeler.getCurrentContext().getContextObservation().getName();
-      }
-      if (modeler.getCurrentContext().getObserver() != null) {
-        ret = modeler.getCurrentContext().getObserver().getName() + "@" + ret;
-      }
-    } /*else if (modeler.getCurrentSession() != null) {
-        ret = modeler.getCurrentSession().getName();
-      }*/
+    //    if (modeler.getCurrentContext() != null) {
+    //      ret = /*modeler.user().getUserSession().getName() + "/" + */
+    //          modeler.getCurrentContext().getName();
+    //      if (modeler.getCurrentContext().getContextObservation() != null) {
+    //        ret += "/" + modeler.getCurrentContext().getContextObservation().getName();
+    //      }
+    //      if (modeler.getCurrentContext().getObserver() != null) {
+    //        ret = modeler.getCurrentContext().getObserver().getName() + "@" + ret;
+    //      }
+    //    } /*else if (modeler.getCurrentSession() != null) {
+    //        ret = modeler.getCurrentSession().getName();
+    //      }*/
     return ret;
   }
 
@@ -204,13 +202,14 @@ public enum KlabCLI {
 
     if (result == null || result.isCancelled()) {
       commandLine.getErr().println("Import was rejected by service (URN is null)");
-    } else try {
-      var outcome = result.get();
-      var urn = outcome.getResults().iterator().next().getResourceUrn();
-      commandLine.getOut().println("Import to service succeeded: URN is " + urn);
-    } catch (Exception e) {
-      Logging.INSTANCE.error(e);
-    }
+    } else
+      try {
+        var outcome = result.get();
+        var urn = outcome.getResults().iterator().next().getResourceUrn();
+        commandLine.getOut().println("Import to service succeeded: URN is " + urn);
+      } catch (Exception e) {
+        Logging.INSTANCE.error(e);
+      }
   }
 
   public ResourceTransport.Schema chooseSchemaInteractively(
@@ -816,15 +815,21 @@ public enum KlabCLI {
 
     } else if (line.trim().equals("..") || line.trim().equals("<")) {
 
-      Scope scope =
+      // FIXME TODO internalize all context management
+
+      Scope scope = null; /*
           modeler == null
               ? null
               : (
-              /*modeler.getCurrentSession() == null
-              ? modeler.user()
-              : */ (modeler.getCurrentContext() == null
-                  ? /*modeler.getCurrentSession()*/ null
-                  : modeler.getCurrentContext()));
+              */
+      /*modeler.getCurrentSession() == null
+      ? modeler.user()
+      : */
+      /* (modeler.getCurrentContext() == null
+      ? */
+      /*modeler.getCurrentSession()*/
+      /* null
+      : modeler.getCurrentContext()));*/
       // context setting
       if (scope == null) {
         INSTANCE.commandLine.getOut().println("No current scope");
@@ -832,20 +837,20 @@ public enum KlabCLI {
 
         var parent = scope.getParentScope();
         if (parent != null && parent.getType() == Scope.Type.CONTEXT) {
-          modeler.setCurrentContext((ContextScope) parent);
+          //          modeler.setCurrentContext((ContextScope) parent);
         } else if (parent != null && parent.getType() == Scope.Type.SESSION) {
-          modeler.setCurrentContext(null);
+          //          modeler.setCurrentContext(null);
         }
         printContextInfo(1);
 
       } else if (scope.getType() == Scope.Type.SESSION) {
-        modeler.setCurrentContext(null);
+        //        modeler.setCurrentContext(null);
         //        modeler.setCurrentSession(null);
         printContextInfo(1);
       }
 
     } else if (line.startsWith("<<")) {
-      this.modeler.setCurrentContext(null);
+      //      this.modeler.setCurrentContext(null);
       //      this.modeler.setCurrentSession(null);
     } else if (line.startsWith("<")) {
       // must have something after the <
@@ -869,11 +874,11 @@ public enum KlabCLI {
      * ?? prints the same info as ? but much more in detail
      */
     var currentContext = user();
-    if (modeler.getCurrentContext() != null) {
-      currentContext = modeler.getCurrentContext();
-    } /* else if (modeler.getCurrentSession() != null) {
-        currentContext = modeler.getCurrentSession();
-      }*/
+    //    if (modeler.getCurrentContext() != null) {
+    //      currentContext = modeler.getCurrentContext();
+    //    } /* else if (modeler.getCurrentSession() != null) {
+    //        currentContext = modeler.getCurrentSession();
+    //      }*/
 
     if (currentContext == null) {
       INSTANCE.commandLine.getOut().println("No context");
@@ -899,7 +904,7 @@ public enum KlabCLI {
   }
 
   private void printObservationTree(int depth, boolean verbose) {
-    var scope = modeler.getCurrentScope();
+    ContextScope scope = null; //  modeler.getCurrentScope();
     if (scope instanceof ContextScope contextScope) {
       if (contextScope.getContextObservation() == null) {
         for (var observation : contextScope.getObservations()) {
@@ -926,6 +931,7 @@ public enum KlabCLI {
   }
 
   private void printContextInfo(int depth) {
+    ContextScope currentContext = null; // TODO
     if (modeler != null /* && modeler.getCurrentSession() != null*/) {
       //      INSTANCE
       //          .commandLine
@@ -933,32 +939,26 @@ public enum KlabCLI {
       //          .println(
       //              Ansi.AUTO.string("Session: @|green " + modeler.getCurrentSession().getName() +
       // "|@"));
-      if (modeler.getCurrentContext() != null) {
+      if (currentContext != null) {
         INSTANCE
             .commandLine
             .getOut()
-            .println(
-                Ansi.AUTO.string(
-                    "   Context: @|green " + modeler.getCurrentContext().getName() + "|@"));
-        if (modeler.getCurrentContext().getObserver() != null) {
+            .println(Ansi.AUTO.string("   Context: @|green " + currentContext.getName() + "|@"));
+        if (currentContext.getObserver() != null) {
           INSTANCE
               .commandLine
               .getOut()
               .println(
                   Ansi.AUTO.string(
-                      "      Observer: @|green "
-                          + modeler.getCurrentContext().getObserver()
-                          + "|@"));
+                      "      Observer: @|green " + currentContext.getObserver() + "|@"));
         }
-        if (modeler.getCurrentContext().getContextObservation() != null) {
+        if (currentContext.getContextObservation() != null) {
           INSTANCE
               .commandLine
               .getOut()
               .println(
                   Ansi.AUTO.string(
-                      "      Within: @|green "
-                          + modeler.getCurrentContext().getContextObservation()
-                          + "|@"));
+                      "      Within: @|green " + currentContext.getContextObservation() + "|@"));
         }
         if (depth != 0) {
           INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("\nObservation structure:"));

@@ -2,18 +2,15 @@ package org.integratedmodelling.klab.modeler;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.SimpleWebServer;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
@@ -21,17 +18,12 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.RepositoryState;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -69,18 +61,19 @@ import org.integratedmodelling.klab.modeler.views.controllers.*;
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
-  private ContextScope currentContext;
-  private List<SessionScope> sessions = new ArrayList<>();
-  private Map<String, ContextScope> contexts = new LinkedHashMap();
+  //  private ContextScope currentContext;
+  //  private final List<SessionScope> sessions = new ArrayList<>();
+  private final Map<String, ContextScope> contexts = new LinkedHashMap<>();
   private SimpleWebServer httpServer = null;
   private File tempDirectory;
   private int serverPort;
 
   EngineConfiguration workbench;
   File workbenchDefinition;
-  private Geometry focalGeometry = Geometry.UNIVERSAL;
-  private int contextCount = 0;
-  private int sessionCount = 0;
+
+  //  private Geometry focalGeometry = Geometry.UNIVERSAL;
+  //  private int contextCount = 0;
+  //  private int sessionCount = 0;
 
   public ModelerImpl() {
     super();
@@ -96,12 +89,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     // TODO read the workbench config - NAH this probably pertains to the IDE
   }
 
-  @Override
-  public Distribution.Status getDistributionStatus() {
-    return engine() == null
-        ? new AbstractDistributionImpl.StatusImpl()
-        : engine().getDistributionStatus();
-  }
+  //  @Override
+  //  public Distribution.Status getDistributionStatus() {
+  //    return engine() == null
+  //        ? new AbstractDistributionImpl.StatusImpl()
+  //        : engine().getDistributionStatus();
+  //  }
 
   private void dispatchServerMessage(
       KlabService.ServiceCapabilities capabilities, Message message) {
@@ -174,9 +167,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public CompletableFuture<Observation> observe(Object asset, boolean adding) {
+  public CompletableFuture<Observation> observe(
+      ContextScope currentContext, Object asset, boolean adding) {
 
-    requireContext();
+    createDefaultContext();
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
@@ -299,7 +293,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   //  observation will be in the KG anyway.
                   currentContext.send(
                       Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved, obs);
-                  setCurrentContext(currentContext.withObserver(obs));
+                  //                  setCurrentContext(currentContext.withObserver(obs));
                   currentContext.ui(
                       Message.create(
                           currentContext,
@@ -312,28 +306,28 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                       currentContext.getService(RuntimeService.class),
                       obs);
                   currentContext.info(obs + " is now the current observer");
-                } else if (currentContext.getContextObservation() == null
-                    && obs.getObservable().is(SemanticType.SUBJECT)
-                    && !obs.getObservable().getSemantics().isCollective()) {
-                  // for the UI
-                  currentContext.send(
-                      Message.MessageClass.DigitalTwin,
-                      Message.MessageType.ContextObservationResolved,
-                      obs);
-                  dispatch(
-                      this,
-                      UIEvent.ContextObservationResolved,
-                      currentContext,
-                      currentContext.getService(RuntimeService.class),
-                      obs);
-                  setCurrentContext(currentContext.within(obs));
-                  currentContext.ui(
-                      Message.create(
-                          currentContext,
-                          Message.MessageClass.UserInterface,
-                          Message.MessageType.CurrentContextModified));
-                  currentContext.info(obs + " is now the current context observation");
-                } else {
+                } /* else if (currentContext.getContextObservation() == null
+                                      && obs.getObservable().is(SemanticType.SUBJECT)
+                                      && !obs.getObservable().getSemantics().isCollective()) {
+                                    // for the UI
+                                    currentContext.send(
+                                        Message.MessageClass.DigitalTwin,
+                                        Message.MessageType.ContextObservationResolved,
+                                        obs);
+                                    dispatch(
+                                        this,
+                                        UIEvent.ContextObservationResolved,
+                                        currentContext,
+                                        currentContext.getService(RuntimeService.class),
+                                        obs);
+                  //                  setCurrentContext(currentContext.within(obs));
+                  //                  currentContext.ui(
+                  //                      Message.create(
+                  //                          currentContext,
+                  //                          Message.MessageClass.UserInterface,
+                  //                          Message.MessageType.CurrentContextModified));
+                  //                  currentContext.info(obs + " is now the current context observation");
+                                  }*/ else {
                   currentContext.info("Observation of " + obs + " resolved successfully");
                 }
               }
@@ -342,7 +336,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   //  @Override
-  public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
+  public ContextScope openNewContext(
+      DigitalTwin.Configuration configuration, boolean dispatchEvent) {
     var runtimeService = user().getService(RuntimeService.class);
     if (runtimeService == null) {
       throw new KlabAuthorizationException("Cannot create a context without a runtime service");
@@ -350,58 +345,62 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     var ret = user().getUserSession(runtimeService).createContext(configuration);
     if (ret != null) {
       contexts.put(ret.getId(), ret);
-      dispatch(this.getController(), UIEvent.ContextCreated, ret, runtimeService);
+      if (dispatchEvent) {
+        dispatch(this.getController(), UIEvent.ContextCreated, ret, runtimeService);
+      }
     }
     return ret;
   }
 
-  @Override
-  public List<SessionScope> getOpenSessions() {
-    return new ArrayList<>(sessions);
-  }
+  //  @Override
+  //  public List<SessionScope> getOpenSessions() {
+  //    return new ArrayList<>(sessions);
+  //  }
 
   @Override
   public List<ContextScope> getOpenContexts() {
     return new ArrayList<>(contexts.values());
   }
 
-  @Override
-  public ContextScope getCurrentContext() {
-    return currentContext;
-  }
+  //  @Override
+  //  public ContextScope getCurrentContext() {
+  //    return currentContext;
+  //  }
 
   @Override
-  public ContextScope requireContext() {
+  public ContextScope createDefaultContext() {
+
+    ContextScope currentContext = null;
 
     if (currentUser() == null) {
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
     }
-    if (currentContext == null) {
-      var name =
-          // TODO revise, but it's more fun than DT1, DT2 etc
-          Utils.Strings.capitalize(
-              Utils.Words.makeUpName(
-                  "elephant",
-                  "intelligence",
-                  "code",
-                  "planet",
-                  "environment",
-                  "cacophony",
-                  "paradox",
-                  "conundrum",
-                  "troglodyte",
-                  "anaconda",
-                  "chicken",
-                  "blasphemy",
-                  "enema",
-                  "pain",
-                  "knowledge",
-                  "wisdom",
-                  "suffering",
-                  "sausage",
-                  "cucumber"));
-      currentContext = openNewContext(defaultDigitalTwinConfiguration(name));
-    }
+    //    if (currentContext == null) {
+    var name =
+        // TODO revise, but it's more fun than DT1, DT2 etc
+        Utils.Strings.capitalize(
+            Utils.Words.makeUpName(
+                "elephant",
+                "intelligence",
+                "code",
+                "planet",
+                "environment",
+                "cacophony",
+                "paradox",
+                "conundrum",
+                "troglodyte",
+                "anaconda",
+                "chicken",
+                "blasphemy",
+                "enema",
+                "pain",
+                "knowledge",
+                "wisdom",
+                "suffering",
+                "sausage",
+                "cucumber"));
+    currentContext = openNewContext(defaultDigitalTwinConfiguration(name), false);
+    //    }
 
     if (currentContext == null) {
       user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
@@ -421,17 +420,17 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .build();
   }
 
-  @Override
-  public void setCurrentContext(ContextScope context) {
-    //    if (context != null
-    //        && (this.currentSession == null
-    //            || !this.currentSession.equals(
-    //                context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
-    //      throw new KlabIllegalArgumentException(
-    //          "Cannot set context: argument is not part of the current" + " session");
-    //    }
-    this.currentContext = context;
-  }
+  //  @Override
+  //  public void setCurrentContext(ContextScope context) {
+  //    //    if (context != null
+  //    //        && (this.currentSession == null
+  //    //            || !this.currentSession.equals(
+  //    //                context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
+  //    //      throw new KlabIllegalArgumentException(
+  //    //          "Cannot set context: argument is not part of the current" + " session");
+  //    //    }
+  //    this.currentContext = context;
+  //  }
 
   @Override
   public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
@@ -681,16 +680,16 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return this;
   }
 
-  @Override
-  public Scope getCurrentScope() {
-    if (currentContext != null) {
-      return currentContext;
-    }
-    //    if (currentSession != null) {
-    //      return currentSession;
-    //    }
-    return user();
-  }
+  //  @Override
+  //  public Scope getCurrentScope() {
+  //    if (currentContext != null) {
+  //      return currentContext;
+  //    }
+  //    //    if (currentSession != null) {
+  //    //      return currentSession;
+  //    //    }
+  //    return user();
+  //  }
 
   @Override
   public URL publishLocally(File inputFile, String workspace, File... additionalFiles) {
