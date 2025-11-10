@@ -80,15 +80,11 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         case LUT_RESOLVER -> null; // TODO
         case CONSTANT_RESOLVER -> null; // TODO
         case DEFER_RESOLUTION -> null; // TODO
+        case ADAPTER_RESOLVER -> null; // TODO
       };
     }
     return new ContextualizableImpl(call);
   }
-
-  //  @Override
-  //  public Type getType() {
-  //    return this.type;
-  //  }
 
   @Override
   public String getTargetId() {
@@ -256,10 +252,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   public void setCondition(Contextualizable condition) {
     this.condition = condition;
   }
-
-  //  public void setConversion(Pair<ValueMediator, ValueMediator> conversion) {
-  //    this.conversion = conversion;
-  //  }
 
   public void setNegated(boolean negated) {
     this.negated = negated;

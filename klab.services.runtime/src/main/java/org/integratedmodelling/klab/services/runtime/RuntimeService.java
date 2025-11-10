@@ -7,7 +7,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -379,7 +381,7 @@ public class RuntimeService extends BaseService
             scope
                 .getService(ResourcesService.class)
                 .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
-        if (requirements.isEmpty()) {
+        if (requirements == null || requirements.isEmpty()) {
           return CompletableFuture.completedFuture(
               Observation.empty(
                   Notification.error(
@@ -532,8 +534,20 @@ public class RuntimeService extends BaseService
       ContextScope scope) {
 
     var ret = new DataflowImpl();
+    ret.setChildrenCount(1);
 
-    // TODO DIOCAN!
+    var actuator = new ActuatorImpl();
+    actuator.setObservation(observation);
+    actuator.setActuatorType(Actuator.Type.OBSERVE);
+    actuator
+        .getComputation()
+        .add(
+            new ServiceCallImpl(
+                CoreFunctor.ADAPTER_RESOLVER.getServiceCallName(),
+                "value",
+                predefinedContextualization));
+
+    ret.getComputation().add(actuator);
 
     return CompletableFuture.completedFuture(ret);
   }

@@ -78,6 +78,14 @@ public interface RuntimeService extends KlabService {
      */
     CONSTANT_RESOLVER("klab.core.constant.resolver"),
     /**
+     * Contextualize directly from {@link
+     * org.integratedmodelling.klab.api.knowledge.observation.Observation.ContextualizationData}
+     * containing the valid ID and parameters of an embeddable adapter, creating a temporary
+     * resource on the fly in the runtime. Reserved for submissions from federated clients that have
+     * computed storage independently.
+     */
+    ADAPTER_RESOLVER("klab.core.adapter.resolver"),
+    /**
      * Defer the resolution of the observations produced by this contextualization. Comes with a
      * 'strategy' parameter containing the contextualized ObservationStrategy to use.
      */
