@@ -130,7 +130,6 @@ public class ModelReference {
 	 */
 	public ModelReference copy() {
 		ModelReference ret = new ModelReference();
-//        ret.id = id;
 		ret.name = name;
 		ret.serverId = serverId;
 		ret.projectId = projectId;
@@ -186,24 +185,6 @@ public class ModelReference {
 	public int hashCode() {
 		return name == null ? 0 : name.hashCode();
 	}
-
-//    /**
-//     * Gets the id.
-//     *
-//     * @return the id
-//     */
-//    public String getId() {
-//        return id;
-//    }
-//
-//    /**
-//     * Sets the id.
-//     *
-//     * @param id the new id
-//     */
-//    public void setId(String id) {
-//        this.id = id;
-//    }
 
 	/**
 	 * Gets the name.

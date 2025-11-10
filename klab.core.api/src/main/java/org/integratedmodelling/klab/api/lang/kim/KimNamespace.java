@@ -16,58 +16,64 @@ import java.util.Map;
  */
 public interface KimNamespace extends KlabDocument<KlabStatement> {
 
-    /**
-     * Return all the namespaces that this should not be mixed with during resolution or scenario setting.
-     *
-     * @return IDs of namespaces we do not agree with
-     */
-    Collection<String> getDisjointNamespaces();
+  /**
+   * Return all the namespaces that this should not be mixed with during resolution or scenario
+   * setting.
+   *
+   * @return IDs of namespaces we do not agree with
+   */
+  Collection<String> getDisjointNamespaces();
 
-    /**
-     * Extentual coverage of this namespace. This constrains any model-specific coverage if both are
-     * specified, and it's the upstream top level of coverage specification for any models.
-     *
-     * @return
-     */
-    Geometry getCoverage();
+  /**
+   * Private, project private, public
+   *
+   * @return
+   */
+  KlabStatement.Scope getScope();
 
-    /**
-     * True if declared as a scenario.
-     *
-     * @return
-     */
-    boolean isScenario();
+  /**
+   * Extentual coverage of this namespace. This constrains any model-specific coverage if both are
+   * specified, and it's the upstream top level of coverage specification for any models.
+   *
+   * @return
+   */
+  Geometry getCoverage();
 
-    /**
-     * If this is a script, return its ID (either specified in a run annotation or the file name). Otherwise
-     * return null.
-     *
-     * @return the script ID or null.
-     */
-    String getScriptId();
+  /**
+   * True if declared as a scenario.
+   *
+   * @return
+   */
+  boolean isScenario();
 
-    /**
-     * If this is a test case, return its ID (either specified in a run annotation or the file name).
-     * Otherwise return null.
-     *
-     * @return the test case ID or null.
-     */
-    String getTestCaseId();
+  /**
+   * If this is a script, return its ID (either specified in a run annotation or the file name).
+   * Otherwise return null.
+   *
+   * @return the script ID or null.
+   */
+  String getScriptId();
 
-    /**
-     * Bound to a worldview, therefore used as a script or sidecar file.
-     *
-     * @return
-     */
-    boolean isWorldviewBound();
+  /**
+   * If this is a test case, return its ID (either specified in a run annotation or the file name).
+   * Otherwise return null.
+   *
+   * @return the test case ID or null.
+   */
+  String getTestCaseId();
 
+  /**
+   * Bound to a worldview, therefore used as a script or sidecar file.
+   *
+   * @return
+   */
+  boolean isWorldviewBound();
 
-    /**
-     * A list of the imported namespace IDs matched to a (possibly null) list of symbols imported from each.
-     * If the list is null, all symbols are imported.
-     *
-     * @return
-     */
-    Map<String, List<String>> getImports();
-
+  /**
+   * A list of the imported namespace IDs matched to a (possibly null) list of symbols imported from
+   * each. If the list is null, all symbols are imported.
+   *
+   * @return
+   */
+  Map<String, List<String>> getImports();
 }

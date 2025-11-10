@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -30,6 +31,8 @@ import java.util.Set;
  *   <li>a service call explicitly given in k.IM;
  *   <li>an executable expression in a supported language;
  *   <li>a classification or lookup table;
+ *   <li>contextualization data pre-set into an observation, turning into an ephemeral resource at
+ *       the runtime end
  *   <li>a conversion between a source and a target value semantics (e.g. unit or currency)
  * </ul>
  *
@@ -46,11 +49,12 @@ import java.util.Set;
  */
 public interface Contextualizable extends KlabStatement {
 
-  public static enum Type {
+  enum Type {
     CLASSIFICATION,
     SERVICE,
     LOOKUP_TABLE,
     RESOURCE,
+    CONTEXTUALIZATION_DATA,
     EXPRESSION,
     CONVERSION,
     LITERAL,
@@ -257,12 +261,12 @@ public interface Contextualizable extends KlabStatement {
     }
   }
 
-//  /**
-//   * Return the type of the contained resource.
-//   *
-//   * @return
-//   */
-//  Type getType();
+  //  /**
+  //   * Return the type of the contained resource.
+  //   *
+  //   * @return
+  //   */
+  //  Type getType();
 
   /**
    * Target ID: if null, the main observable of the model, otherwise another observable which must
@@ -275,6 +279,7 @@ public interface Contextualizable extends KlabStatement {
 
   /**
    * The type of action (applies to expressions)
+   *
    * @return
    */
   Action getAction();
@@ -290,15 +295,23 @@ public interface Contextualizable extends KlabStatement {
    */
   KimObservable getTarget();
 
-//  /**
-//   * The target artifact ID when this computation is a mediation. In this case the computation means
-//   * "send this artifact through this mediator".
-//   *
-//   * <p>This may be merged with getTarget() at some point as the use cases for it are similar.
-//   *
-//   * @return the mediation target ID.
-//   */
-//  String getMediationTargetId();
+  /**
+   * Comes from observations where adapter configurations have been set prior to resolution.
+   *
+   * @return
+   */
+  Observation.ContextualizationData getContextualizationData();
+
+  //  /**
+  //   * The target artifact ID when this computation is a mediation. In this case the computation
+  // means
+  //   * "send this artifact through this mediator".
+  //   *
+  //   * <p>This may be merged with getTarget() at some point as the use cases for it are similar.
+  //   *
+  //   * @return the mediation target ID.
+  //   */
+  //  String getMediationTargetId();
 
   /**
    * Each computation may use a different language. Null means the default supported expression
@@ -390,13 +403,13 @@ public interface Contextualizable extends KlabStatement {
 
   Trigger getTrigger();
 
-//  /**
-//   * Any parameters set for the computation, e.g. in the case of a function call or a URN with
-//   * optional values.
-//   *
-//   * @return parameter map, never null, possibly empty.
-//   */
-//  Parameters<String> getParameters();
+  //  /**
+  //   * Any parameters set for the computation, e.g. in the case of a function call or a URN with
+  //   * optional values.
+  //   *
+  //   * @return parameter map, never null, possibly empty.
+  //   */
+  //  Parameters<String> getParameters();
 
   /**
    * In interactive mode, resources may expose parameters for users to check and modify before
@@ -414,17 +427,18 @@ public interface Contextualizable extends KlabStatement {
    */
   Contextualizable getCondition();
 
-//  /**
-//   * The computation may consist in a mediation of a quantity represented by the first element in
-//   * the returned tuple, which must be converted into a value represented by the second.
-//   *
-//   * <p>If the resource is created, the mediators must be guaranteed compatible.
-//   *
-//   * <p>
-//   *
-//   * @return a tuple containing the original and target value semantics.
-//   */
-//  Pair<ValueMediator, ValueMediator> getConversion();
+  //  /**
+  //   * The computation may consist in a mediation of a quantity represented by the first element
+  // in
+  //   * the returned tuple, which must be converted into a value represented by the second.
+  //   *
+  //   * <p>If the resource is created, the mediators must be guaranteed compatible.
+  //   *
+  //   * <p>
+  //   *
+  //   * @return a tuple containing the original and target value semantics.
+  //   */
+  //  Pair<ValueMediator, ValueMediator> getConversion();
 
   /**
    * Only meaningful if this computable is a condition computing a (scalar or distributed) boolean,

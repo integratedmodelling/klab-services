@@ -2,6 +2,8 @@ package org.integratedmodelling.common.lang.kim;
 
 import java.io.Serial;
 import java.util.*;
+
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -19,17 +21,17 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
   @Serial private static final long serialVersionUID = 6198296119075476515L;
 
   private Set<String> disjointNamespaces = new HashSet<>();
-  private List<PairImpl<String, String>> owlImports = new ArrayList<>();
-  private List<PairImpl<String, List<String>>> vocabularyImports = new ArrayList<>();
+  private List<Pair<String, String>> owlImports = new ArrayList<>();
+  private List<Pair<String, List<String>>> vocabularyImports = new ArrayList<>();
   private boolean scenario;
   private String scriptId;
   private String testCaseId;
   private boolean worldviewBound;
-  //    private Parameters<String> defines = Parameters.create();
   private List<KlabStatement> statements = new ArrayList<>();
   private Map<String, List<String>> imports = new HashMap<>();
   private Geometry coverage;
   private List<Annotation> annotations = new ArrayList<>();
+  private KlabStatement.Scope scope;
 
   @Override
   public Collection<String> getDisjointNamespaces() {
@@ -56,15 +58,14 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
     return this.worldviewBound;
   }
 
-  //    @Override
-  //    public List<ServiceCall> getExtents() {
-  //        return this.extents;
-  //    }
-  //
-  //    @Override
-  //    public Parameters<String> getDefines() {
-  //        return this.defines;
-  //    }
+  @Override
+  public KlabStatement.Scope getScope() {
+    return scope;
+  }
+
+  public void setScope(KlabStatement.Scope scope) {
+    this.scope = scope;
+  }
 
   @Override
   public List<KlabStatement> getStatements() {

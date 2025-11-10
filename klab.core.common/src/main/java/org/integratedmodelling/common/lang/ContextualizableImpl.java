@@ -6,11 +6,9 @@ import java.util.Collection;
 import java.util.List;
 import org.integratedmodelling.common.lang.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -49,11 +47,16 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   private String urn;
   private Trigger trigger;
   private Action action;
+  private Observation.ContextualizationData contextualizationData;
 
   public ContextualizableImpl() {}
 
   public ContextualizableImpl(ServiceCall serviceCall) {
     this.serviceCall = serviceCall;
+  }
+
+  public ContextualizableImpl(Observation.ContextualizationData contextualizationData) {
+    this.contextualizationData = contextualizationData;
   }
 
   public ContextualizableImpl(List<String> resourceUrns) {
@@ -97,11 +100,14 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.target;
   }
 
-  //  @Override
-  //  public String getMediationTargetId() {
-  //    return this.mediationTargetId;
-  //  }
-  //
+  public Observation.ContextualizationData getContextualizationData() {
+    return contextualizationData;
+  }
+
+  public void setContextualizationData(Observation.ContextualizationData contextualizationData) {
+    this.contextualizationData = contextualizationData;
+  }
+
   @Override
   public String getLanguage() {
     return this.language;
@@ -151,11 +157,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.inputs;
   }
 
-  //  @Override
-  //  public Parameters<String> getParameters() {
-  //    return this.parameters;
-  //  }
-
   @Override
   public Collection<String> getInteractiveParameters() {
     return this.interactiveParameters;
@@ -165,12 +166,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   public Contextualizable getCondition() {
     return this.condition;
   }
-
-  //  @Override
-  //  public Pair<ValueMediator, ValueMediator> getConversion() {
-  //    return this.conversion;
-  //  }
-
 
   @Override
   public Action getAction() {
@@ -206,10 +201,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.empty;
   }
 
-  //  public void setType(Type type) {
-  //    this.type = type;
-  //  }
-
   public void setTargetId(String targetId) {
     this.targetId = targetId;
   }
@@ -217,10 +208,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   public void setTarget(KimObservable target) {
     this.target = target;
   }
-
-  //  public void setMediationTargetId(String mediationTargetId) {
-  //    this.mediationTargetId = mediationTargetId;
-  //  }
 
   public void setLanguage(String language) {
     this.language = language;
@@ -262,10 +249,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.inputs = inputs;
   }
 
-  //  public void setParameters(Parameters<String> parameters) {
-  //    this.parameters = parameters;
-  //  }
-
   public void setInteractiveParameters(Collection<String> interactiveParameters) {
     this.interactiveParameters = interactiveParameters;
   }
@@ -306,15 +289,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   public void setEmpty(boolean empty) {
     this.empty = empty;
   }
-
-  //  @Override
-  //  public ObservationStrategy getObservationStrategy() {
-  //    return observationStrategy;
-  //  }
-  //
-  //  public void setObservationStrategy(ObservationStrategy observationStrategy) {
-  //    this.observationStrategy = observationStrategy;
-  //  }
 
   @Override
   public void visit(Visitor visitor) {}

@@ -602,6 +602,12 @@ public class RuntimeService extends BaseService
         ret = Utils.Resources.merge(ret, resolution);
       }
 
+      if (contextualizable.getContextualizationData() != null) {
+        // must have adapter in embedded form; then validate resource data and build
+        // ephemeral resource for this computation.
+        System.out.println("POMPADOUR");
+      }
+
       if (!contextualizable.getResourceUrns().isEmpty()) {
 
         // ensure resource or adapter is accessible, pre-cache any multiple URN configuration

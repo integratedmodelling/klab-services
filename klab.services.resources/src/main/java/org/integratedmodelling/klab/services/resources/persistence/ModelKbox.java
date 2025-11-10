@@ -245,11 +245,11 @@ public class ModelKbox extends ObservableKbox {
      */
     if (database.hasTable("model")) {
       try {
-      for (ModelReference md : queryModels(observable, scope)) {
-        if (md.getPermissions().checkAuthorization(scope)) {
-          local.add(md);
+        for (ModelReference md : queryModels(observable, scope)) {
+          if (md.getPermissions().checkAuthorization(scope)) {
+            local.add(md);
+          }
         }
-      }
       } catch (Throwable t) {
         Logging.INSTANCE.error("Unexpected error querying models: verify geometry and observables");
         return List.of();
@@ -399,7 +399,7 @@ public class ModelKbox extends ObservableKbox {
 
     ret +=
         (ret.isEmpty() ? "" : " OR ")
-            + "((NOT model.scope = 'NAMESPACE') AND (NOT model.inscenario))";
+            + "((NOT model.scope = 'PRIVATE') AND (NOT model.inscenario))";
 
     if (!context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class).isEmpty()) {
       ret +=
@@ -420,7 +420,8 @@ public class ModelKbox extends ObservableKbox {
     }
 
     if (projectId != null) {
-      ret += " AND (NOT (model.scope = 'PROJECT' AND model.projectid <> '" + projectId + "'))";
+      ret +=
+          " AND (NOT (model.scope = 'PROJECT_PRIVATE' AND model.projectid <> '" + projectId + "'))";
     }
 
     return ret;
@@ -685,10 +686,6 @@ public class ModelKbox extends ObservableKbox {
 
     initialize(monitor);
 
-    // if (o instanceof KimNamespace && ((KimNamespace) o).isInternal()) {
-    // return 0;
-    // }
-
     ArrayList<Object> toStore = new ArrayList<>();
 
     if (o instanceof KimModel) {
@@ -769,6 +766,7 @@ public class ModelKbox extends ObservableKbox {
         m.setDereifyingAttribute(attr.getFormalName());
         m.setMediation(Mediation.DEREIFY_QUALITY);
         m.setPrimaryObservable(!isInstantiator);
+        m.setScope(model.getScope());
         ret.add(m);
       }
 
@@ -869,12 +867,7 @@ public class ModelKbox extends ObservableKbox {
 
         m.setName(model.getUrn());
         m.setNamespaceId(model.getNamespace());
-        // if (model.getNamespace().getProject() != null) {
         m.setProjectId(model.getProjectName());
-        // if (model.getNamespace().getProject().isRemote()) {
-        // m.setServerId(model.getNamespace().getProject().getOriginatingNodeId());
-        // }
-        // }
 
         if (project != null) {
           m.setPermissions(project.getManifest().getPrivileges());
@@ -894,8 +887,6 @@ public class ModelKbox extends ObservableKbox {
         m.setObservable(obs.getUrn());
         m.setObservationType(obs.getDescriptionType().name());
         m.setObservableConcept(obs.getSemantics());
-        // m.setObservationConcept(obs.getObservationType());
-
         m.setScope(model.getScope());
         m.setInScenario(namespace.isScenario());
         m.setReification(isInstantiator);

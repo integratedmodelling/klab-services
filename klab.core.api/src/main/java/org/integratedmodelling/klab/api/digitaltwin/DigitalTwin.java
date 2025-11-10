@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -420,6 +421,7 @@ public interface DigitalTwin extends RuntimeAsset {
     boolean isObserver = false;
     long id = Observation.UNASSIGNED_ID;
     String instanceUrn = null;
+    Observation.ContextualizationData contextualizationData = null;
 
     Geometry ogeom = null;
     if (resolvables != null) {
@@ -472,6 +474,19 @@ public interface DigitalTwin extends RuntimeAsset {
               ogeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
             }
 
+            if (definition.containsKey("contextualization")
+                && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
+              // TODO must be either collective or quality. Geometry is supplied externally and it's
+              //  illegal here.
+              if (geometry != null) {
+                scope.error(
+                    "Geometry cannot be supplied when contextualization data are given. Observation: "
+                        + symbol.getUrn());
+                return null;
+              }
+              contextualizationData = defineContextualization(contextualization, scope);
+            }
+
             /*            if (isObserver) {
               observerGeometry = geometry;
               geometry = ogeom == null ? Geometry.builder().build() : ogeom;
@@ -520,6 +535,7 @@ public interface DigitalTwin extends RuntimeAsset {
       ret.setName(name);
       ret.setId(id);
       ret.setType(observable.getArtifactType());
+      ret.setContextualizationData(contextualizationData);
 
       if (instanceUrn != null) {
         // this notifies that the observation represents a specific instance, so it will only be
@@ -531,6 +547,23 @@ public interface DigitalTwin extends RuntimeAsset {
     }
 
     return null;
+  }
+
+  static Observation.ContextualizationData defineContextualization(
+      Map<?, ?> contextualization, Scope scope) {
+    var ret = new ObservationImpl.ContextualizationDataImpl();
+
+    ret.setAdapterId(contextualization.get("adapter").toString());
+    ret.setServiceId(scope.getService(RuntimeService.class).serviceId());
+    ret.setServiceUrl(scope.getService(RuntimeService.class).getUrl());
+
+    for (var key : contextualization.keySet()) {
+      if (!"adapter".equals(key.toString())) {
+        ret.getParameters().put(key.toString(), contextualization.get(key));
+      }
+    }
+
+    return ret;
   }
 
   static Geometry defineGeometry(Map<?, ?> definition) {

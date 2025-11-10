@@ -16,69 +16,78 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
-public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, KimNamespace> implements KimNamespace {
+public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, KimNamespace>
+    implements KimNamespace {
 
-	@Serial
-	private static final long serialVersionUID = 3213955882357790089L;
+  @Serial private static final long serialVersionUID = 3213955882357790089L;
 
-	public NavigableKimNamespace(KimNamespace document, NavigableKlabAsset<?> parent) {
-		super(document, parent);
-	}
+  public NavigableKimNamespace(KimNamespace document, NavigableKlabAsset<?> parent) {
+    super(document, parent);
+  }
 
-	@Override
-	protected List<? extends NavigableKlabStatement<?>> createChildren() {
-		return getStatements().stream().map(s ->  switch(s) {
-			case KimModel kimModel -> new NavigableKimModel(kimModel, this);
-			case KimSymbolDefinition kimSymbolDefinition -> new NavigableKimSymbolDefinition(kimSymbolDefinition, this);
-			default -> throw new KlabInternalErrorException("Unrecognized statement in namespace when wrapping for navigation");
-		}).toList();
-	}
+  @Override
+  protected List<? extends NavigableKlabStatement<?>> createChildren() {
+    return getStatements().stream()
+        .map(
+            s ->
+                switch (s) {
+                  case KimModel kimModel -> new NavigableKimModel(kimModel, this);
+                  case KimSymbolDefinition kimSymbolDefinition ->
+                      new NavigableKimSymbolDefinition(kimSymbolDefinition, this);
+                  default ->
+                      throw new KlabInternalErrorException(
+                          "Unrecognized statement in namespace when wrapping for navigation");
+                })
+        .toList();
+  }
 
-//	@Override
-//	public Parameters<String> getDefines() {
-//		return delegate.getDefines();
-//	}
+  @Override
+  public KlabStatement.Scope getScope() {
+    return delegate.getScope();
+  }
 
-	@Override
-	public Collection<String> getDisjointNamespaces() {
-		return delegate.getDisjointNamespaces();
-	}
+  @Override
+  public Collection<String> getDisjointNamespaces() {
+    return delegate.getDisjointNamespaces();
+  }
 
-	@Override
-	public Geometry getCoverage() {
-		return delegate.getCoverage();
-	}
+  @Override
+  public Geometry getCoverage() {
+    return delegate.getCoverage();
+  }
 
-	@Override
-	public Map<String, List<String>> getImports() {
-		return delegate.getImports();
-	}
+  @Override
+  public Map<String, List<String>> getImports() {
+    return delegate.getImports();
+  }
 
-	@Override
-	public String getScriptId() {
-		return delegate.getScriptId();
-	}
+  @Override
+  public String getScriptId() {
+    return delegate.getScriptId();
+  }
 
-	@Override
-	public String getTestCaseId() {
-		return delegate.getTestCaseId();
-	}
+  @Override
+  public String getTestCaseId() {
+    return delegate.getTestCaseId();
+  }
 
-	@Override
-	public boolean isScenario() {
-		return delegate.isScenario();
-	}
+  @Override
+  public boolean isScenario() {
+    return delegate.isScenario();
+  }
 
-	@Override
-	public boolean isWorldviewBound() {
-		return delegate.isWorldviewBound();
-	}
+  @Override
+  public boolean isWorldviewBound() {
+    return delegate.isWorldviewBound();
+  }
 
-	@Override
-	public Set<String> importedNamespaces(boolean withinType) {
-		return delegate.importedNamespaces(withinType);
-	}
+  @Override
+  public Set<String> importedNamespaces(boolean withinType) {
+    return delegate.importedNamespaces(withinType);
+  }
 
-	@Override
-	public Collection<Annotation> getAnnotations() { return delegate.getAnnotations(); }
+  @Override
+  public Collection<Annotation> getAnnotations() {
+    return delegate.getAnnotations();
+  }
 }

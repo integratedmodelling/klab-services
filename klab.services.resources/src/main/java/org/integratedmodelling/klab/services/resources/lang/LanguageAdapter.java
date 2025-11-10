@@ -326,6 +326,10 @@ public enum LanguageAdapter {
     ret.setScenario(namespace.isScenario());
     ret.setSourceCode(namespace.getSourceCode());
     ret.setProjectName(projectName);
+    ret.setScope(
+        namespace.getScope() == null
+            ? KlabStatement.Scope.PUBLIC
+            : KlabStatement.Scope.valueOf(namespace.getScope().name()));
 
     // TODO       ret.setImports(); and the rest
     for (var statement : namespace.getStatements()) {
@@ -441,6 +445,11 @@ public enum LanguageAdapter {
 
     KimModelImpl ret = new KimModelImpl();
 
+    ret.setScope(namespace.getScope());
+    ret.setScope(
+        model.getScope() == null
+            ? namespace.getScope()
+            : KlabStatement.Scope.valueOf(model.getScope().name()));
     ret.setNamespace(namespace.getUrn());
     ret.setDeprecated(model.getDeprecation() != null);
     ret.setDeprecation(model.getDeprecation());
