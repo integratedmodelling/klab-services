@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -91,10 +92,15 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       }
       return ret;
     }
-    return (Collection<T>)
-        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+    var key = KlabService.Type.classify(serviceClass);
+    Collection<T> list = (Collection<T>) Optional.ofNullable(serviceMap.get(key))
+            .orElseGet(() -> {
+              Logging.INSTANCE.warn("No services found for key: " + key);
+              return Collections.emptyList();
+            }).stream()
             .filter(s -> s.status().isOperational())
             .toList();
+    return list;
   }
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
