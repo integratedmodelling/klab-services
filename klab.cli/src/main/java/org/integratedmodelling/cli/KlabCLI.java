@@ -639,8 +639,8 @@ public enum KlabCLI {
 
       // create the modeler
       INSTANCE.modeler = new CommandLineModeler();
-      // Configure messages for CLI use
-      INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
+      //      // Configure messages for CLI use
+      //      INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
 
       Supplier<Path> workDir =
           () ->

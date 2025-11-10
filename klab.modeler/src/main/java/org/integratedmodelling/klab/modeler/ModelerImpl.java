@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler;
 
+import fi.iki.elonen.SimpleWebServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -7,8 +8,6 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-
-import fi.iki.elonen.SimpleWebServer;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -24,7 +23,6 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -71,10 +69,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   EngineConfiguration workbench;
   File workbenchDefinition;
 
-  //  private Geometry focalGeometry = Geometry.UNIVERSAL;
-  //  private int contextCount = 0;
-  //  private int sessionCount = 0;
-
   public ModelerImpl() {
     super();
     // read the workbench config
@@ -88,13 +82,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     super(uiView);
     // TODO read the workbench config - NAH this probably pertains to the IDE
   }
-
-  //  @Override
-  //  public Distribution.Status getDistributionStatus() {
-  //    return engine() == null
-  //        ? new AbstractDistributionImpl.StatusImpl()
-  //        : engine().getDistributionStatus();
-  //  }
 
   private void dispatchServerMessage(
       KlabService.ServiceCapabilities capabilities, Message message) {
@@ -158,12 +145,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       UIReactor requestingReactor, NavigableDocument document, boolean shown) {
     // TODO
     super.configureWorkbench(requestingReactor, document, shown);
-  }
-
-  @Override
-  public void setOption(Option option, Object... payload) {
-    // TODO validate option
-    // TODO react
   }
 
   @Override

@@ -29,21 +29,10 @@ import java.util.concurrent.CompletableFuture;
  * org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset} to enable navigation and
  * selection.
  *
- * <p>TODO the modeler is itself a view that should receive UI events, particularly those related to
+ * <p>The modeler is itself a view that should receive UI events, particularly those related to
  * showing and hiding views.
  */
 public interface Modeler extends UIController {
-
-  /** TODO move into Settings */
-  public enum Option {
-    UseAnsiEscapeSequences(Boolean.class);
-
-    final Class<?>[] payloadClass;
-
-    Option(Class<?>... payloadClass) {
-      this.payloadClass = payloadClass;
-    }
-  }
 
   /**
    * Authentication is necessary for the engine to operate. This can be called before {@link
@@ -54,25 +43,12 @@ public interface Modeler extends UIController {
    */
   UserScope authenticate();
 
-  //  @Deprecated
-  //  Distribution.Status getDistributionStatus();
-
   /**
    * If the associated engine has a k.LAB distribution available, return it.
    *
    * @return the available distribution or null
    */
   Distribution getDistribution();
-
-  /**
-   * Set any of the options above with passed payload, which should be validated before use.
-   *
-   * @param option
-   * @param payload
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the payload
-   *     is unsuitable for the option.
-   */
-  void setOption(Option option, Object... payload);
 
   /**
    * User action that obtains or find an asset from a URN and tells the modeler to observe it,
@@ -107,15 +83,6 @@ public interface Modeler extends UIController {
       Map<String, Object> visualizationOptions,
       Class<T> outputType);
 
-  //  /**
-  //   * Return all the open sessions for the current user.
-  //   *
-  //   * <p>FIXME we should just get the DTs as info
-  //   *
-  //   * @return
-  //   */
-  //  List<SessionScope> getOpenSessions();
-
   /**
    * Return all the open contexts for the current session.
    *
@@ -131,22 +98,6 @@ public interface Modeler extends UIController {
    */
   ContextScope createDefaultContext();
 
-  //  /**
-  //   * Return the current context, or null if there is no current context or session.
-  //   *
-  //   * @deprecated this should be an IDE issue, not a Modeler issue
-  //   * @return
-  //   */
-  //  ContextScope getCurrentContext();
-
-  //  /**
-  //   * Return the innermost current scope available.
-  //   *
-  //   * @deprecated this should be an IDE issue, not a Modeler issue
-  //   * @return
-  //   */
-  //  Scope getCurrentScope();
-
   /**
    * Transparently create (if needed) a local web server and publish the passed file so that it can
    * be accessed in a browser using the returned URL. The workspace argument may be null; if passed,
@@ -161,17 +112,9 @@ public interface Modeler extends UIController {
    */
   URL publishLocally(File inputFile, String workspace, File... additionalFiles);
 
-  //  /**
-  //   * Make the passed context the current one. The context must belong to the current session or
-  // an
-  //   * exception will be thrown.
-  //   *
-  //   * @deprecated this should be an IDE issue, not a Modeler issue
-  //   * @param context
-  //   */
-  //  void setCurrentContext(ContextScope context);
-
   boolean shutdown(boolean shutdownLocalServices);
+
+  // FIXME not sure about these below, or the entire UIAction business
 
   @UIActionHandler(
       value = UIReactor.UIAction.ImportProject,
