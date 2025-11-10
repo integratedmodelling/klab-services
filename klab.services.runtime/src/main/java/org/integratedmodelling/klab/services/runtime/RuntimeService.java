@@ -2,11 +2,13 @@ package org.integratedmodelling.klab.services.runtime;
 
 import java.io.File;
 import java.io.Serializable;
+import java.net.http.HttpClient;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
@@ -342,8 +344,9 @@ public class RuntimeService extends BaseService
 
       if (observation.getObservable().is(SemanticType.QUALITY)
           && scope.getContextObservation() == null) {
-        throw new KlabIllegalStateException(
-            "Cannot observe a quality without a context observation");
+        return CompletableFuture.completedFuture(
+            Observation.empty(
+                Notification.error("Cannot observe a quality without a context observation")));
       }
 
       /** Only situation when we accept an observation w/o geometry */
@@ -365,6 +368,55 @@ public class RuntimeService extends BaseService
                   instanceof ObservationImpl.ContextualizationDataImpl cd
               ? cd
               : new ObservationImpl.ContextualizationDataImpl();
+
+      /*
+       * Due diligence to verify that the adapter is there and available.
+       */
+      Observation.ContextualizationData predefinedContextualization = null;
+      if (observation.getContextualizationData() != null) {
+        // TODO use all services!
+        var requirements =
+            scope
+                .getService(ResourcesService.class)
+                .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
+        if (requirements.isEmpty()) {
+          return CompletableFuture.completedFuture(
+              Observation.empty(
+                  Notification.error(
+                      "Adapter '"
+                          + contextualizationData.getAdapterId()
+                          + "' referenced in submission is not visible to the digital twin runtime")));
+        }
+        if (!ingestResources(
+            requirements,
+            scope,
+            settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
+          return CompletableFuture.completedFuture(
+              Observation.empty(
+                  Notification.error(
+                      "Adapter '"
+                          + contextualizationData.getAdapterId()
+                          + "' referenced in submission is not accessible to the digital twin runtime")));
+        }
+
+        if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
+          var adapter =
+              getComponentRegistry()
+                  .getAdapter(contextualizationData.getAdapterId(), Version.ANY_VERSION, scope);
+          if (adapter == null || !adapter.isEmbeddable()) {
+            return CompletableFuture.completedFuture(
+                Observation.empty(
+                    Notification.error(
+                        "Adapter '"
+                            + contextualizationData.getAdapterId()
+                            + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")));
+          }
+        }
+
+        // TODO we have the adapter, no need to call the resolver but we must embed the call into
+        //  the resolution step. Only direct submissions are supported with this method.
+        predefinedContextualization = contextualizationData;
+      }
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
@@ -422,9 +474,11 @@ public class RuntimeService extends BaseService
           submissionScope.executing(
               resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null);
 
-      return resolver
-          /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
-          .resolve(observation, resolutionScope)
+      return (predefinedContextualization != null
+              ? createPredefinedDataflow(predefinedContextualization, observation, scope)
+              : resolver
+                  /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
+                  .resolve(observation, resolutionScope))
           .exceptionally(
               t -> {
                 resolutionScope.fail(t);
@@ -470,6 +524,18 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  private CompletableFuture<Dataflow> createPredefinedDataflow(
+      Observation.ContextualizationData predefinedContextualization,
+      Observation observation,
+      ContextScope scope) {
+
+    var ret = new DataflowImpl();
+
+    // TODO DIOCAN!
+
+    return CompletableFuture.completedFuture(ret);
   }
 
   private boolean compile(
@@ -600,12 +666,6 @@ public class RuntimeService extends BaseService
                   "Cannot receive resources from service " + resourcesService.serviceName()));
         }
         ret = Utils.Resources.merge(ret, resolution);
-      }
-
-      if (contextualizable.getContextualizationData() != null) {
-        // must have adapter in embedded form; then validate resource data and build
-        // ephemeral resource for this computation.
-        System.out.println("POMPADOUR");
       }
 
       if (!contextualizable.getResourceUrns().isEmpty()) {

@@ -46,6 +46,7 @@ public class ObservationImpl implements Observation {
   private ContextualizationData contextualizationData;
   private int childrenCount;
   private long parentId = -1;
+  private boolean empty;
 
   public static class ContextualizationDataImpl implements ContextualizationData {
 
@@ -221,8 +222,11 @@ public class ObservationImpl implements Observation {
 
   @Override
   public boolean isEmpty() {
-    // TODO Auto-generated method stub
-    return false;
+    return empty;
+  }
+
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
   }
 
   @Override

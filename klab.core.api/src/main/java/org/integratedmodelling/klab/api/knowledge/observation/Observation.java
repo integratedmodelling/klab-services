@@ -167,6 +167,13 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     return EMPTY_OBSERVATION;
   }
 
+  static Observation empty(Notification notification) {
+    var ret = new ObservationImpl();
+    ret.setEmpty(true);
+    ret.getNotifications().add(notification);
+    return ret;
+  }
+
   Object getValue();
 
   /**

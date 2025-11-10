@@ -4,15 +4,19 @@ import org.integratedmodelling.klab.api.collections.Identifier;
 
 public class IdentifierImpl implements Identifier {
 
-    String value;
+  String value;
 
-    @Override
-    public String getValue() {
-        return value;
-    }
+  @Override
+  public String getValue() {
+    return value;
+  }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+  public void setValue(String value) {
+    this.value = value;
+  }
 
+  @Override
+  public String toString() {
+    return value;
+  }
 }
