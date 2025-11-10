@@ -360,7 +360,6 @@ public class ServiceAuthorizationManager {
       resolvedScope = scope;
     } else {
 
-      // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);
       resolvedScope =
           klabService
@@ -369,23 +368,17 @@ public class ServiceAuthorizationManager {
               .getScopeManager()
               .getScope(ret, scopeData.type().classify(), scopeData.scopeId(), runtimeId);
 
-      if (resolvedScope == null && scope instanceof ServiceContextScope) {
+      if (resolvedScope instanceof ServiceContextScope serviceContextScope) {
 
-        /**
-         * We have not seen the scope before:
-         *
-         * <p>if it's a session scope, just create it from the user scope with the same ID and the
-         * runtime service indicated by runtimeId
-         *
-         * <p>if it's a context scope, create it from the session with a client DT after locating
-         * the runtime and retrieving the configuration from it.
+        /*
+         * Contextualize as needed
          */
         resolvedScope =
             klabService
                 .get()
                 .klabService()
                 .getScopeManager()
-                .contextualizeScope((ServiceContextScope) scope, scopeData);
+                .contextualizeScope(serviceContextScope, scopeData);
       }
     }
 

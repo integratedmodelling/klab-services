@@ -151,8 +151,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   public CompletableFuture<Observation> observe(
       ContextScope currentContext, Object asset, boolean adding) {
 
-    createDefaultContext();
-
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
     boolean isObserver = false;
