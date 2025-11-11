@@ -8,8 +8,11 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceBuilderImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * A resource descriptor, including all the public information related to a URN-specified resource
@@ -444,5 +447,25 @@ public interface Resource extends Knowledge, Resolvable {
 
   static Builder builder(String urn) {
     return new ResourceBuilderImpl(urn);
+  }
+
+  /**
+   * Return a builder for a temporary resource implementing a previously validated adapter
+   * configuration passed contextualization data. The geometry should be added after.
+   *
+   * @param contextualizationData
+   * @return
+   */
+  static Builder builder(Observation.ContextualizationData contextualizationData) {
+    var ret =
+        new ResourceBuilderImpl(
+            contextualizationData.getServiceId()
+                + ":temporary:internal:"
+                + Utils.Names.shortUUID());
+
+    ret.withAdapterType(contextualizationData.getAdapterId());
+    contextualizationData.getParameters().forEach(ret::withParameter);
+
+    return ret;
   }
 }

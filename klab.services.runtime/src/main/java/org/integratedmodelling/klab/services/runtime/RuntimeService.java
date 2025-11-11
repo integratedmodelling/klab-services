@@ -376,42 +376,53 @@ public class RuntimeService extends BaseService
        */
       Observation.ContextualizationData predefinedContextualization = null;
       if (observation.getContextualizationData() != null) {
-        // TODO use all services!
-        var requirements =
-            scope
-                .getService(ResourcesService.class)
-                .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
-        if (requirements == null || requirements.isEmpty()) {
-          return CompletableFuture.completedFuture(
-              Observation.empty(
-                  Notification.error(
-                      "Adapter '"
-                          + contextualizationData.getAdapterId()
-                          + "' referenced in submission is not visible to the digital twin runtime")));
-        }
-        if (!ingestResources(
-            requirements,
-            scope,
-            settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
-          return CompletableFuture.completedFuture(
-              Observation.empty(
-                  Notification.error(
-                      "Adapter '"
-                          + contextualizationData.getAdapterId()
-                          + "' referenced in submission is not accessible to the digital twin runtime")));
-        }
 
-        if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
-          var adapter =
-              getComponentRegistry()
-                  .getAdapter(contextualizationData.getAdapterId(), Version.ANY_VERSION, scope);
-          if (adapter == null || !adapter.isEmbeddable()) {
+        // first check if we have the adapter locally
+        if (getComponentRegistry()
+                .getAdapter(
+                    observation.getContextualizationData().getAdapterId(),
+                    Version.ANY_VERSION, // TODO this should probably be deprecated in favor of
+                    // urn@version
+                    scope)
+            == null) {
+
+          // TODO use all services!
+          var requirements =
+              scope
+                  .getService(ResourcesService.class)
+                  .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
+          if (requirements == null || requirements.isEmpty()) {
             return CompletableFuture.completedFuture(
                 Observation.empty(
                     Notification.error(
                         "Adapter '"
                             + contextualizationData.getAdapterId()
-                            + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")));
+                            + "' referenced in submission is not visible to the digital twin runtime")));
+          }
+          if (!ingestResources(
+              requirements,
+              scope,
+              settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
+            return CompletableFuture.completedFuture(
+                Observation.empty(
+                    Notification.error(
+                        "Adapter '"
+                            + contextualizationData.getAdapterId()
+                            + "' referenced in submission is not accessible to the digital twin runtime")));
+          }
+
+          if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
+            var adapter =
+                getComponentRegistry()
+                    .getAdapter(contextualizationData.getAdapterId(), Version.ANY_VERSION, scope);
+            if (adapter == null || !adapter.isEmbeddable()) {
+              return CompletableFuture.completedFuture(
+                  Observation.empty(
+                      Notification.error(
+                          "Adapter '"
+                              + contextualizationData.getAdapterId()
+                              + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")));
+            }
           }
         }
 
@@ -538,6 +549,7 @@ public class RuntimeService extends BaseService
 
     var actuator = new ActuatorImpl();
     actuator.setObservation(observation);
+    actuator.setId(observation.getId());
     actuator.setActuatorType(Actuator.Type.OBSERVE);
     actuator
         .getComputation()

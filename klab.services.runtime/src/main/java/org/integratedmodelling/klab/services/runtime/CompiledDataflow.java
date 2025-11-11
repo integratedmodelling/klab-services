@@ -151,6 +151,30 @@ public class CompiledDataflow {
 
       if (preset != null) {
         switch (preset) {
+          case ADAPTER_RESOLVER -> {
+            resource =
+                Resource.builder(
+                        call.getParameters().get("value", Observation.ContextualizationData.class))
+                    .withGeometry(observation.getGeometry())
+                    .build();
+
+            if (resource != null) {
+
+              // for now it's only embedded
+              embeddedAdapter =
+                  componentRegistry.getAdapter(
+                      resource.getAdapterType(), /* TODO adapter version! */
+                      Version.ANY_VERSION,
+                      scope);
+
+              adapterDescriptor =
+                  embeddedAdapter == null
+                      ? scope
+                          .getService(ResourcesService.class)
+                          .retrieveAdapterInfo(resource.getAdapterType(), scope)
+                      : embeddedAdapter.getAdapterInfo();
+            }
+          }
           case URN_RESOLVER -> {
             // TODO use all services hostia
             resource =

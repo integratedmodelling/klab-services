@@ -439,13 +439,19 @@ public class ResourcesProvider extends BaseService
     var version = Version.splitVersion(urn);
     var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
     if (adapter == null) {
-      // TODO lookup component in the other services that the scope provides.
-    }
-    if (adapter == null) {
       return ResourceSet.empty(Notification.error("No adapter available for " + urn));
     }
-    // TODO
-    return null;
+    ResourceSet ret = new ResourceSet();
+    ret.getResults()
+        .add(
+            new ResourceSet.Resource(
+                this.serviceId(),
+                adapter.getComponentUrn(),
+                null,
+                adapter.getComponentVersion(),
+                KnowledgeClass.COMPONENT,
+                false));
+    return ret;
   }
 
   @Override

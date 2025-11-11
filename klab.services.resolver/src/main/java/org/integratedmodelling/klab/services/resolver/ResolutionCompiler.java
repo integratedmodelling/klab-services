@@ -37,6 +37,7 @@ public class ResolutionCompiler {
   private AtomicLong nextResolutionId = new AtomicLong(-1);
 
   public ResolutionCompiler(ResolverService service) {
+    this.resolutionCache.addVertex(RuntimeAsset.CONTEXT_ASSET);
     this.resolver = service;
   }
 
@@ -424,6 +425,7 @@ public class ResolutionCompiler {
                   : candidateScope.getContextObservation())) {
         if (obs instanceof Observation observation
             && observation.getObservable().getSemantics().equals(observable.getSemantics())) {
+          // TODO also compare the URN of provenance in case it's an independent subject
           return observation;
         }
       }
