@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -440,7 +441,11 @@ public interface KlabService extends Service {
    * @return
    */
   InputStream exportAsset(
-      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope);
+      String urn,
+      KlabAsset.KnowledgeClass knowledgeClass,
+      String mediaType,
+      Parameters<String> parameters,
+      Scope scope);
 
   /**
    * @param schema a valid schema that comes from those admitted in the service

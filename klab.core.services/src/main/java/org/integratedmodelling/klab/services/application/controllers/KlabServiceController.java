@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Principal;
+import java.util.Map;
 
 /**
  * Unsecured information endpoints common to all controllers, inquiring about status and
@@ -87,6 +89,7 @@ public class KlabServiceController {
       @PathVariable(name = "urn") String urn,
       @PathVariable(name = "class") KlabAsset.KnowledgeClass knowledgeClass,
       @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
+      @RequestParam(required = false) Map<String, String> parameters,
       HttpServletResponse response,
       Principal principal) {
 
@@ -94,7 +97,11 @@ public class KlabServiceController {
 
       var scope = authorization.getScope();
 
-      var stream = instance.klabService().exportAsset(urn, knowledgeClass, mediaType, scope);
+      Parameters<String> params = Parameters.create();
+      parameters.forEach((k, v) -> params.put(k, Utils.Data.asPOD(v)));
+
+      var stream =
+          instance.klabService().exportAsset(urn, knowledgeClass, mediaType, params, scope);
       if (stream == null) {
 
         // see if we have the referenced asset. In that case we can check for specific export

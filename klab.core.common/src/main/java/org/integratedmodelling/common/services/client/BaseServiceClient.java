@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -250,13 +251,24 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public InputStream exportAsset(
-      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
+      String urn,
+      KlabAsset.KnowledgeClass knowledgeClass,
+      String mediaType,
+      Parameters<String> parameters,
+      Scope scope) {
     try {
+      var params = new ArrayList<Object>();
+      params.addAll(List.of("urn", urn, "class", knowledgeClass.name()));
+      parameters.forEach(
+          (k, v) -> {
+            params.add(k);
+            params.add(v);
+          });
       var file =
           client
               .withScope(scope)
               .accepting(List.of(mediaType))
-              .download(ServicesAPI.EXPORT, "urn", urn, "class", knowledgeClass.name());
+              .download(ServicesAPI.EXPORT, params.toArray(new Object[0]));
       return new FileInputStream(file);
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

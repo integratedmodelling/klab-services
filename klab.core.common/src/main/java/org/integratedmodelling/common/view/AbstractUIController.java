@@ -8,6 +8,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -665,6 +666,7 @@ public abstract class AbstractUIController implements UIController {
                               asset.getUrn(),
                               KlabAsset.classify(asset),
                               visualization.visualization.requires(),
+                              Parameters.create(),
                               contextScope));
         }
 
@@ -684,7 +686,8 @@ public abstract class AbstractUIController implements UIController {
               var out = Files.createTempFile("klab", "." + extension);
               Files.copy((InputStream) ret, out);
             } else {
-                // TODO support URL outputType through local webserver when the result is File or InputStream
+              // TODO support URL outputType through local webserver when the result is File or
+              // InputStream
               throw new KlabInternalErrorException(
                   "Visualization method returned unexpected type "
                       + ret.getClass().getCanonicalName());

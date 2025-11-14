@@ -25,6 +25,7 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -451,7 +452,11 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public InputStream exportAsset(
-      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
+      String urn,
+      KlabAsset.KnowledgeClass knowledgeClass,
+      String mediaType,
+      Parameters<String> parameters,
+      Scope scope) {
 
     // First retrieve the asset, then if the metadata contain an adapter and the adapter is local,
     // use that to prioritize before warning.
