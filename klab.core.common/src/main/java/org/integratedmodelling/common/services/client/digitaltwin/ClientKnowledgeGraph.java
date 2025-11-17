@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -127,6 +128,14 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
                     link.getFirst(),
                     link.getSecond(),
                     Map.of("commit", commit.getId())));
+            // if we had the source observation, we must maintain the child count manually
+            if (!commit.getAddedObservations().contains(link.getFirst())
+                && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
+              var existingObservation = assetCache.getIfPresent(link.getFirst());
+              if (existingObservation instanceof ObservationImpl observationImpl) {
+                observationImpl.setChildrenCount(observationImpl.getChildrenCount() + 1);
+              }
+            }
             if (!commit.getAddedObservations().contains(link.getFirst())
                 && commit.getAddedObservations().contains(link.getSecond())
                 && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {

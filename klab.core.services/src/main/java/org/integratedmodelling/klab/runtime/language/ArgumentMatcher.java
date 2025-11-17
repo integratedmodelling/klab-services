@@ -77,7 +77,7 @@ public class ArgumentMatcher {
             if (event == null
                 && (observation.getGeometry().dimension(Geometry.Dimension.Type.TIME) == null
                     || observation.getGeometry().dimension(Geometry.Dimension.Type.TIME).size()
-                        == 1)) {
+                        <= 1)) {
               event = Scheduler.Event.initialization();
             }
             if (event != null) {
