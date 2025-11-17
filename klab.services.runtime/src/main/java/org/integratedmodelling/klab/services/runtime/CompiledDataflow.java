@@ -567,7 +567,7 @@ public class CompiledDataflow {
         var preset = RuntimeService.CoreFunctor.classify(call);
         if (preset != null) {
           switch (preset) {
-            case URN_RESOLVER -> {
+            case URN_RESOLVER, ADAPTER_RESOLVER -> {
               if (scalarBuilder != null) {
                 if (!getScalarOperator(scalarBuilder, knownObservations)) {
                   return false;
