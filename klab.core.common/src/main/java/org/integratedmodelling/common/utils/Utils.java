@@ -654,6 +654,31 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
+  public static class Files extends org.integratedmodelling.klab.api.utils.Utils.Files {
+
+    public static File copyInputStreamToTempFile(InputStream inputStream, String extension) {
+
+      if (inputStream == null) {
+        return null;
+      }
+
+      try {
+        File tempFile =
+            File.createTempFile("klab", extension.startsWith(".") ? extension : ("." + extension));
+        try (FileOutputStream out = new FileOutputStream(tempFile)) {
+          byte[] buffer = new byte[1024];
+          int len;
+          while ((len = inputStream.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
+          }
+        }
+        return tempFile;
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
+    }
+  }
+
   public static class Http {
 
     /**
