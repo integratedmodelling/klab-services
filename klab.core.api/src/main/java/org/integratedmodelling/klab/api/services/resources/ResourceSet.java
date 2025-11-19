@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -65,6 +66,7 @@ public class ResourceSet implements Serializable {
 
     private String serviceId;
     private String resourceUrn;
+    private boolean local;
     private Version resourceVersion;
     private KnowledgeClass knowledgeClass;
     private CRUDOperation operation = CRUDOperation.UPDATE;
@@ -104,6 +106,14 @@ public class ResourceSet implements Serializable {
 
     public void setServiceId(String serviceId) {
       this.serviceId = serviceId;
+    }
+
+    public boolean isLocal() {
+      return local;
+    }
+
+    public void setLocal(boolean local) {
+      this.local = local;
     }
 
     public String getResourceUrn() {
@@ -311,7 +321,7 @@ public class ResourceSet implements Serializable {
    * @param info
    * @return
    */
-  public static ResourceSet of(ResourceInfo info, Version version) {
+  public static ResourceSet of(ResourceInfo info, Version version, KlabService service) {
     var ret = new ResourceSet();
     ret.getNotifications().addAll(info.getNotifications());
     var result = new Resource();
@@ -320,6 +330,7 @@ public class ResourceSet implements Serializable {
     result.setResourceVersion(version);
     result.setKnowledgeClass(info.getKnowledgeClass());
     result.setServiceId(info.getServiceId());
+    result.setLocal(service == null ? false : Utils.URLs.isLocalHost(service.getUrl()));
     ret.getResults().add(result);
     return ret;
   }

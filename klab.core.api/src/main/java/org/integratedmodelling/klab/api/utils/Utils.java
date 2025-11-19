@@ -405,6 +405,7 @@ public class Utils {
           descriptor.setServiceId(service.serviceId());
           descriptor.setOperation(operation);
           descriptor.setKnowledgeClass(KlabAsset.classify(resource));
+          descriptor.setLocal(URLs.isLocalHost(service.getUrl()));
           descriptor.setProjectUrn(
               resource instanceof KlabDocument<?> doc ? doc.getProjectName() : null);
           if (resource instanceof KlabDocument<?> document) {
@@ -496,7 +497,10 @@ public class Utils {
           }
         }
         if (swap) {
-          destination.put(r.getResourceUrn(), r);
+          // always choose the local one
+          var r1 = destination.get(r.getResourceUrn());
+          var choice = r1.isLocal() && r.isLocal() ? r : (r1.isLocal() ? r1 : r);
+          destination.put(r.getResourceUrn(), choice);
         }
       }
       return destination;

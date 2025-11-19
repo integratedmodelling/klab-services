@@ -26,12 +26,13 @@ import java.util.zip.ZipFile;
 public class ComponentIOLibrary {
 
   @Importer(
-          schema = "kar.import",
-          knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
-          description = "Import a component by directly uploading a kar file",
-          mediaType = "application/java-archive",
-          fileExtensions = {"kar"})
-  public static ResourceSet importComponentDirect(Parameters<String> properties, File file, BaseService service, Scope scope) {
+      schema = "kar.import",
+      knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
+      description = "Import a component by directly uploading a kar file",
+      mediaType = "application/java-archive",
+      fileExtensions = {"kar"})
+  public static ResourceSet importComponentDirect(
+      Parameters<String> properties, File file, BaseService service, Scope scope) {
 
     // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
     //  without setting it into the Maven cache at all. This can only be updated by uploading a new
@@ -89,7 +90,6 @@ public class ComponentIOLibrary {
     return ResourceSet.empty(Notification.error("Kar import not yet implemented"));
   }
 
-
   /**
    * Maven import also registers the component's rights if the service it's registered with is a
    * resources service. For now direct file import does not.
@@ -146,7 +146,9 @@ public class ComponentIOLibrary {
                 scope);
         var result =
             ResourceSet.of(
-                info, component.version() != null ? component.version() : Version.ANY_VERSION);
+                info,
+                component.version() != null ? component.version() : Version.ANY_VERSION,
+                service);
         result
             .getNotifications()
             .add(

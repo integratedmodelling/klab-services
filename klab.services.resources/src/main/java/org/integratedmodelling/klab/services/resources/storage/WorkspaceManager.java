@@ -23,6 +23,7 @@ import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.knowledge.WorkspaceImpl;
 import org.integratedmodelling.common.knowledge.WorldviewImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -51,9 +52,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
@@ -362,6 +361,8 @@ public class WorkspaceManager {
         projectResource.setResourceUrn(pd.name);
         projectResource.setRepositoryState(repositoryState);
         projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+
         rset.getProjects().add(projectResource);
       }
 
@@ -1980,6 +1981,7 @@ public class WorkspaceManager {
       resource.setServiceId(configuration.getServiceId());
       resource.setKnowledgeClass(KlabAsset.classify(asset));
       resource.getNotifications().addAll(asset.getNotifications());
+      resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
       if (resourceSet.getServices().containsKey(configuration.getServiceId())) {
         resourceSet.getServices().put(configuration.getServiceId(), service.getUrl());
       }
@@ -2831,6 +2833,7 @@ public class WorkspaceManager {
         projectResource.setResourceUrn(pd.name);
         projectResource.setRepositoryState(repositoryState);
         projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
         result.getProjects().add(projectResource);
       }
     }

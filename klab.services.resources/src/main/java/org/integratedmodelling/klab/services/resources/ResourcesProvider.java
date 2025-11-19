@@ -1395,6 +1395,7 @@ public class ResourcesProvider extends BaseService
     resource.setResourceUrn(ns);
     resource.setResourceVersion(namespace.getVersion());
     resource.setServiceId(serviceId());
+    resource.setLocal(Utils.URLs.isLocalHost(getUrl()));
     storage.put(ns, resource);
 
     return true;
