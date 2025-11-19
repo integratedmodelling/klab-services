@@ -58,16 +58,6 @@ public enum Setting {
       "Look for a hub running on localhost for authentication",
       Boolean.class,
       false),
-  RESET_ALL_SERVICE_CONFIGURATION(
-      Page.DEBUGGING,
-      "Reset the configuration of all local services and their data",
-      Boolean.class,
-      false),
-  RESET_ALL_SERVICE_DATA(
-      Page.DEBUGGING,
-      "Remove all data for local services but not their configuration",
-      Boolean.class,
-      false),
   MAX_RESOLVER_SERVICE_MEMORY(
       Page.RESOLVER,
       "Maximum memory for the local resolver in MB",
@@ -123,6 +113,26 @@ public enum Setting {
       "Interval in seconds for checking for changes in configured Git repositories (0 to disable)",
       Integer.class,
       0),
+  USE_LOCAL_MESSAGE_BROKER(
+      Page.MESSAGING,
+      "Deploy a local message broker with the runtime service for internal communication when user is not federated",
+      Boolean.class,
+      true),
+  SUBSCRIBE_TO_WARNING_NOTIFICATIONS(
+      Page.MESSAGING,
+      "Have the runtime send warning notifications to the local client through the messaging system",
+      Boolean.class,
+      false),
+  SUBSCRIBE_TO_INFO_NOTIFICATIONS(
+      Page.MESSAGING,
+      "Have the runtime send informational notifications to the local client through the messaging system",
+      Boolean.class,
+      false),
+  SUBSCRIBE_TO_DEBUG_NOTIFICATIONS(
+      Page.MESSAGING,
+      "Have the runtime send debug notifications to the local client through the messaging system",
+      Boolean.class,
+      false),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "
@@ -147,11 +157,21 @@ public enum Setting {
           + Product.ProductType.RUNTIME_SERVICE.getDebugPort(),
       Boolean.class,
       false),
+  RESET_ALL_SERVICE_CONFIGURATION(
+      Page.DEBUGGING,
+      "Reset the configuration of all local services and their data",
+      Map.class,
+      Map.of()),
+  RESET_ALL_SERVICE_DATA(
+      Page.DEBUGGING,
+      "Remove all data for local services but not their configuration",
+      Map.class,
+      Map.of()),
   LAUNCH_DEBUG_GUI(
       Page.DEBUGGING,
       "Launch a DevToolsFX debugging tool for the GUI when in graphical mode",
       Map.class,
-      false),
+      Map.of()),
   CLEAR_WORKSPACE(
       Page.RESOURCES,
       "Execute to remove all workspaces from the service. This is a destructive operation.",

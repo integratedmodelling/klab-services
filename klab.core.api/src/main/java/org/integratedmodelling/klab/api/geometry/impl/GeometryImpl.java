@@ -414,7 +414,7 @@ public class GeometryImpl implements Geometry {
         throw new KlabIllegalArgumentException(
             "geometry: cannot address a "
                 + dimensionality
-                + "-dimensional extent with an offset array of lenght "
+                + "-dimensional extent with an offset array of length "
                 + offsets.length);
       }
       if (shape == null) {

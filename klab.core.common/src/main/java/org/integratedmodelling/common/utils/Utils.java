@@ -23,6 +23,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -62,6 +64,8 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimePeriodImpl;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -651,6 +655,58 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       return ret;
+    }
+  }
+
+  public static class Time {
+
+    public static String formatDuration(TimePeriod duration) {
+      return formatDuration(
+          Duration.of(
+              duration.getEnd().getMilliseconds() - duration.getStart().getMilliseconds(),
+              ChronoUnit.MILLIS));
+    }
+
+    public static String formatDuration(long start, long end) {
+      return formatDuration(Duration.of(end - start, ChronoUnit.MILLIS));
+    }
+
+    public static String formatDuration(Duration duration) {
+      StringBuffer ret = new StringBuffer();
+      if (duration.get(ChronoUnit.YEARS) > 0) {
+        ret.append(duration.get(ChronoUnit.YEARS)).append("yr");
+      }
+      if (duration.get(ChronoUnit.MONTHS) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ")
+            .append(duration.get(ChronoUnit.MONTHS))
+            .append("mo");
+      }
+      if (duration.get(ChronoUnit.DAYS) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ").append(duration.get(ChronoUnit.DAYS)).append("d");
+      }
+      if (duration.get(ChronoUnit.HOURS) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ")
+            .append(duration.get(ChronoUnit.HOURS))
+            .append("hr");
+      }
+      if (duration.get(ChronoUnit.MINUTES) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ")
+            .append(duration.get(ChronoUnit.MINUTES))
+            .append("min");
+      }
+      if (duration.get(ChronoUnit.SECONDS) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ")
+            .append(duration.get(ChronoUnit.SECONDS))
+            .append("sec");
+      }
+      if (duration.get(ChronoUnit.MILLIS) > 0) {
+        ret.append(ret.length() == 0 ? "" : " ")
+            .append(duration.get(ChronoUnit.MILLIS))
+            .append("ms");
+      }
+
+      ;
+      return ret.toString();
     }
   }
 
