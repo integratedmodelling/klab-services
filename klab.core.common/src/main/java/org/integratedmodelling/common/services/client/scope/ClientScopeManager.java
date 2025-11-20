@@ -104,6 +104,9 @@ public enum ClientScopeManager {
 
   public void register(ClientSessionScope ret) {
     scopes.put(ret.getId(), ret);
+    if (ret instanceof ClientContextScope contextScope) {
+      contextScope.createDigitalTwin(ret.getId());
+    }
   }
 
   public void unregister(ClientSessionScope clientSessionScope) {

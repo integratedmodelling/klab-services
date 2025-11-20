@@ -171,9 +171,6 @@ public abstract class BaseServiceClient implements KlabService {
 
     if (scopeId != null) {
       setupMessaging(contextScope, sessionScope, scopeId);
-      if (contextScope instanceof ClientContextScope clientContextScope) {
-        clientContextScope.createDigitalTwin(scopeId);
-      }
     }
     return scopeId;
   }
