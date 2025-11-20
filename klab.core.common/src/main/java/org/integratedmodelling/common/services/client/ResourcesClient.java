@@ -60,7 +60,7 @@ public class ResourcesClient extends BaseServiceClient
   boolean useCaches = false;
 
   /** Caches for concepts and observables. */
-  private LoadingCache<String, KimConcept> concepts =
+  private final LoadingCache<String, KimConcept> concepts =
       CacheBuilder.newBuilder()
           .maximumSize(500)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -72,7 +72,7 @@ public class ResourcesClient extends BaseServiceClient
               });
 
   /** Caches for concepts and observables. */
-  private LoadingCache<String, KimObservable> observables =
+  private final LoadingCache<String, KimObservable> observables =
       CacheBuilder.newBuilder()
           .maximumSize(500)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
