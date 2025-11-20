@@ -2,9 +2,6 @@ package org.integratedmodelling.common.services.client.scope;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.integratedmodelling.common.services.client.ServiceClientCatalog;
-import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -91,19 +88,23 @@ public enum ClientScopeManager {
     }
 
     throw new KlabIllegalStateException("IMPLEMENT SERVICE INSTANTIATION");
-//    var newRuntime =
-//        ServiceClientCatalog.INSTANCE.getService(
-//            configuration.getUrl(), requestingScope.getIdentity(), SettingsImpl.forEngine());
-//
-//    // FIXME this will cause an exception as the client list is read-only. The client-side services
-//    //  are ultimately stored in the engine - must deal with that.
-//    requestingScope.getServices(RuntimeService.class).add(newRuntime);
-//
-//    return newRuntime;
+    //    var newRuntime =
+    //        ServiceClientCatalog.INSTANCE.getService(
+    //            configuration.getUrl(), requestingScope.getIdentity(), SettingsImpl.forEngine());
+    //
+    //    // FIXME this will cause an exception as the client list is read-only. The client-side
+    // services
+    //    //  are ultimately stored in the engine - must deal with that.
+    //    requestingScope.getServices(RuntimeService.class).add(newRuntime);
+    //
+    //    return newRuntime;
   }
 
   public void register(ClientSessionScope ret) {
     scopes.put(ret.getId(), ret);
+    if (ret instanceof ClientContextScope contextScope) {
+      contextScope.createDigitalTwin(ret.getId());
+    }
   }
 
   public void unregister(ClientSessionScope clientSessionScope) {

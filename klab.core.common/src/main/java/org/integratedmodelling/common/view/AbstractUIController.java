@@ -709,11 +709,12 @@ public abstract class AbstractUIController implements UIController {
           observation.getContextualizationData() == null
               ? null
               : scope()
-                  .getService(
+                  .findService(
                       RuntimeService.class,
                       s ->
                           s.serviceId()
-                              .equals(observation.getContextualizationData().getServiceId()));
+                              .equals(observation.getContextualizationData().getServiceId()))
+                  .orElse(null);
       // TODO everything else
       default -> null;
     };

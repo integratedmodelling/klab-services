@@ -41,14 +41,14 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
   }
 
   @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+  public <T extends KlabService> T getService(Class<T> serviceClass) {
     if (RuntimeService.class.isAssignableFrom(serviceClass)) {
       return (T) runtimeService;
     }
-    return super.getService(serviceClass, selectors);
+    return super.getService(serviceClass);
   }
 
-  /**
+    /**
    * Use to pre-define the ID when necessary.
    *
    * @param id

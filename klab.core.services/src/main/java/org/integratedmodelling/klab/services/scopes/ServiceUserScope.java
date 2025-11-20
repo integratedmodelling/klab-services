@@ -57,7 +57,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   protected Map<KlabService.Type, List<KlabService>> serviceMap = new HashMap<>();
 
   @Override
-  public final <T extends KlabService> T getService(
+  public final <T extends KlabService> Optional<T> findService(
       Class<T> serviceClass, Predicate<T>... selectors) {
 
     var services = getServices(serviceClass);
@@ -67,19 +67,27 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
         throw new KlabServiceAccessException(
             "No suitable service for request of " + serviceClass.getSimpleName());
       }
-      return (T) services.iterator().next();
+      return Optional.of((T) services.iterator().next());
     }
 
     for (var selector : selectors) {
       var ret =
           services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
       if (!ret.isEmpty()) {
-        return (T) ret.getFirst();
+        return Optional.of((T) ret.getFirst());
       }
     }
 
-    throw new KlabServiceAccessException(
-        "No suitable service for request of " + serviceClass.getSimpleName());
+    return Optional.empty();
+  }
+
+  @Override
+  public final <T extends KlabService> T getService(Class<T> serviceClass) {
+    return findService(serviceClass)
+        .orElseThrow(
+            () ->
+                new KlabServiceAccessException(
+                    "No suitable service for request of " + serviceClass.getSimpleName()));
   }
 
   @Override
@@ -102,7 +110,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // if they are of the passed class. Used on scope copies for monitoring and messaging.These are
   // never
   // copied downstream
-  // FIXME unused and messy, remove
+  // FIXME messy and probably obsolete, remove after checking the notification logic where this is used
   private List<Object> payloadCollector = null;
   private Class<?> collectedPayloadClass = null;
 

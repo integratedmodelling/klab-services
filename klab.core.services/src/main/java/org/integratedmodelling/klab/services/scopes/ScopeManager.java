@@ -84,12 +84,6 @@ public class ScopeManager {
 
     ServiceUserScope ret = scopes.get(user.getUsername());
     if (ret == null) {
-
-      /**
-       * The user scope is for a legitimately authorized user, so by default it uses all services
-       * from the service scope. TODO we should filter them by permission vs. the user identity!
-       * That can be done directly in the overloaded functions below.
-       */
       ret = new ServiceUserScope(user, service);
       File userBehavior =
           new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
@@ -302,7 +296,9 @@ public class ScopeManager {
 
         // we need the original service to retrieve the configuration
         var originalService =
-            userScope.getService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
+            userScope
+                .findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()))
+                .orElse(null);
 
         if (originalService != null) {
           var configuration = originalService.getConfiguration(scopeId, userScope);

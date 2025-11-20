@@ -15,6 +15,10 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import gg.jte.ContentType;
+import gg.jte.TemplateEngine;
+import gg.jte.output.StringOutput;
+import gg.jte.resolve.DirectoryCodeResolver;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.*;
@@ -24,17 +28,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.*;
-
-import gg.jte.ContentType;
-import gg.jte.TemplateEngine;
-import gg.jte.output.StringOutput;
-import gg.jte.resolve.DirectoryCodeResolver;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -60,21 +58,27 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimePeriodImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.common.data.DataRequest;
@@ -710,6 +714,97 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
+  /** Methods to facilitate concurrent access to multiple services. */
+  public static class Services {
+
+    /**
+     * Resolve a resource URN in all connected services, choose the most appropriate one if multiple
+     * services provide it, retrieve it and return it. Local services always have priority.
+     *
+     * @param scope
+     * @param urn
+     * @return
+     */
+    public static Pair<Resource, ResourcesService> resolveResource(Scope scope, String urn) {
+      return null;
+    }
+
+    public static Pair<AdapterDescriptor, ResourcesService> resolveAdapter(
+        Scope scope, String urn) {
+      return null;
+    }
+
+    /**
+     * If the current service does not have it already, resolve a model URN in all connected
+     * services, choose the most appropriate one if multiple services provide it, retrieve it and
+     * return it. The entire project is always ingested in case the model is not available locally.
+     * Local services always have priority.
+     *
+     * @param scope
+     * @param urn
+     * @return
+     */
+    public static Pair<KimModel, ResourcesService> resolveModel(
+        Scope scope, String urn, KlabService currentService) {
+      return null;
+    }
+
+    /**
+     * If the current service does not have it already, resolve a behavior URN in all connected
+     * services, choose the most appropriate one if multiple services provide it, retrieve it and
+     * return it. The entire project is always ingested in case the model is not available locally.
+     * Local services always have priority.
+     *
+     * @param scope
+     * @param urn
+     * @return
+     */
+    public static Pair<KActorsBehavior, ResourcesService> resolveBehavior(Scope scope, String urn) {
+      return null;
+    }
+
+    public static List<Pair<KimModel, ResourcesService>> resolveModels(
+        ContextScope scope, Observable observable) {
+      return null;
+    }
+
+    /**
+     * If the current service does not have it already, resolve a project URN in all connected
+     * services, choose the most appropriate one if multiple services provide it, retrieve it and
+     * return it. Local services always have priority.
+     *
+     * @param scope
+     * @param urn
+     * @return
+     */
+    public static Pair<Project, ResourcesService> resolveProject(
+        Scope scope, String urn, KlabService currentService) {
+      return null;
+    }
+
+    /**
+     * Resolve the worldview available to the current scope. Local services have priority. Parts of
+     * the worldview provided by different services and accessible to the scope may be merged in the
+     * final result.
+     *
+     * @param scope
+     * @return
+     */
+    public static Worldview resolveWorldview(Scope scope) {
+      return null;
+    }
+
+    public static Pair<ResourceTransport.Schema, ResourcesService> resolveExportSchema(
+        Scope scope, String mediaType, Geometry geometry) {
+      return null;
+    }
+
+    public static Pair<ResourceTransport.Schema, ResourcesService> resolveImportSchema(
+        Scope scope, String urn, Geometry geometry) {
+      return null;
+    }
+  }
+
   public static class Files extends org.integratedmodelling.klab.api.utils.Utils.Files {
 
     public static File copyInputStreamToTempFile(InputStream inputStream, String extension) {
@@ -948,7 +1043,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 -1,
                 3000);
           } else {
-            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            System.out.println(
+                "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
             //            var log = parseResponse(response.body(), Map.class);
             //            MapUtils.debugPrint(System.out, "Server error", log);
             System.out.println(
@@ -1006,19 +1102,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
         return ret;
       }
-
-      //      /**
-      //       * Localize the scope for communication when the scope itself is not available but its
-      // ID is.
-      //       *
-      //       * @param authorization
-      //       * @return
-      //       */
-      //      public Client withAutorization(String authorization) {
-      //        var ret = new Client(this);
-      //        ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
-      //        return ret;
-      //      }
 
       public Client withIdentity(Identity identity) {
         var ret = new Client(this);
@@ -1240,9 +1323,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               // TODO do something with the error response (which should be better and
               //  contain a stack trace)
             }
-          } catch (Throwable diocane) {
-            System.out.println("DIOCANE");
-            throw diocane;
           }
         } catch (Throwable e) {
           if (scope != null) {
@@ -1302,16 +1382,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
             } else {
               var log = parseResponse(body, Map.class);
-              System.out.println(
-                  "============ POST " + apiCall + " EXCEPTION REPORT ==============");
-              MapUtils.debugPrint(System.out, "Server error", log);
-              System.out.println("============ END OF REPORT  ==============");
+              Logging.INSTANCE.error(
+                  "============ POST " + post.getURI() + " EXCEPTION REPORT ==============");
+              Logging.INSTANCE.error(Maps.debugPrint(log));
+              Logging.INSTANCE.error("============ END OF REPORT  ==============");
               return CompletableFuture.failedFuture(new KlabServiceAccessException(body));
             }
-
-          } catch (Throwable diocane) {
-            System.out.println("DIOCANE");
-            throw diocane;
           }
         } catch (Throwable e) {
           if (scope != null) {
@@ -1388,11 +1464,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             parseHeaders(response);
             return parseResponse(response.body(), resultClass);
           } else {
-            System.out.println("========== POST " + apiCall + " return " + response.statusCode());
+            Logging.INSTANCE.error(
+                "========== POST " + apiCall + " return " + response.statusCode());
             var log = parseResponse(response.body(), Map.class);
-            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
-            MapUtils.debugPrint(System.out, "Server error", log);
-            System.out.println("============ END OF REPORT  ==============");
+            Logging.INSTANCE.error(
+                "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
+            Logging.INSTANCE.error(Maps.debugPrint(log));
+            Logging.INSTANCE.error("============ END OF REPORT  ==============");
             // TODO do something with the error response (which should be better and
             //  contain a stack trace)
           }
@@ -1476,9 +1554,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
           } else {
             var log = parseResponse(response.body(), Map.class);
-            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
-            MapUtils.debugPrint(System.out, "Server error", log);
-            System.out.println("============ END OF REPORT  ==============");
+            Logging.INSTANCE.error(
+                "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
+            Logging.INSTANCE.error(Maps.debugPrint(log));
+            Logging.INSTANCE.error("============ END OF REPORT  ==============");
             return CompletableFuture.failedFuture(new KlabServiceAccessException(response.body()));
           }
 
@@ -2573,6 +2652,20 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         o = (Map<?, ?>) to;
       }
       return o == null ? null : Data.asType(o.get(paths[paths.length - 1]), cls);
+    }
+
+    /**
+     * Pretty-print a map using the Apache functions.
+     *
+     * @param map
+     * @return
+     */
+    public static String debugPrint(Map<?, ?> map) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      PrintStream ps = new PrintStream(baos);
+      MapUtils.debugPrint(ps, "", map);
+      ps.flush();
+      return baos.toString();
     }
 
     /**

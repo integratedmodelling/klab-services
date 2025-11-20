@@ -31,22 +31,6 @@ public enum KnowledgeRepository {
 
   MultivaluedMap<String, Pair<KlabAsset, Version>> assetMap = new MultivaluedHashMap<>();
 
-  //    Map<KlabAsset.KnowledgeClass, Function<KlabDocument<?>, Collection<Knowledge>>> processors =
-  //            new HashMap<>();
-
-  //    /**
-  //     * @param knowledgeClass
-  //     * @param processor
-  //     * @param <T>
-  //     */
-  //    public <T extends KlabDocument<?>> void setProcessor(KlabAsset.KnowledgeClass
-  // knowledgeClass,
-  //                                                         Function<T, Collection<Knowledge>>
-  // processor) {
-  //        this.processors.put(knowledgeClass, (Function<KlabDocument<?>, Collection<Knowledge>>)
-  //        processor);
-  //    }
-
   /**
    * Knowledge assets can be registered from the outside, normally within the service whenever
    * results are ingested.
@@ -206,7 +190,7 @@ public enum KnowledgeRepository {
     }
 
     // if we get here, we need to resolve the document
-    // TODO use broadcast to all services
+    // TODO use all services
     // TODO honor version in request
     var resources = scope.getService(ResourcesService.class);
     KlabDocument<?> doc =

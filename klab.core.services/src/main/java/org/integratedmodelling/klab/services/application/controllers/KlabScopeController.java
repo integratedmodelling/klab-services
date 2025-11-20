@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.services.application.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
 import java.util.*;
+
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.*;
@@ -22,8 +24,9 @@ public class KlabScopeController {
   @PostMapping(ServicesAPI.NOTIFY_USER_SCOPE)
   public boolean notifyUserScope(@RequestBody UserScopeNotification request, Principal principal) {
 
-    if (principal instanceof EngineAuthorization authorization) {
+    Logging.INSTANCE.info("Received user scope notification: " + request);
 
+    if (principal instanceof EngineAuthorization authorization) {
       var userScope = authorization.getScope(ServiceUserScope.class);
       if (userScope == null) {
         return false;
@@ -54,5 +57,4 @@ public class KlabScopeController {
     }
     return userScope.validateServices();
   }
-
 }

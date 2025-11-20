@@ -66,10 +66,15 @@ public abstract class BaseServiceClient implements KlabService {
     this.serviceScope =
         new AbstractServiceDelegatingScope(scope) {
           @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
+          public <T extends KlabService> T getService(Class<T> serviceClass) {
             throw new KlabIllegalStateException(
                 "Service clients don't hold other services in their scopes");
+          }
+
+          @Override
+          public <T extends KlabService> Optional<T> findService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
+            return Optional.empty();
           }
 
           @Override
@@ -171,9 +176,6 @@ public abstract class BaseServiceClient implements KlabService {
 
     if (scopeId != null) {
       setupMessaging(contextScope, sessionScope, scopeId);
-      if (contextScope instanceof ClientContextScope clientContextScope) {
-        clientContextScope.createDigitalTwin(scopeId);
-      }
     }
     return scopeId;
   }

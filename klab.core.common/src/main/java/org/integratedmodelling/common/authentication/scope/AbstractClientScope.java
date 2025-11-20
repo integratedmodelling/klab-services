@@ -2,6 +2,7 @@ package org.integratedmodelling.common.authentication.scope;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -34,7 +35,17 @@ public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
   }
 
   @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+  public <T extends KlabService> T getService(Class<T> serviceClass) {
+    return findService(serviceClass)
+        .orElseThrow(
+            () ->
+                new KlabServiceAccessException(
+                    "No suitable service for request of " + serviceClass.getSimpleName()));
+  }
+
+  @Override
+  public <T extends KlabService> Optional<T> findService(
+      Class<T> serviceClass, Predicate<T>... selectors) {
 
     var services = getServices(serviceClass);
 
@@ -43,18 +54,17 @@ public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
         throw new KlabServiceAccessException(
             "No suitable service for request of " + serviceClass.getSimpleName());
       }
-      return (T) services.iterator().next();
+      return Optional.of((T) services.iterator().next());
     }
 
     for (var selector : selectors) {
       var ret =
           services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
       if (!ret.isEmpty()) {
-        return (T) ret.getFirst();
+        return Optional.of((T) ret.getFirst());
       }
     }
 
-    throw new KlabServiceAccessException(
-        "No suitable service for request of " + serviceClass.getSimpleName());
+    return Optional.empty();
   }
 }

@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotifi
  * transparently managing the lifecycle of the underlying monitors.
  */
 public enum ServiceClientCatalog {
+
   INSTANCE;
 
   private final long localPollCycleSeconds = (Integer) Setting.POLLING_INTERVAL_LOCAL.defaultValue;

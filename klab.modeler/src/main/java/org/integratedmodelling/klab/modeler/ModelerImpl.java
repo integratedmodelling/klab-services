@@ -319,7 +319,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       DigitalTwin.Configuration configuration, boolean dispatchEvent) {
     var runtimeService = user().getService(RuntimeService.class);
     if (runtimeService == null) {
-      throw new KlabAuthorizationException("Cannot create a context without a runtime service");
+      user()
+          .error("Cannot create a context without a runtime service", UIView.Interactivity.DISPLAY);
+      return null;
     }
     var ret = user().getUserSession(runtimeService).createContext(configuration);
     if (ret != null) {
@@ -331,20 +333,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ret;
   }
 
-  //  @Override
-  //  public List<SessionScope> getOpenSessions() {
-  //    return new ArrayList<>(sessions);
-  //  }
-
   @Override
   public List<ContextScope> getOpenContexts() {
     return new ArrayList<>(contexts.values());
   }
-
-  //  @Override
-  //  public ContextScope getCurrentContext() {
-  //    return currentContext;
-  //  }
 
   @Override
   public ContextScope createDefaultContext() {
@@ -354,7 +346,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     if (currentUser() == null) {
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
     }
-    //    if (currentContext == null) {
+
     var name =
         // TODO revise, but it's more fun than DT1, DT2 etc
         Utils.Strings.capitalize(
@@ -369,27 +361,43 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 "conundrum",
                 "troglodyte",
                 "anaconda",
+                "octothorpe",
                 "chicken",
                 "blasphemy",
                 "enema",
                 "pain",
+                "gibbon",
+                "slumgullion",
                 "knowledge",
                 "wisdom",
+                "avocado",
                 "suffering",
                 "sausage",
                 "cucumber"));
-    currentContext = openNewContext(defaultDigitalTwinConfiguration(name), false);
-    //    }
 
-    if (currentContext == null) {
-      user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
+    var configuration = defaultDigitalTwinConfiguration(name);
+
+    if (configuration != null) {
+      currentContext = openNewContext(configuration, false);
     }
 
     return currentContext;
   }
 
   private DigitalTwin.Configuration defaultDigitalTwinConfiguration(String name) {
-    var runtime = user().getService(RuntimeService.class);
+    var runtime =
+        user()
+            .findService(RuntimeService.class, service -> Utils.URLs.isLocalHost(service.getUrl()))
+            .orElse(null);
+
+    if (runtime == null) {
+      user()
+          .error(
+              "A default digital twin can only be created in a locally running runtime service.",
+              UIView.Interactivity.DISPLAY);
+      return null;
+    }
+
     return DigitalTwin.Configuration.builder()
         .name(name)
         .serverUrl(runtime.getUrl())
@@ -398,18 +406,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .persistence(Persistence.IDLE_TIMEOUT)
         .build();
   }
-
-  //  @Override
-  //  public void setCurrentContext(ContextScope context) {
-  //    //    if (context != null
-  //    //        && (this.currentSession == null
-  //    //            || !this.currentSession.equals(
-  //    //                context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
-  //    //      throw new KlabIllegalArgumentException(
-  //    //          "Cannot set context: argument is not part of the current" + " session");
-  //    //    }
-  //    this.currentContext = context;
-  //  }
 
   @Override
   public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {

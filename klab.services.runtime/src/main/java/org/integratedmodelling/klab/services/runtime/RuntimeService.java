@@ -707,8 +707,11 @@ public class RuntimeService extends BaseService
           for (var resource : resolution.getResults()) {
             if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
               var service =
-                  scope.getService(
-                      ResourcesService.class, ks -> ks.serviceId().equals(resource.getServiceId()));
+                  scope
+                      .findService(
+                          ResourcesService.class,
+                          ks -> ks.serviceId().equals(resource.getServiceId()))
+                      .orElse(null);
               if (service == null) {
                 return ResourceSet.empty(
                     Notification.error(

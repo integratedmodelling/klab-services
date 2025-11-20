@@ -464,9 +464,14 @@ public class DistributionImpl extends AbstractDistributionImpl {
                   }
                 }) {
               @Override
-              public <T extends KlabService> T getService(
-                  Class<T> serviceClass, Predicate<T>... selectors) {
+              public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return null;
+              }
+
+              @Override
+              public <T extends KlabService> Optional<T> findService(
+                  Class<T> serviceClass, Predicate<T>... selectors) {
+                return Optional.empty();
               }
 
               @Override

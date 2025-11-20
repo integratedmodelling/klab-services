@@ -247,8 +247,10 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     switch (change.getOperation()) {
       case CREATE -> {
         var service =
-            scope.getService(
-                ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()));
+            scope
+                .findService(
+                    ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
+                .orElse(null); // TODO check
         var ret =
             addChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
@@ -276,8 +278,10 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       }
       case UPDATE -> {
         var service =
-            scope.getService(
-                ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()));
+            scope
+                .findService(
+                    ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
+                .orElse(null); // TODO check
         var physicalChanges =
             updateChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));

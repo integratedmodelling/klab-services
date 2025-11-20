@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.scope;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -78,14 +79,6 @@ public interface Scope extends Channel {
     }
   }
 
-  //  /**
-  //   * The expiration type for the scope. The details (e.g. the idle time) depend on service
-  //   * configuration.
-  //   *
-  //   * @return
-  //   */
-  //  Persistence getPersistence();
-
   /**
    * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is
    * the only one that can have another scope of its same class as parent. If a specific scope class
@@ -117,8 +110,22 @@ public interface Scope extends Channel {
   /**
    * Retrieve the service corresponding to the passed class. A {@link KlabServiceAccessException}
    * should be the response when services are unavailable. If there are multiple services available
-   * for the class and a selector predicate is not passed, the implementation should choose a
-   * default one should be chosen based on load factor, vicinity or any other sensible logic.
+   * for the class, the implementation should choose a default one should be chosen based on the
+   * load factor, the vicinity or any other sensible logic.
+   *
+   * @param <T>
+   * @param serviceClass
+   * @return
+   * @throws KlabServiceAccessException if the requested service is not available
+   */
+  <T extends KlabService> T getService(Class<T> serviceClass);
+
+  /**
+   * Retrieve a service corresponding to the passed class and meeting the conditions passed. A
+   * {@link KlabServiceAccessException} should be the response when services are unavailable. If
+   * there are multiple services available for the class and any selectors, the implementation
+   * should choose a default one should be chosen based on the load factor, the vicinity or any
+   * other sensible logic.
    *
    * <p>TODO reimplement and document so that the predicates are used as priority: if the first
    * matches, return the match, otherwise move to the second until satisfied or finished. Currently
@@ -128,15 +135,14 @@ public interface Scope extends Channel {
    * @param serviceClass
    * @param selectors one or more predicates that the returned service must match. If more than one
    *     service matches, the result is the first service that matches.
-   * @return
-   * @throws KlabServiceAccessException if the requested service is not available
+   * @return an optional service
    */
-  <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors);
+  <T extends KlabService> Optional<T> findService(Class<T> serviceClass, Predicate<T>... selectors);
 
   /**
    * Retrieve all the currently available services corresponding to the passed class, including the
-   * default one returned by {@link #getService(Class, Predicate...)} if applicable. Passing
-   * KlabService.class as a parameter should always return all services.
+   * default one returned by {@link #getService(Class)} if applicable. Passing KlabService.class as
+   * a parameter should always return all services.
    *
    * @param <T>
    * @param serviceClass

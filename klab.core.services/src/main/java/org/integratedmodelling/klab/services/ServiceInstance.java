@@ -144,7 +144,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
 
     @Override
-    public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
       if (serviceClass.isAssignableFrom(klabService().getClass())) {
         return serviceClass.cast(klabService());
       }
@@ -156,6 +156,12 @@ public abstract class ServiceInstance<T extends BaseService> {
               .orElse(null);
 
       return serviceClass.cast(available);
+    }
+
+    @Override
+    public <T extends KlabService> Optional<T> findService(
+        Class<T> serviceClass, Predicate<T>... selectors) {
+      return Optional.of(getService(serviceClass));
     }
 
     @Override
