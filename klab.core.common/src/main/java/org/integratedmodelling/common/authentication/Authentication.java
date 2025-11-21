@@ -82,7 +82,7 @@ public enum Authentication {
   public Pair<Identity, List<ServiceReference>> authenticate(Settings settings) {
     File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
     KlabCertificate certificate =
-        certFile.isFile()
+        (certFile.isFile() && !settings.get(Setting.LOGIN_ANONYMOUSLY, Boolean.class))
             ? KlabCertificateImpl.createFromFile(certFile)
             : new AnonymousEngineCertificate();
     return authenticate(certificate, settings);
@@ -99,7 +99,8 @@ public enum Authentication {
   public Pair<Identity, List<ServiceReference>> authenticate(
       KlabCertificate certificate, Settings settings) {
 
-    if (certificate instanceof AnonymousEngineCertificate) {
+    if (certificate instanceof AnonymousEngineCertificate
+        || settings.get(Setting.LOGIN_ANONYMOUSLY, Boolean.class)) {
       // no partner, no node, no token, no nothing. REST calls automatically accept
       // the anonymous user when secured as Roles.PUBLIC.
       if (settings.get(Setting.LOG_EVENTS, Boolean.class)) {
@@ -246,7 +247,8 @@ public enum Authentication {
         /* validate federation data */
         var federationData = Klab.INSTANCE.getFederationData(ret);
         if (federationData != null) {
-          Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData.getId());
+          Logging.INSTANCE.info(
+              "User " + ret.getUsername() + " is part of the " + federationData.getId());
           ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
         }
 

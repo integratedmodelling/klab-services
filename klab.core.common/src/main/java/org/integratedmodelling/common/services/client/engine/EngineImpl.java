@@ -8,11 +8,13 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -48,7 +50,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
-  private final Set<String> notified = new HashSet<>();
+  private boolean onlineStatusNotified = false;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -103,6 +105,10 @@ public class EngineImpl implements Engine, PropertyHolder {
     return defaultUser;
   }
 
+  public Federation getFederation() {
+    return federationData;
+  }
+
   @Override
   public boolean shutdown() {
 
@@ -123,6 +129,9 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public Map<KlabService.Type, KlabService> startLocalServices() {
+    // this will force a re-advertising of services when they all come up, as long as the engine
+    // becomes operational again only when the 4 local are available
+    onlineStatusNotified = false;
     return serviceMonitor.startLocalServices(distribution, defaultUser);
   }
 
@@ -148,41 +157,55 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   private void notifyLocalEngine(Engine.Status status) {
+
+//    Logging.INSTANCE.info(
+//        "STRONZ: "
+//            + status
+//            + " ("
+//            + (status.isOperational() ? "operational" : "not operational")
+//            + (onlineStatusNotified ? " notified " : " not notified ")
+//            + ")");
+
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);
     }
+    if (!onlineStatusNotified
+        && status.getCondition() != Status.EngineCondition.TRANSITIONING
+        && status.isOperational()) {
+      // advertise the user scope to all online services
+      // TODO strategy is static - if we have services coming in at runtime we will need to notify
+      //  them too.
+      notifyScopeToServices(defaultUser);
+      onlineStatusNotified = true;
+    }
   }
 
-  private void notifyScopeToService(KlabService service, UserScope userScope) {
+  private void notifyScopeToServices(UserScope userScope) {
 
     var request = new UserScopeNotification();
 
+    // TODO mixed aux info
     request.setEmailAddress(userScope.getUser().getEmailAddress());
 
-    var serviceInfo = new UserScopeNotification.ServiceInfo();
-    serviceInfo.setId(service.serviceId());
-    serviceInfo.setUrl(service.getUrl());
-    serviceInfo.setType(KlabService.Type.classify(service));
-    request.getServices().add(serviceInfo);
+    for (var service : userScope.getServices(KlabService.class)) {
+      var serviceInfo = new UserScopeNotification.ServiceInfo();
+      serviceInfo.setId(service.serviceId());
+      serviceInfo.setUrl(service.getUrl());
+      serviceInfo.setType(KlabService.Type.classify(service));
+      request.getServices().add(serviceInfo);
+    }
 
-    if (service instanceof BaseServiceClient serviceClient) {
-      Thread.ofVirtual().start(() -> serviceClient.notifyScope(request));
+    for (var service : getUser().getServices(KlabService.class)) {
+      if (service instanceof BaseServiceClient serviceClient) {
+        Thread.ofVirtual().start(() -> serviceClient.notifyScope(request));
+      }
     }
   }
 
-  private void notifyService(KlabService klabService, KlabService.ServiceStatus serviceStatus) {
-
+  private void notifyLocalService(
+      KlabService klabService, KlabService.ServiceStatus serviceStatus) {
     if (serviceStatusMonitor != null) {
       serviceStatusMonitor.accept(klabService, serviceStatus);
-    }
-    if (serviceStatus.isOperational() && !notified.contains(serviceStatus.getServiceId())) {
-      // NAAH dio carogna this should be done when ALL services are operational, but at each change?
-      // Must be ready at server side to apply changes
-      notifyScopeToService(klabService, defaultUser);
-      notified.add(serviceStatus.getServiceId());
-    }
-    if (!serviceStatus.isOperational()) {
-      notified.remove(serviceStatus.getServiceId());
     }
   }
 
@@ -230,7 +253,7 @@ public class EngineImpl implements Engine, PropertyHolder {
             settings,
             true,
             authData.getSecond(),
-            this::notifyService,
+            this::notifyLocalService,
             this::notifyLocalEngine);
 
     return this.defaultUser;

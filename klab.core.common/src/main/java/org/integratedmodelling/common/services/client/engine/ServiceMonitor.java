@@ -117,7 +117,7 @@ public class ServiceMonitor {
   }
 
   private void handleStatus(
-          BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
+      BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
     clients.put(service, status);
     for (var serviceListener : serviceConsumers) {
       serviceListener.accept(service, status);
@@ -199,15 +199,14 @@ public class ServiceMonitor {
           .getServicesProvision()
           .put(type, operationalStatus(type, localOperational, localAvailable, remoteOperational));
     }
-
-    status.setAvailable(active.size() > 3);
-    status.setOperational(online.size() > 3);
-    status.setShutdown(!shutdown.isEmpty());
-
     var localTransitioningCount =
         status.getServicesProvision().values().stream()
             .filter(p -> !p.isOperational() && p.isLocal())
             .count();
+
+    status.setAvailable(active.size() > 3);
+    status.setOperational(online.size() > 3 && localTransitioningCount == 0);
+    status.setShutdown(!shutdown.isEmpty());
 
     var localOperationalCount =
         status.getServicesProvision().values().stream()

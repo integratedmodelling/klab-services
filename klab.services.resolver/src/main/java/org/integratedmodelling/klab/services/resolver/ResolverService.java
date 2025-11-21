@@ -245,13 +245,13 @@ public class ResolverService extends BaseService implements Resolver {
      */
     getComponentRegistry().loadExtensions(extensionPackages.toArray(new String[] {}));
 
-    /**
-     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-     * is no configured broker.
-     */
-    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-      this.embeddedBroker = new EmbeddedBroker();
-    }
+//    /**
+//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+//     * is no configured broker.
+//     */
+//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+//      this.embeddedBroker = new EmbeddedBroker();
+//    }
 
     //    serviceScope()
     //        .send(

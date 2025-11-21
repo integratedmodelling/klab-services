@@ -5,8 +5,10 @@ import org.integratedmodelling.common.authentication.AnonymousUser;
 import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.engine.distribution.impl.LocalProductImp
 import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 
@@ -230,8 +233,26 @@ public class DistributionImpl extends AbstractDistributionImpl {
    * @return
    */
   private StartupOptions makeOptions(Build build, Scope scope) {
-    // TODO
-    return new ServiceStartupOptions();
+
+    var ret = new ServiceStartupOptions();
+    if (scope instanceof ClientUserScope clientUserScope) {
+      if (clientUserScope.getEngine().getFederation() != null) {
+        if (build.getProduct().getProductType() == Product.ProductType.RUNTIME_SERVICE
+            && Federation.LOCAL_FEDERATION_ID.equals(
+                clientUserScope.getEngine().getFederation().getId())) {
+          if (clientUserScope
+              .getEngine()
+              .getSettings()
+              .get(Setting.USE_LOCAL_MESSAGE_BROKER, Boolean.class)) {
+            ret.setStartLocalBroker(true);
+          }
+        }
+      }
+    }
+
+    // TODO remaining options from settings
+
+    return ret;
   }
 
   private void readFilelist(File f, Map<String, String> map) {

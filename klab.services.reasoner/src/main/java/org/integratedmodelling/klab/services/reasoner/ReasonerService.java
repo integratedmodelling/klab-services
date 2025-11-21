@@ -304,17 +304,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-    /*
-     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-     * is no configured broker.
-     */
-    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-      Logging.INSTANCE.info("Setting up embedded broker in local service");
-      this.embeddedBroker = new EmbeddedBroker();
-      Logging.INSTANCE.info(
-          "Embedded broker is "
-              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) : "offline"));
-    }
+//    /*
+//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+//     * is no configured broker.
+//     */
+//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+//      Logging.INSTANCE.info("Setting up embedded broker in local service");
+//      this.embeddedBroker = new EmbeddedBroker();
+//      Logging.INSTANCE.info(
+//          "Embedded broker is "
+//              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) : "offline"));
+//    }
 
     /*
     This is called when resources are available, so this is the time to load the worldview.

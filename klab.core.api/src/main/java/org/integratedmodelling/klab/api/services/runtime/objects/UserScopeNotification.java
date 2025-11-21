@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime.objects;
 
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -63,5 +64,15 @@ public class UserScopeNotification {
 
   public void setEmailAddress(String emailAddress) {
     this.emailAddress = emailAddress;
+  }
+
+  /** Removes all services that are not running on the local host. */
+  public void removeLocalServices() {
+    var newInfo = new ArrayList<ServiceInfo>();
+    services.forEach(
+        s -> {
+          if (!Utils.URLs.isLocalHost(s.getUrl())) newInfo.add(s);
+        });
+    services = newInfo;
   }
 }

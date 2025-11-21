@@ -133,6 +133,8 @@ public enum Setting {
       "Have the runtime send debug notifications to the local client through the messaging system",
       Boolean.class,
       false),
+  LOGIN_ANONYMOUSLY(
+      Page.DEBUGGING, "Ignore the user certificate and login anonymously", Boolean.class, false),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "

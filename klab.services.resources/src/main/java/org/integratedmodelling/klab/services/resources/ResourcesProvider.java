@@ -231,13 +231,13 @@ public class ResourcesProvider extends BaseService
      * TODO launch update service
      */
 
-    /**
-     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-     * is no configured broker.
-     */
-    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-      this.embeddedBroker = new EmbeddedBroker();
-    }
+//    /**
+//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+//     * is no configured broker.
+//     */
+//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+//      this.embeddedBroker = new EmbeddedBroker();
+//    }
 
     /*
      * If we want the local resources service to provide LSP functionalities, uncomment this. For now it is
