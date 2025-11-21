@@ -45,7 +45,7 @@ public class ResourceInfo implements Serializable {
 
     private boolean usable;
 
-    private Type(boolean usable) {
+    Type(boolean usable) {
       this.usable = usable;
     }
 
@@ -112,6 +112,7 @@ public class ResourceInfo implements Serializable {
   private Metadata metadata = Metadata.create();
   private String serviceId;
   private Set<CRUDOperation> permissions = new HashSet<>();
+  private boolean local;
 
   public List<String> getChildResourceUrns() {
     return childResourceUrns;
@@ -271,6 +272,14 @@ public class ResourceInfo implements Serializable {
 
   public void setUrn(String urn) {
     this.urn = urn;
+  }
+
+  public boolean isLocal() {
+    return local;
+  }
+
+  public void setLocal(boolean local) {
+    this.local = local;
   }
 
   /**

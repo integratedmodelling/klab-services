@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
@@ -47,6 +48,7 @@ public class ResourcesKBox {
   private final File databaseFile;
   private ObjectRepository<ResourceInfo> resourceMetadata;
   private ObjectRepository<ResourceImpl> resources;
+  private boolean local;
 
   /** Take over the mapper so we can use interfaces */
   private static class KlabJacksonMapper extends JacksonMapper {
@@ -81,6 +83,7 @@ public class ResourcesKBox {
     this.databaseFile =
         BaseService.getFileInConfigurationSubdirectory(options, "data", "resources.db");
     RocksDBModule storeModule = RocksDBModule.withConfig().filePath(databaseFile.getPath()).build();
+    this.local = Utils.URLs.isLocalHost(service.getUrl());
 
     this.db =
         Nitrite.builder()
@@ -173,7 +176,11 @@ public class ResourcesKBox {
    */
   public ResourceInfo getStatus(String urn, Version version) {
     // TODO handle version
-    return resourceMetadata.getById(urn);
+    var ret = resourceMetadata.getById(urn);
+    if (ret != null) {
+      ret.setLocal(this.local);
+    }
+    return ret;
   }
 
   public boolean putStatus(ResourceInfo status) {
