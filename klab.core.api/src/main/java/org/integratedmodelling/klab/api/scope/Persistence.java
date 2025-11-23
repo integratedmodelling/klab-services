@@ -5,23 +5,24 @@ import java.util.Arrays;
 /** The type of persistence associated to an asset. */
 public enum Persistence {
   /** Asset disappears when it's out of scope or garbage collected. */
-  ONE_OFF("Delete at editor closed"),
+  ONE_OFF("Delete at editor closed", false),
   /** Asset is deleted after being idle for a set timeout. */
-  IDLE_TIMEOUT("Delete after set timeout"),
+  IDLE_TIMEOUT("Delete after set timeout", false),
   /** Asset is deleted when the service that hosts it is shut down. */
-  SERVICE_SHUTDOWN("Delete on service shutdown"),
+  SERVICE_SHUTDOWN("Delete on service shutdown", false),
   /**
    * The asset is not deleted on timeout, but it's reset to empty conditions. Used for testing and
    * demos.
    */
-  REINITIALIZED_ON_TIMEOUT("Reset to empty on timeout"),
+  REINITIALIZED_ON_TIMEOUT("Reset to empty on timeout", false),
   /**
    * Asset can only be deleted upon an explicit action from its owner or other authorized identity.
    */
-  EXPLICIT_ACTION("Delete only when asked");
+  EXPLICIT_ACTION("Delete only when asked", true);
 
-  Persistence(String description) {
+  Persistence(String description, boolean persistent) {
     this.description = description;
+    this.persistent = persistent;
   }
 
   public static Persistence fromDescription(String description) {
@@ -31,5 +32,6 @@ public enum Persistence {
         .orElse(null);
   }
 
-  public String description;
+  public final String description;
+  public final boolean persistent;
 }

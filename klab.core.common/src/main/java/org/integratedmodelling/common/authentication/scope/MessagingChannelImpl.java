@@ -69,22 +69,6 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     return super.send(args);
   }
 
-  //  public void installQueueConsumer(
-  //      String scopeId, Message.Queue queue, Consumer<Message> consumer) {
-  //    queueConsumers
-  //        .computeIfAbsent(scopeId, k -> new HashMap<>())
-  //        .computeIfAbsent(
-  //            scopeId + "." + queue.name().toLowerCase(), q -> new ArrayList<Consumer<Message>>())
-  //        .add(consumer);
-  //  }
-  //
-  //  public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
-  //    queueConsumers
-  //        .computeIfAbsent(getId(), k -> new HashMap<>())
-  //        .computeIfAbsent(queueId, q -> new ArrayList<Consumer<Message>>())
-  //        .add(consumer);
-  //  }
-
   protected void closeMessaging() {
     if (this.amqpChannel != null) {
       this.amqpChannel.close();
@@ -109,7 +93,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
             federation,
             switch (this) {
               case ContextScope ignored1 -> ownId;
-              case SessionScope ignored -> ownId;
+              case SessionScope ignored -> null; // don't connect sessions
               default -> federation.getId();
             },
             this,

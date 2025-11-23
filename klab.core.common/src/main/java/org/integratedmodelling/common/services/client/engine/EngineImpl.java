@@ -142,6 +142,10 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser = authenticate();
     }
 
+    // This instruments the user scope with the federation queues. Only meant for federation-wide
+    // messaging. TODO check which queues are used and whether they should be persistent or not.
+    // TODO probably the federation queue should be independent and temporary. Also check that
+    // the session scope do not get instrumented at client side.
     var federation =
         this.defaultUser
             .getIdentity()
@@ -158,13 +162,13 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   private void notifyLocalEngine(Engine.Status status) {
 
-//    Logging.INSTANCE.info(
-//        "STRONZ: "
-//            + status
-//            + " ("
-//            + (status.isOperational() ? "operational" : "not operational")
-//            + (onlineStatusNotified ? " notified " : " not notified ")
-//            + ")");
+    //    Logging.INSTANCE.info(
+    //        "STRONZ: "
+    //            + status
+    //            + " ("
+    //            + (status.isOperational() ? "operational" : "not operational")
+    //            + (onlineStatusNotified ? " notified " : " not notified ")
+    //            + ")");
 
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);

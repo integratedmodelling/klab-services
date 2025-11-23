@@ -1,35 +1,53 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import com.rabbitmq.client.*;
-import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.identities.Federation;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 
 /**
  * A channel that connects to an AMQP broker and provides methods to send and receive messages. This
  * class is used for communication between instances of the same class with the same brokerUri and
  * queue. Uses a fanout exchange to implement a publish-subscribe pattern where all subscribers
  * receive all messages.
+ *
+ * <p>Re: persistence, the strategy is:
+ *
+ * <p>1. Each federation creates a persistent and a temporary exchange, except the LOCAL_FEDERATION
+ * on the local broker, which only creates a temporary exchange.
+ *
+ * <p>2. Each session scope is a channel to the default federation's exchange - persistent for
+ * non-local brokers, temporary otherwise.
+ *
+ * <p>3. Each context scope is a channel to an exchange whose persistence is linked to the digital
+ * twin's configuration. If the latter is persistent, the exchange is also persistent.
+ *
+ * <p>Currently, there is one exchange per federation and all queues are created in it, which is
+ * incompatible with these specs as the exchange and the queue's persistence must be consistent.
+ * Must create an exchange per context scope. ALSO: check logic at close() - first, check if it's
+ * called on delete action or close action. If delete, currently calling queueDelete
+ * indiscriminately, which is wrong. If non-persistent, must close queue AND exchange. If
+ * persistent, must close but not delete.
  */
 public class AMQPChannel {
 
   private final String brokerUri;
-  private final String queue;
-  private final String exchangeName;
+  private final String exchangeId;
   private final org.integratedmodelling.klab.api.services.runtime.Channel klabChannel;
+  private final Federation federation;
   private ConnectionFactory connectionFactory;
   private Connection connection;
-  private Channel channel;
+  private Channel amqpChannel;
   private boolean connected = false;
   private final Consumer<Message> messageConsumer;
   private String consumerQueue;
@@ -37,28 +55,29 @@ public class AMQPChannel {
   private boolean online = false;
   private String channelTag;
   private Collection<Message.Queue> queues;
-  private boolean federationWide = false;
 
   /**
    * Creates a new AMQPChannel with the specified federation and queue.
    *
    * @param federation the federation containing the broker URI
-   * @param queue the queue name
+   * @param exchangeId the exchange name (scope ID for contexts, federation ID for user scopes. Null
+   *     can be passed but will cause an inoperative channel)
    */
   public AMQPChannel(
       Federation federation,
-      String queue,
+      String exchangeId,
       org.integratedmodelling.klab.api.services.runtime.Channel channel,
       Consumer<Message> messageConsumer) {
     this.brokerUri = federation.getBroker();
-    this.queue = queue;
-    this.exchangeName = federation.getId() + ".exchange";
+    this.exchangeId = exchangeId;
+    this.federation = federation;
     this.messageConsumer = messageConsumer;
     this.klabChannel = channel;
-    if (queue == null || channel == null) {
+    if (exchangeId == null
+        || channel == null
+        || (klabChannel instanceof Scope scope && scope.getType() == Scope.Type.SESSION)) {
       this.online = false;
     } else {
-      this.federationWide = queue.equals(federation.getId());
       this.online = connect();
     }
   }
@@ -73,33 +92,44 @@ public class AMQPChannel {
    * @return true if the connection was successful, false otherwise
    */
   private boolean connect() {
+
+    // initialize for the federation. If we are a context, refine later
+    var persistence = Federation.LOCAL_FEDERATION_ID.equals(federation.getId()) ? 1 : 2;
+
     try {
       // Create connection factory
       connectionFactory = new ConnectionFactory();
       connectionFactory.setUri(brokerUri);
 
+      if (klabChannel instanceof ContextScope contextScope) {
+        var configuration = contextScope.getConfiguration();
+        if (configuration != null
+            && persistence == 2
+            && !configuration.getPersistence().persistent) {
+          persistence = 1;
+        }
+      }
+
       // Create connection and channel
       connection = connectionFactory.newConnection();
-      channel = connection.createChannel();
-      channelTag = channel.hashCode() + "";
+      amqpChannel = connection.createChannel();
+      channelTag = amqpChannel.hashCode() + "";
       this.props =
           new AMQP.BasicProperties.Builder()
               .headers(Map.of("channelId", channelTag))
-              .deliveryMode(2) // persistent
+              .deliveryMode(persistence) // persistent
               .contentType("text/plain")
               .build();
 
       // Declare a fanout exchange
-      // FIXME either switch to a direct exchange or refactor to have just one fanout exchange per
-      //  user scope
-      channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT, true);
+      amqpChannel.exchangeDeclare(exchangeId, BuiltinExchangeType.FANOUT, persistence == 2);
 
       connected = true;
       // Create a unique queue for this consumer
-      consumerQueue = channel.queueDeclare().getQueue();
+      consumerQueue = amqpChannel.queueDeclare().getQueue();
 
       // Bind the queue to the exchange
-      channel.queueBind(consumerQueue, exchangeName, queue);
+      amqpChannel.queueBind(consumerQueue, exchangeId, consumerQueue);
 
       if (messageConsumer != null) {
 
@@ -107,13 +137,16 @@ public class AMQPChannel {
             (consumerTag, delivery) -> {
               try {
 
+                Logging.INSTANCE.info("DIO CARBONARO " + delivery.getBody());
+
                 // filter messages from self. TODO this may need configuration
-                Map<String, Object> headers = delivery.getProperties().getHeaders();
-                if (headers != null && headers.containsKey("channelId")) {
-                  if (channelTag.equals(headers.get("channelId").toString())) {
-                    return;
-                  }
-                }
+                //                Map<String, Object> headers =
+                // delivery.getProperties().getHeaders();
+                //                if (headers != null && headers.containsKey("channelId")) {
+                //                  if (channelTag.equals(headers.get("channelId").toString())) {
+                //                    return;
+                //                  }
+                //                }
 
                 // Parse the message from JSON
                 Message message =
@@ -132,7 +165,7 @@ public class AMQPChannel {
                   if (!klabChannel.getDispatchId().equals(message.getDispatchId())) {
                     return;
                   }
-                } else if (!federationWide && !message.getDispatchId().equals(queue)) {
+                } else if (!message.getDispatchId().equals(exchangeId)) {
                   return;
                 }
 
@@ -144,12 +177,12 @@ public class AMQPChannel {
                         + "\n"
                         + new String(delivery.getBody(), StandardCharsets.UTF_8)
                         + "\nqueue="
-                        + queue);
+                        + consumerQueue);
               }
             };
 
         // Start consuming messages from the unique queue
-        channel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
+        amqpChannel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
       }
 
       return true;
@@ -161,7 +194,7 @@ public class AMQPChannel {
               + "\n"
               + brokerUri
               + "\nqueue="
-              + queue);
+              + consumerQueue);
       return false;
     }
   }
@@ -190,9 +223,9 @@ public class AMQPChannel {
     try {
       // Convert message to JSON and send to exchange
       // START: Method using routingKey parameter
-      channel.basicPublish(
-          exchangeName,
-          queue,
+      amqpChannel.basicPublish(
+          exchangeId,
+          consumerQueue,
           props,
           Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
       // END: Method using routingKey parameter
@@ -207,12 +240,12 @@ public class AMQPChannel {
 
   /** Closes the connection to the AMQP broker. */
   public void close() {
-    if (channel != null) {
+    if (amqpChannel != null) {
       try {
         if (consumerQueue != null) {
-          channel.queueDelete(consumerQueue);
+          amqpChannel.queueDelete(consumerQueue);
         }
-        channel.close();
+        amqpChannel.close();
       } catch (IOException | TimeoutException e) {
         Logging.INSTANCE.error("Error closing channel: " + e.getMessage());
       }
