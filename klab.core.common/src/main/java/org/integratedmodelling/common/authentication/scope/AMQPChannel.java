@@ -68,6 +68,7 @@ public class AMQPChannel {
       String exchangeId,
       org.integratedmodelling.klab.api.services.runtime.Channel channel,
       Consumer<Message> messageConsumer) {
+
     this.brokerUri = federation.getBroker();
     this.exchangeId = exchangeId;
     this.federation = federation;
@@ -79,6 +80,12 @@ public class AMQPChannel {
       this.online = false;
     } else {
       this.online = connect();
+      Utils.DebugFile.println(
+          "NEW CHANNEL FOR "
+              + channel.getClass().getSimpleName()
+              + ": exchangeId="
+              + exchangeId
+              + "");
     }
   }
 
@@ -138,9 +145,8 @@ public class AMQPChannel {
             (consumerTag, delivery) -> {
               try {
                 // Do not process our own messages (identified by channelId header)
-                Map<String, Object> headers = delivery.getProperties() != null
-                    ? delivery.getProperties().getHeaders()
-                    : null;
+                Map<String, Object> headers =
+                    delivery.getProperties() != null ? delivery.getProperties().getHeaders() : null;
                 if (headers != null) {
                   Object senderId = headers.get("channelId");
                   if (senderId != null && channelTag.equals(String.valueOf(senderId))) {
@@ -209,6 +215,15 @@ public class AMQPChannel {
       Logging.INSTANCE.error("Cannot post message: not connected to broker");
       return;
     }
+
+    Utils.DebugFile.println(
+        "    "
+            + klabChannel.getClass().getSimpleName()
+            + " POSTING  "
+            + message.getMessageType()
+            + " TO exchangeId="
+            + exchangeId
+            + "");
 
     try {
       // Convert message to JSON and send to exchange
