@@ -119,6 +119,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       case SESSION -> {}
       case CONTEXT -> {}
       case USER -> {}
+      case SERVICE -> {}
       default ->
           throw new KlabValidationException(
               "Cannot validate a digital twin configuration against a scope of type: "
@@ -274,7 +275,6 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     if (descriptor.getServiceUrl() != null) {
       this.serviceUrl = descriptor.getServiceUrl();
     }
-
   }
 
   @Override

@@ -144,7 +144,10 @@ public class RuntimeServerController {
   @PostMapping(value = ServicesAPI.RUNTIME.CONNECT)
   public @ResponseBody DigitalTwin.Configuration connectToDigitalTwin(
       Principal principal,
-      @Parameter(description = "Digital twin configuration") @RequestBody ScopeRequest request) {
+      @Parameter(description = "Digital twin configuration") @RequestBody ScopeRequest request,
+      @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
+          Collection<Message.Queue> queuesHeader,
+      HttpServletResponse response) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
@@ -158,6 +161,27 @@ public class RuntimeServerController {
       }
       if (ret instanceof ServiceContextScope serviceContextScope) {
         serviceContextScope.setHostServiceId(runtimeService.klabService().serviceId());
+        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+        if (federation != null) {
+
+          if (queuesHeader == null || queuesHeader.isEmpty()) {
+            queuesHeader = ret.defaultQueues();
+          }
+
+          var implementedQueues =
+              serviceContextScope.setupMessaging(
+                  federation, request.getConfiguration().getId(), queuesHeader);
+
+          Logging.INSTANCE.info(
+              "Queues set up for context "
+                  + request.getConfiguration().getId()
+                  + ": "
+                  + implementedQueues
+                  + " on context scope");
+
+          response.setHeader(
+              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
+        }
       }
 
       return ret.getConfiguration();

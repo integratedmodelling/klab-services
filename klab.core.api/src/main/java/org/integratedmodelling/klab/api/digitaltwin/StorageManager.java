@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 
 /**
  * The state storage is a persistent store of state storage data for the digital twin. Each digital
@@ -25,6 +26,14 @@ public interface StorageManager {
    * @return the storage for the passed observation
    */
   Storage getStorage(Observation observation);
+
+  /**
+   * Delete the storage for the passed digital twin. Should only managed by the service at admin
+   * level.
+   *
+   * @param digitalTwin
+   */
+  void deleteStorage(DigitalTwin.Configuration digitalTwin, ServiceScope scope);
 
   /**
    * Create storage for the passed observation, using the observation's scale and ID and honoring

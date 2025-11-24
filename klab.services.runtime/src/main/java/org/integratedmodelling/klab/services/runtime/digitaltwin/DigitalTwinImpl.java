@@ -585,6 +585,11 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
+  public boolean isClient() {
+    return true;
+  }
+
+  @Override
   public void dispose() {
     this.knowledgeGraph.deleteContext();
     this.storageManager.clear();

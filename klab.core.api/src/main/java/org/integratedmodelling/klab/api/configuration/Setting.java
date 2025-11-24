@@ -98,6 +98,16 @@ public enum Setting {
       "If false, no remote components will be loaded when requested, relying only on those explicitly installed",
       Boolean.class,
       true),
+  DIGITAL_TWIN_TIMEOUT_MINUTES(
+      Page.RUNTIME,
+      "Maximum idle lifetime in minutes for a digital twin configured to be deleted on timeout",
+      Integer.class,
+      60),
+  DIGITAL_TWIN_REINITIALIZATION_TIMEOUT_MINUTES(
+      Page.RUNTIME,
+      "Maximum idle lifetime in minutes for a digital twin configured to be reinitialized on timeout",
+      Integer.class,
+      120),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",

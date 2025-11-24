@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -10,8 +11,10 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -55,10 +58,18 @@ public class StorageManagerImpl implements StorageManager {
 
   private boolean recordHistogram = true;
 
+  // Called to remove any orphan files from disk.
+  public static void removeStorage(ContextInfo scope) {
+    var workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getId());
+    if (workspace.isDirectory()) {
+      Utils.Files.deleteQuietly(workspace);
+    }
+  }
+
   public StorageManagerImpl(RuntimeService service, ServiceContextScope scope) {
     // choose the mm files, parallelism level and the floating point representation
     this.service = service;
-    this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
+    this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getId());
     this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
     this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
     this.longBackupFile = new File(this.workspace + File.separator + "lstorage.bin");
@@ -185,6 +196,13 @@ public class StorageManagerImpl implements StorageManager {
           "cannot create storage: no storage found for " + observation);
     }
     return ret;
+  }
+
+  @Override
+  public void deleteStorage(DigitalTwin.Configuration digitalTwin, ServiceScope serviceScope) {
+    // remove any persisted data; clear caches related to a DT
+    storage.values().forEach(s -> s.close(serviceScope));
+    storage.clear();
   }
 
   @Override

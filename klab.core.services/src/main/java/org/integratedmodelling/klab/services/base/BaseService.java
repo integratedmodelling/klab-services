@@ -12,6 +12,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
@@ -86,6 +88,7 @@ public abstract class BaseService implements KlabService {
   protected Settings settings;
   protected Settings settingsForSlaveServices;
   private Identity identity;
+  private ScheduledExecutorService schedule = Executors.newScheduledThreadPool(1);
 
   protected BaseService(
       AbstractServiceDelegatingScope scope,

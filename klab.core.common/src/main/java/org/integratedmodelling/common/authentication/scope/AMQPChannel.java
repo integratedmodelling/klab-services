@@ -79,20 +79,20 @@ public class AMQPChannel {
         || channel == null
         || (klabChannel instanceof Scope scope && scope.getType() == Scope.Type.SESSION)) {
       this.online = false;
-//      Utils.DebugFile.println(
-//          "NO CHANNEL FOR "
-//              + channel.getClass().getSimpleName()
-//              + " in "
-//              + Klab.INSTANCE.getExecutionContext());
+      //      Utils.DebugFile.println(
+      //          "NO CHANNEL FOR "
+      //              + channel.getClass().getSimpleName()
+      //              + " in "
+      //              + Klab.INSTANCE.getExecutionContext());
     } else {
       this.online = connect();
-//      Utils.DebugFile.println(
-//          "NEW CHANNEL FOR "
-//              + channel.getClass().getSimpleName()
-//              + ": exchangeId="
-//              + exchangeId
-//              + " in "
-//              + Klab.INSTANCE.getExecutionContext());
+      //      Utils.DebugFile.println(
+      //          "NEW CHANNEL FOR "
+      //              + channel.getClass().getSimpleName()
+      //              + ": exchangeId="
+      //              + exchangeId
+      //              + " in "
+      //              + Klab.INSTANCE.getExecutionContext());
     }
   }
 
@@ -143,7 +143,8 @@ public class AMQPChannel {
       amqpChannel.exchangeDeclare(exchangeId, BuiltinExchangeType.FANOUT, persistence == 2);
 
       connected = true;
-      // Create a unique queue for this consumer
+      // Create a unique queue for this consumer. This should delete itself. Not sure if we should
+      // use expiration
       consumerQueue = amqpChannel.queueDeclare().getQueue();
 
       // Bind the queue to the exchange
@@ -227,14 +228,14 @@ public class AMQPChannel {
       return;
     }
 
-//    Utils.DebugFile.println(
-//        klabChannel.getClass().getSimpleName()
-//            + " POSTING  "
-//            + message.getMessageType()
-//            + " TO exchangeId="
-//            + exchangeId
-//            + " on "
-//            + Klab.INSTANCE.getExecutionContext());
+    //    Utils.DebugFile.println(
+    //        klabChannel.getClass().getSimpleName()
+    //            + " POSTING  "
+    //            + message.getMessageType()
+    //            + " TO exchangeId="
+    //            + exchangeId
+    //            + " on "
+    //            + Klab.INSTANCE.getExecutionContext());
 
     try {
       // Convert message to JSON and send to exchange
@@ -260,6 +261,10 @@ public class AMQPChannel {
       try {
         if (consumerQueue != null) {
           amqpChannel.queueDelete(consumerQueue);
+        }
+        if (klabChannel instanceof ContextScope contextScope
+            && !contextScope.getDigitalTwin().isClient()) {
+          amqpChannel.exchangeDelete(exchangeId);
         }
         amqpChannel.close();
       } catch (IOException | TimeoutException e) {

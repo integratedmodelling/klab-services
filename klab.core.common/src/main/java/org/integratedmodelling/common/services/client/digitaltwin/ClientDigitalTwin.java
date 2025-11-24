@@ -163,6 +163,11 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
+  public boolean isClient() {
+    return true;
+  }
+
+  @Override
   public long getParentId() {
     return parentId;
   }

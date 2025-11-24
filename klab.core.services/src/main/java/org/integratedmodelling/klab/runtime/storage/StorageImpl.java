@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
 
@@ -86,6 +87,10 @@ public class StorageImpl implements Storage {
             case INTEGER, KEYED, BOOLEAN -> storage.getIntBuffer(shard.getGeometry().size());
             case LONG -> storage.getLongBuffer(shard.getGeometry().size());
           };
+    }
+
+    public void close() {
+      this.data.close();
     }
   }
 
@@ -315,6 +320,13 @@ public class StorageImpl implements Storage {
   @Override
   public DataKey getKey() {
     return dataKey;
+  }
+
+  @Override
+  public void close(ServiceScope serviceScope) {
+    // TODO remove all buffers
+    shardStorage.values().forEach(shardStorage1 -> shardStorage1.close());
+    shardStorage.clear();
   }
 
   public static void main(String[] args) {

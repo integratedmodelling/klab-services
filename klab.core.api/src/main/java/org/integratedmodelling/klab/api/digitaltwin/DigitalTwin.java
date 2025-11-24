@@ -305,6 +305,13 @@ public interface DigitalTwin extends RuntimeAsset {
   Configuration getOptions();
 
   /**
+   * Important for cleanup. Only service-side DTs that are hosted locally should return false here.
+   *
+   * @return
+   */
+  boolean isClient();
+
+  /**
    * Get a new transaction to make changes in the knowledge graph. Nothing is modified until {@link
    * Transaction#commit()} is invoked on the root-level transaction and returns true.
    *

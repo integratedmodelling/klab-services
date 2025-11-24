@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 
 /**
  * Base storage providing only general methods. There is one Storage object per observation, managed
@@ -238,4 +239,11 @@ public interface Storage {
    * @return the data key, or null.
    */
   DataKey getKey();
+
+  /**
+   * Admin-only: destroy any trace of storage and leave
+   *
+   * @param serviceScope
+   */
+  void close(ServiceScope serviceScope);
 }

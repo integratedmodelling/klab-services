@@ -10,6 +10,7 @@ import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
+import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
@@ -115,6 +116,8 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     stopped.set(true);
     booted.set(false);
+
+    ClientScopeManager.INSTANCE.close();
 
     return true;
   }

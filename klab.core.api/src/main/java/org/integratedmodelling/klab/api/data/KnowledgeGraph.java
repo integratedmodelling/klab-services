@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -96,7 +97,7 @@ public interface KnowledgeGraph {
      */
     Set<Triple<Long, Long, String>> getDeletedLinks();
 
-      Set<Long> getModifiedAssets();
+    Set<Long> getModifiedAssets();
   }
 
   /**
@@ -298,6 +299,15 @@ public interface KnowledgeGraph {
    * @return a list of matching IDs and creation timestamps
    */
   List<ContextInfo> getExistingContexts(UserScope scope);
+
+  /**
+   * Admin-only: delete the knowledge related to a particular scope. The lifetime of the digital
+   * twin is manage through {@link ContextScope#close()} and the persistence configuration: this
+   * should only happen at service side and throw an exception if called on the client.
+   *
+   * @param contextScope
+   */
+  void deleteContext(ContextInfo contextScope, ServiceScope serviceScope);
 
   /**
    * Clear the knowledge graph - if contextualized, clear all the assets linked to the context,

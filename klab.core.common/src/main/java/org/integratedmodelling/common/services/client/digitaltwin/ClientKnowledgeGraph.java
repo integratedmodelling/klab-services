@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
@@ -389,6 +390,12 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {
     return List.of();
+  }
+
+  @Override
+  public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
+    throw new KlabIllegalStateException(
+        "Admin operations not allowed on the client-side knowledge graph");
   }
 
   @Override

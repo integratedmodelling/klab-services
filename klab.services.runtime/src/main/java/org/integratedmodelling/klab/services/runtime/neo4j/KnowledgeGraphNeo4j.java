@@ -530,6 +530,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), userScope);
   }
 
+  @Override
+  public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
+    query(Queries.REMOVE_CONTEXT, Map.of("contextId", contextScope.getId()), serviceScope);
+  }
+
   /**
    * @param query
    * @param requiredClass
@@ -1396,6 +1401,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 params,
                 scope);
           }
+          case ServiceScope serviceScope -> query("match(c:Context) return c", Map.of(), scope);
+
           default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
         };
 

@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.net.http.HttpClient;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -28,6 +29,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
@@ -41,10 +43,12 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
+import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -65,6 +69,8 @@ public class RuntimeService extends BaseService
   private RuntimeConfiguration configuration;
   private KnowledgeGraphNeo4j knowledgeGraph;
   private SystemLauncher systemLauncher;
+  private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
   public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
@@ -122,38 +128,102 @@ public class RuntimeService extends BaseService
 
     Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
 
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceInitializing,
-    //            capabilities(serviceScope()).toString());
-
     if (createMainKnowledgeGraph()) {
-
       // TODO internal libraries
       getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime");
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
-      //      serviceScope()
-      //          .send(
-      //              Message.MessageClass.ServiceLifecycle,
-      //              Message.MessageType.ServiceAvailable,
-      //              capabilities(serviceScope()));
-    } else {
-
-      //      serviceScope()
-      //          .send(
-      //              Message.MessageClass.ServiceLifecycle,
-      //              Message.MessageType.ServiceUnavailable,
-      //              capabilities(serviceScope()));
     }
   }
 
   @Override
   public boolean operationalizeService() {
-    // nothing to do here
+    // start the timed DT maintenance process
+    Logging.INSTANCE.info("Starting scheduled DT maintenance thread");
+    scheduler.scheduleAtFixedRate(
+        () -> {
+          dtScheduledMaintenance();
+        },
+        0,
+        5,
+        TimeUnit.MINUTES);
+
     return true;
+  }
+
+  private void dtScheduledMaintenance() {
+    for (var session : getSessionInfo(serviceScope())) {
+      for (var context : session.getContexts()) {
+        checkForOrphanContext(context);
+      }
+    }
+  }
+
+  private void checkForOrphanContext(ContextInfo context) {
+    Logging.INSTANCE.info(
+        "Checking for orphan context "
+            + context.getName()
+            + "/"
+            + context.getId()
+            + " "
+            + context.getPersistence()
+            + " created "
+            + TimeInstant.create(context.getCreationTime())
+            + " idle "
+            + context.getIdleTimeMs());
+
+    if (!context.getPersistence().persistent) {
+      var orphan = false;
+      var timeout = false;
+      var reinit = false;
+      var maxIdleTime =
+          settings().get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class)
+              * TimeUnit.MINUTES.toMillis(1);
+      var maxIdleReinitTime =
+          settings().get(Setting.DIGITAL_TWIN_REINITIALIZATION_TIMEOUT_MINUTES, Integer.class)
+              * TimeUnit.MINUTES.toMillis(1);
+      var existingScope = getScopeManager().getScope(context.getId(), ServiceContextScope.class);
+      if (existingScope == null) {
+        orphan = true;
+      } else if (context.getPersistence() == Persistence.IDLE_TIMEOUT) {
+        timeout = context.getIdleTimeMs() > maxIdleTime;
+      } else if (context.getPersistence() == Persistence.REINITIALIZED_ON_TIMEOUT) {
+        reinit = context.getIdleTimeMs() > maxIdleReinitTime;
+      }
+
+      final boolean horphan = orphan;
+      if (orphan || timeout) {
+        executorService.submit(
+            () -> {
+              Logging.INSTANCE.info(
+                  "Orphan context "
+                      + context.getName()
+                      + "/"
+                      + context.getId()
+                      + " being removed due to "
+                      + (horphan ? "being orphaned" : "inactivity"));
+              if (existingScope != null) {
+                existingScope.close();
+              } else {
+                // yank it off the knowledge graph
+                knowledgeGraph.deleteContext(context, serviceScope());
+                StorageManagerImpl.removeStorage(context);
+              }
+            });
+      } else if (reinit) {
+        executorService.submit(
+            () -> {
+              Logging.INSTANCE.info(
+                  "Reinitializing context "
+                      + context.getName()
+                      + "/"
+                      + context.getId()
+                      + " due to inactivity");
+              existingScope.reinitialize();
+            });
+      }
+    }
   }
 
   @Override
@@ -173,11 +243,6 @@ public class RuntimeService extends BaseService
       }
     }
 
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceUnavailable,
-    //            capabilities(serviceScope()));
     if (systemLauncher != null) {
       systemLauncher.shutdown();
     }

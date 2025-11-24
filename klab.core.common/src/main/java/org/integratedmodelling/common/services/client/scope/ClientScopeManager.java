@@ -110,4 +110,8 @@ public enum ClientScopeManager {
   public void unregister(ClientSessionScope clientSessionScope) {
     scopes.remove(clientSessionScope.getId());
   }
+
+  public void close() {
+    scopes.values().forEach(ClientSessionScope::close);
+  }
 }

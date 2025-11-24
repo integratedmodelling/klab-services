@@ -772,4 +772,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.currentTransaction.fail(null);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
+
+  /** Reinitialize a context scope after a timeout if so configured. */
+  public void reinitialize() {
+    // TODO zap the KG and all caches; leave a trace somewhere for provenance.
+  }
 }
