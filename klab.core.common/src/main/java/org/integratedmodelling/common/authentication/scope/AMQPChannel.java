@@ -129,46 +129,36 @@ public class AMQPChannel {
       consumerQueue = amqpChannel.queueDeclare().getQueue();
 
       // Bind the queue to the exchange
-      amqpChannel.queueBind(consumerQueue, exchangeId, consumerQueue);
+      // For FANOUT exchanges the routing key is ignored; use empty string for clarity
+      amqpChannel.queueBind(consumerQueue, exchangeId, "");
 
       if (messageConsumer != null) {
 
         DeliverCallback deliverCallback =
             (consumerTag, delivery) -> {
               try {
-
-                Logging.INSTANCE.info("DIO CARBONARO " + delivery.getBody());
-
-                // filter messages from self. TODO this may need configuration
-                //                Map<String, Object> headers =
-                // delivery.getProperties().getHeaders();
-                //                if (headers != null && headers.containsKey("channelId")) {
-                //                  if (channelTag.equals(headers.get("channelId").toString())) {
-                //                    return;
-                //                  }
-                //                }
+                // Do not process our own messages (identified by channelId header)
+                Map<String, Object> headers = delivery.getProperties() != null
+                    ? delivery.getProperties().getHeaders()
+                    : null;
+                if (headers != null) {
+                  Object senderId = headers.get("channelId");
+                  if (senderId != null && channelTag.equals(String.valueOf(senderId))) {
+                    return;
+                  }
+                }
 
                 // Parse the message from JSON
                 Message message =
                     Utils.Json.parseObject(
                         new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
 
-                // filter queue and identity route if needed
+                // Filter by subscribed queues if provided
                 if (queues != null && !queues.isEmpty() && !queues.contains(message.getQueue())) {
                   return;
                 }
 
-                if (klabChannel != null) {
-                  // filter identity route. FIXME use direct, so that AMQP does the job and not me,
-                  //  or leave fanout with one exchange per user scope. Early experiments were
-                  //  painful.
-                  if (!klabChannel.getDispatchId().equals(message.getDispatchId())) {
-                    return;
-                  }
-                } else if (!message.getDispatchId().equals(exchangeId)) {
-                  return;
-                }
-
+                // Broadcast semantics within the same exchange: no dispatchId filtering here
                 messageConsumer.accept(message);
               } catch (Exception e) {
                 Logging.INSTANCE.error(
@@ -225,7 +215,7 @@ public class AMQPChannel {
       // START: Method using routingKey parameter
       amqpChannel.basicPublish(
           exchangeId,
-          consumerQueue,
+          "", // FANOUT exchange ignores routing key; use empty for clarity
           props,
           Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
       // END: Method using routingKey parameter
