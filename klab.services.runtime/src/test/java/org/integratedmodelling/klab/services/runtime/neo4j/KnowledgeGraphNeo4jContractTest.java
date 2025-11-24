@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph.Query;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -186,7 +187,12 @@ public abstract class KnowledgeGraphNeo4jContractTest {
       return false;
     }
 
-    public boolean isReceiver() {
+      @Override
+      public Federation getFederation() {
+          return null;
+      }
+
+      public boolean isReceiver() {
       return false;
     }
 

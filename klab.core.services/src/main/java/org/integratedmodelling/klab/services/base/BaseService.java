@@ -22,6 +22,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -121,6 +122,14 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegistry = new ComponentRegistry(this, options);
+
+    Klab.INSTANCE.setExecutionContext(
+        new Klab.ExecutionContext(type, url) {
+          @Override
+          public String uptime() {
+            return Utils.Time.formatDuration(getBootTime(), System.currentTimeMillis());
+          }
+        });
   }
 
   public ComponentRegistry getComponentRegistry() {

@@ -675,42 +675,33 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return formatDuration(Duration.of(end - start, ChronoUnit.MILLIS));
     }
 
-    public static String formatDuration(Duration duration) {
-      StringBuffer ret = new StringBuffer();
-      if (duration.get(ChronoUnit.YEARS) > 0) {
-        ret.append(duration.get(ChronoUnit.YEARS)).append("yr");
-      }
-      if (duration.get(ChronoUnit.MONTHS) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ")
-            .append(duration.get(ChronoUnit.MONTHS))
-            .append("mo");
-      }
-      if (duration.get(ChronoUnit.DAYS) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ").append(duration.get(ChronoUnit.DAYS)).append("d");
-      }
-      if (duration.get(ChronoUnit.HOURS) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ")
-            .append(duration.get(ChronoUnit.HOURS))
-            .append("hr");
-      }
-      if (duration.get(ChronoUnit.MINUTES) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ")
-            .append(duration.get(ChronoUnit.MINUTES))
-            .append("min");
-      }
-      if (duration.get(ChronoUnit.SECONDS) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ")
-            .append(duration.get(ChronoUnit.SECONDS))
-            .append("sec");
-      }
-      if (duration.get(ChronoUnit.MILLIS) > 0) {
-        ret.append(ret.length() == 0 ? "" : " ")
-            .append(duration.get(ChronoUnit.MILLIS))
-            .append("ms");
+    public static String formatDuration(java.time.Duration duration) {
+      if (duration == null) {
+        return "0s";
       }
 
-      ;
-      return ret.toString();
+      // Duration does not support YEARS directly, so we calculate it from days
+      long days = duration.toDays();
+      long years = days / 365; // Approximation standard for durations
+      days = days % 365;
+
+      // Java 9+ methods to extract parts
+      long hours = duration.toHoursPart();
+      long minutes = duration.toMinutesPart();
+      long seconds = duration.toSecondsPart();
+      long milliseconds = duration.toMillisPart();
+
+      StringBuilder sb = new StringBuilder();
+      if (years > 0) sb.append(sb.length() == 0 ? "" : ", ").append(years).append("y");
+      if (days > 0) sb.append(sb.length() == 0 ? "" : ", ").append(days).append("d");
+      if (hours > 0) sb.append(sb.length() == 0 ? "" : ", ").append(hours).append("h");
+      if (minutes > 0) sb.append(sb.length() == 0 ? "" : ", ").append(minutes).append("m");
+      if (seconds > 0 || sb.length() == 0)
+        sb.append(sb.length() == 0 ? "" : ", ").append(seconds).append("s");
+      if (milliseconds > 0)
+        sb.append(sb.length() == 0 ? "" : ", ").append(milliseconds).append("ms");
+
+      return sb.toString().trim();
     }
   }
 

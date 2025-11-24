@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,6 +19,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -35,6 +37,58 @@ public enum Klab {
   INSTANCE;
 
   private static AtomicLong nextId = new AtomicLong(1L);
+  private ExecutionContext executionContext;
+
+  /** Defines the execution context. This should be available in all situations. */
+  public abstract static class ExecutionContext {
+
+    private long bootTime;
+    private KlabService.Type serviceType;
+    URL url;
+
+    public ExecutionContext(KlabService.Type serviceType, URL url) {
+      bootTime = System.currentTimeMillis();
+      this.serviceType = serviceType;
+      this.url = url;
+    }
+
+    public ExecutionContext(KlabService.Type serviceType) {
+      bootTime = System.currentTimeMillis();
+      this.serviceType = serviceType;
+    }
+
+    // TODO anything else
+
+    public abstract String uptime();
+
+    public long getBootTime() {
+      return bootTime;
+    }
+
+    public void setBootTime(long bootTime) {
+      this.bootTime = bootTime;
+    }
+
+    public KlabService.Type getServiceType() {
+      return serviceType;
+    }
+
+    public void setServiceType(KlabService.Type serviceType) {
+      this.serviceType = serviceType;
+    }
+
+    public URL getUrl() {
+      return url;
+    }
+
+    public void setUrl(URL url) {
+      this.url = url;
+    }
+
+    public String toString() {
+      return serviceType + " (" + (url == null ? "up " : (url + ", up ")) + uptime() + ")";
+    }
+  }
 
   /**
    * Error codes for all situations. These can (should) be passed, along with an ErrorContext, to
@@ -156,6 +210,15 @@ public enum Klab {
   private Configuration configuration;
 
   /**
+   * MUST be called by any service (including the Engine) upon startup
+   *
+   * @param executionContext
+   */
+  public void setExecutionContext(ExecutionContext executionContext) {
+    this.executionContext = executionContext;
+  }
+
+  /**
    * Call this in the static block of the core package configuration to ensure that the constructors
    * know how to do their job.
    *
@@ -167,6 +230,10 @@ public enum Klab {
 
   public Configuration getConfiguration() {
     return this.configuration;
+  }
+
+  public ExecutionContext getExecutionContext() {
+    return this.executionContext;
   }
 
   public Federation getFederationData(UserIdentity identity) {

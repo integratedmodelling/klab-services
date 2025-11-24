@@ -499,7 +499,10 @@ public class Utils {
         if (swap) {
           // always choose the local one
           var r1 = destination.get(r.getResourceUrn());
-          var choice = r1.isLocal() && r.isLocal() ? r : (r1.isLocal() ? r1 : r);
+          var choice =
+              (r1 != null && r1.isLocal() && r.isLocal())
+                  ? r
+                  : ((r1 != null && r1.isLocal()) ? r1 : r);
           destination.put(r.getResourceUrn(), choice);
         }
       }

@@ -52,6 +52,7 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEm
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 

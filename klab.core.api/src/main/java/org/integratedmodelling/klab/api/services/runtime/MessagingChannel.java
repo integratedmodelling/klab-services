@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.identities.Federation;
+
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -34,6 +36,14 @@ public interface MessagingChannel extends Channel {
    * @return
    */
   boolean isSender();
+
+  /**
+   * Channels instrumented for messaging are part of a federation. This is not set in stone at the
+   * moment, so it may return null legitimately.
+   *
+   * @return
+   */
+  Federation getFederation();
 
   /**
    * True if the scope is connected to one or more queues and is set up for receiving messages.

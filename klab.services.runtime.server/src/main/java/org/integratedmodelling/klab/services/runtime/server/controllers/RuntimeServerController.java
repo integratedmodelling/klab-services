@@ -435,24 +435,27 @@ public class RuntimeServerController {
         if (request.getBehaviorUrn() != null) {
           // TODO resolve the behavior with all resources services
         }
-        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
         var id = runtimeService.klabService().declareSessionScope(ret, userScope, behavior);
-        if (federation != null) {
-          if (queuesHeader == null) {
-            queuesHeader = ret.defaultQueues();
-          }
 
-          var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
-
-          Logging.INSTANCE.info(
-              "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
-
-          if (!ret.initializeAgents(id)) {
-            Logging.INSTANCE.warn("agent initialization failed in session creation");
-          }
-          response.setHeader(
-              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
-        }
+        //        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+        //        if (federation != null) {
+        //          if (queuesHeader == null) {
+        //            queuesHeader = ret.defaultQueues();
+        //          }
+        //
+        //          var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
+        //
+        //          Logging.INSTANCE.info(
+        //              "Queues set up for session " + id + ": " + implementedQueues + " on session
+        // scope");
+        //
+        //          if (!ret.initializeAgents(id)) {
+        //            Logging.INSTANCE.warn("agent initialization failed in session creation");
+        //          }
+        //          response.setHeader(
+        //              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues,
+        // ", "));
+        //        }
         return id;
       } else {
         Logging.INSTANCE.error("Session instantiation failed: no valid user scope for request");
@@ -528,15 +531,20 @@ public class RuntimeServerController {
 
           // this creates the DT and registers the scope
           var id = runtimeService.klabService().declareContextScope(ret, sessionScope, userScope);
-          var queuesAvailable = ret.setupQueues(queuesHeader);
-          Logging.INSTANCE.info("Queues set up for digital twin " + id + ": " + queuesAvailable);
+          if (federation != null) {
+
+            var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
+
+            Logging.INSTANCE.info(
+                "Queues set up for session " + id + ": " + implementedQueues + " on context scope");
+
+            response.setHeader(
+                ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
+          }
 
           if (!ret.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");
           }
-
-          response.setHeader(
-              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(queuesAvailable, ", "));
 
           return id;
         }

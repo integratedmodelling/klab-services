@@ -93,6 +93,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.currentTransaction = parent.currentTransaction;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
+    copyMessagingSetup(parent);
   }
 
   @Override
@@ -647,32 +648,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       }
     }
 
-//    if (observation.getId() > 0) {
+    //    if (observation.getId() > 0) {
 
-      var query =
-          digitalTwin
-              .getKnowledgeGraph()
-              .query(Observation.class, this)
-              .source(contextObservation == null ? this : contextObservation)
-              .along(GraphModel.Relationship.HAS_CHILD);
-      if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
-        query =
-            query.where(
-                "instanceUrn",
-                KnowledgeGraph.Query.Operator.EQUALS,
-                observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
-      } else {
-        query =
-            query.where(
-                "semantics",
-                KnowledgeGraph.Query.Operator.EQUALS,
-                observation.getObservable().asConcept().getUrn());
-      }
-      var ret = query.run(this);
-      return ret.isEmpty() ? null : ret.getFirst();
-//    }
-//
-//    return null;
+    var query =
+        digitalTwin
+            .getKnowledgeGraph()
+            .query(Observation.class, this)
+            .source(contextObservation == null ? this : contextObservation)
+            .along(GraphModel.Relationship.HAS_CHILD);
+    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+      query =
+          query.where(
+              "instanceUrn",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+    } else {
+      query =
+          query.where(
+              "semantics",
+              KnowledgeGraph.Query.Operator.EQUALS,
+              observation.getObservable().asConcept().getUrn());
+    }
+    var ret = query.run(this);
+    return ret.isEmpty() ? null : ret.getFirst();
+    //    }
+    //
+    //    return null;
   }
 
   @Override

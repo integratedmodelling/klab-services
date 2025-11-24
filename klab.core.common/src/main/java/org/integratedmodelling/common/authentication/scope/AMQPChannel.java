@@ -9,6 +9,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -78,15 +79,25 @@ public class AMQPChannel {
         || channel == null
         || (klabChannel instanceof Scope scope && scope.getType() == Scope.Type.SESSION)) {
       this.online = false;
+//      Utils.DebugFile.println(
+//          "NO CHANNEL FOR "
+//              + channel.getClass().getSimpleName()
+//              + " in "
+//              + Klab.INSTANCE.getExecutionContext());
     } else {
       this.online = connect();
-      Utils.DebugFile.println(
-          "NEW CHANNEL FOR "
-              + channel.getClass().getSimpleName()
-              + ": exchangeId="
-              + exchangeId
-              + "");
+//      Utils.DebugFile.println(
+//          "NEW CHANNEL FOR "
+//              + channel.getClass().getSimpleName()
+//              + ": exchangeId="
+//              + exchangeId
+//              + " in "
+//              + Klab.INSTANCE.getExecutionContext());
     }
+  }
+
+  public Federation getFederation() {
+    return federation;
   }
 
   public void filter(Collection<Message.Queue> queues) {
@@ -216,14 +227,14 @@ public class AMQPChannel {
       return;
     }
 
-    Utils.DebugFile.println(
-        "    "
-            + klabChannel.getClass().getSimpleName()
-            + " POSTING  "
-            + message.getMessageType()
-            + " TO exchangeId="
-            + exchangeId
-            + "");
+//    Utils.DebugFile.println(
+//        klabChannel.getClass().getSimpleName()
+//            + " POSTING  "
+//            + message.getMessageType()
+//            + " TO exchangeId="
+//            + exchangeId
+//            + " on "
+//            + Klab.INSTANCE.getExecutionContext());
 
     try {
       // Convert message to JSON and send to exchange

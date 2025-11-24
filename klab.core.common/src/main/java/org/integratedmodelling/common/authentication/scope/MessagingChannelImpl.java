@@ -51,6 +51,11 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   @Override
+  public Federation getFederation() {
+    return amqpChannel == null ? null : amqpChannel.getFederation();
+  }
+
+  @Override
   public Message send(Object... args) {
     if (this.sender && this.amqpChannel != null && this.amqpChannel.isOnline()) {
       // dispatch to queue if the queue is there

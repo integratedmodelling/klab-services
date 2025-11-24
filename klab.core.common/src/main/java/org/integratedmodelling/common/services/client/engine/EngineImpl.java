@@ -11,6 +11,7 @@ import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
@@ -28,7 +29,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
-import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /** */
@@ -137,6 +138,14 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public void boot() {
+
+    Klab.INSTANCE.setExecutionContext(
+        new Klab.ExecutionContext(KlabService.Type.ENGINE) {
+          @Override
+          public String uptime() {
+            return Utils.Time.formatDuration(getBootTime(), System.currentTimeMillis());
+          }
+        });
 
     if (this.defaultUser == null) {
       this.defaultUser = authenticate();

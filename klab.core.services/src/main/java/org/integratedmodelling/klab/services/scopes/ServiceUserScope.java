@@ -142,7 +142,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   protected ServiceUserScope(ServiceUserScope parent) {
     super(parent.user, parent.isSender(), parent.isReceiver());
-    copyMessagingSetup(parent);
+//    copyMessagingSetup(parent);
     this.service = parent.service;
     this.setHostServiceId(parent.getHostServiceId());
     this.user = parent.user;
