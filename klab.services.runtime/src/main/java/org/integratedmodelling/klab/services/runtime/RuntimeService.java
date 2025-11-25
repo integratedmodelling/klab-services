@@ -210,7 +210,7 @@ public class RuntimeService extends BaseService
               } else {
                 // yank it off the knowledge graph
                 knowledgeGraph.deleteContext(context, serviceScope());
-                StorageManagerImpl.removeStorage(context);
+                StorageManagerImpl.removeStorage(context, this);
               }
             });
       } else if (reinit) {

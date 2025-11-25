@@ -65,11 +65,13 @@ public class StorageManagerImpl implements StorageManager {
   private boolean recordHistogram = true;
 
   // Called to remove any orphan files from disk.
-  public static void removeStorage(ContextInfo scope) {
-    var workspace =
-        ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getConfiguration().getId());
-    if (workspace.isDirectory()) {
-      Utils.Files.deleteQuietly(workspace);
+  public static void removeStorage(ContextInfo scope, RuntimeService service) {
+    final var path =
+        BaseService.getConfigurationSubdirectory(
+            ((BaseService) service).startupOptions(), "storage");
+    final var storagePath = new File(path + File.separator + scope.getConfiguration().getId());
+    if (storagePath.isDirectory()) {
+      Utils.Files.deleteQuietly(storagePath);
     }
   }
 
@@ -348,6 +350,7 @@ public class StorageManagerImpl implements StorageManager {
           BaseService.getConfigurationSubdirectory(
               ((BaseService) baseService).startupOptions(), "storage");
       final var storagePath = new File(path + File.separator + contextScope.getId());
+      storagePath.mkdirs();
       final var outFile = new File(storagePath + File.separator + shard.getUrn() + ".dat");
       shardMaintenance.execute(
           () -> saveBufferArray(baseScanner.data, outFile, shard.getNativeType()));
