@@ -72,7 +72,14 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         for (var scanner :
             storage.scan(
                 event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
-          tasks.add(() -> run(event, scanner, contextScope));
+          tasks.add(
+              () -> {
+                var ok = run(event, scanner, contextScope);
+                if (ok) {
+                  storage.finalizeRun(scanner);
+                }
+                return ok;
+              });
         }
       } catch (Throwable t) {
         cause = t;

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -15,18 +16,22 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.ojalgo.array.BufferArray;
 import org.ojalgo.concurrent.Parallelism;
+import picocli.CommandLine;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -51,6 +56,7 @@ public class StorageManagerImpl implements StorageManager {
   private final int histogramBinSize = 20;
   private final Map<Observation, Storage> storage = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(0);
+  private final Executor shardMaintenance = Executors.newSingleThreadExecutor();
 
   public boolean isRecordHistogram() {
     return recordHistogram;
@@ -263,6 +269,88 @@ public class StorageManagerImpl implements StorageManager {
       p.store(new FileOutputStream(propertyFile), null);
     } catch (Exception e) {
       throw new KlabIOException(e);
+    }
+  }
+
+  public boolean saveBufferArray(BufferArray array, File file, Storage.Type type) {
+    try {
+      int elementSize = type.size();
+      FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
+      MappedByteBuffer buffer =
+          channel.map(FileChannel.MapMode.READ_WRITE, 0, array.count() * elementSize);
+      buffer.order(ByteOrder.nativeOrder());
+
+      for (long i = 0; i < array.count(); i++) {
+        switch (type) {
+          case FLOAT:
+            buffer.putFloat(array.get(i).floatValue());
+            break;
+          case DOUBLE:
+            buffer.putDouble(array.get(i).doubleValue());
+            break;
+          case LONG:
+            buffer.putLong(array.get(i).longValue());
+            break;
+          case INTEGER, KEYED:
+            buffer.putInt(array.get(i).intValue());
+            break;
+          case BOOLEAN:
+            buffer.put(array.get(i).byteValue());
+            break;
+        }
+      }
+      channel.close();
+    } catch (IOException e) {
+      contextScope.error("Error saving buffer array: " + e.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  public boolean loadBufferArray(BufferArray array, File file, Storage.Type type) {
+    try {
+      FileChannel channel = new RandomAccessFile(file, "r").getChannel();
+      MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+      buffer.order(ByteOrder.nativeOrder());
+
+      for (long i = 0; i < array.count(); i++) {
+        switch (type) {
+          case FLOAT:
+            array.set(i, buffer.getFloat());
+            break;
+          case DOUBLE:
+            array.set(i, buffer.getDouble());
+            break;
+          case LONG:
+            array.set(i, buffer.getLong());
+            break;
+          case INTEGER, KEYED:
+            array.set(i, buffer.getInt());
+            break;
+          case BOOLEAN:
+            array.set(i, buffer.get() != 0);
+            break;
+        }
+      }
+      channel.close();
+    } catch (IOException e) {
+      contextScope.error("Error loading buffer array: " + e.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  public void persistShard(Storage.Scanner scanner) {
+    if (scanner instanceof StorageImpl.BaseScanner baseScanner) {
+      final var shard = baseScanner.shard();
+      final var baseService = contextScope.getService(RuntimeService.class);
+      final var path =
+          BaseService.getConfigurationSubdirectory(
+              ((BaseService) baseService).startupOptions(), "storage");
+      final var storagePath = new File(path + File.separator + contextScope.getId());
+      final var outFile = new File(storagePath + File.separator + shard.getUrn() + ".dat");
+      shardMaintenance.execute(
+          () -> saveBufferArray(baseScanner.data, outFile, shard.getNativeType()));
     }
   }
 }

@@ -153,7 +153,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case ShardImpl buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.getPersistence().name());
-          ret.put("type", buffer.getShardingStrategy().getDataType().name());
+          ret.put("type", buffer.getNativeType().name());
           ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("size", buffer.getGeometry().size());
           ret.put("offset", buffer.getShardIndex());

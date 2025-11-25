@@ -41,6 +41,7 @@ public class ShardImpl implements Storage.Shard {
   private long parentTransientId; // manage
   private long parentId = -1; // TODO manage
   private Histogram histogram;
+  private Storage.Type nativeType;
 
   public ShardImpl() {
     geometry = null;
@@ -65,13 +66,15 @@ public class ShardImpl implements Storage.Shard {
       Data.ShardingStrategy shardingStrategy,
       int shardIndex,
       long timestamp,
-      Persistence persistence) {
+      Persistence persistence,
+      Storage.Type dataType) {
     this.geometry = geometry;
     this.shardingStrategy = shardingStrategy;
     this.shardIndex = shardIndex;
     this.timestamp = timestamp;
     this.urn = Utils.Names.fastName();
     this.persistence = persistence;
+    this.nativeType = dataType;
   }
 
   public static ShardImpl trivial(Storage.Type dataType) {
@@ -141,6 +144,15 @@ public class ShardImpl implements Storage.Shard {
 
   public String getUrn() {
     return urn;
+  }
+
+  @Override
+  public Storage.Type getNativeType() {
+    return nativeType;
+  }
+
+  public void setNativeType(Storage.Type nativeType) {
+    this.nativeType = nativeType;
   }
 
   public long getTimestamp() {

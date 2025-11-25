@@ -64,7 +64,12 @@ public class ScannerAdapters {
       return null;
     }
 
-    @Override
+      @Override
+      public Storage.Type getNativeType() {
+      return null;
+      }
+
+      @Override
     public long getId() {
       return 0;
     }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import java.io.File;
 import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -8,6 +9,8 @@ import com.dynatrace.dynahist.layout.Layout;
 import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
 import org.glassfish.grizzly.compression.lzma.impl.Base;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -214,7 +217,8 @@ public class StorageImpl implements Storage {
               nativeShardingStrategy,
               index++,
               timeStart,
-              scope.getConfiguration().getPersistence());
+              scope.getConfiguration().getPersistence(),
+              getNativeType());
 
       shardStorage.put(shard.getUrn(), new ShardStorage(shard, storageManager));
 
@@ -245,11 +249,12 @@ public class StorageImpl implements Storage {
     var st = shardStorage.get(((ShardImpl) shard).getUrn());
 
     return switch (shard.getShardingStrategy().getDataType()) {
-      case DOUBLE -> new LocalDoubleScanner(shard, st.data, st.histogram);
-      case FLOAT -> new LocalFloatScanner(shard, st.data, st.histogram);
+      case DOUBLE -> new LocalDoubleScanner((ShardImpl) shard, st.data, st.histogram);
+      case FLOAT -> new LocalFloatScanner((ShardImpl) shard, st.data, st.histogram);
       case INTEGER, KEYED, BOOLEAN ->
-          new LocalIntScanner(shard, st.data, st.histogram); // TODO needs to implement KEYED
-      case LONG -> new LocalLongScanner(shard, st.data, st.histogram);
+          new LocalIntScanner(
+              (ShardImpl) shard, st.data, st.histogram); // TODO needs to implement KEYED
+      case LONG -> new LocalLongScanner((ShardImpl) shard, st.data, st.histogram);
     };
   }
 
@@ -323,6 +328,13 @@ public class StorageImpl implements Storage {
   }
 
   @Override
+  public void finalizeRun(Scanner scanner) {
+    if (scope.getConfiguration().getPersistence().survivesShutdown) {
+      storageManager.persistShard(scanner);
+    }
+  }
+
+  @Override
   public void close(ServiceScope serviceScope) {
     // TODO remove all buffers
     shardStorage.values().forEach(shardStorage1 -> shardStorage1.close());
@@ -341,13 +353,14 @@ public class StorageImpl implements Storage {
 
   class BaseScanner implements Storage.Scanner {
 
-    protected final Shard shard;
+    protected final ShardImpl shard;
     protected final long size;
     protected final BufferArray data;
     protected final com.dynatrace.dynahist.Histogram histogram;
     protected long index = 0L;
 
-    public BaseScanner(Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+    public BaseScanner(
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       this.shard = shard;
       this.size = shard.getGeometry().size();
       this.data = data;
@@ -355,7 +368,7 @@ public class StorageImpl implements Storage {
     }
 
     @Override
-    public Storage.Shard shard() {
+    public ShardImpl shard() {
       return shard;
     }
 
@@ -379,7 +392,7 @@ public class StorageImpl implements Storage {
   class LocalDoubleScanner extends BaseScanner implements Storage.DoubleScanner {
 
     public LocalDoubleScanner(
-        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -405,7 +418,7 @@ public class StorageImpl implements Storage {
   class LocalFloatScanner extends BaseScanner implements Storage.FloatScanner {
 
     public LocalFloatScanner(
-        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -431,7 +444,7 @@ public class StorageImpl implements Storage {
   class LocalIntScanner extends BaseScanner implements Storage.IntScanner {
 
     public LocalIntScanner(
-        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -457,7 +470,7 @@ public class StorageImpl implements Storage {
   class LocalLongScanner extends BaseScanner implements Storage.LongScanner {
 
     public LocalLongScanner(
-        Shard shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 

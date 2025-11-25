@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -26,22 +24,36 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
  */
 public interface Storage {
 
+  //        if (array instanceof BufferArray.Float32) return 4;
+  //    if (array instanceof BufferArray.Float64) return 8;
+  //    if (array instanceof BufferArray.Int32) return 4;
+  //    if (array instanceof BufferArray.Int64) return 8;
+  //    if (array instanceof BufferArray.Int16) return 2;
+  //    if (array instanceof BufferArray.Int8) return 1;
+  //    throw new IllegalArgumentException("Unsupported buffer type: " + array.getClass());
+  //
   enum Type {
-    DOUBLE(true),
-    FLOAT(true),
-    INTEGER(true),
-    LONG(true),
-    KEYED(false),
-    BOOLEAN(false);
+    DOUBLE(true, 8),
+    FLOAT(true, 4),
+    INTEGER(true, 4),
+    LONG(true, 8),
+    KEYED(false, 4),
+    BOOLEAN(false, 1);
 
     private boolean number;
+    private int size;
 
-    Type(boolean number) {
+    Type(boolean number, int size) {
       this.number = number;
+      this.size = size;
     }
 
     public boolean isNumber() {
       return number;
+    }
+
+    public int size() {
+      return size;
     }
 
     public static Type defaultFor(Artifact.Type artifactType) {
@@ -172,6 +184,13 @@ public interface Storage {
      * @return
      */
     Histogram getHistogram();
+
+    /**
+     * Native type of the storage associated to the shard.
+     *
+     * @return
+     */
+    Storage.Type getNativeType();
   }
 
   /**
@@ -239,6 +258,14 @@ public interface Storage {
    * @return the data key, or null.
    */
   DataKey getKey();
+
+  /**
+   * Called after each shard's successful run to update internal indices and, if required, enqueue
+   * low-priority threads to persist a shard's storage.
+   *
+   * @param scanner
+   */
+  void finalizeRun(Scanner scanner);
 
   /**
    * Admin-only: destroy any trace of storage and leave
