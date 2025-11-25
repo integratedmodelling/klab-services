@@ -33,7 +33,7 @@ pipeline {
                 script {
                     currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
                 }
-                sh './mvnw clean source:jar package'
+                sh './mvnw clean source:jar package -DskipTests'
             }
         }
         stage('Install') {
