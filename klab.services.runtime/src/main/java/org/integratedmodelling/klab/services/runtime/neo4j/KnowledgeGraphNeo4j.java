@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -532,7 +533,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
-    query(Queries.REMOVE_CONTEXT, Map.of("contextId", contextScope.getId()), serviceScope);
+    query(
+        Queries.REMOVE_CONTEXT,
+        Map.of("contextId", contextScope.getConfiguration().getId()),
+        serviceScope);
   }
 
   /**
@@ -714,10 +718,61 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     for (var record : result.records()) {
       ContextInfo info = new ContextInfo();
-      info.setId(record.get("contextId").asString());
-      info.setName(record.get("contextName").asString());
+      //      info.setId(record.get("contextId").asString());
+      //      info.setName(record.get("contextName").asString());
       info.setCreationTime(record.get("startTime").asLong());
-      info.setServiceId(serviceId);
+      //      info.setServiceId(serviceId);
+      //      info.setPersistence(Persistence.valueOf(record.get("expiration").asString()));
+      info.setIdleTimeMs(System.currentTimeMillis() - record.get("lastUpdate").asLong());
+      //      info.setUser(record.get("user").asString());
+
+      //      info.setDescription(record.get("description").asString());
+
+      info.setConfiguration(
+          DigitalTwin.Configuration.builder()
+              .url(
+                  Utils.URLs.newURL(
+                      scope.getService(RuntimeService.class).getUrl()
+                          + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
+                              "{id}", record.get("id").toString())))
+              .id(record.get("id").toString())
+              .name(record.get("name").toString())
+              .serviceId(serviceId)
+              .owner(record.get("user").toString())
+              .description(record.get("description").toString())
+              .serverUrl(scope.getService(RuntimeService.class).getUrl())
+              .persistence(Persistence.valueOf(record.get("expiration").toString()))
+              .timeout(
+                  scope
+                      .getService(RuntimeService.class)
+                      .settings()
+                      .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class),
+                  TimeUnit.MINUTES)
+              .build()
+              .validate(scope));
+
+      //      var configuration = new ConfigurationImpl();
+      //      configuration.setPersistence(info.getPersistence());
+      //      configuration.setServiceId(info.getServiceId());
+      //      configuration.setDescription(info.getDescription());
+      //
+      // configuration.setAccessRights(ResourcePrivileges.create(record.get("rights").asString()));
+      //      configuration.setId(info.getId());
+      //      configuration.setCreationTime(info.getCreationTime());
+      //      configuration.setIdleTimeMs(info.getIdleTimeMs());
+      //      configuration.setServiceUrl(
+      //          Urls.create(scope.getService(RuntimeService.class).getUrl() + "/dt/" +
+      // info.getId()));
+      //      configuration.setName(info.getName());
+      //      configuration.setTimeout(
+      //          scope
+      //              .getService(RuntimeService.class)
+      //              .settings()
+      //              .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class));
+      //      configuration.setTimeoutUnit(TimeUnit.MINUTES);
+
+      // TODO something is probably missing
+
       // TODO the rest
       ret.add(info);
     }
@@ -1410,12 +1465,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     for (var context : adapt(contexts, Map.class, scope)) {
 
       ContextInfo contextInfo = new ContextInfo();
-      contextInfo.setId(context.get("id").toString());
+      //      contextInfo.setId(context.get("id").toString());
       contextInfo.setCreationTime((Long) context.get("created"));
-      contextInfo.setName(context.get("name").toString());
-      contextInfo.setUser(context.get("user").toString());
-      contextInfo.setDescription(context.get("description").toString());
-      contextInfo.setServiceId(serviceId);
+      contextInfo.setIdleTimeMs(System.currentTimeMillis() - (Long) context.get("lastUpdate"));
+
+      //      contextInfo.setName(context.get("name").toString());
+      //      contextInfo.setUser(context.get("user").toString());
+      //      contextInfo.setDescription(context.get("description").toString());
+      //      contextInfo.setServiceId(serviceId);
 
       contextInfo.setConfiguration(
           DigitalTwin.Configuration.builder()
@@ -1424,10 +1481,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                       scope.getService(RuntimeService.class).getUrl()
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get("id").toString())))
-              .id(contextInfo.getId())
-              .name(contextInfo.getName())
+              .id(context.get("id").toString())
+              .name(context.get("name").toString())
+              .serviceId(serviceId)
+              .owner(context.get("user").toString())
+              .description(context.get("description").toString())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(Persistence.valueOf(context.get("expiration").toString()))
+              .timeout(
+                  scope
+                      .getService(RuntimeService.class)
+                      .settings()
+                      .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class),
+                  TimeUnit.MINUTES)
               .build()
               .validate(scope));
 
@@ -1444,14 +1510,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     // collect sessions
     for (var context : contextInfos) {
-      var sessionId = Utils.Paths.getFirst(context.getId(), ".");
+      var sessionId = Utils.Paths.getFirst(context.getConfiguration().getId(), ".");
       var sessionInfo =
           sessionIds.computeIfAbsent(
               sessionId,
               (s) -> {
                 var ss = new SessionInfo();
                 ss.setId(s);
-                ss.setUsername(context.getUser());
+                ss.setUsername(context.getConfiguration().getOwner());
                 return ss;
               });
       sessionInfo.getContexts().add(context);

@@ -994,9 +994,9 @@ public enum KlabCLI {
                       + "."
                       + (++n)
                       + "|@. "
-                      + context.getName()
+                      + context.getConfiguration().getName()
                       + " ["
-                      + context.getId()
+                      + context.getConfiguration().getId()
                       + "]"));
       if (verbose) {}
     }

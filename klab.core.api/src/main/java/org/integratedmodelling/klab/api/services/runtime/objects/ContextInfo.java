@@ -3,30 +3,35 @@ package org.integratedmodelling.klab.api.services.runtime.objects;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
+/**
+ * Context information returned by the runtime upon request. Only containing the runtime data
+ * relative to current status, idle time etc., plus the Configuration object for the static data.
+ */
 public class ContextInfo {
 
-  private String name;
-  private String id;
-  private String description;
-  private String behavior;
+  //  private String name;
+  //  private String id;
+  //  private String description;
+  //  private String behavior;
   private long creationTime;
   private long idleTimeMs;
-  private Persistence persistence;
+  //  private Persistence persistence;
   private long creditsSoFar;
   private long observationCount;
   private long size;
-  private String user;
+  //  private String user;
   private DigitalTwin.Configuration configuration;
-  private String serviceId;
 
-  public String getBehavior() {
-    return behavior;
-  }
+  //  private String serviceId;
 
-  public void setBehavior(String behavior) {
-    this.behavior = behavior;
-  }
-
+  //  public String getBehavior() {
+  //    return behavior;
+  //  }
+  //
+  //  public void setBehavior(String behavior) {
+  //    this.behavior = behavior;
+  //  }
+  //
   public long getCreationTime() {
     return creationTime;
   }
@@ -43,22 +48,22 @@ public class ContextInfo {
     this.creditsSoFar = creditsSoFar;
   }
 
-  public Persistence getPersistence() {
-    return persistence;
-  }
-
-  public void setPersistence(Persistence expiration) {
-    this.persistence = expiration;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
+  //  public Persistence getPersistence() {
+  //    return persistence;
+  //  }
+  //
+  //  public void setPersistence(Persistence expiration) {
+  //    this.persistence = expiration;
+  //  }
+  //
+  //  public String getId() {
+  //    return id;
+  //  }
+  //
+  //  public void setId(String id) {
+  //    this.id = id;
+  //  }
+  //
   public long getIdleTimeMs() {
     return idleTimeMs;
   }
@@ -67,13 +72,14 @@ public class ContextInfo {
     this.idleTimeMs = idleTimeMs;
   }
 
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
+  //
+  //  public String getName() {
+  //    return name;
+  //  }
+  //
+  //  public void setName(String name) {
+  //    this.name = name;
+  //  }
 
   public long getObservationCount() {
     return observationCount;
@@ -91,13 +97,13 @@ public class ContextInfo {
     this.size = size;
   }
 
-  public String getUser() {
-    return user;
-  }
-
-  public void setUser(String user) {
-    this.user = user;
-  }
+  //  public String getUser() {
+  //    return user;
+  //  }
+  //
+  //  public void setUser(String user) {
+  //    this.user = user;
+  //  }
 
   public DigitalTwin.Configuration getConfiguration() {
     return configuration;
@@ -107,19 +113,19 @@ public class ContextInfo {
     this.configuration = configuration;
   }
 
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
+  //  public String getDescription() {
+  //    return description;
+  //  }
+  //
+  //  public void setDescription(String description) {
+  //    this.description = description;
+  //  }
+  //
+  //  public String getServiceId() {
+  //    return serviceId;
+  //  }
+  //
+  //  public void setServiceId(String serviceId) {
+  //    this.serviceId = serviceId;
+  //  }
 }

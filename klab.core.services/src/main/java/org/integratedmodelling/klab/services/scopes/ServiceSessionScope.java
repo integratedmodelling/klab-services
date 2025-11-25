@@ -123,7 +123,10 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
       for (var ss : runtime.getSessionInfo(this)) {
         if (ss.getId().equals(this.getId())) {
           for (var ctx : ss.getContexts()) {
-            var ctxScope = baseService.getScopeManager().getScope(ctx.getId(), ContextScope.class);
+            var ctxScope =
+                baseService
+                    .getScopeManager()
+                    .getScope(ctx.getConfiguration().getId(), ContextScope.class);
             if (ctxScope != null) {
               ret.add(ctxScope);
             }

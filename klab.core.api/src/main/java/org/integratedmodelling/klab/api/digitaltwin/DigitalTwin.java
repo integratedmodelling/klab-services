@@ -89,6 +89,13 @@ public interface DigitalTwin extends RuntimeAsset {
     TimeUnit getTimeoutUnit();
 
     /**
+     * The owning username
+     *
+     * @return
+     */
+    String getOwner();
+
+    /**
      * Access rights define who can access the digital twin and the modality of the access.
      * Individual observations should also allow distinct levels of access within the scope of the
      * overall rights.
@@ -124,6 +131,7 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getId();
 
+    @Deprecated
     boolean isCreateWhenAbsent();
 
     /**

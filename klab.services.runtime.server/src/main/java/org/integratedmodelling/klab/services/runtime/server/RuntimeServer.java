@@ -35,7 +35,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
          * TODO the context request contains the service URLs actually. So all these should be optional only
          *  for the runtime to work standalone (but there are issues if these aren't there).
          */
-        return List.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER);
+        return List.of(/*KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER*/);
     }
 
     @Override

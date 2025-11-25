@@ -30,6 +30,7 @@ public class ConfigurationBuilder {
   private boolean createWhenAbsent;
   private String serviceId;
   private String description;
+  private String owner;
 
   public ConfigurationBuilder() {}
 
@@ -112,6 +113,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder owner(String owner) {
+    this.owner = owner;
+    return this;
+  }
+
   public ConfigurationBuilder createWhenAbsent(boolean b) {
     this.createWhenAbsent = b;
     return this;
@@ -166,6 +172,7 @@ public class ConfigurationBuilder {
         this.notifications,
         this.createWhenAbsent,
         this.serviceId,
-        this.description);
+        this.description,
+        this.owner);
   }
 }

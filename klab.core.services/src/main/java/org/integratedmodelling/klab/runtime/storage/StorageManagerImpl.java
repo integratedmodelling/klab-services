@@ -60,7 +60,8 @@ public class StorageManagerImpl implements StorageManager {
 
   // Called to remove any orphan files from disk.
   public static void removeStorage(ContextInfo scope) {
-    var workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getId());
+    var workspace =
+        ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getConfiguration().getId());
     if (workspace.isDirectory()) {
       Utils.Files.deleteQuietly(workspace);
     }

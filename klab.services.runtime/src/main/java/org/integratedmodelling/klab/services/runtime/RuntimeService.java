@@ -163,17 +163,17 @@ public class RuntimeService extends BaseService
   private void checkForOrphanContext(ContextInfo context) {
     Logging.INSTANCE.info(
         "Checking for orphan context "
-            + context.getName()
+            + context.getConfiguration().getName()
             + "/"
-            + context.getId()
+            + context.getConfiguration().getId()
             + " "
-            + context.getPersistence()
+            + context.getConfiguration().getPersistence()
             + " created "
             + TimeInstant.create(context.getCreationTime())
             + " idle "
             + context.getIdleTimeMs());
 
-    if (!context.getPersistence().persistent) {
+    if (!context.getConfiguration().getPersistence().persistent) {
       var orphan = false;
       var timeout = false;
       var reinit = false;
@@ -183,12 +183,14 @@ public class RuntimeService extends BaseService
       var maxIdleReinitTime =
           settings().get(Setting.DIGITAL_TWIN_REINITIALIZATION_TIMEOUT_MINUTES, Integer.class)
               * TimeUnit.MINUTES.toMillis(1);
-      var existingScope = getScopeManager().getScope(context.getId(), ServiceContextScope.class);
+      var existingScope =
+          getScopeManager().getScope(context.getConfiguration().getId(), ServiceContextScope.class);
       if (existingScope == null) {
         orphan = true;
-      } else if (context.getPersistence() == Persistence.IDLE_TIMEOUT) {
+      } else if (context.getConfiguration().getPersistence() == Persistence.IDLE_TIMEOUT) {
         timeout = context.getIdleTimeMs() > maxIdleTime;
-      } else if (context.getPersistence() == Persistence.REINITIALIZED_ON_TIMEOUT) {
+      } else if (context.getConfiguration().getPersistence()
+          == Persistence.REINITIALIZED_ON_TIMEOUT) {
         reinit = context.getIdleTimeMs() > maxIdleReinitTime;
       }
 
@@ -198,9 +200,9 @@ public class RuntimeService extends BaseService
             () -> {
               Logging.INSTANCE.info(
                   "Orphan context "
-                      + context.getName()
+                      + context.getConfiguration().getName()
                       + "/"
-                      + context.getId()
+                      + context.getConfiguration().getId()
                       + " being removed due to "
                       + (horphan ? "being orphaned" : "inactivity"));
               if (existingScope != null) {
@@ -216,9 +218,9 @@ public class RuntimeService extends BaseService
             () -> {
               Logging.INSTANCE.info(
                   "Reinitializing context "
-                      + context.getName()
+                      + context.getConfiguration().getName()
                       + "/"
-                      + context.getId()
+                      + context.getConfiguration().getId()
                       + " due to inactivity");
               existingScope.reinitialize();
             });
@@ -868,24 +870,6 @@ public class RuntimeService extends BaseService
     }
     return false;
   }
-
-  //
-  //  @Override
-  //  public GraphModel.KnowledgeGraph retrieveSubgraph(
-  //      long focalNodeId,
-  //      int depth,
-  //      Collection<Long> requiredNodes,
-  //      Collection<RuntimeAsset.Type> acceptedTypes,
-  //      Collection<GraphModel.Relationship> acceptedRelationships,
-  //      GraphModel.KnowledgeGraph.Detail detail,
-  //      ContextScope scope) {
-  //    return scope
-  //        .getDigitalTwin()
-  //        .getKnowledgeGraph()
-  //        .subgraph(
-  //            focalNodeId, depth, requiredNodes, acceptedTypes, acceptedRelationships, detail,
-  // scope);
-  //  }
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(

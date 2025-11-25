@@ -23,14 +23,15 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private TimeUnit timeoutUnit;
   private URL url;
   private String behavior;
-  private long creationTime;
-  private long idleTimeMs;
+  //  private long creationTime;
+  //  private long idleTimeMs;
   private URL serviceUrl;
   private List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
   private String serviceId;
   private String description;
   private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
+  private String owner;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -47,7 +48,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       List<Notification> notifications,
       boolean createWhenAbsent,
       String serviceId,
-      String description) {
+      String description,
+      String owner) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -60,6 +62,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.createWhenAbsent = createWhenAbsent;
     this.serviceId = serviceId;
     this.description = description;
+    this.owner = owner;
   }
 
   @Override
@@ -75,6 +78,15 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   @Override
   public ResourcePrivileges getAccessRights() {
     return accessRights;
+  }
+
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  public void setOwner(String owner) {
+    this.owner = owner;
   }
 
   @Override
@@ -175,21 +187,21 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.behavior = behavior;
   }
 
-  public long getCreationTime() {
-    return creationTime;
-  }
-
-  public void setCreationTime(long creationTime) {
-    this.creationTime = creationTime;
-  }
-
-  public long getIdleTimeMs() {
-    return idleTimeMs;
-  }
-
-  public void setIdleTimeMs(long idleTimeMs) {
-    this.idleTimeMs = idleTimeMs;
-  }
+  //  public long getCreationTime() {
+  //    return creationTime;
+  //  }
+  //
+  //  public void setCreationTime(long creationTime) {
+  //    this.creationTime = creationTime;
+  //  }
+  //
+  //  public long getIdleTimeMs() {
+  //    return idleTimeMs;
+  //  }
+  //
+  //  public void setIdleTimeMs(long idleTimeMs) {
+  //    this.idleTimeMs = idleTimeMs;
+  //  }
 
   @Override
   public URL getServiceUrl() {
