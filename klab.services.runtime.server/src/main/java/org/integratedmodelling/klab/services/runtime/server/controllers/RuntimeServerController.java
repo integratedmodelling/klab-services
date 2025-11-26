@@ -34,6 +34,7 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequ
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
@@ -116,10 +117,10 @@ public class RuntimeServerController {
             description = "Session information retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
-  @GetMapping(ServicesAPI.RUNTIME.GET_SESSION_INFO)
-  public @ResponseBody List<SessionInfo> getSessionInfo(Principal principal) {
+  @GetMapping(ServicesAPI.RUNTIME.GET_CONTEXT_INFO)
+  public @ResponseBody List<ContextInfo> getSessionInfo(Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      return runtimeService.klabService().getSessionInfo(authorization.getScope());
+      return runtimeService.klabService().getContextInfo(authorization.getScope());
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

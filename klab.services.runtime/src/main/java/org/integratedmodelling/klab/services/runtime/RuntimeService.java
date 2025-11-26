@@ -153,11 +153,11 @@ public class RuntimeService extends BaseService
   }
 
   private void dtScheduledMaintenance() {
-    for (var session : getSessionInfo(serviceScope())) {
-      for (var context : session.getContexts()) {
-        checkForOrphanContext(context);
-      }
+    //    for (var session : getSessionInfo(serviceScope())) {
+    for (var context : getContextInfo(serviceScope())) {
+      checkForOrphanContext(context);
     }
+    //    }
   }
 
   private void checkForOrphanContext(ContextInfo context) {
@@ -198,6 +198,14 @@ public class RuntimeService extends BaseService
       if (orphan || timeout) {
         executorService.submit(
             () -> {
+              Utils.DebugFile.println(
+                  "Orphan context "
+                      + context.getConfiguration().getName()
+                      + "/"
+                      + context.getConfiguration().getId()
+                      + " being removed due to "
+                      + (horphan ? "being orphaned" : "inactivity"));
+
               Logging.INSTANCE.info(
                   "Orphan context "
                       + context.getConfiguration().getName()
@@ -809,8 +817,8 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public List<SessionInfo> getSessionInfo(Scope scope) {
-    return knowledgeGraph.getSessionInfo(scope);
+  public List<ContextInfo> getContextInfo(Scope scope) {
+    return knowledgeGraph.getContextInfo(scope);
   }
 
   @Override

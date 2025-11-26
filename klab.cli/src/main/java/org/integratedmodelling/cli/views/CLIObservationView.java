@@ -274,7 +274,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
         var runtime = KlabCLI.INSTANCE.user().getService(RuntimeService.class);
 
-        for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {
+        for (var session : runtime.getContextInfo(KlabCLI.INSTANCE.user())) {
           // TODO this is the proper way
         }
 

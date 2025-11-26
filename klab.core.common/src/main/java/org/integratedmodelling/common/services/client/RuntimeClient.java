@@ -29,8 +29,8 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 public class RuntimeClient extends BaseServiceClient
@@ -70,10 +70,10 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public List<SessionInfo> getSessionInfo(Scope scope) {
+  public List<ContextInfo> getContextInfo(Scope scope) {
     return client
         .withScope(scope)
-        .getCollection(ServicesAPI.RUNTIME.GET_SESSION_INFO, SessionInfo.class);
+        .getCollection(ServicesAPI.RUNTIME.GET_CONTEXT_INFO, ContextInfo.class);
   }
 
   @Override
@@ -117,8 +117,7 @@ public class RuntimeClient extends BaseServiceClient
       var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
       if (federation != null && ret instanceof MessagingChannelImpl messagingChannel) {
         var queues =
-                getQueuesFromHeader(
-                        ret, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            getQueuesFromHeader(ret, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
         if (queues == null) {
           // TODO error recovery
           Logging.INSTANCE.error("no queues found in messaging header");

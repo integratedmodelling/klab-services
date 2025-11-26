@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 import java.util.*;
@@ -191,7 +192,7 @@ public interface RuntimeService extends KlabService {
    *     everything.
    * @return the list of sessions with their contexts
    */
-  List<SessionInfo> getSessionInfo(Scope scope);
+  List<ContextInfo> getContextInfo(Scope scope);
 
   /**
    * Establishes a connection to a specific context within the designated session scope. The call

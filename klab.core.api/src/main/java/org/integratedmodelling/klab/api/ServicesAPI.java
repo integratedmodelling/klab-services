@@ -363,7 +363,7 @@ public interface ServicesAPI {
      */
     interface ADMIN {}
 
-    String GET_SESSION_INFO = "/sessions";
+    String GET_CONTEXT_INFO = "/contexts";
 
     String DIGITAL_TWIN_PREFIX = "/dt/";
 

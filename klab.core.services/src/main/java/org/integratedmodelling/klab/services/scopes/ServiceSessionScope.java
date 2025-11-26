@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.scopes;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -11,10 +14,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.services.base.BaseService;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope}
  * at each new session, script, application or test case run. Relies on external instrumentation
@@ -23,7 +22,8 @@ import java.util.List;
  * <code>super.getServices()</code>.
  *
  * <p>Instrumented by {@link KlabService#declareSessionScope(SessionScope, UserScope,
- * KActorsBehavior)}, {@link KlabService#declareContextScope(ContextScope, SessionScope)}.
+ * KActorsBehavior)}, {@link KlabService#declareContextScope(ContextScope, SessionScope, UserScope)}
+ * .
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -120,18 +120,18 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     if (runtime instanceof BaseService baseService) {
 
-      for (var ss : runtime.getSessionInfo(this)) {
-        if (ss.getId().equals(this.getId())) {
-          for (var ctx : ss.getContexts()) {
-            var ctxScope =
-                baseService
-                    .getScopeManager()
-                    .getScope(ctx.getConfiguration().getId(), ContextScope.class);
-            if (ctxScope != null) {
-              ret.add(ctxScope);
-            }
-          }
+      for (var ss : runtime.getContextInfo(this)) {
+        //        if (ss.getConfiguration().getId().equals(this.getId())) {
+        //          for (var ctx : ss.getContexts()) {
+        var ctxScope =
+            baseService
+                .getScopeManager()
+                .getScope(ss.getConfiguration().getId(), ContextScope.class);
+        if (ctxScope != null) {
+          ret.add(ctxScope);
         }
+        //          }
+        //        }
       }
 
       baseService.getScopeManager().releaseScope(this.getId());

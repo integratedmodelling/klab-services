@@ -1430,7 +1430,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public List<SessionInfo> getSessionInfo(Scope scope) {
+  public List<ContextInfo> getContextInfo(Scope scope) {
 
     var sessionIds = new LinkedHashMap<String, SessionInfo>();
 
@@ -1508,22 +1508,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           }
         });
 
-    // collect sessions
-    for (var context : contextInfos) {
-      var sessionId = Utils.Paths.getFirst(context.getConfiguration().getId(), ".");
-      var sessionInfo =
-          sessionIds.computeIfAbsent(
-              sessionId,
-              (s) -> {
-                var ss = new SessionInfo();
-                ss.setId(s);
-                ss.setUsername(context.getConfiguration().getOwner());
-                return ss;
-              });
-      sessionInfo.getContexts().add(context);
-    }
+//    // collect sessions
+//    for (var context : contextInfos) {
+//      var sessionId = Utils.Paths.getFirst(context.getConfiguration().getId(), ".");
+//      var sessionInfo =
+//          sessionIds.computeIfAbsent(
+//              sessionId,
+//              (s) -> {
+//                var ss = new SessionInfo();
+//                ss.setId(s);
+//                ss.setUsername(context.getConfiguration().getOwner());
+//                return ss;
+//              });
+//      sessionInfo.getContexts().add(context);
+//    }
 
-    return new ArrayList<>(sessionIds.values());
+    return contextInfos;
   }
 
   @Override

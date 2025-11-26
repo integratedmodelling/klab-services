@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.jline.builtins.ConfigurationPath;
@@ -892,13 +893,13 @@ public enum KlabCLI {
     }
 
     boolean verbose = line.startsWith("??");
-    var sessionInfo = runtime.getSessionInfo(currentContext);
+    var sessionInfo = runtime.getContextInfo(currentContext);
 
     if (line.startsWith("?")) {
 
       int n = 0;
       for (var session : sessionInfo) {
-        listSession(session, verbose, ++n);
+        listContext(session, verbose, ++n);
       }
     }
   }
@@ -968,22 +969,22 @@ public enum KlabCLI {
     }
   }
 
-  private void listSession(SessionInfo session, boolean verbose, int index) {
+  private void listContext(ContextInfo context, boolean verbose, int index) {
 
-    INSTANCE
-        .commandLine
-        .getOut()
-        .println(
-            Ansi.AUTO.string(
-                "@|green Session "
-                    + index
-                    + "|@. "
-                    + session.getName()
-                    + " ["
-                    + session.getId()
-                    + "]"));
-    int n = 0;
-    for (var context : session.getContexts()) {
+//    INSTANCE
+//        .commandLine
+//        .getOut()
+//        .println(
+//            Ansi.AUTO.string(
+//                "@|green Session "
+//                    + index
+//                    + "|@. "
+//                    + session.getName()
+//                    + " ["
+//                    + session.getId()
+//                    + "]"));
+//    int n = 0;
+//    for (var context : session.getContexts()) {
       INSTANCE
           .commandLine
           .getOut()
@@ -991,15 +992,15 @@ public enum KlabCLI {
               Ansi.AUTO.string(
                   "   @|yellow Context "
                       + index
-                      + "."
-                      + (++n)
+//                      + "."
+//                      + (++n)
                       + "|@. "
                       + context.getConfiguration().getName()
                       + " ["
                       + context.getConfiguration().getId()
                       + "]"));
       if (verbose) {}
-    }
+//    }
   }
 
   public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {

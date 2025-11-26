@@ -26,7 +26,6 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -497,7 +496,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void shutdown() {}
 
   @Override
-  public List<SessionInfo> getSessionInfo(Scope scope) {
+  public List<ContextInfo> getContextInfo(Scope scope) {
     return List.of();
   }
 

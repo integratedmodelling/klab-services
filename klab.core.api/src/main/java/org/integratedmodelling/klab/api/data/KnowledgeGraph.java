@@ -434,13 +434,11 @@ public interface KnowledgeGraph {
   void shutdown();
 
   /**
-   * Retrieve information relative to all sessions that are currently active in this scope.
-   * According to the scope type, different info will be retrieved; if the scope is a {@link
-   * ContextScope}, the session to which it belongs will be retrieved but only that scope will be
-   * listed in it.
+   * Retrieve information relative to all contexts that are currently active in this scope.
+   * According to the scope type, different info will be retrieved.
    *
    * @param scope
    * @return
    */
-  List<SessionInfo> getSessionInfo(Scope scope);
+  List<ContextInfo> getContextInfo(Scope scope);
 }
