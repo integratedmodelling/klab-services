@@ -57,6 +57,7 @@ public class StorageManagerImpl implements StorageManager {
   private final Map<Observation, Storage> storage = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(0);
   private final Executor shardMaintenance = Executors.newSingleThreadExecutor();
+  private final File persistentSpace;
 
   public boolean isRecordHistogram() {
     return recordHistogram;
@@ -79,6 +80,12 @@ public class StorageManagerImpl implements StorageManager {
     // choose the mm files, parallelism level and the floating point representation
     this.service = service;
     this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory(scope.getId());
+    this.persistentSpace =
+        BaseService.getConfigurationSubdirectory(
+            ((BaseService) service).startupOptions(), "storage");
+    if (persistentSpace.isDirectory()) {
+      // TODO setup for restore of shards
+    }
     this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
     this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
     this.longBackupFile = new File(this.workspace + File.separator + "lstorage.bin");
@@ -346,10 +353,7 @@ public class StorageManagerImpl implements StorageManager {
     if (scanner instanceof StorageImpl.BaseScanner baseScanner) {
       final var shard = baseScanner.shard();
       final var baseService = contextScope.getService(RuntimeService.class);
-      final var path =
-          BaseService.getConfigurationSubdirectory(
-              ((BaseService) baseService).startupOptions(), "storage");
-      final var storagePath = new File(path + File.separator + contextScope.getId());
+      final var storagePath = new File(persistentSpace + File.separator + contextScope.getId());
       storagePath.mkdirs();
       final var outFile = new File(storagePath + File.separator + shard.getUrn() + ".dat");
       shardMaintenance.execute(
