@@ -1,22 +1,16 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import java.io.File;
+import com.dynatrace.dynahist.layout.Layout;
+import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
 import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
-
-import com.dynatrace.dynahist.layout.Layout;
-import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
-import org.glassfish.grizzly.compression.lzma.impl.Base;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -120,13 +114,28 @@ public class StorageImpl implements Storage {
       Observation observation,
       Data.ShardingStrategy shardingStrategy,
       ContextScope contextScope,
-      StorageManagerImpl storageManager) {
+      StorageManagerImpl storageManager,
+      boolean loadExistingShards) {
     this.observation = observation;
     this.scope = contextScope;
     this.storageManager = storageManager;
+    this.nativeShardingStrategy = shardingStrategy;
+
+    if (loadExistingShards && observation.getId() > 0) {
+      for (var shard :
+          contextScope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Shard.class, contextScope)
+              .source(observation)
+              .along(GraphModel.Relationship.HAS_DATA)
+              .run(contextScope)) {
+        System.out.println("DIO CANAGLIA UNA SHARD OF MY COCK");
+      }
+    }
+
     // TODO prepare shard descriptors from any existing shards in the knowledge graph! If there is a
     // different sharding strategy, adopt that as native and create mediators.
-    this.nativeShardingStrategy = shardingStrategy;
   }
 
   // used only for testing, won't work for anything else

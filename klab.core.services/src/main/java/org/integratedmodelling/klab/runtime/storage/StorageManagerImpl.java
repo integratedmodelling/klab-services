@@ -58,6 +58,7 @@ public class StorageManagerImpl implements StorageManager {
   private final AtomicLong nextId = new AtomicLong(0);
   private final Executor shardMaintenance = Executors.newSingleThreadExecutor();
   private final File persistentSpace;
+  private boolean existingData = false;
 
   public boolean isRecordHistogram() {
     return recordHistogram;
@@ -84,7 +85,7 @@ public class StorageManagerImpl implements StorageManager {
         BaseService.getConfigurationSubdirectory(
             ((BaseService) service).startupOptions(), "storage");
     if (persistentSpace.isDirectory()) {
-      // TODO setup for restore of shards
+      existingData = true;
     }
     this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
     this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
@@ -239,7 +240,7 @@ public class StorageManagerImpl implements StorageManager {
       Data.ShardingStrategy shardingStrategy,
       ServiceContextScope contextScope) {
     // TODO set up a persistable peer object for the shard and expose it into the maintenance thread
-    return new StorageImpl(observation, shardingStrategy, contextScope, this);
+    return new StorageImpl(observation, shardingStrategy, contextScope, this, existingData);
   }
 
   @Override
