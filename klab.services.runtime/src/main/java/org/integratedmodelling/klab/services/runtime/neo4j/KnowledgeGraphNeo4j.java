@@ -128,126 +128,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         };
   }
 
-  //  /** Links for stored objects (not in a DT transaction) */
-  //  class LinkImpl implements Link {
-  //
-  //    private long id = 0;
-  //    private Parameters<String> properties = Parameters.create();
-  //    private GraphModel.Relationship type;
-  //    private long transientId = Klab.getNextId();
-  //    private long parentTransientId;
-  //    private long parentId;
-  //    private int childrenCount = 0;
-  //
-  //    @Override
-  //    public GraphModel.Relationship type() {
-  //      return type;
-  //    }
-  //
-  //    @Override
-  //    public Parameters<String> properties() {
-  //      return properties;
-  //    }
-  //
-  //    private RuntimeAsset source;
-  //    private RuntimeAsset target;
-  //
-  //    @Override
-  //    public RuntimeAsset source() {
-  //      return source;
-  //    }
-  //
-  //    @Override
-  //    public RuntimeAsset target() {
-  //      return target;
-  //    }
-  //
-  //    public void setSource(RuntimeAsset source) {
-  //      this.source = source;
-  //    }
-  //
-  //    public void setTarget(RuntimeAsset target) {
-  //      this.target = target;
-  //    }
-  //
-  ////    @Override
-  ////    public int sequence() {
-  ////      return properties.containsKey("sequence") ? properties.get("sequence", Integer.class) :
-  // -1;
-  ////    }
-  ////
-  ////    @Override
-  ////    public Geometry geometry() {
-  ////      return null;
-  ////    }
-  //
-  //    @Override
-  //    public long getId() {
-  //      return id;
-  //    }
-  //
-  //    @Override
-  //    public Type classify() {
-  //      return Type.LINK;
-  //    }
-  //
-  //    public void setId(long id) {
-  //      this.id = id;
-  //    }
-  //
-  //    public Parameters<String> getProperties() {
-  //      return properties;
-  //    }
-  //
-  //    public void setProperties(Parameters<String> properties) {
-  //      this.properties = properties;
-  //    }
-  //
-  //    public GraphModel.Relationship getType() {
-  //      return type;
-  //    }
-  //
-  //    public void setType(GraphModel.Relationship type) {
-  //      this.type = type;
-  //    }
-  //
-  //    @Override
-  //    public long getTransientId() {
-  //      return transientId;
-  //    }
-  //
-  //    @Override
-  //    public int getChildrenCount() {
-  //      return childrenCount;
-  //    }
-  //
-  //    public void setChildrenCount(int childrenCount) {
-  //      this.childrenCount = childrenCount;
-  //    }
-  //
-  //    @Override
-  //    public long getParentId() {
-  //      return parentId;
-  //    }
-  //
-  //    public void setParentId(long parentId) {
-  //      this.parentId = parentId;
-  //    }
-  //
-  //    public void setTransientId(long transientId) {
-  //      this.transientId = transientId;
-  //    }
-  //
-  //    @Override
-  //    public long getParentTransientId() {
-  //      return parentTransientId;
-  //    }
-  //
-  //    public void setParentTransientId(long parentTransientId) {
-  //      this.parentTransientId = parentTransientId;
-  //    }
-  //  }
-
   class TransactionImpl implements Transaction {
 
     private final org.neo4j.driver.Transaction transaction;
@@ -1508,20 +1388,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           }
         });
 
-//    // collect sessions
-//    for (var context : contextInfos) {
-//      var sessionId = Utils.Paths.getFirst(context.getConfiguration().getId(), ".");
-//      var sessionInfo =
-//          sessionIds.computeIfAbsent(
-//              sessionId,
-//              (s) -> {
-//                var ss = new SessionInfo();
-//                ss.setId(s);
-//                ss.setUsername(context.getConfiguration().getOwner());
-//                return ss;
-//              });
-//      sessionInfo.getContexts().add(context);
-//    }
+    //    // collect sessions
+    //    for (var context : contextInfos) {
+    //      var sessionId = Utils.Paths.getFirst(context.getConfiguration().getId(), ".");
+    //      var sessionInfo =
+    //          sessionIds.computeIfAbsent(
+    //              sessionId,
+    //              (s) -> {
+    //                var ss = new SessionInfo();
+    //                ss.setId(s);
+    //                ss.setUsername(context.getConfiguration().getOwner());
+    //                return ss;
+    //              });
+    //      sessionInfo.getContexts().add(context);
+    //    }
 
     return contextInfos;
   }
