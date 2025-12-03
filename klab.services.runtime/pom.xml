@@ -43,7 +43,37 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.services</artifactId>
             <version>${klab.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jdk8</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>jackson-module-jaxb-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.api</artifactId>
@@ -55,6 +85,12 @@
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-cypher-dsl</artifactId>
             <version>2024.4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                    <artifactId>jackson-jaxrs-providers</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 
@@ -73,6 +109,10 @@
                                     <artifactId>jakarta.validation-api</artifactId>
                                 </exclusion>
                 -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                    <artifactId>jackson-jaxrs-json-provider</artifactId>
+                </exclusion>
             </exclusions>
             <!--
                         <exclusions>
