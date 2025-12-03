@@ -643,16 +643,6 @@ public class RuntimeService extends BaseService
   private boolean compile(
       Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
 
-    scope.getCurrentTransaction().add(rootObservation);
-    scope
-        .getCurrentTransaction()
-        .link(
-            scope.getContextObservation() == null
-                ? scope.getDigitalTwin().getKnowledgeGraph().scope()
-                : scope.getContextObservation(),
-            rootObservation,
-            GraphModel.Relationship.HAS_CHILD);
-
     scope
         .getCurrentTransaction()
         .link(

@@ -251,7 +251,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       if (source instanceof ObservationImpl sourceObs
           && destination instanceof ObservationImpl targetObs
           && relationship == GraphModel.Relationship.HAS_CHILD) {
-        // FIXME for some reason this ends up being done twice and the count is double
         sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
         update(sourceObs);
         targetObs.setParentTransientId(sourceObs.getTransientId());
