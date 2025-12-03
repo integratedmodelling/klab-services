@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -23,7 +22,6 @@ import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -67,13 +65,10 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
-import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
+import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
-import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.jgrapht.Graph;
@@ -95,7 +90,7 @@ public class ResourcesProvider extends BaseService
    * We keep a hash of all the resource URNs we serve for quick reference and search
    *
    * @deprecated use {@link
-   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+   *     ResourcesKBox}
    */
   private Set<String> localResources = new HashSet<>();
 
@@ -137,7 +132,7 @@ public class ResourcesProvider extends BaseService
   //   * and the storage of the review status is the job of the resources service.
   //   *
   //   * @deprecated use {@link
-  //   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+  //   *     org.integratedmodelling.klab.resources.ResourcesKBox}
   //   */
   //  private DB db = null;
   //
@@ -145,7 +140,7 @@ public class ResourcesProvider extends BaseService
 
   /**
    * @deprecated use {@link
-   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+   *     ResourcesKBox}
    */
   private ModelKbox kbox;
 

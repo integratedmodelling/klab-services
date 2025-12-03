@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
+import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -16,11 +15,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
-import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
-
-import java.util.List;
+import org.integratedmodelling.klab.resources.ResourcesKBox;
 
 public class ResourceManager {
 

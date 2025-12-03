@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resources.persistence;
+package org.integratedmodelling.klab.resources;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonParser;
@@ -8,12 +8,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.dizitart.no2.Nitrite;
-import org.dizitart.no2.collection.Document;
-import org.dizitart.no2.collection.NitriteId;
 import org.dizitart.no2.common.mapper.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
-import org.dizitart.no2.common.tuples.Pair;
-import org.dizitart.no2.filters.Filter;
 import org.dizitart.no2.index.IndexType;
 import org.dizitart.no2.repository.EntityDecorator;
 import org.dizitart.no2.repository.EntityId;
@@ -22,17 +18,16 @@ import org.dizitart.no2.repository.ObjectRepository;
 import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
 /**
  * Nitrite-based noSQL embedded storage for observables, resources, models and permissions. The URN
@@ -41,7 +36,6 @@ import org.integratedmodelling.klab.services.resources.ResourcesProvider;
  */
 public class ResourcesKBox {
 
-  private final ResourcesProvider resourcesProvider;
   private final ResourceIndexer index;
 
   private final Nitrite db;
@@ -77,9 +71,8 @@ public class ResourcesKBox {
     }
   }
 
-  public ResourcesKBox(Scope scope, ServiceStartupOptions options, ResourcesProvider service) {
+  public ResourcesKBox(Scope scope, ServiceStartupOptions options, BaseService service) {
 
-    this.resourcesProvider = service;
     this.databaseFile =
         BaseService.getFileInConfigurationSubdirectory(options, "data", "resources.db");
     RocksDBModule storeModule = RocksDBModule.withConfig().filePath(databaseFile.getPath()).build();
