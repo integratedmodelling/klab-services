@@ -55,6 +55,7 @@ public class ObservationImpl implements Observation {
     private String adapterId;
     private Parameters<String> parameters = Parameters.create();
     private URL serviceUrl;
+    private Data.ShardingStrategy nativeShardingStrategy;
 
     @Override
     public Data getData() {
@@ -99,6 +100,15 @@ public class ObservationImpl implements Observation {
 
     public void setServiceUrl(URL serviceUrl) {
       this.serviceUrl = serviceUrl;
+    }
+
+    @Override
+    public Data.ShardingStrategy getNativeShardingStrategy() {
+      return nativeShardingStrategy;
+    }
+
+    public void setNativeShardingStrategy(Data.ShardingStrategy nativeShardingStrategy) {
+      this.nativeShardingStrategy = nativeShardingStrategy;
     }
 
     @Override

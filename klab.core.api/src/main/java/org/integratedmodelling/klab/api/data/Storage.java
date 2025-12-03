@@ -177,6 +177,13 @@ public interface Storage {
     int getShardIndex();
 
     /**
+     * Total number of shards in the storage.
+     *
+     * @return
+     */
+    int getShardCount();
+
+    /**
      * Each shard should have a histogram built upon filling or upon demand, whichever is faster.
      * Histogram implementation must allow merging so that the contextualizers can access aggregated
      * observation information quickly by binding the histogram to the contextualizing functions.
@@ -191,6 +198,20 @@ public interface Storage {
      * @return
      */
     Storage.Type getNativeType();
+
+    /**
+     * The timestamp is the primary key for the (list of) shards in the storage.
+     *
+     * @return
+     */
+    long getTimestamp();
+
+    /**
+     * The URN is unique of the shard and must identify its storage on disk or in a database.
+     *
+     * @return
+     */
+    String getUrn();
   }
 
   /**

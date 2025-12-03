@@ -13,12 +13,15 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -114,14 +117,21 @@ public class StorageImpl implements Storage {
       Observation observation,
       Data.ShardingStrategy shardingStrategy,
       ContextScope contextScope,
-      StorageManagerImpl storageManager,
-      boolean loadExistingShards) {
+      StorageManagerImpl storageManager) {
     this.observation = observation;
     this.scope = contextScope;
     this.storageManager = storageManager;
     this.nativeShardingStrategy = shardingStrategy;
 
-    if (loadExistingShards && observation.getId() > 0) {
+    if (observation.getContextualizationData()
+        instanceof ObservationImpl.ContextualizationDataImpl data) {
+      data.setNativeShardingStrategy(shardingStrategy);
+    }
+
+    /**
+     * If the observation comes from the KG, we load any pre-existing shards into lazy containers.
+     */
+    if (observation.getId() > 0) {
       for (var shard :
           contextScope
               .getDigitalTwin()
@@ -130,7 +140,24 @@ public class StorageImpl implements Storage {
               .source(observation)
               .along(GraphModel.Relationship.HAS_DATA)
               .run(contextScope)) {
-        System.out.println("DIO CANAGLIA UNA SHARD OF MY COCK");
+        if (shard.getGeometry() == null && shard instanceof ShardImpl shardImpl) {
+          shardImpl.setGeometry(GeometryRepository.INSTANCE.geometry(observation.getGeometry()));
+        }
+        var time = TimeInstant.create(shard.getTimestamp());
+        var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry()).at(time);
+        var key =
+            scale.getExtents().stream()
+                // TODO generalize: remove the moving dimension in the geometry - no scenarios so
+                // far
+                //  under which it's not space.
+                .filter(e -> e.getType() != Geometry.Dimension.Type.SPACE)
+                .map(
+                    e ->
+                        e.getType() == Geometry.Dimension.Type.TIME
+                            ? shard.getTimestamp()
+                            : /* TODO use the index for any further dimension, unused for now */ 0L)
+                .toList();
+        shards.computeIfAbsent(new ComparableLongList(key), k -> new ArrayList<>()).add(shard);
       }
     }
 
@@ -213,18 +240,20 @@ public class StorageImpl implements Storage {
 
     var shards = new ArrayList<Shard>();
     int index = 0; // TODO do we need this to change with the time slice?
-    for (var geometry :
+    var geometries =
         getGeometries(
             scale,
             nativeShardingStrategy.getSuggestedSplits(),
             nativeShardingStrategy.getMinSplitSize(),
-            nativeShardingStrategy.getMaxBufferSize())) {
+            nativeShardingStrategy.getMaxBufferSize());
+    for (var geometry : geometries) {
       var shard =
           new ShardImpl(
               GeometryRepository.INSTANCE.geometry(geometry),
               observation,
               nativeShardingStrategy,
               index++,
+              geometries.size(),
               timeStart,
               scope.getConfiguration().getPersistence(),
               getNativeType());
@@ -255,7 +284,16 @@ public class StorageImpl implements Storage {
   @Override
   public Storage.Scanner getNativeScanner(Shard shard) {
 
-    var st = shardStorage.get(((ShardImpl) shard).getUrn());
+    var st = shardStorage.get(shard.getUrn());
+
+    if (st == null) {
+      shardStorage.put(shard.getUrn(), st = restore(shard));
+    }
+
+    if (st == null) {
+      throw new KlabIllegalStateException(
+          "Cannot restore shard " + shard.getUrn() + " from storage");
+    }
 
     return switch (shard.getShardingStrategy().getDataType()) {
       case DOUBLE -> new LocalDoubleScanner((ShardImpl) shard, st.data, st.histogram);
@@ -265,6 +303,26 @@ public class StorageImpl implements Storage {
               (ShardImpl) shard, st.data, st.histogram); // TODO needs to implement KEYED
       case LONG -> new LocalLongScanner((ShardImpl) shard, st.data, st.histogram);
     };
+  }
+
+  /**
+   * TODO next obvious step is to keep these cached and offload buffers dynamically when things get
+   * big. Could use a Buffer proxy with file associated and set it into a cache linked to overall
+   * size.
+   *
+   * @param shard
+   * @return
+   */
+  private ShardStorage restore(Shard shard) {
+    if (!storageManager.hasExistingData()) {
+      throw new KlabIllegalStateException("Cannot restore shard without pre-existing storage data");
+    }
+    var ret = new StorageImpl.ShardStorage(shard, storageManager);
+    var file = storageManager.getStorageFile(shard);
+    if (!storageManager.loadBufferArray(ret.data, file, shard.getNativeType())) {
+      scope.error("Cannot read shard data from local storage: " + file);
+    }
+    return ret;
   }
 
   /**

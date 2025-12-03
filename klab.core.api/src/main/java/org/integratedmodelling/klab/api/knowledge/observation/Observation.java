@@ -96,6 +96,15 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     Parameters<String> getParameters();
+
+    /**
+     * The native sharding strategy, if a quality. Calculated from the contextualization strategy on
+     * the first contextualization. We need this when reconstructing an existing observation, so we
+     * save it in the graph.
+     *
+     * @return
+     */
+    Data.ShardingStrategy getNativeShardingStrategy();
   }
 
   /**

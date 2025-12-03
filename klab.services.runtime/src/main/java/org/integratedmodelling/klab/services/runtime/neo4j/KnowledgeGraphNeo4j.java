@@ -21,9 +21,11 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -510,6 +512,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Utils.Json.parseObject(node.get("adapterParameters").asString(), Parameters.class);
           cData.getParameters().putAll(params);
         }
+
+        // sharding strategy, if any.
+        if (!node.get("fillCurve").isNull()) {
+          var shardingStrategy = new Data.ShardingStrategy();
+          shardingStrategy.setDataType(Storage.Type.valueOf(node.get("dataType").asString()));
+          shardingStrategy.setCurve(Data.FillCurve.valueOf(node.get("fillCurve").asString()));
+          shardingStrategy.setSuggestedSplits(node.get("suggestedSplits").asInt());
+          shardingStrategy.setMaxBufferSize(node.get("maxBufferSize").asLong());
+          shardingStrategy.setMinSplitSize(node.get("minSplitSize").asLong());
+          cData.setNativeShardingStrategy(shardingStrategy);
+        }
+
         instance.setContextualizationData(cData);
 
         var gResult =
@@ -563,6 +577,40 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // TODO use a cache storing scales
         ret.add(
             (T) GeometryRepository.INSTANCE.get(node.get("definition").asString(), Geometry.class));
+      } else if (Storage.Shard.class.isAssignableFrom(cls)) {
+
+        var shardingStrategy = new Data.ShardingStrategy();
+        shardingStrategy.setDataType(Storage.Type.valueOf(node.get("dataType").asString()));
+        shardingStrategy.setCurve(Data.FillCurve.valueOf(node.get("fillCurve").asString()));
+        shardingStrategy.setSuggestedSplits(node.get("suggestedSplits").asInt());
+        shardingStrategy.setMaxBufferSize(node.get("maxBufferSize").asLong());
+        shardingStrategy.setMinSplitSize(node.get("minSplitSize").asLong());
+
+        var instance = new ShardImpl();
+        instance.setUrn(node.get("urn").asString());
+        instance.setId(node.get("id").asLong());
+        instance.setShardCount(node.get("shardCount").asInt());
+        instance.setNativeType(Storage.Type.valueOf(node.get("nativeType").asString()));
+        instance.setTimestamp(node.get("timestamp").asLong());
+        instance.setShardIndex(node.get("shardIndex").asInt());
+        instance.setPersistence(Persistence.valueOf(node.get("persistence").asString()));
+        if (!node.get("histogram").isNull()) {
+          instance.setHistogram(
+              Utils.Json.parseObject(node.get("histogram").toString(), HistogramImpl.class));
+        }
+        instance.setShardingStrategy(shardingStrategy);
+
+        var gResult =
+            query(
+                "MATCH (o:Data)-[:HAS_GEOMETRY]->(g:Geometry) WHERE o.urn" + " = $urn RETURN g",
+                Map.of("urn", node.get("urn").asString()),
+                scope);
+
+        if (gResult == null || !gResult.records().isEmpty()) {
+          instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
+        }
+
+        ret.add((T) instance);
       }
     }
     return ret;
@@ -719,6 +767,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           switch (asset) {
             case Observation observation -> observation.getGeometry();
             case Actuator actuator -> actuator.getCoverage();
+            // only store geometries for shards that are partial
+            case Storage.Shard shard -> shard.getShardCount() > 1 ? shard.getGeometry() : null;
             default -> null;
           };
 
@@ -756,6 +806,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           switch (asset) {
             case Observation observation -> observation.getGeometry();
             case Actuator actuator -> actuator.getCoverage();
+            // only store geometries for shards that are partial
+            case Storage.Shard shard -> shard.getShardCount() > 1 ? shard.getGeometry() : null;
             default -> null;
           };
 

@@ -1,22 +1,14 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import com.dynatrace.dynahist.layout.Layout;
-import com.dynatrace.dynahist.layout.LogLinearLayout;
-import com.dynatrace.dynahist.layout.LogOptimalLayout;
-import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.ojalgo.array.BufferArray;
-
-import java.util.UUID;
 
 /**
  * Base buffer provides the histogram and the geometry indexing/merging.
@@ -30,18 +22,19 @@ import java.util.UUID;
  */
 public class ShardImpl implements Storage.Shard {
 
-  private final Persistence persistence;
-  private final Data.ShardingStrategy shardingStrategy;
-  private final int shardIndex;
-  private final long timestamp;
-  private final Geometry geometry; // TODO must be a real Geometry, not a scale
+  private Persistence persistence;
+  private Data.ShardingStrategy shardingStrategy;
+  private int shardIndex;
+  private long timestamp;
+  private Geometry geometry; // TODO must be a real Geometry, not a scale
   private long id; // for reference in the knowledge graph
-  private final String urn; // for persistent reference in the storage manager
+  private String urn; // for persistent reference in the storage manager
   private long transientId = Klab.getNextId();
   private long parentTransientId; // manage
   private long parentId = -1; // TODO manage
   private Histogram histogram;
   private Storage.Type nativeType;
+  private int shardCount;
 
   public ShardImpl() {
     geometry = null;
@@ -49,6 +42,7 @@ public class ShardImpl implements Storage.Shard {
     shardIndex = -1;
     timestamp = -1;
     urn = null;
+    shardCount = 0;
     persistence = null;
   }
 
@@ -65,6 +59,7 @@ public class ShardImpl implements Storage.Shard {
       Observation observation,
       Data.ShardingStrategy shardingStrategy,
       int shardIndex,
+      int shardCount,
       long timestamp,
       Persistence persistence,
       Storage.Type dataType) {
@@ -73,11 +68,13 @@ public class ShardImpl implements Storage.Shard {
     this.shardIndex = shardIndex;
     this.timestamp = timestamp;
     this.urn = Utils.Names.fastName();
+    this.shardCount = shardCount;
     this.persistence = persistence;
     this.nativeType = dataType;
   }
 
   public static ShardImpl trivial(Storage.Type dataType) {
+    // TODO should have shardCount = 0, plus a literal to convert
     throw new KlabUnimplementedException("trivial shards are not yet supported");
   }
 
@@ -88,6 +85,15 @@ public class ShardImpl implements Storage.Shard {
 
   public void setId(long id) {
     this.id = id;
+  }
+
+  @Override
+  public int getShardCount() {
+    return shardCount;
+  }
+
+  public void setShardCount(int shardCount) {
+    this.shardCount = shardCount;
   }
 
   @Override
@@ -105,8 +111,32 @@ public class ShardImpl implements Storage.Shard {
     return Type.DATA;
   }
 
+  public void setPersistence(Persistence persistence) {
+    this.persistence = persistence;
+  }
+
+  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
+    this.shardingStrategy = shardingStrategy;
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public void setGeometry(Geometry geometry) {
+    this.geometry = geometry;
+  }
+
+  public void setParentId(long parentId) {
+    this.parentId = parentId;
+  }
+
   public void setTransientId(long transientId) {
     this.transientId = transientId;
+  }
+
+  public void setShardIndex(int shardIndex) {
+    this.shardIndex = shardIndex;
   }
 
   public Persistence getPersistence() {
@@ -146,6 +176,10 @@ public class ShardImpl implements Storage.Shard {
     return urn;
   }
 
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
+
   @Override
   public Storage.Type getNativeType() {
     return nativeType;
@@ -155,6 +189,7 @@ public class ShardImpl implements Storage.Shard {
     this.nativeType = nativeType;
   }
 
+  @Override
   public long getTimestamp() {
     return timestamp;
   }
@@ -162,10 +197,6 @@ public class ShardImpl implements Storage.Shard {
   @Override
   public long getParentId() {
     return parentId;
-  }
-
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
   }
 
   // TODO revise - this must be the serializable k.LAB histogram, which implies it cannot be merged

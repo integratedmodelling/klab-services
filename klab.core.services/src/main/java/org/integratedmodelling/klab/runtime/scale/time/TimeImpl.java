@@ -91,7 +91,9 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     }
 
     if (locator instanceof TimeInstant timeInstant) {
-      if (timeInstant.getMilliseconds() >= start.getMilliseconds()
+      if (timeInstant.getMilliseconds() == 0) {
+        return initialization(this);
+      } else if (timeInstant.getMilliseconds() >= start.getMilliseconds()
           && timeInstant.getMilliseconds() < end.getMilliseconds()) {
         // FIXME wrong: if this is an extent of this as a grid, return that extent!
         for (var extent : this) {

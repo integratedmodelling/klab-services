@@ -109,6 +109,16 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             ret.put(
                 "adapterParameters",
                 data.getParameters() == null ? null : Utils.Json.asString(data.getParameters()));
+
+            var shardingStrategy =
+                observation.getContextualizationData().getNativeShardingStrategy();
+            if (shardingStrategy != null) {
+              ret.put("fillCurve", shardingStrategy.getCurve().name());
+              ret.put("suggestedSplits", shardingStrategy.getSuggestedSplits());
+              ret.put("maxBufferSize", shardingStrategy.getMaxBufferSize());
+              ret.put("minSplitSize", shardingStrategy.getMinSplitSize());
+              ret.put("dataType", shardingStrategy.getDataType().name());
+            }
           }
         }
         case Agent agent -> {
@@ -153,15 +163,21 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case ShardImpl buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.getPersistence().name());
-          ret.put("type", buffer.getNativeType().name());
+          ret.put("nativeType", buffer.getNativeType().name());
           ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("size", buffer.getGeometry().size());
-          ret.put("offset", buffer.getShardIndex());
+          ret.put("shardIndex", buffer.getShardIndex());
           ret.put("timestamp", buffer.getTimestamp());
+          ret.put("shardCount", buffer.getShardCount());
           ret.put("urn", buffer.getUrn());
-          ret.put(
-              "histogram",
-              org.integratedmodelling.common.utils.Utils.Json.asString(buffer.getHistogram()));
+          if (buffer.getHistogram() != null) {
+            ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
+          }
+         ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
+          ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
+          ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
+          ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());
+          ret.put("dataType", buffer.getShardingStrategy().getDataType().name());
         }
         default ->
             throw new KlabInternalErrorException(

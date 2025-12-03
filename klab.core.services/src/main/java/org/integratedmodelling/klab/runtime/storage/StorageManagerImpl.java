@@ -207,12 +207,27 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   public Storage getStorage(Observation observation) {
+
     var ret = this.storage.get(observation);
+    if (ret == null && this.existingData) {
+      ret = reconstructStorage(observation);
+    }
+
     if (ret == null) {
       throw new KlabIllegalStateException(
-          "cannot create storage: no storage found for " + observation);
+          "cannot create storage: no storage found for "
+              + observation
+              + " or insufficient information to reconstruct storage");
     }
     return ret;
+  }
+
+  private Storage reconstructStorage(Observation observation) {
+    var contextualizationData = observation.getContextualizationData();
+    if (contextualizationData == null) return null;
+    var shardingStrategy = contextualizationData.getNativeShardingStrategy();
+    if (shardingStrategy == null) return null;
+    return new StorageImpl(observation, shardingStrategy, contextScope, this);
   }
 
   @Override
@@ -240,7 +255,7 @@ public class StorageManagerImpl implements StorageManager {
       Data.ShardingStrategy shardingStrategy,
       ServiceContextScope contextScope) {
     // TODO set up a persistable peer object for the shard and expose it into the maintenance thread
-    return new StorageImpl(observation, shardingStrategy, contextScope, this, existingData);
+    return new StorageImpl(observation, shardingStrategy, contextScope, this);
   }
 
   @Override
@@ -317,6 +332,7 @@ public class StorageManagerImpl implements StorageManager {
     return true;
   }
 
+  // FIXME restore the histogram and return that
   public boolean loadBufferArray(BufferArray array, File file, Storage.Type type) {
     try {
       FileChannel channel = new RandomAccessFile(file, "r").getChannel();
@@ -360,5 +376,19 @@ public class StorageManagerImpl implements StorageManager {
       shardMaintenance.execute(
           () -> saveBufferArray(baseScanner.data, outFile, shard.getNativeType()));
     }
+  }
+
+  public boolean hasExistingData() {
+    return existingData;
+  }
+
+  public File getStorageFile(Storage.Shard shard) {
+    return new File(
+        persistentSpace
+            + File.separator
+            + contextScope.getId()
+            + File.separator
+            + shard.getUrn()
+            + ".dat");
   }
 }

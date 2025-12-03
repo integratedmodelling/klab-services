@@ -60,13 +60,28 @@ public class ScannerAdapters {
     }
 
     @Override
+    public int getShardCount() {
+      return 0;
+    }
+
+    @Override
     public Histogram getHistogram() {
       return null;
     }
 
-      @Override
-      public Storage.Type getNativeType() {
+    @Override
+    public Storage.Type getNativeType() {
       return null;
+    }
+
+      @Override
+      public long getTimestamp() {
+      return 0;
+      }
+
+      @Override
+      public String getUrn() {
+      return "";
       }
 
       @Override
