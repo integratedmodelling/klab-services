@@ -109,10 +109,6 @@
                                     <artifactId>jakarta.validation-api</artifactId>
                                 </exclusion>
                 -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
             </exclusions>
             <!--
                         <exclusions>
