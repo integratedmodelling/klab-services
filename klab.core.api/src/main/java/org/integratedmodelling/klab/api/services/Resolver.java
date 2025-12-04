@@ -1,18 +1,16 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface Resolver extends KlabService {
-
-//  default String getServiceName() {
-//    return "klab.resolver.service";
-//  }
 
   /**
    * All services publish capabilities and have a call to obtain them.
@@ -47,6 +45,28 @@ public interface Resolver extends KlabService {
    * @return
    */
   String encodeDataflow(Dataflow dataflow);
+
+  /**
+   * Create a resource from an observation's contextualization data and make it available, together
+   * with an annotating model, to the context scope through a scope-specific scenario that is always
+   * active. The resource is tagged with the observation's semantics and remains available, along
+   * with the scenario and the models in it, until the scope goes away, honoring its persistence
+   * settings.
+   *
+   * @param observation
+   * @param contextScope
+   * @return
+   */
+  Resource submitResource(Observation observation, ContextScope contextScope);
+
+  /**
+   * Return all resources submitted in the scope. These can be further specified in the modeler for
+   * submission to a resource service.
+   *
+   * @param scope
+   * @return
+   */
+  List<Resource> getSubmittedResources(ContextScope scope);
 
   /**
    * Resolver administration functions.

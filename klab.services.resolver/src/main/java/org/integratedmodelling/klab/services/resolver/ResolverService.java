@@ -245,13 +245,14 @@ public class ResolverService extends BaseService implements Resolver {
      */
     getComponentRegistry().loadExtensions(extensionPackages.toArray(new String[] {}));
 
-//    /**
-//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-//     * is no configured broker.
-//     */
-//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-//      this.embeddedBroker = new EmbeddedBroker();
-//    }
+    //    /**
+    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
+    // there
+    //     * is no configured broker.
+    //     */
+    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+    //      this.embeddedBroker = new EmbeddedBroker();
+    //    }
 
     //    serviceScope()
     //        .send(
@@ -314,6 +315,18 @@ public class ResolverService extends BaseService implements Resolver {
     return ret.toString();
   }
 
+  @Override
+  public Resource submitResource(Observation observation, ContextScope contextScope) {
+    Logging.INSTANCE.warn("Submitting resource!");
+    return null;
+  }
+
+  @Override
+  public List<Resource> getSubmittedResources(ContextScope scope) {
+    Logging.INSTANCE.warn("Getting submitted resources!");
+    return List.of();
+  }
+
   private StringBuffer encodeResources(Dataflow dataflow, Map<String, String> resources) {
     StringBuffer ret = new StringBuffer(1024);
     // TODO
@@ -332,6 +345,7 @@ public class ResolverService extends BaseService implements Resolver {
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
     // instrument the scope for resolving observations and keeping resolution results across calls.
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
+    // TODO load up the model scenario cache if persistent; prepare an ephemeral one if not
     return super.declareContextScope(contextScope, sessionScope, userScope);
   }
 

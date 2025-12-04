@@ -105,6 +105,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     Data.ShardingStrategy getNativeShardingStrategy();
+
+    /**
+     * If true, we are asking the resolver to persist this contextualization data as a resource and
+     * an annotated model that uses it. These will be part of a scenario unique to the running
+     * scope, and may be later published to a chosen resources service upon further validation and
+     * curation. They will appear in the modeler when tuned to the scope.
+     *
+     * @return
+     */
+    boolean isPersistent();
   }
 
   /**

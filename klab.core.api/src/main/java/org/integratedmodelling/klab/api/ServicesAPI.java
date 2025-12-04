@@ -512,5 +512,9 @@ public interface ServicesAPI {
     interface ADMIN {}
 
     String RESOLVE_OBSERVATION = "/resolve";
+
+    String SUBMIT_RESOURCE = "/resource/submit";
+
+    String GET_SUBMITTED_RESOURCES = "/resource/submitted";
   }
 }

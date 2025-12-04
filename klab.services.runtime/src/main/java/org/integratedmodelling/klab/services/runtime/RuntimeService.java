@@ -450,7 +450,7 @@ public class RuntimeService extends BaseService
       /*
        * Due diligence to verify that the adapter is there and available.
        */
-      Observation.ContextualizationData predefinedContextualization = null;
+      Observation.ContextualizationData predefinedContextualization;
       if (observation.getContextualizationData() != null) {
 
         // first check if we have the adapter locally
@@ -502,9 +502,11 @@ public class RuntimeService extends BaseService
           }
         }
 
-        // TODO we have the adapter, no need to call the resolver but we must embed the call into
-        //  the resolution step. Only direct submissions are supported with this method.
+        // we have the adapter, no need to call the resolver but we must embed the call into
+        // the resolution step. Only direct submissions are supported with this method.
         predefinedContextualization = contextualizationData;
+      } else {
+        predefinedContextualization = null;
       }
 
       contextualizationData.setServiceId(serviceId());
@@ -579,6 +581,10 @@ public class RuntimeService extends BaseService
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit() != null) {
+                      if (predefinedContextualization != null) {
+                        publishContextualization(observation, resolutionScope);
+                      }
+
                       return observation;
                     }
                   }
@@ -613,6 +619,13 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  private void publishContextualization(
+      Observation observation, ServiceContextScope resolutionScope) {
+    if (observation.getContextualizationData().isPersistent()) {
+      resolutionScope.getService(Resolver.class).submitResource(observation, resolutionScope);
+    }
   }
 
   private CompletableFuture<Dataflow> createPredefinedDataflow(

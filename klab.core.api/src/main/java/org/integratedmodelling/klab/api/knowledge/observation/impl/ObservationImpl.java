@@ -56,6 +56,7 @@ public class ObservationImpl implements Observation {
     private Parameters<String> parameters = Parameters.create();
     private URL serviceUrl;
     private Data.ShardingStrategy nativeShardingStrategy;
+    private boolean persistent;
 
     @Override
     public Data getData() {
@@ -109,6 +110,15 @@ public class ObservationImpl implements Observation {
 
     public void setNativeShardingStrategy(Data.ShardingStrategy nativeShardingStrategy) {
       this.nativeShardingStrategy = nativeShardingStrategy;
+    }
+
+    @Override
+    public boolean isPersistent() {
+      return persistent;
+    }
+
+    public void setPersistent(boolean persistent) {
+      this.persistent = persistent;
     }
 
     @Override

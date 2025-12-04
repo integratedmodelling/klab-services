@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
 import org.apache.commons.exec.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
@@ -25,6 +27,7 @@ public class RunningInstanceImpl implements RunningInstance {
   private int njars;
   private int ndirs;
   private Scope scope;
+  private Consumer<Status> statusChangeMonitor;
 
   public RunningInstanceImpl(Build release, Scope scope, StartupOptions startupOptions) {
     this.startupOptions = startupOptions;
@@ -57,6 +60,10 @@ public class RunningInstanceImpl implements RunningInstance {
       ret.add("-server");
     }
     return ret.toArray(new String[ret.size()]);
+  }
+
+  public void setStatusChangeMonitor(Consumer<Status> statusChangeMonitor) {
+    this.statusChangeMonitor = statusChangeMonitor;
   }
 
   protected CommandLine getCommandLine(Scope scope) {
@@ -191,6 +198,9 @@ public class RunningInstanceImpl implements RunningInstance {
     this.executor = new DefaultExecutor();
     this.executor.setWorkingDirectory(build.getLocalWorkspace());
 
+    // TODO shutdown hook should remove the process lock and notify
+    //    this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
+
     Map<String, String> env = new HashMap<>();
     env.putAll(System.getenv());
 
@@ -205,11 +215,17 @@ public class RunningInstanceImpl implements RunningInstance {
             public void onProcessFailed(ExecuteException ee) {
               scope.error(ee.getMessage());
               status.set(Status.ERROR);
+              if (statusChangeMonitor != null) {
+                statusChangeMonitor.accept(status.get());
+              }
             }
 
             @Override
             public void onProcessComplete(int arg0) {
               status.set(Status.STOPPED);
+              if (statusChangeMonitor != null) {
+                statusChangeMonitor.accept(status.get());
+              }
             }
           });
     } catch (Exception e) {
