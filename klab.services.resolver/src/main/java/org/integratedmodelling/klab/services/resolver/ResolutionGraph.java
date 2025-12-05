@@ -3,10 +3,8 @@ package org.integratedmodelling.klab.services.resolver;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resolvable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -56,6 +54,9 @@ public class ResolutionGraph {
   private long internalObservationId = -1;
   private Map<Long, Observation> observations;
 
+  //  resources installed by resolving observation that come with contextualization data.
+  private List<Resource> localResources = new ArrayList<>();
+
   // these are only used in the root graph. They collect the merged dependencies of all
   // strategies and models, added only after the runtime has successfully resolved them.
   private ResourceSet dependencies = new ResourceSet();
@@ -79,6 +80,7 @@ public class ResolutionGraph {
   private ResolutionGraph(ContextScope rootScope) {
     this.rootScope = rootScope;
     this.observations = new HashMap<>();
+    this.localResources = new ArrayList<>();
   }
 
   public Graph<Resolvable, ResolutionEdge> graph() {
@@ -97,6 +99,7 @@ public class ResolutionGraph {
 
     this.parent = parent;
     this.observations = parent.observations;
+    this.localResources = parent.localResources;
 
     /**
      * Models are resolved from full down, intersecting the coverage of the dependencies. Everything
@@ -125,6 +128,7 @@ public class ResolutionGraph {
 
     this.parent = parent;
     this.observations = parent.observations;
+    this.localResources = parent.localResources;
     this.resolved = resolvedObservation;
     this.target = target;
     this.targetCoverage =
@@ -140,6 +144,10 @@ public class ResolutionGraph {
       case Observation observation -> GeometryRepository.INSTANCE.scale(observation.getGeometry());
       default -> null;
     };
+  }
+
+  public List<Resource> getLocalResources() {
+    return localResources;
   }
 
   public ResourceSet getDependencies() {
@@ -294,6 +302,11 @@ public class ResolutionGraph {
       }
     }
     return ret;
+  }
+
+  public void addLocalResource(Resource resource) {
+    // TODO create a model for immediate resolution as the context's scenario
+    localResources.add(resource);
   }
 
   /**

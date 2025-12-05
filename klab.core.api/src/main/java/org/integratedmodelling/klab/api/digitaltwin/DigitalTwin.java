@@ -572,8 +572,13 @@ public interface DigitalTwin extends RuntimeAsset {
     ret.setServiceId(scope.getService(RuntimeService.class).serviceId());
     ret.setServiceUrl(scope.getService(RuntimeService.class).getUrl());
 
+    if (contextualization.containsKey("persist")
+        && contextualization.get("persist") instanceof Boolean persist) {
+      ret.setPersistent(persist);
+    }
+
     for (var key : contextualization.keySet()) {
-      if (!"adapter".equals(key.toString())) {
+      if (!"adapter".equals(key.toString()) && !"persist".equals(key.toString())) {
         ret.getParameters().put(key.toString(), contextualization.get(key));
       }
     }

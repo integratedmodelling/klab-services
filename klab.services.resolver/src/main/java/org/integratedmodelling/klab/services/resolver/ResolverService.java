@@ -45,7 +45,6 @@ import org.integratedmodelling.klab.utilities.Utils;
 public class ResolverService extends BaseService implements Resolver {
 
   private static final String RESOLUTION_GRAPH_KEY = "__RESOLUTION_GRAPH__";
-  private static final String AVAILABLE_RESOURCES_KEY = "__AVAILABLE_RESOURCES__";
 
   /** FIXME this should be modifiable at the scope level */
   private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
@@ -342,21 +341,15 @@ public class ResolverService extends BaseService implements Resolver {
       resourcesKbox.putResource(resource);
     }
 
-    // must be somewhere available to the scope to use during resolution
-    var resourceList =
-        contextScope
-            .getData()
-            .computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
-
-    ((List<Resource>) resourceList).add(resource);
+    // make available to the scope to use during resolution
+    scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class).addLocalResource(resource);
 
     return resource;
   }
 
   @Override
   public List<Resource> getSubmittedResources(ContextScope scope) {
-    return (List<Resource>)
-        scope.getData().computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
+    return scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class).getLocalResources();
   }
 
   private StringBuffer encodeResources(Dataflow dataflow, Map<String, String> resources) {
@@ -376,17 +369,17 @@ public class ResolverService extends BaseService implements Resolver {
   public String declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
     // instrument the scope for resolving observations and keeping resolution results across calls.
-    contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
+    var resolutionGraph = ResolutionGraph.create(contextScope);
+    contextScope.getData().put(RESOLUTION_GRAPH_KEY, resolutionGraph);
+
     var ret = super.declareContextScope(contextScope, sessionScope, userScope);
 
     // load up the resource scenario cache if persistent
     if (contextScope.getConfiguration().getPersistence().survivesShutdown) {
-      var resourceList =
-          contextScope
-              .getData()
-              .computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
       var urnMatch = Resource.resourceRegexFor(this, ret);
-      ((List<Resource>) resourceList).addAll(this.resourcesKbox.getResourcesByUrnMatch(urnMatch));
+      this.resourcesKbox
+          .getResourcesByUrnMatch(urnMatch)
+          .forEach(resolutionGraph::addLocalResource);
     }
     return ret;
   }
