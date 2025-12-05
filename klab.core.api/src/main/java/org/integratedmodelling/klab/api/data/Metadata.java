@@ -206,6 +206,9 @@ public interface Metadata extends Parameters<String> {
   /** For legacy resources */
   public static String IM_ORIGINAL_URN = "im:original-urn";
 
+  /** For resources and dataflows built from existing observations */
+  public static String IM_ORIGINAL_OBSERVABLE = "im:original-observable";
+
   /** ISO639-2 http://www.w3.org/TR/NOTE-datetime RFC1766 http://www.ietf.org/rfc/rfc1766.txt */
   public static final String DC_LANGUAGE = "dc:language";
 

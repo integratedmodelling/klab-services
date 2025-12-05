@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.resources;
 
+import static org.dizitart.no2.filters.FluentFilter.*;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -110,6 +112,14 @@ public class ResourcesKBox {
   public Resource getResource(String urn, Version version) {
     // TODO handle version
     return resources.getById(urn);
+  }
+
+  public List<Resource> getResourcesByUrnMatch(String regex) {
+    var ret = new ArrayList<Resource>();
+    for (var result : resources.find(where("urn").regex(regex))) {
+      ret.add(result);
+    }
+    return ret;
   }
 
   /**

@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceBuilderImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -465,6 +466,52 @@ public interface Resource extends Knowledge, Resolvable {
 
     ret.withAdapterType(contextualizationData.getAdapterId());
     contextualizationData.getParameters().forEach(ret::withParameter);
+
+    return ret;
+  }
+
+  /**
+   * Produce the URN for a temporary resource linked to a resolved observation with pre-existing
+   * contextualization data.
+   *
+   * @param observation
+   * @param scope
+   * @return
+   */
+  static String resourceUrnFor(Observation observation, ContextScope scope) {
+    return observation.getContextualizationData().getServiceId()
+        + ":"
+        + Utils.Paths.getLeading(scope.getId(), '.').toLowerCase()
+        + ":"
+        + Utils.Paths.getLast(scope.getId(), '.').toLowerCase()
+        + ":submission."
+        + observation.getId();
+  }
+
+  static String resourceRegexFor(KlabService service, String scopeId) {
+    return service.serviceId().replace(".", "\\.")
+        + ":"
+        + Utils.Paths.getLeading(scopeId, '.').toLowerCase().replace(".", "\\.")
+        + ":"
+        + Utils.Paths.getLast(scopeId, '.').toLowerCase()
+        + ":submission\\.[0-9]*";
+  }
+
+  /**
+   * Return a builder for a temporary resource implementing a previously validated adapter
+   * configuration passed contextualization data, using the lowercased scope ID as namespace.
+   *
+   * <p>NOTE: does not add the geometry. That can be done as needed on the result.
+   *
+   * @param observation must have valid contextualization data
+   * @param scope
+   * @return a minimal resource with the URN created by #resourceUrnFor and the adapter data.
+   */
+  static Builder builder(Observation observation, ContextScope scope) {
+
+    var ret = new ResourceBuilderImpl(resourceUrnFor(observation, scope));
+    ret.withAdapterType(observation.getContextualizationData().getAdapterId());
+    observation.getContextualizationData().getParameters().forEach(ret::withParameter);
 
     return ret;
   }

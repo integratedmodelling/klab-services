@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
@@ -13,16 +12,14 @@ import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -38,23 +35,26 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResolverConfiguration;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 public class ResolverService extends BaseService implements Resolver {
 
   private static final String RESOLUTION_GRAPH_KEY = "__RESOLUTION_GRAPH__";
+  private static final String AVAILABLE_RESOURCES_KEY = "__AVAILABLE_RESOURCES__";
 
   /** FIXME this should be modifiable at the scope level */
   private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
 
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private ResolverConfiguration configuration;
+  // resource kbox for scope-bound persistent resources from observations that come with
+  // contextualization data and request to be persisted.
+  private final ResourcesKBox resourcesKbox;
 
   //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
@@ -62,6 +62,7 @@ public class ResolverService extends BaseService implements Resolver {
     super(scope, Type.RESOLVER, options);
     ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
   }
 
   @Override
@@ -318,13 +319,44 @@ public class ResolverService extends BaseService implements Resolver {
   @Override
   public Resource submitResource(Observation observation, ContextScope contextScope) {
     Logging.INSTANCE.warn("Submitting resource!");
-    return null;
+
+    var resourceBuilder =
+        Resource.builder(observation.getContextualizationData())
+            .withGeometry(observation.getGeometry());
+    for (var key : observation.getMetadata().keySet()) {
+      resourceBuilder.withMetadata(key, observation.getMetadata().get(key));
+    }
+
+    resourceBuilder
+        .withNotifications(
+            Notification.info(
+                "Created upon submission by "
+                    + contextScope.getUser().getUsername()
+                    + " on "
+                    + TimeInstant.create().toRFC3339String()))
+        .withMetadata(Metadata.IM_ORIGINAL_OBSERVABLE, observation.getObservable().getUrn());
+
+    var resource = resourceBuilder.build();
+
+    if (contextScope.getConfiguration().getPersistence().survivesShutdown) {
+      resourcesKbox.putResource(resource);
+    }
+
+    // must be somewhere available to the scope to use during resolution
+    var resourceList =
+        contextScope
+            .getData()
+            .computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
+
+    ((List<Resource>) resourceList).add(resource);
+
+    return resource;
   }
 
   @Override
   public List<Resource> getSubmittedResources(ContextScope scope) {
-    Logging.INSTANCE.warn("Getting submitted resources!");
-    return List.of();
+    return (List<Resource>)
+        scope.getData().computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
   }
 
   private StringBuffer encodeResources(Dataflow dataflow, Map<String, String> resources) {
@@ -345,8 +377,18 @@ public class ResolverService extends BaseService implements Resolver {
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
     // instrument the scope for resolving observations and keeping resolution results across calls.
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
-    // TODO load up the model scenario cache if persistent; prepare an ephemeral one if not
-    return super.declareContextScope(contextScope, sessionScope, userScope);
+    var ret = super.declareContextScope(contextScope, sessionScope, userScope);
+
+    // load up the resource scenario cache if persistent
+    if (contextScope.getConfiguration().getPersistence().survivesShutdown) {
+      var resourceList =
+          contextScope
+              .getData()
+              .computeIfAbsent(AVAILABLE_RESOURCES_KEY, key -> new ArrayList<Resource>());
+      var urnMatch = Resource.resourceRegexFor(this, ret);
+      ((List<Resource>) resourceList).addAll(this.resourcesKbox.getResourcesByUrnMatch(urnMatch));
+    }
+    return ret;
   }
 
   private StringBuffer encodeActuator(
