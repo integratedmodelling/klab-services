@@ -85,6 +85,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.parent = parent;
     this.splits = parent.splits;
     this.observer = parent.observer;
+    this.data = parent.data;
     this.contextObservation = parent.contextObservation;
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;

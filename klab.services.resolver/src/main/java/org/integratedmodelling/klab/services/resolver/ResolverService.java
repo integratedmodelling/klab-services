@@ -342,7 +342,10 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     // make available to the scope to use during resolution
-    scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class).addLocalResource(resource);
+    contextScope
+        .getData()
+        .get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class)
+        .addLocalResource(resource);
 
     return resource;
   }

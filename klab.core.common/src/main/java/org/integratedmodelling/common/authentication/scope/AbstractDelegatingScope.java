@@ -19,12 +19,13 @@ import java.util.function.Consumer;
 public abstract class AbstractDelegatingScope implements Scope {
 
   Channel delegateChannel;
-  Parameters<String> data = Parameters.create();
+  Parameters<String> data;
   Status status = Status.EMPTY;
   Scope parentScope;
 
   public AbstractDelegatingScope(Channel delegateChannel) {
     this.delegateChannel = delegateChannel;
+    this.data = Parameters.create();
   }
 
   @Override
