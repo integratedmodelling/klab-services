@@ -1408,7 +1408,8 @@ public class ComponentRegistry {
    * @param pluginRoot
    */
   public void initializeComponents(File pluginRoot) {
-    this.componentManager = new KlabPluginManager(pluginRoot.toPath());
+    this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
+    //    this.componentManager = new KlabPluginManager(pluginRoot.toPath());
     this.componentManager.loadPlugins();
     this.pluginPath = pluginRoot;
     // TODO configuration
