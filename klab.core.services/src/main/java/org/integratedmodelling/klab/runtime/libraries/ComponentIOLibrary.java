@@ -133,7 +133,7 @@ public class ComponentIOLibrary {
               properties.get("artifactId", String.class),
               properties.get("version", String.class));
 
-      if (ret != null && service instanceof ResourcesService resourcesService) {
+      if (ret != null && ret.getFirst() != null && service instanceof ResourcesService resourcesService) {
 
         var component = ret.getFirst();
         // TODO record the rights in the ResourcesKBox
@@ -169,6 +169,9 @@ public class ComponentIOLibrary {
                     + ":"
                     + properties.get("version")
                     + " not found in configured repositories"));
+      }
+      if (ret.getFirst() == null) {
+        return ret.getSecond();
       }
     } catch (Throwable t) {
       return ResourceSet.empty(Notification.error("Component import failed: ", t.getMessage()));
