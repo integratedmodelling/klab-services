@@ -5,11 +5,13 @@ import java.util.*;
 import org.integratedmodelling.common.lang.kactors.KActorsActionImpl;
 import org.integratedmodelling.common.lang.kactors.KActorsBehaviorImpl;
 import org.integratedmodelling.common.lang.kactors.KActorsStatementImpl;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -666,6 +668,12 @@ public enum LanguageAdapter {
               EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY);
           case IDENTITY ->
               EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY, SemanticType.TRAIT);
+          case INDIVIDUAL_IDENTITY ->
+              EnumSet.of(
+                  SemanticType.PREDICATE,
+                  SemanticType.IDENTITY,
+                  SemanticType.INDIVIDUAL,
+                  SemanticType.TRAIT);
           case LENGTH ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -898,6 +906,7 @@ public enum LanguageAdapter {
     var ret = new KimObservationStrategyImpl();
 
     ret.setRank(strategy.getRank());
+    ret.setType(KimObservationStrategy.Type.valueOf(strategy.getType().name()));
     ret.setNamespace(namespace);
     ret.setUrn(strategy.getName());
     ret.setDescription(strategy.getDescription());

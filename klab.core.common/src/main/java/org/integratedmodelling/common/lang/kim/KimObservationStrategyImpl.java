@@ -30,6 +30,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
   private List<List<Filter>> filters = new ArrayList<>();
   private int rank;
   private KnowledgeClass documentClass = KnowledgeClass.OBSERVATION_STRATEGY;
+  private Type type;
 
   public KimObservationStrategyImpl() {}
 
@@ -186,6 +187,15 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
   public void setDocumentClass(KnowledgeClass documentClass) {
     this.documentClass = documentClass;
+  }
+
+  @Override
+  public Type getType() {
+    return type;
+  }
+
+  public void setType(Type type) {
+    this.type = type;
   }
 
   @Override

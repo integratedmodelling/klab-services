@@ -33,6 +33,8 @@ public enum SemanticType {
   TRAIT,
   /** */
   IDENTITY,
+  /** applies to IDENTITY to denote those that define individual entities uniquely */
+  INDIVIDUAL,
   /** */
   ATTRIBUTE,
   /** */
