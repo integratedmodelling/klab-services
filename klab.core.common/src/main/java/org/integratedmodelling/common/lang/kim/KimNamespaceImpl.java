@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
@@ -32,6 +33,7 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
   private Geometry coverage;
   private List<Annotation> annotations = new ArrayList<>();
   private KlabStatement.Scope scope;
+  private KlabLanguage language = KlabLanguage.KIM;
 
   @Override
   public Collection<String> getDisjointNamespaces() {
@@ -131,5 +133,30 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
 
   public void setAnnotations(List<Annotation> annotations) {
     this.annotations = annotations;
+  }
+
+  public List<Pair<String, String>> getOwlImports() {
+    return owlImports;
+  }
+
+  public void setOwlImports(List<Pair<String, String>> owlImports) {
+    this.owlImports = owlImports;
+  }
+
+  public List<Pair<String, List<String>>> getVocabularyImports() {
+    return vocabularyImports;
+  }
+
+  public void setVocabularyImports(List<Pair<String, List<String>>> vocabularyImports) {
+    this.vocabularyImports = vocabularyImports;
+  }
+
+  @Override
+  public KlabLanguage getLanguage() {
+    return language;
+  }
+
+  public void setLanguage(KlabLanguage language) {
+    this.language = language;
   }
 }

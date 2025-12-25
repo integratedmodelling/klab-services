@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -20,15 +21,6 @@ import java.util.Set;
  * @author ferdinando.villa
  */
 public interface KlabDocument<T extends Statement> extends KlabAsset {
-
-//    /**
-//     * For a document, the repository record is used to check the status. It should never be null even if
-//     * there is no repository connected: in that case, {@link Repository.Status#CLEAN} should be returned.
-//     * Every other info about the repository is in {@link Project#getRepository()}.
-//     *
-//     * @return
-//     */
-//    Repository.Status getRepositoryStatus();
 
 
     /**
@@ -99,10 +91,6 @@ public interface KlabDocument<T extends Statement> extends KlabAsset {
      */
     Set<String> importedNamespaces(boolean withinType);
 
-//    /**
-//     * Visit the document and each statement.
-//     *
-//     * @param visitor
-//     */
-//    void visit(DocumentVisitor<T> visitor);
+    KlabLanguage getLanguage();
+
 }

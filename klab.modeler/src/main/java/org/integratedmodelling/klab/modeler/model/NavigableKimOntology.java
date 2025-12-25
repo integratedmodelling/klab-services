@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
@@ -53,6 +54,11 @@ public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatem
   @Override
   public Set<String> importedNamespaces(boolean withinType) {
     // TODO Auto-generated method stub
-    return null;
+    return delegate.importedNamespaces(withinType);
+  }
+
+  @Override
+  public KlabLanguage getLanguage() {
+    return delegate.getLanguage();
   }
 }
