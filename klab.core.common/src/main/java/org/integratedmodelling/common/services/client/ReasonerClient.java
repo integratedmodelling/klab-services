@@ -595,6 +595,28 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public ObservationStrategy computeIdentificationStrategies(
+      Observable observable, ContextScope scope) {
+    ResolutionRequest resolutionRequest = new ResolutionRequest();
+    resolutionRequest.setObservable(observable);
+    resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
+      resolutionRequest
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  scope.getContextObservation()));
+    }
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.REASONER.COMPUTE_IDENTIFICATION_STRATEGY,
+            resolutionRequest,
+            ObservationStrategy.class);
+  }
+
+  @Override
   public Concept buildConcept(ObservableBuildStrategy builder) {
     // TODO Auto-generated method stub
     return null;

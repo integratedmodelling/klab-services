@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.*;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -532,7 +533,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
   }
 
   @Override
-  public String encode(String language) {
+  public String encode(KlabLanguage language) {
     return encodeCall().encode(language);
   }
 

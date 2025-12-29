@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -12,23 +16,12 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
-//  default String getServiceName() {
-//    return "klab.reasoner.service";
-//  }
-
   /**
-   * All services publish capabilities and have a call to obtain them. Capabilities may depend on
+   * All services publish capabilities and have a call to get them. Capabilities may depend on
    * authentication but the endpoint should be publicly available as well.
-   *
-   * @author Ferd
    */
   interface Capabilities extends ServiceCapabilities {
 
@@ -423,14 +416,6 @@ public interface Reasoner extends KlabService {
    */
   boolean hasParentRole(Semantics o1, Concept t);
 
-  //    /**
-  //     * True if the concept was declared with distributed inherency (<code>of each</code>)
-  //     *
-  //     * @param c
-  //     * @return
-  //     */
-  //    boolean hasDistributedInherency(Concept c);
-
   /**
    * Like {@link #traits(Semantics)} but only returns the traits directly attributed to this
    * concept.
@@ -728,6 +713,16 @@ public interface Reasoner extends KlabService {
       Observation observation, ContextScope scope);
 
   /**
+   * Compute the most specific identification strategies to establish identity of individuals of the
+   * passed substantial observable in the scope, ordered by increasing cost and complexity.
+   *
+   * @param observable
+   * @param scope
+   * @return
+   */
+  ObservationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope);
+
+  /**
    * Entry point of the assisted semantic search behind interactive concept definition. If the
    * request has a new searchId, start a new SemanticExpression and keep it until timeout or
    * completion.
@@ -735,17 +730,6 @@ public interface Reasoner extends KlabService {
    * @param request
    */
   SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
-
-  //  /**
-  //   * Replace conceptual components as requested in the conceptual expression defining the
-  // concept
-  //   * and return the result.
-  //   *
-  //   * @param original
-  //   * @param replacements
-  //   * @return
-  //   */
-  //  Concept replaceComponent(Concept original, Map<Concept, Concept> replacements);
 
   /**
    * Send a build strategy constructed through a builder and return the result as a concept.

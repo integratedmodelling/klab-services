@@ -361,4 +361,10 @@ public class ObservationReasoner {
 
     return ret;
   }
+
+  public ObservationStrategy computeIdentificationStrategy(
+      Observable observable, ContextScope scope) {
+    // TODO
+    return null;
+  }
 }

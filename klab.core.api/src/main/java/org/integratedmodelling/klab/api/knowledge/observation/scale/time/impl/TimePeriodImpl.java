@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 
@@ -329,7 +330,7 @@ public class TimePeriodImpl implements TimePeriod {
   }
 
   @Override
-  public String encode(String language) {
+  public String encode(KlabLanguage language) {
     return /*encodeCall().encode(language)*/ "TIME-UNIMPLEMENTED";
   }
 }

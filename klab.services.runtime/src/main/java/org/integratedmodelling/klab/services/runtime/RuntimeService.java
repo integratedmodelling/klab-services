@@ -64,8 +64,7 @@ public class RuntimeService extends BaseService
     implements org.integratedmodelling.klab.api.services.RuntimeService,
         org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
-  private String hardwareSignature =
-      org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+  private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
   private RuntimeConfiguration configuration;
   private KnowledgeGraphNeo4j knowledgeGraph;
   private SystemLauncher systemLauncher;
@@ -81,7 +80,10 @@ public class RuntimeService extends BaseService
 
   private void initializeMessaging() {
     if (startupOptions.isStartLocalBroker()) {
+      Utils.DebugFile.println("Starting embedded broker for local messaging");
       this.embeddedBroker = new EmbeddedBroker();
+    } else {
+      Utils.DebugFile.println("NOT starting embedded broker for local messaging");
     }
   }
 
@@ -560,10 +562,13 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
-      // keep the k.LAB ownership for the resolution only if we're the root action
+      // keep the k.LAB ownership for the resolution only if we're the root action.
       var resolutionScope =
-          submissionScope.executing(
-              resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null);
+          submissionScope
+              .executing(
+                  resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null)
+              //  Add any folder structure and identification strategy needed for KG maintenance.
+              .contextualizeFor(observation);
 
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)

@@ -68,7 +68,6 @@ public class RepositoryState {
      * pull
      */
     FETCH_COMMIT_AND_PUSH,
-
     /** Fetch remote changes and merge them if no conflicts arise */
     FETCH_AND_MERGE,
     /** Switch to another branch (possibly new) after locally committing any pending changes */
@@ -76,7 +75,18 @@ public class RepositoryState {
     /** Hard reset head deleting all uncommitted changes */
     HARD_RESET,
 
-    MERGE_CHANGES_FROM
+    MERGE_CHANGES_FROM;
+
+    public String description() {
+      return switch (this) {
+        case FETCH_COMMIT_AND_PUSH ->
+            "Fetch remote changes, merge if no conflicts, commit and push";
+        case FETCH_AND_MERGE -> "Fetch remote changes, merge if no conflicts";
+        case COMMIT_AND_SWITCH -> "Commit changes and switch to another branch";
+        case HARD_RESET -> "Hard reset, deleting all uncommitted changes";
+        case MERGE_CHANGES_FROM -> "Merge changes from another branch";
+      };
+    }
   }
 
   private Status overallStatus = Status.UNTRACKED;

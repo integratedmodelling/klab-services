@@ -2799,6 +2799,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return observationReasoner.computeMatchingStrategies(observation, scope);
   }
 
+  @Override
+  public ObservationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope) {
+    return observationReasoner.computeIdentificationStrategy(observable, scope);
+  }
+
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();

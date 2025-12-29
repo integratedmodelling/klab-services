@@ -12,10 +12,7 @@ import org.integratedmodelling.klab.api.data.mediation.classification.Classifier
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.Encodeable;
-import org.integratedmodelling.klab.api.lang.ServiceInfo;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -56,7 +53,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     }
 
     @Override
-    public String encode(String language) {
+    public String encode(KlabLanguage language) {
 
         if (sourceCode != null) {
             // if this comes from a language, make it easy
@@ -92,13 +89,13 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
     @Override
     public String toString() {
-        return encode(Language.KIM);
+        return encode(KlabLanguage.KIM);
     }
 
     private String stringValue(Object val) {
 
         if (val instanceof Encodeable) {
-            return ((Encodeable) val).encode(Language.KIM);
+            return ((Encodeable) val).encode(KlabLanguage.KIM);
         } else if (val instanceof List) {
             String ret = "(";
             for (Object o : ((List<?>) val)) {

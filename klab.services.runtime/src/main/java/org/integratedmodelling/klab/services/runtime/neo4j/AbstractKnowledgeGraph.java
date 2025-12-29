@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -132,7 +133,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               "computation",
               // TODO skip any recursive resolution calls and prepare for linking later
               actuator.getComputation().stream()
-                  .map(call -> call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE))
+                  .map(call -> call.encode(KlabLanguage.KLAB_EXPRESSION_LANGUAGE))
                   .toList());
           ret.put("parentId", actuator.getParentId());
           ret.put("strategy", actuator.getStrategyUrn());

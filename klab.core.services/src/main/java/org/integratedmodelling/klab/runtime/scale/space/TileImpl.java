@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.WKBWriter;
@@ -79,7 +80,7 @@ public class TileImpl extends ShapeImpl implements Tile {
   }
 
   @Override
-  public String encode(String language) {
+  public String encode(KlabLanguage language) {
     ServiceCall ret = super.encodeCall();
     // TODO have ShapeImpl return a service call with a protected method, then use that and add
     // arguments

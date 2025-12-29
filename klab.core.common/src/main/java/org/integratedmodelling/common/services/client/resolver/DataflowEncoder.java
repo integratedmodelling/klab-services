@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.resolver;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -75,7 +76,7 @@ public class DataflowEncoder {
           outWriter.append(" ");
         }
         outWriter
-            .append(computation.encode(Language.KIM))
+            .append(computation.encode(KlabLanguage.KIM))
             .append(i < (actuator.getComputation().size() - 1) ? "," : "");
         i++;
       }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 
 import java.io.Serial;
 
@@ -59,7 +60,7 @@ public class ExpressionCodeImpl implements ExpressionCode {
 	}
 
 	@Override
-	public String encode(String language) {
+	public String encode(KlabLanguage language) {
 		return (forcedScalar ? "#" : "") + "[" + code + "]";
 	}
 

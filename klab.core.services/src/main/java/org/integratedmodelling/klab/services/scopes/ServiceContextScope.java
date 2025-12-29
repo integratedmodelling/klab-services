@@ -432,6 +432,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  /**
+   * Return a child scope executing the passed activity. If the original scope does not have an
+   * active DT transaction, one is created. Otherwise, the active transaction is specialized for the
+   * activity, and the activity will be linked to the previously executing one. In all cases {@link
+   * #getCurrentTransaction()} will never return null when called on the resulting scope.
+   *
+   * @param currentActivity
+   * @param runtimeAssets
+   * @return
+   */
   public ServiceContextScope executing(Activity currentActivity, Object... runtimeAssets) {
 
     ServiceContextScope ret = new ServiceContextScope(this);
@@ -449,6 +459,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
     return ret;
+  }
+
+  /**
+   * @param observation
+   * @return
+   */
+  public ServiceContextScope contextualizeFor(Observation observation) {
+    var context = contextObservation;
+    if (observation.getObservable().is(SemanticType.SUBJECT)
+        && !observation.getObservable().asConcept().isCollective()) {
+      // establish the containing folder independent of the contextualization
+      // TODO shouldn't allow having one besides a collective
+      if (!(contextObservation != null
+          && contextObservation.getObservable().asConcept().isCollective())) {
+        context = null;
+      }
+
+      // TODO establish the identification strategy for the folder
+      if (context == null) {
+        // TODO find or create a suitable folder for the subject. A specialized one is only built if
+        //  a specialized identification strategy is available for the subject. Otherwise the
+        // default strategy and default folder (stripped of all predicates) is used.
+      }
+    }
+
+    return this;
   }
 
   @Override
@@ -636,6 +672,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
               .stream()
               .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
               .toList()) {
+        // TODO for substantials, this should be in the context of a collective, and the collective
+        //  should provide the identification strategy
         if (obs.target() instanceof Observation o
             && ((instanceUrn != null
                     && instanceUrn.equals(o.getMetadata().get(Metadata.IM_FEATURE_URN)))
@@ -651,12 +689,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     //    if (observation.getId() > 0) {
 
+    // TODO for substantials, this should always be in the context of a collective, and the
+    //  collective should provide the identification strategy
+
     var query =
         digitalTwin
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD);
+
     if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
       query =
           query.where(

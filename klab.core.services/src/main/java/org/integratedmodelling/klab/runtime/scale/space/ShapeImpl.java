@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelo
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -1137,7 +1138,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
   }
 
   @Override
-  public String encode(String language) {
+  public String encode(KlabLanguage language) {
     return encodeCall().encode(language);
   }
 }

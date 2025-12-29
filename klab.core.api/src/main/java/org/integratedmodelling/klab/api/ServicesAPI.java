@@ -292,7 +292,9 @@ public interface ServicesAPI {
 
     String IMPLIED_ROLE = REASONER_BASE + "/impliedRole";
 
-    String COMPUTE_OBSERVATION_STRATEGIES = REASONER_BASE + "/computeStrategies";
+    String COMPUTE_OBSERVATION_STRATEGIES = REASONER_BASE + "/observationStrategies";
+
+    String COMPUTE_IDENTIFICATION_STRATEGY = REASONER_BASE + "/identificationStrategy";
 
     String ROLES_FOR = REASONER_BASE + "/rolesFor";
 

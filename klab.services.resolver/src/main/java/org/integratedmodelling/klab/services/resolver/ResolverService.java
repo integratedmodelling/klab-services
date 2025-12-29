@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -431,7 +432,7 @@ public class ResolverService extends BaseService implements Resolver {
       ServiceCall contextualizable, int offset, Map<String, String> resources) {
     // TODO extract resource parameters and substitute with variables
     return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset)
-        + contextualizable.encode(Language.KOBSERVATION);
+        + contextualizable.encode(KlabLanguage.OBSERVATION);
   }
 
   @Override
