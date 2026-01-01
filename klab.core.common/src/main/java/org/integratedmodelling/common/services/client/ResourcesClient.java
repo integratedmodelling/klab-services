@@ -389,8 +389,9 @@ public class ResourcesClient extends BaseServiceClient
 
   @Override
   public Project retrieveProject(String projectName, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RETRIEVE_PROJECT, Project.class, "projectName", projectName);
   }
 
   @Override
@@ -449,7 +450,13 @@ public class ResourcesClient extends BaseServiceClient
       String documentUrn,
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
-    return List.of();
+    return client.getCollection(
+        ServicesAPI.RESOURCES.ADMIN.CREATE_DOCUMENT,
+        ResourceSet.class,
+        "projectName",
+        projectName,
+        "documentType",
+        documentType);
   }
 
   @Override
@@ -518,7 +525,10 @@ public class ResourcesClient extends BaseServiceClient
 
   @Override
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT, ResourceSet.class, "urn", projectName);
   }
 
   @Override

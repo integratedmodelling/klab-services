@@ -8,6 +8,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
@@ -342,7 +344,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
 
       public File build() {
-        return null;
+        rootFolder.mkdirs();
+        for (var pair : verbatim) {
+          Utils.Files.writeStringToFile(
+              pair.getSecond(), Path.of(rootFolder.getAbsolutePath(), pair.getFirst()).toFile());
+        }
+        for (var pair : templates) {
+          // TODO render template
+        }
+        return rootFolder;
       }
 
       // TODO may add some more methods to automatically set up git

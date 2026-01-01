@@ -47,20 +47,21 @@ public class ResourceAdminController {
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
-  /**
-   * Create a new workspace
-   */
-  @Operation(summary = "Create a new workspace", 
-            description = "Creates a new workspace with the specified name and metadata")
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Workspace created successfully"),
-      @ApiResponse(responseCode = "400", description = "Invalid workspace parameters"),
-      @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role")
-  })
+  /** Create a new workspace */
+  @Operation(
+      summary = "Create a new workspace",
+      description = "Creates a new workspace with the specified name and metadata")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Workspace created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid workspace parameters"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role")
+      })
   @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_WORKSPACE)
   public @ResponseBody boolean createNewProject(
       @Parameter(description = "Workspace metadata") @RequestBody Metadata metadata,
-      @Parameter(description = "Name of the workspace") @PathVariable("workspaceName") String workspaceName,
+      @Parameter(description = "Name of the workspace") @PathVariable("workspaceName")
+          String workspaceName,
       Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
       return admin.createWorkspace(
@@ -73,21 +74,23 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
-  /**
-   * Create a new project in a workspace
-   */
-  @Operation(summary = "Create a new project", 
-            description = "Creates a new project in the specified workspace")
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Project created successfully"),
-      @ApiResponse(responseCode = "400", description = "Invalid project parameters"),
-      @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role"),
-      @ApiResponse(responseCode = "404", description = "Workspace not found")
-  })
+  /** Create a new project in a workspace */
+  @Operation(
+      summary = "Create a new project",
+      description = "Creates a new project in the specified workspace")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Project created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid project parameters"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role"),
+        @ApiResponse(responseCode = "404", description = "Workspace not found")
+      })
   @GetMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
   public @ResponseBody ResourceSet createNewProject(
-      @Parameter(description = "Name of the workspace") @PathVariable("workspaceName") String workspaceName,
-      @Parameter(description = "Name of the project") @PathVariable("projectName") String projectName,
+      @Parameter(description = "Name of the workspace") @PathVariable("workspaceName")
+          String workspaceName,
+      @Parameter(description = "Name of the project") @PathVariable("projectName")
+          String projectName,
       Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
       return admin.createProject(
@@ -100,20 +103,21 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
-  /**
-   * Update an existing project
-   */
-  @Operation(summary = "Update an existing project", 
-            description = "Updates the manifest and metadata of an existing project")
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Project updated successfully"),
-      @ApiResponse(responseCode = "400", description = "Invalid project parameters"),
-      @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role"),
-      @ApiResponse(responseCode = "404", description = "Project not found")
-  })
+  /** Update an existing project */
+  @Operation(
+      summary = "Update an existing project",
+      description = "Updates the manifest and metadata of an existing project")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Project updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid project parameters"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires administrator role"),
+        @ApiResponse(responseCode = "404", description = "Project not found")
+      })
   @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_PROJECT)
   public @ResponseBody ResourceSet updateExistingProject(
-      @Parameter(description = "Name of the project") @PathVariable("projectName") String projectName,
+      @Parameter(description = "Name of the project") @PathVariable("projectName")
+          String projectName,
       @Parameter(description = "Project manifest") @RequestBody Project.Manifest manifest,
       @Parameter(description = "Project metadata") @RequestBody Metadata metadata,
       Principal principal) {
@@ -206,22 +210,22 @@ public class ResourceAdminController {
   // operation");
   //    }
 
-  @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
+  @GetMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
   public List<ResourceSet> removeProject(
-      @RequestParam("projectName") String projectName, Principal principal) {
+      @PathVariable("urn") String projectName, Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin
         && principal instanceof EngineAuthorization auth) {
-      admin.deleteProject(projectName, auth.getScope(UserScope.class));
+      return admin.deleteProject(projectName, auth.getScope(UserScope.class));
     }
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
-  @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_WORKSPACE)
+  @GetMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_WORKSPACE)
   public List<ResourceSet> removeWorkspace(
-      @RequestParam("workspaceName") String workspaceName, Principal principal) {
+      @PathVariable("urn") String workspaceName, Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin
         && principal instanceof EngineAuthorization auth) {
-      admin.deleteWorkspace(workspaceName, auth.getScope(UserScope.class));
+      return admin.deleteWorkspace(workspaceName, auth.getScope(UserScope.class));
     }
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }

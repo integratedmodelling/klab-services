@@ -408,9 +408,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
+  public void importProject(
+      ResourcesService resources,
+      String workspaceName,
+      String projectUrl,
+      boolean overwriteExisting) {
 
-    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -432,24 +435,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public void deleteProject(String projectUrl) {
+  public void deleteProject(ResourcesService resources, String projectUrl) {
 
-    if (getUI() != null) {
-      if (!getUI()
-          .confirm(
-              Notification.create(
-                  "Confirm unrecoverable deletion of project " + projectUrl + "?"))) {
-        return;
-      }
-    }
-
-    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
               () -> {
-                var ret = admin.deleteProject(projectUrl, currentUser());
-                handleResultSets(ret);
+                handleResultSets(admin.deleteProject(projectUrl, currentUser()));
               });
     } else if (getUI() != null) {
       getUI()
@@ -460,17 +452,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public void deleteAsset(NavigableAsset asset) {
+  public void deleteAsset(ResourcesService resources, NavigableAsset asset) {
 
-    if (getUI() != null) {
-      if (!getUI()
-          .confirm(
-              Notification.create("Confirm unrecoverable deletion of " + asset.getUrn() + "?"))) {
-        return;
-      }
-    }
-
-    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -489,9 +472,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public void manageProject(
-      String projectId, RepositoryState.Operation operation, String... arguments) {
+      ResourcesService resources,
+      String projectId,
+      RepositoryState.Operation operation,
+      String... arguments) {
 
-    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -507,25 +492,33 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
   }
 
-  private void handleResultSets(List<ResourceSet> ret) {
+  private boolean handleResultSets(List<ResourceSet> ret) {
+    var result = true;
     if (ret != null && !ret.isEmpty()) {
       for (var change : ret) {
+        if (change.isEmpty() || Utils.Notifications.hasErrors(change.getNotifications())) {
+          result = false;
+        }
         dispatch(
             this,
             UIEvent.WorkspaceModified,
             getUI() == null ? change : getUI().processAlerts(change));
       }
     }
+    return result;
   }
 
   @Override
-  public void editProperties(String projectId) {}
+  public void editProperties(ResourcesService service, String projectId) {}
 
   @Override
-  public void createDocument(
-      String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType) {
-    var resources = engine().getOwner().getService(ResourcesService.class);
-    if (resources instanceof ResourcesService.Admin admin) {
+  public boolean createDocument(
+      ResourcesService service,
+      String newDocumentUrn,
+      String projectName,
+      ProjectStorage.ResourceType documentType) {
+
+    if (service instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
               () -> {
@@ -540,12 +533,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   }
                 }
               });
+      return true;
     } else if (getUI() != null) {
       getUI()
           .alert(
               Notification.create(
                   "Service does not support this operation", Notification.Level.Warning));
     }
+    return false;
   }
 
   @Override
@@ -708,5 +703,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     } catch (IOException e) {
       throw new KlabIOException("Error publishing file " + inputFile);
     }
+  }
+
+  @Override
+  public boolean createProject(ResourcesService service, String projectName, String workspaceName) {
+    if (projectName != null && service instanceof ResourcesService.Admin admin) {
+      return handleResultSets(List.of(admin.createProject(workspaceName, projectName, user())));
+    }
+    return false;
   }
 }

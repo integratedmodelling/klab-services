@@ -3733,6 +3733,11 @@ public class Utils {
     }
 
     public static File writeStringToFile(String template, File file) {
+      // Ensure path to file is available
+      var path = file.getParentFile();
+      if (path != null && !path.exists()) {
+        path.mkdirs();
+      }
       try {
         java.nio.file.Files.writeString(file.toPath(), template);
         return file;

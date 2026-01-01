@@ -89,8 +89,7 @@ public class ResourcesProvider extends BaseService
   /**
    * We keep a hash of all the resource URNs we serve for quick reference and search
    *
-   * @deprecated use {@link
-   *     ResourcesKBox}
+   * @deprecated use {@link ResourcesKBox}
    */
   private Set<String> localResources = new HashSet<>();
 
@@ -139,8 +138,7 @@ public class ResourcesProvider extends BaseService
   //  private ConcurrentNavigableMap<String, ResourceInfo> catalog = null;
 
   /**
-   * @deprecated use {@link
-   *     ResourcesKBox}
+   * @deprecated use {@link ResourcesKBox}
    */
   private ModelKbox kbox;
 
@@ -807,15 +805,17 @@ public class ResourcesProvider extends BaseService
               "Cannot create project " + projectName + ": requesting scope is not authorized"));
     }
 
-    var ret = workspaceManager.createProject(projectName, workspaceName);
+    var ret = workspaceManager.createProject(projectName, workspaceName, scope);
 
     if (ret != null) {
 
       ResourceInfo resourceInfo = new ResourceInfo();
       resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
       resourceInfo.setRights(rights);
-      resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+      resourceInfo.setKnowledgeClass(KnowledgeClass.PROJECT);
       resourceInfo.setUrn(projectName);
+      resourceInfo.setOwner(scope.getUser().getUsername());
+      resourceInfo.setServiceId(serviceId());
       resourceInfo
           .getMetadata()
           .putAll(
@@ -828,6 +828,9 @@ public class ResourcesProvider extends BaseService
                   scope.getUser().getUsername()));
 
       resourcesKbox.putStatus(resourceInfo);
+
+    } else {
+      return ResourceSet.empty(Notification.error("Cannot create project " + projectName));
     }
 
     return ret;
@@ -867,36 +870,36 @@ public class ResourcesProvider extends BaseService
   @Override
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
 
-    updateLock.writeLock().lock();
-    //
-    //        try {
-    //            // remove namespaces, behaviors and resources
-    //            var project = localProjects.get(projectName);
-    //            if (project != null) {
-    //                for (var namespace : project.getNamespaces()) {
-    //                    this.localNamespaces.remove(namespace.getUrn());
-    //                }
-    //                for (var ontology : project.getOntologies()) {
-    //                    this.servedOntologies.remove(ontology.getUrn());
-    //                }
-    //                for (KActorsBehavior behavior : project.getBehaviors()) {
-    //                    this.localBehaviors.remove(behavior.getUrn());
-    //                }
-    //                for (String resource : project.getResourceUrns()) {
-    //                    localResources.remove(resource);
-    //                    catalog.remove(resource);
-    //                }
-    //                this.localProjects.remove(projectName);
-    //            }
-    workspaceManager.removeProject(projectName);
-    invalidateCaches();
-    //    db.commit();
+    //    updateLock.writeLock().lock();
+    var workspaceName = workspaceManager.getWorkspaceForProject(projectName);
+    if (workspaceName != null && workspaceManager.removeProject(projectName)) {
+      invalidateCaches();
+      // a project deletion can have deep consequences, so the client should rebuild the
+      // entire workspace
+      ResourceSet resourceSet = new ResourceSet();
+      resourceSet
+          .getNotifications()
+          .add(
+              Notification.info(
+                  "Project "
+                      + projectName
+                      + " was deleted, invalidating caches and rebuilding workspace"));
 
-    //        }/* finally {*/
-    updateLock.writeLock().unlock();
-    /*}*/
+      resourceSet.setWorkspace(workspaceName);
 
-    return null;
+      var change = new ResourceSet.Resource();
+      change.setOperation(CRUDOperation.DELETE);
+      change.setResourceUrn(projectName);
+      change.setKnowledgeClass(KnowledgeClass.PROJECT);
+      change.setServiceId(serviceId());
+
+      resourceSet.getProjects().add(change);
+
+      return List.of(resourceSet);
+    }
+    //    updateLock.writeLock().unlock();
+    return List.of(
+        ResourceSet.empty(Notification.info("Project " + projectName + " was not deleted")));
   }
 
   @Override

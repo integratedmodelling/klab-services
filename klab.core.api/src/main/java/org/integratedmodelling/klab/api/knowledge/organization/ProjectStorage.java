@@ -49,12 +49,13 @@ public interface ProjectStorage {
         RESOURCE,
         RESOURCE_ASSET;
 
+        // FIXME just report language and take the rest from there
         public static ResourceType forExtension(String extension) {
             return switch (extension) {
                 case "kwv" -> ONTOLOGY;
                 case "kim" -> MODEL_NAMESPACE;
                 case "obs" -> STRATEGY;
-                case "kactors" -> BEHAVIOR;
+                case "kactor" -> BEHAVIOR;
                 default -> null;
             };
         }
@@ -64,7 +65,7 @@ public interface ProjectStorage {
                 case ONTOLOGY -> "kwv";
                 case MODEL_NAMESPACE -> "kim";
                 case STRATEGY -> "obs";
-                case BEHAVIOR, TESTCASE, SCRIPT -> "kactors";
+                case BEHAVIOR, TESTCASE, SCRIPT -> "kactor";
                 default ->
                         throw new KlabUnimplementedException("file extension for document of class " + this);
             };

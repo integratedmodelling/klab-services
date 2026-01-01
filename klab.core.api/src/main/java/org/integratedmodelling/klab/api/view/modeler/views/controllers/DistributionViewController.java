@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.DistributionView;
@@ -34,7 +33,7 @@ public interface DistributionViewController extends ViewController<DistributionV
      *
      * @param distribution a valid distribution
      */
-    @UIActionHandler(value = UIAction.SelectDistribution)
+//    @UIActionHandler(value = UIAction.SelectDistribution)
     void selectDistribution(Distribution distribution);
 
     @UIEventHandler

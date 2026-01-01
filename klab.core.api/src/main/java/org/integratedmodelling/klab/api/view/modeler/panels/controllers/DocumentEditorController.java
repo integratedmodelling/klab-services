@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.view.modeler.panels.controllers;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+//import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
@@ -27,13 +27,13 @@ public interface DocumentEditorController extends PanelController<NavigableDocum
      *
      * @param position
      */
-    @UIActionHandler(UIAction.ReportChangeOfPositionInDocument)
+//    @UIActionHandler(UIAction.ReportChangeOfPositionInDocument)
     default void caretMovedTo(int position) {
         getController().dispatch(this, UIEvent.DocumentPositionChanged, getPayload(), position);
     }
 
 
-    @UIActionHandler(UIAction.DocumentUpdate)
+//    @UIActionHandler(UIAction.DocumentUpdate)
     default void documentUpdated(String newContents) {
         getController().dispatch(this, UIEvent.AssetUpdateRequest, getPayload().getUrn(), newContents);
     }
@@ -51,7 +51,7 @@ public interface DocumentEditorController extends PanelController<NavigableDocum
      *
      * @param position
      */
-    @UIActionHandler(UIAction.RequestChangeOfPositionInDocument)
+//    @UIActionHandler(UIAction.RequestChangeOfPositionInDocument)
     void moveCaretTo(int position);
 
 }

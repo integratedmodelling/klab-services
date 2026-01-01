@@ -14,48 +14,53 @@ import java.util.List;
  */
 public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements ResourcesNavigator {
 
-    @Override
-    public void showWorkspaces(List<NavigableContainer> workspaces) {
-
-    }
-
-    @Override
-    public void showResources(NavigableContainer workspace) {
-
-    }
+//    @Override
+//    public void showWorkspaces(List<NavigableContainer> workspaces) {
+//
+//    }
+//
+//    @Override
+//    public void showResources(NavigableContainer workspace) {
+//
+//    }
 
     @Override
     public void workspaceModified(NavigableContainer container) {
 
     }
 
-    @Override
-    public void showAssetInfo(NavigableAsset asset) {
-
-    }
-
-    @Override
-    public void highlightAssetPath(List<NavigableAsset> path) {
-
-    }
-
-    @Override
-    public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {
-
-    }
-
-    @Override
-    public void workspaceCreated(NavigableContainer workspace) {
-
-    }
-
-    @Override
-    public void resetValidationNotifications(NavigableContainer notifications) {
-
-    }
+//    @Override
+//    public void showAssetInfo(NavigableAsset asset) {
+//
+//    }
+//
+//    @Override
+//    public void highlightAssetPath(List<NavigableAsset> path) {
+//
+//    }
+//
+//    @Override
+//    public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {
+//
+//    }
+//
+//    @Override
+//    public void workspaceCreated(NavigableContainer workspace) {
+//
+//    }
+//
+//    @Override
+//    public void resetValidationNotifications(NavigableContainer notifications) {
+//
+//    }
 
     @Override
     public void engineStatusChanged(Engine.Status status) {
 
+    }
+
+    @Override
+    public NavigableContainer getVisualizedWorkspace(String workspace) {
+        return null;
     }
 }

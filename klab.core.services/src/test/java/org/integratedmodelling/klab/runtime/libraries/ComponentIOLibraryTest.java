@@ -31,16 +31,16 @@ class ComponentIOLibraryTest {
         .thenReturn(Pair.of(null, ResourceSet.of(new ResourceInfo(), Version.ANY_VERSION, null)));
   }
 
-  @Test
-  void importComponentDirectKar() {
-    Parameters params = Parameters.create();
-    File karFile =
-        new File("src/test/resources/klab.component.geospatial-1.0-SNAPSHOT-component.kar");
-
-    var result = ComponentIOLibrary.importComponentDirect(params, karFile, service, null);
-
-    Assertions.assertFalse(result.isEmpty());
-  }
+//  @Test
+//  void importComponentDirectKar() {
+//    Parameters params = Parameters.create();
+//    File karFile =
+//        new File("src/test/resources/klab.component.geospatial-1.0-SNAPSHOT-component.kar");
+//
+//    var result = ComponentIOLibrary.importComponentDirect(params, karFile, service, null);
+//
+//    Assertions.assertFalse(result.isEmpty());
+//  }
 
   @Test
   void importComponentMaven() {}

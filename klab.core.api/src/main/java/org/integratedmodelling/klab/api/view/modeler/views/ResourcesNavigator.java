@@ -14,21 +14,31 @@ import java.util.List;
 
 public interface ResourcesNavigator extends View {
 
-    void showWorkspaces(List<NavigableContainer> workspaces);
-
-    void showResources(NavigableContainer workspace);
+//    void showWorkspaces(List<NavigableContainer> workspaces);
+//
+//    void showResources(NavigableContainer workspace);
 
     void workspaceModified(NavigableContainer changedContainer);
 
-    void showAssetInfo(NavigableAsset asset);
+//    void showAssetInfo(NavigableAsset asset);
+//
+//    void highlightAssetPath(List<NavigableAsset> path);
+//
+//    void setServiceCapabilities(ResourcesService.Capabilities capabilities);
 
-    void highlightAssetPath(List<NavigableAsset> path);
-
-    void setServiceCapabilities(ResourcesService.Capabilities capabilities);
-
-    void workspaceCreated(NavigableContainer workspace);
-
-    void resetValidationNotifications(NavigableContainer notifications);
+//    void workspaceCreated(NavigableContainer workspace);
+//
+//    void resetValidationNotifications(NavigableContainer notifications);
 
     void engineStatusChanged(Engine.Status status);
+
+  /**
+   * Return the workspace with the given URN if it is being visualized, or null otherwise. Called
+   * before merging incoming changes which will trigger a call to {@link
+   * #workspaceModified(NavigableContainer)}
+   *
+   * @param workspace
+   * @return
+   */
+  NavigableContainer getVisualizedWorkspace(String workspace);
 }

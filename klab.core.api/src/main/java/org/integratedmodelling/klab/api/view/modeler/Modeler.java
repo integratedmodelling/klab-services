@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
@@ -7,18 +12,11 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.view.UIController;
-import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+// import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
-
-import java.io.File;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement
@@ -60,10 +58,6 @@ public interface Modeler extends UIController {
    * @param adding the user has activate a UI mode that forces an "add to existing" mode, such as
    *     keeping the Ctrl key pressed. May be handled or ignored according to context.
    */
-  @UIActionHandler(
-      value = UIAction.ObserveAsset,
-      label = "Observe asset",
-      tooltip = "Select a k.LAB " + "asset to create a new context or add to the current one.")
   CompletableFuture<Observation> observe(ContextScope contextScope, Object asset, boolean adding);
 
   /**
@@ -114,27 +108,84 @@ public interface Modeler extends UIController {
 
   boolean shutdown(boolean shutdownLocalServices);
 
-  // FIXME not sure about these below, or the entire UIAction business
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param workspaceName
+   * @param projectUrl
+   * @param overwriteExisting
+   */
+  void importProject(
+      ResourcesService service, String workspaceName, String projectUrl, boolean overwriteExisting);
 
-  @UIActionHandler(
-      value = UIReactor.UIAction.ImportProject,
-      label = "New project",
-      tooltip = "Create a new k.LAB project in the current workspace and scope")
-  void importProject(String workspaceName, String projectUrl, boolean overwriteExisting);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param projectUrl
+   */
+  void deleteProject(ResourcesService service, String projectUrl);
 
-  @UIActionHandler(UIReactor.UIAction.DeleteProject)
-  void deleteProject(String projectUrl);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param asset
+   */
+  void deleteAsset(ResourcesService service, NavigableAsset asset);
 
-  @UIActionHandler(UIReactor.UIAction.DeleteAsset)
-  void deleteAsset(NavigableAsset asset);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param projectId
+   * @param operation
+   * @param arguments
+   */
+  void manageProject(
+      ResourcesService service,
+      String projectId,
+      RepositoryState.Operation operation,
+      String... arguments);
 
-  @UIActionHandler(UIReactor.UIAction.ManageProject)
-  void manageProject(String projectId, RepositoryState.Operation operation, String... arguments);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param projectId
+   */
+  void editProperties(ResourcesService service, String projectId);
 
-  @UIActionHandler(UIReactor.UIAction.EditProjectProperties)
-  void editProperties(String projectId);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param projectName
+   * @param workspaceName
+   * @return
+   */
+  boolean createProject(ResourcesService service, String projectName, String workspaceName);
 
-  @UIActionHandler(UIReactor.UIAction.CreateAsset)
-  void createDocument(
-      String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType);
+  /**
+   * Call the correspondent API on the service and ingest all modifications, propagating UI events
+   * as needed.
+   *
+   * @param service
+   * @param projectName
+   * @param documentUrn
+   * @param documentType
+   * @return
+   */
+  boolean createDocument(
+      ResourcesService service,
+      String projectName,
+      String documentUrn,
+      ProjectStorage.ResourceType documentType);
 }

@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.*;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+//import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
@@ -332,12 +332,12 @@ public abstract class AbstractUIController implements UIController {
         // TODO validate the argument list w.r.t. the event payload class!
         this.reactors.computeIfAbsent(key, k -> new ArrayList<>()).add(descriptor);
       }
-      var actionHandlerDefinition = AnnotationUtils.findAnnotation(method, UIActionHandler.class);
-      if (actionHandlerDefinition != null) {
-
-        // TODO update action graph
-
-      }
+//      var actionHandlerDefinition = AnnotationUtils.findAnnotation(method, UIActionHandler.class);
+//      if (actionHandlerDefinition != null) {
+//
+//        // TODO update action graph
+//
+//      }
     }
   }
 
@@ -374,12 +374,12 @@ public abstract class AbstractUIController implements UIController {
         // TODO update action graph
 
       }
-      var actionHandlerDefinition = AnnotationUtils.findAnnotation(method, UIActionHandler.class);
-      if (actionHandlerDefinition != null) {
-
-        // TODO update action graph
-
-      }
+//      var actionHandlerDefinition = AnnotationUtils.findAnnotation(method, UIActionHandler.class);
+//      if (actionHandlerDefinition != null) {
+//
+//        // TODO update action graph
+//
+//      }
       var visualizationHandlerDefinition =
           AnnotationUtils.findAnnotation(method, Visualization.class);
       if (visualizationHandlerDefinition != null) {

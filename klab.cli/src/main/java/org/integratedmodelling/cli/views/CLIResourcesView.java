@@ -682,30 +682,35 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     }
   }
 
-  @Override
-  public void showWorkspaces(java.util.List<NavigableContainer> workspaces) {}
-
-  @Override
-  public void showResources(NavigableContainer workspace) {}
+//  @Override
+//  public void showWorkspaces(java.util.List<NavigableContainer> workspaces) {}
+//
+//  @Override
+//  public void showResources(NavigableContainer workspace) {}
 
   @Override
   public void workspaceModified(NavigableContainer changedContainer) {}
 
-  @Override
-  public void showAssetInfo(NavigableAsset asset) {}
-
-  @Override
-  public void highlightAssetPath(java.util.List<NavigableAsset> path) {}
-
-  @Override
-  public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {}
-
-  @Override
-  public void workspaceCreated(NavigableContainer workspace) {}
-
-  @Override
-  public void resetValidationNotifications(NavigableContainer notifications) {}
+//  @Override
+//  public void showAssetInfo(NavigableAsset asset) {}
+//
+//  @Override
+//  public void highlightAssetPath(java.util.List<NavigableAsset> path) {}
+//
+//  @Override
+//  public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {}
+//
+//  @Override
+//  public void workspaceCreated(NavigableContainer workspace) {}
+//
+//  @Override
+//  public void resetValidationNotifications(NavigableContainer notifications) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {}
+
+  @Override
+  public NavigableContainer getVisualizedWorkspace(String workspace) {
+    return null;
+  }
 }

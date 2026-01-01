@@ -45,6 +45,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -153,7 +154,7 @@ public class WorkspaceManager {
   private void updateProjectStatus(String projectId, KlabDocument<?> resource) {
     var pd = projectDescriptors.get(projectId);
     var prj = projects.get(projectId);
-    if (pd.storage instanceof FileProjectStorage fps && prj instanceof ProjectImpl pimpl) {
+    if (pd != null && pd.storage instanceof FileProjectStorage fps && prj instanceof ProjectImpl pimpl) {
       pimpl.setRepositoryState(fps.getRepositoryState());
       //            fps.updateMetadata(prj, resource, scope);
     }
@@ -383,30 +384,42 @@ public class WorkspaceManager {
    * @param projectName
    * @return
    */
-  public ResourceSet createProject(String projectName, String workspaceName) {
+  public ResourceSet createProject(String projectName, String workspaceName, UserScope userScope) {
 
     File workspace = BaseService.getConfigurationSubdirectory(startupOptions, "workspaces");
     File projectHome = new File(workspace + File.separator + projectName);
 
     if (projectHome.exists()) {
       // shouldn't happen, but in case
-      return null;
+      return ResourceSet.empty(Notification.error("Project already exists: " + projectName));
     }
 
     var manifest = new ProjectImpl.ManifestImpl();
+    manifest.setPrivileges(ResourcePrivileges.create(userScope));
+    manifest.setVersion(Version.EMPTY_VERSION);
+    manifest.setWorldview(service.capabilities(userScope).getAdoptedWorldview());
+
     var result =
         Utils.Templates.builder(projectHome)
             // TODO other support files?
-            .file("META-INF/klab.yaml", Utils.YAML.asString(manifest))
+            .file("docs/documentation.json", "{}")
+            .file("docs/references.json", "{}")
+            .file("META-INF/manifest.json", Utils.Json.asString(manifest))
             .build();
 
     if (result != null) {
+
       var ret = new ResourceSet();
       var prj = new ResourceSet.Resource();
       prj.setResourceUrn(projectName);
       prj.setResourceVersion(manifest.getVersion());
       ret.setWorkspace(workspaceName);
+      prj.setOperation(CRUDOperation.CREATE);
+      prj.setServiceId(service.serviceId());
+      prj.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+
       ret.getProjects().add(prj);
+      ret.getNotifications().add(Notification.info("Project created: " + projectName));
 
       var configuration = new ResourcesConfiguration.ProjectConfiguration();
       configuration.setSourceUrl(projectName);
@@ -435,6 +448,9 @@ public class WorkspaceManager {
       this.lastProjectUpdates.put(projectName, System.currentTimeMillis());
 
       saveConfiguration();
+
+      // register in catalog
+      createProjectData(projectName, workspaceName);
 
       return ret;
     }

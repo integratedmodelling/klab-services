@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+//import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -28,9 +28,7 @@ import java.util.Map;
  * build the "controller" part of the modeler as much as possible within the core k.LAB
  * implementation.
  *
- * <p>Interfaces derived from this define the wiring of events and actions by means of methods
- * annotated with the @{@link org.integratedmodelling.klab.api.modeler.annotations.UIEventHandler}
- * and @{@link org.integratedmodelling.klab.api.modeler.annotations.UIActionHandler} annotations.
+ * <p>Interfaces derived from this define the wiring of events and actions.
  * The modeler collects them and automatically wires events from the engine to UI actions that are
  * dispatched to all views and panels registered with them.
  */
@@ -254,7 +252,7 @@ public interface UIReactor {
    * Views may call refresh() to ensure that the controller sends them whatever updated content they
    * may be handling. This may be linked to the view coming into focus after potential changes.
    */
-  @UIActionHandler(UIAction.RefreshContents)
+//  @UIActionHandler(UIAction.RefreshContents)
   default void refresh() {}
 
   /**

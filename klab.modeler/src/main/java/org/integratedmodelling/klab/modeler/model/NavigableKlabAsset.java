@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.stream.Stream;
 
 // import org.eclipse.core.resources.IContainer;
 // import org.eclipse.core.resources.IFile;
@@ -16,15 +17,15 @@ import java.util.*;
 // import org.eclipse.ui.model.IWorkbenchAdapter3;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -32,6 +33,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableFolder;
 
 /**
@@ -118,12 +120,36 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       return null;
     }
 
-    // TODO
-    return null;
+    NavigableAsset ret = null;
+    if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
+      ret = navigableKlabAsset;
+    } else {
+      ret =
+          switch (asset) {
+            case Project project -> new NavigableProject(project, this);
+            case KimNamespace namespace -> new NavigableKimNamespace(namespace, this);
+            case KimOntology ontology -> new NavigableKimOntology(ontology, this);
+            case KimObservationStrategyDocument observationStrategyDocument ->
+                new NavigableObservationStrategies(observationStrategyDocument, this);
+
+            //            case KActorsBehavior behavior -> { // TODO missing
+            //              new NavigableActorsBehavior(behavior);
+            //            }
+            default ->
+                throw new KlabInternalErrorException("cannot handle navigable " + asset.getClass());
+          };
+    }
+
+    if (ret != null) {
+      this.children = Stream.concat(children.stream(), Stream.of(ret)).toList();
+    }
+
+    return ret;
   }
 
   protected void removeChild(KlabAsset asset) {
-    // TODO!
+    this.children =
+        children.stream().filter(child -> !child.getUrn().equals(asset.getUrn())).toList();
   }
 
   protected boolean is(KlabAsset asset) {
@@ -217,7 +243,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             changes.getOntologies(),
             changes.getNamespaces(),
             changes.getObservationStrategies(),
-            changes.getBehaviors())) {
+            changes.getBehaviors(),
+            changes.getProjects())) {
       applyChange(change, scope, ret);
     }
     computeStatistics(changes);
@@ -265,12 +292,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         var asset = findAsset(change.getResourceUrn(), KlabAsset.class, change.getKnowledgeClass());
         if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
           var parent = navigableKlabAsset.parent;
-          navigableKlabAsset.children =
-              children.stream()
-                  .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
-                  .toList();
+          if (parent instanceof NavigableKlabAsset<?> parentAsset) {
+            parentAsset.children =
+                children.stream()
+                    .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
+                    .toList();
+          }
           changedAssets.add(parent);
-          parent
+          navigableKlabAsset
               .localMetadata()
               .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
           return true;

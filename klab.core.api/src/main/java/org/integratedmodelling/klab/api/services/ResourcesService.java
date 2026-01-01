@@ -118,10 +118,6 @@ public interface ResourcesService extends KlabService {
     Set<CRUDOperation> getPermissions();
   }
 
-  //  default String getServiceName() {
-  //    return "klab.resources.service";
-  //  }
-  //
   /**
    * Scope CAN be null for generic public capabilities.
    *
