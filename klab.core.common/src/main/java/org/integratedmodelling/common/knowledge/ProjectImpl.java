@@ -24,271 +24,280 @@ import java.util.List;
 
 public class ProjectImpl implements Project {
 
-    @Serial
-    private static final long serialVersionUID = 7618524077068234748L;
-//    private Repository repositoryMetadata = new RepositoryImpl();
+  @Serial private static final long serialVersionUID = 7618524077068234748L;
 
-    public static class ManifestImpl implements Manifest {
+  //    private Repository repositoryMetadata = new RepositoryImpl();
 
-        @Serial
-        private static final long serialVersionUID = -6549113149802016133L;
-        private String description;
-        private ResourcePrivileges privileges = ResourcePrivileges.PUBLIC;
-        private Version version = Version.EMPTY_VERSION;
-        private Collection<MetadataConvention> metadataConventions = new HashSet<>();
-        private List<Pair<String, Version>> prerequisiteProjects = new ArrayList<>();
-        private List<Pair<String, Version>> prerequisiteComponents = new ArrayList<>();
-        private String worldview;
-        private String definedWorldview;
+  public static class ManifestImpl implements Manifest {
 
-        @Override
-        public String getDescription() {
-            return this.description;
-        }
-
-        @Override
-        public String getWorldview() {
-            return this.worldview;
-        }
-
-        @Override
-        public String getDefinedWorldview() {
-            return this.definedWorldview;
-        }
-
-        @Override
-        public ResourcePrivileges getPrivileges() {
-            return this.privileges;
-        }
-
-        @Override
-        public Version getVersion() {
-            return this.version;
-        }
-
-        @Override
-        public Collection<MetadataConvention> getMetadataConventions() {
-            return this.metadataConventions;
-        }
-
-        @Override
-        public List<Pair<String, Version>> getPrerequisiteProjects() {
-            return this.prerequisiteProjects;
-        }
-
-        @Override
-        public List<Pair<String, Version>> getPrerequisiteComponents() {
-            return this.prerequisiteComponents;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
-        public void setPrivileges(ResourcePrivileges privileges) {
-            this.privileges = privileges;
-        }
-
-        public void setVersion(Version version) {
-            this.version = version;
-        }
-
-        public void setMetadataConventions(Collection<MetadataConvention> metadataConventions) {
-            this.metadataConventions = metadataConventions;
-        }
-
-        public void setPrerequisiteProjects(List<Pair<String, Version>> prerequisiteProjects) {
-            this.prerequisiteProjects = prerequisiteProjects;
-        }
-
-        public void setPrerequisiteComponents(List<Pair<String, Version>> prerequisiteComponents) {
-            this.prerequisiteComponents = prerequisiteComponents;
-        }
-
-        public void setWorldview(String worldview) {
-            this.worldview = worldview;
-        }
-
-        public void setDefinedWorldview(String definedWorldview) {
-            this.definedWorldview = definedWorldview;
-        }
-    }
-
-    private Manifest manifest;
-    private Metadata metadata = Metadata.create();
-    private String urn;
-    private List<KimNamespace> namespaces = new ArrayList<>();
-    private List<KimOntology> ontologies = new ArrayList<>();
-    private List<KActorsBehavior> behaviors = new ArrayList<>();
-    private List<KActorsBehavior> apps = new ArrayList<>();
-    private List<KActorsBehavior> testCases = new ArrayList<>();
-    private List<Notification> notifications = new ArrayList<>();
-    private List<String> resourceUrns = new ArrayList<>();
-    private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
-    private List<Annotation> annotations = new ArrayList<>();
-    private RepositoryState repositoryState = new RepositoryState();
+    @Serial private static final long serialVersionUID = -6549113149802016133L;
+    private String description;
+    private ResourcePrivileges privileges = ResourcePrivileges.PUBLIC;
+    private Version version = Version.EMPTY_VERSION;
+    private Collection<MetadataConvention> metadataConventions = new HashSet<>();
+    private List<Pair<String, Version>> prerequisiteProjects = new ArrayList<>();
+    private List<Pair<String, Version>> prerequisiteComponents = new ArrayList<>();
+    private String worldview;
+    private String definedWorldview;
 
     @Override
-    public Manifest getManifest() {
-        return this.manifest;
+    public String getDescription() {
+      return this.description;
     }
 
     @Override
-    public Metadata getMetadata() {
-        return this.metadata;
+    public String getWorldview() {
+      return this.worldview;
     }
 
     @Override
-    public String getUrn() {
-        return this.urn;
+    public String getDefinedWorldview() {
+      return this.definedWorldview;
     }
 
     @Override
-    public List<KimNamespace> getNamespaces() {
-        return this.namespaces;
+    public ResourcePrivileges getPrivileges() {
+      return this.privileges;
     }
 
     @Override
-    public List<KActorsBehavior> getBehaviors() {
-        return this.behaviors;
+    public Version getVersion() {
+      return this.version;
     }
 
     @Override
-    public List<KActorsBehavior> getApps() {
-        return this.apps;
+    public Collection<MetadataConvention> getMetadataConventions() {
+      return this.metadataConventions;
     }
 
     @Override
-    public List<KActorsBehavior> getTestCases() {
-        return this.testCases;
+    public List<Pair<String, Version>> getPrerequisiteProjects() {
+      return this.prerequisiteProjects;
     }
 
     @Override
-    public List<Notification> getNotifications() {
-        return this.notifications;
+    public List<Pair<String, Version>> getPrerequisiteComponents() {
+      return this.prerequisiteComponents;
     }
 
-    public void setManifest(Manifest manifest) {
-        this.manifest = manifest;
+    public void setDescription(String description) {
+      this.description = description;
     }
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
+    public void setPrivileges(ResourcePrivileges privileges) {
+      this.privileges = privileges;
     }
 
-    public void setUrn(String urn) {
-        this.urn = urn;
+    public void setVersion(Version version) {
+      this.version = version;
     }
 
-    public void setNamespaces(List<KimNamespace> namespaces) {
-        this.namespaces = namespaces;
+    public void setMetadataConventions(Collection<MetadataConvention> metadataConventions) {
+      this.metadataConventions = metadataConventions;
     }
 
-    public void setBehaviors(List<KActorsBehavior> behaviors) {
-        this.behaviors = behaviors;
+    public void setPrerequisiteProjects(List<Pair<String, Version>> prerequisiteProjects) {
+      this.prerequisiteProjects = prerequisiteProjects;
     }
 
-    public void setApps(List<KActorsBehavior> apps) {
-        this.apps = apps;
+    public void setPrerequisiteComponents(List<Pair<String, Version>> prerequisiteComponents) {
+      this.prerequisiteComponents = prerequisiteComponents;
     }
 
-    public void setTestCases(List<KActorsBehavior> testCases) {
-        this.testCases = testCases;
+    public void setWorldview(String worldview) {
+      this.worldview = worldview;
     }
 
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
+    public void setDefinedWorldview(String definedWorldview) {
+      this.definedWorldview = definedWorldview;
     }
+  }
 
-    public List<String> getResourceUrns() {
-        return resourceUrns;
-    }
+  private Manifest manifest;
+  private Metadata metadata = Metadata.create();
+  private String urn;
+  private List<KimNamespace> namespaces = new ArrayList<>();
+  private List<KimOntology> ontologies = new ArrayList<>();
+  private List<KActorsBehavior> behaviors = new ArrayList<>();
+  private List<KActorsBehavior> apps = new ArrayList<>();
+  private List<KActorsBehavior> testCases = new ArrayList<>();
+  private List<KActorsBehavior> scripts = new ArrayList<>();
+  private List<Notification> notifications = new ArrayList<>();
+  private List<String> resourceUrns = new ArrayList<>();
+  private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
+  private List<Annotation> annotations = new ArrayList<>();
+  private RepositoryState repositoryState = new RepositoryState();
 
-    public void setResourceUrns(List<String> resourceUrns) {
-        this.resourceUrns = resourceUrns;
-    }
+  @Override
+  public Manifest getManifest() {
+    return this.manifest;
+  }
 
-    @Override
-    public List<KimOntology> getOntologies() {
-        return ontologies;
-    }
+  @Override
+  public Metadata getMetadata() {
+    return this.metadata;
+  }
 
-    @Override
-    public List<KimObservationStrategyDocument> getObservationStrategies() {
-        return this.observationStrategies;
-    }
+  @Override
+  public String getUrn() {
+    return this.urn;
+  }
 
-    public void setOntologies(List<KimOntology> ontologies) {
-        this.ontologies = ontologies;
-    }
+  @Override
+  public List<KimNamespace> getNamespaces() {
+    return this.namespaces;
+  }
 
-    public void setObservationStrategies(List<KimObservationStrategyDocument> observationStrategies) {
-        this.observationStrategies = observationStrategies;
-    }
+  @Override
+  public List<KActorsBehavior> getBehaviors() {
+    return this.behaviors;
+  }
 
-    public List<Annotation> getAnnotations() {
-        return annotations;
-    }
+  @Override
+  public List<KActorsBehavior> getScripts() {
+    return this.scripts;
+  }
 
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
-    }
+  public void setScripts(List<KActorsBehavior> scripts) {
+    this.scripts = scripts;
+  }
 
-    @Override
-    public RepositoryState getRepositoryState() {
-        return repositoryState;
-    }
+  @Override
+  public List<KActorsBehavior> getApps() {
+    return this.apps;
+  }
 
-    public void setRepositoryState(RepositoryState repositoryState) {
-        this.repositoryState = repositoryState;
-    }
+  @Override
+  public List<KActorsBehavior> getTestCases() {
+    return this.testCases;
+  }
 
-    //    public Repository getRepository() {
-//        return repositoryMetadata;
-//    }
-//
-//    public void setRepositoryMetadata(Repository repositoryMetadata) {
-//        this.repositoryMetadata = repositoryMetadata;
-//    }
+  @Override
+  public List<Notification> getNotifications() {
+    return this.notifications;
+  }
 
-    // TODO lots
-    public KlabDocument<?> findDocument(String documentPath) {
-        var ddata = ProjectStorage.getDocumentData(documentPath);
-        if (ddata != null) {
+  public void setManifest(Manifest manifest) {
+    this.manifest = manifest;
+  }
 
-            return switch (ddata.getFirst()) {
-                case ONTOLOGY -> {
-                    for (var ontology : getOntologies()) {
-                        if (ontology.getUrn().equals(ddata.getSecond())) {
-                            yield ontology;
-                        }
-                    }
-                    yield null;
-                }
-                case MODEL_NAMESPACE -> {
-                    for (var namespace : getNamespaces()) {
-                        if (namespace.getUrn().equals(ddata.getSecond())) {
-                            yield namespace;
-                        }
-                    }
-                    yield null;
-                }
-                case MANIFEST -> null;
-                case DOCUMENTATION_NAMESPACE -> null;
-                case STRATEGY -> {
-                    for (var strategy : getObservationStrategies()) {
-                        if (strategy.getUrn().equals(ddata.getSecond())) {
-                            yield strategy;
-                        }
-                    }
-                    yield null;
-                }
-                case BEHAVIOR -> null;
-                case RESOURCE -> null;
-                case RESOURCE_ASSET -> null;
-                default -> null;
-            };
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
+
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
+
+  public void setNamespaces(List<KimNamespace> namespaces) {
+    this.namespaces = namespaces;
+  }
+
+  public void setBehaviors(List<KActorsBehavior> behaviors) {
+    this.behaviors = behaviors;
+  }
+
+  public void setApps(List<KActorsBehavior> apps) {
+    this.apps = apps;
+  }
+
+  public void setTestCases(List<KActorsBehavior> testCases) {
+    this.testCases = testCases;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
+
+  public List<String> getResourceUrns() {
+    return resourceUrns;
+  }
+
+  public void setResourceUrns(List<String> resourceUrns) {
+    this.resourceUrns = resourceUrns;
+  }
+
+  @Override
+  public List<KimOntology> getOntologies() {
+    return ontologies;
+  }
+
+  @Override
+  public List<KimObservationStrategyDocument> getObservationStrategies() {
+    return this.observationStrategies;
+  }
+
+  public void setOntologies(List<KimOntology> ontologies) {
+    this.ontologies = ontologies;
+  }
+
+  public void setObservationStrategies(List<KimObservationStrategyDocument> observationStrategies) {
+    this.observationStrategies = observationStrategies;
+  }
+
+  public List<Annotation> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(List<Annotation> annotations) {
+    this.annotations = annotations;
+  }
+
+  @Override
+  public RepositoryState getRepositoryState() {
+    return repositoryState;
+  }
+
+  public void setRepositoryState(RepositoryState repositoryState) {
+    this.repositoryState = repositoryState;
+  }
+
+  //    public Repository getRepository() {
+  //        return repositoryMetadata;
+  //    }
+  //
+  //    public void setRepositoryMetadata(Repository repositoryMetadata) {
+  //        this.repositoryMetadata = repositoryMetadata;
+  //    }
+
+  // TODO lots
+  public KlabDocument<?> findDocument(String documentPath) {
+    var ddata = ProjectStorage.getDocumentData(documentPath);
+    if (ddata != null) {
+
+      return switch (ddata.getFirst()) {
+        case ONTOLOGY -> {
+          for (var ontology : getOntologies()) {
+            if (ontology.getUrn().equals(ddata.getSecond())) {
+              yield ontology;
+            }
+          }
+          yield null;
         }
-        return null;
+        case MODEL_NAMESPACE -> {
+          for (var namespace : getNamespaces()) {
+            if (namespace.getUrn().equals(ddata.getSecond())) {
+              yield namespace;
+            }
+          }
+          yield null;
+        }
+        case MANIFEST -> null;
+        case DOCUMENTATION_NAMESPACE -> null;
+        case STRATEGY -> {
+          for (var strategy : getObservationStrategies()) {
+            if (strategy.getUrn().equals(ddata.getSecond())) {
+              yield strategy;
+            }
+          }
+          yield null;
+        }
+        case BEHAVIOR -> null;
+        case RESOURCE -> null;
+        case RESOURCE_ASSET -> null;
+        default -> null;
+      };
     }
+    return null;
+  }
 }

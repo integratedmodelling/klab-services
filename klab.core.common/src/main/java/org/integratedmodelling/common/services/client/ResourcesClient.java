@@ -456,7 +456,9 @@ public class ResourcesClient extends BaseServiceClient
         "projectName",
         projectName,
         "documentType",
-        documentType);
+        documentType,
+        "urn",
+        documentUrn);
   }
 
   @Override

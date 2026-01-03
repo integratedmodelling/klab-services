@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatement, KimOntology>
     implements KimOntology {
@@ -42,8 +43,10 @@ public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatem
   }
 
   @Override
-  protected List<? extends NavigableKlabStatement<KimConceptStatement>> createChildren() {
-    return getStatements().stream().map(s -> new NavigableKimConceptStatement(s, this)).toList();
+  protected List<NavigableAsset> createChildren() {
+    return getStatements().stream()
+        .map(s -> (NavigableAsset) new NavigableKimConceptStatement(s, this))
+        .toList();
   }
 
   @Override

@@ -733,6 +733,7 @@ public class ResourcesProvider extends BaseService
     status.setReviewStatus(0);
     status.setType(ResourceInfo.Type.AVAILABLE);
     status.setLegacy(false);
+    status.setServiceId(serviceId());
     status.setUrn(project.getUrn());
     resourcesKbox.putStatus(status);
     //    db.commit();
@@ -814,6 +815,7 @@ public class ResourcesProvider extends BaseService
       resourceInfo.setRights(rights);
       resourceInfo.setKnowledgeClass(KnowledgeClass.PROJECT);
       resourceInfo.setUrn(projectName);
+      resourceInfo.setServiceId(serviceId());
       resourceInfo.setOwner(scope.getUser().getUsername());
       resourceInfo.setServiceId(serviceId());
       resourceInfo

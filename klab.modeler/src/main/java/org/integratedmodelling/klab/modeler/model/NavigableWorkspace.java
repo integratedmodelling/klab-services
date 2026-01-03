@@ -62,8 +62,10 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace>
   protected Parameters<String> parameters = Parameters.create();
 
   @Override
-  protected List<? extends NavigableAsset> createChildren() {
-    return delegate.getProjects().stream().map(p -> new NavigableProject(p, this)).toList();
+  protected List<NavigableAsset> createChildren() {
+    return delegate.getProjects().stream()
+        .map(p -> (NavigableAsset) (new NavigableProject(p, this)))
+        .toList();
   }
 
   /**

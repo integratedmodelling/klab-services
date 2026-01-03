@@ -49,7 +49,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
   protected T delegate;
   protected NavigableAsset parent;
   protected String path;
-  private List<? extends NavigableAsset> children;
+  private List<NavigableAsset> children;
   protected Metadata localMetadata = Metadata.create();
 
   public NavigableKlabAsset(String pathElement, NavigableKlabAsset<?> parent) {
@@ -65,7 +65,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     this.children = createChildren();
   }
 
-  protected abstract List<? extends NavigableAsset> createChildren();
+  protected abstract List<NavigableAsset> createChildren();
 
   public T getDelegate() {
     return delegate;
@@ -89,7 +89,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     return (NavigableContainer) ret;
   }
 
-  public final List<? extends NavigableAsset> children() {
+  public final List<NavigableAsset> children() {
     return children;
   }
 
@@ -119,6 +119,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     if (asset == null) {
       return null;
     }
+    var parent = getParentFor(asset, this);
 
     NavigableAsset ret = null;
     if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
@@ -126,11 +127,11 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     } else {
       ret =
           switch (asset) {
-            case Project project -> new NavigableProject(project, this);
-            case KimNamespace namespace -> new NavigableKimNamespace(namespace, this);
-            case KimOntology ontology -> new NavigableKimOntology(ontology, this);
+            case Project project -> new NavigableProject(project, parent);
+            case KimNamespace namespace -> new NavigableKimNamespace(namespace, parent);
+            case KimOntology ontology -> new NavigableKimOntology(ontology, parent);
             case KimObservationStrategyDocument observationStrategyDocument ->
-                new NavigableObservationStrategies(observationStrategyDocument, this);
+                new NavigableObservationStrategies(observationStrategyDocument, parent);
 
             //            case KActorsBehavior behavior -> { // TODO missing
             //              new NavigableActorsBehavior(behavior);
@@ -141,10 +142,44 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
 
     if (ret != null) {
-      this.children = Stream.concat(children.stream(), Stream.of(ret)).toList();
+      parent.children = Stream.concat(parent.children.stream(), Stream.of(ret)).toList();
     }
 
     return ret;
+  }
+
+  private NavigableKlabAsset<?> getParentFor(
+      KlabAsset asset, NavigableKlabAsset<T> tNavigableKlabAsset) {
+
+    var root =
+        tNavigableKlabAsset instanceof NavigableWorkspace
+            ? tNavigableKlabAsset
+            : tNavigableKlabAsset.parent(NavigableWorkspace.class);
+
+    if (root == null) {
+      return null;
+    }
+
+    return (NavigableKlabAsset<?>)
+        switch (asset) {
+          case KlabDocument<?> document -> {
+            var project =
+                root.findAsset(
+                    document.getProjectName(),
+                    NavigableProject.class,
+                    KlabAsset.KnowledgeClass.PROJECT);
+            if (project != null) {
+              if (asset instanceof KimNamespace || asset instanceof KimOntology) {
+                yield project;
+              } else {
+                yield project.requireFolderFor(document);
+              }
+            }
+            yield null;
+          }
+          case Project ignored -> root;
+          default -> null;
+        };
   }
 
   protected void removeChild(KlabAsset asset) {
@@ -271,13 +306,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
   private boolean applyChange(
       ResourceSet.Resource change, Scope scope, Set<NavigableAsset> changedAssets) {
 
+    var service =
+        scope
+            .findService(ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
+            .orElse(null); // TODO this should be an exception when the Worldview change doesn't get
+    // here
+
     switch (change.getOperation()) {
       case CREATE -> {
-        var service =
-            scope
-                .findService(
-                    ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
-                .orElse(null); // TODO check
         var ret =
             addChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
@@ -306,11 +342,6 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         }
       }
       case UPDATE -> {
-        var service =
-            scope
-                .findService(
-                    ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
-                .orElse(null); // TODO check
         var physicalChanges =
             updateChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));

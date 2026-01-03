@@ -54,7 +54,7 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview>
   }
 
   @Override
-  public List<? extends NavigableAsset> createChildren() {
+  public List<NavigableAsset> createChildren() {
 
     var ret =
         new ArrayList<NavigableAsset>(
@@ -69,9 +69,9 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview>
           new NavigableFolderImpl<NavigableDocument>("Observation strategies", this) {
 
             @Override
-            protected List<? extends NavigableAsset> createChildren() {
+            protected List<NavigableAsset> createChildren() {
               return worldview.getObservationStrategies().stream()
-                  .map(s -> new NavigableObservationStrategies(s, this))
+                  .map(s -> (NavigableAsset) new NavigableObservationStrategies(s, this))
                   .toList();
             }
           });

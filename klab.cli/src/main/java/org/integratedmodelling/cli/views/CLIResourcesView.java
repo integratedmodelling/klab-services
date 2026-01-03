@@ -2,6 +2,8 @@ package org.integratedmodelling.cli.views;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Collection;
+
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
@@ -86,24 +88,23 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     }
   }
 
-
   @CommandLine.Command(
-          name = "info",
-          mixinStandardHelpOptions = true,
-          version = Version.CURRENT,
-          description = {"List and describe all the available resource services.", ""},
-          subcommands = {})
+      name = "info",
+      mixinStandardHelpOptions = true,
+      version = Version.CURRENT,
+      description = {"List and describe all the available resource services.", ""},
+      subcommands = {})
   public static class Info implements Runnable {
 
     @CommandLine.Option(
-            names = {"-s", "--service"},
-            defaultValue = "local" /* TODO initialize at null */,
-            description = {"Resource service to connect to"},
-            required = false)
+        names = {"-s", "--service"},
+        defaultValue = "local" /* TODO initialize at null */,
+        description = {"Resource service to connect to"},
+        required = false)
     private String service;
 
     @CommandLine.Parameters(
-            description = "The URN of the resource that we inquire or assign rights for")
+        description = "The URN of the resource that we inquire or assign rights for")
     private String urn;
 
     @Override
@@ -363,8 +364,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
       if (service instanceof ResourcesService.Admin) {
         for (var project :
-            ((ResourcesService.Admin) service)
-                .listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
+            ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
           out.println("   " + project.getUrn());
           if (verbose) {
 
@@ -682,29 +682,9 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     }
   }
 
-//  @Override
-//  public void showWorkspaces(java.util.List<NavigableContainer> workspaces) {}
-//
-//  @Override
-//  public void showResources(NavigableContainer workspace) {}
-
   @Override
-  public void workspaceModified(NavigableContainer changedContainer) {}
-
-//  @Override
-//  public void showAssetInfo(NavigableAsset asset) {}
-//
-//  @Override
-//  public void highlightAssetPath(java.util.List<NavigableAsset> path) {}
-//
-//  @Override
-//  public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {}
-//
-//  @Override
-//  public void workspaceCreated(NavigableContainer workspace) {}
-//
-//  @Override
-//  public void resetValidationNotifications(NavigableContainer notifications) {}
+  public void workspaceModified(
+      NavigableContainer changedContainer, Collection<NavigableAsset> changedAssets) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {}

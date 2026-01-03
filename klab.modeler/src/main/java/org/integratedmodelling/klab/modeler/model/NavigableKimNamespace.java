@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, KimNamespace>
     implements KimNamespace {
@@ -27,18 +28,19 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
   }
 
   @Override
-  protected List<? extends NavigableKlabStatement<?>> createChildren() {
+  protected List<NavigableAsset> createChildren() {
     return getStatements().stream()
         .map(
             s ->
-                switch (s) {
-                  case KimModel kimModel -> new NavigableKimModel(kimModel, this);
-                  case KimSymbolDefinition kimSymbolDefinition ->
-                      new NavigableKimSymbolDefinition(kimSymbolDefinition, this);
-                  default ->
-                      throw new KlabInternalErrorException(
-                          "Unrecognized statement in namespace when wrapping for navigation");
-                })
+                (NavigableAsset)
+                    switch (s) {
+                      case KimModel kimModel -> new NavigableKimModel(kimModel, this);
+                      case KimSymbolDefinition kimSymbolDefinition ->
+                          new NavigableKimSymbolDefinition(kimSymbolDefinition, this);
+                      default ->
+                          throw new KlabInternalErrorException(
+                              "Unrecognized statement in namespace when wrapping for navigation");
+                    })
         .toList();
   }
 

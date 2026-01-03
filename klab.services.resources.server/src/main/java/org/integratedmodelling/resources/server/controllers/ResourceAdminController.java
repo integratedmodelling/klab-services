@@ -128,7 +128,7 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
-  @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_DOCUMENT)
+  @GetMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_DOCUMENT)
   public List<ResourceSet> createDocument(
       @PathVariable("projectName") String projectName,
       @PathVariable("documentType") ProjectStorage.ResourceType documentType,

@@ -62,7 +62,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     var workspace = view().getVisualizedWorkspace(changes.getWorkspace());
     if (workspace != null) {
-      if (!workspace.mergeChanges(changes, getController().engine().getOwner()).isEmpty()) {
+      var changedAssets = workspace.mergeChanges(changes, getController().engine().getOwner());
+      if (!changedAssets.isEmpty()) {
         // FIXME this should be done directly in the worldview controller, which should react
         //        if (!changes.getObservationStrategies().isEmpty() ||
         // !changes.getOntologies().isEmpty()) {
@@ -81,7 +82,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         //            }
         //          }
         //        }
-        view().workspaceModified(workspace);
+        view().workspaceModified(workspace, changedAssets);
       }
     }
     //          if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {

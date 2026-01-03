@@ -14,85 +14,87 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
-public abstract class NavigableKlabStatement<T extends KlabStatement> extends NavigableKlabAsset<T> implements KlabStatement {
+public abstract class NavigableKlabStatement<T extends KlabStatement> extends NavigableKlabAsset<T>
+    implements KlabStatement {
 
-    @Serial
-    private static final long serialVersionUID = -6767482412135943192L;
+  @Serial private static final long serialVersionUID = -6767482412135943192L;
 
-    public NavigableKlabStatement(T asset, NavigableKlabAsset<?> parent) {
-        super(asset, parent);
+  public NavigableKlabStatement(T asset, NavigableKlabAsset<?> parent) {
+    super(asset, parent);
+  }
+
+  @Override
+  public List<Annotation> getAnnotations() {
+    return delegate.getAnnotations();
+  }
+
+  @Override
+  public String getDeprecation() {
+    return delegate.getDeprecation();
+  }
+
+  @Override
+  public int getLength() {
+    return delegate.getLength();
+  }
+
+  @Override
+  public Collection<Notification> getNotifications() {
+    return delegate.getNotifications();
+  }
+
+  @Override
+  public void visit(Visitor visitor) {
+    delegate.visit(visitor);
+  }
+
+  @Override
+  public int getOffsetInDocument() {
+    return delegate.getOffsetInDocument();
+  }
+
+  @Override
+  public boolean isDeprecated() {
+    return delegate.isDeprecated();
+  }
+
+  @Override
+  public String getNamespace() {
+    // TODO Auto-generated method stub
+    return delegate.getNamespace();
+  }
+
+  @Override
+  public String getProjectName() {
+    return delegate.getProjectName();
+  }
+
+  @Override
+  public KnowledgeClass getDocumentClass() {
+    return delegate.getDocumentClass();
+  }
+
+  public NavigableKlabDocument<T, ?> document() {
+    var parent = this.parent();
+    while (parent instanceof NavigableKlabAsset<?> asset
+        && !(parent instanceof NavigableKlabDocument)) {
+      parent = asset.parent();
     }
+    return (NavigableKlabDocument<T, ?>) parent;
+  }
 
-    @Override
-    public List<Annotation> getAnnotations() {
-        return delegate.getAnnotations();
+  @Override
+  public Scope getScope() {
+    return delegate.getScope();
+  }
+
+  @Override
+  protected List<NavigableAsset> createChildren() {
+    if (delegate instanceof KimConceptStatement concept) {
+      return concept.getChildren().stream()
+          .map(c -> (NavigableAsset) new NavigableKimConceptStatement(c, this))
+          .toList();
     }
-
-    @Override
-    public String getDeprecation() {
-        return delegate.getDeprecation();
-    }
-
-    @Override
-    public int getLength() {
-        return delegate.getLength();
-    }
-
-    @Override
-    public Collection<Notification> getNotifications() {
-        return delegate.getNotifications();
-    }
-
-    @Override
-    public void visit(Visitor visitor) {
-        delegate.visit(visitor);
-    }
-
-    @Override
-    public int getOffsetInDocument() {
-        return delegate.getOffsetInDocument();
-    }
-
-    @Override
-    public boolean isDeprecated() {
-        return delegate.isDeprecated();
-    }
-
-    @Override
-    public String getNamespace() {
-        // TODO Auto-generated method stub
-        return delegate.getNamespace();
-    }
-
-    @Override
-    public String getProjectName() {
-        return delegate.getProjectName();
-    }
-
-    @Override
-    public KnowledgeClass getDocumentClass() {
-        return delegate.getDocumentClass();
-    }
-
-    public NavigableKlabDocument<T, ?> document() {
-        var parent = this.parent();
-        while (parent instanceof NavigableKlabAsset<?> asset && !(parent instanceof NavigableKlabDocument)) {
-            parent = asset.parent();
-        }
-        return (NavigableKlabDocument<T, ?>) parent;
-    }
-
-    @Override
-    public Scope getScope() {
-        return delegate.getScope();
-    }
-
-    @Override
-    protected List<? extends NavigableAsset> createChildren() {
-        if (delegate instanceof KimConceptStatement concept) {
-            return concept.getChildren().stream().map(c -> new NavigableKimConceptStatement(c, this)).toList();
-        }
-        return Collections.emptyList();
-    }
-
+    return Collections.emptyList();
+  }
 }

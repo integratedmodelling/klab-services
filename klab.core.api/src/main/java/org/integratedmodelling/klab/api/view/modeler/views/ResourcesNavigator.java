@@ -10,32 +10,32 @@ import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ResourcesNavigator extends View {
 
-//    void showWorkspaces(List<NavigableContainer> workspaces);
-//
-//    void showResources(NavigableContainer workspace);
+  /**
+   * Notify the view that a workspace has been modified, with a list of changed assets.
+   *
+   * @param changedContainer the workspace that was modified
+   * @param changedAssets the list of assets that were changed
+   */
+  void workspaceModified(
+      NavigableContainer changedContainer, Collection<NavigableAsset> changedAssets);
 
-    void workspaceModified(NavigableContainer changedContainer);
-
-//    void showAssetInfo(NavigableAsset asset);
-//
-//    void highlightAssetPath(List<NavigableAsset> path);
-//
-//    void setServiceCapabilities(ResourcesService.Capabilities capabilities);
-
-//    void workspaceCreated(NavigableContainer workspace);
-//
-//    void resetValidationNotifications(NavigableContainer notifications);
-
-    void engineStatusChanged(Engine.Status status);
+  /**
+   * Monitor the engine status so we can choose to disable when the service(s) we need are
+   * unavailable.
+   *
+   * @param status
+   */
+  void engineStatusChanged(Engine.Status status);
 
   /**
    * Return the workspace with the given URN if it is being visualized, or null otherwise. Called
    * before merging incoming changes which will trigger a call to {@link
-   * #workspaceModified(NavigableContainer)}
+   * #workspaceModified(NavigableContainer, Collection<NavigableAsset>)}
    *
    * @param workspace
    * @return

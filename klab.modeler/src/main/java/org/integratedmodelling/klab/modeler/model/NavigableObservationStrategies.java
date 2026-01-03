@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 import java.io.Serial;
 import java.util.Collection;
@@ -26,8 +27,10 @@ public class NavigableObservationStrategies
   }
 
   @Override
-  protected List<? extends NavigableKlabStatement<KimObservationStrategy>> createChildren() {
-    return getStatements().stream().map(s -> new NavigableObservationStrategy(s, this)).toList();
+  protected List<NavigableAsset> createChildren() {
+    return getStatements().stream()
+        .map(s -> (NavigableAsset) new NavigableObservationStrategy(s, this))
+        .toList();
   }
 
   @Override

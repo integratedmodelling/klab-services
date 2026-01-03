@@ -154,7 +154,9 @@ public class WorkspaceManager {
   private void updateProjectStatus(String projectId, KlabDocument<?> resource) {
     var pd = projectDescriptors.get(projectId);
     var prj = projects.get(projectId);
-    if (pd != null && pd.storage instanceof FileProjectStorage fps && prj instanceof ProjectImpl pimpl) {
+    if (pd != null
+        && pd.storage instanceof FileProjectStorage fps
+        && prj instanceof ProjectImpl pimpl) {
       pimpl.setRepositoryState(fps.getRepositoryState());
       //            fps.updateMetadata(prj, resource, scope);
     }
@@ -356,11 +358,13 @@ public class WorkspaceManager {
       }
 
       for (var rset : ret) {
+        // FIXME not sure this is needed, or even safe to send
         var projectResource = new ResourceSet.Resource();
         projectResource.setResourceVersion(pd.manifest.getVersion());
         projectResource.setProjectUrn(pd.name);
         projectResource.setResourceUrn(pd.name);
         projectResource.setRepositoryState(repositoryState);
+        projectResource.setServiceId(service.serviceId());
         projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
         projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
 
@@ -1593,8 +1597,9 @@ public class WorkspaceManager {
 
     // this may or may not end up in the result set
     var worldviewChange = new ResourceSet();
+
     worldviewChange.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
-    worldviewChange.getServices().put(configuration.getServiceId(), service.getUrl());
+    worldviewChange.getServices().put(service.serviceId(), service.getUrl());
     var projectDescriptor = projectDescriptors.get(project);
 
     Set<String> affectedOntologies = new HashSet<>();
@@ -1667,8 +1672,16 @@ public class WorkspaceManager {
 
         // TODO Add document to project. FileStorage should have added it to the repository if
         //  there's one
-
-        newAssets.add(newAsset);
+        if (newAsset != null) {
+          switch (newAsset) {
+            case KimNamespace ns -> replaceAndIndex(ns);
+            case KActorsBehavior ns -> replaceAndIndex(ns);
+            case KimObservationStrategyDocument ns -> replaceAndIndex(ns);
+            case KimOntology ns -> replaceAndIndex(ns);
+            default -> {}
+          }
+          newAssets.add(newAsset);
+        }
 
       } else {
 
@@ -1927,6 +1940,11 @@ public class WorkspaceManager {
           default -> throw new KlabIllegalStateException("can't deal with " + document);
         }
       }
+
+      if (!newDocuments.contains(newAsset)) {
+        addToResultSet(newAsset, projectDescriptor.workspace, result)
+            .setOperation(CRUDOperation.CREATE);
+      }
     }
 
     this.loading.set(false);
@@ -1966,6 +1984,11 @@ public class WorkspaceManager {
     _ontologyMap.put(ontology.getUrn(), ontology);
   }
 
+  private void replaceAndIndex(KimObservationStrategyDocument strategies) {
+    // TODO index concept declarations for queries
+    _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
+  }
+
   /**
    * Add the document info to the result set that corresponds to the passed workspace in the passed
    * result map, creating whatever is needed. If the external workspace name is given, use that for
@@ -1987,19 +2010,20 @@ public class WorkspaceManager {
       if (resourceSet == null) {
         resourceSet = new ResourceSet();
         resourceSet.setWorkspace(workspace);
-        resourceSet.getServices().put(configuration.getServiceId(), service.getUrl());
+        resourceSet.getServices().put(service.serviceId(), service.getUrl());
         result.put(workspace, resourceSet);
       }
 
       resource = new ResourceSet.Resource();
       resource.setResourceUrn(asset.getUrn());
       resource.setResourceVersion(asset.getVersion());
-      resource.setServiceId(configuration.getServiceId());
+      resource.setServiceId(service.serviceId());
       resource.setKnowledgeClass(KlabAsset.classify(asset));
       resource.getNotifications().addAll(asset.getNotifications());
+      resource.setProjectUrn(asset.getProjectName());
       resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
-      if (resourceSet.getServices().containsKey(configuration.getServiceId())) {
-        resourceSet.getServices().put(configuration.getServiceId(), service.getUrl());
+      if (resourceSet.getServices().containsKey(service.serviceId())) {
+        resourceSet.getServices().put(service.serviceId(), service.getUrl());
       }
 
       /*
@@ -2553,6 +2577,7 @@ public class WorkspaceManager {
           pInfo.setUrn(project.getUrn());
           pInfo.setOwner(info.getOwner());
           pInfo.setRights(info.getRights());
+          pInfo.setServiceId(info.getServiceId());
           pInfo.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
           pInfo.setType(ResourceInfo.Type.AVAILABLE);
           pInfo
@@ -2841,18 +2866,20 @@ public class WorkspaceManager {
       repositoryState = fileProjectStorage.getRepositoryState();
     }
 
-    if (repositoryState != null) {
-      for (var result : ret) {
-        var projectResource = new ResourceSet.Resource();
-        projectResource.setResourceVersion(pd.manifest.getVersion());
-        projectResource.setProjectUrn(pd.name);
-        projectResource.setResourceUrn(pd.name);
-        projectResource.setRepositoryState(repositoryState);
-        projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
-        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
-        result.getProjects().add(projectResource);
-      }
-    }
+    //    if (repositoryState != null) {
+    //      for (var result : ret) {
+    //        // FIXME we may not need this
+    //        var projectResource = new ResourceSet.Resource();
+    //        projectResource.setResourceVersion(pd.manifest.getVersion());
+    //        projectResource.setProjectUrn(pd.name);
+    //        projectResource.setResourceUrn(pd.name);
+    //        projectResource.setServiceId(service.serviceId());
+    //        projectResource.setRepositoryState(repositoryState);
+    //        projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+    //        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+    //        result.getProjects().add(projectResource);
+    //      }
+    //    }
 
     return ret;
   }
@@ -2864,7 +2891,7 @@ public class WorkspaceManager {
       Scope lockingScope) {
 
     List<ResourceSet> ret = new ArrayList<>();
-    String lockingAuthorization = scope.getIdentity().getId();
+    String lockingAuthorization = lockingScope.getIdentity().getId();
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
@@ -2881,11 +2908,16 @@ public class WorkspaceManager {
                   "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
-    var document = fileProjectStorage.create(documentUrn, documentType);
-    if (document != null) {
-      return handleFileChange(
-          projectName, List.of(Triple.of(documentType, CRUDOperation.CREATE, document)));
+    try {
+      var document = fileProjectStorage.create(documentUrn, documentType);
+      if (document != null) {
+        return handleFileChange(
+            projectName, List.of(Triple.of(documentType, CRUDOperation.CREATE, document)));
+      }
+    } catch (Exception e) {
+      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
     }
+
     return ret;
   }
 }
