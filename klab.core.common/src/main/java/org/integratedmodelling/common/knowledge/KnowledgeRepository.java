@@ -221,9 +221,4 @@ public enum KnowledgeRepository {
 
     return false;
   }
-
-  //    <T extends Knowledge> T resolve(String urn, Class<T> resultClass) {
-  //        return null;
-  //    }
-
 }

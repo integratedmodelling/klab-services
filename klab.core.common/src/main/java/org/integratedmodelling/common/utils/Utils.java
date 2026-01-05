@@ -1886,7 +1886,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
        * @param parameters paired key, value sequence for URL options
        * @return
        */
-      public boolean put(String apiRequest, Object... parameters) {
+      public <T> T put(String apiRequest, Class<T> resultClass, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -1909,11 +1909,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var response =
               client.send(
                   requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
-                  HttpResponse.BodyHandlers.discarding());
+                      HttpResponse.BodyHandlers.ofString());
 
           if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
-            return true;
+            return parseResponse(response.body(), resultClass);
           }
 
         } catch (Throwable e) {
@@ -1924,8 +1924,155 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         }
 
-        return false;
+        return null;
       }
+
+      /**
+       * PUT helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest
+       * @param parameters paired key, value sequence for URL options
+       * @return
+       */
+      public <T> List<T> putCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          var response =
+                  client.send(
+                          requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                          HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponseList(response.body(), resultClass);
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+
+        return null;
+      }
+
+
+      /**
+       * PUT helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest
+       * @param parameters paired key, value sequence for URL options
+       * @return
+       */
+      public <T> T delete(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().DELETE();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          var response =
+                  client.send(
+                          requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                          HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponse(response.body(), resultClass);
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+
+        return null;
+      }
+
+      /**
+       * PUT helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest
+       * @param parameters paired key, value sequence for URL options
+       * @return
+       */
+      public <T> List<T> deleteCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().DELETE();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          var response =
+                  client.send(
+                          requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                          HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponseList(response.body(), resultClass);
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+
+        return null;
+      }
+
+
 
       public void parseHeaders(HttpResponse<?> response) {
         responseHeaders.putAll(response.headers().map());

@@ -456,6 +456,8 @@ public class WorkspaceManager {
       // register in catalog
       createProjectData(projectName, workspaceName);
 
+      lockProject(projectName, userScope.getIdentity().getId(), true);
+
       return ret;
     }
 

@@ -516,7 +516,15 @@ public class ResourcesClient extends BaseServiceClient
 
   @Override
   public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.ADMIN.REMOVE_DOCUMENT,
+            ResourceSet.class,
+            "projectName",
+            projectName,
+            "urn",
+            assetUrn);
   }
 
   @Override

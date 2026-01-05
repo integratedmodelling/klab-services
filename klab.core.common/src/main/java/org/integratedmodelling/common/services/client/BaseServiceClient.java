@@ -220,7 +220,7 @@ public abstract class BaseServiceClient implements KlabService {
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
     return client
         .withScope(scope)
-        .put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
+        .put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, Boolean.class, "urn", resourceUrn);
   }
 
   @Override
