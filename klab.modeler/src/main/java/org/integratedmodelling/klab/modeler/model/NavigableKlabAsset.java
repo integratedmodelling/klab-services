@@ -346,10 +346,11 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             updateChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
         var asset =
-            findAsset(
-                change.getResourceUrn(), NavigableKlabDocument.class, change.getKnowledgeClass());
+            findAsset(change.getResourceUrn(), NavigableAsset.class, change.getKnowledgeClass());
         var metadataChanges =
-            asset != null && asset.mergeMetadata(change.getMetadata(), change.getNotifications());
+            asset != null
+                && asset instanceof NavigableKlabDocument document
+                && document.mergeMetadata(change.getMetadata(), change.getNotifications());
         if (physicalChanges || metadataChanges) {
           changedAssets.add(asset);
           asset
