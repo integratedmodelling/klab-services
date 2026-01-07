@@ -490,7 +490,7 @@ public interface ServicesAPI {
 
       String REMOVE_PROJECT = "/removeProject/{urn}";
       String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
-      String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{urn}";
+      String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{documentType}/{urn}";
       String MANAGE_PROJECT = "/manageProject/{urn}";
 
       /**

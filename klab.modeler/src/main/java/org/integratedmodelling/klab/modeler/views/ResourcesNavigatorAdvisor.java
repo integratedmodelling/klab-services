@@ -10,11 +10,13 @@ import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import java.util.Collection;
 import java.util.List;
 
-/** TODO implement data model to replicate the actions when the Eclipse modeler is done. */
 public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements ResourcesNavigator {
 
   @Override
-  public void workspaceModified(NavigableContainer container, Collection<NavigableAsset> changes) {}
+  public void workspaceModified(
+      NavigableContainer container,
+      ResourceSet changes,
+      Collection<NavigableAsset> changedAssets) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {}

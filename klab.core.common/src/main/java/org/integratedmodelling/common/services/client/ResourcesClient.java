@@ -326,7 +326,7 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public List<KimNamespace> dependents(String namespaceId) {
+  public List<String> dependents(String namespaceId) {
     // TODO Auto-generated method stub
     return null;
   }
@@ -343,7 +343,7 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public List<KimNamespace> precursors(String namespaceId) {
+  public List<String> precursors(String namespaceId) {
     // TODO Auto-generated method stub
     return null;
   }
@@ -515,8 +515,22 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
-    return null;
+  public List<ResourceSet> deleteDocument(
+      String projectName,
+      String assetUrn,
+      ProjectStorage.ResourceType documentType,
+      UserScope scope) {
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.ADMIN.REMOVE_DOCUMENT,
+            ResourceSet.class,
+            "urn",
+            assetUrn,
+            "projectName",
+            projectName,
+            "documentType",
+            documentType.name());
   }
 
   @Override

@@ -5,38 +5,26 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.io.FileUtils;
-import org.integratedmodelling.common.logging.Logging;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
@@ -141,6 +129,19 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
+  @GetMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_DOCUMENT)
+  public List<ResourceSet> createDocument(
+      @PathVariable("projectName") String projectName,
+      @PathVariable("urn") String urn,
+      @PathVariable("documentType") ProjectStorage.ResourceType documentType,
+      Principal principal) {
+    if (resourcesServer.klabService() instanceof ResourcesService.Admin admin
+        && principal instanceof EngineAuthorization auth) {
+      return admin.deleteDocument(projectName, urn, documentType, auth.getScope(UserScope.class));
+    }
+    throw new KlabInternalErrorException("Resources service is incapable of admin operation");
+  }
+
   @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_DOCUMENT)
   public List<ResourceSet> updateOntology(
       @PathVariable("projectName") String projectName,
@@ -154,61 +155,6 @@ public class ResourceAdminController {
     }
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
-
-  //    @PostMapping(ServicesAPI.RESOURCES.ADMIN.IMPORT_RESOURCE)
-  //    public @ResponseBody ResourceSet createResource(@RequestBody Resource resource, Principal
-  // principal) {
-  //        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-  //            var urn = admin.createResource(resource,
-  //                    principal instanceof EngineAuthorization authorization ?
-  //                    authorization.getScope(UserScope.class) : null);
-  //            return null; // TODO create ResourceSet
-  //        }
-  //        throw new KlabInternalErrorException("Resources service is incapable of admin
-  // operation");
-  //    }
-  //
-  //    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPLOAD_RESOURCE)
-  //    public @ResponseBody ResourceSet createResourceFromPath(@RequestParam("file") MultipartFile
-  // file,
-  //                                                            Principal principal) {
-  //
-  //        ResourceSet ret = null;
-  //
-  //        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal
-  // instanceof EngineAuthorization auth) {
-  //            var scope = auth.getScope(UserScope.class);
-  //            try {
-  //                File tempDir = Files.createTempDirectory("klab").toFile();
-  //                File resourcePath = new File(tempDir + File.separator +
-  // file.getOriginalFilename());
-  //                FileUtils.copyInputStreamToFile(file.getInputStream(), resourcePath);
-  //                ret = admin.createResource(resourcePath, scope);
-  //                tempDir.deleteOnExit();
-  //            } catch (IOException e) {
-  //                scope.error(e);
-  //            }
-  //
-  //            return ret;
-  //        }
-  //        throw new KlabInternalErrorException("Resources service is incapable of admin
-  // operation");
-  //    }
-
-  //    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_RESOURCE)
-  //    public Resource createResourceForProject(@RequestParam("projectName") String projectName,
-  //                                             @RequestParam("urnId") String urnId,
-  //                                             @RequestParam("adapter") String adapter,
-  //                                             @RequestBody Parameters<String> resourceData,
-  //                                             Principal principal) {
-  //        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-  //            return admin.createResource(projectName, urnId, adapter, resourceData,
-  //                    principal instanceof EngineAuthorization authorization ?
-  //                    authorization.getScope(UserScope.class) : null);
-  //        }
-  //        throw new KlabInternalErrorException("Resources service is incapable of admin
-  // operation");
-  //    }
 
   @GetMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
   public List<ResourceSet> removeProject(

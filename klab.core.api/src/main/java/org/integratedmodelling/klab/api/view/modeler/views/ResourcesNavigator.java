@@ -19,10 +19,14 @@ public interface ResourcesNavigator extends View {
    * Notify the view that a workspace has been modified, with a list of changed assets.
    *
    * @param changedContainer the workspace that was modified
-   * @param changedAssets the list of assets that were changed
+   * @param changes the changeset describing the changes
+   * @param changedAssets the assets that were changed in their post-change state, already included
+   *     in <code>changedContainer</code>
    */
   void workspaceModified(
-      NavigableContainer changedContainer, Collection<NavigableAsset> changedAssets);
+      NavigableContainer changedContainer,
+      ResourceSet changes,
+      Collection<NavigableAsset> changedAssets);
 
   /**
    * Monitor the engine status so we can choose to disable when the service(s) we need are
@@ -35,7 +39,7 @@ public interface ResourcesNavigator extends View {
   /**
    * Return the workspace with the given URN if it is being visualized, or null otherwise. Called
    * before merging incoming changes which will trigger a call to {@link
-   * #workspaceModified(NavigableContainer, Collection<NavigableAsset>)}
+   * #workspaceModified(NavigableContainer, ResourceSet, Collection)}
    *
    * @param workspace
    * @return

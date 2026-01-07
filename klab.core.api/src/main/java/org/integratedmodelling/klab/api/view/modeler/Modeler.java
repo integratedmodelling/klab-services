@@ -129,7 +129,14 @@ public interface Modeler extends UIController {
    */
   void deleteProject(ResourcesService service, String projectUrl);
 
-  /**
+    boolean updateDocument(
+            ResourcesService service,
+            String projectName,
+            String documentUrn,
+            ProjectStorage.ResourceType documentType,
+            String updatedContent);
+
+    /**
    * Call the correspondent API on the service and ingest all modifications, propagating UI events
    * as needed.
    *

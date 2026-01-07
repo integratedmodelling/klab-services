@@ -755,6 +755,23 @@ public class Utils {
 
       return ret;
     }
+
+    /**
+     * Shorthand to collect all changes from ontologies, namespaces, behaviors, observation
+     * strategies and projects.
+     *
+     * @param resourceSet
+     * @return
+     */
+    public static List<ResourceSet.Resource> collectChanges(ResourceSet resourceSet) {
+
+      return Collections.join(
+          resourceSet.getOntologies(),
+          resourceSet.getNamespaces(),
+          resourceSet.getBehaviors(),
+          resourceSet.getObservationStrategies(),
+          resourceSet.getProjects());
+    }
   }
 
   /**

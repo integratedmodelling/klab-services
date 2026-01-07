@@ -9,6 +9,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
@@ -684,7 +685,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
   @Override
   public void workspaceModified(
-      NavigableContainer changedContainer, Collection<NavigableAsset> changedAssets) {}
+          NavigableContainer changedContainer, ResourceSet changes,  Collection<NavigableAsset> changedAssets) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {}

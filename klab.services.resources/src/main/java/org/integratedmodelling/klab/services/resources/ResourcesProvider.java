@@ -680,8 +680,8 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<KimNamespace> dependents(String namespaceId) {
-    return null;
+  public List<String> dependents(String namespaceId) {
+    return workspaceManager.dependents(namespaceId);
   }
 
   @Override
@@ -692,7 +692,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<KimNamespace> precursors(String namespaceId) {
+  public List<String> precursors(String namespaceId) {
     return null;
   }
 
@@ -1288,8 +1288,12 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
-    return null;
+  public List<ResourceSet> deleteDocument(
+      String projectName,
+      String assetUrn,
+      ProjectStorage.ResourceType resourceType,
+      UserScope scope) {
+    return this.workspaceManager.deleteDocument(projectName, resourceType, assetUrn, scope);
   }
 
   @Override

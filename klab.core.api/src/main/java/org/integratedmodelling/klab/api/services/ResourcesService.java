@@ -355,12 +355,14 @@ public interface ResourcesService extends KlabService {
   Worldview retrieveWorldview();
 
   /**
-   * Return all the namespaces that depend on the passed namespace.
+   * Return all the document URNs that depend directly on the passed namespace. This is used for
+   * special purposes as the <code>resolve</code> endpoints in the service return the full closure
+   * of any resource needed.
    *
    * @param namespaceId the ID of the namespace to find dependents for
-   * @return list of namespaces that depend on the specified namespace
+   * @return list of URNs that depend on the specified namespace
    */
-  List<KimNamespace> dependents(String namespaceId);
+  List<String> dependents(String namespaceId);
 
   /**
    * Retrieve all information about an adapter that is accessible to the passed scope.
@@ -372,15 +374,15 @@ public interface ResourcesService extends KlabService {
   AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope);
 
   /**
-   * Return all the namespaces that the passed namespace depends on. These must be available to the
-   * resolver prior to loading any namespace. The closure of the namespace must be complete, no
-   * matter if they come from this service or others: a service cannot serve a namespace unless it's
-   * prepared to serve its entire closure under the same scope.
+   * Return all the document URNs that the passed namespace depends directly on. These must be
+   * available to the resolver prior to loading any namespace. This is used for special purposes as
+   * the <code>resolve</code> endpoints in the service return the full closure of any resource
+   * needed.
    *
    * @param namespaceId the ID of the namespace to find precursors for
    * @return list of namespaces that are dependencies of the specified namespace
    */
-  List<KimNamespace> precursors(String namespaceId);
+  List<String> precursors(String namespaceId);
 
   /**
    * Return the info associated withany locally hosted resources whose URN, metadata or other field
@@ -591,7 +593,11 @@ public interface ResourcesService extends KlabService {
      * @param scope the user scope for permission validation
      * @return list of resource sets affected by the deletion
      */
-    List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope);
+    List<ResourceSet> deleteDocument(
+        String projectName,
+        String assetUrn,
+        ProjectStorage.ResourceType documentType,
+        UserScope scope);
 
     /**
      * Publish an observation from the passed context scope into a persistent resource. The resource

@@ -148,8 +148,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     return ret;
   }
 
-  private NavigableKlabAsset<?> getParentFor(
-      KlabAsset asset, NavigableKlabAsset<T> tNavigableKlabAsset) {
+  public NavigableKlabAsset<?> getParentFor(
+      KlabAsset asset, NavigableKlabAsset<?> tNavigableKlabAsset) {
 
     var root =
         tNavigableKlabAsset instanceof NavigableWorkspace
@@ -330,7 +330,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
           var parent = navigableKlabAsset.parent;
           if (parent instanceof NavigableKlabAsset<?> parentAsset) {
             parentAsset.children =
-                children.stream()
+                parentAsset.children.stream()
                     .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
                     .toList();
           }

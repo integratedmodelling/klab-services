@@ -82,7 +82,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         //            }
         //          }
         //        }
-        view().workspaceModified(workspace, changedAssets);
+        view().workspaceModified(workspace, changes, changedAssets);
       }
     }
     //          if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {

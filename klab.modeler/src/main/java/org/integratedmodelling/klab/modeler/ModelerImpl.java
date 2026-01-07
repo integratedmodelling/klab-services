@@ -452,14 +452,45 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
+  public boolean updateDocument(
+      ResourcesService service,
+      String projectName,
+      String documentUrn,
+      ProjectStorage.ResourceType documentType,
+      String updatedContent) {
+
+    if (service instanceof ResourcesService.Admin admin) {
+      Thread.ofVirtual()
+          .start(
+              () -> {
+                handleResultSets(
+                    admin.updateDocument(projectName, documentType, updatedContent, currentUser()));
+              });
+    } else if (getUI() != null) {
+      getUI()
+          .alert(
+              Notification.create(
+                  "Service does not support this operation", Notification.Level.Warning));
+      return false;
+    }
+    return true;
+  }
+
+  @Override
   public void deleteAsset(ResourcesService resources, NavigableAsset asset) {
 
-    if (resources instanceof ResourcesService.Admin admin) {
+    if (resources instanceof ResourcesService.Admin admin
+        && asset instanceof KlabDocument<?> document) {
       Thread.ofVirtual()
           .start(
               () -> {
                 var project = asset.parent(NavigableProject.class);
-                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(), currentUser());
+                var ret =
+                    admin.deleteDocument(
+                        project.getUrn(),
+                        asset.getUrn(),
+                        ProjectStorage.ResourceType.classify(document),
+                        currentUser());
                 handleResultSets(ret);
               });
     } else if (getUI() != null) {

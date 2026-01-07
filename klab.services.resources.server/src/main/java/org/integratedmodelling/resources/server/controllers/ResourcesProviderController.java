@@ -647,14 +647,14 @@ public class ResourcesProviderController {
     @ApiResponse(responseCode = "403", description = "Forbidden")
   })
   @GetMapping(ServicesAPI.RESOURCES.DEPENDENTS)
-  public @ResponseBody List<KimNamespace> dependents(
+  public @ResponseBody List<String> dependents(
       @Parameter(description = "ID of the namespace") @PathVariable("namespaceId")
           String namespaceId) {
     return resourcesServer.klabService().dependents(namespaceId);
   }
 
   @GetMapping(ServicesAPI.RESOURCES.PRECURSORS)
-  public List<KimNamespace> precursors(@PathVariable("namespaceId") String namespaceId) {
+  public List<String> precursors(@PathVariable("namespaceId") String namespaceId) {
     return resourcesServer.klabService().precursors(namespaceId);
   }
 

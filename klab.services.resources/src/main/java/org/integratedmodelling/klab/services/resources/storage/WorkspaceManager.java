@@ -15,6 +15,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
@@ -470,6 +472,29 @@ public class WorkspaceManager {
     this.workspaces.put(resourceInfo.getUrn(), workspace);
     this.configuration.getWorkspaces().put(resourceInfo.getUrn(), new LinkedHashSet<>());
     this.saveConfiguration();
+  }
+
+  public List<String> dependents(String namespaceId) {
+    var ret = new ArrayList<String>();
+    for (var asset : _namespaceMap.values()) {
+      if (!namespaceId.equals(asset.getUrn())
+          && asset.importedNamespaces(false).contains(namespaceId)) {
+        ret.add(asset.getUrn());
+      }
+    }
+    for (var asset : _ontologyMap.values()) {
+      if (!namespaceId.equals(asset.getUrn())
+          && asset.importedNamespaces(false).contains(namespaceId)) {
+        ret.add(asset.getUrn());
+      }
+    }
+    for (var asset : _behaviorMap.values()) {
+      if (!namespaceId.equals(asset.getUrn())
+          && asset.importedNamespaces(false).contains(namespaceId)) {
+        ret.add(asset.getUrn());
+      }
+    }
+    return ret;
   }
 
   class StrategyParser extends Parser<Strategies> {
@@ -1613,51 +1638,7 @@ public class WorkspaceManager {
     for (var change : changes) {
 
       if (change.getSecond() == CRUDOperation.DELETE) {
-
-        // there's no new asset but all the affected must be reloaded
-        if (projectDescriptor.storage instanceof FileProjectStorage fps) {
-
-          String deletedUrn = fps.getDocumentUrn(change.getFirst(), change.getThird());
-
-          if (deletedUrn != null) {
-
-            affectedOntologies.add(deletedUrn);
-            for (var ontology : getOntologies(false)) {
-              if (!Sets.intersection(affectedOntologies, ontology.importedNamespaces(false))
-                  .isEmpty()) {
-                affectedOntologies.add(ontology.getUrn());
-              }
-            }
-
-            affectedNamespaces.addAll(affectedOntologies);
-            for (var namespace : getNamespaces()) {
-              if (!Sets.intersection(affectedNamespaces, namespace.importedNamespaces(false))
-                  .isEmpty()) {
-                affectedNamespaces.add(namespace.getUrn());
-              }
-            }
-            affectedNamespaces.removeAll(affectedOntologies);
-
-            // same for strategies and behaviors
-            affectedBehaviors.addAll(affectedOntologies);
-            for (var behavior : getBehaviors()) {
-              if (!Sets.intersection(affectedBehaviors, behavior.importedNamespaces(false))
-                  .isEmpty()) {
-                affectedBehaviors.add(behavior.getUrn());
-              }
-            }
-            affectedBehaviors.removeAll(affectedOntologies);
-
-            affectedStrategies.addAll(affectedOntologies);
-            for (var strategies : getStrategyDocuments()) {
-              if (!Sets.intersection(affectedStrategies, strategies.importedNamespaces(false))
-                  .isEmpty()) {
-                affectedStrategies.add(strategies.getUrn());
-              }
-            }
-            affectedStrategies.removeAll(affectedOntologies);
-          }
-        }
+        throw new KlabIllegalStateException("should not use handleFileChange for deletes");
       } else if (change.getSecond() == CRUDOperation.CREATE) {
 
         // just a new asset, nothing should be affected, let this through
@@ -2880,6 +2861,196 @@ public class WorkspaceManager {
     //        result.getProjects().add(projectResource);
     //      }
     //    }
+
+    return ret;
+  }
+
+  public synchronized List<ResourceSet> deleteDocument(
+      String projectName,
+      ProjectStorage.ResourceType resourceType,
+      String documentUrn,
+      Scope lockingScope) {
+
+    List<ResourceSet> ret = new ArrayList<>();
+    String lockingAuthorization = lockingScope.getIdentity().getId();
+
+    if (lockingAuthorization == null
+        || !lockingAuthorization.equals(projectLocks.get(projectName))) {
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("Project " + projectName + " is not locked. Update ignored.")));
+    }
+
+    var pd = projectDescriptors.get(projectName);
+    if (pd == null || !(pd.storage instanceof FileProjectStorage fileProjectStorage)) {
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + projectName + " is not handled by this service. Update ignored.")));
+    }
+
+    var dependents = dependents(documentUrn);
+    if (!dependents.isEmpty()) {
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Document "
+                      + documentUrn
+                      + " cannot be deleted as it is referenced by "
+                      + String.join(", ", dependents))));
+    }
+
+    try {
+      var document = fileProjectStorage.locate(documentUrn, resourceType);
+      if (document != null) {
+        this.loading.set(true);
+        var result = new ResourceSet();
+        result.setWorkspace(getWorkspaceForProject(projectName));
+        result.getServices().put(service.serviceId(), service.getUrl());
+
+        switch (resourceType) {
+          case MODEL_NAMESPACE -> {
+            var previous = _namespaceMap.remove(documentUrn);
+            if (previous != null) {
+              _namespaceOrder =
+                  _namespaceOrder.stream()
+                      .filter(urn -> !urn.equals(documentUrn))
+                      .collect(Collectors.toList());
+              service.modelKbox().clearNamespace(documentUrn, service.serviceScope());
+              result
+                  .getNamespaces()
+                  .add(
+                      new ResourceSet.Resource(
+                          CRUDOperation.DELETE,
+                          service.serviceId(),
+                          documentUrn,
+                          projectName,
+                          previous.getVersion(),
+                          KlabAsset.KnowledgeClass.NAMESPACE,
+                          false));
+              result
+                  .getNotifications()
+                  .add(Notification.info("Namespace " + documentUrn + " was permanently deleted"));
+            } else {
+              result
+                  .getNotifications()
+                  .add(Notification.error("Namespace " + documentUrn + " not found"));
+            }
+          }
+          case ONTOLOGY -> {
+            var previous = _ontologyMap.remove(documentUrn);
+            _ontologyOrder =
+                _ontologyOrder.stream()
+                    .filter(o -> !o.getUrn().equals(documentUrn))
+                    .collect(Collectors.toList());
+            _worldviewOntologies.stream()
+                .filter(o -> !o.getUrn().equals(documentUrn))
+                .collect(Collectors.toList());
+            if (previous != null && isWorldviewProvider()) {
+              // this may or may not end up in the result set
+              var worldviewChange = new ResourceSet();
+              worldviewChange.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
+              worldviewChange.getServices().put(service.serviceId(), service.getUrl());
+              worldviewChange
+                  .getOntologies()
+                  .add(
+                      new ResourceSet.Resource(
+                          CRUDOperation.DELETE,
+                          service.serviceId(),
+                          documentUrn,
+                          projectName,
+                          previous.getVersion(),
+                          KlabAsset.KnowledgeClass.ONTOLOGY,
+                          false));
+              ret.add(worldviewChange);
+              result
+                  .getOntologies()
+                  .add(
+                      new ResourceSet.Resource(
+                          CRUDOperation.DELETE,
+                          service.serviceId(),
+                          documentUrn,
+                          projectName,
+                          previous.getVersion(),
+                          KlabAsset.KnowledgeClass.ONTOLOGY,
+                          false));
+              result
+                  .getNotifications()
+                  .add(Notification.info("Ontology " + documentUrn + " was permanently deleted"));
+
+            } else {
+              result
+                  .getNotifications()
+                  .add(Notification.error("Ontology " + documentUrn + " not found"));
+            }
+          }
+          case BEHAVIOR -> {
+            var previous = _behaviorMap.remove(documentUrn);
+            _behaviorOrder.stream()
+                .filter(o -> !o.getUrn().equals(documentUrn))
+                .collect(Collectors.toList());
+            if (previous != null) {
+              result
+                  .getBehaviors()
+                  .add(
+                      new ResourceSet.Resource(
+                          CRUDOperation.DELETE,
+                          service.serviceId(),
+                          documentUrn,
+                          projectName,
+                          previous.getVersion(),
+                          KlabAsset.KnowledgeClass.BEHAVIOR,
+                          false));
+              result
+                  .getNotifications()
+                  .add(Notification.info("Behavior " + documentUrn + " was permanently deleted"));
+
+            } else {
+              result
+                  .getNotifications()
+                  .add(Notification.error("Behavior " + documentUrn + " not found"));
+            }
+          }
+          case STRATEGY -> {
+            var previous = _observationStrategyDocumentMap.remove(documentUrn);
+            _observationStrategies.stream()
+                .filter(o -> !o.getUrn().equals(documentUrn))
+                .collect(Collectors.toList());
+            if (previous != null) {
+              result
+                  .getObservationStrategies()
+                  .add(
+                      new ResourceSet.Resource(
+                          CRUDOperation.DELETE,
+                          service.serviceId(),
+                          documentUrn,
+                          projectName,
+                          previous.getVersion(),
+                          KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY,
+                          false));
+              result
+                  .getNotifications()
+                  .add(
+                      Notification.info(
+                          "Observation strategy " + documentUrn + " was permanently deleted"));
+
+            } else {
+              result
+                  .getNotifications()
+                  .add(Notification.error("Strategy " + documentUrn + " not found"));
+            }
+          }
+        }
+        // TODO this logic should go in the file storage, including the next TODO and backup
+        File file = new File(document.getFile());
+        Utils.Files.deleteQuietly(file);
+        // TODO if namespace and no other docs in the same dir, remove the folders too
+        ret.add(result);
+        this.loading.set(false);
+      }
+    } catch (Exception e) {
+      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
+    }
 
     return ret;
   }

@@ -237,7 +237,7 @@ public class FileProjectStorage implements ProjectStorage {
       /*
       relative path
        */
-      var relativePath = file.toPath().relativize(rootFolder.toPath());
+      var relativePath = rootFolder.toPath().relativize(file.toPath());
       var data = ProjectStorage.getDocumentData(relativePath.toString(), File.separator);
       return data != null && data.getFirst() == type ? data.getSecond() : null;
     }
@@ -488,6 +488,27 @@ public class FileProjectStorage implements ProjectStorage {
                   + ProjectStorage.getRelativeFilePath(urn, resourceType, File.separator));
       Utils.Files.writeStringToFile(content, resourceFile);
       return resourceFile.toURI().toURL();
+    } catch (Exception e) {
+      throw new KlabIOException(e);
+    }
+  }
+
+  /**
+   * We don't have a delete function, but this returns the file URL that can be deleted by the
+   * workspace manager.
+   *
+   * @param resourceType
+   * @param urn
+   * @return the file URL of an existing file, or null if the resource is not found.
+   */
+  public URL locate(String urn, ResourceType resourceType) {
+    try {
+      File resourceFile =
+          new File(
+              rootFolder
+                  + File.separator
+                  + ProjectStorage.getRelativeFilePath(urn, resourceType, File.separator));
+      return resourceFile.isFile() ? resourceFile.toURI().toURL() : null;
     } catch (Exception e) {
       throw new KlabIOException(e);
     }

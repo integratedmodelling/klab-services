@@ -140,7 +140,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
     initialize(monitor);
 
-    if (!database.hasTable(getMainTableId())) {
+    if (!database.hasTable(getMainTableId()) || !database.hasTable("namespaces")) {
       return 0;
     }
 

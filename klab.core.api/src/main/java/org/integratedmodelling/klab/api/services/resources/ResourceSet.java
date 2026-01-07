@@ -95,6 +95,24 @@ public class ResourceSet implements Serializable {
       this.optional = optional;
     }
 
+    public Resource(
+            CRUDOperation operation,
+            String serviceId,
+            String resourceUrn,
+            String projectUrn,
+            Version resourceVersion,
+            KnowledgeClass knowledgeClass,
+            boolean optional) {
+      super();
+      this.serviceId = serviceId;
+      this.resourceUrn = resourceUrn;
+      this.resourceVersion = resourceVersion;
+      this.knowledgeClass = knowledgeClass;
+      this.projectUrn = projectUrn;
+      this.optional = optional;
+      this.operation = operation;
+    }
+
     /**
      * The service ID maps to the services hash in the enclosing class, to avoid duplications.
      *
