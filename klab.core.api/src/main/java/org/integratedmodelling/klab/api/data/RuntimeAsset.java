@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -20,8 +21,10 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  *
  * <p>For now this is little more than a tag interface. It will contain methods to subscribe to
  * events relative to the asset through the messaging subsystem.
+ *
+ * TODO this should extend KlabAsset
  */
-public interface RuntimeAsset {
+public interface RuntimeAsset /*extends KlabAsset*/ {
 
   long CONTEXT_ASSET_ID = -1000;
   long PROVENANCE_ASSET_ID = -1001;
