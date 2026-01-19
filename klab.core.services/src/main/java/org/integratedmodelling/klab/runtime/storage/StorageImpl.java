@@ -295,6 +295,10 @@ public class StorageImpl implements Storage {
           "Cannot restore shard " + shard.getUrn() + " from storage");
     }
 
+    /**
+     * TODO if there is a need for mediation, we should create a MediatingScanner with the appropriate
+     *  type. All mediation should be in the scanner and nowhere else.
+     */
     return switch (shard.getShardingStrategy().getDataType()) {
       case DOUBLE -> new LocalDoubleScanner((ShardImpl) shard, st.data, st.histogram);
       case FLOAT -> new LocalFloatScanner((ShardImpl) shard, st.data, st.histogram);
