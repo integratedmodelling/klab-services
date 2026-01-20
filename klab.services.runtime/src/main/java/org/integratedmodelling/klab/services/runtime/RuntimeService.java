@@ -8,6 +8,7 @@ import java.util.concurrent.*;
 
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
@@ -439,6 +440,16 @@ public class RuntimeService extends BaseService
             && observation.getObservable().getSemantics().isCollective()
             && scope.getObserver() != null) {
           observation1.setGeometry(scope.getObserver().getGeometry());
+        }
+      }
+
+      // sanitize whatever geometry we have before any use is made of it. TODO add a flag or something to
+      //  avoid doing this when not necessary.
+      if (observation instanceof ObservationImpl observation1) {
+        var geometry = observation.getGeometry();
+        if (geometry != null) {
+          geometry = GeometryRepository.INSTANCE.sanitize(geometry);
+          observation1.setGeometry(geometry);
         }
       }
 

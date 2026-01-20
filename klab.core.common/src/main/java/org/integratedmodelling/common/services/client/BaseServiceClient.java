@@ -41,8 +41,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 
-import javax.cache.event.CacheEntryListener;
-
 public abstract class BaseServiceClient implements KlabService {
 
   protected final Scope userScope;

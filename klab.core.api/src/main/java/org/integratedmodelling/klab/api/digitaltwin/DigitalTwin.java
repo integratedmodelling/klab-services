@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
@@ -616,7 +618,27 @@ public interface DigitalTwin extends RuntimeAsset {
     if (definition.containsKey("time")) {
       var timeBuilder = geometryBuilder.time();
       if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
-        if (timeDefinition.containsKey("year")) {
+        if (timeDefinition.containsKey("start") && timeDefinition.containsKey("end")) {
+          var start = timeDefinition.get("start");
+          var end = timeDefinition.get("end");
+          if (start instanceof Number startNumber && end instanceof Number endNumber) {
+
+            if (startNumber.longValue() >= endNumber.longValue()) {
+              throw new KlabIllegalArgumentException("Start time cannot be after end time");
+            }
+
+            if (startNumber.longValue() > 0 && startNumber.longValue() < 3000) {
+              // assume year
+              startNumber = TimeInstant.create(startNumber.intValue()).getMilliseconds();
+            }
+            if (endNumber.longValue() > 0 && endNumber.longValue() < 3000) {
+              // assume year
+              endNumber = TimeInstant.create(endNumber.intValue()).getMilliseconds();
+            }
+
+            timeBuilder.start(startNumber.longValue()).end(endNumber.longValue());
+          }
+        } else if (timeDefinition.containsKey("year")) {
           var year = timeDefinition.get("year");
           if (year instanceof Number number) {
             timeBuilder.year(number.intValue());
@@ -624,6 +646,14 @@ public interface DigitalTwin extends RuntimeAsset {
               && "default".equals(identifier.getValue())) {
             timeBuilder.year(TimeInstant.create().getYear());
           }
+        }
+
+        if (timeDefinition.containsKey("step")) {
+          var step =
+              timeDefinition.get("step") instanceof Quantity quantity
+                  ? quantity
+                  : Quantity.create(timeDefinition.get("step").toString());
+          timeBuilder.step(step);
         }
       }
       geometryBuilder = timeBuilder.build();

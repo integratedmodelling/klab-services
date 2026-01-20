@@ -8,8 +8,10 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -31,6 +33,28 @@ public enum GeometryRepository {
           .maximumWeight(800000L) // TODO configure - this is just the spec length
           .weigher((key, value) -> ((Pair<Geometry, Scale>) value).getFirst().encode().length())
           .build();
+
+  /**
+   * Ensure that all extents are in a fully specified and usable form. Once that is done, build a
+   * scale and cache it. If not, return null.
+   *
+   * <p>This is called upon {@link
+   * org.integratedmodelling.klab.api.services.RuntimeService#submit(Observation, ContextScope)} to
+   * ensure that all geometries are fully specified before anything is done with them, and is meant
+   * for geometries obtained through JSON and implemented as a standard Geometry. Passing a scale
+   * will return the scale as a geometry without changes or caching.
+   *
+   * @param geometry
+   * @return
+   */
+  public Geometry sanitize(Geometry geometry) {
+    if (geometry instanceof Scale scale) {
+      return scale.as(Geometry.class);
+    }
+
+    var scale = scale(geometry);
+    return geometry(scale);
+  }
 
   public Scale scale(Geometry geometry) {
     if (geometry == null) {

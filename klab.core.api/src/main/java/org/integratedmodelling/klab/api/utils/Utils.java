@@ -4819,6 +4819,22 @@ public class Utils {
       return false;
     }
 
+    public static String disambiguateAgainst(URL rootUrl, String relativeUrl) {
+      if (rootUrl == null || relativeUrl == null) {
+        return null;
+      }
+      if (!relativeUrl.startsWith(".") || relativeUrl.contains("://")) {
+        return relativeUrl;
+      }
+      try {
+        var base = rootUrl.toURI();
+        var relative = base.resolve(relativeUrl); // Result: https://example.com/aa/bb/file2.html
+        return relative.toURL().toString();
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalArgumentException(e);
+      }
+    }
+
     /**
      * Ping the url by requesting the header and inspecting the return code.
      *
