@@ -3,8 +3,10 @@ package org.integratedmodelling.common.data;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.common.data.Instance;
 
+import java.util.Collection;
 import java.util.PrimitiveIterator;
 
 public class DoubleDataImpl extends BaseDataImpl implements PrimitiveIterator.OfDouble {
@@ -14,17 +16,11 @@ public class DoubleDataImpl extends BaseDataImpl implements PrimitiveIterator.Of
   private long index = 0;
   private final long size;
 
-  public DoubleDataImpl(Instance instance, long size, long offset) {
-    super(instance);
+  public DoubleDataImpl(Instance instance, Collection<Notification> notifications, long size, long offset) {
+    super(instance, notifications);
     this.offset = offset;
     this.size = size;
   }
-
-  //  public DoubleDataImpl(Observable observable, Geometry geometry, String name, Instance
-  // instance) {
-  //    super(observable, geometry, name, instance);
-  //    //    this.iterator = fillCurve().cursor(geometry);
-  //  }
 
   @Override
   public boolean hasStates() {

@@ -1816,7 +1816,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               parseHeaders(response);
               var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
               var reader = new SpecificDatumReader<>(Instance.class);
-              return (T) BaseDataImpl.create(reader.read(null, decoder));
+              // TODO FIXME decode the notifications from the Instance
+              return (T) BaseDataImpl.create(reader.read(null, decoder), List.of());
             }
           } else {
             client.send(

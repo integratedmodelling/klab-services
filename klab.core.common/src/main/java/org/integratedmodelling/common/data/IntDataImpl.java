@@ -1,18 +1,20 @@
 package org.integratedmodelling.common.data;
 
+import java.util.Collection;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.common.data.Instance;
 
 public class IntDataImpl extends BaseDataImpl implements PrimitiveIterator.OfInt {
 
   private /*final*/ OfLong iterator;
 
-  public IntDataImpl(Instance instance) {
-    super(instance);
+  public IntDataImpl(Instance instance, Collection<Notification> notifications) {
+    super(instance, notifications);
 //    this.iterator =
 //            fillCurve()
 //                    .cursor(

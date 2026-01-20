@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.data;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
@@ -756,6 +757,14 @@ public interface Data {
      * @return
      */
     Observation getObservation();
+
+    /**
+     * The builder may contain notifications about errors or warnings after use, even if there is no
+     * observation.
+     *
+     * @return
+     */
+    Collection<Notification> getNotifications();
   }
 
   /**

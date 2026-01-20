@@ -31,13 +31,15 @@ public class BaseDataImpl implements Data {
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
+  private List<Notification> notifications = new ArrayList<>();
 
-  public BaseDataImpl(Instance instance) {
+  public BaseDataImpl(Instance instance, Collection<Notification> notifications) {
     this.instance = instance;
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
     this.name = instance.getName().toString();
+    this.notifications.addAll(notifications);
   }
 
   public BaseDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
@@ -74,7 +76,7 @@ public class BaseDataImpl implements Data {
 
   @Override
   public List<Notification> notifications() {
-    return List.of();
+    return notifications;
   }
 
   @Override
@@ -82,7 +84,7 @@ public class BaseDataImpl implements Data {
     if (instance.getInstances() == null || instance.getInstances().isEmpty()) {
       return List.of();
     }
-    return instance.getInstances().stream().map(BaseDataImpl::create).toList();
+    return instance.getInstances().stream().map(i -> BaseDataImpl.create(i, List.of())).toList();
   }
 
   @Override
@@ -140,12 +142,12 @@ public class BaseDataImpl implements Data {
     }
   }
 
-  public static Data create(Instance instance) {
+  public static Data create(Instance instance, Collection<Notification> notifications) {
 
     if (instance.getDoubleData() != null) {
       // TODO we only use one buffer at this point, the fill strategy may be different. Need a
       // parameter in the data builder
-      return new DoubleDataImpl(instance, instance.getDoubleData().size(), 0);
+      return new DoubleDataImpl(instance, notifications, instance.getDoubleData().size(), 0);
     } else if (instance.getFloatData() != null) {
       throw new KlabUnimplementedException("GAAAH");
       //      return new FloatDataImpl(instance);
@@ -153,11 +155,11 @@ public class BaseDataImpl implements Data {
       if (instance.getDataKey() != null) {
         throw new KlabUnimplementedException("GEEEEH");
       }
-      return new IntDataImpl(instance);
+      return new IntDataImpl(instance, notifications);
     } else if (instance.getLongData() != null) {
-      return new LongDataImpl(instance);
+      return new LongDataImpl(instance, notifications);
     }
 
-    return new BaseDataImpl(instance);
+    return new BaseDataImpl(instance, notifications);
   }
 }

@@ -28,6 +28,7 @@ public class SerializingDataBuilder implements Data.Builder {
   private int objectCounter = 1;
   private String adapter;
   private Data input;
+  private List<Notification> notifications = new ArrayList<>();
 
   public SerializingDataBuilder(String name, Data input, Geometry geometry) {
     this.builder = Instance.newBuilder();
@@ -105,6 +106,11 @@ public class SerializingDataBuilder implements Data.Builder {
     return null;
   }
 
+  @Override
+  public Collection<Notification> getNotifications() {
+    return this.notifications;
+  }
+
   //  @Override
   public Data build() {
     if (objectKey != null) {
@@ -120,6 +126,11 @@ public class SerializingDataBuilder implements Data.Builder {
       }
       parentBuilder.getInstances().add(instance);
     }
-    return BaseDataImpl.create(instance);
+//    instance
+//        .getNotifications()
+//        .addAll(
+//            (Collection<? extends org.integratedmodelling.klab.common.data.Notification>)
+//                notifications);
+    return BaseDataImpl.create(instance, notifications);
   }
 }

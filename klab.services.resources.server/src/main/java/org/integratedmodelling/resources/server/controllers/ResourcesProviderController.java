@@ -584,7 +584,7 @@ public class ResourcesProviderController {
 
           Data input = null;
           if (request.getInputData() != null) {
-            input = BaseDataImpl.create(request.getInputData());
+            input = BaseDataImpl.create(request.getInputData(), List.of());
           }
 
           var ret =

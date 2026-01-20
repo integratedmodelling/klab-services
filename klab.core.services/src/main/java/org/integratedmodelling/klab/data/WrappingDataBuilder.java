@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder {
@@ -26,6 +27,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
   private final String adapterId;
   private final Scheduler.Event event;
   private final Storage.Scanner scanner;
+  private final List<Notification> notifications = new ArrayList<>();
 
   public WrappingDataBuilder(
       Data data,
@@ -44,7 +46,8 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
 
   @Override
   public Data.Builder notification(Notification notification) {
-    return null;
+    notifications.add(notification);
+    return this;
   }
 
   @Override
@@ -105,6 +108,11 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
   @Override
   public Observation getObservation() {
     return observation;
+  }
+
+  @Override
+  public Collection<Notification> getNotifications() {
+    return this.notifications;
   }
 
   public Data.Builder fillShards() {

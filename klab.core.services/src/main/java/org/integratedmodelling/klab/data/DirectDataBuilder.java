@@ -9,10 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /** The builder to use when the digital twin is available locally. */
 public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
@@ -23,6 +20,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   private final Data inputData;
   private final Observation observation;
   private List<Data.Builder> objects = new ArrayList<>();
+  private List<Notification> notifications = new ArrayList<>();
 
   public DirectDataBuilder(
       String name, Data inputData, Observation observation, ContextScope contextScope) {
@@ -42,7 +40,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
 
   @Override
   public Data.Builder notification(Notification notification) {
-    scope.send(notification);
+    this.notifications.add(notification);
     return this;
   }
 
@@ -92,6 +90,11 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   @Override
   public Observation getObservation() {
     return observation;
+  }
+
+  @Override
+  public Collection<Notification> getNotifications() {
+    return this.notifications;
   }
 
   public void setScanner(String self, Storage.Scanner scanner) {

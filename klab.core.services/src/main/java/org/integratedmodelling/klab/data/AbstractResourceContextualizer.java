@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +40,7 @@ public abstract class AbstractResourceContextualizer {
   protected final Map<String, Observable> localNames;
 
   protected AbstractResourceContextualizer(
-      Resource resource,
-      Observation observation,
-      Map<String, Observable> localNames) {
+      Resource resource, Observation observation, Map<String, Observable> localNames) {
     this.resource = resource;
     this.urn = Urn.of(resource.getUrn());
     this.urnParameters = Parameters.create(this.urn.getParameters());
@@ -64,6 +63,12 @@ public abstract class AbstractResourceContextualizer {
       // TODO the shards have been filled. Update shard data in the transaction for KG update
       if (scanner != null) {
         // TODO
+      }
+
+      this.observation.getNotifications().addAll(builder.getNotifications());
+
+      if (Utils.Notifications.hasErrors(builder.getNotifications())) {
+        return false;
       }
 
       // ingest and resolve any new objects
