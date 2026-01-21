@@ -170,6 +170,16 @@
                     <artifactId>jib-maven-plugin</artifactId>
                     <version>${googleJibVersion}</version>
                 </plugin>
+    			<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.0.0-M3</version>
+					<configuration>
+						<rules>
+							<dependencyConvergence />
+						</rules>
+					</configuration>
+				</plugin>
             </plugins>
         </pluginManagement>
         <plugins>
