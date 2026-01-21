@@ -461,6 +461,16 @@ public class FileProjectStorage implements ProjectStorage {
 
       URL ret = file.toURI().toURL();
       Templates.createDocument(resourceType, resourceId, file);
+
+      if (isTracked()) {
+
+        try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
+          try (var git = Git.wrap(repository)) {
+            git.add().addFilepattern(relativePath).call();
+          }
+        }
+      }
+
       return ret;
 
     } catch (Throwable t) {

@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
@@ -326,18 +327,6 @@ public class DigitalTwinImpl implements DigitalTwin {
               kgTransaction.link(source, target, edge.relationship, relationshipData);
             }
           }
-
-          //          if (!trivial) {
-          //            kgTransaction.link(
-          //                knowledgeGraph.provenance(), activity,
-          // GraphModel.Relationship.HAS_CHILD);
-          //            linked.add(
-          //                Triple.of(
-          //                    knowledgeGraph.provenance().getId(),
-          //                    activity.getId(),
-          //                    GraphModel.Relationship.HAS_CHILD.name()));
-          //          }
-
         } catch (Exception e) {
           scope.error(e);
           kgTransaction.fail(e);

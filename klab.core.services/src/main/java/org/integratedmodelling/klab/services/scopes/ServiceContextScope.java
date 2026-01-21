@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
@@ -807,10 +808,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 
-  public void fail() {
+  public void fail(Object... details) {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.FAILURE);
       activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
+      for (var detail : details) {
+        if (detail instanceof Notification notification
+            && (notification.getLevel() == Notification.Level.Error
+                || notification.getLevel() == Notification.Level.Error)) {
+          activity.setDescription(notification.getMessage());
+        }
+      }
     }
     this.currentTransaction.fail(null);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());

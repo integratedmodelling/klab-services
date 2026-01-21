@@ -59,8 +59,6 @@ import org.integratedmodelling.klab.modeler.views.controllers.*;
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
-  //  private ContextScope currentContext;
-  //  private final List<SessionScope> sessions = new ArrayList<>();
   private final Map<String, ContextScope> contexts = new LinkedHashMap<>();
   private SimpleWebServer httpServer = null;
   private File tempDirectory;
@@ -285,28 +283,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                       currentContext.getService(RuntimeService.class),
                       obs);
                   currentContext.info(obs + " is now the current observer");
-                } /* else if (currentContext.getContextObservation() == null
-                                      && obs.getObservable().is(SemanticType.SUBJECT)
-                                      && !obs.getObservable().getSemantics().isCollective()) {
-                                    // for the UI
-                                    currentContext.send(
-                                        Message.MessageClass.DigitalTwin,
-                                        Message.MessageType.ContextObservationResolved,
-                                        obs);
-                                    dispatch(
-                                        this,
-                                        UIEvent.ContextObservationResolved,
-                                        currentContext,
-                                        currentContext.getService(RuntimeService.class),
-                                        obs);
-                  //                  setCurrentContext(currentContext.within(obs));
-                  //                  currentContext.ui(
-                  //                      Message.create(
-                  //                          currentContext,
-                  //                          Message.MessageClass.UserInterface,
-                  //                          Message.MessageType.CurrentContextModified));
-                  //                  currentContext.info(obs + " is now the current context observation");
-                                  }*/ else {
+                } else {
                   currentContext.info("Observation of " + obs + " resolved successfully");
                 }
               }

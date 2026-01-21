@@ -23,8 +23,10 @@ import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 import reactor.core.publisher.Sinks;
@@ -265,8 +267,16 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation);
     if (executor != null) {
-      return execute(executor, observation, geometry, causingEvent, scope);
+      var ret = execute(executor, observation, geometry, causingEvent, scope);
+
+      /**
+       * At this point if ret == true there have been no errors within the runtime, but the
+       * observation may still contain non-fatal error notifications coming from a plug-in adapter
+       * or external service. Those must be handled separately.
+       */
+      return ret && !Utils.Notifications.hasErrors(observation.getNotifications());
     }
+
     return true;
   }
 
