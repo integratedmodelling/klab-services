@@ -2,10 +2,8 @@ package org.integratedmodelling.klab.services.runtime;
 
 import java.io.File;
 import java.io.Serializable;
-import java.net.http.HttpClient;
 import java.util.*;
 import java.util.concurrent.*;
-
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -45,7 +43,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
@@ -57,7 +54,6 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEm
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -443,7 +439,8 @@ public class RuntimeService extends BaseService
         }
       }
 
-      // sanitize whatever geometry we have before any use is made of it. TODO add a flag or something to
+      // sanitize whatever geometry we have before any use is made of it. TODO add a flag or
+      // something to
       //  avoid doing this when not necessary.
       if (observation instanceof ObservationImpl observation1) {
         var geometry = observation.getGeometry();
@@ -614,11 +611,12 @@ public class RuntimeService extends BaseService
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
+
                   // TODO add more info about the contextualization to the action's metadata
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId != null
-                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
+                          && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                   }
                 } else {
