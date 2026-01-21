@@ -966,7 +966,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private final Map<String, List<String>> responseHeaders = new HashMap<>();
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
-      private int timeoutSeconds = 10;
+      private int timeoutSeconds = 120;
       private static final String AUTHENTICATION_HEADER = "Authentication";
 
       public void setAuthorization(String token) {
