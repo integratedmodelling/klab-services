@@ -3,16 +3,21 @@ package org.integratedmodelling.klab.services.application.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /** Administration endpoints common to all k.LAB services. Accessible only to administrators. */
 @RestController
@@ -119,13 +125,30 @@ public class KlabAdminController {
    *
    * @return
    */
-  @PostMapping(ServicesAPI.ADMIN.SETTINGS)
-  public @ResponseBody long postSetting(@RequestBody Parameters<String> data, Principal principal) {
-    return -1;
+  @PostMapping(ServicesAPI.ADMIN.SET)
+  public @ResponseBody long postSetting(
+      @RequestBody String dataBody,
+      @PathVariable(name = "setting") String setting,
+      Principal principal) {
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+    if (scope instanceof ServiceUserScope userScope
+        && instance.klabService().settings() instanceof SettingsImpl settings) {
+      var s = settings.property2Setting(setting);
+      if (s != null) {
+        var body = Utils.Json.parseObject(dataBody, s.valueClass);
+        return userScope
+            .getJobManager()
+            .submit(
+                CompletableFuture.supplyAsync(() -> settings.set(s, body)),
+                "Setting change: " + setting);
+      }
+    }
+    throw new KlabIllegalArgumentException("Invalid setting: " + setting);
   }
 
   @GetMapping(ServicesAPI.ADMIN.SETTINGS)
   public @ResponseBody Map<String, Object> getSettings(Principal principal) {
-    return Map.of();
+    return instance.klabService().settings().asMap();
   }
 }

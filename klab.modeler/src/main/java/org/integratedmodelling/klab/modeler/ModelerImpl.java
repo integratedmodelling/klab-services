@@ -13,9 +13,11 @@ import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -23,6 +25,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -96,8 +99,34 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public Engine createEngine() {
     return new EngineImpl(
-        status -> dispatch(this, UIEvent.EngineStatusChanged, status),
+        this::updateEngineStatus,
         (service, status) -> dispatch(this, UIEvent.ServiceStatus, service, status));
+  }
+
+  private void updateEngineStatus(Engine.Status status) {
+    // TODO on local engines active and no federation, setup local federation so that user can get
+    //  messages
+    var federation = Klab.INSTANCE.getFederationData(user().getUser());
+    if (federation == null || federation.getId().equals(Federation.LOCAL_FEDERATION_ID)) {
+      if (status.getCondition() == Engine.Status.EngineCondition.ACTIVE_LOCAL_AND_REMOTE
+          || status.getCondition() == Engine.Status.EngineCondition.ACTIVE_LOCAL_ONLY) {
+        var localRuntime =
+            user().getServices(RuntimeService.class).stream()
+                .filter(
+                    service ->
+                        org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
+                            service.getUrl()))
+                .findAny()
+                .orElse(null);
+
+        federation = Klab.INSTANCE.setupLocalFederation(user().getUser(), localRuntime);
+        if (federation != null && localRuntime != null) {
+          // inform the runtime that the local federation is available
+          localRuntime.set(Setting.USE_LOCAL_FEDERATION, Map.of(), Map.class);
+        }
+      }
+    }
+    dispatch(this, UIEvent.EngineStatusChanged, status);
   }
 
   @Override
@@ -657,17 +686,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   public UIController getController() {
     return this;
   }
-
-  //  @Override
-  //  public Scope getCurrentScope() {
-  //    if (currentContext != null) {
-  //      return currentContext;
-  //    }
-  //    //    if (currentSession != null) {
-  //    //      return currentSession;
-  //    //    }
-  //    return user();
-  //  }
 
   @Override
   public URL publishLocally(File inputFile, String workspace, File... additionalFiles) {

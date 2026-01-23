@@ -13,7 +13,9 @@ import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.*;
@@ -24,6 +26,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -126,6 +129,17 @@ public class RuntimeService extends BaseService
   public void initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
+
+    if (settings instanceof SettingsImpl settingsImpl) {
+      settingsImpl.setExecutionHandler(
+          Setting.USE_LOCAL_FEDERATION,
+          value -> {
+            if (serviceScope().getIdentity() instanceof UserIdentity userIdentity) {
+              Klab.INSTANCE.setupLocalFederation(userIdentity, this);
+            }
+            return null;
+          });
+    }
 
     if (createMainKnowledgeGraph()) {
       // TODO internal libraries
@@ -276,6 +290,7 @@ public class RuntimeService extends BaseService
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
+    ret.setBroker(getEmbeddedBroker() != null);
 
     // TODO this enables creating DTs from the passed scope
     ret.getPermissions()
@@ -616,7 +631,7 @@ public class RuntimeService extends BaseService
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId != null
-                          && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
+                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                   }
                 } else {

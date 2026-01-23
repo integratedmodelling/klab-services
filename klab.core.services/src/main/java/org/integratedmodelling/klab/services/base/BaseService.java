@@ -147,6 +147,11 @@ public abstract class BaseService implements KlabService {
     return settings;
   }
 
+  @Override
+  public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
+    return (CompletableFuture<T>) settings.set(setting, value);
+  }
+
   /**
    * Each service creates a secret key and stores in a text file in its work directory. The service
    * key is created only if absent and remains the same across boot cycles. It is used to grant

@@ -124,6 +124,7 @@ public interface ServicesAPI {
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
     String SETTINGS = "/settings";
+    String SET = "/set/{setting}";
   }
 
   /**

@@ -2182,6 +2182,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     @SuppressWarnings("unchecked")
     public static <T> T parseObject(String text, Class<T> cls) {
+
+      if (Number.class.isAssignableFrom(cls)
+          || Boolean.class.isAssignableFrom(cls)
+          || String.class.isAssignableFrom(cls)) {
+        return Utils.Data.parseAsType(text, cls);
+      }
       try {
         return (T) defaultMapper.readerFor(cls).readValue(text);
       } catch (IOException e) {
