@@ -1,10 +1,14 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -17,6 +21,7 @@ public class SettingsImpl implements Settings {
   // back to stupid properties because none of the TOML implementations work
   private final Properties properties = new Properties();
   private final Executor executor = Executors.newSingleThreadExecutor();
+  private final Map<Setting, Function<Object, Object>> executorCallbacks = new HashMap<>();
 
   public static Settings forService(KlabService.Type type) {
     // TODO
@@ -73,18 +78,30 @@ public class SettingsImpl implements Settings {
   }
 
   @Override
-  public <T> Future<T> set(Setting setting, T value) {
+  public <T> Future<T> set(Setting setting, final T value) {
     executor.execute(
         () -> {
           try {
             var property = setting2Property(setting);
-            if (value == null) {
-              properties.remove(property);
+            T argument = value;
+            if (argument instanceof Map) {
+              if (executorCallbacks.containsKey(setting)) {
+                final var arg = value;
+                argument = (T) executorCallbacks.get(setting).apply(arg);
+                if (argument == null) {
+                  return;
+                }
+              }
             } else {
-              properties.setProperty(property, Utils.Data.asString(value));
-            }
-            if (!Utils.Properties.save(settingsFile, properties)) {
-              Logging.INSTANCE.error("Error writing settings file " + settingsFile);
+
+              if (argument == null) {
+                properties.remove(property);
+              } else {
+                properties.setProperty(property, Utils.Data.asString(argument));
+              }
+              if (!Utils.Properties.save(settingsFile, properties)) {
+                Logging.INSTANCE.error("Error writing settings file " + settingsFile);
+              }
             }
           } catch (Exception e) {
             Logging.INSTANCE.error("Error setting property: " + e.getMessage(), e);
@@ -93,12 +110,21 @@ public class SettingsImpl implements Settings {
     return null;
   }
 
-  private String setting2Property(Setting setting) {
+  public String setting2Property(Setting setting) {
     return setting.page.name().toLowerCase() + "." + setting.name().toLowerCase();
   }
 
-  private Setting property2Setting(String setting) {
+  public Setting property2Setting(String setting) {
     return Setting.valueOf(setting.substring(setting.lastIndexOf(".") + 1).toUpperCase());
+  }
+
+  public Map<String, Object> asMap() {
+    Map<String, Object> ret = new LinkedHashMap<>();
+    for (var entry : properties.entrySet()) {
+      var setting = property2Setting(entry.getKey().toString());
+      ret.put(setting.name(), Utils.Data.asType(entry.getValue(), setting.valueClass));
+    }
+    return ret;
   }
 
   @Override
@@ -107,5 +133,9 @@ public class SettingsImpl implements Settings {
   @Override
   public boolean isSet(Setting setting) {
     return false;
+  }
+
+  public void setExecutionHandler(Setting setting, Function<Object, Object> o) {
+    this.executorCallbacks.put(setting, o);
   }
 }

@@ -322,6 +322,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     var resourceBuilder =
         Resource.builder(observation.getContextualizationData())
+            .withServiceId(serviceId())
             .withGeometry(observation.getGeometry());
     for (var key : observation.getMetadata().keySet()) {
       resourceBuilder.withMetadata(key, observation.getMetadata().get(key));

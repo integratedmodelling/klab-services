@@ -159,7 +159,7 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
 
     @Override
     public long getId() {
-      return -1000;
+      return CONTEXT_ASSET_ID;
     }
 
     @Override
@@ -192,7 +192,7 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
 
     @Override
     public long getId() {
-      return -1001;
+      return PROVENANCE_ASSET_ID;
     }
 
     @Override
@@ -225,7 +225,7 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
 
     @Override
     public long getId() {
-      return -1002;
+      return DATAFLOW_ASSET_ID;
     }
 
     @Override

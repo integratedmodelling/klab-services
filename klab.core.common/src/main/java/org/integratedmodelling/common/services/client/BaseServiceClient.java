@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -34,6 +35,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -114,6 +116,18 @@ public abstract class BaseServiceClient implements KlabService {
   @Override
   public Settings settings() {
     return settings;
+  }
+
+  @Override
+  public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
+    return client
+        .withScope(userScope)
+        .postAsync(
+            ServicesAPI.ADMIN.SET,
+            Utils.Json.asString(value),
+            returnType,
+            "setting",
+            setting.name());
   }
 
   @Override

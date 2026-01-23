@@ -966,7 +966,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private final Map<String, List<String>> responseHeaders = new HashMap<>();
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
-      private int timeoutSeconds = 10;
+      private int timeoutSeconds = 300;
       private static final String AUTHENTICATION_HEADER = "Authentication";
 
       public void setAuthorization(String token) {
@@ -2182,6 +2182,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     @SuppressWarnings("unchecked")
     public static <T> T parseObject(String text, Class<T> cls) {
+
+      if (Number.class.isAssignableFrom(cls)
+          || Boolean.class.isAssignableFrom(cls)
+          || String.class.isAssignableFrom(cls)) {
+        return Utils.Data.parseAsType(text, cls);
+      }
       try {
         return (T) defaultMapper.readerFor(cls).readValue(text);
       } catch (IOException e) {

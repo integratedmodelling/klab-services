@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -313,6 +315,19 @@ public interface KlabService extends Service {
    * @return settings, possibly empty
    */
   Settings settings();
+
+  /**
+   * Change a setting on the service and return a future for the value once the change is complete.
+   *
+   * TODO also add a get() API as the settings() should be local to the service implementation
+   *
+   * @param setting
+   * @param value
+   * @param returnType
+   * @return
+   * @param <T>
+   */
+  <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType);
 
   /**
    * Each service operates under a root scope that is used to report issues, talk to clients and

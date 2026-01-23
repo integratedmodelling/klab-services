@@ -14,6 +14,7 @@ public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities
   private KlabService.Type type;
   private Storage.Type defaultStorageType;
   private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
+  private boolean broker;
 
   @Override
   public KlabService.Type getType() {
@@ -32,6 +33,15 @@ public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities
   @Override
   public Set<CRUDOperation> getPermissions() {
     return permissions;
+  }
+
+  @Override
+  public boolean isBroker() {
+    return broker;
+  }
+
+  public void setBroker(boolean broker) {
+    this.broker = broker;
   }
 
   public void setPermissions(Set<CRUDOperation> permissions) {

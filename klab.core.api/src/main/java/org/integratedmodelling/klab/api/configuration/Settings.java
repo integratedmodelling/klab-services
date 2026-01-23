@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.configuration;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 
 /**
@@ -44,6 +45,13 @@ public interface Settings {
    * @param value
    */
   void setIfUnset(Setting setting, Object value);
+
+  /**
+   * The current settings as a map.
+   *
+   * @return
+   */
+  Map<String, Object> asMap();
 
   /**
    * Return true if the setting has been stored after being set explicitly, false if the default

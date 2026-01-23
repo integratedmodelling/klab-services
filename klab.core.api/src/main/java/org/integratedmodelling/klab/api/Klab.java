@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -38,6 +39,15 @@ public enum Klab {
 
   private static AtomicLong nextId = new AtomicLong(1L);
   private ExecutionContext executionContext;
+  private Federation localFederation = null;
+
+  public Federation setupLocalFederation(UserIdentity user, RuntimeService localRuntimeService) {
+    localFederation =
+        localRuntimeService == null
+            ? null
+            : localRuntimeService.capabilities(null).isBroker() ? Federation.local() : null;
+    return localFederation;
+  }
 
   /** Defines the execution context. This should be available in all situations. */
   public abstract static class ExecutionContext {
@@ -57,8 +67,7 @@ public enum Klab {
       this.serviceType = serviceType;
     }
 
-    // TODO anything else
-
+    // TODO anything else=
     public abstract String uptime();
 
     public long getBootTime() {
@@ -262,6 +271,15 @@ public enum Klab {
               .orElse(null));
     }
 
-    return null;
+    return localFederation;
+  }
+
+  /**
+   * Checked to inform the local runtime that the client expects to use the local federation.
+   *
+   * @return
+   */
+  public Federation getLocalFederation() {
+    return localFederation;
   }
 }

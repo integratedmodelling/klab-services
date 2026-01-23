@@ -108,6 +108,11 @@ public enum Setting {
       "Maximum idle lifetime in minutes for a digital twin configured to be reinitialized on timeout",
       Integer.class,
       120),
+  USE_LOCAL_FEDERATION(
+      Page.RUNTIME,
+      "Use the local federation with the broker embedded in the runtime until downtime",
+      Map.class,
+      Map.of()),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",
