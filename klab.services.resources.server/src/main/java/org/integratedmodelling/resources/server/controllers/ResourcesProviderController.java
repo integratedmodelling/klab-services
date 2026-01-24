@@ -6,10 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
@@ -28,7 +25,6 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -44,9 +40,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
-import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -59,6 +53,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+// TODO only implement the RESOLVE endpoint here
 @RestController
 @Secured(Role.USER)
 @Tag(
@@ -294,12 +289,12 @@ public class ResourcesProviderController {
   })
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
   public @ResponseBody ResourceSet resolveResource(
-      @Parameter(description = "List of URNs to resolve") @RequestBody List<String> urns,
+      @Parameter(description = "List of URNs to resolve") @RequestBody String urn,
       Principal principal) {
     return resourcesServer
         .klabService()
         .resolveResource(
-            urns,
+            urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
@@ -711,7 +706,7 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().readBehavior(url);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+  @GetMapping(ServicesAPI.RESOURCES.RIGHTS)
   public ResourcePrivileges getResourceRights(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
@@ -723,7 +718,7 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @PutMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+  @PutMapping(ServicesAPI.RESOURCES.RIGHTS)
   public boolean setResourceRights(
       @PathVariable("urn") String urn,
       @RequestBody ResourcePrivileges resourcePrivileges,

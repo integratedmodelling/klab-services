@@ -78,8 +78,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ResourcesProvider extends BaseService
-    implements ResourcesService, ResourcesService.Admin {
+public class ResourcesProvider extends BaseService implements ResourcesService {
 
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private final WorkspaceManager workspaceManager;
@@ -514,13 +513,8 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceSet resolveResource(List<String> urnIds, Scope scope) {
-
-    if (urnIds.size() == 1) {
-      return resolveResourceUrn(urnIds.getFirst(), scope);
-    }
-
-    return ResourceSet.empty(Notification.error("MULTIPLE RESOURCE RESOLUTION IS UNIMPLEMENTED"));
+  public ResourceSet resolveResource(String urn, Scope scope) {
+    return resolveResourceUrn(urn, scope);
   }
 
   @Override
@@ -975,6 +969,36 @@ public class ResourcesProvider extends BaseService
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
 
     return ret;
+  }
+
+  @Override
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, Scope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass, Scope scope) {
+    return List.of();
+  }
+
+  @Override
+  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, Scope scope) {
+    return List.of();
+  }
+
+  @Override
+  public ResourceSet resolve(String urn, KnowledgeClass assetClass, Scope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> List<ResourceSet> submit(T asset, SubmissionMode submissionMode, Scope scope) {
+    return List.of();
+  }
+
+  @Override
+  public <T> T status(String urn, KnowledgeClass assetClass, Class<T> infoClass, Scope scope) {
+    return null;
   }
 
   @Override

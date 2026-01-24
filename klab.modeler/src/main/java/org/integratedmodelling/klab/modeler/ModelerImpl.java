@@ -420,41 +420,27 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       String projectUrl,
       boolean overwriteExisting) {
 
-    if (resources instanceof ResourcesService.Admin admin) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                // TODO use import schema, then resolve project to obtain the ResourceSet
-                throw new KlabUnimplementedException("import project");
-                //                var ret = admin.importProject(workspaceName, projectUrl,
-                // overwriteExisting, currentUser());
-                //                if (ret != null) {
-                //                    handleResultSets(ret);
-                //                }
-              });
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
-    }
+    Thread.ofVirtual()
+        .start(
+            () -> {
+              // TODO use import schema, then resolve project to obtain the ResourceSet
+              throw new KlabUnimplementedException("import project");
+              //                var ret = admin.importProject(workspaceName, projectUrl,
+              // overwriteExisting, currentUser());
+              //                if (ret != null) {
+              //                    handleResultSets(ret);
+              //                }
+            });
   }
 
   @Override
   public void deleteProject(ResourcesService resources, String projectUrl) {
 
-    if (resources instanceof ResourcesService.Admin admin) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                handleResultSets(admin.deleteProject(projectUrl, currentUser()));
-              });
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
-    }
+    Thread.ofVirtual()
+        .start(
+            () -> {
+              handleResultSets(resources.deleteProject(projectUrl, currentUser()));
+            });
   }
 
   @Override
@@ -465,45 +451,31 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       ProjectStorage.ResourceType documentType,
       String updatedContent) {
 
-    if (service instanceof ResourcesService.Admin admin) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                handleResultSets(
-                    admin.updateDocument(projectName, documentType, updatedContent, currentUser()));
-              });
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
-      return false;
-    }
+    Thread.ofVirtual()
+        .start(
+            () -> {
+              handleResultSets(
+                  service.updateDocument(projectName, documentType, updatedContent, currentUser()));
+            });
     return true;
   }
 
   @Override
   public void deleteAsset(ResourcesService resources, NavigableAsset asset) {
 
-    if (resources instanceof ResourcesService.Admin admin
-        && asset instanceof KlabDocument<?> document) {
+    if (asset instanceof KlabDocument<?> document) {
       Thread.ofVirtual()
           .start(
               () -> {
                 var project = asset.parent(NavigableProject.class);
                 var ret =
-                    admin.deleteDocument(
+                    resources.deleteDocument(
                         project.getUrn(),
                         asset.getUrn(),
                         ProjectStorage.ResourceType.classify(document),
                         currentUser());
                 handleResultSets(ret);
               });
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
     }
   }
 
@@ -514,19 +486,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       RepositoryState.Operation operation,
       String... arguments) {
 
-    if (resources instanceof ResourcesService.Admin admin) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                var ret = admin.manageRepository(projectId, operation, arguments);
-                handleResultSets(ret);
-              });
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
-    }
+    Thread.ofVirtual()
+        .start(
+            () -> {
+              var ret = resources.manageRepository(projectId, operation, arguments);
+              handleResultSets(ret);
+            });
   }
 
   private boolean handleResultSets(List<ResourceSet> ret) {
@@ -555,29 +520,21 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       String projectName,
       ProjectStorage.ResourceType documentType) {
 
-    if (service instanceof ResourcesService.Admin admin) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                var changes =
-                    admin.createDocument(projectName, newDocumentUrn, documentType, currentUser());
-                if (changes != null) {
-                  for (var change : changes) {
-                    dispatch(
-                        this,
-                        UIEvent.WorkspaceModified,
-                        getUI() == null ? change : getUI().processAlerts(change));
-                  }
+    Thread.ofVirtual()
+        .start(
+            () -> {
+              var changes =
+                  service.createDocument(projectName, newDocumentUrn, documentType, currentUser());
+              if (changes != null) {
+                for (var change : changes) {
+                  dispatch(
+                      this,
+                      UIEvent.WorkspaceModified,
+                      getUI() == null ? change : getUI().processAlerts(change));
                 }
-              });
-      return true;
-    } else if (getUI() != null) {
-      getUI()
-          .alert(
-              Notification.create(
-                  "Service does not support this operation", Notification.Level.Warning));
-    }
-    return false;
+              }
+            });
+    return true;
   }
 
   @Override
@@ -733,8 +690,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public boolean createProject(ResourcesService service, String projectName, String workspaceName) {
-    if (projectName != null && service instanceof ResourcesService.Admin admin) {
-      return handleResultSets(List.of(admin.createProject(workspaceName, projectName, user())));
+    if (projectName != null) {
+      return handleResultSets(List.of(service.createProject(workspaceName, projectName, user())));
     }
     return false;
   }

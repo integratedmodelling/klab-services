@@ -192,12 +192,11 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     releaseLock(workspace);
     var service = getController().engine().getOwner().getService(ResourcesService.class);
     var anythingLocked = false;
-    if (service instanceof ResourcesService.Admin admin
-        && workspace instanceof NavigableWorkspace navigableWorkspace) {
+    if (workspace instanceof NavigableWorkspace navigableWorkspace) {
       for (var asset : navigableWorkspace.children()) {
         if (asset instanceof NavigableProject project && !project.isLocked()) {
           // attempt locking
-          anythingLocked = admin.lockProject(project.getUrn(), getController().user());
+          anythingLocked = service.lockProject(project.getUrn(), getController().user());
           //          if (url != null) {
           //            if (url.getProtocol().equals("file")) {
           //              var file = new File(url.getFile());
@@ -226,11 +225,10 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
   public void releaseLock(Workspace workspace) {
     if (workspace != null) {
       var service = getController().engine().getOwner().getService(ResourcesService.class);
-      if (service instanceof ResourcesService.Admin admin
-          && workspace instanceof NavigableWorkspace navigableWorkspace) {
+      if (workspace instanceof NavigableWorkspace navigableWorkspace) {
         for (var asset : navigableWorkspace.children()) {
           if (asset instanceof NavigableProject project && project.isLocked()) {
-            admin.unlockProject(project.getUrn(), getController().user());
+            service.unlockProject(project.getUrn(), getController().user());
             project.setLocked(false);
             project.setRootDirectory(null);
           }
