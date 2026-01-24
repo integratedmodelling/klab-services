@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.data.SerializingDataBuilder;
-import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;

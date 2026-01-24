@@ -153,7 +153,8 @@ public interface ResourcesService extends KlabService {
   /**
    * Main retrieve endpoint.
    *
-   * @param urn
+   * @param urn the urn of the asset. When appropriate and in some instances mandatorily, the urn
+   *     can be prefixed with workspaceId and projectId, separated by forward slashes.
    * @param assetClass
    * @param scope
    * @return
@@ -164,7 +165,8 @@ public interface ResourcesService extends KlabService {
   /**
    * Main delete endpoint.
    *
-   * @param urn
+   * @param urn the urn of the asset. When appropriate and in some instances mandatorily, the urn
+   *     can be prefixed with workspaceId and projectId, separated by forward slashes.
    * @param knowledgeClass
    * @param scope
    * @return Changesets for all affected workspaces.
@@ -184,7 +186,8 @@ public interface ResourcesService extends KlabService {
   /**
    * Main resolve endpoint.
    *
-   * @param urn
+   * @param urn the urn of the asset. When appropriate and in some instances mandatorily, the urn
+   *     can be prefixed with workspaceId and projectId, separated by forward slashes.
    * @param assetClass
    * @param scope
    * @return
@@ -194,7 +197,8 @@ public interface ResourcesService extends KlabService {
   /**
    * Submit an asset for the operations specified in #SubmissionMode.
    *
-   * @param asset
+   * @param asset the asset to submit. Use Project.create(), Workspace.create(), etc. to create new
+   *     empty containers and documents.
    * @param submissionMode
    * @param scope
    * @return resource sets for all workspaces affected by the change.
@@ -207,7 +211,8 @@ public interface ResourcesService extends KlabService {
    * Retrieve information relative to the passed URN. The information object may be different
    * according to the asset type.
    *
-   * @param urn
+   * @param urn the urn of the asset. When appropriate and in some instances mandatorily, the urn
+   *     can be prefixed with workspaceId and projectId, separated by forward slashes.
    * @param infoClass
    * @param scope
    * @return

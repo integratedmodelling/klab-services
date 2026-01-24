@@ -6,6 +6,8 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
@@ -48,8 +50,32 @@ public class ResourceCRUDController {
 
   @DeleteMapping(ServicesAPI.RESOURCES.DELETE)
   public List<ResourceSet> delete(
-      String urn, KlabAsset.KnowledgeClass knowledgeClass, Principal scope) {
-    return List.of();
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, Principal principal) {
+
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope == null) {
+      // TODO check authorization
+      return List.of(
+          ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
+    }
+
+    switch (knowledgeClass) {
+      case RESOURCE -> {}
+      case NAMESPACE -> {}
+      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {}
+      case ONTOLOGY -> {}
+      case OBSERVATION_STRATEGY_DOCUMENT -> {}
+      case COMPONENT -> {}
+      case PROJECT -> {}
+      case WORKSPACE -> {}
+      default -> {}
+    }
+
+    return List.of(
+        ResourceSet.empty(
+            Notification.error("Cannot delete URN " + urn + " of type " + knowledgeClass)));
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE)
@@ -62,13 +88,41 @@ public class ResourceCRUDController {
   }
 
   @PutMapping(ServicesAPI.RESOURCES.SUBMIT)
-  public <T> List<ResourceSet> submit(ResourcesService.SubmissionMode submissionMode, Principal scope) {
-    return List.of();
+  public <T> List<ResourceSet> submit(
+      @PathVariable(name = "urn") String urn,
+      @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass knowledgeClass,
+      @PathVariable(name = "submissionMode") ResourcesService.SubmissionMode submissionMode,
+      @RequestBody String contents,
+      Principal principal) {
+
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope == null) {
+      // TODO check authorization
+      return List.of(
+          ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
+    }
+
+    switch (knowledgeClass) {
+      case RESOURCE -> {}
+      case NAMESPACE -> {}
+      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {}
+      case ONTOLOGY -> {}
+      case OBSERVATION_STRATEGY_DOCUMENT -> {}
+      case COMPONENT -> {}
+      case PROJECT -> {}
+      case WORKSPACE -> {}
+      default -> {}
+    }
+
+    return List.of(
+            ResourceSet.empty(
+                    Notification.error("Cannot delete URN " + urn + " of type " + knowledgeClass)));
   }
 
   @GetMapping(ServicesAPI.RESOURCES.STATUS)
-  public Object status(
-      String urn, KlabAsset.KnowledgeClass assetClass, Principal scope) {
+  public Object status(String urn, KlabAsset.KnowledgeClass assetClass, Principal scope) {
     return null;
   }
 }

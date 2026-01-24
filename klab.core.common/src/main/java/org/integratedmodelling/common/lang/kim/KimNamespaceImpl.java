@@ -2,9 +2,7 @@ package org.integratedmodelling.common.lang.kim;
 
 import java.io.Serial;
 import java.util.*;
-
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
