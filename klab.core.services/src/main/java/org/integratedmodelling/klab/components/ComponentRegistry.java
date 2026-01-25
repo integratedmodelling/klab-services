@@ -77,22 +77,7 @@ public class ComponentRegistry {
   // we keep the local services and adapters in here
   // FIXME the permissions should come from the external permission system, not as the internal
   //  Plugin-License
-  private final Extensions.ComponentDescriptor localComponentDescriptor =
-      new Extensions.ComponentDescriptor(
-          LOCAL_SERVICE_COMPONENT,
-          Version.CURRENT_VERSION,
-          "Natively available " + "services",
-          null,
-          null,
-          null,
-          ResourcePrivileges.PUBLIC,
-          new ArrayList<>(),
-          new ArrayList<>(),
-          new HashMap<>(),
-          new HashMap<>(),
-          new HashMap<>(),
-          new HashMap<>(),
-          new HashMap<>());
+  private final Extensions.ComponentDescriptor localComponentDescriptor;
 
   /** Component descriptors, uniquely identified by id + version */
   private MultiValuedMap<String, Extensions.ComponentDescriptor> components =
@@ -128,6 +113,23 @@ public class ComponentRegistry {
   public ComponentRegistry(BaseService service, StartupOptions options) {
     readConfiguration(service, options);
     this.service = service;
+    localComponentDescriptor =
+        new Extensions.ComponentDescriptor(
+            LOCAL_SERVICE_COMPONENT,
+            Version.CURRENT_VERSION,
+            "Natively available " + "services",
+            null,
+            null,
+            null,
+            ResourcePrivileges.PUBLIC,
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            service.serviceId());
   }
 
   //  /**
@@ -522,7 +524,8 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            new HashMap<>());
+            new HashMap<>(),
+            service.serviceId());
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {

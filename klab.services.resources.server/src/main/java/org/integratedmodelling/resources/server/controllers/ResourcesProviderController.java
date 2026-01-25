@@ -507,7 +507,7 @@ public class ResourcesProviderController {
   public @ResponseBody KimObservable resolveObservable(
       @Parameter(description = "Definition of the observable") @RequestParam("definition")
           String definition) {
-    return resourcesServer.klabService().retrieveObservable(definition);
+    return resourcesServer.klabService().declareObservable(definition);
   }
 
   @Operation(
@@ -537,7 +537,7 @@ public class ResourcesProviderController {
   public @ResponseBody KimConcept resolveConcept(
       @Parameter(description = "Definition of the concept") @PathVariable("definition")
           String definition) {
-    return resourcesServer.klabService().retrieveConcept(definition);
+    return resourcesServer.klabService().declareConcept(definition);
   }
 
   /**

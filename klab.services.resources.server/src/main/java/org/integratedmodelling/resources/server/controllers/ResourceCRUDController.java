@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
@@ -43,11 +44,11 @@ public class ResourceCRUDController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-    if (scope == null) {
-      throw new KlabAuthorizationException("No valid scope in resource RETRIEVE request");
+    if (scope instanceof UserScope userScope) {
+      return (T) resourcesServer.klabService().retrieve(urn, assetClass.getAssetClass(), userScope);
     }
 
-    return (T) resourcesServer.klabService().retrieve(urn, assetClass.getAssetClass(), scope);
+    throw new KlabAuthorizationException("No valid scope in resource RETRIEVE request");
   }
 
   @GetMapping(ServicesAPI.RESOURCES.LIST)
@@ -58,7 +59,11 @@ public class ResourceCRUDController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-    return (List<T>) resourcesServer.klabService().list(assetClass.getAssetClass(), scope);
+    if (scope instanceof UserScope userScope) {
+      return (List<T>) resourcesServer.klabService().list(assetClass.getAssetClass(), userScope);
+    }
+
+    throw new KlabAuthorizationException("No valid scope in resource LIST request");
   }
 
   @PostMapping(ServicesAPI.RESOURCES.LIST)
@@ -74,13 +79,13 @@ public class ResourceCRUDController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-    if (scope == null) {
+    if (scope instanceof UserScope userScope) {
       // TODO check authorization
-      return List.of(
-          ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
+      return resourcesServer.klabService().delete(urn, knowledgeClass, userScope);
     }
 
-    return resourcesServer.klabService().delete(urn, knowledgeClass, scope);
+    return List.of(
+        ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE)
@@ -91,12 +96,11 @@ public class ResourceCRUDController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-    if (scope == null) {
+    if (scope instanceof UserScope userScope) {
       // TODO check authorization
-      return ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request"));
+      return resourcesServer.klabService().resolve(urn, assetClass, userScope);
     }
-
-    return resourcesServer.klabService().resolve(urn, assetClass, scope);
+    return ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request"));
   }
 
   @PutMapping(ServicesAPI.RESOURCES.SUBMIT)
@@ -110,40 +114,37 @@ public class ResourceCRUDController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-    if (scope == null) {
-      // TODO check authorization too
-      return List.of(
-          ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
-    }
+    if (scope instanceof UserScope userScope) {
 
-    switch (knowledgeClass) {
-      case RESOURCE -> {
-        var resource = Utils.Json.parseObject(contents, ResourceImpl.class);
-        return resourcesServer.klabService().submit(resource, submissionMode, scope);
-      }
-      case NAMESPACE -> {
-        var namespace = Utils.Json.parseObject(contents, KimNamespaceImpl.class);
-        return resourcesServer.klabService().submit(namespace, submissionMode, scope);
-      }
-      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
-        var behavior = Utils.Json.parseObject(contents, KActorsBehaviorImpl.class);
-        return resourcesServer.klabService().submit(behavior, submissionMode, scope);
-      }
-      case ONTOLOGY -> {
-        var ontology = Utils.Json.parseObject(contents, KimOntologyImpl.class);
-        return resourcesServer.klabService().submit(ontology, submissionMode, scope);
-      }
-      case OBSERVATION_STRATEGY_DOCUMENT -> {
-        var strategies = Utils.Json.parseObject(contents, KimObservationStrategiesImpl.class);
-        return resourcesServer.klabService().submit(strategies, submissionMode, scope);
-      }
-      case PROJECT -> {
-        var project = Utils.Json.parseObject(contents, ProjectImpl.class);
-        return resourcesServer.klabService().submit(project, submissionMode, scope);
-      }
-      case WORKSPACE -> {
-        var workspace = Utils.Json.parseObject(contents, WorkspaceImpl.class);
-        return resourcesServer.klabService().submit(workspace, submissionMode, scope);
+      switch (knowledgeClass) {
+        case RESOURCE -> {
+          var resource = Utils.Json.parseObject(contents, ResourceImpl.class);
+          return resourcesServer.klabService().submit(resource, submissionMode, userScope);
+        }
+        case NAMESPACE -> {
+          var namespace = Utils.Json.parseObject(contents, KimNamespaceImpl.class);
+          return resourcesServer.klabService().submit(namespace, submissionMode, userScope);
+        }
+        case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
+          var behavior = Utils.Json.parseObject(contents, KActorsBehaviorImpl.class);
+          return resourcesServer.klabService().submit(behavior, submissionMode, userScope);
+        }
+        case ONTOLOGY -> {
+          var ontology = Utils.Json.parseObject(contents, KimOntologyImpl.class);
+          return resourcesServer.klabService().submit(ontology, submissionMode, userScope);
+        }
+        case OBSERVATION_STRATEGY_DOCUMENT -> {
+          var strategies = Utils.Json.parseObject(contents, KimObservationStrategiesImpl.class);
+          return resourcesServer.klabService().submit(strategies, submissionMode, userScope);
+        }
+        case PROJECT -> {
+          var project = Utils.Json.parseObject(contents, ProjectImpl.class);
+          return resourcesServer.klabService().submit(project, submissionMode, userScope);
+        }
+        case WORKSPACE -> {
+          var workspace = Utils.Json.parseObject(contents, WorkspaceImpl.class);
+          return resourcesServer.klabService().submit(workspace, submissionMode, userScope);
+        }
       }
     }
 

@@ -153,6 +153,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
 
     super(scope, Type.RESOURCES, options);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
+    this.workspaceManager =
+        new WorkspaceManager(scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
+    this.resourceManager = new ResourceManager(this.resourcesKbox, this);
+
+    setComponentRegistry();
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 
@@ -181,10 +187,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         Instance.class);
 
     this.kbox = ModelKbox.create(this);
-    this.resourcesKbox = new ResourcesKBox(scope, options, this);
-    this.workspaceManager =
-        new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
-    this.resourceManager = new ResourceManager(this.resourcesKbox, this);
 
     /*
     initialize the plugin system to handle components
@@ -972,32 +974,76 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, Scope scope) {
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
     return null;
   }
 
   @Override
-  public <T extends KlabAsset> List<T> list(Class<T> assetClass, Scope scope) {
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
     return List.of();
   }
 
   @Override
-  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, Scope scope) {
-    return List.of();
+  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
+    switch (knowledgeClass) {
+      case PROJECT:
+        return deleteProject(urn, scope);
+      case WORKSPACE:
+        return deleteWorkspace(urn, scope);
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+        String[] urns = urn.split("/");
+        if (urns.length < 2) {
+          throw new KlabIllegalArgumentException(
+              "Invalid URN " + urn + " for deletion: must contain at least the project name");
+        }
+        return deleteDocument(
+            urns[urns.length - 2], urns[urns.length - 1], knowledgeClass.getResourceType(), scope);
+      case COMPONENT:
+        getComponentRegistry().unloadComponent(urn, Urn.of(urn).getVersion());
+        // TODO delete from registry!
+    }
+
+    return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
   }
 
   @Override
-  public ResourceSet resolve(String urn, KnowledgeClass assetClass, Scope scope) {
-    return null;
+  public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
+    switch (assetClass) {
+      //      case PROJECT:
+      //        return resolveProject(urn, scope);
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+      case COMPONENT:
+      case MODEL:
+      case RESOURCE:
+      case WORKSPACE:
+      case PROJECT:
+      case OBSERVATION_STRATEGY:
+      case CONCEPT_STATEMENT:
+      default:
+        return null;
+    }
   }
 
   @Override
-  public <T extends KlabAsset> List<ResourceSet> submit(T asset, SubmissionMode submissionMode, Scope scope) {
-    return List.of();
+  public <T extends KlabAsset> List<ResourceSet> submit(
+      T asset, SubmissionMode submissionMode, UserScope scope) {
+    switch (asset) {
+      case Resource resource:
+        return List.of(ingestResource(resource, scope));
+      //      case Workspace workspace:
+      //        return List.of(ingestProject(project, scope));
+      //      case Project project:
+      //        return List.of(ingestProject(project, scope));
+      //      case KlabDocument<?> document:
+      //        return List.of(ingestDocument(document, scope));
+      default:
+        return List.of(ResourceSet.empty(Notification.error("Cannot submit " + asset)));
+    }
+    //    return List.of();
   }
 
   @Override
-  public <T> T status(String urn, KnowledgeClass assetClass, Class<T> infoClass, Scope scope) {
+  public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     return null;
   }
 
@@ -1012,7 +1058,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public KimConcept retrieveConcept(String definition) {
+  public KimConcept declareConcept(String definition) {
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -1022,7 +1068,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public KimObservable retrieveObservable(String definition) {
+  public KimObservable declareObservable(String definition) {
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -1609,7 +1655,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         }
       }
       case OBSERVABLE -> {
-        var observable = retrieveObservable(urn);
+        var observable = declareObservable(urn);
         if (observable != null) {
           ret.getResults()
               .add(

@@ -99,32 +99,46 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, Scope scope) {
+  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
     return List.of();
   }
 
   @Override
-  public ResourceSet resolve(String urn, KnowledgeClass assetClass, Scope scope) {
+  public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
     return null;
   }
 
   @Override
-  public <T extends KlabAsset> List<ResourceSet> submit(T asset, SubmissionMode submissionMode, Scope scope) {
-    return List.of();
+  public <T extends KlabAsset> List<ResourceSet> submit(
+      T asset, SubmissionMode submissionMode, UserScope scope) {
+    return client
+        .withScope(scope)
+        .postCollection(
+            ServicesAPI.RESOURCES.SUBMIT,
+            asset instanceof KlabDocument<?> document
+                ? document.getSourceCode()
+                : Utils.Json.asString(asset),
+            ResourceSet.class,
+            "knowledgeClass",
+            KlabAsset.classify(asset),
+            "submissionMode",
+            submissionMode,
+            "urn",
+            asset.getUrn());
   }
 
   @Override
-  public <T> T status(String urn, KnowledgeClass assetClass, Class<T> infoClass, Scope scope) {
+  public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     return null;
   }
 
   @Override
-  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, Scope scope) {
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
     return null;
   }
 
   @Override
-  public <T extends KlabAsset> List<T> list(Class<T> assetClass, Scope scope) {
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
     return List.of();
   }
 
@@ -298,7 +312,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public KimConcept retrieveConcept(String definition) {
+  public KimConcept declareConcept(String definition) {
     if (!useCaches) {
       return resolveConceptInternal(removeExcessParentheses(definition));
     }
@@ -311,7 +325,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public KimObservable retrieveObservable(String definition) {
+  public KimObservable declareObservable(String definition) {
     if (!useCaches) {
       return resolveObservableInternal(removeExcessParentheses(definition));
     }

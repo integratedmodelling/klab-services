@@ -55,7 +55,7 @@ public class ReasonerController {
               .klabService()
               .serviceScope()
               .getService(ResourcesService.class)
-              .retrieveConcept(definition);
+              .declareConcept(definition);
       if (syntax != null) {
         return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
       }

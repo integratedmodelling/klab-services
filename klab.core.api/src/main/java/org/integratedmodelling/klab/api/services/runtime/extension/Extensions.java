@@ -74,7 +74,9 @@ public interface Extensions {
       Map<String, List<FunctionDescriptor>> annotations,
       Map<String, List<FunctionDescriptor>> verbs,
       Map<String, List<FunctionDescriptor>> exporters,
-      Map<String, List<FunctionDescriptor>> importers) {
+      Map<String, List<FunctionDescriptor>> importers,
+      String sourceServiceId // ID of source service for updates
+  ) {
 
     @Override
     public boolean equals(Object o) {

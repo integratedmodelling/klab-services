@@ -256,8 +256,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.owl = new OWL(scope);
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
-    ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
+    setComponentRegistry();
+    ServiceConfiguration.INSTANCE.setMainService(this);
   }
 
   private void readConfiguration(ServiceStartupOptions options) {
@@ -298,17 +299,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-//    /*
-//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-//     * is no configured broker.
-//     */
-//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-//      Logging.INSTANCE.info("Setting up embedded broker in local service");
-//      this.embeddedBroker = new EmbeddedBroker();
-//      Logging.INSTANCE.info(
-//          "Embedded broker is "
-//              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) : "offline"));
-//    }
+    //    /*
+    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
+    // there
+    //     * is no configured broker.
+    //     */
+    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+    //      Logging.INSTANCE.info("Setting up embedded broker in local service");
+    //      this.embeddedBroker = new EmbeddedBroker();
+    //      Logging.INSTANCE.info(
+    //          "Embedded broker is "
+    //              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) :
+    // "offline"));
+    //    }
 
     /*
     This is called when resources are available, so this is the time to load the worldview.
@@ -436,7 +439,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
     } else {
-      KimConcept parsed = scope.getService(ResourcesService.class).retrieveConcept(definition);
+      KimConcept parsed = scope.getService(ResourcesService.class).declareConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
         //        concepts.put(definition, ret);
@@ -447,7 +450,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable resolveObservableInternal(String definition) {
     Observable ret = null;
-    KimObservable parsed = scope.getService(ResourcesService.class).retrieveObservable(definition);
+    KimObservable parsed = scope.getService(ResourcesService.class).declareObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
       if (ret != null) {
@@ -2794,14 +2797,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public ObservationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope) {
+  public ObservationStrategy computeIdentificationStrategies(
+      Observable observable, ContextScope scope) {
     return observationReasoner.computeIdentificationStrategy(observable, scope);
   }
 
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
-    KimConcept peer = scope.getService(ResourcesService.class).retrieveConcept(concept.getUrn());
+    KimConcept peer = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
     peer.visit(
         new Statement.Visitor() {
           @Override
@@ -2853,7 +2857,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declaration = declaration.replace(key.getUrn(), rep);
     }
 
-    return declareConcept(scope.getService(ResourcesService.class).retrieveConcept(declaration));
+    return declareConcept(scope.getService(ResourcesService.class).declareConcept(declaration));
   }
 
   @Override

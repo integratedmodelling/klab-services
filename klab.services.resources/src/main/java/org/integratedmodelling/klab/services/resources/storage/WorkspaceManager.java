@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
+import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
@@ -757,17 +758,20 @@ public class WorkspaceManager {
   private ResourcesConfiguration configuration;
   private final Map<String, Long> lastProjectUpdates = new HashMap<>();
   private final List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
+  private final ResourcesKBox resourcesKbox;
 
   // TODO fix the API - just pass the service, get options and scope from it like the kbox
   public WorkspaceManager(
       Scope scope,
       ServiceStartupOptions options,
       ResourcesProvider service,
+      ResourcesKBox resourcesKbox,
       Function<String, Project> externalProjectResolver) {
     this.service = service;
     this.externalProjectResolver = externalProjectResolver;
     this.scope = scope;
     this.startupOptions = options;
+    this.resourcesKbox = resourcesKbox;
     readConfiguration(options);
     loadWorkspace();
     scheduler.scheduleAtFixedRate(this::checkForProjectUpdates, 1, 1, TimeUnit.MINUTES);
@@ -2528,9 +2532,8 @@ public class WorkspaceManager {
     Ensure we have all descriptors for workspaces and projects; if we don't, replace them with
     defaults so that admins can modify them. adding a warning notification
      */
-    var kbox = service.getResourcesKbox();
     for (var ws : this.workspaces.keySet()) {
-      var info = kbox.getStatus(ws, null);
+      var info = resourcesKbox.getStatus(ws, null);
       boolean wasNull = info == null;
       if (wasNull) {
         info = new ResourceInfo();
@@ -2552,7 +2555,7 @@ public class WorkspaceManager {
       var workspace = this.workspaces.get(ws);
 
       for (var project : workspace.getProjects()) {
-        var pInfo = kbox.getStatus(project.getUrn(), null);
+        var pInfo = resourcesKbox.getStatus(project.getUrn(), null);
         if (pInfo == null) {
           pInfo = new ResourceInfo();
           pInfo.setUrn(project.getUrn());
@@ -2572,7 +2575,7 @@ public class WorkspaceManager {
           pInfo.getMetadata().put(Metadata.DC_DATE_CREATED, TimeInstant.create().toRFC3339String());
           Logging.INSTANCE.warn(
               "Recreating lost metadata for project " + project.getUrn() + " with public rights");
-          kbox.putStatus(pInfo);
+          resourcesKbox.putStatus(pInfo);
         }
         if (!info.getChildResourceUrns().contains(project.getUrn())) {
           info.getChildResourceUrns().add(project.getUrn());
@@ -2582,7 +2585,7 @@ public class WorkspaceManager {
       if (wasNull) {
         Logging.INSTANCE.warn(
             "Recreating lost metadata for workspace " + ws + " with public rights");
-        kbox.putStatus(info);
+        resourcesKbox.putStatus(info);
       }
     }
 

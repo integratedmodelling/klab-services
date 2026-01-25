@@ -181,6 +181,8 @@ public interface Resource extends Knowledge, Resolvable {
    */
   interface Builder {
 
+    Builder withUrn(String urn);
+
     /**
      * @param type
      * @return the builder itself
@@ -270,14 +272,6 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withAdapterType(String string);
 
-    //    /**
-    //     * Set the local resource path.
-    //     *
-    //     * @param localPath the local resource path
-    //     * @return the builder itself
-    //     */
-    //    Builder withLocalPath(String localPath);
-
     /**
      * Set the local resource name - for file resources, this should be the name of the primary file
      * they were loaded from, without any path but with the extension.
@@ -295,15 +289,6 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withParameters(Parameters<String> parameters);
 
-    //    /**
-    //     * Set the project name. Only for local resources. Project name enters the local URN but
-    // is not
-    //     * exposed by the IResource API. Stored to enable easier management and retrieval.
-    //     *
-    //     * @param name
-    //     * @return the builder itself
-    //     */
-    //    Builder withProjectName(String name);
 
     Builder withServiceId(String serviceId);
 
