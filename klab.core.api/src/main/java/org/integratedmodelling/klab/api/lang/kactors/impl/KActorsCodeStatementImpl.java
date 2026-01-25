@@ -1,6 +1,6 @@
-package org.integratedmodelling.common.lang.kactors;
+package org.integratedmodelling.klab.api.lang.kactors.impl;
 
-import org.integratedmodelling.common.lang.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 
 public abstract class KActorsCodeStatementImpl extends KimStatementImpl

@@ -229,6 +229,7 @@ public interface ResourcesService extends KlabService {
    * @param scope could be null (defaulting to the service scope) for the entire worldview, but a
    *     user scope should include the optional parts due to the user's group selection.
    * @return an entire worldview managed by this service, or an empty resource set if not available.
+   * @deprecated  use streamlined API
    */
   List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope);
 
@@ -241,6 +242,7 @@ public interface ResourcesService extends KlabService {
    * @param modelName
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveModel(String modelName, Scope scope);
 
@@ -248,6 +250,7 @@ public interface ResourcesService extends KlabService {
    * Resolve a specific URN to the object that is represented by it, which must be returned in
    * {@link ResourceSet#setResults(java.util.Set)}. The result must be self-consistent and complete.
    * Return an empty resultset if not found.
+   * @deprecated  use streamlined API (with ANY asset type?)
    */
   ResourceSet resolve(String urn, Scope scope);
 
@@ -259,11 +262,26 @@ public interface ResourcesService extends KlabService {
    * @param urn the URN identifier of the workspace to retrieve
    * @param scope the requesting scope for permission validation
    * @return the workspace corresponding to the URN, or null if not found
+   * @deprecated  use streamlined API
    */
   KimNamespace retrieveNamespace(String urn, Scope scope);
 
+  /**
+   *
+   * @param urn
+   * @param scope
+   * @return
+   * @deprecated  use streamlined API
+   */
   KimOntology retrieveOntology(String urn, Scope scope);
 
+  /**
+   *
+   * @param urn
+   * @param scope
+   * @return
+   * @deprecated  use streamlined API
+   */
   KimObservationStrategyDocument retrieveObservationStrategyDocument(String urn, Scope scope);
 
   /**
@@ -272,6 +290,7 @@ public interface ResourcesService extends KlabService {
    *
    * @deprecated use list endpoint only
    * @return collection of accessible workspaces with their contents
+   * @deprecated  use streamlined API
    */
   Collection<Workspace> listWorkspaces();
 
@@ -283,6 +302,7 @@ public interface ResourcesService extends KlabService {
    * @param scope the requesting scope for permission validation
    * @return the parsed behavior, or null if not found or not accessible
    * @deprecated use retrieve endpoint only
+   * @deprecated  use streamlined API
    */
   KActorsBehavior retrieveBehavior(String urn, Scope scope);
 
@@ -294,6 +314,7 @@ public interface ResourcesService extends KlabService {
    * @param scope the requesting scope for permission validation
    * @return the parsed resource or multi-resource container, or null if not found
    * @deprecated use retrieve endpoint only
+   * @deprecated  use streamlined API
    */
   Resource retrieveResource(List<String> urns, Scope scope);
 
@@ -302,6 +323,7 @@ public interface ResourcesService extends KlabService {
    * @param urn
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   Workspace retrieveWorkspace(String urn, Scope scope);
 
@@ -312,6 +334,7 @@ public interface ResourcesService extends KlabService {
    * @param urn
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveResourceAdapter(String urn, Scope scope);
 
@@ -322,6 +345,7 @@ public interface ResourcesService extends KlabService {
    * @param geometry
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope);
 
@@ -332,6 +356,7 @@ public interface ResourcesService extends KlabService {
    * @param geometry
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope);
 
@@ -342,6 +367,7 @@ public interface ResourcesService extends KlabService {
    * @param version can be null, in which case the results will reflect the latest available
    * @param scope requesting identity
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveServiceCall(String name, Version version, Scope scope);
 
@@ -357,6 +383,7 @@ public interface ResourcesService extends KlabService {
    * @param urn one or more URNs, possibly containing a version
    * @param scope
    * @return
+   * @deprecated  use streamlined API
    */
   ResourceSet resolveResource(String urn, Scope scope);
 
@@ -376,6 +403,8 @@ public interface ResourcesService extends KlabService {
    * Inquire about resource availability for the passed urn and scope. Should work for all types of
    * assets.
    *
+   * FIXME rename to assetInfo
+   *
    * @param urn
    * @param scope
    * @return
@@ -390,12 +419,14 @@ public interface ResourcesService extends KlabService {
    * @param info the new resource status from now on
    * @param scope
    * @return
+   * FIXME rename to setAssetInfo
    */
   boolean setResourceInfo(String urn, ResourceInfo info, Scope scope);
 
   /**
    * @param definition the observable definition string to parse
-   * @return the parsed KimObservable object, or null if definition is invalid
+   * @return the parsed KimObservable object, or null if definition is invalid FIXME rename to
+   *     declare
    */
   KimObservable retrieveObservable(String definition);
 
@@ -405,12 +436,13 @@ public interface ResourcesService extends KlabService {
    * @param conceptUrn a fully specified concept URN, such as "namespace:Concept". Not usable with
    *     concept expressions.
    * @return a valid descriptor or null.
+   * @deprecated  use streamlined status API with info object
    */
   KimConcept.Descriptor describeConcept(String conceptUrn);
 
   /**
    * @param definition the concept definition string to parse
-   * @return the parsed KimConcept object, or null if definition is invalid
+   * @return the parsed KimConcept object, or null if definition is invalid FIXME rename to declare
    */
   KimConcept retrieveConcept(String definition);
 
@@ -442,6 +474,7 @@ public interface ResourcesService extends KlabService {
    * @param urn the URN of the dataflow document to retrieve
    * @param scope the requesting scope for permission validation
    * @return the parsed dataflow document, or null if not found
+   * @deprecated use streamlined API
    */
   KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope);
 
@@ -457,6 +490,7 @@ public interface ResourcesService extends KlabService {
    * function to take an ID as parameter.
    *
    * @return the served worldview, possibly empty
+   * @deprecated use streamlined API
    */
   Worldview retrieveWorldview();
 
@@ -476,6 +510,7 @@ public interface ResourcesService extends KlabService {
    * @param adapterType
    * @param scope
    * @return
+   * @deprecated use streamlined API
    */
   AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope);
 
@@ -500,6 +535,7 @@ public interface ResourcesService extends KlabService {
    * @param queryString the pattern to match resource URNs against
    * @param resourceTypes optional types to filter the results by
    * @return list of matching resource URNs
+   * @deprecated use streamlined API
    */
   List<ResourceInfo> queryResources(
       String queryString, Scope scope, KlabAsset.KnowledgeClass... resourceTypes);
@@ -529,6 +565,7 @@ public interface ResourcesService extends KlabService {
    * @param projectName name of the project to retrieve
    * @param scope the requesting scope for permission validation
    * @return the project with its complete contents, or null if not found
+   * @deprecated use streamlined API
    */
   Project retrieveProject(String projectName, Scope scope);
 
@@ -541,6 +578,7 @@ public interface ResourcesService extends KlabService {
    * @param observable the observable to find matching models for
    * @param scope the context scope containing the reasoner service
    * @return resource set containing matching models and their dependencies
+   * @deprecated use streamlined API
    */
   ResourceSet resolveModels(Observable observable, ContextScope scope);
 
@@ -562,11 +600,13 @@ public interface ResourcesService extends KlabService {
    *     should be thrown.
    * @return the coverage of the model, reporting coverage == 1 unless constraints are not met.
    * @throws KlabIllegalArgumentException if the URN isn't recognized or does not specify a model.
+   * @deprecated use query API
    */
   Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException;
 
   /**
-   * Read a behavior from the passed URL and return the parsed behavior.
+   * Read a behavior from the passed URL and return the parsed behavior without adding it to the
+   * managed resource set.
    *
    * @param url
    */
@@ -586,6 +626,7 @@ public interface ResourcesService extends KlabService {
    *     unburdened copying if the file is opened.
    * @param submittingScope the scope requesting the registration
    * @return resource info for the registered resource
+   * @deprecated use streamlined API
    */
   ResourceInfo registerResource(
       String urn,
@@ -605,6 +646,7 @@ public interface ResourcesService extends KlabService {
    * @param scope
    * @return true if the workspace creation succeeded. False will be returned if there were errors
    *     or the workspace already existed.
+   * @deprecated use streamlined API
    */
   boolean createWorkspace(String workspace, Metadata metadata, UserScope scope);
 
@@ -616,6 +658,7 @@ public interface ResourcesService extends KlabService {
    * @param projectName name of the project to create
    * @param scope the user scope for permission validation
    * @return resource set containing the created project
+   * @deprecated use streamlined API
    */
   ResourceSet createProject(String workspaceName, String projectName, UserScope scope);
 
@@ -627,6 +670,7 @@ public interface ResourcesService extends KlabService {
    * @param metadata
    * @param scope a scope that must have previously locked the project
    * @return the updated project with the new metadata and manifest.
+   * @deprecated use streamlined API
    */
   ResourceSet updateProject(
       String projectName, Project.Manifest manifest, Metadata metadata, UserScope scope);
@@ -641,6 +685,7 @@ public interface ResourcesService extends KlabService {
    * @param documentType type of the document to create
    * @param scope a scope that must have previously locked the project
    * @return list of resource sets containing the created document and any dependencies
+   * @deprecated use streamlined API
    */
   List<ResourceSet> createDocument(
       String projectName,
@@ -659,6 +704,7 @@ public interface ResourcesService extends KlabService {
    * @param content
    * @param scope a scope that must have previously locked the project
    * @return a {@link ResourceSet} per affected namespace
+   * @deprecated  use streamlined API
    */
   List<ResourceSet> updateDocument(
       String projectName,
@@ -690,6 +736,7 @@ public interface ResourcesService extends KlabService {
    * @param assetUrn URN of the document/asset to delete
    * @param scope the user scope for permission validation
    * @return list of resource sets affected by the deletion
+   * @deprecated  use streamlined API
    */
   List<ResourceSet> deleteDocument(
       String projectName,
@@ -711,6 +758,7 @@ public interface ResourcesService extends KlabService {
    * @param projectName name of the project to delete
    * @param scope the user scope for permission validation
    * @return list of resource sets affected by the project deletion
+   * @deprecated  use streamlined API
    */
   List<ResourceSet> deleteProject(String projectName, UserScope scope);
 
@@ -720,6 +768,7 @@ public interface ResourcesService extends KlabService {
    * @param workspaceName name of the workspace to delete
    * @param scope the user scope for permission validation
    * @return list of resource sets affected by the workspace deletion
+   * @deprecated  use streamlined API
    */
   List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope);
 
@@ -729,6 +778,7 @@ public interface ResourcesService extends KlabService {
    *
    * @param scope the requesting scope for permission validation
    * @return collection of all available projects with their contents
+   * @deprecated  use streamlined/query API
    */
   Collection<Project> listProjects(Scope scope);
 
@@ -737,6 +787,7 @@ public interface ResourcesService extends KlabService {
    *
    * @param scope the requesting scope for permission validation
    * @return collection of URNs for all locally available resources
+   * @deprecated  use streamlined/query API
    */
   Collection<String> listResourceUrns(Scope scope);
 

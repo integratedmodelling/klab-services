@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -48,6 +49,22 @@ public interface KlabAsset extends Serializable {
     WORKSPACE,
     CONCEPT_STATEMENT,
     OBSERVATION;
+
+    public Class<? extends KlabAsset> getAssetClass() {
+      return switch (this) {
+        case RESOURCE -> Resource.class;
+        case NAMESPACE -> KimNamespace.class;
+        case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> KActorsBehavior.class;
+        case ONTOLOGY -> KimOntology.class;
+        case OBSERVATION_STRATEGY_DOCUMENT -> KimObservationStrategyDocument.class;
+        case PROJECT -> Project.class;
+        case WORLDVIEW -> Worldview.class;
+        case WORKSPACE -> Workspace.class;
+        default ->
+            throw new KlabIllegalStateException(
+                "Cannot convert  " + this + " into serializable asset class");
+      };
+    }
   }
 
   public static KnowledgeClass classify(KlabAsset asset) {

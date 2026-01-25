@@ -4,7 +4,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.integratedmodelling.common.lang.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;

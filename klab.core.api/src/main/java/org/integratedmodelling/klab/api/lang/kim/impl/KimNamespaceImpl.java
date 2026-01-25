@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.lang.kim;
+package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import java.io.Serial;
 import java.util.*;

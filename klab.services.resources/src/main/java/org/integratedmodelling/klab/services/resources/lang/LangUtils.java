@@ -10,8 +10,8 @@
 //import org.integratedmodelling.klab.api.knowledge.IConcept;
 //import org.integratedmodelling.klab.api.lang.Annotation;
 //import org.integratedmodelling.klab.api.lang.AnnotationImpl;
-//import org.integratedmodelling.common.lang.kactors.KActorsActionImpl;
-//import org.integratedmodelling.common.lang.kactors.KActorsStatementImpl;
+//import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+//import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 //import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 //import org.integratedmodelling.klab.utils.Range;
 //

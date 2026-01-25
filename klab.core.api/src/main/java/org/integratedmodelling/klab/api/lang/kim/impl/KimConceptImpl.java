@@ -1,11 +1,10 @@
-package org.integratedmodelling.common.lang.kim;
+package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import java.io.Serial;
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
@@ -14,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
@@ -563,9 +563,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
       if (comparisonConcept != null) {
         ret.append(" ")
-           .append(semanticModifier.declaration[1])
-           .append(" ")
-           .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
+            .append(semanticModifier.declaration[1])
+            .append(" ")
+            .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
       }
       main = ret.toString();
       ret = new StringBuilder();

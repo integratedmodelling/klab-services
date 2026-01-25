@@ -3,7 +3,7 @@
 //import org.integratedmodelling.common.knowledge.ConceptImpl;
 //import org.integratedmodelling.common.knowledge.ObservableImpl;
 //import org.integratedmodelling.common.lang.Axiom;
-//import org.integratedmodelling.common.lang.kim.KimConceptImpl;
+//import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 //import org.integratedmodelling.common.utils.Utils;
 //import org.integratedmodelling.klab.api.collections.Pair;
 //import org.integratedmodelling.klab.api.data.Metadata;

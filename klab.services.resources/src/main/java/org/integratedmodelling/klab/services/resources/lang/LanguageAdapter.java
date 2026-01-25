@@ -2,20 +2,17 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
-import org.integratedmodelling.common.lang.kactors.KActorsActionImpl;
-import org.integratedmodelling.common.lang.kactors.KActorsBehaviorImpl;
-import org.integratedmodelling.common.lang.kactors.KActorsStatementImpl;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
-import org.integratedmodelling.common.lang.kim.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -58,7 +55,7 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
 
-    KimObservableImpl ret = new KimObservableImpl();
+    org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
 
     ret.setLength(observableSyntax.getCodeLength());
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
@@ -109,19 +106,19 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  private List<KimConceptImpl> asTokens(
+  private List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> asTokens(
       SemanticSyntax semanticSyntax,
       String namespace,
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
-    List<KimConceptImpl> tokens = new ArrayList<>();
+    List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens = new ArrayList<>();
     for (var token : semanticSyntax) {
       tokens.add(adaptSemanticToken(token, namespace, projectName, documentClass));
     }
     return tokens;
   }
 
-  private List<KimConceptImpl> asTokens(
+  private List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> asTokens(
       List<SemanticSyntax> second,
       String namespace,
       String projectName,
@@ -133,7 +130,7 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  public KimConceptImpl adaptSemantics(
+  public org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl adaptSemantics(
       SemanticSyntax semantics,
       String namespace,
       String projectName,
@@ -147,11 +144,11 @@ public enum LanguageAdapter {
    * intelligently from the last, apply traits where they belong and bring the first "each" or
    * distribution operator to the final concept
    */
-  private KimConceptImpl adaptSemanticSequence(List<KimConceptImpl> tokens) {
+  private KimConceptImpl adaptSemanticSequence(List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens) {
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
-    KimConceptImpl ret = null;
+    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret = null;
     Set<SemanticType> type = null;
     List<KimConcept> roles = new ArrayList<>();
     List<KimConcept> traits = new ArrayList<>();
@@ -572,7 +569,7 @@ public enum LanguageAdapter {
 
   private KimConcept adaptSemantics(
       SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
-    KimConceptImpl ret = new KimConceptImpl();
+    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));

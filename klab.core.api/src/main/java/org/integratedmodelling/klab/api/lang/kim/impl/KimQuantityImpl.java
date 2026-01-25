@@ -1,6 +1,5 @@
-package org.integratedmodelling.common.lang.kim;
+package org.integratedmodelling.klab.api.lang.kim.impl;
 
-import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 
 import java.io.Serial;
