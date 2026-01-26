@@ -113,7 +113,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       T asset, SubmissionMode submissionMode, UserScope scope) {
     return client
         .withScope(scope)
-        .postCollection(
+        .putCollection(
             ServicesAPI.RESOURCES.SUBMIT,
             asset instanceof KlabDocument<?> document
                 ? document.getSourceCode()

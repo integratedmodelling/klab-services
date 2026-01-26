@@ -382,18 +382,18 @@ public class ResolverService extends BaseService implements Resolver {
       return;
     }
 
-    var catalogDef = cData.getParameters().get("catalog");
-    var namespaceDef = cData.getParameters().get("namespace");
-    var idDef = cData.getParameters().get("id");
+    var catalogDef = definition.get("catalog");
+    var namespaceDef = definition.get("namespace");
+    var idDef = definition.get("id");
 
     var catalog = catalogDef == null ? null : catalogDef.toString();
     var namespace = namespaceDef == null ? null : namespaceDef.toString();
     var id = idDef == null ? null : idDef.toString();
 
-    if (cData.getParameters().containsKey("mode")) {
+    if (definition.containsKey("mode")) {
       submissionMode =
           ResourcesService.SubmissionMode.valueOf(
-              cData.getParameters().get("mode").toString().toUpperCase());
+              definition.get("mode").toString().toUpperCase());
     }
 
     if (id == null || namespace == null || catalog == null) {

@@ -53,7 +53,8 @@ public class ResourceCRUDController {
   public <T extends KlabAsset> @ResponseBody T retrieve(
       @Parameter(description = "URN of the asset to retrieve") String urn,
       @Parameter(description = "Knowledge class of the asset")
-          @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass assetClass,
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
       Principal principal) {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
@@ -75,8 +76,8 @@ public class ResourceCRUDController {
   })
   @GetMapping(ServicesAPI.RESOURCES.LIST)
   public <T extends KlabAsset> List<T> list(
-      @Parameter(description = "Knowledge class to list")
-          @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass assetClass,
+      @Parameter(description = "Knowledge class to list") @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
       Principal principal) {
 
     var scope =
@@ -100,8 +101,8 @@ public class ResourceCRUDController {
   })
   @PostMapping(ServicesAPI.RESOURCES.LIST)
   public <T extends KlabAsset> List<T> query(
-      @Parameter(description = "Knowledge class to query")
-          @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass assetClass,
+      @Parameter(description = "Knowledge class to query") @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
       Principal scope) {
     return List.of(); // resourcesServer.klabService().q(assetClass, scope);
   }
@@ -144,7 +145,8 @@ public class ResourceCRUDController {
       @Parameter(description = "URN of the asset to resolve") @PathVariable(name = "urn")
           String urn,
       @Parameter(description = "Knowledge class of the asset")
-          @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass assetClass,
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
       Principal principal) {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
@@ -170,9 +172,11 @@ public class ResourceCRUDController {
   public <T> List<ResourceSet> submit(
       @Parameter(description = "URN of the asset to submit") @PathVariable(name = "urn") String urn,
       @Parameter(description = "Knowledge class of the asset")
-          @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass knowledgeClass,
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass knowledgeClass,
       @Parameter(description = "Submission mode (add, update, replace)")
-          @PathVariable(name = "submissionMode") ResourcesService.SubmissionMode submissionMode,
+          @PathVariable(name = "submissionMode")
+          ResourcesService.SubmissionMode submissionMode,
       @Parameter(description = "Serialized asset definition") @RequestBody String contents,
       Principal principal) {
 

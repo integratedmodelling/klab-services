@@ -1711,6 +1711,68 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return java.util.Collections.emptyList();
       }
 
+      public <T> List<T> putCollection(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var payloadText = payload instanceof String ? (String) payload : Json.asString(payload);
+          var requestBuilder =
+              HttpRequest.newBuilder()
+                  .version(HttpClient.Version.HTTP_1_1)
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
+                  .uri(URI.create(uri + apiCall + encodeParameters(params)));
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          } else {
+            requestBuilder =
+                requestBuilder.header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+          }
+
+          if (forcedContentHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
+          } else {
+            requestBuilder =
+                requestBuilder.header(
+                    HttpHeaders.CONTENT_TYPE,
+                    payload instanceof String
+                        ? MediaType.PLAIN_TEXT_UTF_8.toString()
+                        : MediaType.JSON_UTF_8.toString());
+          }
+
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          var request =
+              requestBuilder.PUT(HttpRequest.BodyPublishers.ofString(payloadText)).build();
+
+          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponseList(response.body(), resultClass);
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+
+        return java.util.Collections.emptyList();
+      }
+
       private String getAcceptedMediaType(Class<?> resultClass) {
         if (String.class == resultClass) {
           return MediaType.PLAIN_TEXT_UTF_8.toString();
