@@ -29,6 +29,9 @@ public class ObservationImpl implements Observation {
 
   @Serial private static final long serialVersionUID = 8993700853991252827L;
 
+  /** The catalog name for the URN of a resolved substantial observation. */
+  public static final String INDIVIDUALS_CATALOG_NAME = "individuals";
+
   private Observable observable;
   private Geometry geometry;
   private Metadata metadata = Metadata.create();

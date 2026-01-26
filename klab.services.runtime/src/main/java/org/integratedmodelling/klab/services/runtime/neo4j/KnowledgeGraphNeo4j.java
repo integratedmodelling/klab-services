@@ -497,10 +497,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
-        var instanceUrn = node.get("urn").asString();
-        if (instanceUrn != null) {
-          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
-        }
+        //        var instanceUrn = node.get("urn").asString();
+        //        if (instanceUrn != null) {
+        //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+        //        }
         var cData = new ObservationImpl.ContextualizationDataImpl();
         var service = scope.getService(RuntimeService.class);
         cData.setServiceUrl(service.getUrl());
@@ -1018,7 +1018,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     switch (asset) {
       case ObservationImpl observation -> {
         observation.setId(id);
-        observation.setUrn(rootContextId + "." + id);
+        observation.setUrn(
+            observation.getUrn() == null
+                ? rootContextId + "." + id
+                : rootContextId + ":" + ObservationImpl.INDIVIDUALS_CATALOG_NAME + ":" + observation.getUrn());
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case ShardImpl buffer -> buffer.setId(id);

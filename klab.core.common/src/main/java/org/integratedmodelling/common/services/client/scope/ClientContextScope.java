@@ -14,8 +14,10 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -343,12 +345,16 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
             .query(Observation.class, this)
             .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD);
-    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+    if (SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())) {
       query =
           query.where(
-              "instanceUrn",
+              "urn",
               KnowledgeGraph.Query.Operator.EQUALS,
-              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+              getId()
+                  + ":"
+                  + ObservationImpl.INDIVIDUALS_CATALOG_NAME
+                  + ":"
+                  + observation.getUrn());
     } else {
       query =
           query.where(

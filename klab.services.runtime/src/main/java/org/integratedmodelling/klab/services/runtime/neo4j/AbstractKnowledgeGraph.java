@@ -100,10 +100,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
-          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
-          if (instanceUrn != null) {
-            ret.put("instanceUrn", instanceUrn);
-          }
+//          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
+//          if (instanceUrn != null) {
+//            ret.put("instanceUrn", instanceUrn);
+//          }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
             ret.put("adapterId", data.getAdapterId());

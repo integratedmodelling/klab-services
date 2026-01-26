@@ -11,9 +11,11 @@ import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -437,7 +439,7 @@ public interface DigitalTwin extends RuntimeAsset {
     Metadata metadata = Metadata.create();
     boolean isObserver = false;
     long id = Observation.UNASSIGNED_ID;
-    String instanceUrn = null;
+    Urn identity = null;
     Observation.ContextualizationData contextualizationData = null;
 
     Geometry ogeom = null;
@@ -454,7 +456,7 @@ public interface DigitalTwin extends RuntimeAsset {
             defaultValue = string;
           }
         } else if (o instanceof Urn urn) {
-          resourceUrn = urn.getUrn();
+          identity = urn;
         } else if (o instanceof Data data) {
           observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
           geometry = data.geometry();
@@ -468,7 +470,7 @@ public interface DigitalTwin extends RuntimeAsset {
               && symbol.getValue() instanceof Map<?, ?> definition) {
 
             isObserver = "observer".equals(symbol.getDefineClass());
-            instanceUrn = symbol.getUrn();
+            identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
 
             name = symbol.getName();
             if (definition.containsKey("semantics")) {
@@ -504,10 +506,6 @@ public interface DigitalTwin extends RuntimeAsset {
               contextualizationData = defineContextualization(contextualization, scope);
             }
 
-            /*            if (isObserver) {
-              observerGeometry = geometry;
-              geometry = ogeom == null ? Geometry.builder().build() : ogeom;
-            } else */
             if (geometry == null && ogeom != null) {
               geometry = ogeom;
             }
@@ -554,10 +552,17 @@ public interface DigitalTwin extends RuntimeAsset {
       ret.setType(observable.getArtifactType());
       ret.setContextualizationData(contextualizationData);
 
-      if (instanceUrn != null) {
-        // this notifies that the observation represents a specific instance, so it will only be
-        // added once in the scope
-        ret.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+      if (identity != null) {
+        // mandatory for substantials, and must be namespace:name
+        if (identity.length() != 2) {
+          scope.error("Identity must be in the form namespace:id");
+          return null;
+        }
+        ret.setUrn(identity.getUrn());
+      } else if (!observable.getSemantics().isCollective()
+          && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+        scope.error("Observations of substantials must have an explicit unique identity");
+        return null;
       }
 
       return ret;

@@ -230,8 +230,8 @@ public interface Metadata extends Parameters<String> {
   /** The Constant IM_MAX_TEMPORAL_SCALE. */
   public static final String IM_MAX_TEMPORAL_SCALE = "im:max-temporal-scale";
 
-  /** unique URN to a feature returned by a service */
-  public static final String IM_FEATURE_URN = "im:feature-urn";
+//  /** unique URN to a feature returned by a service */
+//  public static final String IM_FEATURE_URN = "im:feature-urn";
 
   /**
    * If present in project metadata and it encodes a file:/ URL, the project is local to the

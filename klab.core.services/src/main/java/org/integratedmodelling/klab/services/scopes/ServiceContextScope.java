@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
@@ -662,7 +663,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Observation getObservation(Observation observation) {
 
-    var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
+    //    var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
 
     // look first in the currentTransaction graph if there is a transaction
     if (currentTransaction != null) {
@@ -676,13 +677,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO for substantials, this should be in the context of a collective, and the collective
         //  should provide the identification strategy
         if (obs.target() instanceof Observation o
-            && ((instanceUrn != null
-                    && instanceUrn.equals(o.getMetadata().get(Metadata.IM_FEATURE_URN)))
-                || (observation
-                    .getObservable()
-                    .getSemantics()
-                    .getUrn()
-                    .equals(observation.getObservable().getSemantics().getUrn())))) {
+            && (isSameInstance(observation, o)
+                || (SemanticType.isDependent(observation.getObservable().getSemantics().getType())
+                    && observation
+                        .getObservable()
+                        .getSemantics()
+                        .getUrn()
+                        .equals(observation.getObservable().getSemantics().getUrn())))) {
           return o;
         }
       }
@@ -700,12 +701,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD);
 
-    if (observation.getMetadata().containsKey(Metadata.IM_FEATURE_URN)) {
+    if (!observation.getObservable().getSemantics().isCollective()
+        && SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())) {
       query =
           query.where(
-              "instanceUrn",
+              "urn",
               KnowledgeGraph.Query.Operator.EQUALS,
-              observation.getMetadata().get(Metadata.IM_FEATURE_URN, String.class));
+              getId()
+                  + ":"
+                  + ObservationImpl.INDIVIDUALS_CATALOG_NAME
+                  + ":"
+                  + observation.getUrn());
     } else {
       query =
           query.where(
@@ -713,11 +719,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
               KnowledgeGraph.Query.Operator.EQUALS,
               observation.getObservable().asConcept().getUrn());
     }
+
     var ret = query.run(this);
     return ret.isEmpty() ? null : ret.getFirst();
-    //    }
-    //
-    //    return null;
+  }
+
+  private boolean isSameInstance(Observation observation, Observation o) {
+    return !observation.getObservable().getSemantics().isCollective()
+        && SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+        && observation
+            .getUrn()
+            .equals(getId() + ":" + ObservationImpl.INDIVIDUALS_CATALOG_NAME + ":" + o.getUrn());
   }
 
   @Override

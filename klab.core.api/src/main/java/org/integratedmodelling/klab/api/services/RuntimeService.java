@@ -123,7 +123,11 @@ public interface RuntimeService extends KlabService {
    * observation will have its {@link Observation#getId()} set to a valid ID (>0) and a valid URN.
    *
    * <p>If the observation submitted is resolved (its ID is valid when submitted), the submission is
-   * ignored and the completed future for the submitted observation is returned.
+   * ignored and the completed future for the submitted observation is returned. An observation of a
+   * substantial (endurant subject or agent) must have a valid URN specifying its unique identity,
+   * including a namespace and an identifier separated by a colon, which will be prefixed with the
+   * scope ID and a predefined catalog name to form the final URN when resolved. An observation of a
+   * dependent is normally not given a URN upon submission; it will contain one after it's resolved.
    *
    * <p>The submit operation is transactional, i.e., a failed submission will leave the knowledge
    * graph unaltered. Note that observations of individual substantials, i.e. non-collective
