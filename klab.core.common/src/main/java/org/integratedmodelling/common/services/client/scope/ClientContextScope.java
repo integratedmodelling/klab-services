@@ -140,7 +140,14 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public CompletableFuture<Observation> submit(Observation observation) {
     var runtime = getService(RuntimeService.class);
-    return runtime.submit(observation, this);
+    var submissionContext = this;
+    // substantials are always submitted at root level
+    if (SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+        && contextObservation != null) {
+      // keep scenarios and any other config by deriving a new context with ctx = null
+      submissionContext = (ClientContextScope) submissionContext.within(null);
+    }
+    return runtime.submit(observation, submissionContext);
   }
 
   @Override

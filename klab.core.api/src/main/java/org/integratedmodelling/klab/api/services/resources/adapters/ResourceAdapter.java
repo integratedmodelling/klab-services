@@ -276,6 +276,22 @@ public @interface ResourceAdapter {
   public @interface Contextualizer {}
 
   /**
+   * Tags a merging function that will take a {@link Resource} or a {@link
+   * org.integratedmodelling.klab.api.knowledge.Urn}, the coordinates of an {@link
+   * org.integratedmodelling.klab.api.knowledge.observation.Observation} and a {@link ContextScope}
+   * and attempt to merge the contents of the observation with the resource, that must exist. The
+   * adapter may provide a merger to support incremental building of resources from contextualized
+   * observations. The merger should be able to generate the first version of the resource if it
+   * does not exist yet and the permissions are aligned.
+   *
+   * @author Ferd
+   */
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.TYPE)
+  public @interface Merger {}
+
+  /**
    * Tags a method that, if present, will establish the online status of the adapter at
    * initialization. The method should return a boolean; alternatively, it can be void and throw an
    * exception if initialization fails. Because this is called at initialization, there won't be a
