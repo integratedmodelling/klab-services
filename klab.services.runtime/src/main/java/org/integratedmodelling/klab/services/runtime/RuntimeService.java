@@ -27,11 +27,14 @@ import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IdentificationStrategy;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
@@ -70,6 +73,38 @@ public class RuntimeService extends BaseService
   private SystemLauncher systemLauncher;
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+  /**
+   * We keep identification strategies for each concept encountered. The base one is implemented for
+   * odo:Substantial.
+   */
+  private Map<Concept, IdentificationStrategy> identificationStrategies = new HashMap<>();
+
+  private IdentificationStrategy defaultIdentificationStrategy =
+      new IdentificationStrategy() {
+
+        @Override
+        public int compare(Observation o1, Observation o2) {
+          // TODO add prefix. O1 is the unknown observation so it gets the prefix if it doesn't have
+          // one
+          return o1.getUrn().compareTo(o2.getUrn());
+        }
+
+        @Override
+        public String getUrn() {
+          return "identification.strategy.default";
+        }
+
+        @Override
+        public Metadata getMetadata() {
+          return Metadata.create();
+        }
+
+        @Override
+        public Collection<Annotation> getAnnotations() {
+          return List.of();
+        }
+      };
 
   public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
