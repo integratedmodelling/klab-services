@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.lang.kactors;
+package org.integratedmodelling.klab.api.lang.kactors.impl;
 
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;

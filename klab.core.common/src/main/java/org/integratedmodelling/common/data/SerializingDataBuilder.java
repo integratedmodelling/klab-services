@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -29,8 +30,9 @@ public class SerializingDataBuilder implements Data.Builder {
   private String adapter;
   private Data input;
   private List<Notification> notifications = new ArrayList<>();
+  private Urn identity;
 
-  public SerializingDataBuilder(String name, Data input, Geometry geometry) {
+  public SerializingDataBuilder(String name, Data input, Geometry geometry, Urn identity) {
     this.builder = Instance.newBuilder();
     this.builder.setName(name);
     this.builder.setGeometry(geometry.encode());
@@ -42,13 +44,14 @@ public class SerializingDataBuilder implements Data.Builder {
     this.builder.setIntData(null);
     this.builder.setLongData(null);
     this.builder.setDataKey(null);
+    this.builder.setIdentity(identity.toString());
     this.geometry = geometry;
     this.input = input;
   }
 
   private SerializingDataBuilder(
-      String name, Data input, Geometry geometry, Instance.Builder parentBuilder) {
-    this(name, input, geometry);
+      String name, Data input, Geometry geometry, Urn identity, Instance.Builder parentBuilder) {
+    this(name, input, geometry, identity);
     this.parentBuilder = parentBuilder;
   }
 
@@ -73,6 +76,11 @@ public class SerializingDataBuilder implements Data.Builder {
     return this;
   }
 
+  public Data.Builder identity(String namespace, String id) {
+    this.identity = Urn.of(namespace + ":" + id);
+    return this;
+  }
+
   @Override
   public Data.Builder metadata(String key, Object value) {
     builder.getMetadata().put(key, Utils.Data.asString(value));
@@ -81,12 +89,12 @@ public class SerializingDataBuilder implements Data.Builder {
 
   @Override
   public Data.Builder state(String observable) {
-    return new SerializingDataBuilder(observable, input, this.geometry, this.builder);
+    return new SerializingDataBuilder(observable, input, this.geometry, null, this.builder);
   }
 
   @Override
-  public Data.Builder object(String name, Observable observable, Geometry geometry) {
-    return new SerializingDataBuilder(name, input, geometry, this.builder);
+  public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
+    return new SerializingDataBuilder(name, input, geometry, identity, this.builder);
   }
 
   @Override
@@ -126,11 +134,11 @@ public class SerializingDataBuilder implements Data.Builder {
       }
       parentBuilder.getInstances().add(instance);
     }
-//    instance
-//        .getNotifications()
-//        .addAll(
-//            (Collection<? extends org.integratedmodelling.klab.common.data.Notification>)
-//                notifications);
+    //    instance
+    //        .getNotifications()
+    //        .addAll(
+    //            (Collection<? extends org.integratedmodelling.klab.common.data.Notification>)
+    //                notifications);
     return BaseDataImpl.create(instance, notifications);
   }
 }

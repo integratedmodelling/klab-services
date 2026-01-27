@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -48,9 +50,40 @@ public interface KlabAsset extends Serializable {
     WORKSPACE,
     CONCEPT_STATEMENT,
     OBSERVATION;
+
+    public Class<? extends KlabAsset> getAssetClass() {
+      return switch (this) {
+        case RESOURCE -> Resource.class;
+        case NAMESPACE -> KimNamespace.class;
+        case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> KActorsBehavior.class;
+        case ONTOLOGY -> KimOntology.class;
+        case OBSERVATION_STRATEGY_DOCUMENT -> KimObservationStrategyDocument.class;
+        case PROJECT -> Project.class;
+        case WORLDVIEW -> Worldview.class;
+        case WORKSPACE -> Workspace.class;
+        default ->
+            throw new KlabIllegalStateException(
+                "Cannot convert  " + this + " into serializable asset class");
+      };
+    }
+
+    public ProjectStorage.ResourceType getResourceType() {
+      return switch (this) {
+        case NAMESPACE -> ProjectStorage.ResourceType.MODEL_NAMESPACE;
+        case BEHAVIOR -> ProjectStorage.ResourceType.BEHAVIOR;
+        case SCRIPT -> ProjectStorage.ResourceType.SCRIPT;
+        case TESTCASE -> ProjectStorage.ResourceType.TESTCASE;
+        case APPLICATION -> ProjectStorage.ResourceType.APPLICATION;
+        case ONTOLOGY -> ProjectStorage.ResourceType.ONTOLOGY;
+        case OBSERVATION_STRATEGY_DOCUMENT -> ProjectStorage.ResourceType.STRATEGY;
+        default ->
+            throw new KlabIllegalStateException(
+                "Cannot convert  " + this + " into a project resource type");
+      };
+    }
   }
 
-  public static KnowledgeClass classify(KlabAsset asset) {
+  static KnowledgeClass classify(KlabAsset asset) {
     return switch (asset) {
       case KimConcept c -> KnowledgeClass.CONCEPT;
       case KimConceptStatement c -> KnowledgeClass.CONCEPT_STATEMENT;
@@ -65,6 +98,7 @@ public interface KlabAsset extends Serializable {
       case KimObservationStrategyDocument s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
       case KimNamespace n -> KnowledgeClass.NAMESPACE;
       case KimModel model -> KnowledgeClass.MODEL;
+      case Resource resource -> KnowledgeClass.RESOURCE;
       case KActorsBehavior behavior ->
           switch (behavior.getType()) {
             case BEHAVIOR, TASK, USER, TRAITS -> KnowledgeClass.BEHAVIOR;

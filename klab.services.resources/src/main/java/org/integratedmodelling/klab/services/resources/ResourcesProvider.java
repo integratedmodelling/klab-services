@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.data.SerializingDataBuilder;
-import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
@@ -78,8 +78,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ResourcesProvider extends BaseService
-    implements ResourcesService, ResourcesService.Admin {
+public class ResourcesProvider extends BaseService implements ResourcesService {
 
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private final WorkspaceManager workspaceManager;
@@ -154,6 +153,12 @@ public class ResourcesProvider extends BaseService
   public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
 
     super(scope, Type.RESOURCES, options);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
+    this.workspaceManager =
+        new WorkspaceManager(scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
+    this.resourceManager = new ResourceManager(this.resourcesKbox, this);
+
+    setComponentRegistry();
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 
@@ -182,10 +187,6 @@ public class ResourcesProvider extends BaseService
         Instance.class);
 
     this.kbox = ModelKbox.create(this);
-    this.resourcesKbox = new ResourcesKBox(scope, options, this);
-    this.workspaceManager =
-        new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
-    this.resourceManager = new ResourceManager(this.resourcesKbox, this);
 
     /*
     initialize the plugin system to handle components
@@ -514,13 +515,8 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceSet resolveResource(List<String> urnIds, Scope scope) {
-
-    if (urnIds.size() == 1) {
-      return resolveResourceUrn(urnIds.getFirst(), scope);
-    }
-
-    return ResourceSet.empty(Notification.error("MULTIPLE RESOURCE RESOLUTION IS UNIMPLEMENTED"));
+  public ResourceSet resolveResource(String urn, Scope scope) {
+    return resolveResourceUrn(urn, scope);
   }
 
   @Override
@@ -655,7 +651,7 @@ public class ResourcesProvider extends BaseService
               "Resource " + resource.getUrn() + " failed remote pre-contextualization validation"));
     }
 
-    var builder = new SerializingDataBuilder(name, input, observation.getGeometry());
+    var builder = new SerializingDataBuilder(name, input, observation.getGeometry(), null);
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(
@@ -978,6 +974,80 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
+    return List.of();
+  }
+
+  @Override
+  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
+    switch (knowledgeClass) {
+      case PROJECT:
+        return deleteProject(urn, scope);
+      case WORKSPACE:
+        return deleteWorkspace(urn, scope);
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+        String[] urns = urn.split("/");
+        if (urns.length < 2) {
+          throw new KlabIllegalArgumentException(
+              "Invalid URN " + urn + " for deletion: must contain at least the project name");
+        }
+        return deleteDocument(
+            urns[urns.length - 2], urns[urns.length - 1], knowledgeClass.getResourceType(), scope);
+      case COMPONENT:
+        getComponentRegistry().unloadComponent(urn, Urn.of(urn).getVersion());
+        // TODO delete from registry!
+    }
+
+    return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
+  }
+
+  @Override
+  public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
+    switch (assetClass) {
+      //      case PROJECT:
+      //        return resolveProject(urn, scope);
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+      case COMPONENT:
+      case MODEL:
+      case RESOURCE:
+      case WORKSPACE:
+      case PROJECT:
+      case OBSERVATION_STRATEGY:
+      case CONCEPT_STATEMENT:
+      default:
+        return null;
+    }
+  }
+
+  @Override
+  public <T extends KlabAsset> List<ResourceSet> submit(
+      T asset, SubmissionMode submissionMode, UserScope scope) {
+    switch (asset) {
+      case Resource resource:
+        return List.of(ingestResource(resource, scope));
+      //      case Workspace workspace:
+      //        return List.of(ingestProject(project, scope));
+      //      case Project project:
+      //        return List.of(ingestProject(project, scope));
+      //      case KlabDocument<?> document:
+      //        return List.of(ingestDocument(document, scope));
+      default:
+        return List.of(ResourceSet.empty(Notification.error("Cannot submit " + asset)));
+    }
+    //    return List.of();
+  }
+
+  @Override
+  public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
+    return null;
+  }
+
+  @Override
   public String serviceId() {
     return workspaceManager.getConfiguration().getServiceId();
   }
@@ -988,7 +1058,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimConcept retrieveConcept(String definition) {
+  public KimConcept declareConcept(String definition) {
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -998,7 +1068,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimObservable retrieveObservable(String definition) {
+  public KimObservable declareObservable(String definition) {
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -1585,7 +1655,7 @@ public class ResourcesProvider extends BaseService
         }
       }
       case OBSERVABLE -> {
-        var observable = retrieveObservable(urn);
+        var observable = declareObservable(urn);
         if (observable != null) {
           ret.getResults()
               .add(

@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.lang.kim;
+package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;

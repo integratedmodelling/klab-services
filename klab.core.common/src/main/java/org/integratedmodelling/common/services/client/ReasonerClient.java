@@ -636,7 +636,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
-    var ret = client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, ResourceSet.class);
+    var ret = client.post(ServicesAPI.REASONER.LOAD_KNOWLEDGE, worldview, ResourceSet.class);
     invalidateCaches();
     return ret;
   }
@@ -648,14 +648,14 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
-    var ret = client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, ResourceSet.class);
+    var ret = client.post(ServicesAPI.REASONER.UPDATE_KNOWLEDGE, changes, ResourceSet.class);
     invalidateCaches();
     return ret;
   }
 
   @Override
   public Concept defineConcept(KimConceptStatement statement, Scope scope) {
-    return client.post(ServicesAPI.REASONER.ADMIN.DEFINE_CONCEPT, statement, Concept.class);
+    return client.post(ServicesAPI.REASONER.DEFINE_CONCEPT, statement, Concept.class);
   }
 
   @Override

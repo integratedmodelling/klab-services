@@ -104,6 +104,15 @@ public class Urn implements Serializable {
   }
 
   /**
+   * Length is the number of colon-separated tokens in the URN.
+   * @return
+   */
+  public int length() {
+    return tokens == null ? 0 : tokens.length;
+  }
+
+
+  /**
    * Whether the URN should be processed by the same engine that generates it.
    *
    * @return true if local

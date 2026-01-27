@@ -48,7 +48,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
             : observation.getObservable().getStatedName();
 
     // FIXME needs a server-side builder that uses the DT's buffers
-    var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope);
+    var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope, null);
 
     if (scanner != null) {
       builder.setScanner("self", scanner);

@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.lang.kim;
+package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;

@@ -7,13 +7,11 @@ import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -115,7 +113,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
     var type = Urn.classify(urn);
     if (type == Urn.Type.OBSERVABLE) {
 
-      var resolved = resources.retrieveObservable(urn);
+      var resolved = resources.declareObservable(urn);
       if (resolved != null) {
         out.println(
             CommandLine.Help.Ansi.AUTO.string(

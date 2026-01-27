@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
+import java.io.StringBufferInputStream;
+
 /**
  * TODO add accepted http requests and payload types for both input (POST) and output
  *
@@ -10,8 +12,10 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
  */
 public interface ServicesAPI {
 
-  /** ACHTUNG this should be v1 for 1.0 at production, but the HUB endpoints also use it */
-  String API_BASE = "/api/v2";
+  String API_BASE = "/api/v1";
+
+  // legacy - hub is same architecture as before
+  String HUB_API_BASE = "/api/v2";
 
   /**
    * Request header to communicate and reconstruct the calling scope at server side when requests
@@ -148,20 +152,14 @@ public interface ServicesAPI {
 
   interface ENGINE {}
 
-  /**
-   * STOMP endpoint for client/server notifications to session receivers. Handled through Websockets
-   * protocol.
-   */
-  String MESSAGE = "/public/message";
-
   interface HUB {
     /** Base URL path for engine resources on the hub. */
-    String ENGINE_BASE = API_BASE + "/engines";
+    String ENGINE_BASE = HUB_API_BASE + "/engines";
 
     String AUTH_BASE = "/auth-cert";
 
     // TODO rename /nodes to /services (?)
-    String SERVICE_BASE = API_BASE + "/nodes";
+    String SERVICE_BASE = HUB_API_BASE + "/nodes";
 
     /**
      * Returns authenticated user details and network status with all nodes (including offline if
@@ -183,7 +181,7 @@ public interface ServicesAPI {
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
 
     /** Called from services to have information about the user */
-    String USER_BASE_ID_SERVICES = API_BASE + "/users/services/{id}";
+    String USER_BASE_ID_SERVICES = HUB_API_BASE + "/users/services/{id}";
   }
 
   /**
@@ -193,8 +191,6 @@ public interface ServicesAPI {
    */
   interface REASONER {
 
-    String REASONER_BASE = API_BASE;
-
     /**
      * Resolve a concept definition passed as a request body, returning a unique ID for the
      * reasoner, the normalized URN form and any metadata.
@@ -203,151 +199,129 @@ public interface ServicesAPI {
      * @service
      * @produces {@link Concept}
      */
-    String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept";
+    String RESOLVE_CONCEPT = API_BASE + "/resolve/concept";
 
     /**
      * @protocol POST for a string definition passed as request body
      * @produces {@link Observable}
      */
-    String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable";
+    String RESOLVE_OBSERVABLE = API_BASE + "/resolve/observable";
 
-    //        /**
-    //         * @protocol POST for a map containing the KimObservable definition as "OBSERVABLE"
-    // and possibly
-    //         * pattern variables
-    //         */
-    //        String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
-    //
-    //        /**
-    //         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and
-    // possibly pattern
-    //         * variables
-    //         */
-    //        String DECLARE_CONCEPT = REASONER_BASE + "/declare/concept";
+    String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
 
-    String SEMANTIC_SEARCH = REASONER_BASE + "/semanticSearch";
+    String HAS_TRAIT = API_BASE + "/hasTrait";
 
-    String HAS_TRAIT = REASONER_BASE + "/hasTrait";
+    String RAW_OBSERVABLE = API_BASE + "/rawObservable";
 
-    String RAW_OBSERVABLE = REASONER_BASE + "/rawObservable";
+    String SUBSUMES = API_BASE + "/subsumes";
 
-    String SUBSUMES = REASONER_BASE + "/subsumes";
+    String OPERANDS = API_BASE + "/operands";
 
-    String OPERANDS = REASONER_BASE + "/operands";
+    String CHILDREN = API_BASE + "/children";
 
-    String CHILDREN = REASONER_BASE + "/children";
+    String PARENTS = API_BASE + "/parents";
 
-    String PARENTS = REASONER_BASE + "/parents";
+    String PARENT = API_BASE + "/parent";
 
-    String PARENT = REASONER_BASE + "/parent";
+    String ALL_CHILDREN = API_BASE + "/allChildren";
 
-    String ALL_CHILDREN = REASONER_BASE + "/allChildren";
+    String ALL_PARENTS = API_BASE + "/allParents";
 
-    String ALL_PARENTS = REASONER_BASE + "/allParents";
+    String CLOSURE = API_BASE + "/closure";
 
-    String CLOSURE = REASONER_BASE + "/closure";
+    String CORE_OBSERVABLE = API_BASE + "/coreObservable";
 
-    String CORE_OBSERVABLE = REASONER_BASE + "/coreObservable";
+    String SPLIT_OPERATORS = API_BASE + "/splitOperators";
 
-    String SPLIT_OPERATORS = REASONER_BASE + "/splitOperators";
+    String DISTANCE = API_BASE + "/distance";
 
-    String DISTANCE = REASONER_BASE + "/distance";
+    String ROLES = API_BASE + "/roles";
 
-    String ROLES = REASONER_BASE + "/roles";
+    String HAS_ROLE = API_BASE + "/hasRole";
 
-    String HAS_ROLE = REASONER_BASE + "/hasRole";
+    String INHERENT = API_BASE + "/inherent";
 
-    String INHERENT = REASONER_BASE + "/inherent";
+    String GOAL = API_BASE + "/goal";
 
-    String GOAL = REASONER_BASE + "/goal";
+    String COOCCURRENT = API_BASE + "/cooccurent";
 
-    String COOCCURRENT = REASONER_BASE + "/cooccurent";
+    String CAUSANT = API_BASE + "/causant";
 
-    String CAUSANT = REASONER_BASE + "/causant";
+    String CAUSED = API_BASE + "/caused";
 
-    String CAUSED = REASONER_BASE + "/caused";
+    String ADJACENT = API_BASE + "/adjacent";
 
-    String ADJACENT = REASONER_BASE + "/adjacent";
+    String COMPRESENT = API_BASE + "/compresent";
 
-    String COMPRESENT = REASONER_BASE + "/compresent";
+    String RELATIVE_TO = API_BASE + "/relativeTo";
 
-    String RELATIVE_TO = REASONER_BASE + "/relativeTo";
+    String TRAITS = API_BASE + "/traits";
 
-    String TRAITS = REASONER_BASE + "/traits";
+    String IDENTITIES = API_BASE + "/identities";
 
-    String IDENTITIES = REASONER_BASE + "/identities";
+    String ATTRIBUTES = API_BASE + "/attributes";
 
-    String ATTRIBUTES = REASONER_BASE + "/attributes";
+    String REALMS = API_BASE + "/realms";
 
-    String REALMS = REASONER_BASE + "/realms";
+    String LEXICAL_ROOT = API_BASE + "/lexicalRoot";
 
-    String LEXICAL_ROOT = REASONER_BASE + "/lexicalRoot";
+    String BASE_OBSERVABLE = API_BASE + "/baseObservable";
 
-    String BASE_OBSERVABLE = REASONER_BASE + "/baseObservable";
+    String HAS_PARENT_ROLE = API_BASE + "/hasParentRole";
 
-    String HAS_PARENT_ROLE = REASONER_BASE + "/hasParentRole";
+    String SEMANTIC_TYPE = API_BASE + "/semanticType";
 
-    String SEMANTIC_TYPE = REASONER_BASE + "/semanticType";
+    String IMPLIED_ROLES = API_BASE + "/impliedRoles";
 
-    String IMPLIED_ROLES = REASONER_BASE + "/impliedRoles";
+    String IMPLIED_ROLE = API_BASE + "/impliedRole";
 
-    String IMPLIED_ROLE = REASONER_BASE + "/impliedRole";
+    String COMPUTE_OBSERVATION_STRATEGIES = API_BASE + "/observationStrategies";
 
-    String COMPUTE_OBSERVATION_STRATEGIES = REASONER_BASE + "/observationStrategies";
+    String COMPUTE_IDENTIFICATION_STRATEGY = API_BASE + "/identificationStrategy";
 
-    String COMPUTE_IDENTIFICATION_STRATEGY = REASONER_BASE + "/identificationStrategy";
+    String ROLES_FOR = API_BASE + "/rolesFor";
 
-    String ROLES_FOR = REASONER_BASE + "/rolesFor";
+    String CREATED = API_BASE + "/created";
 
-    String CREATED = REASONER_BASE + "/created";
+    String AFFECTED = API_BASE + "/affected";
 
-    String AFFECTED = REASONER_BASE + "/affected";
+    String AFFECTED_OR_CREATED = API_BASE + "/affectedOrCreated";
 
-    String AFFECTED_OR_CREATED = REASONER_BASE + "/affectedOrCreated";
+    String CREATED_BY = API_BASE + "/createdBy";
 
-    String CREATED_BY = REASONER_BASE + "/createdBy";
+    String AFFECTED_BY = API_BASE + "/affectedBy";
 
-    String AFFECTED_BY = REASONER_BASE + "/affectedBy";
+    String LGC = API_BASE + "/leastGenericCommon";
 
-    String LGC = REASONER_BASE + "/leastGenericCommon";
+    String OCCURRENT = API_BASE + "/occurrent";
 
-    String OCCURRENT = REASONER_BASE + "/occurrent";
+    String CONTEXTUALLY_COMPATIBLE = API_BASE + "/contextuallyCompatible";
 
-    String CONTEXTUALLY_COMPATIBLE = REASONER_BASE + "/contextuallyCompatible";
+    String COMPATIBLE = API_BASE + "/compatible";
 
-    String COMPATIBLE = REASONER_BASE + "/compatible";
+    String DESCRIBED = API_BASE + "/described";
 
-    String DESCRIBED = REASONER_BASE + "/described";
+    String APPLICABLE = API_BASE + "/applicable";
 
-    String APPLICABLE = REASONER_BASE + "/applicable";
+    String DOMAIN = API_BASE + "/domain";
 
-    String DOMAIN = REASONER_BASE + "/domain";
+    String NEGATED = API_BASE + "/negated";
 
-    String NEGATED = REASONER_BASE + "/negated";
+    String MATCHES = API_BASE + "/matches";
 
-    String MATCHES = REASONER_BASE + "/matches";
+    String RELATIONSHIP_TARGETS = API_BASE + "/relationshipTargets";
 
-    String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationshipTargets";
+    String SATISFIABLE = API_BASE + "/satisfiable";
 
-    String SATISFIABLE = REASONER_BASE + "/satisfiable";
+    String RELATIONSHIP_TARGET = API_BASE + "/relationshipTarget";
 
-    String RELATIONSHIP_TARGET = REASONER_BASE + "/relationshipTarget";
+    String RELATIONSHIP_SOURCES = API_BASE + "/relationshipSources";
 
-    String RELATIONSHIP_SOURCES = REASONER_BASE + "/relationshipSources";
+    String RELATIONSHIP_SOURCE = API_BASE + "/relationshipSource";
 
-    String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationshipSource";
-
-    /**
-     * Reasoner plug-ins can extend the observation strategies.
-     *
-     * @author Ferd
-     */
-    interface ADMIN {
-
-      String LOAD_KNOWLEDGE = "/loadKnowledge";
-      String UPDATE_KNOWLEDGE = "/updateKnowledge";
-      String DEFINE_CONCEPT = "/defineConcept";
-    }
+    String LOAD_KNOWLEDGE = API_BASE + "/loadKnowledge";
+    String UPDATE_KNOWLEDGE = API_BASE + "/updateKnowledge";
+    String DEFINE_CONCEPT = API_BASE + "/defineConcept";
 
     /** Endpoints for authorities configuration, creation, discovery and use */
     interface AUTHORITIES {}
@@ -359,16 +333,9 @@ public interface ServicesAPI {
    */
   interface RUNTIME {
 
-    /**
-     * Runtime plug-ins can extend the contextualizers and the storage infrastructure.
-     *
-     * @author Ferd
-     */
-    interface ADMIN {}
+    String GET_CONTEXT_INFO = API_BASE + "/contexts";
 
-    String GET_CONTEXT_INFO = "/contexts";
-
-    String DIGITAL_TWIN_PREFIX = "/dt/";
+    String DIGITAL_TWIN_PREFIX = API_BASE + "/dt/";
 
     /**
      * The endpoint for digital twin access. With JSON media type, this will send the top-level DT
@@ -376,148 +343,180 @@ public interface ServicesAPI {
      */
     String DIGITAL_TWIN = DIGITAL_TWIN_PREFIX + "{id}";
 
-    String CONNECT = "/connect";
+    String CONNECT = API_BASE + "/connect";
 
-    String GET_COMMIT_INFO = "/commit";
+    String GET_COMMIT_INFO = API_BASE + "/commit";
 
     /**
      * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.
      */
-    String GET_DIGITAL_TWIN_CONFIGURATION = "/configuration/{id}";
+    String GET_DIGITAL_TWIN_CONFIGURATION = API_BASE + "/configuration/{id}";
 
     /**
      * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that
      * can be used to follow the resolution task. Payload is a {@link
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
      */
-    String SUBMIT_OBSERVATION = "/submit";
+    String SUBMIT_OBSERVATION = API_BASE + "/submit";
 
     /** Structured Knowledge Graph query */
-    String QUERY = "/query";
+    String QUERY = API_BASE + "/query";
 
     /**
      * GET endpoint to quickly retrieve a specific asset from the knowledge graph by using its long
      * ID.
      */
-    String RETRIEVE_KNOWLEDGE_GRAPH_ASSET = "/asset/{id}";
+    String RETRIEVE_KNOWLEDGE_GRAPH_ASSET = API_BASE + "/asset/{id}";
 
     /**
      * GET endpoint to retrieve the links between assets in the knowledge graph, returning only the
      * asset IDs as per {@link org.integratedmodelling.klab.api.data.KnowledgeGraph.LinkInfo}.
      */
-    String RETRIEVE_KNOWLEDGE_GRAPH_LINKS = "/links";
+    String RETRIEVE_KNOWLEDGE_GRAPH_LINKS = API_BASE + "/links";
 
     /**
      * POST or GET endpoint for visualization of a URN, including the "adapter" identifier and the
      * URN of the visualized asset. GET will return the full visualization with the standard
      * geometry and options. POST will enable specifying different options and geometry.
      */
-    String VISUALIZE_ASSET = "/visualize/{method}/{urn}";
+    String VISUALIZE_ASSET = API_BASE + "/visualize/{method}/{urn}";
 
     /**
      * POST endpoint that takes a list of contextualizer references and returns the ResourceSet that
      * specifies whether those will be available to the runtime and upon which conditions.
      */
-    String RESOLVE_CONTEXTUALIZERS = "/resolve";
+    String RESOLVE_CONTEXTUALIZERS = API_BASE + "/resolve";
   }
 
   interface RESOURCES {
 
-    String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
-    String QUERY_RESOURCES = "/queryResources";
+    @Deprecated // use /query/resources
+    String QUERY_RESOURCES = API_BASE + "/query/resources";
+    String RIGHTS = API_BASE + "/rights/{urn}";
+    String STATUS = API_BASE + "/status/{knowledgeClass}/{urn}";
+
+    @Deprecated // use info
+    String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
+
+    String CONTEXTUALIZE = "/contextualize";
+    String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
+    String DEPENDENTS = "/dependents/{namespaceId}";
     String PRECURSORS = "/precursors/{namespaceId}";
+    @Deprecated // get /info/geometry/{class}/{urn} on whatever
+    String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
+
+    /**
+     * The RESOLVE endpoint always returns a ResourceSet with the full dependency closure for the
+     * intended asset. The URN may also be a comma-separated list of URNs.
+     */
+    String RESOLVE = API_BASE + "/resolve/{knowledgeClass}/{urn}";
+
+    String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
+
+    /** PUT endpoint to ingest an asset for addition, update or replacement */
+    String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
+
+    /**
+     * GET endpoint to retrieve a list of assets of a given type. A POST endpoint may specify a
+     * query.
+     */
+    String LIST = API_BASE + "/list/{knowledgeClass}";
+
+    /**
+     * RETRIEVE endpoints are GET endpoints that return the full asset definition for the passed
+     * URN.
+     */
+    String RETRIEVE = API_BASE + "/retrieve/{knowledgeClass}/{urn}";
+
     String RESOLVE_PROJECTS = "/resolveProjects";
     String RESOLVE_MODEL = "/resolveModel/{modelName}";
     String RESOLVE_URN = "/resolve/{urn}";
-    String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
-    String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
     String RESOLVE_RESOURCE = "/resolveResource";
     String RESOLVE_ADAPTER = "/resolveAdapter/{urn}";
-    String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT = "/retrieveObservationStrategyDocument/{urn}";
-    String LIST_WORKSPACES = "/listWorkspaces";
-    String RETRIEVE_BEHAVIOR = "/retrieveBehavior/{urn}";
-    String RETRIEVE_RESOURCE = "/retrieveResource";
-    String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
     String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
     String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema";
     String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema";
-    String RESOURCE_INFO = "/resourceInfo/{urn}";
-    String RETRIEVE_OBSERVABLE = "/retrieveObservable";
-    String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
-    String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
-    String CONTEXTUALIZE = "/contextualize";
-    String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
-    String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
-    String RETRIEVE_WORLDVIEW = "/getWorldview";
-    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
-    String DEPENDENTS = "/dependents/{namespaceId}";
     String RESOLVE_MODELS = "/resolveModels";
+
+    @Deprecated // use PUT on whatever
     String IMPORT_RESOURCE = "importResource";
-    String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
-    String READ_BEHAVIOR = "/readBehavior";
+
+    @Deprecated // use GET /worspaces
+    String LIST_WORKSPACES = "/listWorkspaces";
     String LIST_PROJECTS = "/listProjects";
     String LIST_RESOURCE_URNS = "/listResourceUrns";
 
+    @Deprecated // use project with GET
+    String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
+    String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
+    String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
+    String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT = "/retrieveObservationStrategyDocument/{urn}";
+    String RETRIEVE_BEHAVIOR = "/retrieveBehavior/{urn}";
+    String RETRIEVE_RESOURCE = "/retrieveResource";
+    String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
+    String RETRIEVE_OBSERVABLE = "/retrieveObservable";
+    String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
+    String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
+    String RETRIEVE_WORLDVIEW = "/getWorldview";
+    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
+
     /** Set/get the access rights for the passed resource URN */
-    String RESOURCE_RIGHTS = "/rights/{urn}";
+    String RESOURCE_INFO = "/resourceInfo/{urn}";
+
+    String READ_BEHAVIOR = "/readBehavior";
+
+    /** create a new workspace, posting metadata */
+    String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
+
+    /** Create new empty project in passed workspace. */
+    String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
+
+    /** POST request to update an existing project's manifest */
+    String UPDATE_PROJECT = "/updateProject/{projectName}";
 
     /**
-     * Resource plug-ins provide resource adapters.
-     *
-     * @author Ferd
+     * GET endpoint: create new document with passed URN. Return changes in each workspace affected.
      */
-    public interface ADMIN {
+    String CREATE_DOCUMENT = "/createDocument/{projectName}/{documentType}/{urn}";
 
-      /** create a new workspace, posting metadata */
-      String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
+    /**
+     * Update document with passed type. POST endpoint whose body is the document content. Return
+     * changes in each workspace affected.
+     *
+     * <p>NO should be PUT but currently we don't return a body
+     */
+    String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
 
-      /** Create new empty project in passed workspace. */
-      String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
+    String REMOVE_PROJECT = "/removeProject/{urn}";
+    String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
+    String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{documentType}/{urn}";
 
-      /** POST request to update an existing project's manifest */
-      String UPDATE_PROJECT = "/updateProject/{projectName}";
+    String MANAGE_PROJECT = API_BASE + "/project/manage/{urn}";
 
-      /**
-       * GET endpoint: create new document with passed URN. Return changes in each workspace
-       * affected.
-       */
-      String CREATE_DOCUMENT = "/createDocument/{projectName}/{documentType}/{urn}";
+    /**
+     * If successful, stop automatic file management for the project and respond with a URL to
+     * either the file:/ location of the project (if the request comes from a client sharing the
+     * same filesystem) or the http:// URL to a zip containing the current version of the project.
+     * Prepare to receive project updates allowing the requesting user to modify files to the
+     * UPDATE_* endpoints.
+     *
+     * <p>TODO this should be PUT
+     */
+    String LOCK_PROJECT = API_BASE + "/project/lock/{urn}";
 
-      /**
-       * Update document with passed type. POST endpoint whose body is the document content. Return
-       * changes in each workspace affected.
-       */
-      String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
-
-      String REMOVE_PROJECT = "/removeProject/{urn}";
-      String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
-      String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{documentType}/{urn}";
-      String MANAGE_PROJECT = "/manageProject/{urn}";
-
-      /**
-       * If successful, stop automatic file management for the project and respond with a URL to
-       * either the file:/ location of the project (if the request comes from a client sharing the
-       * same filesystem) or the http:// URL to a zip containing the current version of the project.
-       * Prepare to receive project updates allowing the requesting user to modify files to the
-       * UPDATE_* endpoints.
-       */
-      String LOCK_PROJECT = "/lockProject/{urn}";
-
-      /**
-       * Resume file management and disallow the user from updating project files for the project.
-       */
-      String UNLOCK_PROJECT = "/unlockProject/{urn}";
-    }
+    /**
+     * Resume file management and disallow the user from updating project files for the project.
+     * TODO make this PUT
+     */
+    String UNLOCK_PROJECT = API_BASE + "/project/unlock/{urn}";
   }
 
   interface RESOLVER {
 
-    interface ADMIN {}
+    String RESOLVE_OBSERVATION = API_BASE + "/resolve";
 
-    String RESOLVE_OBSERVATION = "/resolve";
+    String SUBMIT_RESOURCE = API_BASE + "/resource";
 
-    String SUBMIT_RESOURCE = "/resource/submit";
-
-    String GET_SUBMITTED_RESOURCES = "/resource/submitted";
+    String GET_SUBMITTED_RESOURCES = API_BASE + "/resources";
   }
 }

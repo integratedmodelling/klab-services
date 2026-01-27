@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -53,8 +54,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescri
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 
-public class ResourcesClient extends BaseServiceClient
-    implements ResourcesService, ResourcesService.Admin {
+public class ResourcesClient extends BaseServiceClient implements ResourcesService {
 
   private Capabilities capabilities;
   boolean useCaches = false;
@@ -96,6 +96,50 @@ public class ResourcesClient extends BaseServiceClient
     return capabilities == null
         ? getCapabilities(scope, ResourcesCapabilitiesImpl.class)
         : capabilities;
+  }
+
+  @Override
+  public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
+    return List.of();
+  }
+
+  @Override
+  public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> List<ResourceSet> submit(
+      T asset, SubmissionMode submissionMode, UserScope scope) {
+    return client
+        .withScope(scope)
+        .putCollection(
+            ServicesAPI.RESOURCES.SUBMIT,
+            asset instanceof KlabDocument<?> document
+                ? document.getSourceCode()
+                : Utils.Json.asString(asset),
+            ResourceSet.class,
+            "knowledgeClass",
+            KlabAsset.classify(asset),
+            "submissionMode",
+            submissionMode,
+            "urn",
+            asset.getUrn());
+  }
+
+  @Override
+  public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
+    return List.of();
   }
 
   @Override
@@ -223,10 +267,35 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public ResourceSet resolveResource(List<String> urns, Scope scope) {
+  public ResourceSet resolveResource(String urn, Scope scope) {
     return client
         .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RESOLVE_RESOURCE, urns, ResourceSet.class);
+        .post(ServicesAPI.RESOURCES.RESOLVE_RESOURCE, urn, ResourceSet.class);
+  }
+
+  @Override
+  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
+    ResolutionRequest request = new ResolutionRequest();
+    request.setObservable(observable);
+    request.setResolutionConstraints(scope.getResolutionConstraints());
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
+      request
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  scope.getContextObservation()));
+    }
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
+  }
+
+  @Override
+  public ResourceSet resolve(String urn, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RESOLVE_URN, ResourceSet.class, "urn", urn);
   }
 
   @Override
@@ -243,7 +312,7 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public KimConcept retrieveConcept(String definition) {
+  public KimConcept declareConcept(String definition) {
     if (!useCaches) {
       return resolveConceptInternal(removeExcessParentheses(definition));
     }
@@ -256,7 +325,7 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public KimObservable retrieveObservable(String definition) {
+  public KimObservable declareObservable(String definition) {
     if (!useCaches) {
       return resolveObservableInternal(removeExcessParentheses(definition));
     }
@@ -349,24 +418,6 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
-    ResolutionRequest request = new ResolutionRequest();
-    request.setObservable(observable);
-    request.setResolutionConstraints(scope.getResolutionConstraints());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      request
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  scope.getContextObservation()));
-    }
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
-  }
-
-  @Override
   public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
     return client
         .withScope(scope)
@@ -407,18 +458,11 @@ public class ResourcesClient extends BaseServiceClient
   }
 
   @Override
-  public ResourceSet resolve(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_URN, ResourceSet.class, "urn", urn);
-  }
-
-  @Override
   public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
     return client
         .withScope(scope)
         .post(
-            ServicesAPI.RESOURCES.ADMIN.CREATE_WORKSPACE,
+            ServicesAPI.RESOURCES.CREATE_WORKSPACE,
             metadata,
             Boolean.class,
             "workspaceName",
@@ -430,7 +474,7 @@ public class ResourcesClient extends BaseServiceClient
     return client
         .withScope(scope)
         .get(
-            ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT,
+            ServicesAPI.RESOURCES.CREATE_PROJECT,
             ResourceSet.class,
             "workspaceName",
             workspaceName,
@@ -451,7 +495,7 @@ public class ResourcesClient extends BaseServiceClient
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
     return client.getCollection(
-        ServicesAPI.RESOURCES.ADMIN.CREATE_DOCUMENT,
+        ServicesAPI.RESOURCES.CREATE_DOCUMENT,
         ResourceSet.class,
         "projectName",
         projectName,
@@ -469,7 +513,7 @@ public class ResourcesClient extends BaseServiceClient
       UserScope scope) {
     var ret =
         client.postCollection(
-            ServicesAPI.RESOURCES.ADMIN.UPDATE_DOCUMENT,
+            ServicesAPI.RESOURCES.UPDATE_DOCUMENT,
             content,
             ResourceSet.class,
             "projectName",
@@ -492,11 +536,7 @@ public class ResourcesClient extends BaseServiceClient
     }
     var ret =
         client.postCollection(
-            ServicesAPI.RESOURCES.ADMIN.MANAGE_PROJECT,
-            request,
-            ResourceSet.class,
-            "urn",
-            projectName);
+            ServicesAPI.RESOURCES.MANAGE_PROJECT, request, ResourceSet.class, "urn", projectName);
 
     invalidateCaches();
 
@@ -523,7 +563,7 @@ public class ResourcesClient extends BaseServiceClient
     return client
         .withScope(scope)
         .getCollection(
-            ServicesAPI.RESOURCES.ADMIN.REMOVE_DOCUMENT,
+            ServicesAPI.RESOURCES.REMOVE_DOCUMENT,
             ResourceSet.class,
             "urn",
             assetUrn,
@@ -543,8 +583,7 @@ public class ResourcesClient extends BaseServiceClient
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
     return client
         .withScope(scope)
-        .getCollection(
-            ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT, ResourceSet.class, "urn", projectName);
+        .getCollection(ServicesAPI.RESOURCES.REMOVE_PROJECT, ResourceSet.class, "urn", projectName);
   }
 
   @Override
@@ -564,12 +603,12 @@ public class ResourcesClient extends BaseServiceClient
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   private void invalidateCaches() {

@@ -193,6 +193,12 @@ public interface Metadata extends Parameters<String> {
 
   public static String IM_KEY = "im:key";
 
+  /**
+   * Comes with a resolved observation to indicate that the observation is meant to become the
+   * current observer.
+   */
+  public static String IM_OBSERVER_TAG = "im:observer-tag";
+
   public static String IM_THEMATIC_AREA = "im:thematic-area";
 
   public static String IM_GEOGRAPHIC_AREA = "im:geographic-area";
@@ -230,8 +236,8 @@ public interface Metadata extends Parameters<String> {
   /** The Constant IM_MAX_TEMPORAL_SCALE. */
   public static final String IM_MAX_TEMPORAL_SCALE = "im:max-temporal-scale";
 
-  /** unique URN to a feature returned by a service */
-  public static final String IM_FEATURE_URN = "im:feature-urn";
+  //  /** unique URN to a feature returned by a service */
+  //  public static final String IM_FEATURE_URN = "im:feature-urn";
 
   /**
    * If present in project metadata and it encodes a file:/ URL, the project is local to the

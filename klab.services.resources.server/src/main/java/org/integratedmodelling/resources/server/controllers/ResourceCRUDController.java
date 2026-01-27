@@ -1,59 +1,241 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
-import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
-@Tag(name = "Resources CRUD support")
+@Tag(
+    name = "Resources CRUD operations",
+    description =
+        "Endpoints for managing k.LAB resources, bridging to the info, submit, retrieve and delete endpoints of the Resources service")
+@Secured(Role.USER)
 public class ResourceCRUDController {
 
   @Autowired private ResourcesServer resourcesServer;
 
-  @Autowired private ServiceAuthorizationManager authenticationManager;
+  @Operation(
+      summary = "Retrieve asset",
+      description = "Retrieve a k.LAB asset by its knowledge class and URN")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Asset retrieved successfully"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Asset not found")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE)
+  public <T extends KlabAsset> @ResponseBody T retrieve(
+      @Parameter(description = "URN of the asset to retrieve") String urn,
+      @Parameter(description = "Knowledge class of the asset")
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
+      Principal principal) {
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
-  /**
-   * GET endpoint that returns uncontextualized resource data to the authorized user. If the
-   * resource is public, the endpoint works w/o authentication.
-   *
-   * @param urn
-   * @param principal
-   */
-  public void getResource(String urn, Principal principal) {}
+    if (scope instanceof UserScope userScope) {
+      return (T) resourcesServer.klabService().retrieve(urn, assetClass.getAssetClass(), userScope);
+    }
 
-  /**
-   * POST endpoint that takes geometry and (possibly) value URLs for dependencies from the {@link
-   * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin} and returns the contextualized data
-   * as a flow.
-   */
-  @Secured(Role.USER)
-  public void contextualizeResource(Principal principal) {}
-
-  /** PATCH endpoint that modifies a resource with new content, tracking all operations */
-  @Secured(Role.USER)
-  public void updateResource(Principal principal) {}
-
-  /**
-   * PUT endpoint that creates a new resource, returning the new URN (takes hints for it but may not
-   * follow them). Uses multipart data. Note that permissions are handled separately; at creation,
-   * the resource is only available to the creating identity
-   */
-  @Secured(Role.USER)
-  public String createResource(Principal principal) {
-    return null;
+    throw new KlabAuthorizationException("No valid scope in resource RETRIEVE request");
   }
 
-  /**
-   * DELETE endpoint that deletes a resource.
-   *
-   * @param urn
-   */
-  @Secured(Role.USER)
-  public void deleteResource(String urn, Principal principal) {}
+  @Operation(
+      summary = "List assets",
+      description = "List all assets for the specified knowledge class")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Assets listed successfully"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.LIST)
+  public <T extends KlabAsset> List<T> list(
+      @Parameter(description = "Knowledge class to list") @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
+      Principal principal) {
+
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope instanceof UserScope userScope) {
+      return (List<T>) resourcesServer.klabService().list(assetClass.getAssetClass(), userScope);
+    }
+
+    throw new KlabAuthorizationException("No valid scope in resource LIST request");
+  }
+
+  @Operation(
+      summary = "Query assets",
+      description = "Run a query for assets in the specified knowledge class")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Query executed successfully"),
+    @ApiResponse(responseCode = "400", description = "Invalid query parameters"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @PostMapping(ServicesAPI.RESOURCES.LIST)
+  public <T extends KlabAsset> List<T> query(
+      @Parameter(description = "Knowledge class to query") @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
+      Principal scope) {
+    return List.of(); // resourcesServer.klabService().q(assetClass, scope);
+  }
+
+  @Operation(summary = "Delete asset", description = "Delete a k.LAB asset by its URN")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Asset deleted successfully"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Asset not found")
+  })
+  @DeleteMapping(ServicesAPI.RESOURCES.DELETE)
+  public List<ResourceSet> delete(
+      @Parameter(description = "URN of the asset to delete") String urn,
+      @Parameter(description = "Knowledge class of the asset")
+          KlabAsset.KnowledgeClass knowledgeClass,
+      Principal principal) {
+
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope instanceof UserScope userScope) {
+      // TODO check authorization
+      return resourcesServer.klabService().delete(urn, knowledgeClass, userScope);
+    }
+
+    return List.of(
+        ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request")));
+  }
+
+  @Operation(summary = "Resolve asset", description = "Resolve a k.LAB asset by its URN")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Asset resolved successfully"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Asset not found")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE)
+  public ResourceSet resolve(
+      @Parameter(description = "URN of the asset to resolve") @PathVariable(name = "urn")
+          String urn,
+      @Parameter(description = "Knowledge class of the asset")
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
+      Principal principal) {
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope instanceof UserScope userScope) {
+      // TODO check authorization
+      return resourcesServer.klabService().resolve(urn, assetClass, userScope);
+    }
+    return ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request"));
+  }
+
+  @Operation(
+      summary = "Submit asset",
+      description =
+          "Submit or update an asset definition for the specified knowledge class and submission mode")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Asset submitted successfully"),
+    @ApiResponse(responseCode = "400", description = "Invalid asset payload"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @PutMapping(ServicesAPI.RESOURCES.SUBMIT)
+  public <T> List<ResourceSet> submit(
+      @Parameter(description = "URN of the asset to submit") @PathVariable(name = "urn") String urn,
+      @Parameter(description = "Knowledge class of the asset")
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass knowledgeClass,
+      @Parameter(description = "Submission mode (add, update, replace)")
+          @PathVariable(name = "submissionMode")
+          ResourcesService.SubmissionMode submissionMode,
+      @Parameter(description = "Serialized asset definition") @RequestBody String contents,
+      Principal principal) {
+
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+
+    if (scope instanceof UserScope userScope) {
+
+      switch (knowledgeClass) {
+        case RESOURCE -> {
+          var resource = Utils.Json.parseObject(contents, ResourceImpl.class);
+          return resourcesServer.klabService().submit(resource, submissionMode, userScope);
+        }
+        case NAMESPACE -> {
+          var namespace = Utils.Json.parseObject(contents, KimNamespaceImpl.class);
+          return resourcesServer.klabService().submit(namespace, submissionMode, userScope);
+        }
+        case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
+          var behavior = Utils.Json.parseObject(contents, KActorsBehaviorImpl.class);
+          return resourcesServer.klabService().submit(behavior, submissionMode, userScope);
+        }
+        case ONTOLOGY -> {
+          var ontology = Utils.Json.parseObject(contents, KimOntologyImpl.class);
+          return resourcesServer.klabService().submit(ontology, submissionMode, userScope);
+        }
+        case OBSERVATION_STRATEGY_DOCUMENT -> {
+          var strategies = Utils.Json.parseObject(contents, KimObservationStrategiesImpl.class);
+          return resourcesServer.klabService().submit(strategies, submissionMode, userScope);
+        }
+        case PROJECT -> {
+          var project = Utils.Json.parseObject(contents, ProjectImpl.class);
+          return resourcesServer.klabService().submit(project, submissionMode, userScope);
+        }
+        case WORKSPACE -> {
+          var workspace = Utils.Json.parseObject(contents, WorkspaceImpl.class);
+          return resourcesServer.klabService().submit(workspace, submissionMode, userScope);
+        }
+      }
+    }
+
+    return List.of(
+        ResourceSet.empty(
+            Notification.error("Cannot delete URN " + urn + " of type " + knowledgeClass)));
+  }
+
+  @Operation(
+      summary = "Get asset status",
+      description = "Retrieve status information for a k.LAB asset by URN")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Asset status retrieved successfully"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Asset not found")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.STATUS)
+  public Object status(
+      @Parameter(description = "URN of the asset") String urn,
+      @Parameter(description = "Knowledge class of the asset") KlabAsset.KnowledgeClass assetClass,
+      Principal scope) {
+    return null;
+  }
 }

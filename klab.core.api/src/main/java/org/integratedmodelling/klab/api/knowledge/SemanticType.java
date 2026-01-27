@@ -202,9 +202,11 @@ public enum SemanticType {
   }
 
   public static boolean isSubstantial(Set<SemanticType> type) {
-    var set = EnumSet.copyOf(type);
-    set.retainAll(DIRECT_OBSERVABLE_TYPES);
-    return !set.isEmpty();
+    return type.contains(SUBJECT) || type.contains(AGENT) || type.contains(EVENT);
+  }
+
+  public static boolean isDependent(Set<SemanticType> type) {
+    return type.contains(QUALITY) || type.contains(PROCESS);
   }
 
   public boolean isPredicate() {

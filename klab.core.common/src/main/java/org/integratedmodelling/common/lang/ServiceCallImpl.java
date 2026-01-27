@@ -1,6 +1,6 @@
 package org.integratedmodelling.common.lang;
 
-import org.integratedmodelling.common.lang.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.data.mediation.classification.LookupTabl
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.*;
-import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serial;

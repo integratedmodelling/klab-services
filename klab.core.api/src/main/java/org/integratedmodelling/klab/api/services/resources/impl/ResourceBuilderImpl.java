@@ -180,6 +180,12 @@ public class ResourceBuilderImpl implements Resource.Builder {
   }
 
   @Override
+  public Resource.Builder withUrn(String urn) {
+    this.urn = urn;
+    return this;
+  }
+
+  @Override
   public Resource.Builder withType(Artifact.Type type) {
     this.type = type;
     return this;

@@ -380,9 +380,10 @@ public class ResolutionCompiler {
     return ret;
   }
 
-//  private ContextScope contextualizeScope(ContextScope scope, Observable observable, Scale scale) {
-//
-//  }
+  //  private ContextScope contextualizeScope(ContextScope scope, Observable observable, Scale
+  // scale) {
+  //
+  //  }
 
   /**
    * If the runtime contains the observation, return it (in resolved or unresolved status but with a

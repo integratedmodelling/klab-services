@@ -497,10 +497,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
-        var instanceUrn = node.get("urn").asString();
-        if (instanceUrn != null) {
-          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
-        }
+        //        var instanceUrn = node.get("urn").asString();
+        //        if (instanceUrn != null) {
+        //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+        //        }
         var cData = new ObservationImpl.ContextualizationDataImpl();
         var service = scope.getService(RuntimeService.class);
         cData.setServiceUrl(service.getUrl());
@@ -753,8 +753,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(asset, additionalProperties);
     var ret = nextKey();
     props.put("id", ret);
-    if (asset instanceof Observation) {
-      props.put("urn", rootContextId + "." + ret);
+    if (asset instanceof Observation || asset instanceof Activity) {
+
+      // URN for substantials will be not null and set to the pre-resolution identity
+      var urn =
+          asset instanceof Observation observation
+              ? (observation.getUrn() == null
+                  ? (rootContextId + "." + ret)
+                  : (rootContextId
+                      + ":"
+                      + ObservationImpl.INDIVIDUALS_CATALOG_NAME
+                      + ":"
+                      + observation.getUrn()))
+              : (rootContextId + "." + ret);
+
+      props.put("urn", urn);
     }
     var result =
         query(
@@ -790,8 +803,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(asset, additionalProperties);
     var ret = nextKey();
     props.put("id", ret);
+
     if (asset instanceof Observation || asset instanceof Activity) {
-      props.put("urn", rootContextId + "." + ret);
+
+      // URN for substantials will be not null and set to the pre-resolution identity
+      var urn =
+          asset instanceof Observation observation
+              ? (observation.getUrn() == null
+                  ? (rootContextId + "." + ret)
+                  : (rootContextId
+                      + ":"
+                      + ObservationImpl.INDIVIDUALS_CATALOG_NAME
+                      + ":"
+                      + observation.getUrn()))
+              : (rootContextId + "." + ret);
+
+      props.put("urn", urn);
     }
     var result =
         query(
@@ -800,7 +827,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("properties", props),
             scope);
     if (result != null && result.hasNext()) {
-
       setId(asset, ret);
       var geometry =
           switch (asset) {
@@ -1018,7 +1044,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     switch (asset) {
       case ObservationImpl observation -> {
         observation.setId(id);
-        observation.setUrn(rootContextId + "." + id);
+        observation.setUrn(
+            observation.getUrn() == null
+                ? rootContextId + "." + id
+                : rootContextId
+                    + ":"
+                    + ObservationImpl.INDIVIDUALS_CATALOG_NAME
+                    + ":"
+                    + observation.getUrn());
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case ShardImpl buffer -> buffer.setId(id);

@@ -73,8 +73,9 @@ public class RuntimeService extends BaseService
 
   public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
-    ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
+    setComponentRegistry();
+    ServiceConfiguration.INSTANCE.setMainService(this);
     initializeMessaging();
   }
 
@@ -804,9 +805,13 @@ public class RuntimeService extends BaseService
 
       if (!contextualizable.getResourceUrns().isEmpty()) {
 
+        if (contextualizable.getResourceUrns().size() > 1) {
+          throw new KlabUnimplementedException("Multiple URNs not supported for contextualization");
+        }
+
         // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
         var resolution =
-            resourcesService.resolveResource(contextualizable.getResourceUrns(), scope);
+            resourcesService.resolveResource(contextualizable.getResourceUrns().getFirst(), scope);
         if (resolution.isEmpty()) {
           return resolution;
         }

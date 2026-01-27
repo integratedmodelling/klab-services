@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -700,6 +701,16 @@ public interface Data {
     Builder metadata(String key, Object value);
 
     /**
+     * Mandatory when building substantial individuals, should not be called for any other
+     * observation.
+     *
+     * @param namespace a valid namespace identifier
+     * @param id a valid identifier within the namespace
+     * @return this builder instance for method chaining
+     */
+    Builder identity(String namespace, String id);
+
+    /**
      * Returns a builder specialized for a secondary observation identified by a <em>known</em>
      * identifier. Using this is only necessary if anything must be set for the observation besides
      * the values, such as metadata. Otherwise the scanner can simply be retrieved directly using
@@ -717,9 +728,10 @@ public interface Data {
      * @param name the name of the object
      * @param observable the observable for the object FIXME should not be necessary?
      * @param geometry the geometry for the object
+     * @param identity the identity for the object. Mandatory for non-collective substantials.
      * @return a new builder for the object
      */
-    Builder object(String name, Observable observable, Geometry geometry);
+    Builder object(String name, Observable observable, Geometry geometry, Urn identity);
 
     /**
      * Create a scanner of the specified type using the filling curve and geometry declared for the
@@ -774,6 +786,16 @@ public interface Data {
    * @return the name of this data object
    */
   String name();
+
+  /**
+   * The identity is a <code>namespace:id</code> pair that must be non-null when the data specify an
+   * individual substantial, and should be null otherwise. It must be unique to the object and must
+   * ensures that only one object with that identity can exist in a digital twin, unless explicit
+   * strategies to establish identity linked to the semantics are defined.
+   *
+   * @return
+   */
+  Urn identity();
 
   /**
    * The observable URN. Never null.
@@ -884,6 +906,11 @@ public interface Data {
       @Override
       public String name() {
         return "unknown";
+      }
+
+      @Override
+      public Urn identity() {
+        return null;
       }
 
       @Override

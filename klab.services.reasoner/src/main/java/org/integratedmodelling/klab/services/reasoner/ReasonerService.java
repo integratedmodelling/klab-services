@@ -21,12 +21,11 @@ import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.Axiom;
-import org.integratedmodelling.common.lang.kim.KimConceptImpl;
-import org.integratedmodelling.common.lang.kim.KimObservableImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -39,12 +38,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Statement;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -69,9 +66,6 @@ import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -262,8 +256,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.owl = new OWL(scope);
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
-    ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
+    setComponentRegistry();
+    ServiceConfiguration.INSTANCE.setMainService(this);
   }
 
   private void readConfiguration(ServiceStartupOptions options) {
@@ -304,17 +299,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-//    /*
-//     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-//     * is no configured broker.
-//     */
-//    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-//      Logging.INSTANCE.info("Setting up embedded broker in local service");
-//      this.embeddedBroker = new EmbeddedBroker();
-//      Logging.INSTANCE.info(
-//          "Embedded broker is "
-//              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) : "offline"));
-//    }
+    //    /*
+    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
+    // there
+    //     * is no configured broker.
+    //     */
+    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
+    //      Logging.INSTANCE.info("Setting up embedded broker in local service");
+    //      this.embeddedBroker = new EmbeddedBroker();
+    //      Logging.INSTANCE.info(
+    //          "Embedded broker is "
+    //              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) :
+    // "offline"));
+    //    }
 
     /*
     This is called when resources are available, so this is the time to load the worldview.
@@ -442,7 +439,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
     } else {
-      KimConcept parsed = scope.getService(ResourcesService.class).retrieveConcept(definition);
+      KimConcept parsed = scope.getService(ResourcesService.class).declareConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
         //        concepts.put(definition, ret);
@@ -453,7 +450,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable resolveObservableInternal(String definition) {
     Observable ret = null;
-    KimObservable parsed = scope.getService(ResourcesService.class).retrieveObservable(definition);
+    KimObservable parsed = scope.getService(ResourcesService.class).declareObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
       if (ret != null) {
@@ -2800,14 +2797,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public ObservationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope) {
+  public ObservationStrategy computeIdentificationStrategies(
+      Observable observable, ContextScope scope) {
     return observationReasoner.computeIdentificationStrategy(observable, scope);
   }
 
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
-    KimConcept peer = scope.getService(ResourcesService.class).retrieveConcept(concept.getUrn());
+    KimConcept peer = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
     peer.visit(
         new Statement.Visitor() {
           @Override
@@ -2859,7 +2857,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declaration = declaration.replace(key.getUrn(), rep);
     }
 
-    return declareConcept(scope.getService(ResourcesService.class).retrieveConcept(declaration));
+    return declareConcept(scope.getService(ResourcesService.class).declareConcept(declaration));
   }
 
   @Override

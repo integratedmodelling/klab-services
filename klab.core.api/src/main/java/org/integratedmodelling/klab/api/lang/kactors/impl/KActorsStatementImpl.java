@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.lang.kactors;
+package org.integratedmodelling.klab.api.lang.kactors.impl;
 
 import java.io.Serial;
 import java.util.ArrayList;

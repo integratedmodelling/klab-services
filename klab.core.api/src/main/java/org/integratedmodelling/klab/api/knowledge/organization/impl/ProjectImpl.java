@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.knowledge;
+package org.integratedmodelling.klab.api.knowledge.organization.impl;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;

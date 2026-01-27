@@ -124,8 +124,6 @@ public abstract class BaseService implements KlabService {
       throw new KlabIllegalStateException(e);
     }
     createServiceSecret();
-    componentRegistry = new ComponentRegistry(this, options);
-
     Klab.INSTANCE.setExecutionContext(
         new Klab.ExecutionContext(type, url) {
           @Override
@@ -133,6 +131,10 @@ public abstract class BaseService implements KlabService {
             return Utils.Time.formatDuration(getBootTime(), System.currentTimeMillis());
           }
         });
+  }
+
+  protected void setComponentRegistry() {
+    this.componentRegistry = new ComponentRegistry(this, this.startupOptions);
   }
 
   public ComponentRegistry getComponentRegistry() {

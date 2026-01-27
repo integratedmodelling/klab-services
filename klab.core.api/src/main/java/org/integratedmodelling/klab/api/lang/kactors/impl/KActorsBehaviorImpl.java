@@ -1,6 +1,6 @@
-package org.integratedmodelling.common.lang.kactors;
+package org.integratedmodelling.klab.api.lang.kactors.impl;
 
-import org.integratedmodelling.common.lang.kim.KlabDocumentImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;

@@ -45,7 +45,7 @@ public class SyntacticMatcher {
               new CacheLoader<>() {
                 @Override
                 public KimObservable load(String key) throws Exception {
-                  return resourcesService.retrieveObservable(key);
+                  return resourcesService.declareObservable(key);
                 }
               });
 

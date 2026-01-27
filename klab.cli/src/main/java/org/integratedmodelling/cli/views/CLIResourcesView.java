@@ -259,12 +259,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     public void listResources() {
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-      if (service instanceof ResourcesService.Admin) {
-        for (var urn :
-            ((ResourcesService.Admin) service)
-                .listResourceUrns(KlabCLI.INSTANCE.engine().getOwner())) {
-          System.out.println("   " + urn);
-        }
+      for (var urn : service.listResourceUrns(KlabCLI.INSTANCE.engine().getOwner())) {
+        System.out.println("   " + urn);
       }
     }
   }
@@ -363,49 +359,46 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-      if (service instanceof ResourcesService.Admin) {
-        for (var project :
-            ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
-          out.println("   " + project.getUrn());
-          if (verbose) {
+      for (var project : service.listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
+        out.println("   " + project.getUrn());
+        if (verbose) {
 
-            boolean first = true;
-            for (var ontology : project.getOntologies()) {
-              if (first) {
-                out.println("   Ontologies:");
-              }
-              out.println("      " + ontology.getUrn());
-              first = false;
+          boolean first = true;
+          for (var ontology : project.getOntologies()) {
+            if (first) {
+              out.println("   Ontologies:");
             }
-            first = true;
-            for (var namespace : project.getNamespaces()) {
-              if (first) {
-                out.println("   Namespaces::");
-              }
-              out.println("      " + namespace.getUrn());
-              first = false;
+            out.println("      " + ontology.getUrn());
+            first = false;
+          }
+          first = true;
+          for (var namespace : project.getNamespaces()) {
+            if (first) {
+              out.println("   Namespaces::");
             }
-            for (var behavior : project.getBehaviors()) {
-              if (first) {
-                out.println("   Behaviors::");
-              }
-              out.println("      " + behavior.getUrn());
-              first = false;
+            out.println("      " + namespace.getUrn());
+            first = false;
+          }
+          for (var behavior : project.getBehaviors()) {
+            if (first) {
+              out.println("   Behaviors::");
             }
-            for (var app : project.getApps()) {
-              if (first) {
-                out.println("   Applications:");
-              }
-              out.println("      " + app.getUrn());
-              first = false;
+            out.println("      " + behavior.getUrn());
+            first = false;
+          }
+          for (var app : project.getApps()) {
+            if (first) {
+              out.println("   Applications:");
             }
-            for (var testcase : project.getTestCases()) {
-              if (first) {
-                out.println("   Test cases:");
-              }
-              out.println("      " + testcase.getUrn());
-              first = false;
+            out.println("      " + app.getUrn());
+            first = false;
+          }
+          for (var testcase : project.getTestCases()) {
+            if (first) {
+              out.println("   Test cases:");
             }
+            out.println("      " + testcase.getUrn());
+            first = false;
           }
         }
       }
@@ -510,9 +503,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       @Override
       public void run() {
         var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-        if (service instanceof ResourcesService.Admin) {
-          ((ResourcesService.Admin) service).deleteProject(project, KlabCLI.INSTANCE.user());
-        }
+        service.deleteProject(project, KlabCLI.INSTANCE.user());
       }
     }
   }
@@ -676,16 +667,16 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       @Override
       public void run() {
         var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-        if (service instanceof ResourcesService.Admin) {
-          ((ResourcesService.Admin) service).deleteWorkspace(workspace, KlabCLI.INSTANCE.user());
-        }
+        service.deleteWorkspace(workspace, KlabCLI.INSTANCE.user());
       }
     }
   }
 
   @Override
   public void workspaceModified(
-          NavigableContainer changedContainer, ResourceSet changes,  Collection<NavigableAsset> changedAssets) {}
+      NavigableContainer changedContainer,
+      ResourceSet changes,
+      Collection<NavigableAsset> changedAssets) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {}

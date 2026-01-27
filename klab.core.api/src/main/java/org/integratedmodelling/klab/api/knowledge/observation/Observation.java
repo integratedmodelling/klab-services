@@ -91,7 +91,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     String getAdapterId();
 
     /**
-     * The parameters for the adapter that contextualized the observation, if any.
+     * The parameters for the adapter that contextualized the observation, if any. Parameters
+     * prefixed with `resource.` specify more persistent operations to create or update existing
+     * resources in specified services.
      *
      * @return
      */

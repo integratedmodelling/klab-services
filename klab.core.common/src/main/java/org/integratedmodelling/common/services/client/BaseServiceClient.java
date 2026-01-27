@@ -10,12 +10,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-import org.glassfish.tyrus.spi.ClientContainer;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
-import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -35,7 +33,6 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -225,14 +222,14 @@ public abstract class BaseServiceClient implements KlabService {
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
+        .get(ServicesAPI.RESOURCES.RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
   }
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
     return client
         .withScope(scope)
-        .put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
+        .put(ServicesAPI.RESOURCES.RIGHTS, resourcePrivileges, "urn", resourceUrn);
   }
 
   @Override

@@ -13,6 +13,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -31,6 +32,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -60,8 +62,9 @@ public class ResolverService extends BaseService implements Resolver {
 
   public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RESOLVER, options);
-    ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
+    setComponentRegistry();
+    ServiceConfiguration.INSTANCE.setMainService(this);
     this.resourcesKbox = new ResourcesKBox(scope, options, this);
   }
 
@@ -320,10 +323,10 @@ public class ResolverService extends BaseService implements Resolver {
   public Resource submitResource(Observation observation, ContextScope contextScope) {
     Logging.INSTANCE.warn("Submitting resource!");
 
+    var cData = observation.getContextualizationData();
+
     var resourceBuilder =
-        Resource.builder(observation.getContextualizationData())
-            .withServiceId(serviceId())
-            .withGeometry(observation.getGeometry());
+        Resource.builder(cData).withServiceId(serviceId()).withGeometry(observation.getGeometry());
     for (var key : observation.getMetadata().keySet()) {
       resourceBuilder.withMetadata(key, observation.getMetadata().get(key));
     }
@@ -340,7 +343,12 @@ public class ResolverService extends BaseService implements Resolver {
     var resource = resourceBuilder.build();
 
     if (contextScope.getConfiguration().getPersistence().survivesShutdown) {
+
       resourcesKbox.putResource(resource);
+
+      if (cData.getParameters().containsKey("resource")) {
+        Thread.ofVirtual().start(() -> publishResourceToService(resource, cData, contextScope));
+      }
     }
 
     // make available to the scope to use during resolution
@@ -350,6 +358,61 @@ public class ResolverService extends BaseService implements Resolver {
         .addLocalResource(resource);
 
     return resource;
+  }
+
+  private void publishResourceToService(
+      Resource resource, Observation.ContextualizationData cData, ContextScope contextScope) {
+
+    var definition = cData.getParameters().get("resource", Parameters.class);
+    ResourcesService service = null;
+    String serviceName = null;
+    ResourcesService.SubmissionMode submissionMode = ResourcesService.SubmissionMode.REPLACE;
+    if (definition.containsKey("service")) {
+      serviceName = definition.get("service").toString();
+      service =
+          contextScope.getServices(ResourcesService.class).stream()
+              .filter(s -> s.serviceName().equals(definition.get("service").toString()))
+              .findAny()
+              .orElse(null);
+    }
+    if (service == null) {
+      resource
+          .getNotifications()
+          .add(Notification.error("No service found for resource publishing!"));
+      return;
+    }
+
+    var catalogDef = definition.get("catalog");
+    var namespaceDef = definition.get("namespace");
+    var idDef = definition.get("id");
+
+    var catalog = catalogDef == null ? null : catalogDef.toString();
+    var namespace = namespaceDef == null ? null : namespaceDef.toString();
+    var id = idDef == null ? null : idDef.toString();
+
+    if (definition.containsKey("mode")) {
+      submissionMode =
+          ResourcesService.SubmissionMode.valueOf(
+              definition.get("mode").toString().toUpperCase());
+    }
+
+    if (id == null || namespace == null || catalog == null) {
+      resource
+          .getNotifications()
+          .add(Notification.error("Not enough information to publish resource to service"));
+      return;
+    }
+
+    var resourceBuilder =
+        Resource.builder(cData)
+            .withServiceId(serviceId())
+            .withGeometry(resource.getGeometry())
+            .withUrn(serviceName + ":" + catalog + ":" + namespace + ":" + id);
+    for (var key : resource.getMetadata().keySet()) {
+      resourceBuilder.withMetadata(key, resource.getMetadata().get(key));
+    }
+
+    service.submit(resourceBuilder.build(), submissionMode, contextScope);
   }
 
   @Override
