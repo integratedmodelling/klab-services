@@ -421,7 +421,7 @@ public interface DigitalTwin extends RuntimeAsset {
    * Assemble the passed parameters into an unresolved Observation, to be inserted into the
    * knowledge graph and resolved.
    *
-   * @param scope a scope used to resolve semantics.
+   * @param scope any valid scope, used to resolve semantics.
    * @param resolvables
    * @return a new unresolved observation, or null if the parameters do not resolve to a valid one
    */
@@ -431,18 +431,14 @@ public interface DigitalTwin extends RuntimeAsset {
 
     String name = null;
     Geometry geometry = null;
-    Geometry observerGeometry = null;
     Observable observable = null;
-    String resourceUrn = null;
-    String modelUrn = null;
     String defaultValue = null;
     Metadata metadata = Metadata.create();
-    boolean isObserver = false;
     long id = Observation.UNASSIGNED_ID;
     Urn identity = null;
     Observation.ContextualizationData contextualizationData = null;
 
-    Geometry ogeom = null;
+    Geometry oGeom = null;
     if (resolvables != null) {
       for (Object o : resolvables) {
         if (o instanceof Observable obs) {
@@ -469,7 +465,11 @@ public interface DigitalTwin extends RuntimeAsset {
                   || "observer".equals(symbol.getDefineClass()))
               && symbol.getValue() instanceof Map<?, ?> definition) {
 
-            isObserver = "observer".equals(symbol.getDefineClass());
+            if ("observer".equals(symbol.getDefineClass())) {
+              // tell the clients that this has been defined as an observer
+              metadata.put(Metadata.IM_OBSERVER_TAG, true);
+            }
+
             identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
 
             name = symbol.getName();
@@ -490,7 +490,7 @@ public interface DigitalTwin extends RuntimeAsset {
 
             if (definition.containsKey("geometry")
                 && definition.get("geometry") instanceof Map<?, ?>) {
-              ogeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
+              oGeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
             }
 
             if (definition.containsKey("contextualization")
@@ -506,8 +506,8 @@ public interface DigitalTwin extends RuntimeAsset {
               contextualizationData = defineContextualization(contextualization, scope);
             }
 
-            if (geometry == null && ogeom != null) {
-              geometry = ogeom;
+            if (geometry == null && oGeom != null) {
+              geometry = oGeom;
             }
 
             for (var key : definition.keySet()) {
@@ -523,7 +523,6 @@ public interface DigitalTwin extends RuntimeAsset {
               scope
                   .getService(Reasoner.class)
                   .resolveObservable(model.getObservables().getFirst().getUrn());
-          modelUrn = model.getUrn();
         } else if (o instanceof Map<?, ?> map) {
           // metadata
           metadata.putAll((Map<? extends String, ?>) map);
@@ -558,10 +557,14 @@ public interface DigitalTwin extends RuntimeAsset {
           scope.error("Identity must be in the form namespace:id");
           return null;
         }
-        ret.setUrn(identity.getUrn());
+        if (!observable.getSemantics().isCollective()
+            && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+          ret.setUrn(identity.getUrn());
+        }
       } else if (!observable.getSemantics().isCollective()
           && SemanticType.isSubstantial(observable.getSemantics().getType())) {
-        scope.error("Observations of substantials must have an explicit unique identity");
+        scope.error(
+            "Observations of individual substantials must specify a unique identity, passed as a Urn object <namespace>:<identifier>");
         return null;
       }
 
@@ -579,9 +582,11 @@ public interface DigitalTwin extends RuntimeAsset {
     ret.setServiceId(scope.getService(RuntimeService.class).serviceId());
     ret.setServiceUrl(scope.getService(RuntimeService.class).getUrl());
 
-    if (contextualization.containsKey("persist")
-        && contextualization.get("persist") instanceof Boolean persist) {
-      ret.setPersistent(persist);
+    if ((contextualization.containsKey("persist")
+            && contextualization.get("persist") instanceof Boolean persist
+            && persist)
+        || (contextualization.get("resource") instanceof Map<?, ?>)) {
+      ret.setPersistent(true);
     }
 
     for (var key : contextualization.keySet()) {

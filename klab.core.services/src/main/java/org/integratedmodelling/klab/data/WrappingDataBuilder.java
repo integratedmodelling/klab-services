@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -28,6 +29,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
   private final Scheduler.Event event;
   private final Storage.Scanner scanner;
   private final List<Notification> notifications = new ArrayList<>();
+  private final Urn identity;
 
   public WrappingDataBuilder(
       Data data,
@@ -42,6 +44,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     this.adapterId = adapterId;
     this.event = event;
     this.scanner = scanner;
+    this.identity = data.identity();
   }
 
   @Override
@@ -58,7 +61,12 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
       var observable = reasoner.resolveObservable(child.semantics());
       var observation =
           DigitalTwin.createObservation(
-              scope, child.name(), observable, child.geometry(), child.metadata());
+              scope,
+              child.name(),
+              observable,
+              child.geometry(),
+              child.metadata(),
+              child.identity());
       if (observation.getContextualizationData()
           instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
         contextualizationData.setAdapterId(adapterId);
@@ -73,7 +81,12 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
 
   @Override
   public Data.Builder adapter(String adapterId) {
-    return null;
+    return this;
+  }
+
+  @Override
+  public Data.Builder identity(String namespace, String id) {
+    return this;
   }
 
   @Override
@@ -89,7 +102,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
   }
 
   @Override
-  public Data.Builder object(String name, Observable observable, Geometry geometry) {
+  public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
     throw new KlabIllegalStateException("Operation not admitted on a wrapping data builder.");
   }
 

@@ -651,7 +651,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               "Resource " + resource.getUrn() + " failed remote pre-contextualization validation"));
     }
 
-    var builder = new SerializingDataBuilder(name, input, observation.getGeometry());
+    var builder = new SerializingDataBuilder(name, input, observation.getGeometry(), null);
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(

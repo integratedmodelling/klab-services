@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -21,13 +22,19 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   private final Observation observation;
   private List<Data.Builder> objects = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
+  private Urn identity;
 
   public DirectDataBuilder(
-      String name, Data inputData, Observation observation, ContextScope contextScope) {
+      String name,
+      Data inputData,
+      Observation observation,
+      ContextScope contextScope,
+      Urn identity) {
     this.scope = contextScope;
     this.name = name;
     this.inputData = inputData;
     this.observation = observation;
+    this.identity = identity;
   }
 
   private DirectDataBuilder(DirectDataBuilder other) {
@@ -35,6 +42,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
     this.name = other.name;
     this.inputData = other.inputData;
     this.observation = other.observation;
+    this.identity = other.identity;
     this.scanners.putAll(other.scanners);
   }
 
@@ -47,6 +55,12 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   @Override
   public List<Data.Builder> getObjects() {
     return objects;
+  }
+
+  @Override
+  public Data.Builder identity(String namespace, String id) {
+    this.identity = Urn.of(namespace + ":" + id);
+    return this;
   }
 
   @Override
@@ -70,9 +84,9 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   }
 
   @Override
-  public Data.Builder object(String name, Observable observable, Geometry geometry) {
-    var observation = DigitalTwin.createObservation(scope, name, observable, geometry);
-    var builder = new DirectDataBuilder(name, null, observation, scope);
+  public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
+    var observation = DigitalTwin.createObservation(scope, name, observable, geometry, identity);
+    var builder = new DirectDataBuilder(name, null, observation, scope, identity);
     objects.add(builder);
     return builder;
   }

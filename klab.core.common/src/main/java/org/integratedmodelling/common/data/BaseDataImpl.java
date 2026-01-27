@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.common.data.Instance;
@@ -32,6 +33,7 @@ public class BaseDataImpl implements Data {
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
   private List<Notification> notifications = new ArrayList<>();
+  private Urn identity;
 
   public BaseDataImpl(Instance instance, Collection<Notification> notifications) {
     this.instance = instance;
@@ -52,6 +54,11 @@ public class BaseDataImpl implements Data {
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public Urn identity() {
+    return identity;
   }
 
   @Override
@@ -108,6 +115,10 @@ public class BaseDataImpl implements Data {
 
   public Map<Integer, String> getDataKey() {
     return dataKey;
+  }
+
+  public void setIdentity(Urn identity) {
+    this.identity = identity;
   }
 
   public void setDataKey(Map<Integer, String> dataKey) {
