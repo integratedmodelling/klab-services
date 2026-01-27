@@ -40,6 +40,13 @@ public @interface ResourceAdapter {
   String name();
 
   /**
+   * Description may accept Markdown syntax.
+   *
+   * @return
+   */
+  String description() default "";
+
+  /**
    * Adapter parameters. All must be declared in order to be accepted; passing invalid parameters is
    * cause of automatic rejection.
    *
