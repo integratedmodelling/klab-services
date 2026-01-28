@@ -989,6 +989,20 @@ public class ReasonerController {
   }
 
   @Operation(
+      summary = "Get core substantial",
+      description =
+          "Retrieves the core substantial type for the passed type")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Core substantial retrieved successfully")
+      })
+  @PostMapping(ServicesAPI.REASONER.CORE_SUBSTANTIAL)
+  public Concept coreSubstantial(
+      @Parameter(description = "The substantial concept to analyze") @RequestBody Concept arg) {
+    return reasoner.klabService().baseSubstantialType(arg);
+  }
+
+  @Operation(
       summary = "Get implied roles",
       description = "Retrieves all implied roles for the specified concept")
   @ApiResponses(

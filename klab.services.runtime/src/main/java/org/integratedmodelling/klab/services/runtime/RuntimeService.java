@@ -27,10 +27,7 @@ import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IdentificationStrategy;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -609,14 +606,18 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
+      var cohort = getCohortFor(observation);
+
       submissionScope
           .getCurrentTransaction()
           .link(
               scope.getContextObservation() == null
-                  ? RuntimeAsset.CONTEXT_ASSET
+                  ? (cohort == null ? RuntimeAsset.CONTEXT_ASSET : cohort)
                   : scope.getContextObservation(),
               observation,
-              GraphModel.Relationship.HAS_CHILD);
+              cohort == null
+                  ? GraphModel.Relationship.HAS_CHILD
+                  : GraphModel.Relationship.HAS_MEMBER);
       submissionScope
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
@@ -684,6 +685,10 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  private Cohort getCohortFor(Observation observation) {
+    return null;
   }
 
   private void publishContextualization(

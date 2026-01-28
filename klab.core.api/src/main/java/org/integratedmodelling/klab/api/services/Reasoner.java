@@ -174,6 +174,19 @@ public interface Reasoner extends KlabService {
   Concept coreObservable(Semantics first);
 
   /**
+   * The base substantial type is the core concrete observable type for a substantial (subject,
+   * event or agent) that identifies its base category. Normally simply the observable (e.g. a
+   * Terrestrial Region becomes a Region). If the original type has an individual identity (whose
+   * adoption makes the subject a concrete individual), the lexical root of the identity is added to
+   * the result (France Region becomes Country Region). Any non-identifying attributes or roles are
+   * removed.
+   *
+   * @param concept
+   * @return
+   */
+  Concept baseSubstantialType(Semantics concept);
+
+  /**
    * @param concept
    * @return
    */

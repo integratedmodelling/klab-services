@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
  * admissible tokens during interactive building of observables.
  *
  * <p>FIXME this has inconsistent coverage and should be reorganized along with the APIs that use
- *  it.
+ * it.
  */
 public enum SemanticRole {
 
@@ -60,17 +61,18 @@ public enum SemanticRole {
     this.kimDeclaration = kimDeclaration;
   }
 
-  public List<SemanticRole> modifiers() {
-    return List.of(
-        INHERENT,
-        CAUSANT,
-        CAUSED,
-        COMPRESENT,
-        COOCCURRENT,
-        GOAL,
-        ADJACENT,
-        RELATIONSHIP_SOURCE,
-        RELATIONSHIP_TARGET);
+  public static SemanticRole[] modifiers() {
+    return new SemanticRole[] {
+      INHERENT,
+      CAUSANT,
+      CAUSED,
+      COMPRESENT,
+      COOCCURRENT,
+      GOAL,
+      ADJACENT,
+      RELATIONSHIP_SOURCE,
+      RELATIONSHIP_TARGET
+    };
   }
 
   public boolean appliesTo(SemanticType type) {

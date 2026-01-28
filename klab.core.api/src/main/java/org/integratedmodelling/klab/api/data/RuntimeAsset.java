@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -22,7 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  * <p>For now this is little more than a tag interface. It will contain methods to subscribe to
  * events relative to the asset through the messaging subsystem.
  *
- * TODO this should extend KlabAsset
+ * <p>TODO this should extend KlabAsset
  */
 public interface RuntimeAsset /*extends KlabAsset*/ {
 
@@ -52,8 +53,8 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
     ACTIVITY(Activity.class),
     PLAN(Plan.class),
     AGENT(Agent.class),
-    //    ARTIFACT(Storage.class),
     DATA(Storage.Shard.class),
+    COHORT(Cohort.class),
     LINK(KnowledgeGraph.Link.class);
 
     public final Class<? extends RuntimeAsset> assetClass;

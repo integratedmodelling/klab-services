@@ -3,7 +3,10 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -96,12 +99,16 @@ public class ObservationReasoner {
    * @return
    */
   public List<ObservationStrategy> computeMatchingStrategies(
-      Observation observation, ContextScope scope) {
+      Observation observation, ContextScope scope, boolean isResolution) {
 
     var observable = observation.getObservable();
     List<ObservationStrategy> ret = new ArrayList<>();
 
     for (var strategy : observationStrategies) {
+
+      if (isResolution && strategy.getType() != KimObservationStrategy.Type.OBSERVATION) {
+        continue;
+      }
 
       QuickSemanticFilter filter = quickFilters.get(strategy.getUrn());
 
@@ -364,7 +371,9 @@ public class ObservationReasoner {
 
   public ObservationStrategy computeIdentificationStrategy(
       Observable observable, ContextScope scope) {
-    // TODO
-    return null;
+    // bit of a stretch, but no harm done
+    var observation = DigitalTwin.createObservation(scope, observable, Geometry.UNIVERSAL);
+    var strategies = computeMatchingStrategies(observation, scope, false);
+    return strategies.isEmpty() ? null : strategies.getFirst();
   }
 }
