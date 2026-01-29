@@ -51,7 +51,8 @@ public class ResourceCRUDController {
   })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE)
   public <T extends KlabAsset> @ResponseBody T retrieve(
-      @Parameter(description = "URN of the asset to retrieve") String urn,
+      @Parameter(description = "URN of the asset to retrieve") @PathVariable(name = "urn")
+          String urn,
       @Parameter(description = "Knowledge class of the asset")
           @PathVariable(name = "knowledgeClass")
           KlabAsset.KnowledgeClass assetClass,

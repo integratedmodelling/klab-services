@@ -155,7 +155,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     super(scope, Type.RESOURCES, options);
     this.resourcesKbox = new ResourcesKBox(scope, options, this);
     this.workspaceManager =
-        new WorkspaceManager(scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
+        new WorkspaceManager(
+            scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
     this.resourceManager = new ResourceManager(this.resourcesKbox, this);
 
     setComponentRegistry();
@@ -975,7 +976,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    return null;
+    if (Project.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveProject(urn, scope);
+    } else if (Workspace.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveWorkspace(urn, scope);
+    } else if (Resource.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveResource(List.of(urn), scope);
+    }
+    // TODO continue
+    throw new KlabIllegalStateException(
+        "Cannot retrieve " + assetClass.getSimpleName() + " " + urn);
   }
 
   @Override
@@ -1001,6 +1011,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       case COMPONENT:
         getComponentRegistry().unloadComponent(urn, Urn.of(urn).getVersion());
         // TODO delete from registry!
+        // TODO RESOURCE
     }
 
     return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));

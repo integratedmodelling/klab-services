@@ -81,6 +81,40 @@ public interface KlabAsset extends Serializable {
                 "Cannot convert  " + this + " into a project resource type");
       };
     }
+
+    public static KnowledgeClass classify(Class<? extends KlabAsset> cls) {
+      if (Concept.class.isAssignableFrom(cls)) {
+        return CONCEPT;
+      } else if (KimObservable.class.isAssignableFrom(cls)) {
+        return OBSERVABLE;
+      } else if (KimConceptStatement.class.isAssignableFrom(cls)) {
+        return CONCEPT_STATEMENT;
+      } else if (KimObservationStrategy.class.isAssignableFrom(cls)) {
+        return OBSERVATION_STRATEGY;
+      } else if (KimObservationStrategyDocument.class.isAssignableFrom(cls)) {
+        return OBSERVATION_STRATEGY_DOCUMENT;
+      } else if (KimOntology.class.isAssignableFrom(cls)) {
+        return ONTOLOGY;
+      } else if (Project.class.isAssignableFrom(cls)) {
+        return PROJECT;
+      } else if (Worldview.class.isAssignableFrom(cls)) {
+        return WORLDVIEW;
+      } else if (Workspace.class.isAssignableFrom(cls)) {
+        return WORKSPACE;
+      } else if (KimSymbolDefinition.class.isAssignableFrom(cls)) {
+        return DEFINITION;
+      } else if (KimNamespace.class.isAssignableFrom(cls)) {
+        return NAMESPACE;
+      } else if (KimModel.class.isAssignableFrom(cls)) {
+        return MODEL;
+      } else if (Resource.class.isAssignableFrom(cls)) {
+        return RESOURCE;
+      } else if (KActorsBehavior.class.isAssignableFrom(cls)) {
+        return BEHAVIOR;
+      } else {
+        throw new KlabUnimplementedException("Classification of asset class " + cls);
+      }
+    }
   }
 
   static KnowledgeClass classify(KlabAsset asset) {

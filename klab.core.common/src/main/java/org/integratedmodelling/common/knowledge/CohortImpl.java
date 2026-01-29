@@ -1,6 +1,9 @@
 package org.integratedmodelling.common.knowledge;
 
+import org.ehcache.spi.service.ServiceConfiguration;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -10,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public class CohortImpl implements Cohort {
 
@@ -87,4 +91,6 @@ public class CohortImpl implements Cohort {
   public void setParentId(long parentId) {
     this.parentId = parentId;
   }
+
+
 }
