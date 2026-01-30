@@ -55,7 +55,8 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
 
-    org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+    org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl ret =
+        new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
 
     ret.setLength(observableSyntax.getCodeLength());
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
@@ -144,7 +145,8 @@ public enum LanguageAdapter {
    * intelligently from the last, apply traits where they belong and bring the first "each" or
    * distribution operator to the final concept
    */
-  private KimConceptImpl adaptSemanticSequence(List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens) {
+  private KimConceptImpl adaptSemanticSequence(
+      List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens) {
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
@@ -452,8 +454,6 @@ public enum LanguageAdapter {
     ret.setNamespace(namespace.getUrn());
     ret.setDeprecated(model.getDeprecation() != null);
     ret.setDeprecation(model.getDeprecation());
-    ret.setUrn(namespace.getUrn() + "." + model.getName());
-    //        ret.setName(model.getName());
     ret.setOffsetInDocument(model.getCodeOffset());
     ret.setLength(model.getCodeLength());
     ret.setProjectName(namespace.getProjectName());
@@ -513,6 +513,11 @@ public enum LanguageAdapter {
       }
     }
 
+    /**
+     * TODO the model name should be redefined depending on the observable's description type,
+     * unless it is explicitly named.
+     */
+    ret.setUrn(namespace.getUrn() + "." + model.getName());
     ret.setInactive(inactive);
 
     for (var contextualizable : model.getContextualizations()) {
@@ -569,7 +574,8 @@ public enum LanguageAdapter {
 
   private KimConcept adaptSemantics(
       SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
-    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret =
+        new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));

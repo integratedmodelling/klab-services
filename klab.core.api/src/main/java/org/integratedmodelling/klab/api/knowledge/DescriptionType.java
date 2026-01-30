@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 
 import java.util.Collection;
 
@@ -19,23 +20,23 @@ public enum DescriptionType {
    * observe</code> statement). The instantiation of relationships ({@link #CONNECTION}) is handled
    * separately because of the non-independence from its targets.
    */
-  INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiate"),
+  INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiator"),
   /**
    * The observation activity that produces a configuration (aka EMERGENCE) - the instantiation of a
    * configuration.
    */
-  DETECTION(true, "configuration", Artifact.Type.CONFIGURATION, "detect"),
+  DETECTION(true, "configuration", Artifact.Type.CONFIGURATION, "detector"),
   /** The observation activity that produces a dynamic account of a process */
-  SIMULATION(false, "process", Artifact.Type.PROCESS, "simulate"),
+  SIMULATION(false, "process", Artifact.Type.PROCESS, "simulator"),
   /** The observation activity that produces a numeric quality */
-  QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantify"),
+  QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /**
    * The observation activity that produces a categorical quality (observes a conceptual category)
    * over a context.
    */
-  CATEGORIZATION(false, "concept", Artifact.Type.CONCEPT, "categorize"),
+  CATEGORIZATION(false, "concept", Artifact.Type.CONCEPT, "categorizer"),
   /** The observation activity that produces a boolean quality (presence/absence) */
-  VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verify"),
+  VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verifier"),
   /**
    * The observation activity that scans a group of observation to attribute a concrete trait or
    * role to each of them (if it is a quality, it will produce a transforming state for successive
@@ -43,26 +44,20 @@ public enum DescriptionType {
    * abstract form and an inherent observable. This is specified as <code>
    * ABSTRACT_TRAIT of SUBSTAMTIAL</code>.
    */
-  CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classify"),
+  CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classifier"),
   /**
    * The resolution activity of a concrete trait or role after it has been attributed to an
    * observation through {@link #CLASSIFICATION}. Explains the trait within the observation. This is
    * specified as <code>TRAIT of SUBSTANTIAL</code>.
    */
-  CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterize"),
+  CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterizer"),
   /**
    * The resolution activity of a concrete trait or role that has been attributed to a quality
    * observation. Transforms the quality so that it expresses the trait. This is specified as <code>
    * TRAIT of QUALITY</code>.
    */
-  TRANSFORMATION(false, "resolve", Artifact.Type.NUMBER, "transform"),
+  TRANSFORMATION(false, "resolve", Artifact.Type.NUMBER, "transformer"),
 
-  //    /**
-  //     * Compilation is the observation of a void observable, producing only side effects. Creates
-  //     non-semantic
-  //     * artifacts such as tables, charts, reports etc.
-  //     */
-  //    COMPILATION(false, "void"),
   /**
    * Acknowledgement is the "void" of observation activity: an object exists and we take notice of
    * its existence. It does not <em>produce</em> an observation but simply explains it through a
@@ -71,11 +66,11 @@ public enum DescriptionType {
    * instantiator's actuator). Acknowledgements can also be explicitly programmed in k.IM through
    * the <code>observe</code> statement.
    */
-  ACKNOWLEDGEMENT(false, "void", Artifact.Type.VOID, "explain"),
+  ACKNOWLEDGEMENT(false, "void", Artifact.Type.VOID, "explainer"),
   /**
    * Instantiation of relationships, requiring the "connected" countables to be observed as well.
    */
-  CONNECTION(true, "object", Artifact.Type.RELATIONSHIP, "connect");
+  CONNECTION(true, "object", Artifact.Type.RELATIONSHIP, "connector");
 
   private final boolean instantiation;
   private final String kdlType;
@@ -130,6 +125,11 @@ public enum DescriptionType {
     this.verbalForm = verbalForm;
   }
 
+  public static DescriptionType forSemantics(KimConcept observable) {
+    // TODO implement properly
+    return forSemantics(observable.getType(), observable.isCollective());
+  }
+
   /**
    * Return the description type that corresponds to the specified semantics, according to the
    * context of resolution.
@@ -139,6 +139,7 @@ public enum DescriptionType {
    *     observations or their traits); otherwise it refers to "explanation" of an existing
    *     observation or characteristic. It's only relevant for countables and traits.
    * @return the description type
+   * @deprecated use the other
    */
   public static DescriptionType forSemantics(Collection<SemanticType> type, boolean distributed) {
     if (type.contains(SemanticType.CLASS)) {

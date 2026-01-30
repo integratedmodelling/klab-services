@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
@@ -19,7 +20,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   @Serial private static final long serialVersionUID = 8531431719010407385L;
 
-  //  private SemanticRole semanticRole;
   private String name;
   private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
   private KimConcept observable;
@@ -48,6 +48,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private boolean pattern;
   private Set<String> patternVariables = new HashSet<>();
   private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
+  private DescriptionType descriptionType;
 
   public Set<SemanticType> getArgumentType() {
     return argumentType;
@@ -92,6 +93,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.pattern = other.pattern;
     this.patternVariables.addAll(other.patternVariables);
     this.valueOperators.addAll(other.valueOperators);
+    this.descriptionType = other.descriptionType;
   }
 
   @Override
@@ -212,6 +214,15 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   @Override
   public KimConcept getAdjacent() {
     return this.adjacent;
+  }
+
+  @Override
+  public DescriptionType getDescriptionType() {
+    return descriptionType;
+  }
+
+  public void setDescriptionType(DescriptionType descriptionType) {
+    this.descriptionType = descriptionType;
   }
 
   public void setName(String name) {

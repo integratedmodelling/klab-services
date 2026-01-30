@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
@@ -162,6 +163,14 @@ public interface KimConcept extends KlabStatement {
   SemanticType getFundamentalType();
 
   /**
+   * Get the description type of this concept when observed. This is determined by the fundamental
+   * type, the collective character, and the inherency.
+   *
+   * @return
+   */
+  DescriptionType getDescriptionType();
+
+  /**
    * Get the 'co-occurrent' (during) event type if any.
    *
    * @return
@@ -175,12 +184,12 @@ public interface KimConcept extends KlabStatement {
    */
   KimConcept getAdjacent();
 
-//  /**
-//   * Return a string suitable for naming a k.IM object after this concept.
-//   *
-//   * @return
-//   */
-//  String getCodeName();
+  //  /**
+  //   * Return a string suitable for naming a k.IM object after this concept.
+  //   *
+  //   * @return
+  //   */
+  //  String getCodeName();
 
   //  SemanticRole getSemanticRole();
 
