@@ -28,6 +28,8 @@ public enum DescriptionType {
   DETECTION(true, "configuration", Artifact.Type.CONFIGURATION, "detector"),
   /** The observation activity that produces a dynamic account of a process */
   SIMULATION(false, "process", Artifact.Type.PROCESS, "simulator"),
+  /** The observation activity that produces a measurable quality with units */
+  MEASUREMENT(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /** The observation activity that produces a numeric quality */
   QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /**
@@ -146,19 +148,21 @@ public enum DescriptionType {
       return CATEGORIZATION;
     } else if (type.contains(SemanticType.PRESENCE)) {
       return VERIFICATION;
+    } else if (type.contains(SemanticType.EXTENSIVE) || type.contains(SemanticType.INTENSIVE)) {
+      return MEASUREMENT;
+    }else if (type.contains(SemanticType.QUALITY)) {
+      return QUANTIFICATION;
     } else if (type.contains(SemanticType.RELATIONSHIP)) {
       return distributed ? CONNECTION : ACKNOWLEDGEMENT;
-    } else if (type.contains(SemanticType.QUANTIFIABLE)) {
-      return QUANTIFICATION;
     } else if (type.contains(SemanticType.CONFIGURATION)) {
       return DETECTION;
     } else if (type.contains(SemanticType.PROCESS)) {
       return SIMULATION;
-    } else if (type.contains(SemanticType.TRAIT)) {
+    } else if (type.contains(SemanticType.PREDICATE)) {
       return distributed
           ? CLASSIFICATION
           : CHARACTERIZATION; // TODO depends on the inherent, if quality it's TRANSFORMATION
-    } else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
+    } else if (type.contains(SemanticType.COUNTABLE)) {
       return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
     } else if (type.contains(SemanticType.NOTHING)) {
       return VOID;

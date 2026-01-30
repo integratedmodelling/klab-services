@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
@@ -55,8 +56,7 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
 
-    org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl ret =
-        new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+    var ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
 
     ret.setLength(observableSyntax.getCodeLength());
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
@@ -202,14 +202,13 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
 
-    KimConceptImpl ret = new KimConceptImpl();
+    var ret = new KimConceptImpl();
 
     ret.setLength(semantics.getCodeLength());
     ret.setOffsetInDocument(semantics.getCodeOffset());
     ret.setType(adaptSemanticType(semantics.getType()));
     ret.setNegated(semantics.isNegated());
     ret.setCollective(semantics.isCollective());
-    //    ret.setCodeName(semantics.codeName());
     ret.setDeprecation(semantics.getDeprecation());
     ret.setDeprecated(semantics.getDeprecation() != null);
     ret.setNamespace(namespace);
@@ -313,7 +312,6 @@ public enum LanguageAdapter {
     }
 
     // TODO establish abstract and generic nature
-
     ret.finalizeDefinition();
 
     return ret;

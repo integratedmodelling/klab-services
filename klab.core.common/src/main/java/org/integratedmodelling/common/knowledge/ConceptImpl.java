@@ -59,6 +59,7 @@ public class ConceptImpl implements Concept {
     this.collective = other.collective;
     this.annotations.addAll(other.annotations);
     this.qualifier = other.qualifier;
+    this.descriptionType = other.descriptionType;
   }
 
   public void setQualifier(LogicalConnector qualifier) {

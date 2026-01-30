@@ -988,7 +988,7 @@ public class RuntimeService extends BaseService
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
         switch (observation.getObservable().getDescriptionType()) {
-          case QUANTIFICATION -> Storage.Type.DOUBLE;
+          case QUANTIFICATION, MEASUREMENT -> Storage.Type.DOUBLE;
           case CATEGORIZATION -> Storage.Type.KEYED;
           case VERIFICATION -> Storage.Type.BOOLEAN;
           default ->

@@ -31,7 +31,9 @@ public enum SemanticType {
   INTENSIVE,
   /** */
   TRAIT,
-  /** */
+  /**
+   * @deprecated use PREDICATE
+   */
   IDENTITY,
   /** applies to IDENTITY to denote those that define individual entities uniquely */
   INDIVIDUAL,
@@ -117,7 +119,9 @@ public enum SemanticType {
   INTERACTIVE,
   /** */
   REACTIVE,
-  /** */
+  /**
+   * @deprecated use COUNTABLE
+   */
   DIRECT_OBSERVABLE,
   /** */
   COUNTABLE,

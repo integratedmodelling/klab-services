@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
@@ -885,7 +886,10 @@ public class ModelKbox extends ObservableKbox {
         m.setEnumeratedSpaceLocation(enumeratedSpaceLocation);
 
         m.setObservable(obs.getUrn());
-        m.setObservationType(obs.getDescriptionType().name());
+        m.setObservationType(
+            obs.getDescriptionType() == null
+                ? DescriptionType.VOID.name()
+                : obs.getDescriptionType().name());
         m.setObservableConcept(obs.getSemantics());
         m.setScope(model.getScope());
         m.setInScenario(namespace.isScenario());

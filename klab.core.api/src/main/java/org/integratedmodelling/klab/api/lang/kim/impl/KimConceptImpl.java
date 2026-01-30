@@ -660,7 +660,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           .append(((KimConceptImpl) operand).computeUrnAndParenthesize());
     }
 
-    return this.urn = ret.toString();
+    this.urn = ret.toString();
+    this.descriptionType = DescriptionType.forSemantics(this);
+
+    return this.urn;
   }
 
   /**

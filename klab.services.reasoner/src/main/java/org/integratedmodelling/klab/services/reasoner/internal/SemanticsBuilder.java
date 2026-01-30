@@ -148,7 +148,7 @@ public class SemanticsBuilder implements Observable.Builder {
   public Observable.Builder withTrait(Collection<Concept> concepts) {
     syntax.addTraits(
         concepts.stream().map(c -> resourcesService.declareConcept(c.getUrn())).toList(),
-        (added, original)-> {
+        (added, original) -> {
           var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           return baseTraitAdded.equals(baseTraitOriginal);
@@ -319,9 +319,9 @@ public class SemanticsBuilder implements Observable.Builder {
   }
 
   //  @Override
-//  public Observable.Builder withReferenceName(String s) {
-//    return null;
-//  }
+  //  public Observable.Builder withReferenceName(String s) {
+  //    return null;
+  //  }
 
   // TODO use a cache
   private Concept buildConcept(KimConcept kimConcept) {
@@ -553,6 +553,8 @@ public class SemanticsBuilder implements Observable.Builder {
         addValueOperator(valueOperator, ret);
       }
 
+      ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
+
       reasoner.owl().finalizeConcept(ret);
     }
 
@@ -569,6 +571,7 @@ public class SemanticsBuilder implements Observable.Builder {
     //  _, ' ' -> __, '()' -> ___ and any value op with a base64 hash of the value
 
     ret.setUrn(kimConcept.getUrn());
+    ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
 
     return ret;
   }
