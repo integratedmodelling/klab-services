@@ -32,6 +32,8 @@ public enum DescriptionType {
   MEASUREMENT(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /** The observation activity that produces a numeric quality */
   QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantifier"),
+  /** The observation activity that produces a numeric quality that quantifies value */
+  VALUATION(false, "number", Artifact.Type.QUANTITY, "valuator"),
   /**
    * The observation activity that produces a categorical quality (observes a conceptual category)
    * over a context.
@@ -128,7 +130,21 @@ public enum DescriptionType {
   }
 
   public static DescriptionType forSemantics(KimConcept observable) {
-    // TODO implement properly
+
+    // predicates are particular and cannot be classified based on type alone
+    if (observable.is(SemanticType.PREDICATE)) {
+      // depends on the inherency
+      var inherent = observable.getInherent();
+      if (inherent == null) {
+        // not observable as such
+        return VOID;
+      }
+      if (inherent.is(SemanticType.QUALITY)) {
+        return TRANSFORMATION;
+      }
+
+      return inherent.isCollective() ? CLASSIFICATION : CHARACTERIZATION;
+    }
     return forSemantics(observable.getType(), observable.isCollective());
   }
 
@@ -143,14 +159,16 @@ public enum DescriptionType {
    * @return the description type
    * @deprecated use the other
    */
-  public static DescriptionType forSemantics(Collection<SemanticType> type, boolean distributed) {
+  private static DescriptionType forSemantics(Collection<SemanticType> type, boolean distributed) {
     if (type.contains(SemanticType.CLASS)) {
       return CATEGORIZATION;
     } else if (type.contains(SemanticType.PRESENCE)) {
       return VERIFICATION;
     } else if (type.contains(SemanticType.EXTENSIVE) || type.contains(SemanticType.INTENSIVE)) {
       return MEASUREMENT;
-    }else if (type.contains(SemanticType.QUALITY)) {
+    } else if (type.contains(SemanticType.VALUE) || type.contains(SemanticType.MONETARY_VALUE)) {
+      return VALUATION;
+    } else if (type.contains(SemanticType.QUALITY)) {
       return QUANTIFICATION;
     } else if (type.contains(SemanticType.RELATIONSHIP)) {
       return distributed ? CONNECTION : ACKNOWLEDGEMENT;
@@ -158,10 +176,6 @@ public enum DescriptionType {
       return DETECTION;
     } else if (type.contains(SemanticType.PROCESS)) {
       return SIMULATION;
-    } else if (type.contains(SemanticType.PREDICATE)) {
-      return distributed
-          ? CLASSIFICATION
-          : CHARACTERIZATION; // TODO depends on the inherent, if quality it's TRANSFORMATION
     } else if (type.contains(SemanticType.COUNTABLE)) {
       return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
     } else if (type.contains(SemanticType.NOTHING)) {

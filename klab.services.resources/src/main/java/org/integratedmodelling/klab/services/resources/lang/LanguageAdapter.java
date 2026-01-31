@@ -486,6 +486,7 @@ public enum LanguageAdapter {
       throw new KlabUnimplementedException("non-semantic model support");
     }
 
+    KimObservable mainObservable = null;
     for (var observable : model.getObservables()) {
       var obs =
           adaptObservable(
@@ -493,6 +494,9 @@ public enum LanguageAdapter {
               namespace.getUrn(),
               namespace.getProjectName(),
               KlabAsset.KnowledgeClass.NAMESPACE);
+      if (mainObservable == null) {
+        mainObservable = obs;
+      }
       ret.getObservables().add(obs);
       if (obs.getSemantics().is(SemanticType.NOTHING)) {
         inactive = true;
@@ -511,11 +515,11 @@ public enum LanguageAdapter {
       }
     }
 
-    /**
-     * TODO the model name should be redefined depending on the observable's description type,
-     * unless it is explicitly named.
-     */
-    ret.setUrn(namespace.getUrn() + "." + model.getName());
+    var modelDescriptionType =
+        mainObservable == null || mainObservable.getSemantics().is(SemanticType.NOTHING)
+            ? "inactive"
+            : mainObservable.getSemantics().getDescriptionType().getVerbalForm();
+    ret.setUrn(namespace.getUrn() + "." + model.getName() + "-" + modelDescriptionType);
     ret.setInactive(inactive);
 
     for (var contextualizable : model.getContextualizations()) {
