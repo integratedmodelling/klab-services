@@ -708,12 +708,13 @@ public class RuntimeService extends BaseService
   private Observation checkIdentity(
       Observation observation, Cohort cohort, ServiceContextScope submissionScope) {
     var reasoner = submissionScope.getService(Reasoner.class);
-//    var comparisonStrategy =
-//        reasoner.computeIdentificationStrategies(observation.getObservable(), submissionScope);
+    //    var comparisonStrategy =
+    //        reasoner.computeIdentificationStrategies(observation.getObservable(),
+    // submissionScope);
     var identificationStrategy = defaultIdentificationStrategy;
-//    if (comparisonStrategy != null) {
-      // TODO compile into identificationStrategy
-//    }
+    //    if (comparisonStrategy != null) {
+    // TODO compile into identificationStrategy
+    //    }
 
     for (var sibling :
         submissionScope
@@ -745,6 +746,8 @@ public class RuntimeService extends BaseService
               .getDigitalTwin()
               .getKnowledgeGraph()
               .query(Cohort.class, scope)
+              .source(RuntimeAsset.CONTEXT_ASSET)
+              .along(GraphModel.Relationship.HAS_CHILD)
               .where(
                   GraphModel.Cohort.OBSERVABLE_FIELD,
                   KnowledgeGraph.Query.Operator.EQUALS,

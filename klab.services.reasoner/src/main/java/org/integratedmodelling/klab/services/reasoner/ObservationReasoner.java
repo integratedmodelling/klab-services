@@ -7,10 +7,8 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
@@ -372,7 +370,9 @@ public class ObservationReasoner {
   public ObservationStrategy computeIdentificationStrategy(
       Observable observable, ContextScope scope) {
     // bit of a stretch, but no harm done
-    var observation = DigitalTwin.createObservation(scope, observable, Geometry.UNIVERSAL);
+    var observation =
+        DigitalTwin.createObservation(
+            scope, observable, Geometry.UNIVERSAL, "dummy", Urn.of("urn:dummy"));
     var strategies = computeMatchingStrategies(observation, scope, false);
     return strategies.isEmpty() ? null : strategies.getFirst();
   }
