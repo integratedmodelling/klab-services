@@ -242,6 +242,7 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withoutValueOperators() {
+    this.syntax = (KimConceptImpl) this.syntax.removeComponents(SemanticRole.VALUE_OPERATOR);
     return this;
   }
 
@@ -253,12 +254,15 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder without(SemanticRole... roles) {
-    return null;
+    this.syntax = (KimConceptImpl) this.syntax.removeComponents(roles);
+    return this;
   }
 
   @Override
   public Observable.Builder withTemporalInherent(Concept concept) {
-    return null;
+    // TODO check
+//    this.syntax.setCooccurrent(resourcesService.declareConcept(concept.getUrn()));
+    return this;
   }
 
   @Override
@@ -317,11 +321,6 @@ public class SemanticsBuilder implements Observable.Builder {
   public Collection<Notification> getNotifications() {
     return notifications;
   }
-
-  //  @Override
-  //  public Observable.Builder withReferenceName(String s) {
-  //    return null;
-  //  }
 
   // TODO use a cache
   private Concept buildConcept(KimConcept kimConcept) {

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 
 /**
@@ -8,6 +9,10 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
  * relationship.
  */
 public interface Cohort extends RuntimeAsset {
+
+  Metadata getMetadata();
+
+  String getUrn();
 
   Observable getObservable();
 }

@@ -21,15 +21,17 @@ public class CohortImpl implements Cohort {
   private Observable observable;
   private long id = Observation.UNASSIGNED_ID;
   private long transientId = Klab.getNextId();
-  private long parentTransientId = 0;
+  private long parentTransientId = CONTEXT_ASSET.getTransientId();
   private int childrenCount;
-  private long parentId = -1;
+  private long parentId = CONTEXT_ASSET_ID;
+  private String urn;
 
   @Override
   public Observable getObservable() {
     return observable;
   }
 
+  @Override
   public Metadata getMetadata() {
     return metadata;
   }
@@ -49,6 +51,15 @@ public class CohortImpl implements Cohort {
 
   public void setId(long id) {
     this.id = id;
+  }
+
+  @Override
+  public String getUrn() {
+    return urn;
+  }
+
+  public void setUrn(String urn) {
+    this.urn = urn;
   }
 
   @Override
@@ -91,6 +102,4 @@ public class CohortImpl implements Cohort {
   public void setParentId(long parentId) {
     this.parentId = parentId;
   }
-
-
 }
