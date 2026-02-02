@@ -55,7 +55,8 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
     AGENT(Agent.class),
     DATA(Storage.Shard.class),
     COHORT(Cohort.class),
-    LINK(KnowledgeGraph.Link.class);
+    LINK(KnowledgeGraph.Link.class),
+    COMMIT(KnowledgeGraph.Commit.class);
 
     public final Class<? extends RuntimeAsset> assetClass;
 
@@ -87,6 +88,15 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
       }
       if (KnowledgeGraph.Link.class.isAssignableFrom(assetClass)) {
         return LINK;
+      }
+      if (KnowledgeGraph.Commit.class.isAssignableFrom(assetClass)) {
+        return COMMIT;
+      }
+      if (Cohort.class.isAssignableFrom(assetClass)) {
+        return COHORT;
+      }
+      if (Storage.Shard.class.isAssignableFrom(assetClass)) {
+        return DATA;
       }
       //      if (Artifact.class.isAssignableFrom(assetClass)
       //          || Storage.class.isAssignableFrom(assetClass)) {

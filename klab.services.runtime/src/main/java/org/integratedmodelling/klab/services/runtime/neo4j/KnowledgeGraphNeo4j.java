@@ -1235,7 +1235,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  protected synchronized long nextKey() {
+  public synchronized long nextKey() {
     var ret = -1L;
     var lastActivity = System.currentTimeMillis();
     var result = query("MATCH (n:Statistics) return n.nextId", Map.of(), userScope);

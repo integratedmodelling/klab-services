@@ -25,7 +25,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   protected UserScope userScope;
 
-  protected abstract long nextKey();
+  public abstract long nextKey();
 
   /**
    * Retrieve the asset with the passed key.

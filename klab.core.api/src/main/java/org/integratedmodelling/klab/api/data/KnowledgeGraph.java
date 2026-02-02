@@ -45,12 +45,17 @@ public interface KnowledgeGraph {
    * immediately after the new observation comes out of {@link ContextScope#submit(Observation)}.
    * The client side of the knowledge graph can do this in interactive applications.
    *
+   * <p>The commit is a RuntimeAsset that provides a unique identifier and timestamp. This is meant
+   * to enable storing in the knowledge graph (currently we don't do that) and presents a uniform
+   * interface for treating as part of a RuntimeAsset graph (for example as the root for
+   * visualization). Even if not in the KG, the ID must be guaranteed unique within the KG.
+   *
    * <p>The commit ID is available as part of the metadata of the committed observation and it can
    * be used to obtain the commit through the digital twin API.
    */
-  interface Commit {
+  interface Commit extends RuntimeAsset {
 
-    String getId();
+    long getId();
 
     /**
      * Server-side timestamp can be used to provide sequencing.

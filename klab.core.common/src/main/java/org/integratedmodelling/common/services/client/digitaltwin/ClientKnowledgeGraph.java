@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +68,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private final RuntimeClient runtimeClient;
   private final Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
   private final Set<Long> finalizedAssets = new HashSet<>();
+  private final Queue<KnowledgeGraph.Commit> commitQueue = new ConcurrentLinkedQueue<>();
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from engine settings */ 500)
@@ -113,6 +115,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       var commit = runtimeClient.getCommit(commitId, scope);
       if (commit != null) {
 
+        commitQueue.add(commit);
+
         // preload cohorts as we can't easily do that without complicating the logic
         for (var id : commit.getAddedCohorts()) {
           if (assetCache.getIfPresent(id) == null) {
@@ -147,7 +151,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
               }
             }
             if (!commit.getAddedCohorts().contains(link.getFirst())
-                    && link.getThird().equals(GraphModel.Relationship.HAS_MEMBER.toString())) {
+                && link.getThird().equals(GraphModel.Relationship.HAS_MEMBER.toString())) {
               var existingCohort = assetCache.getIfPresent(link.getFirst());
               if (existingCohort instanceof CohortImpl cohortImpl) {
                 cohortImpl.setChildrenCount(cohortImpl.getChildrenCount() + 1);
@@ -173,6 +177,14 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
                 Utils.Strings.join(focusIds, ",")));
       }
     }
+  }
+
+  /**
+   * The commit queue for all commits we got during the lifetime of the scope that hosts this
+   * @return
+   */
+  public Queue<KnowledgeGraph.Commit> getCommitQueue() {
+    return commitQueue;
   }
 
   /// Extract a subgraph from the current graph at a given hierarchy depth and showing a specified

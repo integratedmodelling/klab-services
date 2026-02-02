@@ -764,7 +764,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public String commit() {
+  public long commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
       activity.setName(activity.getType().name().substring(0, 3) + " OK");
@@ -778,7 +778,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     if (this.currentTransaction == null) {
-      return null;
+      return -1;
     }
 
     var ret = this.currentTransaction.commit();

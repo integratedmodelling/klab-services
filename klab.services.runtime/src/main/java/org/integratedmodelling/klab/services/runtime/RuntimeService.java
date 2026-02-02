@@ -663,7 +663,7 @@ public class RuntimeService extends BaseService
               dataflow -> {
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
-                    if (resolutionScope.commit() != null) {
+                    if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
                       }
@@ -685,8 +685,7 @@ public class RuntimeService extends BaseService
                   // TODO add more info about the contextualization to the action's metadata
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
-                  if (commitId != null
-                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
+                  if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                   }
                 } else {

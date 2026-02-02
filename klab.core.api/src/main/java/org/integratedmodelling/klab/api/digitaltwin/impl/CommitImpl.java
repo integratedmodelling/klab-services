@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class CommitImpl implements KnowledgeGraph.Commit {
 
-  private String id;
+  private long id;
   private long timestamp;
   private Set<Long> addedAssets = new HashSet<>();
   private Set<Triple<Long, Long, String>> addedLinks = new HashSet<>();
@@ -19,11 +19,36 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   private Set<Long> modifiedAssets = new HashSet<>();
 
   @Override
-  public String getId() {
+  public long getId() {
     return id;
   }
 
-  public void setId(String id) {
+  @Override
+  public long getParentId() {
+    return 0;
+  }
+
+  @Override
+  public long getTransientId() {
+    return 0;
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return 0;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return 0;
+  }
+
+  @Override
+  public Type classify() {
+    return Type.COMMIT;
+  }
+
+  public void setId(long id) {
     this.id = id;
   }
 

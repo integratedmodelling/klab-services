@@ -54,7 +54,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
-  private Cache<String, KnowledgeGraph.Commit> commitCache =
+  private Cache<Long, KnowledgeGraph.Commit> commitCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from service settings */ 200)
           .expireAfterAccess(/* TODO this too */ 10, TimeUnit.MINUTES)
@@ -277,11 +277,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public String commit() {
+    public long commit() {
 
       if (!failures.isEmpty()) {
         failures.forEach(t -> scope.error(t));
-        return null;
+        return -1;
       }
 
       if (activity instanceof ActivityImpl activity1) {
@@ -343,13 +343,13 @@ public class DigitalTwinImpl implements DigitalTwin {
               .setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-          return null;
+          return -1;
         } finally {
           // dio sanguinaccio
           try {
             kgTransaction.close();
             var commit = new CommitImpl();
-            commit.setId(Utils.Names.shortUUID());
+            commit.setId(knowledgeGraph.nextKey());
             commit.setTimestamp(System.currentTimeMillis());
             commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
             commit
