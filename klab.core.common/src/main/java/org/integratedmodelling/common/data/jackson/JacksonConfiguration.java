@@ -349,6 +349,7 @@ public class JacksonConfiguration {
           Actuator.class,
           KnowledgeGraph.Commit.class,
           Adapter.class,
+          Cohort.class,
           KnowledgeGraph.LinkInfo.class,
           Adapter.Parameter.class,
           Notification.LexicalContext.class,

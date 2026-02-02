@@ -359,6 +359,14 @@ public class DigitalTwinImpl implements DigitalTwin {
                         .filter(a -> a instanceof Observation)
                         .map(RuntimeAsset::getId)
                         .toList());
+            commit
+                .getAddedCohorts()
+                .addAll(
+                    stored.stream()
+                        .filter(a -> a instanceof Cohort)
+                        .map(RuntimeAsset::getId)
+                        .toList());
+
             commit.getAddedLinks().addAll(linked);
             // TODO add modified and deleted assets. Also we may need to notify changed n. of
             //  children

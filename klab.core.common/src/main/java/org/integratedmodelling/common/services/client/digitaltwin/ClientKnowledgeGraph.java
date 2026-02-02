@@ -6,6 +6,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -110,6 +113,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       var commit = runtimeClient.getCommit(commitId, scope);
       if (commit != null) {
 
+        // preload cohorts as we can't easily do that without complicating the logic
+        for (var id : commit.getAddedCohorts()) {
+          if (assetCache.getIfPresent(id) == null) {
+            assetCache.put(id, retrieveFromGraph(id, Cohort.class, scope));
+          }
+        }
+
         synchronized (graph) {
           /* Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
           commit.getAddedAssets().forEach(graph::addVertex);
@@ -134,6 +144,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
               var existingObservation = assetCache.getIfPresent(link.getFirst());
               if (existingObservation instanceof ObservationImpl observationImpl) {
                 observationImpl.setChildrenCount(observationImpl.getChildrenCount() + 1);
+              }
+            }
+            if (!commit.getAddedCohorts().contains(link.getFirst())
+                    && link.getThird().equals(GraphModel.Relationship.HAS_MEMBER.toString())) {
+              var existingCohort = assetCache.getIfPresent(link.getFirst());
+              if (existingCohort instanceof CohortImpl cohortImpl) {
+                cohortImpl.setChildrenCount(cohortImpl.getChildrenCount() + 1);
               }
             }
             if (!commit.getAddedObservations().contains(link.getFirst())
@@ -251,12 +268,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             asset.getId(),
             child.getId(),
             new Relationship(
-                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
+                asset instanceof Cohort
+                    ? GraphModel.Relationship.HAS_MEMBER
+                    : GraphModel.Relationship.HAS_CHILD,
+                asset.getId(),
+                child.getId(),
+                Map.of()));
         children.add(child);
       }
       return children;
     }
-    return outgoing(asset, GraphModel.Relationship.HAS_CHILD);
+    return outgoing(
+        asset,
+        asset instanceof Cohort
+            ? GraphModel.Relationship.HAS_MEMBER
+            : GraphModel.Relationship.HAS_CHILD);
   }
 
   @Override

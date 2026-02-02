@@ -75,6 +75,14 @@ public interface KnowledgeGraph {
     Set<Long> getAddedObservations();
 
     /**
+     * Separately list the IDs of all new assets that are cohorts. These are also included in the
+     * result of #getAddedAssets().
+     *
+     * @return
+     */
+    Set<Long> getAddedCohorts();
+
+    /**
      * IDs of all the links that were created in the transaction. Each link is a triple with the
      * source asset ID, the target asset ID and the relationship type. The IDs may refer to assets
      * previously seen in the graph and not present in #newAssets().

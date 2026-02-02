@@ -15,6 +15,7 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   private Set<Long> deletedAssets = new HashSet<>();
   private Set<Triple<Long, Long, String>> deletedLinks = new HashSet<>();
   private Set<Long> addedObservations = new HashSet<>();
+  private Set<Long> addedCohorts = new HashSet<>();
   private Set<Long> modifiedAssets = new HashSet<>();
 
   @Override
@@ -87,5 +88,14 @@ public class CommitImpl implements KnowledgeGraph.Commit {
 
   public void setModifiedAssets(Set<Long> modifiedAssets) {
     this.modifiedAssets = modifiedAssets;
+  }
+
+  @Override
+  public Set<Long> getAddedCohorts() {
+    return addedCohorts;
+  }
+
+  public void setAddedCohorts(Set<Long> addedCohorts) {
+    this.addedCohorts = addedCohorts;
   }
 }

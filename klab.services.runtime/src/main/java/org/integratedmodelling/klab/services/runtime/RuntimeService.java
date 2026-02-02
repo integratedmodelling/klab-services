@@ -625,9 +625,9 @@ public class RuntimeService extends BaseService
                   ? (cohort == null ? RuntimeAsset.CONTEXT_ASSET : cohort)
                   : scope.getContextObservation(),
               observation,
-              cohort == null
-                  ? GraphModel.Relationship.HAS_CHILD
-                  : GraphModel.Relationship.HAS_MEMBER);
+              (scope.getContextObservation() == null && cohort != null)
+                  ? GraphModel.Relationship.HAS_MEMBER
+                  : GraphModel.Relationship.HAS_CHILD);
 
       if (cohort != null && scope.getContextObservation() != null) {
         // ALSO link the observation to the cohort, which wasn't done in the previous statement
@@ -790,7 +790,7 @@ public class RuntimeService extends BaseService
         scope.getCurrentTransaction().add(cohort);
         scope
             .getCurrentTransaction()
-            .link(cohort, RuntimeAsset.CONTEXT_ASSET, GraphModel.Relationship.HAS_CHILD);
+            .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
         return cohort;
       } else {
         return result.getFirst();
