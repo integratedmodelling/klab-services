@@ -102,4 +102,9 @@ public class CohortImpl implements Cohort {
   public void setParentId(long parentId) {
     this.parentId = parentId;
   }
+
+  @Override
+  public String toString() {
+    return "(C) [obs=" + observable.getUrn() + "]";
+  }
 }

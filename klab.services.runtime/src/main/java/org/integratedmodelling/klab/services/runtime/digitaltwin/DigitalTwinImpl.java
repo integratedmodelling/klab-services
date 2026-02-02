@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -19,6 +20,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -255,6 +257,12 @@ public class DigitalTwinImpl implements DigitalTwin {
         sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
         update(sourceObs);
         targetObs.setParentTransientId(sourceObs.getTransientId());
+      } else if (source instanceof CohortImpl sourceCohort
+          && destination instanceof ObservationImpl targetObs
+          && relationship == GraphModel.Relationship.HAS_MEMBER) {
+        sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
+        update(sourceCohort);
+        targetObs.setParentTransientId(sourceCohort.getTransientId());
       }
     }
 
@@ -400,6 +408,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private boolean setupForStorage(RuntimeAsset asset, boolean trivial) {
       return switch (asset) {
         case Observation observation -> observation.getId() < 0;
+        case Cohort cohort -> cohort.getId() < 0;
         case Actuator actuator -> !trivial;
         case Activity activity -> {
           var ret = activity.getId() < 0 && !trivial;

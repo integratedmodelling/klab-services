@@ -628,6 +628,14 @@ public class RuntimeService extends BaseService
               cohort == null
                   ? GraphModel.Relationship.HAS_CHILD
                   : GraphModel.Relationship.HAS_MEMBER);
+
+      if (cohort != null && scope.getContextObservation() != null) {
+        // ALSO link the observation to the cohort, which wasn't done in the previous statement
+        submissionScope
+            .getCurrentTransaction()
+            .link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+      }
+
       submissionScope
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
@@ -707,6 +715,12 @@ public class RuntimeService extends BaseService
    */
   private Observation checkIdentity(
       Observation observation, Cohort cohort, ServiceContextScope submissionScope) {
+
+    if (cohort.getId() < 0) {
+      // cohort is new, can't have observations
+      return null;
+    }
+
     var reasoner = submissionScope.getService(Reasoner.class);
     //    var comparisonStrategy =
     //        reasoner.computeIdentificationStrategies(observation.getObservable(),
@@ -741,6 +755,21 @@ public class RuntimeService extends BaseService
 
       var reasoner = scope.getService(Reasoner.class);
       var cohortObservable = reasoner.baseSubstantialType(observation.getObservable());
+
+      // local uncommitted
+      var existing =
+          scope.getCurrentTransaction().assets().stream()
+              .filter(
+                  a ->
+                      a instanceof Cohort cohort
+                          && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+              .findFirst()
+              .orElse(null);
+
+      if (existing != null) {
+        return (Cohort) existing;
+      }
+
       var result =
           scope
               .getDigitalTwin()
