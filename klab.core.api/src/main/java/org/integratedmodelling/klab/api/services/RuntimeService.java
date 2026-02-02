@@ -35,8 +35,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RuntimeService extends KlabService {
 
-  KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope);
-
   /**
    * The core functors for k.LAB dataflow supporting the primary k.IM constructs such as inline
    * expressions, lookup tables and the like. The runtime must support all of these.
@@ -253,6 +251,15 @@ public interface RuntimeService extends KlabService {
    */
   <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope);
+
+  /**
+   * TODO this could simply be a KG query now that a Commit is a RuntimeAsset
+   *
+   * @param commitId
+   * @param scope
+   * @return
+   */
+  KnowledgeGraph.Commit getCommit(long commitId, ContextScope scope);
 
   interface Admin {
 

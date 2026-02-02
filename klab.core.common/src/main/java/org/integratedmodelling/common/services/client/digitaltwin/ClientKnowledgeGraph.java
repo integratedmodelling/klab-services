@@ -111,8 +111,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
 
-      var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, String.class);
-      var commit = runtimeClient.getCommit(commitId, scope);
+      var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, Number.class);
+      var commit = runtimeClient.getCommit(commitId.longValue(), scope);
       if (commit != null) {
 
         commitQueue.add(commit);
@@ -181,6 +181,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   /**
    * The commit queue for all commits we got during the lifetime of the scope that hosts this
+   *
    * @return
    */
   public Queue<KnowledgeGraph.Commit> getCommitQueue() {

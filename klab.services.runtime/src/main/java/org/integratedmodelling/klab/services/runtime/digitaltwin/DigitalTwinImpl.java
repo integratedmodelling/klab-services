@@ -582,7 +582,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     return new DataflowGraph(this.knowledgeGraph, this.rootScope);
   }
 
-  public KnowledgeGraph.Commit getCommit(String id) {
+  public KnowledgeGraph.Commit getCommit(long id) {
     return commitCache.getIfPresent(id);
   }
 

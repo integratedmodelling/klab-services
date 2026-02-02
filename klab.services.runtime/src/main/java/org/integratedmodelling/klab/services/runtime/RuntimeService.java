@@ -426,7 +426,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
+  public KnowledgeGraph.Commit getCommit(long commitId, ContextScope scope) {
     if (scope.getDigitalTwin() instanceof DigitalTwinImpl dt) {
       return dt.getCommit(commitId);
     }

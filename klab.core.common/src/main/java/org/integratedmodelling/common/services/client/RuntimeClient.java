@@ -244,7 +244,7 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
+  public KnowledgeGraph.Commit getCommit(long commitId, ContextScope scope) {
     return client
         .withScope(scope)
         .get(ServicesAPI.RUNTIME.GET_COMMIT_INFO, KnowledgeGraph.Commit.class, "id", commitId);
