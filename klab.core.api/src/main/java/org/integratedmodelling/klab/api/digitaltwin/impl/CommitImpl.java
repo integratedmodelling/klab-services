@@ -25,7 +25,7 @@ public class CommitImpl implements KnowledgeGraph.Commit {
 
   @Override
   public long getParentId() {
-    return 0;
+    return CONTEXT_ASSET_ID;
   }
 
   @Override
