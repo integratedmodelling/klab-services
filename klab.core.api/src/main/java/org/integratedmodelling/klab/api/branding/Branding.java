@@ -270,8 +270,4 @@ public interface Branding {
     // TODO
     return semantics.getUrn();
   }
-
-  static String pluralize(String nounPhrase) {
-    return nounPhrase.endsWith("s") ? nounPhrase : nounPhrase + "s";
-  }
 }

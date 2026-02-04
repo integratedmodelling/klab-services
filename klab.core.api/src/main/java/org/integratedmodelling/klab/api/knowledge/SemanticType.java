@@ -29,11 +29,11 @@ public enum SemanticType {
   EXTENSIVE,
   /** */
   INTENSIVE,
-  /** */
-  TRAIT,
   /**
    * @deprecated use PREDICATE
    */
+  TRAIT,
+  /** */
   IDENTITY,
   /** applies to IDENTITY to denote those that define individual entities uniquely */
   INDIVIDUAL,
