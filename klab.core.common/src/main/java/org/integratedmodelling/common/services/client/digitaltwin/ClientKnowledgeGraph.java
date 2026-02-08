@@ -117,6 +117,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
         commitQueue.add(commit);
 
+        // add it to the observation so that clients downstream can find it without further requests
+        observation.getMetadata().put(Metadata.IM_COMMIT, commit);
+
         // preload cohorts as we can't easily do that without complicating the logic
         for (var id : commit.getAddedCohorts()) {
           if (assetCache.getIfPresent(id) == null) {
@@ -167,15 +170,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         }
       }
 
-      /** Notify the UI of the new observations. */
-      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
-        clientDigitalTwin.ingest(
-            Message.create(
-                scope,
-                Message.MessageClass.UserInterface,
-                Message.MessageType.ObservationsInFocus,
-                Utils.Strings.join(focusIds, ",")));
-      }
+//      /** Notify the UI of the new observations. */
+//      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+//        clientDigitalTwin.ingest(
+//            Message.create(
+//                scope,
+//                Message.MessageClass.UserInterface,
+//                Message.MessageType.ObservationsInFocus,
+//                Utils.Strings.join(focusIds, ",")));
+//      }
     }
   }
 

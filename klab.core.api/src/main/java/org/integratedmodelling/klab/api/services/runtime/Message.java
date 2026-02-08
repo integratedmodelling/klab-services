@@ -219,14 +219,14 @@ public interface Message extends Serializable {
      * <p>TODO add the current context path and the user to the metadata in case it comes from a
      * linked DT.
      */
-    ObservationSubmissionFinished(Queue.Events, Observation.class),
+    ObservationSubmissionFinished(Queue.Events, Observation.class);
 
-    /**
-     * Sent within the client with class UserInterface to communicate a list of IDs that should be
-     * brought into focus in any visualization of the knowledge graph. The payload is a string of
-     * comma-separated observation IDs.
-     */
-    ObservationsInFocus(Queue.UI, String.class);
+//    /**
+//     * Sent within the client with class UserInterface to communicate a list of IDs that should be
+//     * brought into focus in any visualization of the knowledge graph. The payload is a string of
+//     * comma-separated observation IDs.
+//     */
+//    ObservationsInFocus(Queue.UI, String.class);
 
     public final Class<?> payloadClass;
     public final Queue queue;
