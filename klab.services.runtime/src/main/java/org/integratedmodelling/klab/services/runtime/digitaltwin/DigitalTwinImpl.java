@@ -351,6 +351,7 @@ public class DigitalTwinImpl implements DigitalTwin {
             var commit = new CommitImpl();
             commit.setId(knowledgeGraph.nextKey());
             commit.setTimestamp(System.currentTimeMillis());
+            commit.setOwner(scope.getUser().getUsername());
             commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
             commit
                 .getAddedObservations()

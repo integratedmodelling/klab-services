@@ -17,6 +17,7 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   private Set<Long> addedObservations = new HashSet<>();
   private Set<Long> addedCohorts = new HashSet<>();
   private Set<Long> modifiedAssets = new HashSet<>();
+  private String owner;
 
   @Override
   public long getId() {
@@ -122,5 +123,14 @@ public class CommitImpl implements KnowledgeGraph.Commit {
 
   public void setAddedCohorts(Set<Long> addedCohorts) {
     this.addedCohorts = addedCohorts;
+  }
+
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  public void setOwner(String username) {
+    this.owner = username;
   }
 }

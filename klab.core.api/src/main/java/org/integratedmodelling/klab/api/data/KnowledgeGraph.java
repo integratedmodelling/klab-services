@@ -111,6 +111,8 @@ public interface KnowledgeGraph {
     Set<Triple<Long, Long, String>> getDeletedLinks();
 
     Set<Long> getModifiedAssets();
+
+    String getOwner();
   }
 
   /**

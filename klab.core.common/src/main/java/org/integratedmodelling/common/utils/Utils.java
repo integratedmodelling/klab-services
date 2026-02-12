@@ -67,6 +67,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -677,6 +678,27 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static String formatDuration(long start, long end) {
       return formatDuration(Duration.of(end - start, ChronoUnit.MILLIS));
+    }
+
+    public static String actualizedFormat(TimeInstant timeInstant) {
+
+      var timePortion =
+          timeInstant.getHour() + ":" + timeInstant.getMinute() + ":" + timeInstant.getSecond();
+      var today = TimeInstant.create();
+
+      if (timeInstant.getYear() == today.getYear()
+          && timeInstant.getMonth() == today.getMonth()
+          && timeInstant.getDay() == today.getDay()) {
+        return timePortion;
+      }
+
+      return timeInstant.getYear()
+          + "-"
+          + timeInstant.getMonth()
+          + "-"
+          + timeInstant.getDay()
+          + " "
+          + timePortion;
     }
 
     public static String formatDuration(java.time.Duration duration) {
