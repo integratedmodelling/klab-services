@@ -170,15 +170,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         }
       }
 
-//      /** Notify the UI of the new observations. */
-//      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
-//        clientDigitalTwin.ingest(
-//            Message.create(
-//                scope,
-//                Message.MessageClass.UserInterface,
-//                Message.MessageType.ObservationsInFocus,
-//                Utils.Strings.join(focusIds, ",")));
-//      }
+      //      /** Notify the UI of the new observations. */
+      //      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+      //        clientDigitalTwin.ingest(
+      //            Message.create(
+      //                scope,
+      //                Message.MessageClass.UserInterface,
+      //                Message.MessageType.ObservationsInFocus,
+      //                Utils.Strings.join(focusIds, ",")));
+      //      }
     }
   }
 
@@ -333,6 +333,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    */
   public List<RuntimeAsset> incoming(RuntimeAsset target, GraphModel.Relationship relationship) {
     var asset = assetCache.getIfPresent(target.getId());
+    if (asset == null) {
+      return List.of();
+    }
     return graph.incomingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
         .map(defaultEdge -> getAsset(graph.getEdgeSource(defaultEdge), scope, RuntimeAsset.class))
@@ -394,6 +397,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    */
   public List<RuntimeAsset> outgoing(RuntimeAsset source, GraphModel.Relationship relationship) {
     var asset = assetCache.getIfPresent(source.getId());
+    if (asset == null) {
+      return List.of();
+    }
     return graph.outgoingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
         .map(defaultEdge -> getAsset(graph.getEdgeTarget(defaultEdge), scope, RuntimeAsset.class))
