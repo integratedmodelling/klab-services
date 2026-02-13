@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +23,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
@@ -55,7 +53,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.integratedmodelling.klab.runtime.storage.ShardImpl;
+import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
@@ -742,7 +740,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "MATCH (n:{assetLabel} {id: $id}) return n"
                     .replace("{assetLabel}", getLabel(assetClass)),
                 Map.of("id", key),
-                null);
+                scope);
     var adapted = adapt(result, assetClass, scope);
     return adapted.isEmpty() ? null : adapted.getFirst();
   }
@@ -753,7 +751,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (key instanceof Long id) {
       try {
         return (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
-      } catch (ExecutionException e) {
+      } catch (Throwable e) {
         // fall back to other strategy
         Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
       }

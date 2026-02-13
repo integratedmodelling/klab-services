@@ -17,8 +17,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.runtime.storage.ShardImpl;
+import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {

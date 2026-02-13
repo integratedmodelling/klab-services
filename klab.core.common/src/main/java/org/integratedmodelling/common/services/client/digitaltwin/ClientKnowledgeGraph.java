@@ -449,14 +449,19 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void clear() {}
 
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
-    return runtimeClient.getAsset(id, assetClass, scope);
+    try {
+      return runtimeClient.getAsset(id, assetClass, scope);
+    } catch (Throwable t) {
+      scope.warn("Ignoring unexpected error in service-side knowledge graph", t);
+      return null;
+    }
   }
 
   @Override
   public <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass) {
     try {
       return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
-    } catch (ExecutionException e) {
+    } catch (Throwable e) {
       // fall back to other strategy
       scope.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
     }
