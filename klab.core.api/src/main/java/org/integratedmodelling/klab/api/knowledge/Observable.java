@@ -493,22 +493,26 @@ public interface Observable extends Semantics, Resolvable {
   Collection<Pair<Concept, Concept>> getSpecializedComponents();
 
   /**
-   * Promote a concept to the corresponding observable.
+   * Promote any semantics to the corresponding observable.
    *
    * @param concept
    * @return
    */
-  static Observable promote(Concept concept) {
+  static Observable promote(Semantics concept) {
+
+    if (concept instanceof Observable observable) {
+      return observable;
+    }
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
       throw new KlabIllegalStateException(
           "k.LAB environment not configured to promote a concept to observable");
     }
-    return configuration.promoteConceptToObservable(concept);
+    return configuration.promoteConceptToObservable(concept.asConcept());
   }
 
   /**
-   * Same as {@link #promote(Concept)} but also sets the stated name.
+   * Same as {@link #promote(Semantics)} but also sets the stated name.
    *
    * @param concept
    * @param named

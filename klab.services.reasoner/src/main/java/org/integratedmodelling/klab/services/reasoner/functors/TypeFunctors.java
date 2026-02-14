@@ -2,13 +2,16 @@ package org.integratedmodelling.klab.services.reasoner.functors;
 
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 
+import java.util.Arrays;
 import java.util.List;
 
 /** Functor family for type checking and inspection, used by filters in observation strategies */
@@ -46,26 +49,39 @@ public class TypeFunctors {
   }
 
   @KlabFunction(
-          name = "predicates.count",
-          description = "Return the number of predicates in the expression",
-          type = Artifact.Type.BOOLEAN)
+      name = "predicates.count",
+      description = "Return the number of predicates in the expression",
+      type = Artifact.Type.BOOLEAN)
   public int countPredicates(Semantics semantics) {
     return reasoner.traits(semantics).size() + reasoner.roles(semantics).size();
+  }
+
+  @KlabFunction(
+      name = "predicates.splitfirst",
+      description = "Remove the first predicate from an observable and return the two parts",
+      type = Artifact.Type.CONCEPT)
+  public List<Concept> splitFirstPredicate(Semantics semantics, Scope scope) {
+    var builder = Observable.promote(semantics).builder(scope);
+    var firstPredicate = reasoner.traits(semantics).stream().findAny().orElse(null);
+    if (firstPredicate != null) {
+      semantics = builder.without(firstPredicate).buildObservable();
+    }
+    return Arrays.asList(firstPredicate, semantics.asConcept());
   }
 
   @KlabFunction(
       name = "operator.splitfirst",
       description = "Remove the first predicate from an observable and return the two parts",
       type = Artifact.Type.CONCEPT)
-  public List<Concept> splitFirst(Semantics semantics) {
+  public List<Concept> splitFirstOperator(Semantics semantics) {
     /** TODO TODO TODO */
     return List.of(semantics.asConcept(), semantics.asConcept());
   }
 
   @KlabFunction(
-          name = "lexicalroot",
-          description = "Return the lexical root of a predicate",
-          type = Artifact.Type.CONCEPT)
+      name = "lexicalroot",
+      description = "Return the lexical root of a predicate",
+      type = Artifact.Type.CONCEPT)
   public Concept lexicalRoot(Semantics semantics) {
     return reasoner.lexicalRoot(semantics);
   }
@@ -77,9 +93,10 @@ public class TypeFunctors {
   public Semantics changeArityToSingle(Semantics semantics) {
 
     if (semantics.asConcept().isCollective()) {
-      semantics = SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
-                      .collective(false)
-                      .buildObservable();
+      semantics =
+          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+              .collective(false)
+              .buildObservable();
     }
 
     return semantics;
@@ -92,9 +109,10 @@ public class TypeFunctors {
   public Semantics changeArityToCollective(Semantics semantics) {
 
     if (!semantics.asConcept().isCollective()) {
-      semantics = SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
-          .collective(true)
-          .buildObservable();
+      semantics =
+          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+              .collective(true)
+              .buildObservable();
     }
 
     return semantics;

@@ -80,6 +80,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService {
 
+  // this is for URNs that represent inline resources from namespace defines
+  private static final String TEMPORARY_NODE_NAME = "temporary";
+  // this for URNs that identify resources. Leaving space for other URN catalogs in the future.
+  private static final String TEMPORARY_CATALOG_NAME = "resources";
+
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private final WorkspaceManager workspaceManager;
   private final ResourcesKBox resourcesKbox;
@@ -115,26 +120,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   return resolveObservableInternal(key);
                 }
               });
-
-  //  /**
-  //   * the only persistent info in this implementation is the catalog of resource status info.
-  // This is
-  //   * used for individual resources and whole projects. It also holds and maintains the review
-  //   * status, which in the case of projects propagates to the namespaces and models. Reviews and
-  // the
-  //   * rest of the editorial material should be part of the provenance info associCREATEated to
-  // the
-  // items.
-  //   * The review process is organized and maintained in the community service; only its
-  // initiation
-  //   * and the storage of the review status is the job of the resources service.
-  //   *
-  //   * @deprecated use {@link
-  //   *     org.integratedmodelling.klab.resources.ResourcesKBox}
-  //   */
-  //  private DB db = null;
-  //
-  //  private ConcurrentNavigableMap<String, ResourceInfo> catalog = null;
 
   /**
    * @deprecated use {@link ResourcesKBox}
@@ -402,9 +387,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     if (urn.isUniversal()) {
       return createUniversalResource(urn, scope);
+    } else if (urn.getNodeName().equals(TEMPORARY_NODE_NAME)
+        && urn.getCatalog().equals(TEMPORARY_CATALOG_NAME)) {
+      return createResourceFromDefinition(urn.getNamespace(), urn.getResourceId());
     }
 
     return resourcesKbox.getResource(urnId, urn.getVersion());
+  }
+
+  private Resource createResourceFromDefinition(String namespace, String resourceId) {
+    throw new KlabUnimplementedException("createResourceFromDefinition");
   }
 
   private Resource createUniversalResource(Urn urn, Scope scope) {
