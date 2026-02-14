@@ -463,11 +463,21 @@ public class FileProjectStorage implements ProjectStorage {
       Templates.createDocument(resourceType, resourceId, file);
 
       if (isTracked()) {
-
         try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
           try (var git = Git.wrap(repository)) {
-            git.add().addFilepattern(relativePath).call();
+            var command = git.add().addFilepattern(relativePath);
+            var result = command.call();
+            if (result.lock()) {
+              if (!result.commit()) {
+                Logging.INSTANCE.error("Failed to commit new document " + file);
+              }
+              result.unlock();
+            } else {
+              Logging.INSTANCE.error("Failed to lock new document " + file);
+            }
           }
+        } catch (Throwable t) {
+          Logging.INSTANCE.error(t);
         }
       }
 
