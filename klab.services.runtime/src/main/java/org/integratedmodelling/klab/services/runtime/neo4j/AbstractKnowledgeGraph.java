@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -16,15 +17,14 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.runtime.storage.ShardImpl;
+import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   protected UserScope userScope;
 
-  protected abstract long nextKey();
+  public abstract long nextKey();
 
   /**
    * Retrieve the asset with the passed key.
@@ -100,10 +100,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
-//          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
-//          if (instanceUrn != null) {
-//            ret.put("instanceUrn", instanceUrn);
-//          }
+          //          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
+          //          if (instanceUrn != null) {
+          //            ret.put("instanceUrn", instanceUrn);
+          //          }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
             ret.put("adapterId", data.getAdapterId());
@@ -125,6 +125,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case Agent agent -> {
           ret.putAll(sanitizeMetadata(agent.getMetadata()));
           ret.put("name", agent.getName());
+          // TODO
+        }
+        case Cohort cohort -> {
+          ret.putAll(sanitizeMetadata(cohort.getMetadata()));
+          ret.put("observable", cohort.getObservable().getUrn());
+          ret.put("childrenCount", cohort.getChildrenCount());
+          ret.put("urn", cohort.getObservable().getUrn() + "_cohort");
+          ret.put("id", cohort.getId());
           // TODO
         }
         case ActuatorImpl actuator -> {
@@ -174,7 +182,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (buffer.getHistogram() != null) {
             ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
           }
-         ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
+          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
           ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
           ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());

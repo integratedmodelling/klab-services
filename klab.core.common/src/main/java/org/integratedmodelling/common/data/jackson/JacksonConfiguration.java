@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -349,6 +350,8 @@ public class JacksonConfiguration {
           Actuator.class,
           KnowledgeGraph.Commit.class,
           Adapter.class,
+          Cohort.class,
+          Storage.Shard.class,
           KnowledgeGraph.LinkInfo.class,
           Adapter.Parameter.class,
           Notification.LexicalContext.class,

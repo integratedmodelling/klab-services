@@ -221,29 +221,6 @@ public class ObservableImpl implements Observable {
   public ValueMediator mediator() {
     return this.unit == null ? (this.range == null ? this.currency : this.range) : this.unit;
   }
-//
-//  @Override
-//  public Object getValue() {
-//    return value;
-//  }
-
-  // @Override
-  // public Concept context() {
-  // // TODO Auto-generated method stub
-  // return null;
-  // }
-  //
-  // @Override
-  // public Concept inherent() {
-  // // TODO Auto-generated method stub
-  // return null;
-  // }
-  //
-  // @Override
-  // public Concept temporalInherent() {
-  // // TODO Auto-generated method stub
-  // return null;
-  // }
 
   @Override
   public Object getDefaultValue() {
@@ -400,7 +377,7 @@ public class ObservableImpl implements Observable {
       ret.referenceName = concept.getNamespace() + "_" + concept.getName();
     }
     ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-    ret.descriptionType = DescriptionType.forSemantics(concept.getType(), concept.isCollective());
+    ret.descriptionType = concept.getDescriptionType();
     return ret;
   }
 

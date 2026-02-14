@@ -6,6 +6,7 @@ import java.util.*;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -42,6 +43,7 @@ public class ConceptImpl implements Concept {
   private List<Annotation> annotations = new ArrayList<>();
   private LogicalConnector qualifier;
   private List<Notification> notifications = new ArrayList<>();
+  private DescriptionType descriptionType;
 
   public ConceptImpl() {}
 
@@ -57,6 +59,7 @@ public class ConceptImpl implements Concept {
     this.collective = other.collective;
     this.annotations.addAll(other.annotations);
     this.qualifier = other.qualifier;
+    this.descriptionType = other.descriptionType;
   }
 
   public void setQualifier(LogicalConnector qualifier) {
@@ -244,6 +247,15 @@ public class ConceptImpl implements Concept {
     ret.setReferenceName("each_" + this.getReferenceName());
     ret.setUrn("each " + this.getUrn());
     return ret;
+  }
+
+  @Override
+  public DescriptionType getDescriptionType() {
+    return descriptionType;
+  }
+
+  public void setDescriptionType(DescriptionType descriptionType) {
+    this.descriptionType = descriptionType;
   }
 
   public ConceptImpl singular() {

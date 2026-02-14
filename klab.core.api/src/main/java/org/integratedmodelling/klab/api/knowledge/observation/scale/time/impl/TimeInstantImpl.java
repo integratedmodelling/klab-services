@@ -271,6 +271,11 @@ public class TimeInstantImpl implements TimeInstant {
   }
 
   @Override
+  public int getSecond() {
+    return time.getSecond();
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(time);
   }

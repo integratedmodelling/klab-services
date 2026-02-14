@@ -134,7 +134,15 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RESOURCES.RETRIEVE,
+            assetClass,
+            "urn",
+            urn,
+            "knowledgeClass",
+            KnowledgeClass.classify(assetClass));
   }
 
   @Override

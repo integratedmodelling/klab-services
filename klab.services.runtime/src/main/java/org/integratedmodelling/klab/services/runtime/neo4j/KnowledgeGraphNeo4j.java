@@ -6,11 +6,12 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
@@ -22,7 +23,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
@@ -34,6 +34,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -52,7 +53,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.integratedmodelling.klab.runtime.storage.ShardImpl;
+import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
@@ -458,6 +459,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 case "Activity" -> (Class<T>) Activity.class;
                 case "Context" -> (Class<T>) ContextScope.class;
                 case "Data" -> (Class<T>) Storage.Shard.class;
+                case "Cohort" -> (Class<T>) Cohort.class;
                 default -> null;
               };
         }
@@ -484,14 +486,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         ret.add((T) instance);
 
+      } else if (Cohort.class.isAssignableFrom(cls)) {
+
+        var instance = new CohortImpl();
+        var reasoner = scope.getService(Reasoner.class);
+
+        instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
+        instance.setUrn(node.get("urn").asString());
+        instance.setId(node.get("id").asLong());
+        instance.setChildrenCount(node.get("childrenCount").asInt());
+        instance.setParentId(node.get("parentId").asLong());
+
+        ret.add((T) instance);
+
       } else if (Observation.class.isAssignableFrom(cls)) {
 
         var instance = new ObservationImpl();
         var reasoner = scope.getService(Reasoner.class);
 
-        instance.setUrn(node.get("urn").asString());
         instance.setName(node.get("name").asString());
         instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
+        instance.setUrn(node.get("urn").asString());
         instance.setId(node.get("id").asLong());
         instance.setChildrenCount(node.get("childrenCount").asInt());
         instance.setParentId(node.get("parentId").asLong());
@@ -725,7 +740,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "MATCH (n:{assetLabel} {id: $id}) return n"
                     .replace("{assetLabel}", getLabel(assetClass)),
                 Map.of("id", key),
-                null);
+                scope);
     var adapted = adapt(result, assetClass, scope);
     return adapted.isEmpty() ? null : adapted.getFirst();
   }
@@ -736,7 +751,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (key instanceof Long id) {
       try {
         return (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
-      } catch (ExecutionException e) {
+      } catch (Throwable e) {
         // fall back to other strategy
         Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
       }
@@ -998,6 +1013,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         switch (asset) {
           case Activity ignored3 -> name + ".id = $" + queryVariable;
           case Observation ignored2 -> name + ".id = $" + queryVariable;
+          case Cohort ignored2 -> name + ".id = $" + queryVariable;
           case Actuator ignored1 -> name + ".id = $" + queryVariable;
           case Storage.Shard ignored -> name + ".id = $" + queryVariable;
           case Agent ignored -> name + ".name = $" + queryVariable;
@@ -1024,6 +1040,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
           case ShardImpl buffer -> buffer.getId();
+          case Cohort cohort -> cohort.getId();
           default -> null;
         };
 
@@ -1055,6 +1072,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case ShardImpl buffer -> buffer.setId(id);
+      case CohortImpl cohort -> cohort.setId(id);
       case ActivityImpl activity -> {
         activity.setId(id);
         activity.setUrn(rootContextId + "." + id);
@@ -1114,6 +1132,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         case ACTIVITY -> "Activity";
         case AGENT -> "Agent";
         case DATA -> "Data";
+        case COHORT -> "Cohort";
         default -> throw new KlabInternalErrorException("Cannot find a KG node label for " + asset);
       };
     }
@@ -1126,6 +1145,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         case ACTUATOR -> "Actuator";
         case ACTIVITY -> "Activity";
         case OBSERVATION -> "Observation";
+        case COHORT -> "Cohort";
         case DATA -> "Data";
         case ANY -> null;
         default ->
@@ -1150,6 +1170,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return "Plan";
       } else if (Storage.Shard.class.isAssignableFrom(cls)) {
         return "Data";
+      } else if (Cohort.class.isAssignableFrom(cls)) {
+        return "Cohort";
       }
     }
 
@@ -1159,6 +1181,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Activity x -> "Activity";
           case Actuator x -> "Actuator";
           case Agent x -> "Agent";
+          case Cohort x -> "Cohort";
           case Storage.Shard x -> "Data";
           case Plan x -> "Plan";
           default -> null;
@@ -1210,7 +1233,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  protected synchronized long nextKey() {
+  public synchronized long nextKey() {
     var ret = -1L;
     var lastActivity = System.currentTimeMillis();
     var result = query("MATCH (n:Statistics) return n.nextId", Map.of(), userScope);
@@ -1638,7 +1661,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         switch (asset.getType()) {
           case SCOPE, ACTUATOR, PROVENANCE, DATAFLOW, DATA -> "id";
           case LINK -> null;
-          case ACTIVITY, OBSERVATION, SEMANTICS, OBSERVABLE -> "urn";
+          case ACTIVITY, OBSERVATION, SEMANTICS, OBSERVABLE, COHORT -> "urn";
           default -> throw new KlabInternalErrorException("Unexpected value: " + asset.getType());
         };
     var searchValue =

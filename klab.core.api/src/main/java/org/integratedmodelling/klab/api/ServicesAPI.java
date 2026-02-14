@@ -231,6 +231,8 @@ public interface ServicesAPI {
 
     String CORE_OBSERVABLE = API_BASE + "/coreObservable";
 
+    String CORE_SUBSTANTIAL = API_BASE + "/coreSubstantial";
+
     String SPLIT_OPERATORS = API_BASE + "/splitOperators";
 
     String DISTANCE = API_BASE + "/distance";

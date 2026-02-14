@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "klab-python-client"
+version = "0.1.0"
+description = "Client-side Python interface scaffolding for k.LAB services"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "k.LAB"}]
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

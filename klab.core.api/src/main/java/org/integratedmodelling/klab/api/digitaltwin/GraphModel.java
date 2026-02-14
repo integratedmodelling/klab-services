@@ -110,8 +110,9 @@ public interface GraphModel {
     HAS_DATAFLOW,
     HAS_PROVENANCE,
     HAS_ACTIVITY,
-    HAS_DATA,
-    HAS_CHILD,
+    HAS_DATA,   // Quality observations to their storage items
+    HAS_CHILD,  // Most assets that build the primary path in the KG
+    HAS_MEMBER, // Cohort to Observation
     TRIGGERED,
     RESOLVED;
 
@@ -166,6 +167,12 @@ public interface GraphModel {
     public static final String ID_FIELD = "id";
     public static final String DEFINITION_FIELD = "definition";
     public static final String SIZE_FIELD = "size";
+  }
+
+  record Cohort(long id, String observable, String behaviorUrn) {
+    public static final String ID_FIELD = "id";
+    public static final String OBSERVABLE_FIELD = "observable";
+    public static final String BEHAVIOR_URN = "behaviorUrn";
   }
 
   record Agent(long id, AgentType type, String name) {

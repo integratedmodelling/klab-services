@@ -36,6 +36,10 @@ public class ObservationImpl implements Observation {
   private Geometry geometry;
   private Metadata metadata = Metadata.create();
   private long id = UNASSIGNED_ID;
+  private long transientId = Klab.getNextId();
+  private long parentTransientId = 0;
+  private int childrenCount;
+  private long parentId = -1;
   private String urn;
   private Object value;
   private String name;
@@ -43,12 +47,8 @@ public class ObservationImpl implements Observation {
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
-  private long transientId = Klab.getNextId();
-  private long parentTransientId = 0;
   private List<Notification> notifications = new ArrayList<>();
   private ContextualizationData contextualizationData;
-  private int childrenCount;
-  private long parentId = -1;
   private boolean empty;
 
   public static class ContextualizationDataImpl implements ContextualizationData {

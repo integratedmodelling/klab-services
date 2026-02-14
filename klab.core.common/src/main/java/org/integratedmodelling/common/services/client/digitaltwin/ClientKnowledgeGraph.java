@@ -4,8 +4,11 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
@@ -17,6 +20,7 @@ import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -64,6 +68,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private final RuntimeClient runtimeClient;
   private final Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
   private final Set<Long> finalizedAssets = new HashSet<>();
+  private final Queue<KnowledgeGraph.Commit> commitQueue = new ConcurrentLinkedQueue<>();
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from engine settings */ 500)
@@ -106,9 +111,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
 
-      var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, String.class);
-      var commit = runtimeClient.getCommit(commitId, scope);
+      var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, Number.class);
+      var commit = runtimeClient.getCommit(commitId.longValue(), scope);
       if (commit != null) {
+
+        commitQueue.add(commit);
+
+        // add it to the observation so that clients downstream can find it without further requests
+        observation.getMetadata().put(Metadata.IM_COMMIT, commit);
+
+        // preload cohorts as we can't easily do that without complicating the logic
+        for (var id : commit.getAddedCohorts()) {
+          if (assetCache.getIfPresent(id) == null) {
+            assetCache.put(id, retrieveFromGraph(id, Cohort.class, scope));
+          }
+        }
 
         synchronized (graph) {
           /* Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
@@ -136,6 +153,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
                 observationImpl.setChildrenCount(observationImpl.getChildrenCount() + 1);
               }
             }
+            if (!commit.getAddedCohorts().contains(link.getFirst())
+                && link.getThird().equals(GraphModel.Relationship.HAS_MEMBER.toString())) {
+              var existingCohort = assetCache.getIfPresent(link.getFirst());
+              if (existingCohort instanceof CohortImpl cohortImpl) {
+                cohortImpl.setChildrenCount(cohortImpl.getChildrenCount() + 1);
+              }
+            }
             if (!commit.getAddedObservations().contains(link.getFirst())
                 && commit.getAddedObservations().contains(link.getSecond())
                 && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
@@ -146,16 +170,25 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         }
       }
 
-      /** Notify the UI of the new observations. */
-      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
-        clientDigitalTwin.ingest(
-            Message.create(
-                scope,
-                Message.MessageClass.UserInterface,
-                Message.MessageType.ObservationsInFocus,
-                Utils.Strings.join(focusIds, ",")));
-      }
+      //      /** Notify the UI of the new observations. */
+      //      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+      //        clientDigitalTwin.ingest(
+      //            Message.create(
+      //                scope,
+      //                Message.MessageClass.UserInterface,
+      //                Message.MessageType.ObservationsInFocus,
+      //                Utils.Strings.join(focusIds, ",")));
+      //      }
     }
+  }
+
+  /**
+   * The commit queue for all commits we got during the lifetime of the scope that hosts this
+   *
+   * @return
+   */
+  public Queue<KnowledgeGraph.Commit> getCommitQueue() {
+    return commitQueue;
   }
 
   /// Extract a subgraph from the current graph at a given hierarchy depth and showing a specified
@@ -251,12 +284,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             asset.getId(),
             child.getId(),
             new Relationship(
-                GraphModel.Relationship.HAS_CHILD, asset.getId(), child.getId(), Map.of()));
+                asset instanceof Cohort
+                    ? GraphModel.Relationship.HAS_MEMBER
+                    : GraphModel.Relationship.HAS_CHILD,
+                asset.getId(),
+                child.getId(),
+                Map.of()));
         children.add(child);
       }
       return children;
     }
-    return outgoing(asset, GraphModel.Relationship.HAS_CHILD);
+    return outgoing(
+        asset,
+        asset instanceof Cohort
+            ? GraphModel.Relationship.HAS_MEMBER
+            : GraphModel.Relationship.HAS_CHILD);
   }
 
   @Override
@@ -291,6 +333,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    */
   public List<RuntimeAsset> incoming(RuntimeAsset target, GraphModel.Relationship relationship) {
     var asset = assetCache.getIfPresent(target.getId());
+    if (asset == null) {
+      return List.of();
+    }
     return graph.incomingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
         .map(defaultEdge -> getAsset(graph.getEdgeSource(defaultEdge), scope, RuntimeAsset.class))
@@ -352,6 +397,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    */
   public List<RuntimeAsset> outgoing(RuntimeAsset source, GraphModel.Relationship relationship) {
     var asset = assetCache.getIfPresent(source.getId());
+    if (asset == null) {
+      return List.of();
+    }
     return graph.outgoingEdgesOf(asset.getId()).stream()
         .filter(edge -> relationship == null || edge.relationship == relationship)
         .map(defaultEdge -> getAsset(graph.getEdgeTarget(defaultEdge), scope, RuntimeAsset.class))
@@ -401,14 +449,19 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void clear() {}
 
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
-    return runtimeClient.getAsset(id, assetClass, scope);
+    try {
+      return runtimeClient.getAsset(id, assetClass, scope);
+    } catch (Throwable t) {
+      scope.warn("Ignoring unexpected error in service-side knowledge graph", t);
+      return null;
+    }
   }
 
   @Override
   public <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass) {
     try {
       return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
-    } catch (ExecutionException e) {
+    } catch (Throwable e) {
       // fall back to other strategy
       scope.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
     }

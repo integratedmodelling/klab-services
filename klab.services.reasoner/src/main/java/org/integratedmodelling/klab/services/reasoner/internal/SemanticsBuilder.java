@@ -148,7 +148,7 @@ public class SemanticsBuilder implements Observable.Builder {
   public Observable.Builder withTrait(Collection<Concept> concepts) {
     syntax.addTraits(
         concepts.stream().map(c -> resourcesService.declareConcept(c.getUrn())).toList(),
-        (added, original)-> {
+        (added, original) -> {
           var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           return baseTraitAdded.equals(baseTraitOriginal);
@@ -242,6 +242,7 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withoutValueOperators() {
+    this.syntax = (KimConceptImpl) this.syntax.removeComponents(SemanticRole.VALUE_OPERATOR);
     return this;
   }
 
@@ -253,12 +254,15 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder without(SemanticRole... roles) {
-    return null;
+    this.syntax = (KimConceptImpl) this.syntax.removeComponents(roles);
+    return this;
   }
 
   @Override
   public Observable.Builder withTemporalInherent(Concept concept) {
-    return null;
+    // TODO check
+//    this.syntax.setCooccurrent(resourcesService.declareConcept(concept.getUrn()));
+    return this;
   }
 
   @Override
@@ -317,11 +321,6 @@ public class SemanticsBuilder implements Observable.Builder {
   public Collection<Notification> getNotifications() {
     return notifications;
   }
-
-  //  @Override
-//  public Observable.Builder withReferenceName(String s) {
-//    return null;
-//  }
 
   // TODO use a cache
   private Concept buildConcept(KimConcept kimConcept) {
@@ -553,6 +552,8 @@ public class SemanticsBuilder implements Observable.Builder {
         addValueOperator(valueOperator, ret);
       }
 
+      ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
+
       reasoner.owl().finalizeConcept(ret);
     }
 
@@ -569,6 +570,7 @@ public class SemanticsBuilder implements Observable.Builder {
     //  _, ' ' -> __, '()' -> ___ and any value op with a base64 hash of the value
 
     ret.setUrn(kimConcept.getUrn());
+    ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
 
     return ret;
   }

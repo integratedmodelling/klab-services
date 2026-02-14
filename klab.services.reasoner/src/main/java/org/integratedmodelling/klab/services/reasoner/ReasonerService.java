@@ -597,6 +597,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
+  public Concept baseSubstantialType(Semantics concept) {
+    var builder =
+        SemanticsBuilder.create(concept.asConcept(), this)
+            .without(SemanticRole.TRAIT)
+            .without(SemanticRole.modifiers());
+    for (var identity : directIdentities(concept)) {
+      // TODO recognize individual identities and add their lexical root
+    }
+
+    return builder.buildConcept();
+  }
+
+  @Override
   public boolean resolves(Semantics toResolve, Semantics other, Semantics context) {
 
     /*
@@ -2793,7 +2806,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public List<ObservationStrategy> computeObservationStrategies(
       Observation observation, ContextScope scope) {
-    return observationReasoner.computeMatchingStrategies(observation, scope);
+    return observationReasoner.computeMatchingStrategies(observation, scope, true);
   }
 
   @Override
@@ -2884,9 +2897,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case WITH -> {
           ret = ret.with(op.getConcepts().get(0));
         }
-        //                case WITHIN -> {
-        //                    ret = ret.within(op.getConcepts().get(0));
-        //                }
         case GOAL -> {
           ret = ret.withGoal(op.getConcepts().get(0));
         }
@@ -2940,9 +2950,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case NAMED -> {
           ret = ret.named((String) op.getPod());
         }
-        //                case WITH_DISTRIBUTED_INHERENCY -> {
-        //                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
-        //                }
         case WITHOUT_VALUE_OPERATORS -> {
           ret = ret.withoutValueOperators();
         }
@@ -2955,15 +2962,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case WITH_TEMPORAL_INHERENT -> {
           ret = ret.withTemporalInherent(op.getConcepts().get(0));
         }
-        //                case WITH_DEREIFIED_ATTRIBUTE -> {
-        //                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
-        //                }
-        //        case REFERENCE_NAMED -> {
-        //          ret = ret.withReferenceName((String) op.getPod());
-        //        }
-        //        case WITH_INLINE_VALUE -> {
-        //          ret = ret.withInlineValue(op.getPod());
-        //        }
         case COLLECTIVE -> {
           ret = ret.collective((Boolean) op.getPod());
         }
@@ -2973,17 +2971,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case WITH_RESOLUTION_EXCEPTION -> {
           ret = ret.withResolutionException(op.getResolutionException());
         }
-        //        case AS_GENERIC -> {
-        //          ret = ret.generic((Boolean) op.getPod());
-        //        }
         case WITH_ANNOTATION -> {
           for (Annotation annotation : op.getAnnotations()) {
             ret = ret.withAnnotation(annotation);
           }
         }
-        //        case AS_DESCRIPTION_TYPE -> {
-        //          ret = ret.as(op.getDescriptionType());
-        //        }
         default ->
             throw new KlabUnimplementedException(
                 "ReasonerService::defineBuilder: unhandled " + "operation " + op.getType());

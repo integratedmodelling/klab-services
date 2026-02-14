@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -427,7 +429,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public ContextScope within(Observation contextObservation) {
+  public ServiceContextScope within(Observation contextObservation) {
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
     ret.splits = -1;
@@ -468,24 +470,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    * @return
    */
   public ServiceContextScope contextualizeFor(Observation observation) {
-    var context = contextObservation;
-    if (observation.getObservable().is(SemanticType.SUBJECT)
-        && !observation.getObservable().asConcept().isCollective()) {
-      // establish the containing folder independent of the contextualization
-      // TODO shouldn't allow having one besides a collective
-      if (!(contextObservation != null
-          && contextObservation.getObservable().asConcept().isCollective())) {
-        context = null;
-      }
-
-      // TODO establish the identification strategy for the folder
-      if (context == null) {
-        // TODO find or create a suitable folder for the subject. A specialized one is only built if
-        //  a specialized identification strategy is available for the subject. Otherwise the
-        // default strategy and default folder (stripped of all predicates) is used.
-      }
+    if (contextObservation != null && observation.getObservable().is(SemanticType.COUNTABLE)) {
+        return within(null);
     }
-
     return this;
   }
 
@@ -777,7 +764,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public String commit() {
+  public long commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
       activity.setName(activity.getType().name().substring(0, 3) + " OK");
@@ -791,7 +778,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     if (this.currentTransaction == null) {
-      return null;
+      return -1;
     }
 
     var ret = this.currentTransaction.commit();

@@ -8,21 +8,48 @@ import java.util.Set;
 
 public class CommitImpl implements KnowledgeGraph.Commit {
 
-  private String id;
+  private long id;
   private long timestamp;
   private Set<Long> addedAssets = new HashSet<>();
   private Set<Triple<Long, Long, String>> addedLinks = new HashSet<>();
   private Set<Long> deletedAssets = new HashSet<>();
   private Set<Triple<Long, Long, String>> deletedLinks = new HashSet<>();
   private Set<Long> addedObservations = new HashSet<>();
+  private Set<Long> addedCohorts = new HashSet<>();
   private Set<Long> modifiedAssets = new HashSet<>();
+  private String owner;
 
   @Override
-  public String getId() {
+  public long getId() {
     return id;
   }
 
-  public void setId(String id) {
+  @Override
+  public long getParentId() {
+    return CONTEXT_ASSET_ID;
+  }
+
+  @Override
+  public long getTransientId() {
+    return 0;
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return 0;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return 0;
+  }
+
+  @Override
+  public Type classify() {
+    return Type.COMMIT;
+  }
+
+  public void setId(long id) {
     this.id = id;
   }
 
@@ -87,5 +114,23 @@ public class CommitImpl implements KnowledgeGraph.Commit {
 
   public void setModifiedAssets(Set<Long> modifiedAssets) {
     this.modifiedAssets = modifiedAssets;
+  }
+
+  @Override
+  public Set<Long> getAddedCohorts() {
+    return addedCohorts;
+  }
+
+  public void setAddedCohorts(Set<Long> addedCohorts) {
+    this.addedCohorts = addedCohorts;
+  }
+
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  public void setOwner(String username) {
+    this.owner = username;
   }
 }

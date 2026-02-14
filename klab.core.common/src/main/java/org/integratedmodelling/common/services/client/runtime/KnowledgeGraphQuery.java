@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.security.cert.CertPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     OBSERVATION,
     SEMANTICS,
     OBSERVABLE,
+    COHORT,
     LINK,
     DATA;
 
@@ -81,6 +84,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case Activity ignored -> AssetType.ACTIVITY;
         case Observable ignored -> AssetType.OBSERVABLE;
         case KimObservable ignored -> AssetType.OBSERVABLE;
+        case Cohort ignored -> AssetType.COHORT;
         case ContextScope ignored ->
             ignored.getContextObservation() == null ? AssetType.SCOPE : AssetType.OBSERVATION;
         case Concept ignored -> AssetType.SEMANTICS;
@@ -124,6 +128,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
       if (Storage.Shard.class.isAssignableFrom(asset)) {
         return AssetType.DATA;
       }
+      if (Cohort.class.isAssignableFrom(asset)) {
+        return AssetType.COHORT;
+      }
       if (RuntimeAsset.class.isAssignableFrom(asset)) {
         return AssetType.ANY;
       }
@@ -140,6 +147,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case OBSERVATION -> Observation.class;
         case SEMANTICS -> Concept.class;
         case OBSERVABLE -> Observable.class;
+        case COHORT -> Cohort.class;
         case DATA -> Storage.Shard.class;
         case LINK -> KnowledgeGraph.Link.class;
         case ANY -> RuntimeAsset.class;
@@ -219,6 +227,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             case Activity ignored -> ignored.getUrn();
             case Observable ignored -> ignored.getUrn();
             case KimObservable ignored -> ignored.getUrn();
+            case Cohort ignored -> ignored.getObservable().getUrn() + "_cohort";
             case Concept ignored -> ignored.getUrn();
             case KimConcept ignored -> ignored.getUrn();
             case ServiceSideScope ignored ->

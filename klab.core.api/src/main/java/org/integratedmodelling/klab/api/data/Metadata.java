@@ -209,6 +209,8 @@ public interface Metadata extends Parameters<String> {
 
   public static String IM_COMMIT_ID = "im:commit-id";
 
+  public static String IM_COMMIT = "im:commit";
+
   /** For legacy resources */
   public static String IM_ORIGINAL_URN = "im:original-urn";
 

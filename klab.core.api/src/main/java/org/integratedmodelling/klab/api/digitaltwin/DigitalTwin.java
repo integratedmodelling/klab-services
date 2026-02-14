@@ -209,7 +209,7 @@ public interface DigitalTwin extends RuntimeAsset {
      * code the commit result should be checked against this to know if the transaction was a
      * root-level one, the only one that .
      */
-    String INTERMEDIATE_COMMIT_ID = "intermediate_commit_id";
+    long INTERMEDIATE_COMMIT_ID = 0l;
 
     void registerExecutors();
 
@@ -257,11 +257,11 @@ public interface DigitalTwin extends RuntimeAsset {
     /**
      * Commit the transaction and return the commit ID if it was successful. In intermediate
      * transactions, this should always return INTERMEDIATE_COMMIT_ID or null. The root transaction
-     * must return a valid commit ID or null.
+     * must return a valid commit ID or -1.
      *
-     * @return a valid string
+     * @return a valid commit ID or -1 if the commit failed.
      */
-    String commit();
+    long commit();
 
     /**
      * Get a child transaction for the given activity. The child transaction must be committed

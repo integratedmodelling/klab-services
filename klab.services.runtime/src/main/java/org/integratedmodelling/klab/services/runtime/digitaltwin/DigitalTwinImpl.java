@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -19,6 +20,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -52,7 +54,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
-  private Cache<String, KnowledgeGraph.Commit> commitCache =
+  private Cache<Long, KnowledgeGraph.Commit> commitCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from service settings */ 200)
           .expireAfterAccess(/* TODO this too */ 10, TimeUnit.MINUTES)
@@ -255,6 +257,12 @@ public class DigitalTwinImpl implements DigitalTwin {
         sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
         update(sourceObs);
         targetObs.setParentTransientId(sourceObs.getTransientId());
+      } else if (source instanceof CohortImpl sourceCohort
+          && destination instanceof ObservationImpl targetObs
+          && relationship == GraphModel.Relationship.HAS_MEMBER) {
+        sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
+        update(sourceCohort);
+        targetObs.setParentTransientId(sourceCohort.getTransientId());
       }
     }
 
@@ -269,11 +277,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public String commit() {
+    public long commit() {
 
       if (!failures.isEmpty()) {
         failures.forEach(t -> scope.error(t));
-        return null;
+        return -1;
       }
 
       if (activity instanceof ActivityImpl activity1) {
@@ -335,14 +343,15 @@ public class DigitalTwinImpl implements DigitalTwin {
               .setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-          return null;
+          return -1;
         } finally {
           // dio sanguinaccio
           try {
             kgTransaction.close();
             var commit = new CommitImpl();
-            commit.setId(Utils.Names.shortUUID());
+            commit.setId(knowledgeGraph.nextKey());
             commit.setTimestamp(System.currentTimeMillis());
+            commit.setOwner(scope.getUser().getUsername());
             commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
             commit
                 .getAddedObservations()
@@ -351,6 +360,14 @@ public class DigitalTwinImpl implements DigitalTwin {
                         .filter(a -> a instanceof Observation)
                         .map(RuntimeAsset::getId)
                         .toList());
+            commit
+                .getAddedCohorts()
+                .addAll(
+                    stored.stream()
+                        .filter(a -> a instanceof Cohort)
+                        .map(RuntimeAsset::getId)
+                        .toList());
+
             commit.getAddedLinks().addAll(linked);
             // TODO add modified and deleted assets. Also we may need to notify changed n. of
             //  children
@@ -400,6 +417,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private boolean setupForStorage(RuntimeAsset asset, boolean trivial) {
       return switch (asset) {
         case Observation observation -> observation.getId() < 0;
+        case Cohort cohort -> cohort.getId() < 0;
         case Actuator actuator -> !trivial;
         case Activity activity -> {
           var ret = activity.getId() < 0 && !trivial;
@@ -565,7 +583,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     return new DataflowGraph(this.knowledgeGraph, this.rootScope);
   }
 
-  public KnowledgeGraph.Commit getCommit(String id) {
+  public KnowledgeGraph.Commit getCommit(long id) {
     return commitCache.getIfPresent(id);
   }
 

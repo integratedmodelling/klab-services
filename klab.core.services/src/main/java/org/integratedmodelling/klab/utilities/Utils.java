@@ -36,10 +36,13 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.ehcache.spi.service.ServiceConfiguration;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -51,6 +54,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -58,6 +62,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
+
+  public static class ServiceConfiguration {
+
+    public static void printExampleConfig() {
+      var serviceConfiguration = new ResourcesConfiguration();
+      var privileges = new ResourcePrivileges();
+      privileges.setAllowedGroups(Set.of("ESA.INSTITUTIONAL", "ARIESTEAM"));
+      serviceConfiguration.getPermissions().put(CRUDOperation.CREATE, privileges);
+      serviceConfiguration.getPermissions().put(CRUDOperation.READ, privileges);
+      serviceConfiguration.getPermissions().put(CRUDOperation.UPDATE, privileges);
+      serviceConfiguration.getPermissions().put(CRUDOperation.UPDATE_METADATA, privileges);
+      serviceConfiguration.getPermissions().put(CRUDOperation.DELETE, privileges);
+      System.out.println(YAML.asString(serviceConfiguration));
+    }
+  }
 
   /** Utils to simplify accessing the JTS objects behind a scale or geometry */
   public static class Space {

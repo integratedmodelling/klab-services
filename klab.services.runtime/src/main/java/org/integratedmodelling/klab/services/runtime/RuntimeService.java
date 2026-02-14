@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -27,11 +28,12 @@ import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
@@ -39,6 +41,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -70,6 +73,38 @@ public class RuntimeService extends BaseService
   private SystemLauncher systemLauncher;
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+  /**
+   * We keep identification strategies for each concept encountered. The base one is implemented for
+   * odo:Substantial.
+   */
+  private Map<Concept, IdentificationStrategy> identificationStrategies = new HashMap<>();
+
+  private IdentificationStrategy defaultIdentificationStrategy =
+      new IdentificationStrategy() {
+
+        @Override
+        public int compare(Observation o1, Observation o2) {
+          // TODO add prefix. O1 is the unknown observation so it gets the prefix if it doesn't have
+          // one
+          return o1.getUrn().compareTo(o2.getUrn());
+        }
+
+        @Override
+        public String getUrn() {
+          return "identification.strategy.default";
+        }
+
+        @Override
+        public Metadata getMetadata() {
+          return Metadata.create();
+        }
+
+        @Override
+        public Collection<Annotation> getAnnotations() {
+          return List.of();
+        }
+      };
 
   public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
@@ -391,7 +426,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public KnowledgeGraph.Commit getCommit(String commitId, ContextScope scope) {
+  public KnowledgeGraph.Commit getCommit(long commitId, ContextScope scope) {
     if (scope.getDigitalTwin() instanceof DigitalTwinImpl dt) {
       return dt.getCommit(commitId);
     }
@@ -574,14 +609,33 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
+      var cohort = getCohortFor(observation, submissionScope);
+
+      if (cohort != null) {
+        var identity = checkIdentity(observation, cohort, submissionScope);
+        if (identity != null) {
+          return CompletableFuture.completedFuture(identity);
+        }
+      }
+
       submissionScope
           .getCurrentTransaction()
           .link(
               scope.getContextObservation() == null
-                  ? RuntimeAsset.CONTEXT_ASSET
+                  ? (cohort == null ? RuntimeAsset.CONTEXT_ASSET : cohort)
                   : scope.getContextObservation(),
               observation,
-              GraphModel.Relationship.HAS_CHILD);
+              (scope.getContextObservation() == null && cohort != null)
+                  ? GraphModel.Relationship.HAS_MEMBER
+                  : GraphModel.Relationship.HAS_CHILD);
+
+      if (cohort != null && scope.getContextObservation() != null) {
+        // ALSO link the observation to the cohort, which wasn't done in the previous statement
+        submissionScope
+            .getCurrentTransaction()
+            .link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+      }
+
       submissionScope
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
@@ -591,7 +645,7 @@ public class RuntimeService extends BaseService
           submissionScope
               .executing(
                   resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null)
-              //  Add any folder structure and identification strategy needed for KG maintenance.
+              //  Add any cohort and identification strategy needed for KG maintenance.
               .contextualizeFor(observation);
 
       return (predefinedContextualization != null
@@ -609,7 +663,7 @@ public class RuntimeService extends BaseService
               dataflow -> {
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
-                    if (resolutionScope.commit() != null) {
+                    if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
                       }
@@ -631,8 +685,7 @@ public class RuntimeService extends BaseService
                   // TODO add more info about the contextualization to the action's metadata
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
-                  if (commitId != null
-                      && !DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID.equals(commitId)) {
+                  if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                   }
                 } else {
@@ -649,6 +702,100 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  /**
+   * Find an observation with the same identity as the given observation in the given cohort.
+   *
+   * @param observation
+   * @param cohort
+   * @param submissionScope
+   * @return
+   */
+  private Observation checkIdentity(
+      Observation observation, Cohort cohort, ServiceContextScope submissionScope) {
+
+    if (cohort.getId() < 0) {
+      // cohort is new, can't have observations
+      return null;
+    }
+
+    var reasoner = submissionScope.getService(Reasoner.class);
+    //    var comparisonStrategy =
+    //        reasoner.computeIdentificationStrategies(observation.getObservable(),
+    // submissionScope);
+    var identificationStrategy = defaultIdentificationStrategy;
+    //    if (comparisonStrategy != null) {
+    // TODO compile into identificationStrategy
+    //    }
+
+    for (var sibling :
+        submissionScope
+            .getDigitalTwin()
+            .getKnowledgeGraph()
+            .query(Observation.class, scope)
+            .source(cohort)
+            .along(GraphModel.Relationship.HAS_MEMBER)
+            .run(submissionScope)) {
+      if (identificationStrategy.compare(observation, sibling) == 0) {
+        return sibling;
+      }
+    }
+
+    return null;
+  }
+
+  private Cohort getCohortFor(Observation observation, ContextScope scope) {
+
+    var needsCohort =
+        observation.getObservable().is(SemanticType.COUNTABLE)
+            && !observation.getObservable().asConcept().isCollective();
+    if (needsCohort) {
+
+      var reasoner = scope.getService(Reasoner.class);
+      var cohortObservable = reasoner.baseSubstantialType(observation.getObservable());
+
+      // local uncommitted
+      var existing =
+          scope.getCurrentTransaction().assets().stream()
+              .filter(
+                  a ->
+                      a instanceof Cohort cohort
+                          && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+              .findFirst()
+              .orElse(null);
+
+      if (existing != null) {
+        return (Cohort) existing;
+      }
+
+      var result =
+          scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Cohort.class, scope)
+              .source(RuntimeAsset.CONTEXT_ASSET)
+              .along(GraphModel.Relationship.HAS_CHILD)
+              .where(
+                  GraphModel.Cohort.OBSERVABLE_FIELD,
+                  KnowledgeGraph.Query.Operator.EQUALS,
+                  cohortObservable.getUrn())
+              .run(scope);
+
+      if (result.isEmpty()) {
+        var cohort = new CohortImpl();
+        cohort.setObservable(Observable.promote(cohortObservable));
+        cohort.setChildrenCount(0);
+        scope.getCurrentTransaction().add(cohort);
+        scope
+            .getCurrentTransaction()
+            .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
+        return cohort;
+      } else {
+        return result.getFirst();
+      }
+    }
+    return null;
   }
 
   private void publishContextualization(
@@ -948,7 +1095,7 @@ public class RuntimeService extends BaseService
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
         switch (observation.getObservable().getDescriptionType()) {
-          case QUANTIFICATION -> Storage.Type.DOUBLE;
+          case QUANTIFICATION, MEASUREMENT, VALUATION -> Storage.Type.DOUBLE;
           case CATEGORIZATION -> Storage.Type.KEYED;
           case VERIFICATION -> Storage.Type.BOOLEAN;
           default ->

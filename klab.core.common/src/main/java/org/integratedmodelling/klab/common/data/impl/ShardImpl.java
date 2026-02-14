@@ -1,5 +1,6 @@
-package org.integratedmodelling.klab.runtime.storage;
+package org.integratedmodelling.klab.common.data.impl;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -8,7 +9,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Base buffer provides the histogram and the geometry indexing/merging.
@@ -54,7 +54,7 @@ public class ShardImpl implements Storage.Shard {
    * @param timestamp
    * @param persistence
    */
-  protected ShardImpl(
+  public ShardImpl(
       Geometry geometry,
       Observation observation,
       Data.ShardingStrategy shardingStrategy,

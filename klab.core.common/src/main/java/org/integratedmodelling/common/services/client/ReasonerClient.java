@@ -195,6 +195,12 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public Concept baseSubstantialType(Semantics concept) {
+    // TODO this is called frequently for the same type, should cache
+    return client.post(ServicesAPI.REASONER.CORE_SUBSTANTIAL, concept.asConcept(), Concept.class);
+  }
+
+  @Override
   public Pair<Concept, List<SemanticType>> splitOperators(Semantics concept) {
     // TODO Auto-generated method stub
     return null;

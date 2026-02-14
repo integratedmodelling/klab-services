@@ -117,9 +117,7 @@ public enum ServiceConfiguration {
             ret.setSemantics(concept);
             ret.setUrn(concept.getUrn());
             ret.setArtifactType(Artifact.Type.forSemantics(concept.getType()));
-            ret.setDescriptionType(
-                DescriptionType.forSemantics(
-                    concept.getType(), concept.is(SemanticType.COUNTABLE)));
+            ret.setDescriptionType(concept.getDescriptionType());
             return ret;
           }
 

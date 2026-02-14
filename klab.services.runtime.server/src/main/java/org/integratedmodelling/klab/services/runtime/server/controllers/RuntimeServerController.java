@@ -608,7 +608,7 @@ public class RuntimeServerController {
 
   @GetMapping(ServicesAPI.RUNTIME.GET_COMMIT_INFO)
   public @ResponseBody KnowledgeGraph.Commit retrieveCommit(
-      @RequestParam(name = "id") String id, Principal principal) {
+      @RequestParam(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       if (contextScope != null && contextScope.getDigitalTwin() instanceof DigitalTwinImpl dt) {

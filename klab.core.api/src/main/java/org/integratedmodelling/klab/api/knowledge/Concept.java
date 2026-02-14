@@ -60,6 +60,14 @@ public interface Concept extends Semantics {
   Concept collective();
 
   /**
+   * Get the description type of this concept when observed. This is determined by the fundamental
+   * type, the collective character, and the inherency.
+   *
+   * @return
+   */
+  DescriptionType getDescriptionType();
+
+  /**
    * Return a unique non-semantic observable for collective subject observations
    *
    * @return
@@ -67,8 +75,7 @@ public interface Concept extends Semantics {
   static Concept objects() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.SUBJECT);
   }
@@ -81,8 +88,7 @@ public interface Concept extends Semantics {
   static Concept events() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.EVENT);
   }
@@ -95,8 +101,7 @@ public interface Concept extends Semantics {
   static Concept relationships() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.RELATIONSHIP);
   }
@@ -109,8 +114,7 @@ public interface Concept extends Semantics {
   static Concept number() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.QUANTIFIABLE);
   }
@@ -123,8 +127,7 @@ public interface Concept extends Semantics {
   static Concept text() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.CATEGORY);
   }
@@ -137,8 +140,7 @@ public interface Concept extends Semantics {
   static Concept bool() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.PRESENCE);
   }
@@ -151,8 +153,7 @@ public interface Concept extends Semantics {
   static Concept nothing() {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
-      throw new KlabIllegalStateException(
-              "k.LAB environment not configured");
+      throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.getNonSemanticConcept(SemanticType.NOTHING);
   }

@@ -29,7 +29,9 @@ public enum SemanticType {
   EXTENSIVE,
   /** */
   INTENSIVE,
-  /** */
+  /**
+   * @deprecated use PREDICATE
+   */
   TRAIT,
   /** */
   IDENTITY,
@@ -117,7 +119,9 @@ public enum SemanticType {
   INTERACTIVE,
   /** */
   REACTIVE,
-  /** */
+  /**
+   * @deprecated use COUNTABLE
+   */
   DIRECT_OBSERVABLE,
   /** */
   COUNTABLE,

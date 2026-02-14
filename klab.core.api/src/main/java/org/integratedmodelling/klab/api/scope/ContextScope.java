@@ -103,6 +103,11 @@ public interface ContextScope extends SessionScope {
    * resolution. Unique among the query functions, this one must also return any matching unresolved
    * observation from the current transaction.
    *
+   * <p>In the special case of core substantial types, this method must use the identification
+   * strategy implied by the semantics of the substantial to assess the presence of the observation.
+   * This may imply checking URNs (after completing them with the DT coordinates if the incoming
+   * observation is unresolved) or adopting specific strategies from the worldview.
+   *
    * <p>This method is critical to the working of the resolver and dataflow compiler. Observations
    * that are not found by this method will be created; those that are in the transaction will be
    * skipped as their resolution is ongoing; those that are resolved at the time of the call will

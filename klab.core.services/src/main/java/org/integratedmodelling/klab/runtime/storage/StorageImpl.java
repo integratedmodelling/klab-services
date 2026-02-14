@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
 
@@ -431,7 +432,7 @@ public class StorageImpl implements Storage {
     protected long index = 0L;
 
     public BaseScanner(
-        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       this.shard = shard;
       this.size = shard.getGeometry().size();
       this.data = data;
@@ -463,7 +464,7 @@ public class StorageImpl implements Storage {
   class LocalDoubleScanner extends BaseScanner implements Storage.DoubleScanner {
 
     public LocalDoubleScanner(
-        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -489,7 +490,7 @@ public class StorageImpl implements Storage {
   class LocalFloatScanner extends BaseScanner implements Storage.FloatScanner {
 
     public LocalFloatScanner(
-        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -515,7 +516,7 @@ public class StorageImpl implements Storage {
   class LocalIntScanner extends BaseScanner implements Storage.IntScanner {
 
     public LocalIntScanner(
-        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -541,7 +542,7 @@ public class StorageImpl implements Storage {
   class LocalLongScanner extends BaseScanner implements Storage.LongScanner {
 
     public LocalLongScanner(
-        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
