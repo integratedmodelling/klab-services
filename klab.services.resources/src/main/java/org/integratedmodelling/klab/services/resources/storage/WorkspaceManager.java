@@ -3044,8 +3044,9 @@ public class WorkspaceManager {
             }
           }
         }
-        // TODO this logic should go in the file storage, including the next TODO and backup
+        // FIXME this logic should go in the file storage, including the next TODO and backup
         File file = new File(document.getFile());
+        // FIXME NOO have the file repo do this, with Git synchronization
         Utils.Files.deleteQuietly(file);
         // TODO if namespace and no other docs in the same dir, remove the folders too
         ret.add(result);
