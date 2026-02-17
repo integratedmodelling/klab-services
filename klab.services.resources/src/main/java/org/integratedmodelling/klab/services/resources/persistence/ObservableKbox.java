@@ -32,10 +32,9 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.persistence.h2.H2Database;
-import org.integratedmodelling.klab.persistence.h2.H2Kbox;
-import org.integratedmodelling.klab.persistence.h2.SQL;
-import org.integratedmodelling.klab.services.resources.ResourcesProvider;
+import org.integratedmodelling.klab.services.resources.persistence.h2.H2Database;
+import org.integratedmodelling.klab.services.resources.persistence.h2.H2Kbox;
+import org.integratedmodelling.klab.services.resources.persistence.h2.SQL;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.sql.PreparedStatement;

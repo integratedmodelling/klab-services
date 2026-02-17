@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.ActionScope;
-import reactor.core.publisher.Sinks;
+//import reactor.core.publisher.Sinks;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -44,7 +44,7 @@ import java.util.concurrent.Future;
 public class ActorBase extends GroovyObjectSupport {
 
   private final KActorsBehavior behavior;
-  private final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
+//  private final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
   private CompletableFuture<ExitValue> mainTask = null;
 
   /** The value returned by a void action. */

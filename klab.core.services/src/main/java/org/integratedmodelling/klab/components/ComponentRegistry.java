@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.h2.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;

@@ -8,7 +8,7 @@
     </parent>
     <artifactId>klab.services.runtime</artifactId>
     <properties>
-        <neo4j-version>2025.10.1</neo4j-version>
+        <neo4j-version>2026.01.4</neo4j-version>
     </properties>
     <build>
         <plugins>
@@ -43,6 +43,7 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.services</artifactId>
             <version>${klab.version}</version>
+<!--
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -57,22 +58,23 @@
                     <artifactId>jackson-module-jaxb-annotations</artifactId>
                 </exclusion>
             </exclusions>
+-->
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jdk8</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--            <artifactId>jackson-datatype-jdk8</artifactId>-->
+<!--            <version>${jackson-version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
+<!--            <artifactId>jackson-annotations</artifactId>-->
+<!--            <version>${jackson-version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.module</groupId>-->
+<!--            <artifactId>jackson-module-jaxb-annotations</artifactId>-->
+<!--            <version>${jackson-version}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -84,7 +86,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-cypher-dsl</artifactId>
-            <version>2024.4.0</version>
+            <version>2025.2.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -160,21 +162,7 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>5.28.4</version>
-            <exclusions>
-                <!--
-                                <exclusion>
-                                    <groupId>commons-logging</groupId>
-                                    <artifactId>commons-logging</artifactId>
-                                </exclusion>
-                -->
-                <!--
-                                <exclusion>
-                                    <groupId>org.neo4j</groupId>
-                                    <artifactId>neo4j-slf4j-provider</artifactId>
-                                </exclusion>
-                -->
-            </exclusions>
+            <version>6.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -195,7 +183,16 @@
                 -->
             </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-configuration</artifactId>
+            <version>${neo4j-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-kernel</artifactId>
+            <version>${neo4j-version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -260,41 +257,7 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-neo4j</artifactId>
-            <version>8.0.0-M1</version>
-            <exclusions>
-                <!--
-                                <exclusion>
-                                    <groupId>commons-logging</groupId>
-                                    <artifactId>commons-logging</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>commons-logging</groupId>
-                                    <artifactId>commons-logging</artifactId>
-                                </exclusion>
-                -->
-                <!--
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-core</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-beans</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-context</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-tx</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-data-commons</artifactId>
-                                </exclusion>
-                -->
-            </exclusions>
+            <version>8.0.3</version>
         </dependency>
 
 

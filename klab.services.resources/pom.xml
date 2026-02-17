@@ -28,6 +28,13 @@
             <version>${klab.version}</version>
         </dependency>
 
+        <!-- spatial H2 database for kboxes -->
+        <dependency>
+            <groupId>org.orbisgis</groupId>
+            <artifactId>h2gis</artifactId>
+            <version>${h2gis.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observable</artifactId>

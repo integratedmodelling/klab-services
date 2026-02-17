@@ -108,6 +108,7 @@
         <googleJibVersion>3.3.1</googleJibVersion>
         <jib.jvmFlags>-XshowSettings:vm</jib.jvmFlags>
         <avro.version>1.12.0</avro.version>
+        <nitrite.version>4.3.2</nitrite.version>
 
         <!-- the five below go together. Never change one without checking the
             others. -->
@@ -115,7 +116,7 @@
         <spring.version>6.2.5</spring.version>
         <spring-security.version>6.4.4</spring-security.version>
         <junit-version>5.6.3</junit-version>
-        <jackson-version>2.19.0</jackson-version>
+        <jackson-version>2.20.0</jackson-version>
 
         <javax.mail-api.version>1.5.2</javax.mail-api.version>
         <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
@@ -276,6 +277,11 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.20</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${jackson-version}</version>
             </dependency>
@@ -304,6 +310,11 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-parameter-names</artifactId>
                 <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dizitart</groupId>
+                <artifactId>nitrite-jackson-mapper</artifactId>
+                <version>${nitrite.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -362,6 +373,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${spring-boot.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-json</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>

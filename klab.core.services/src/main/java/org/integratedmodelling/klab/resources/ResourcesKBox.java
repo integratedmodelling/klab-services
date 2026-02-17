@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.dizitart.no2.Nitrite;
-import org.dizitart.no2.common.mapper.JacksonMapper;
+import org.dizitart.no2.mapper.jackson.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
 import org.dizitart.no2.index.IndexType;
 import org.dizitart.no2.repository.EntityDecorator;

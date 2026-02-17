@@ -8,7 +8,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -55,17 +54,17 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     try {
       this.managementService =
           new DatabaseManagementServiceBuilder(directory)
-              .setConfig(GraphDatabaseSettings.initial_default_database, DEFAULT_DATABASE_NAME)
-              .setConfig(GraphDatabaseSettings.pagecache_memory, ByteUnit.mebiBytes(512))
-              .setConfig(GraphDatabaseSettings.transaction_timeout, Duration.ofSeconds(60))
-              .setConfig(GraphDatabaseSettings.preallocate_logical_logs, true)
-              .setConfig(BoltConnector.enabled, true) // for the driver
-              .setConfig(
+                  .setConfig(GraphDatabaseSettings.initial_default_database, DEFAULT_DATABASE_NAME)
+                  .setConfig(GraphDatabaseSettings.pagecache_memory, ByteUnit.mebiBytes(512))
+                  .setConfig(GraphDatabaseSettings.transaction_timeout, Duration.ofSeconds(60))
+                  .setConfig(GraphDatabaseSettings.preallocate_logical_logs, true)
+                  .setConfig(BoltConnector.enabled, true) // for the driver
+                  .setConfig(
                   BoltConnector.listen_address, new SocketAddress("0.0.0.0", 7687)) // docker fix
-              .setConfig(HttpConnector.enabled, true) // for debugging ?
-              .setConfig(
-                  HttpConnector.listen_address, new SocketAddress("0.0.0.0", 7474)) // docker fix
-              .build();
+                  .setConfig(HttpConnector.enabled, true) // for debugging ?
+                  .setConfig(
+                          HttpConnector.listen_address, new SocketAddress("0.0.0.0", 7474)) // docker fix
+                  .build();
 
       this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
 

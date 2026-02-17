@@ -6,6 +6,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
@@ -13,11 +14,12 @@ import java.util.List;
 
 @Component
 // TODO remove the argument when all gson dependencies are the same (never)
-@EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
+//@EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
-                               "org.integratedmodelling.klab.services.messaging",
+//                               "org.integratedmodelling.klab.services.messaging",
                                "org.integratedmodelling.klab.services.application.controllers",
                                "org.integratedmodelling.resources.server.controllers"})
+@SpringBootApplication
 public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider> {
 
     @Override

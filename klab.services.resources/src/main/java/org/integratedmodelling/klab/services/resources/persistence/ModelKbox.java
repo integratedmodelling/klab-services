@@ -31,9 +31,9 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.persistence.h2.SQL;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference.Mediation;
+import org.integratedmodelling.klab.services.resources.persistence.h2.SQL;
 import org.locationtech.jts.geom.Geometry;
 
 import java.sql.ResultSet;
