@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim.impl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -19,7 +20,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     private List<KimObservable> dependencies = new ArrayList<>();
     private List<KimObservable> observables = new ArrayList<>();
     private Type type;
-    private List<String> resourceUrns = new ArrayList<>();
+    private List<Urn> resourceUrns = new ArrayList<>();
     private boolean learningModel;
     private String urn;
     private List<Contextualizable> contextualization = new ArrayList<>();
@@ -53,7 +54,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     }
 
     @Override
-    public List<String> getResourceUrns() {
+    public List<Urn> getResourceUrns() {
         return this.resourceUrns;
     }
 
@@ -89,7 +90,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
         this.type = type;
     }
 
-    public void setResourceUrns(List<String> resourceUrns) {
+    public void setResourceUrns(List<Urn> resourceUrns) {
         this.resourceUrns = resourceUrns;
     }
 

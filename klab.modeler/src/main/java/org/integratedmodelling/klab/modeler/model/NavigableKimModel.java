@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.modeler.model;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -36,7 +37,7 @@ public class NavigableKimModel extends NavigableKlabStatement<KimModel> implemen
     }
 
     @Override
-    public List<String> getResourceUrns() {
+    public List<Urn> getResourceUrns() {
         return delegate.getResourceUrns();
     }
 

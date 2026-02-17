@@ -958,7 +958,8 @@ public class RuntimeService extends BaseService
 
         // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
         var resolution =
-            resourcesService.resolveResource(contextualizable.getResourceUrns().getFirst(), scope);
+            resourcesService.resolveResource(
+                contextualizable.getResourceUrns().getFirst().getUrn(), scope);
         if (resolution.isEmpty()) {
           return resolution;
         }
