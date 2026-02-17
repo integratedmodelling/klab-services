@@ -163,7 +163,7 @@ public class UrnManager {
     }
 
     // Replace invalid characters with underscores
-    component = component.replaceAll("[^a-z0-9_.]", "_");
+    component = component.replaceAll("[^a-z0-9_.-]", "_");
 
     // Ensure it doesn't start with a number or underscore
     if (!component.isEmpty() && !Character.isLetter(component.charAt(0))) {
