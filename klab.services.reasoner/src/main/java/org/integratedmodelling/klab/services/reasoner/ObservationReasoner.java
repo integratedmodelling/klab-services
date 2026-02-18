@@ -32,13 +32,15 @@ public class ObservationReasoner {
   private ReasonerService reasoner;
   private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
 
-  private static class QuickSemanticFilter {
+  private class QuickSemanticFilter {
 
     public Set<SemanticType> semanticTypesWhitelist = EnumSet.noneOf(SemanticType.class);
     public Set<SemanticType> semanticTypesBlacklist = EnumSet.noneOf(SemanticType.class);
     // any predefined variables used in patterns
     public Set<String> fixedVariablesUsed = new HashSet<>();
     public Set<String> customVariablesUsed = new HashSet<>();
+    public List<List<KimObservationStrategy.Filter.SemanticPattern>> typePatterns =
+        new ArrayList<>();
     public boolean collectiveConstraints;
     public boolean collectiveOnly;
     public boolean nonCollectiveOnly;
@@ -68,6 +70,104 @@ public class ObservationReasoner {
         if ((collectiveOnly && !observable.getSemantics().isCollective())
             || (nonCollectiveOnly && observable.getSemantics().isCollective())) {
           return false;
+        }
+      }
+
+      boolean patternMatch = typePatterns.isEmpty();
+      for (var pattern : typePatterns) {
+        if (matchesPattern(observable.getSemantics(), pattern)) {
+          patternMatch = true;
+          break;
+        }
+      }
+
+      return patternMatch;
+    }
+
+    private boolean matchesPattern(
+        Concept semantics, List<KimObservationStrategy.Filter.SemanticPattern> semanticPattern) {
+      for (var rule : semanticPattern) {
+        switch (rule) {
+          case QUALITY -> {
+            if (!semantics.is(SemanticType.QUALITY)) {
+              return false;
+            }
+          }
+          case TYPE -> {
+            if (!semantics.is(SemanticType.CLASS)) {
+              return false;
+            }
+          }
+          case MEASUREMENT -> {
+            if (!semantics.is(SemanticType.INTENSIVE) && !semantics.is(SemanticType.EXTENSIVE)) {
+              return false;
+            }
+          }
+          case QUANTITY -> {
+            if (!semantics.is(SemanticType.QUANTIFIABLE)) {
+              return false;
+            }
+          }
+          case PRIORITY -> {
+            if (!semantics.is(SemanticType.PRIORITY)) {
+              return false;
+            }
+          }
+          case PRESENCE -> {
+            if (!semantics.is(SemanticType.PRESENCE)) {
+              return false;
+            }
+          }
+          case PREDICATE -> {
+            if (reasoner.directTraits(semantics).isEmpty()) {
+              return false;
+            }
+          }
+          case ROLE -> {
+            if (reasoner.directRoles(semantics).isEmpty()) {
+              return false;
+            }
+          }
+          case ATTRIBUTE -> {
+            if (reasoner.directAttributes(semantics).isEmpty()) {
+              return false;
+            }
+          }
+          case IDENTITY -> {
+            if (reasoner.directIdentities(semantics).isEmpty()) {
+              return false;
+            }
+          }
+          case AGENT -> {
+            if (!semantics.is(SemanticType.AGENT)) {
+              return false;
+            }
+          }
+          case RELATIONSHIP -> {
+            if (!semantics.is(SemanticType.RELATIONSHIP)) {
+              return false;
+            }
+          }
+          case SUBJECT -> {
+            if (!semantics.is(SemanticType.SUBJECT)) {
+              return false;
+            }
+          }
+          case PROCESS -> {
+            if (!semantics.is(SemanticType.PROCESS)) {
+              return false;
+            }
+          }
+          case EVENT -> {
+            if (!semantics.is(SemanticType.EVENT)) {
+              return false;
+            }
+          }
+          case CONFIGURATION -> {
+            if (!semantics.is(SemanticType.QUALITY)) {
+              return false;
+            }
+          }
         }
       }
       return true;
@@ -157,6 +257,13 @@ public class ObservationReasoner {
               }
             }
           }
+        }
+
+        /*
+         * A null match to the required macro variables means no match
+         */
+        if (!strategy.getMacroVariables().isEmpty() && patternVariableValues.containsValue(null)) {
+          continue;
         }
 
         // at least a matching filter is necessary
@@ -250,7 +357,7 @@ public class ObservationReasoner {
             function.withUnnamedParameters(
                 patternVariableValues.getOrDefault(key.substring(1), key));
       }
-    return languageService.execute(function, scope, Object.class);
+    return languageService.execute(function, scope, Object.class, scope, observable);
   }
 
   private boolean matchFilter(
@@ -266,6 +373,8 @@ public class ObservationReasoner {
               ? reasoner.declareConcept(filter.getMatch(), patternVariableValues)
               : reasoner.declareConcept(filter.getMatch());
       ret = semantics != null && reasoner.match(observation.getObservable(), semantics);
+    } else if (!filter.getTypePattern().isEmpty()) {
+      System.out.println("PORCELLIN PORCELLINO");
     }
     if (ret && !filter.getFunctions().isEmpty()) {
       for (var function : filter.getFunctions()) {
@@ -343,6 +452,8 @@ public class ObservationReasoner {
             nNoncollective++;
           }
           variables.addAll(match.getMatch().getPatternVariables());
+        } else if (!match.getTypePattern().isEmpty()) {
+          ret.typePatterns.add(match.getTypePattern());
         }
       }
     }

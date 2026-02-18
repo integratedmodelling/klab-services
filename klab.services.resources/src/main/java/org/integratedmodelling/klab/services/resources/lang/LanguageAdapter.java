@@ -950,6 +950,15 @@ public enum LanguageAdapter {
                   KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
         }
 
+        if (match.getTypePattern() != null) {
+          match
+              .getTypePattern()
+              .forEach(
+                  type ->
+                      f.getTypePattern()
+                          .add(KimObservationStrategy.Filter.SemanticPattern.valueOf(type.name())));
+        }
+
         for (var condition : match.getConditions()) {
           f.getFunctions()
               .add(

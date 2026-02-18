@@ -325,7 +325,11 @@ public class ResolverService extends BaseService implements Resolver {
     var cData = observation.getContextualizationData();
 
     var resourceBuilder =
-        Resource.builder(cData).withServiceId(serviceId()).withGeometry(observation.getGeometry());
+        Resource.builder(cData)
+            .withServiceId(serviceId())
+            .withGeometry(observation.getGeometry())
+            .withResourceVersion(Version.create("0.0.1"))
+            .withType(observation.getObservable().getArtifactType());
     for (var key : observation.getMetadata().keySet()) {
       resourceBuilder.withMetadata(key, observation.getMetadata().get(key));
     }
@@ -346,7 +350,8 @@ public class ResolverService extends BaseService implements Resolver {
       resourcesKbox.putResource(resource);
 
       if (cData.getParameters().containsKey("resource")) {
-        Thread.ofVirtual().start(() -> publishResourceToService(resource, cData, contextScope));
+        Thread.ofVirtual()
+            .start(() -> publishResourceToService(resource, observation, cData, contextScope));
       }
     }
 
@@ -360,7 +365,10 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   private void publishResourceToService(
-      Resource resource, Observation.ContextualizationData cData, ContextScope contextScope) {
+      Resource resource,
+      Observation observation,
+      Observation.ContextualizationData cData,
+      ContextScope contextScope) {
 
     var definition = cData.getParameters().get("resource", Parameters.class);
     ResourcesService service = null;
@@ -391,8 +399,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     if (definition.containsKey("mode")) {
       submissionMode =
-          ResourcesService.SubmissionMode.valueOf(
-              definition.get("mode").toString().toUpperCase());
+          ResourcesService.SubmissionMode.valueOf(definition.get("mode").toString().toUpperCase());
     }
 
     if (id == null || namespace == null || catalog == null) {
@@ -404,6 +411,8 @@ public class ResolverService extends BaseService implements Resolver {
 
     var resourceBuilder =
         Resource.builder(cData)
+            .withResourceVersion(Version.create("0.0.1"))
+            .withType(observation.getObservable().getArtifactType())
             .withServiceId(serviceId())
             .withGeometry(resource.getGeometry())
             .withUrn(serviceName + ":" + catalog + ":" + namespace + ":" + id);
