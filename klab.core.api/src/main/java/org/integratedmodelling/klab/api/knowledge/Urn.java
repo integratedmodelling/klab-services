@@ -49,6 +49,9 @@ public class Urn implements Serializable {
     UNKNOWN
   }
 
+  // for the deserializer - don't remove
+  public Urn() {}
+
   /**
    * Pass a valid URN string. For now does no validation.
    *
