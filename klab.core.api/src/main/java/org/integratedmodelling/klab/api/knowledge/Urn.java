@@ -1,8 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -33,7 +32,7 @@ public class Urn implements Serializable {
 
   private String urn;
   private String fullUrn;
-  private String[] tokens;
+  private List<String> tokens = new ArrayList<>();
   private Map<String, String> parameters = new HashMap<>();
 
   public enum Type {
@@ -79,7 +78,7 @@ public class Urn implements Serializable {
       }
     }
     this.urn = urn;
-    this.tokens = urn.split(":");
+    this.tokens = Arrays.asList(urn.split(":"));
   }
 
   private Urn(String urn, Map<String, String> urnParameters) {
@@ -103,17 +102,17 @@ public class Urn implements Serializable {
    * @return the node name.
    */
   public String getNodeName() {
-    return tokens[0];
+    return tokens.getFirst();
   }
 
   /**
    * Length is the number of colon-separated tokens in the URN.
+   *
    * @return
    */
   public int length() {
-    return tokens == null ? 0 : tokens.length;
+    return tokens.size();
   }
-
 
   /**
    * Whether the URN should be processed by the same engine that generates it.
@@ -161,12 +160,12 @@ public class Urn implements Serializable {
    * @return the originator
    */
   public String getCatalog() {
-    return tokens[1];
+    return tokens.size() > 1 ? tokens.get(1) : null;
   }
 
   /** Return the namespace of the resource. */
   public String getNamespace() {
-    return tokens.length > 2 ? tokens[2] : null;
+    return tokens.size() > 2 ? tokens.get(2) : null;
   }
 
   /**
@@ -175,7 +174,7 @@ public class Urn implements Serializable {
    * @return the resource id.
    */
   public String getResourceId() {
-    return tokens.length > 3 ? tokens[3] : null;
+    return tokens.size() > 3 ? tokens.get(3) : null;
   }
 
   /**
@@ -184,7 +183,7 @@ public class Urn implements Serializable {
    * @return
    */
   public Version getVersion() {
-    return tokens.length > 4 ? new Version(tokens[4]) : Version.ANY_VERSION;
+    return tokens.size() > 4 ? new Version(tokens.get(4)) : Version.ANY_VERSION;
   }
 
   /**
