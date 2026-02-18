@@ -61,6 +61,24 @@ public class TestOutput extends TestCaseBase {
     //  k.LAB and projects
   }
 
+  /**
+   * Needs a wrap() function that wraps a generated action and catches exceptions or other return
+   * values, based on the allowed matches. It should return a result packet and take one (null if
+   * root) along with the function to run. The code should be translated so that any return values,
+   * etc. are set into the return packet.
+   *
+   * <p>The packet is the local execution scope and also contains all local variables and other
+   * state.
+   *
+   * <p>Each action and sub-action gets compiled into a member function that gets called within the
+   * wrapper in the main logic.
+   *
+   * <p>An app's main() uses a specialized scope that builds the interface and sends it out on
+   * return. In a test, all test environment is controlled by the special TestScope. Wrap() returns a
+   * Future<Scope> that can be chained as needed.
+   *
+   * @param testScope
+   */
   void action_t1(TestScope testScope /* , ... any parameters */) {
 
     /* initialize closeables used within an action, in a try-with-resources block */
@@ -92,7 +110,8 @@ public class TestOutput extends TestCaseBase {
                     .thenApply(
                         obs1_ -> {
 
-                          // the remaining piece. ACHTUNG must always check for an empty result of handle()!
+                          // the remaining piece. ACHTUNG must always check for an empty result of
+                          // handle()!
                           if (obs1_.isEmpty()) {
                             return obs1_;
                           }

@@ -9,6 +9,8 @@ import reactor.core.publisher.Sinks;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /// Base class for the Java/Groovy compiled actor that translates a k.Actors behavior,
 /// substituting the interpreted k.Actors VM.
@@ -60,6 +62,19 @@ public class ActorBase extends GroovyObjectSupport {
 
   public ActorBase(KActorsBehavior behavior) {
     this.behavior = behavior;
+  }
+
+  /**
+   * The main entry point for the compiled action and all its asynchronous blocks. Each gets
+   * compiled into a member function and the main logic uses a sequence of these.
+   *
+   * @param scope
+   * @param compiledCode
+   * @return
+   */
+  protected CompletableFuture<ActionScope> wrap(
+      ActionScope scope, Function<Object, ActionScope> compiledCode) {
+    return CompletableFuture.completedFuture(scope);
   }
 
   /**
