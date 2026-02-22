@@ -217,23 +217,25 @@ public class ResolutionCompiler {
         }
         case APPLY -> {
 
-          /**
-           * We ask the runtime to resolve all the contextualizables as a single operation. This
-           * will enable using anything that's supported natively in the runtime as well as using
-           * the resources service to locate and install any needed components or resources.
-           *
-           * <p>The strategy goes in the graph so there is no need for further storage of the
-           * contextualizers.
-           */
-          var runtime = scope.getService(RuntimeService.class);
-          ResourceSet requirements =
-              runtime.resolveContextualizables(operation.getContextualizables(), scope);
+          // FIXME this shouldn't happen - apply what?
+          if (!operation.getContextualizables().isEmpty()) {
+            /**
+             * We ask the runtime to resolve all the contextualizables as a single operation. This
+             * will enable using anything that's supported natively in the runtime as well as using
+             * the resources service to locate and install any needed components or resources.
+             *
+             * <p>The strategy goes in the graph so there is no need for further storage of the
+             * contextualizers.
+             */
+            var runtime = scope.getService(RuntimeService.class);
+            ResourceSet requirements =
+                runtime.resolveContextualizables(operation.getContextualizables(), scope);
 
-          if (requirements.isEmpty()) {
-            return ResolutionGraph.empty();
+            if (requirements.isEmpty()) {
+              return ResolutionGraph.empty();
+            }
+            ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
           }
-
-          ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
         }
       }
     }

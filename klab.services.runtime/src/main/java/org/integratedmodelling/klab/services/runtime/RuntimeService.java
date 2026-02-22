@@ -18,6 +18,7 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
@@ -37,6 +38,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -673,7 +675,11 @@ public class RuntimeService extends BaseService
                   }
                 }
                 resolutionScope.fail();
-                return Observation.empty();
+                return Observation.empty(
+                    Notification.error(
+                        "Resolution of "
+                            + observation.getObservable().getUrn()
+                            + " failed: empty dataflow"));
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
@@ -952,39 +958,50 @@ public class RuntimeService extends BaseService
 
       if (!contextualizable.getResourceUrns().isEmpty()) {
 
-        if (contextualizable.getResourceUrns().size() > 1) {
-          throw new KlabUnimplementedException("Multiple URNs not supported for contextualization");
+        // TODO the pre-resolution step should become the key to handle multiple URNs
+        var preResolveResourceData = preResolveResource(contextualizable.getResourceUrns(), scope);
+        if (preResolveResourceData == null) {
+          return ResourceSet.empty(
+              Notification.error(
+                  "Resources " + contextualizable.getResourceUrns() + " not available"));
         }
+        if (preResolveResourceData.getSecond() != null) {
+          // put the resource away for later and return
+          scope
+              .getData()
+              .put(preResolveResourceData.getFirst(), preResolveResourceData.getSecond());
 
-        // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
-        var resolution =
-            resourcesService.resolveResource(
-                contextualizable.getResourceUrns().getFirst().getUrn(), scope);
-        if (resolution.isEmpty()) {
-          return resolution;
-        }
-        ret = Utils.Resources.merge(ret, resolution);
-        if (!ret.isEmpty()) {
-          for (var resource : resolution.getResults()) {
-            if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
-              var service =
-                  scope
-                      .findService(
-                          ResourcesService.class,
-                          ks -> ks.serviceId().equals(resource.getServiceId()))
-                      .orElse(null);
-              if (service == null) {
-                return ResourceSet.empty(
-                    Notification.error(
-                        "Resource "
-                            + resource.getResourceUrn()
-                            + " is in a service that is not available"));
-              }
-              var res = service.retrieveResource(List.of(resource.getResourceUrn()), scope);
-              if (res == null) {
-                return ResourceSet.empty(
-                    Notification.error(
-                        "Resource " + resource.getResourceUrn() + " is not available"));
+        } else {
+
+          // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
+          var resolution =
+              resourcesService.resolveResource(preResolveResourceData.getFirst(), scope);
+          if (resolution.isEmpty()) {
+            return resolution;
+          }
+          ret = Utils.Resources.merge(ret, resolution);
+          if (!ret.isEmpty()) {
+            for (var resource : resolution.getResults()) {
+              if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
+                var service =
+                    scope
+                        .findService(
+                            ResourcesService.class,
+                            ks -> ks.serviceId().equals(resource.getServiceId()))
+                        .orElse(null);
+                if (service == null) {
+                  return ResourceSet.empty(
+                      Notification.error(
+                          "Resource "
+                              + resource.getResourceUrn()
+                              + " is in a service that is not available"));
+                }
+                var res = service.retrieveResource(List.of(resource.getResourceUrn()), scope);
+                if (res == null) {
+                  return ResourceSet.empty(
+                      Notification.error(
+                          "Resource " + resource.getResourceUrn() + " is not available"));
+                }
               }
             }
           }
@@ -999,6 +1016,65 @@ public class RuntimeService extends BaseService
     }
 
     return ret;
+  }
+
+  /**
+   * Create a single resolvable URN from the set of URNs received, which can be later sent to the
+   * resource resolver unless the URN is specially handled. If the pre-inspection produces a
+   * resource directly, return it as the second field so that the call to the resources service can
+   * be skipped.
+   *
+   * @param resourceUrns
+   * @param scope
+   * @return
+   */
+  private Pair<String, Resource> preResolveResource(List<Urn> resourceUrns, ContextScope scope) {
+
+    if (resourceUrns.size() == 1) {
+
+      if (scope.getData().containsKey(resourceUrns.getFirst().getUrn())) {
+        return Pair.of(
+            resourceUrns.getFirst().getUrn(),
+            scope.getData().get(resourceUrns.getFirst().getUrn(), Resource.class));
+      } else if (Utils.Urns.isNamespaceBound(resourceUrns.getFirst().getUrn())) {
+
+        // must be found in the namespace
+        var definitionUrn =
+            resourceUrns.getFirst().getNamespace() + "." + resourceUrns.getFirst().getResourceId();
+
+        var namespace =
+            Utils.Resources.resolveNamespace(resourceUrns.getFirst().getNamespace(), scope);
+
+        if (namespace == null) {
+          return null;
+        }
+
+        var definition =
+            namespace.getStatements().stream()
+                .filter(s -> s.getUrn().equals(resourceUrns.getFirst().getResourceId()))
+                .findFirst()
+                .orElse(null);
+
+        if (definition instanceof KimSymbolDefinition symbolDefinition) {
+          return Pair.of(
+              resourceUrns.getFirst().getUrn(),
+              Resource.builder(resourceUrns.getFirst().getResourceId()) /* TODO add definition */
+                  .build());
+        }
+
+        return Pair.of(resourceUrns.getFirst().getUrn(), null);
+      }
+
+    } else {
+
+      // TODO register the multiple resource as needed: resolve each of them, then create a
+      // collection
+      //  and store it in the scope with a temporary URN
+      throw new KlabUnimplementedException("Multiple URNs not supported for contextualization");
+    }
+
+    // this will cause normal resolution downstream
+    return Pair.of(resourceUrns.getFirst().getUrn(), null);
   }
 
   @Override

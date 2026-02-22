@@ -117,6 +117,14 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     boolean isPersistent();
+
+    /**
+     * Checked before usage in case the data exist but are not usable for lack of specification or
+     * previous error.
+     *
+     * @return
+     */
+    boolean validate();
   }
 
   /**

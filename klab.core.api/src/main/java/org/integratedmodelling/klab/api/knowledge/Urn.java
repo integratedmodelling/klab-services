@@ -223,6 +223,8 @@ public class Urn implements Serializable {
   public static final String LOCAL_URN_PREFIX = "urn:klab:local:";
   public static final String VOID_URN_PREFIX = "urn:klab:void:";
   public static final String LOCAL_FILE_PREFIX = "file:";
+  public static final String INLINE_SERVICE_ID = "inline";
+  public static final String RESOURCES_CATALOG_ID = "resources";
 
   public static boolean isLocal(String urn) {
     return urn.startsWith(LOCAL_URN_PREFIX)

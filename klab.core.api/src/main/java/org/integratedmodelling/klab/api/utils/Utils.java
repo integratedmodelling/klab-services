@@ -222,6 +222,12 @@ public class Utils {
       }
     }
 
+    public static boolean isNamespaceBound(String urn) {
+      var kurn = Urn.of(urn);
+      return kurn.getNodeName().equals(Urn.INLINE_SERVICE_ID)
+          && kurn.getCatalog().equals(Urn.RESOURCES_CATALOG_ID);
+    }
+
     public String getFunctionUrn(ServiceCall functionCall) {
       return "";
     }
@@ -428,6 +434,60 @@ public class Utils {
         ret.setEmpty(true);
       }
       return ret;
+    }
+
+    /**
+     * Resolve a resource by URN, using and prioritizing all the available services.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static Resource resolveResource(String urn, Scope scope) {
+      return null;
+    }
+
+    /**
+     * Resolve a namespace by URN, using and prioritizing all the available services.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static KimNamespace resolveNamespace(String urn, UserScope scope) {
+
+      var result =
+          queryResources(
+              scope,
+              ResourcesService.class,
+              service -> service.resolve(urn, KlabAsset.KnowledgeClass.NAMESPACE, scope));
+
+      if (!result.isEmpty()) {
+        var resource = result.getResults().iterator().next();
+        var service =
+            scope.getServices(ResourcesService.class).stream()
+                .filter(
+                    resourcesService ->
+                        resourcesService.serviceId().equals(resource.getServiceId()))
+                .findFirst()
+                .orElse(null);
+        if (service != null) {
+          return service.retrieve(urn, KimNamespace.class, scope);
+        }
+      }
+
+      return null;
+    }
+
+    /**
+     * Resolve a behavior by URN, using and prioritizing all the available services.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static KActorsBehavior resolveBehavior(String urn, Scope scope) {
+      return null;
     }
 
     /**
