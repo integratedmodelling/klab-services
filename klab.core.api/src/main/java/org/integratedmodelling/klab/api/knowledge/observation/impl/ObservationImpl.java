@@ -120,6 +120,13 @@ public class ObservationImpl implements Observation {
       return persistent;
     }
 
+    @Override
+    public boolean validate() {
+      // simply check the adapterId for now; later we should validate the parameters but it should
+      // be done at setup/creation.
+      return this.adapterId != null;
+    }
+
     public void setPersistent(boolean persistent) {
       this.persistent = persistent;
     }

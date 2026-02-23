@@ -1009,22 +1009,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
   }
 
+  // TODO see logic in the aspecific resolve() and revise API to use this after classification of the urn
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
-    switch (assetClass) {
-      //      case PROJECT:
-      //        return resolveProject(urn, scope);
-      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
-      case COMPONENT:
-      case MODEL:
-      case RESOURCE:
-      case WORKSPACE:
-      case PROJECT:
-      case OBSERVATION_STRATEGY:
-      case CONCEPT_STATEMENT:
-      default:
-        return null;
+    var ret = switch (assetClass) {
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY -> null;
+        // TODO resolution is at the project level so each document will imply the containing project plus
+        //  any projects and components it depends on
+      case COMPONENT -> null;
+      case MODEL -> resolveModel(urn, scope);
+      case RESOURCE -> resolveResourceUrn(urn, scope);
+      case WORKSPACE -> null;
+      case PROJECT -> null;
+      case OBSERVATION_STRATEGY -> null;
+      case CONCEPT_STATEMENT -> null;
+        default -> null;
+    };
+
+    if (ret != null) {
+      return addDependencies(ret, scope);
     }
+
+    return ResourceSet.empty(
+        Notification.error("Cannot resolve " + assetClass.name().toLowerCase() + " " + urn));
   }
 
   @Override

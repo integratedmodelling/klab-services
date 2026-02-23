@@ -29,19 +29,7 @@ import java.util.List;
  */
 public interface Language extends Service {
 
-  public static final String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
-
-//  // TODO turn these into values of an enum
-//  public static final String KWV = "k.IM worldview definition";
-//
-//  /** k.IM is the k.LAB semantic modeling language */
-//  public static final String KIM = "k.IM modelling";
-//
-//  /** k.Actors is the k.LAB actors language */
-//  public static final String KACTORS = "k.Actors";
-//
-//  /** The k.LAB observation strategy and dataflow encoding language */
-//  public static final String KOBSERVATION = "k.Observation";
+  String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
 
   default String getServiceName() {
     return "klab.language.service";

@@ -4,6 +4,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -32,13 +34,10 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   private KimClassification classification;
   private KimLookupTable lookupTable;
   private String accordingTo;
-  private List<String> resourceUrns = new ArrayList<>();
+  private List<Urn> resourceUrns = new ArrayList<>();
   private Collection<Pair<String, Artifact.Type>> inputs;
-  //  private Parameters<String> parameters = Parameters.create();
   private Collection<String> interactiveParameters = new ArrayList<>();
   private Contextualizable condition;
-  //  private ObservationStrategy observationStrategy;
-  //  private Pair<ValueMediator, ValueMediator> conversion;
   private boolean negated;
   private boolean mediation;
   private Geometry geometry;
@@ -59,7 +58,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.contextualizationData = contextualizationData;
   }
 
-  public ContextualizableImpl(List<String> resourceUrns) {
+  public ContextualizableImpl(List<Urn> resourceUrns) {
     this.resourceUrns.addAll(resourceUrns);
   }
 
@@ -144,7 +143,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   }
 
   @Override
-  public List<String> getResourceUrns() {
+  public List<Urn> getResourceUrns() {
     return this.resourceUrns;
   }
 
@@ -233,7 +232,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.accordingTo = accordingTo;
   }
 
-  public void setResourceUrns(List<String> resourceUrns) {
+  public void setResourceUrns(List<Urn> resourceUrns) {
     this.resourceUrns = resourceUrns;
   }
 

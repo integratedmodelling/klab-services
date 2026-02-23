@@ -66,9 +66,40 @@ public interface KimObservationStrategy extends KlabStatement {
    */
   interface Filter extends Serializable {
 
+    enum SemanticPattern {
+      QUALITY,
+      TYPE,
+      MEASUREMENT,
+      QUANTITY,
+      PRIORITY,
+      PRESENCE,
+      PREDICATE,
+      ROLE,
+      ATTRIBUTE,
+      IDENTITY,
+      AGENT,
+      RELATIONSHIP,
+      SUBJECT,
+      PROCESS,
+      EVENT,
+      CONFIGURATION
+    }
+
     boolean isNegated();
 
+    /**
+     * This or a type pattern may be defined
+     *
+     * @return
+     */
     KimConcept getMatch();
+
+    /**
+     * This or an observable may be defined. Two together are impossible.
+     *
+     * @return
+     */
+    List<SemanticPattern> getTypePattern();
 
     List<ServiceCall> getFunctions();
 

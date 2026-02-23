@@ -218,6 +218,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private List<ServiceCall> functions = new ArrayList<>();
     private Object literal;
     private LogicalConnector connectorToPrevious;
+    private List<SemanticPattern> typePattern = new ArrayList<>();
 
     @Override
     public boolean isNegated() {
@@ -261,6 +262,15 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     public void setConnectorToPrevious(LogicalConnector connectorToPrevious) {
       this.connectorToPrevious = connectorToPrevious;
+    }
+
+    @Override
+    public List<SemanticPattern> getTypePattern() {
+      return typePattern;
+    }
+
+    public void setTypePattern(List<SemanticPattern> typePattern) {
+      this.typePattern = typePattern;
     }
   }
 

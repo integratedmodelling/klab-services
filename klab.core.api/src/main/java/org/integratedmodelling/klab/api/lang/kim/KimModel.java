@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public interface KimModel extends KlabStatement, Resolvable {
      */
     Artifact.Type getType();
 
-    List<String> getResourceUrns();
+    List<Urn> getResourceUrns();
 
     boolean isLearningModel();
 

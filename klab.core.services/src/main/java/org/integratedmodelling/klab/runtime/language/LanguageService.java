@@ -233,8 +233,23 @@ public class LanguageService implements Language {
       } else if (Observation.class.isAssignableFrom(cls)) {
         ret[i] =
             scope instanceof ContextScope ? ((ContextScope) scope).getContextObservation() : null;
-      } /* TODO more type inference: definitely Model */ else {
-        ret[i] = null;
+      } else {
+
+        // find in furtherArgs if any
+        boolean found = false;
+        if (furtherArgs != null) {
+          for (Object arg : furtherArgs) {
+            if (cls.isAssignableFrom(arg.getClass())) {
+              ret[i] = arg;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (!found) {
+          ret[i] = null;
+        }
       }
       i++;
     }

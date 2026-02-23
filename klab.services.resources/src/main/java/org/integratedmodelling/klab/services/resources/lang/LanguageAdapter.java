@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resources.lang;
 import java.util.*;
 
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
@@ -456,7 +457,7 @@ public enum LanguageAdapter {
     ret.setLength(model.getCodeLength());
     ret.setProjectName(namespace.getProjectName());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
-    ret.getResourceUrns().addAll(model.getResourceUrns());
+    ret.getResourceUrns().addAll(model.getResourceUrns().stream().map(u -> adaptUrn(u)).toList());
     for (var annotation : model.getAnnotations()) {
       ret.getAnnotations()
           .add(
@@ -526,6 +527,14 @@ public enum LanguageAdapter {
       ret.getContextualization().add(adaptContextualizable(contextualizable, namespace));
     }
 
+    return ret;
+  }
+
+  private Urn adaptUrn(org.eclipse.xtext.util.Pair<String, Map<Object, Object>> u) {
+    var ret = Urn.of(u.getFirst());
+    for (var entry : u.getSecond().entrySet()) {
+      ret.getParameters().put(entry.getKey().toString(), entry.getValue().toString());
+    }
     return ret;
   }
 
@@ -939,6 +948,15 @@ public enum LanguageAdapter {
                   namespace,
                   projectName,
                   KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
+        }
+
+        if (match.getTypePattern() != null) {
+          match
+              .getTypePattern()
+              .forEach(
+                  type ->
+                      f.getTypePattern()
+                          .add(KimObservationStrategy.Filter.SemanticPattern.valueOf(type.name())));
         }
 
         for (var condition : match.getConditions()) {
