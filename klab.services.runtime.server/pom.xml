@@ -177,14 +177,6 @@
             </exclusions>
         </dependency>
 
-
-        <!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.3.5</version>
-        </dependency>
-
         <!-- needs to be forced for some reason, or GraphQL won't initialize -->
         <dependency>
             <groupId>io.micrometer</groupId>
