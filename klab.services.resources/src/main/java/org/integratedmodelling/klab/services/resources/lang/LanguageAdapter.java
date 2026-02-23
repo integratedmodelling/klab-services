@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
