@@ -516,11 +516,11 @@ public class H2Database {
       }
       refresh = knownVersion == null;
       if (!refresh) {
-        refresh = !knownVersion.equals(Constants.getFullVersion());
+        refresh = !knownVersion.equals(Constants.FULL_VERSION);
       }
 
       if (refresh) {
-        properties.setProperty(kboxName + ".h2.version", Constants.getFullVersion());
+        properties.setProperty(kboxName + ".h2.version", Constants.FULL_VERSION);
         try (OutputStream output = new FileOutputStream(propfile)) {
           properties.store(output, null);
         } catch (IOException e) {
