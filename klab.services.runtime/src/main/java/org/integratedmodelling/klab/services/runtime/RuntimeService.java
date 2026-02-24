@@ -222,7 +222,7 @@ public class RuntimeService extends BaseService
             + " created "
             + TimeInstant.create(context.getCreationTime())
             + " idle "
-            + context.getIdleTimeMs());
+            + Utils.Time.formatDuration(context.getIdleTimeMs()));
 
     if (!context.getConfiguration().getPersistence().persistent) {
       var orphan = false;
@@ -574,7 +574,8 @@ public class RuntimeService extends BaseService
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
-      if (observation.getContextualizationData() == null
+      if (contextualizationData.validate()
+          && observation.getContextualizationData() == null
           && observation instanceof ObservationImpl observationImpl) {
         observationImpl.setContextualizationData(contextualizationData);
       }

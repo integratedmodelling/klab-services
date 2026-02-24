@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
 // for local variables
 public class ActionScope {
 
+  ActorBase.ExitValue exitValue;
   Map<String, Object> variables;
 
   public ActionScope() {
@@ -18,6 +19,14 @@ public class ActionScope {
 
   public ActionScope(ActionScope parent) {
     this.variables = new HashMap<>(parent.variables);
+  }
+
+  public static ActionScope of(Object[] parameters) {
+    return null;
+  }
+
+  public ActorBase.ExitValue getExitValue() {
+    return exitValue;
   }
 
   /**

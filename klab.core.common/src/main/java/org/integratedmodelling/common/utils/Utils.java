@@ -680,6 +680,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return formatDuration(Duration.of(end - start, ChronoUnit.MILLIS));
     }
 
+    public static String formatDuration(long milliseconds) {
+      return formatDuration(Duration.of(milliseconds, ChronoUnit.MILLIS));
+    }
+
     public static String actualizedFormat(TimeInstant timeInstant) {
 
       var timePortion =
