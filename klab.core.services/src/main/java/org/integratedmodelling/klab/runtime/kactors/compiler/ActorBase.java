@@ -48,7 +48,7 @@ public abstract class ActorBase extends GroovyObjectSupport {
 
   private final KActorsBehavior behavior;
   protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
-  private CompletableFuture<ExitValue> mainTask = null;
+  private CompletableFuture<ActionScope> mainTask = null;
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -61,6 +61,10 @@ public abstract class ActorBase extends GroovyObjectSupport {
 
   public static class ExitValue {}
 
+ public ActorBase() {
+    this(null);
+ }
+
   public ActorBase(KActorsBehavior behavior) {
     this.behavior = behavior;
   }
@@ -69,11 +73,13 @@ public abstract class ActorBase extends GroovyObjectSupport {
    * Root-level main entry point. If there is no "main" action, one is provided to just listen for
    * any events.
    *
+   * Java-based actors may simply implement this.
+   *
    * @param initialScope
    * @param session
    * @return
    */
-  protected abstract ActionScope main_0(ActionScope initialScope, SessionScope session);
+  protected abstract ActionScope main(ActionScope initialScope, SessionScope session);
 
   /**
    * Run the behavior asynchronously. The behavior will end when a return instruction is reached in
@@ -88,7 +94,7 @@ public abstract class ActorBase extends GroovyObjectSupport {
    *     used to ensure proper cleanup of the runtime environment.
    */
   public CompletableFuture<ActionScope> runAsync(SessionScope scope, Object... parameters) {
-    return CompletableFuture.supplyAsync(() -> main_0(ActionScope.of(parameters), scope));
+    return mainTask  = CompletableFuture.supplyAsync(() -> main(ActionScope.of(parameters), scope));
   }
 
   /**
@@ -107,11 +113,20 @@ public abstract class ActorBase extends GroovyObjectSupport {
       if (mainTask.isDone()) {
         return NORMAL_EXIT;
       }
-      mainTask.complete(FORCED_EXIT);
+      mainTask.complete(null);
       return FORCED_EXIT;
     }
     return NO_TASK;
   }
+
+  public void fire(ActionScope scope, Object fired) {
+
+  }
+
+  public void doReturn(ActionScope scope, Object returnValue) {
+
+  }
+
 
   /**
    * Send a message to be handled by this actor. For the <code>@handle</code>-annotated actions when

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.ActionScope;
+import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 
 import java.util.function.BiFunction;
 
@@ -26,13 +27,15 @@ public class ActorExample extends ActorBase {
 
   // Template ${actorInfo.globalActorInstances()}
   // instantiate all global agents mentioned from library - in this case timer and console
+  CoreActorLibrary.Console console;
+  CoreActorLibrary.Timer timer;
 
   public ActorExample(KActorsBehavior behavior) {
     super(behavior);
   }
 
   @Override
-  protected ActionScope main_0(ActionScope initialScope, SessionScope session) {
+  protected ActionScope main(ActionScope initialScope, SessionScope session) {
 
     // call the emitter action and enqueue listener for it to fire or return
     emitter_0(initialScope, session, this::main_1);
@@ -52,5 +55,7 @@ public class ActorExample extends ActorBase {
       BiFunction<ActionScope, SessionScope, ActionScope> continuation) {
     return initialScope;
   }
+
+
 
 }
