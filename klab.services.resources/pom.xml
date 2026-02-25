@@ -32,7 +32,7 @@
         <dependency>
             <groupId>org.orbisgis</groupId>
             <artifactId>h2gis</artifactId>
-            <version>${h2gis.version}</version>
+            <version>2.2.0</version>
         </dependency>
 
         <dependency>
