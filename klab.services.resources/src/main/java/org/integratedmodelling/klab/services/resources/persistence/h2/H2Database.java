@@ -47,7 +47,7 @@ import javax.sql.PooledConnection;
 import org.h2.engine.Constants;
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2gis.functions.factory.H2GISFunctions;
-import org.h2gis.utilities.SFSUtilities;
+import org.h2gis.utilities.wrapper.ConnectionWrapper;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
@@ -217,7 +217,7 @@ public class H2Database {
   public void preallocateConnection() {
     if (connection == null) {
       try {
-        connection = SFSUtilities.wrapConnection(pooledConnection.getConnection());
+        connection =  new ConnectionWrapper(pooledConnection.getConnection());
       } catch (SQLException e) {
         // just leave null
       }
@@ -326,7 +326,7 @@ public class H2Database {
 
     try {
       // FIXME must close the pooledconnection, not the wrapped connection
-      return SFSUtilities.wrapConnection(pooledConnection.getConnection());
+      return  new ConnectionWrapper(pooledConnection.getConnection());
     } catch (SQLException e) {
       throw new KlabStorageException(e);
     }
