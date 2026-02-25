@@ -198,5 +198,9 @@
             <artifactId>imageio-ext-cog-rangereader-http</artifactId>
             <version>${imageio-ext.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+        </dependency>
     </dependencies>
 </project>
