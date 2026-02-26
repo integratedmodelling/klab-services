@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.TestCaseBase;
  * </pre>
  *
  */
-public class TestOutput extends TestCaseBase {
+public abstract class TestOutput extends TestCaseBase {
 
   /** Rule: generated fields start with underscore; generated local variables end with underscore */
   private final ContextActor contextActorInstance;

@@ -2,10 +2,11 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import groovy.lang.GroovyObjectSupport;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.ActionScope;
-//import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -43,11 +44,11 @@ import java.util.function.Function;
 /// universal adapter, so that only the catalog and the app ID need to be passed (the
 /// rest would be klab:app:) - maybe with the catalog using group-dependent defaults.
 ///
-public class ActorBase extends GroovyObjectSupport {
+public abstract class ActorBase extends GroovyObjectSupport {
 
   private final KActorsBehavior behavior;
-//  private final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
-  private CompletableFuture<ExitValue> mainTask = null;
+  protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
+  private CompletableFuture<ActionScope> mainTask = null;
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -55,40 +56,31 @@ public class ActorBase extends GroovyObjectSupport {
   public static final ExitValue NORMAL_EXIT = new ExitValue();
   public static final ExitValue FORCED_EXIT = new ExitValue();
   public static final ExitValue NO_TASK = new ExitValue();
+  public long id = -1;
 
   public static class Event {}
 
   public static class ExitValue {}
+
+  public ActorBase() {
+    this(null);
+  }
 
   public ActorBase(KActorsBehavior behavior) {
     this.behavior = behavior;
   }
 
   /**
-   * The main entry point for the compiled action and all its asynchronous blocks. Each gets
-   * compiled into a member function and the main logic uses a sequence of these.
+   * Root-level main entry point. If there is no "main" action, one is provided to just listen for
+   * any events.
    *
-   * @param scope
-   * @param compiledCode
+   * <p>Java-based actors may simply implement this.
+   *
+   * @param initialScope
+   * @param session
    * @return
    */
-  protected CompletableFuture<ActionScope> wrap(
-      ActionScope scope, Function<Object, ActionScope> compiledCode) {
-    return CompletableFuture.completedFuture(scope);
-  }
-
-  /**
-   * Run the behavior synchronously and return the exit value. Blocks until the behavior completes.
-   * If the behavior is a script or a test case, a return instruction is inserted at the end of
-   * main() even if a main action is there and it does not end with one.
-   *
-   * @return
-   */
-  public ExitValue run() {
-    // TODO call an asyncSupply on a new completable future calling the main entry point for the
-    //  compiled behavior.
-    return null;
-  }
+  protected abstract ActionScope main(ActionScope initialScope, SessionScope session);
 
   /**
    * Run the behavior asynchronously. The behavior will end when a return instruction is reached in
@@ -102,9 +94,19 @@ public class ActorBase extends GroovyObjectSupport {
    *     be used only for monitoring purposes: to stop or complete the behavior, stop() should be
    *     used to ensure proper cleanup of the runtime environment.
    */
-  public CompletableFuture<ExitValue> runAsync() {
-    // TODO create and start with asyncSupply
-    return mainTask;
+  public CompletableFuture<ActionScope> runAsync(SessionScope scope, Object... parameters) {
+    return mainTask = CompletableFuture.supplyAsync(() -> main(ActionScope.of(parameters), scope));
+  }
+
+  /**
+   * Run the behavior synchronously and return the exit value. Blocks until the behavior completes
+   * (which may never happen). If the behavior is a script or a test case, a return instruction is
+   * inserted at the end of main() even if a main action is there and it does not end with one.
+   *
+   * @return
+   */
+  public ExitValue run(SessionScope session, Object... parameters) {
+    return runAsync(session, parameters).join().getExitValue();
   }
 
   public ExitValue stop() {
@@ -112,11 +114,15 @@ public class ActorBase extends GroovyObjectSupport {
       if (mainTask.isDone()) {
         return NORMAL_EXIT;
       }
-      mainTask.complete(FORCED_EXIT);
+      mainTask.complete(null);
       return FORCED_EXIT;
     }
     return NO_TASK;
   }
+
+  public void fire(ActionScope scope, Object fired) {}
+
+  public void doReturn(ActionScope scope, Object returnValue) {}
 
   /**
    * Send a message to be handled by this actor. For the <code>@handle</code>-annotated actions when

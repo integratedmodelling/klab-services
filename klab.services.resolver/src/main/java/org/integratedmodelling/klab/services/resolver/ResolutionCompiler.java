@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -216,9 +217,8 @@ public class ResolutionCompiler {
           }
         }
         case APPLY -> {
-
-          // FIXME this shouldn't happen - apply what?
-          if (!operation.getContextualizables().isEmpty()) {
+          if (operation.getType() == KimObservationStrategy.Operation.Type.APPLY
+              && !operation.getContextualizables().isEmpty()) {
             /**
              * We ask the runtime to resolve all the contextualizables as a single operation. This
              * will enable using anything that's supported natively in the runtime as well as using
