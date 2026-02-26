@@ -99,7 +99,8 @@
         <geotools.version>34.0</geotools.version>
 		<groovy.version>4.0.15</groovy.version>
         <jts.version>1.20.0</jts.version>
-        <h2gis.version>1.5.0</h2gis.version>
+        <h2gis.version>2.1.214</h2gis.version>
+        <netty.version>4.2.6.Final</netty.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <tycho-version>2.7.3</tycho-version>
@@ -337,6 +338,13 @@
                 <version>33.3.0-jre</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-web</artifactId>
                 <version>${spring.version}</version>
@@ -405,7 +413,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.1.214</version>
+                <version>${h2gis.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
