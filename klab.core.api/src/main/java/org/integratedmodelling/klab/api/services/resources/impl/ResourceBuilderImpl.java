@@ -17,7 +17,6 @@ public class ResourceBuilderImpl implements Resource.Builder {
   private Metadata metadata = Metadata.create();
   private Parameters<String> parameters = Parameters.create();
   private Geometry geometry;
-  //  private String localPath;
   private List<String> resourcePaths = new ArrayList<>();
   private List<Resource> history = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
@@ -26,10 +25,8 @@ public class ResourceBuilderImpl implements Resource.Builder {
   private List<Resource.Attribute> outputs = new ArrayList<>();
   private long resourceTimestamp = System.currentTimeMillis();
   private Version resourceVersion;
-  //  private boolean errors = false;
   private String adapterType;
   private Artifact.Type type;
-  //    private String projectName;
   private String localName;
   private List<Codelist> codelists = new ArrayList<>();
 
@@ -56,44 +53,17 @@ public class ResourceBuilderImpl implements Resource.Builder {
     ret.setGeometry(this.geometry);
     ret.getOutputs().addAll(this.outputs);
     ret.getNotifications().addAll(this.notifications);
-    //        		ret.history.addAll(this.history);
     ret.setTimestamp(this.resourceTimestamp);
     ret.setVersion(this.resourceVersion);
     ret.setAdapterType(this.adapterType);
     ret.setServiceId(this.serviceId);
-    //    ret.setLocalPath(this.localPath);
-    //        		ret.localPaths.addAll(resourcePaths);
     ret.setType(type);
-    //        		ret.projectName = this.projectName;
     ret.setLocalName(this.localName);
-    //        		ret.spatialExtent = this.spatialExtent;
     ret.getAttributes().addAll(this.attributes);
     ret.getInputs().addAll(this.inputs);
     ret.getOutputs().addAll(this.outputs);
-    //        ret.categorizables.addAll(this.categorizables);
-    //        		if (this.requiredUrns != null) {
-    //        			ret.dependencies.addAll(this.requiredUrns);
-    //        		}
-    //		for (Codelist cl : this.codelists) {
-    //		    File clfile = getLocalFile("code_" + cl.getId() + ".json");
-    //		    JsonUtils.save(cl, clfile);
-    //		    ret.codelists.add(cl.getId());
-    //		}
     return ret;
   }
-
-  //	private File getLocalFile(String filename) {
-  //	    if (this.projectName != null && this.localPath != null) {
-  //	        IProject project = Resources.INSTANCE.getProject(this.projectName);
-  //	        if (project != null) {
-  //	            File ret = new File(project.getRoot().getParentFile() + File.separator +
-  // this.localPath);
-  //	            ret.mkdirs();
-  //	            return new File(ret + File.separator + filename);
-  //	        }
-  //	    }
-  //	    return null;
-  //	}
 
   /** {@inheritDoc} */
   @Override
@@ -102,24 +72,12 @@ public class ResourceBuilderImpl implements Resource.Builder {
     return this;
   }
 
-  //	@Override
-  //	public Resource.Builder withDependency(String urn) {
-  //		requiredUrns.add(urn);
-  //		return this;
-  //	}
-
   /** {@inheritDoc} */
   @Override
   public Resource.Builder withParameter(String key, Object value) {
     parameters.put(key, value);
     return this;
   }
-
-  //  @Override
-  //  public Resource.Builder withLocalPath(String localPath) {
-  //    this.localPath = localPath;
-  //    return this;
-  //  }
 
   /** {@inheritDoc} */
   @Override
@@ -194,12 +152,6 @@ public class ResourceBuilderImpl implements Resource.Builder {
     return this;
   }
 
-  //  @Override
-  //  public Resource.Builder withProjectName(String name) {
-  //    this.projectName = name;
-  //    return this;
-  //  }
-
   @Override
   public Collection<File> getImportedFiles() {
     return importedFiles;
@@ -225,12 +177,6 @@ public class ResourceBuilderImpl implements Resource.Builder {
     this.localName = localName;
     return this;
   }
-
-  //	@Override
-  //	public Resource.Builder withSpatialExtent(SpatialExtent extent) {
-  //		this.spatialExtent = extent;
-  //		return this;
-  //	}
 
   @Override
   public Resource.Builder withAttribute(
@@ -281,6 +227,14 @@ public class ResourceBuilderImpl implements Resource.Builder {
 
   @Override
   public Resource.Builder withInlineDefinition(Map<?, ?> map) {
+    // everything in the map except "adapter" must be an adapter parameter
+    for (var key : map.keySet()) {
+      if (!"adapter".equals(key)) {
+        this.parameters.put(key.toString(), map.get(key));
+      } else {
+        this.adapterType = map.get(key).toString();
+      }
+    }
     return this;
   }
 

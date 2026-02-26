@@ -177,11 +177,9 @@ public class CompiledDataflow {
             }
           }
           case URN_RESOLVER -> {
+
             // TODO use all services hostia
-            resource =
-                scope
-                    .getService(ResourcesService.class)
-                    .retrieveResource(call.getParameters().getList("urns", String.class), scope);
+            resource = resolveResource(call.getParameters().getList("urns", String.class), observation, scope);
             if (resource != null) {
 
               embeddedAdapter =
@@ -213,6 +211,17 @@ public class CompiledDataflow {
     }
 
     return ret;
+  }
+
+  private Resource resolveResource(List<String> urns, Observation observation, ServiceContextScope scope) {
+
+    if (urns.size() == 1 && scope.getData().containsKey(urns.getFirst())) {
+      // TODO see if we need to add the observation's geometry to the resource.
+      return scope.getData().get(urns.getFirst(), Resource.class);
+    }
+
+    // TODO use all services hostia
+    return scope.getService(ResourcesService.class).retrieveResource(urns, scope);
   }
 
   private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {

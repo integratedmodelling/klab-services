@@ -58,7 +58,9 @@ public abstract class ActorBase extends GroovyObjectSupport {
   public static final ExitValue NO_TASK = new ExitValue();
   public long id = -1;
 
-  public static class Event {}
+  public record Event(long channel, long sender, long receiver, Object value) {
+
+  }
 
   public static class ExitValue {}
 

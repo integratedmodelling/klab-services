@@ -1029,7 +1029,8 @@ public class RuntimeService extends BaseService
    * @param scope
    * @return
    */
-  private Pair<String, Resource> preResolveResource(List<Urn> resourceUrns, ContextScope scope) {
+  private Pair<String, Resource> preResolveResource(
+      List<Urn> resourceUrns, ContextScope scope) {
 
     if (resourceUrns.size() == 1) {
 
@@ -1061,7 +1062,7 @@ public class RuntimeService extends BaseService
           return Pair.of(
               resourceUrns.getFirst().getUrn(),
               Resource.builder(resourceUrns.getFirst().getResourceId())
-                  .withInlineDefinition(map) /* TODO add definition */
+                  .withInlineDefinition(map)
                   .build());
         }
 
