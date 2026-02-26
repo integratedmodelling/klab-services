@@ -1056,10 +1056,12 @@ public class RuntimeService extends BaseService
                 .findFirst()
                 .orElse(null);
 
-        if (definition instanceof KimSymbolDefinition symbolDefinition) {
+        if (definition instanceof KimSymbolDefinition symbolDefinition
+            && symbolDefinition.getValue() instanceof Map<?, ?> map) {
           return Pair.of(
               resourceUrns.getFirst().getUrn(),
-              Resource.builder(resourceUrns.getFirst().getResourceId()) /* TODO add definition */
+              Resource.builder(resourceUrns.getFirst().getResourceId())
+                  .withInlineDefinition(map) /* TODO add definition */
                   .build());
         }
 

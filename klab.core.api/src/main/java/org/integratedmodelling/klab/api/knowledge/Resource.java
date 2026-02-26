@@ -3,10 +3,12 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -289,7 +291,6 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withParameters(Parameters<String> parameters);
 
-
     Builder withServiceId(String serviceId);
 
     /**
@@ -375,6 +376,14 @@ public interface Resource extends Knowledge, Resolvable {
      * @return
      */
     String getUrn();
+
+    /**
+     * Define all parameters from a single map. Meant for inline definitions from a k.IM define.
+     *
+     * @param map
+     * @return
+     */
+    Builder withInlineDefinition(Map<?, ?> map);
   }
 
   /**

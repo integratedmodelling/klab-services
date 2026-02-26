@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.api.services.resources.impl;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -280,6 +277,11 @@ public class ResourceBuilderImpl implements Resource.Builder {
   @Override
   public String getUrn() {
     return this.urn;
+  }
+
+  @Override
+  public Resource.Builder withInlineDefinition(Map<?, ?> map) {
+    return this;
   }
 
   public Parameters<String> getParameters() {
