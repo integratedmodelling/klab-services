@@ -1009,22 +1009,67 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
   }
 
-  // TODO see logic in the aspecific resolve() and revise API to use this after classification of the urn
+  // TODO see logic in the aspecific resolve() and revise API to use this after classification of
+  // the urn
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
-    var ret = switch (assetClass) {
-      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY -> null;
-        // TODO resolution is at the project level so each document will imply the containing project plus
-        //  any projects and components it depends on
-      case COMPONENT -> null;
-      case MODEL -> resolveModel(urn, scope);
-      case RESOURCE -> resolveResourceUrn(urn, scope);
-      case WORKSPACE -> null;
-      case PROJECT -> null;
-      case OBSERVATION_STRATEGY -> null;
-      case CONCEPT_STATEMENT -> null;
-        default -> null;
-    };
+
+    ResourceSet.Resource desiredResource = null;
+
+    var ret =
+        switch (assetClass) {
+          case NAMESPACE -> {
+            var namespace = workspaceManager.getNamespace(urn);
+            if (namespace != null) {
+              desiredResource =
+                  new ResourceSet.Resource(
+                      serviceId(),
+                      namespace.getUrn(),
+                      namespace.getProjectName(),
+                      namespace.getVersion(),
+                      KnowledgeClass.NAMESPACE,
+                      false);
+            }
+            yield desiredResource == null ? null : ResourceSet.of(desiredResource);
+          }
+          case ONTOLOGY -> {
+            var ontology = workspaceManager.getOntology(urn);
+            if (ontology != null) {
+              desiredResource =
+                  new ResourceSet.Resource(
+                      serviceId(),
+                      ontology.getUrn(),
+                      ontology.getProjectName(),
+                      ontology.getVersion(),
+                      KnowledgeClass.ONTOLOGY,
+                      false);
+            }
+            yield desiredResource == null ? null : ResourceSet.of(desiredResource);
+          }
+          case BEHAVIOR, TESTCASE, APPLICATION, SCRIPT -> {
+            var behavior = workspaceManager.getBehavior(urn);
+            if (behavior != null) {
+              desiredResource =
+                  new ResourceSet.Resource(
+                      serviceId(),
+                      behavior.getUrn(),
+                      behavior.getProjectName(),
+                      behavior.getVersion(),
+                      assetClass,
+                      false);
+            }
+            yield desiredResource == null ? null : ResourceSet.of(desiredResource);
+          }
+          case OBSERVATION_STRATEGY_DOCUMENT -> null;
+          case COMPONENT -> null;
+          case MODEL -> resolveModel(urn, scope);
+          case RESOURCE -> resolveResourceUrn(urn, scope);
+          case WORKSPACE -> null;
+          case PROJECT -> null;
+          case OBSERVATION_STRATEGY -> null;
+          case CONCEPT_STATEMENT -> null;
+          default -> null;
+        };
 
     if (ret != null) {
       return addDependencies(ret, scope);

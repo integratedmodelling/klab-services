@@ -1052,7 +1052,7 @@ public class RuntimeService extends BaseService
 
         var definition =
             namespace.getStatements().stream()
-                .filter(s -> s.getUrn().equals(resourceUrns.getFirst().getResourceId()))
+                .filter(s -> s.getUrn().equals(definitionUrn))
                 .findFirst()
                 .orElse(null);
 

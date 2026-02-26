@@ -105,7 +105,15 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RESOURCES.RESOLVE,
+            ResourceSet.class,
+            "urn",
+            urn,
+            "knowledgeClass",
+            assetClass);
   }
 
   @Override

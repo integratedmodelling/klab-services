@@ -24,6 +24,7 @@ import java.util.function.Function;
  * changed namespace when changes are notified.
  */
 public enum KnowledgeRepository {
+
   INSTANCE;
 
   /** We keep all syntactic document we encounter here, in a multimap with different versions. */
@@ -54,8 +55,18 @@ public enum KnowledgeRepository {
    * @param <T>
    * @return
    */
-  public <T extends Knowledge> T retrieveAsset(String urn, Class<T> assetClass, Version version) {
-    // TODO
+  public <T extends KlabAsset> T retrieveAsset(String urn, Class<T> assetClass, Version version) {
+    var assets = assetMap.get(urn);
+    if (assets != null) {
+      for (var asset : assets) {
+        if (asset.getSecond() == null && version == null
+            || (version != null && asset.getSecond() != null && asset.getSecond().compatible(version))) {
+          if (assetClass.isAssignableFrom(asset.getFirst().getClass())) {
+            return (T) asset.getFirst();
+          }
+        }
+      }
+    }
     return null;
   }
 
@@ -221,9 +232,5 @@ public enum KnowledgeRepository {
 
     return false;
   }
-
-  //    <T extends Knowledge> T resolve(String urn, Class<T> resultClass) {
-  //        return null;
-  //    }
 
 }

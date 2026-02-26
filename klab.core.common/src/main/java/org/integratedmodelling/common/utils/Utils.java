@@ -56,10 +56,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -75,9 +77,11 @@ import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -3955,6 +3959,72 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
       }
       return true;
+    }
+  }
+
+  public static class Resources extends org.integratedmodelling.klab.api.utils.Utils.Resources {
+
+    /**
+     * Resolve a resource by URN, using and prioritizing all the available services.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static Resource resolveResource(String urn, Scope scope) {
+      return null;
+    }
+
+    /**
+     * Resolve a namespace by URN, using and prioritizing all the available services, handling any
+     * needed dependencies, and checking the local KnowledgeRepository for previously resolved
+     * namespaces.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static KimNamespace resolveNamespace(String urn, UserScope scope) {
+
+      var ret =
+          KnowledgeRepository.INSTANCE.retrieveAsset(urn, KimNamespace.class, Version.ANY_VERSION);
+
+      if (ret != null) {
+        return ret;
+      }
+
+      // dio peto
+      for (var s : scope.getServices(ResourcesService.class)) {
+        var diocan = s.resolve(urn, KlabAsset.KnowledgeClass.NAMESPACE, scope);
+        System.out.println("diocpo");
+      }
+
+      var result =
+          queryResources(
+              scope,
+              ResourcesService.class,
+              service -> service.resolve(urn, KlabAsset.KnowledgeClass.NAMESPACE, scope));
+
+      if (!result.isEmpty()) {
+        for (var asset : KnowledgeRepository.INSTANCE.ingest(result, scope, KimNamespace.class)) {
+          if (asset != null) {
+            return asset;
+          }
+        }
+      }
+
+      return null;
+    }
+
+    /**
+     * Resolve a behavior by URN, using and prioritizing all the available services.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static KActorsBehavior resolveBehavior(String urn, Scope scope) {
+      return null;
     }
   }
 

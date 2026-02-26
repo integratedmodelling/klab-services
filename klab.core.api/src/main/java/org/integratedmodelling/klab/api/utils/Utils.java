@@ -437,75 +437,23 @@ public class Utils {
     }
 
     /**
-     * Resolve a resource by URN, using and prioritizing all the available services.
-     *
-     * @param urn
-     * @param scope
-     * @return
-     */
-    public static Resource resolveResource(String urn, Scope scope) {
-      return null;
-    }
-
-    /**
-     * Resolve a namespace by URN, using and prioritizing all the available services.
-     *
-     * @param urn
-     * @param scope
-     * @return
-     */
-    public static KimNamespace resolveNamespace(String urn, UserScope scope) {
-
-      var result =
-          queryResources(
-              scope,
-              ResourcesService.class,
-              service -> service.resolve(urn, KlabAsset.KnowledgeClass.NAMESPACE, scope));
-
-      if (!result.isEmpty()) {
-        var resource = result.getResults().iterator().next();
-        var service =
-            scope.getServices(ResourcesService.class).stream()
-                .filter(
-                    resourcesService ->
-                        resourcesService.serviceId().equals(resource.getServiceId()))
-                .findFirst()
-                .orElse(null);
-        if (service != null) {
-          return service.retrieve(urn, KimNamespace.class, scope);
-        }
-      }
-
-      return null;
-    }
-
-    /**
-     * Resolve a behavior by URN, using and prioritizing all the available services.
-     *
-     * @param urn
-     * @param scope
-     * @return
-     */
-    public static KActorsBehavior resolveBehavior(String urn, Scope scope) {
-      return null;
-    }
-
-    /**
      * Merge two or more resource sets into a new one. If the same resources are available keep the
      * one with the most recent version. Behaves well with no arguments or just one.
      *
      * @param resourceSets
      * @return
      */
-    public static ResourceSet merge(ResourceSet... resourceSets) {
+    public static ResourceSet merge(ResourceSet... rSets) {
 
       ResourceSet ret = null;
 
-      if (resourceSets == null) {
+      var resourceSets = Arrays.stream(rSets).filter(Objects::nonNull).toList();
+
+      if (resourceSets.isEmpty()) {
         ret = new ResourceSet();
         ret.setEmpty(true);
-      } else if (resourceSets.length == 1) {
-        ret = resourceSets[0];
+      } else if (resourceSets.size() == 1) {
+        ret = resourceSets.getFirst();
       } else {
 
         ret = new ResourceSet();
@@ -516,14 +464,13 @@ public class Utils {
         Map<String, ResourceSet.Resource> rrsl = new LinkedHashMap<>();
         Map<String, ResourceSet.Resource> ront = new LinkedHashMap<>();
         Map<String, ResourceSet.Resource> roob = new LinkedHashMap<>();
-        // Set<String> rurn = new HashSet<>();
 
         for (ResourceSet set : resourceSets) {
 
           ret.getServices().putAll(set.getServices());
 
           if (set.isEmpty()) {
-            return set;
+            continue;
           }
 
           collectNewerOrAbsent(set.getResults(), rrsl);

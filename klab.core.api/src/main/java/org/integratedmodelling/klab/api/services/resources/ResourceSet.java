@@ -353,6 +353,12 @@ public class ResourceSet implements Serializable {
     return ret;
   }
 
+  public static ResourceSet of(Resource resource) {
+    var ret = new ResourceSet();
+    ret.getResults().add(resource);
+    return ret;
+  }
+
   public List<Resource> getProjects() {
     return projects;
   }
