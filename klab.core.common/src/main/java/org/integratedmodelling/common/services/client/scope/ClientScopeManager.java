@@ -82,7 +82,7 @@ public enum ClientScopeManager {
   private RuntimeService findService(
       DigitalTwin.Configuration configuration, UserScope requestingScope) {
     for (var runtime : requestingScope.getServices(RuntimeService.class)) {
-      if (runtime.getUrl().equals(configuration.getServiceUrl())) {
+      if (runtime.getUrl().toString().equals(configuration.getServiceUrl().toString())) {
         return runtime;
       }
     }
