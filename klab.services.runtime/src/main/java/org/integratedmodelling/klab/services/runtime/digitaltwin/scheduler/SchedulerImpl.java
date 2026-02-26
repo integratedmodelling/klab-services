@@ -109,10 +109,11 @@ public class SchedulerImpl implements Scheduler {
               timeData.getThird(),
               serviceContextScope);
       if (observation.getObservable().is(SemanticType.EVENT)) {
-        // EVENT! Post iy
+        // EVENT! Post it
       } else if (observation.getObservable().is(SemanticType.PROCESS)) {
         // PROCESS! Time events will affect it
       }
+      // TODO store the disposable that this returns so that we can remove it upon termination
       processor
           .asFlux()
           .filterWhen(event -> Mono.just(checkApplies(registration, event)))
@@ -212,19 +213,8 @@ public class SchedulerImpl implements Scheduler {
                   () ->
                       new KlabIllegalStateException(
                           "Inconsistent AFFECT relationship in knowledge graph"));
-
-      //      scope
-      //          .getCurrentTransaction()
-      //          .link(
-      //              scope.getCurrentTransaction().getActivity(),
-      //              affecting.source(),
-      //              GraphModel.Relationship.CONTEXTUALIZED);
-
-      //      var sequence = 0;
-      //      if (affectingRelationship != null) { // it must be
       var sequence =
           affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
-      //      }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
@@ -388,7 +378,7 @@ public class SchedulerImpl implements Scheduler {
    * <p>TODO add info for filtering, e.g. a <em>substantial</em> flag to filter initialization
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
-   * observation events only affects it, given that contextualization actions are handled through
+   * observation events affect it, given that contextualization actions are handled through
    * the influence diagram in the DT.
    *
    * @param observation

@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
+
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
 
@@ -11,14 +13,14 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
 public class ActionScope {
 
   ActorBase.ExitValue exitValue;
-  Map<String, Object> variables;
+  Parameters<String> variables;
 
   public ActionScope() {
-    this.variables = new HashMap<>();
+    this.variables = Parameters.create();
   }
 
   public ActionScope(ActionScope parent) {
-    this.variables = new HashMap<>(parent.variables);
+    this.variables = Parameters.create(parent.variables);
   }
 
   public static ActionScope of(Object[] parameters) {
@@ -34,6 +36,8 @@ public class ActionScope {
    * and normal results. If the exception is null, then the result must be the normal return value
    * passed as the first value of <code>results</code></>. Otherwise, the exception should be
    * handled and an appropriate error value returned.
+   *
+   * TODO probably not the way this should be done
    *
    * @param t
    * @param actor

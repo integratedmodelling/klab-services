@@ -56,14 +56,15 @@ public abstract class ActorBase extends GroovyObjectSupport {
   public static final ExitValue NORMAL_EXIT = new ExitValue();
   public static final ExitValue FORCED_EXIT = new ExitValue();
   public static final ExitValue NO_TASK = new ExitValue();
+  public long id = -1;
 
   public static class Event {}
 
   public static class ExitValue {}
 
- public ActorBase() {
+  public ActorBase() {
     this(null);
- }
+  }
 
   public ActorBase(KActorsBehavior behavior) {
     this.behavior = behavior;
@@ -73,7 +74,7 @@ public abstract class ActorBase extends GroovyObjectSupport {
    * Root-level main entry point. If there is no "main" action, one is provided to just listen for
    * any events.
    *
-   * Java-based actors may simply implement this.
+   * <p>Java-based actors may simply implement this.
    *
    * @param initialScope
    * @param session
@@ -94,7 +95,7 @@ public abstract class ActorBase extends GroovyObjectSupport {
    *     used to ensure proper cleanup of the runtime environment.
    */
   public CompletableFuture<ActionScope> runAsync(SessionScope scope, Object... parameters) {
-    return mainTask  = CompletableFuture.supplyAsync(() -> main(ActionScope.of(parameters), scope));
+    return mainTask = CompletableFuture.supplyAsync(() -> main(ActionScope.of(parameters), scope));
   }
 
   /**
@@ -119,14 +120,9 @@ public abstract class ActorBase extends GroovyObjectSupport {
     return NO_TASK;
   }
 
-  public void fire(ActionScope scope, Object fired) {
+  public void fire(ActionScope scope, Object fired) {}
 
-  }
-
-  public void doReturn(ActionScope scope, Object returnValue) {
-
-  }
-
+  public void doReturn(ActionScope scope, Object returnValue) {}
 
   /**
    * Send a message to be handled by this actor. For the <code>@handle</code>-annotated actions when
