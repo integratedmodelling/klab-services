@@ -257,8 +257,8 @@ public class ServiceAuthorizationManager {
         if (jwtVerifier == null) {
           String msg =
               String.format(
-                  "Couldn't find JWT verifier for partnerId %s. I only know " + "about " + "%s.",
-                  hubId, jwksVerifiers.keySet().toString());
+                      "Couldn't find JWT verifier for partnerId %s. I only know " + "about " + "%s.",
+                      hubId, jwksVerifiers.keySet());
           Exception e = new KlabAuthorizationException(msg);
           Logging.INSTANCE.error(msg, e);
           // throw e;
