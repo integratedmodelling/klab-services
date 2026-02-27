@@ -25,6 +25,21 @@ public interface ServicesAPI {
   String SCOPE_HEADER = "klab-scope";
 
   /**
+   * Should be checked at each request at production
+   */
+  String KLAB_VERSION_HEADER = "klab-version";
+
+  /**
+   * For resolution requests
+   */
+  String RESOLUTION_PROJECT_HEADER = "klab-resolution-project";
+
+  /**
+   * For resolution requests
+   */
+  String RESOLUTION_NAMESPACE_HEADER = "klab-resolution-namespace";
+
+  /**
    * Scopes that have their natural home in a service will set the native service ID in this header,
    * so that other services can access their native functions through a client if they have it.
    */

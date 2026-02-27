@@ -231,10 +231,13 @@ public class ServiceAuthorizationManager {
    * roles. Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups
    * and roles as expected.
    */
-  public EngineAuthorization validateToken(
-      String token, String serverKey, String scopeHeader, String runtimeId) {
+  public EngineAuthorization validateToken(String token, Map<String, String> requestHeaders) {
 
     EngineAuthorization ret = null;
+
+    var scopeHeader = requestHeaders.get(ServicesAPI.SCOPE_HEADER);
+    var serverKey = requestHeaders.get(ServicesAPI.SERVER_KEY_HEADER);
+    var runtimeId = requestHeaders.get(ServicesAPI.SERVICE_ID_HEADER);
 
     var privilegedLocalService =
         serverKey != null
@@ -257,8 +260,8 @@ public class ServiceAuthorizationManager {
         if (jwtVerifier == null) {
           String msg =
               String.format(
-                      "Couldn't find JWT verifier for partnerId %s. I only know " + "about " + "%s.",
-                      hubId, jwksVerifiers.keySet());
+                  "Couldn't find JWT verifier for partnerId %s. I only know " + "about " + "%s.",
+                  hubId, jwksVerifiers.keySet());
           Exception e = new KlabAuthorizationException(msg);
           Logging.INSTANCE.error(msg, e);
           // throw e;
@@ -276,8 +279,8 @@ public class ServiceAuthorizationManager {
                   hubId,
                   username,
                   token,
-                  scopeHeader,
-                  List.of(),
+                  requestHeaders,
+                  List.of(), // FIXME check: why no groups are used or passed from groupStrings?
                   Collections.unmodifiableList(filterRoles(roleStrings)));
 
           /*
@@ -328,7 +331,8 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", null, scopeHeader, List.of(), List.of());
+      ret =
+          new EngineAuthorization("nohub", "anonymous", null, requestHeaders, List.of(), List.of());
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 

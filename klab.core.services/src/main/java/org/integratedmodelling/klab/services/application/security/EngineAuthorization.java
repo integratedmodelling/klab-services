@@ -95,7 +95,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
       String partnerId,
       String username,
       String token,
-      String scopeId,
+      Map<String, String> requestHeaders,
       Collection<Group> groups,
       Collection<Role> roles) {
     super(roles);
@@ -103,7 +103,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
     this.username = new Credentials(username);
     this.tokenString = new Credentials(token);
     this.groups = groups;
-    this.scopeId = scopeId;
+    this.scopeId = requestHeaders.get(ServicesAPI.SCOPE_HEADER);
     expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
 
     // convenience code: mimic what the parent constructor did, but with the <Role>
