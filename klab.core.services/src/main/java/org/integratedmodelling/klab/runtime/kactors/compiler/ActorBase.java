@@ -58,11 +58,58 @@ public abstract class ActorBase extends GroovyObjectSupport {
   public static final ExitValue NO_TASK = new ExitValue();
   public long id = -1;
 
-  public record Event(long channel, long sender, long receiver, Object value) {
+  public record Event(long channel, long sender, long receiver, Object value) {}
 
+  public static class ExitValue {
+
+    private int exitCode = 0;
+    private int errorCode = 0;
+    private String errorMessage = null;
+    private Object returnValue = null;
+
+    public static ExitValue success() {
+      return new ExitValue();
+    }
+
+    public static ExitValue failure(Object... args) {
+      var ret = new ExitValue();
+      // TODO
+      ret.setErrorCode(1);
+      return ret;
+    }
+
+    public int getExitCode() {
+      return exitCode;
+    }
+
+    public void setExitCode(int exitCode) {
+      this.exitCode = exitCode;
+    }
+
+    public int getErrorCode() {
+      return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+      this.errorCode = errorCode;
+    }
+
+    public String getErrorMessage() {
+      return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+      this.errorMessage = errorMessage;
+    }
+
+    public Object getReturnValue() {
+      return returnValue;
+    }
+
+    public void setReturnValue(Object returnValue) {
+      this.returnValue = returnValue;
+    }
   }
-
-  public static class ExitValue {}
 
   public ActorBase() {
     this(null);

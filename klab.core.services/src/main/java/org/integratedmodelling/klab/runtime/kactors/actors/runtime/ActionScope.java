@@ -14,6 +14,7 @@ public class ActionScope {
 
   ActorBase.ExitValue exitValue;
   Parameters<String> variables;
+  boolean done = false;
 
   public ActionScope() {
     this.variables = Parameters.create();
@@ -32,12 +33,37 @@ public class ActionScope {
   }
 
   /**
+   * Fire an event to the actor's connected receiver(s). Nothing happens if the actor in this
+   * context has no receivers.
+   *
+   * @param payload
+   */
+  public synchronized void fire(Object... payload) {
+    // TODO ziocan
+  }
+
+  // mark end of actor represented
+  public ActorBase.ExitValue done() {
+    // TODO
+    this.done = true;
+    notify();
+    return exitValue = ActorBase.ExitValue.success();
+  }
+
+  public ActorBase.ExitValue failure(Object... args) {
+    // TODO
+    this.done = true;
+    notify();
+    return exitValue = ActorBase.ExitValue.failure(args);
+  }
+
+  /**
    * Called upon any results obtained asynchronously from the k.Actors VM, including both exceptions
    * and normal results. If the exception is null, then the result must be the normal return value
    * passed as the first value of <code>results</code></>. Otherwise, the exception should be
    * handled and an appropriate error value returned.
    *
-   * TODO probably not the way this should be done
+   * <p>TODO probably not the way this should be done
    *
    * @param t
    * @param actor
@@ -53,5 +79,9 @@ public class ActionScope {
       @Nullable Object... results) {
     // TODO
     return null;
+  }
+
+  public boolean isDone() {
+    return done;
   }
 }
