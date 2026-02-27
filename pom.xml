@@ -21,6 +21,7 @@
         <module>klab.cli</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>
+        <module>localhost-neo4j-service</module>
         <!--        <module>klab.lsp</module>-->
     </modules>
 
