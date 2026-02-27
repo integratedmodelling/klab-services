@@ -193,26 +193,6 @@
             <artifactId>commons-math3</artifactId>
             <version>3.6.1</version>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>io.hawt</groupId>
-                    <artifactId>hawtio-springboot</artifactId>
-                    <version>4.2.0</version>
-                </dependency>
-
-                &lt;!&ndash; Mandatory for enabling Camel management via JMX / Hawtio &ndash;&gt;
-                <dependency>
-                    <groupId>org.apache.camel.springboot</groupId>
-                    <artifactId>camel-management-starter</artifactId>
-                    <version>4.9.0</version>
-                </dependency>
-                &lt;!&ndash; (Optional) Required for Hawtio Camel route diagram tab &ndash;&gt;
-                <dependency>
-                    <groupId>org.apache.camel.springboot</groupId>
-                    <artifactId>camel-spring-boot-xml-starter</artifactId>
-                    <version>4.9.0</version>
-                </dependency>
-        -->
 
         <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
         <dependency>
@@ -321,27 +301,7 @@
             <version>0.13.0</version>
         </dependency>
 
-        <!--
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-        -->
-        <!--
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-        -->
-
-        <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
+             <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -483,23 +443,9 @@
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.1</version>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-core</artifactId>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-junit-jupiter</artifactId>
-                    <version>5.18.0</version>
-                    <scope>test</scope>
-                </dependency>
-        -->
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
@@ -527,31 +473,6 @@
             <version>10.1.39</version>
             <scope>compile</scope>
         </dependency>
-        <!--        <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.reasoner.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.resources.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.resolver.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.runtime.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>-->
-
         <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections</artifactId>
@@ -597,24 +518,5 @@
             <artifactId>pf4j</artifactId>
             <version>3.13.0</version>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>org.pf4j</groupId>
-                    <artifactId>pf4j-update</artifactId>
-                    <version>2.4.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-        -->
-        <!--        <dependency>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib-jdk8</artifactId>
-                    <version>${kotlin.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-test</artifactId>
-                    <version>${kotlin.version}</version>
-                    <scope>test</scope>
-                </dependency>-->
     </dependencies>
 </project>
