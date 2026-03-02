@@ -184,7 +184,7 @@ public interface Reasoner extends KlabService {
    * @param concept
    * @return
    */
-  Concept baseSubstantialType(Semantics concept);
+  Concept baseSubstantialType(Semantics concept, Scope scope);
 
   /**
    * @param concept
@@ -753,7 +753,7 @@ public interface Reasoner extends KlabService {
    * @param builder
    * @return
    */
-  Concept buildConcept(ObservableBuildStrategy builder);
+  Concept buildConcept(ObservableBuildStrategy builder, Scope scope);
 
   /**
    * Send a build strategy constructed through a builder and return the result as an observable.
@@ -764,7 +764,7 @@ public interface Reasoner extends KlabService {
    * @param builder
    * @return
    */
-  Observable buildObservable(ObservableBuildStrategy builder);
+  Observable buildObservable(ObservableBuildStrategy builder, Scope scope);
 
   /**
    * Administration of a semantic server includes loading specific knowledge and defining the

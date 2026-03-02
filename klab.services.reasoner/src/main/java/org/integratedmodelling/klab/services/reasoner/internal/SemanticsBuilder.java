@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
@@ -44,10 +45,10 @@ public class SemanticsBuilder implements Observable.Builder {
   private List<Annotation> annotations = new ArrayList<>();
   private Collection<Notification> notifications = new ArrayList<>();
 
-  public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner) {
+  public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner, Scope scope) {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
-    ret.resourcesService = reasoner.serviceScope().getService(ResourcesService.class);
+    ret.resourcesService = scope.getService(ResourcesService.class);
     if (concept instanceof KimConceptImpl kimConcept) {
       ret.syntax = kimConcept;
       return ret;
@@ -55,10 +56,10 @@ public class SemanticsBuilder implements Observable.Builder {
     throw new KlabInternalErrorException("Unexpected concept syntax implementation");
   }
 
-  public static SemanticsBuilder create(Concept concept, ReasonerService reasoner) {
+  public static SemanticsBuilder create(Concept concept, ReasonerService reasoner, Scope scope) {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
-    ret.resourcesService = reasoner.serviceScope().getService(ResourcesService.class);
+    ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax =
         reasoner.serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
@@ -68,14 +69,13 @@ public class SemanticsBuilder implements Observable.Builder {
     throw new KlabInternalErrorException("Unexpected concept syntax implementation");
   }
 
-  public static SemanticsBuilder create(Observable observable, ReasonerService reasoner) {
+  public static SemanticsBuilder create(
+      Observable observable, ReasonerService reasoner, Scope scope) {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
+    ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax =
-        reasoner
-            .serviceScope()
-            .getService(ResourcesService.class)
-            .declareConcept(observable.getSemantics().getUrn());
+        scope.getService(ResourcesService.class).declareConcept(observable.getSemantics().getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
       ret.syntax = kimConcept;
       ret.unit = observable.getUnit();
@@ -165,7 +165,9 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder without(Concept... concepts) {
-    // TODO
+    for (var concept : concepts) {
+      syntax.remove(resourcesService.declareConcept(concept.getUrn()));
+    }
     return this;
   }
 
@@ -261,7 +263,7 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder withTemporalInherent(Concept concept) {
     // TODO check
-//    this.syntax.setCooccurrent(resourcesService.declareConcept(concept.getUrn()));
+    //    this.syntax.setCooccurrent(resourcesService.declareConcept(concept.getUrn()));
     return this;
   }
 

@@ -90,11 +90,11 @@ public class TypeFunctors {
       name = "arity.single",
       description = "Return the singular counterpart of a collective observable",
       type = Artifact.Type.CONCEPT)
-  public Semantics changeArityToSingle(Semantics semantics) {
+  public Semantics changeArityToSingle(Semantics semantics, Scope scope) {
 
     if (semantics.asConcept().isCollective()) {
       semantics =
-          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner, scope)
               .collective(false)
               .buildObservable();
     }
@@ -106,11 +106,11 @@ public class TypeFunctors {
       name = "arity.collective",
       description = "Return the collective counterpart of a singular observable",
       type = Artifact.Type.CONCEPT)
-  public Semantics changeArityToCollective(Semantics semantics) {
+  public Semantics changeArityToCollective(Semantics semantics, Scope scope) {
 
     if (!semantics.asConcept().isCollective()) {
       semantics =
-          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+          SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner, scope)
               .collective(true)
               .buildObservable();
     }

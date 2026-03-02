@@ -48,16 +48,16 @@ public class ReasonerController {
       @Parameter(description = "Concept definition") @RequestBody String definition,
       @Parameter(description = "Use alternative resolution method")
           @RequestParam(name = "alt", required = false)
-          boolean alternative) {
-    if (alternative) {
-      var syntax =
-          reasoner
-              .klabService()
-              .serviceScope()
-              .getService(ResourcesService.class)
-              .declareConcept(definition);
-      if (syntax != null) {
-        return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
+          boolean alternative,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+
+      var scope = authorization.getScope();
+      if (alternative) {
+        var syntax = scope.getService(ResourcesService.class).declareConcept(definition);
+        if (syntax != null) {
+          return SemanticsBuilder.create(syntax, reasoner.klabService(), scope).buildConcept();
+        }
       }
     }
     return reasoner.klabService().resolveConcept(definition);
@@ -990,16 +990,20 @@ public class ReasonerController {
 
   @Operation(
       summary = "Get core substantial",
-      description =
-          "Retrieves the core substantial type for the passed type")
+      description = "Retrieves the core substantial type for the passed type")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "Core substantial retrieved successfully")
       })
   @PostMapping(ServicesAPI.REASONER.CORE_SUBSTANTIAL)
   public Concept coreSubstantial(
-      @Parameter(description = "The substantial concept to analyze") @RequestBody Concept arg) {
-    return reasoner.klabService().baseSubstantialType(arg);
+      @Parameter(description = "The substantial concept to analyze") @RequestBody Concept arg,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope = authorization.getScope();
+      return reasoner.klabService().baseSubstantialType(arg, scope);
+    }
+    throw new IllegalArgumentException("Principal must be an EngineAuthorization");
   }
 
   @Operation(

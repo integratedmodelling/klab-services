@@ -760,7 +760,7 @@ public class RuntimeService extends BaseService
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
-      var cohortObservable = reasoner.baseSubstantialType(observation.getObservable());
+      var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
 
       // local uncommitted
       var existing =

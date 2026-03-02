@@ -297,6 +297,19 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.urn = urn;
   }
 
+  /**
+   * Remove a component concept (must be a trait: use semantic roles for clauses and operators).
+   * @param concept
+   * @return
+   */
+  public boolean remove(KimConcept concept) {
+      if (this.traits.remove(concept)) {
+        resetDefinition();
+        return true;
+      }
+      return false;
+  }
+
   public void setOperands(List<KimConcept> operands) {
     this.operands = operands;
   }
@@ -316,10 +329,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   public void setAdjacent(KimConcept adjacent) {
     this.adjacent = adjacent;
   }
-
-  //  public void setCodeName(String codeName) {
-  //    this.codeName = codeName;
-  //  }
 
   @Override
   public KimConcept getParent() {

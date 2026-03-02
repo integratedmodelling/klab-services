@@ -597,9 +597,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public Concept baseSubstantialType(Semantics concept) {
+  public Concept baseSubstantialType(Semantics concept, Scope scope) {
     var builder =
-        SemanticsBuilder.create(concept.asConcept(), this)
+        SemanticsBuilder.create(concept.asConcept(), this, scope)
             .without(SemanticRole.TRAIT)
             .without(SemanticRole.modifiers());
     for (var identity : directIdentities(concept)) {
@@ -2417,7 +2417,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return null;
     }
 
-    var builder = SemanticsBuilder.create(main, this);
+    var builder = SemanticsBuilder.create(main, this, monitor);
 
     // TODO annotations
 
@@ -2601,7 +2601,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Concept observable = main;
 
-    Observable.Builder builder = SemanticsBuilder.create(observable, this);
+    Observable.Builder builder = SemanticsBuilder.create(observable, this, monitor);
 
     // ret.setUrl(concept.getURI());
     // builder.withUrl(concept.getURI());
@@ -2874,15 +2874,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public Concept buildConcept(ObservableBuildStrategy builder) {
-    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this);
+  public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
+    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildConcept();
   }
 
   @Override
-  public Observable buildObservable(ObservableBuildStrategy builder) {
-    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this);
+  public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
+    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildObservable();
   }

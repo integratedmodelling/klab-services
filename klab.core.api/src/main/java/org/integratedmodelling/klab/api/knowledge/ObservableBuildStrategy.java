@@ -354,13 +354,13 @@ public class ObservableBuildStrategy implements Observable.Builder {
   @Override
   public Concept buildConcept() throws KlabValidationException {
     var reasoner = this.scope.getService(Reasoner.class);
-    return reasoner.buildConcept(this);
+    return reasoner.buildConcept(this, this.scope);
   }
 
   @Override
   public Observable buildObservable() throws KlabValidationException {
     var reasoner = this.scope.getService(Reasoner.class);
-    return reasoner.buildObservable(this);
+    return reasoner.buildObservable(this, this.scope);
   }
 
   @Override

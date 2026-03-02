@@ -375,7 +375,96 @@ public class ObservationReasoner {
               : reasoner.declareConcept(filter.getMatch());
       ret = semantics != null && reasoner.match(observation.getObservable(), semantics);
     } else if (!filter.getTypePattern().isEmpty()) {
-      System.out.println("PORCELLIN PORCELLINO");
+      for (var pattern : filter.getTypePattern()) {
+        if (ret) {
+          switch (pattern) {
+            case QUALITY -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.QUALITY)) {
+                ret = false;
+              }
+            }
+            case TYPE -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.CLASS)) {
+                ret = false;
+              }
+            }
+            case MEASUREMENT -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.INTENSIVE)
+                  && !observation.getObservable().getSemantics().is(SemanticType.EXTENSIVE)) {
+                ret = false;
+              }
+            }
+            case QUANTITY -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.QUANTIFIABLE)) {
+                ret = false;
+              }
+            }
+            case PRIORITY -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.PRIORITY)) {
+                ret = false;
+              }
+            }
+            case PRESENCE -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.PRESENCE)) {
+                ret = false;
+              }
+            }
+            case PREDICATE -> {
+              if (reasoner.directTraits(observation.getObservable().getSemantics()).isEmpty()) {
+                ret = false;
+              }
+            }
+            case ROLE -> {
+              if (reasoner.directRoles(observation.getObservable().getSemantics()).isEmpty()) {
+                ret = false;
+              }
+            }
+            case ATTRIBUTE -> {
+              if (reasoner.directAttributes(observation.getObservable().getSemantics()).isEmpty()) {
+                ret = false;
+              }
+            }
+            case IDENTITY -> {
+              if (reasoner.directIdentities(observation.getObservable().getSemantics()).isEmpty()) {
+                ret = false;
+              }
+            }
+            case AGENT -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.AGENT)) {
+                ret = false;
+              }
+            }
+            case RELATIONSHIP -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.RELATIONSHIP)) {
+                ret = false;
+              }
+            }
+            case SUBJECT -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.SUBJECT)) {
+                ret = false;
+              }
+            }
+            case PROCESS -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.PROCESS)) {
+                ret = false;
+              }
+            }
+            case EVENT -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.EVENT)) {
+                ret = false;
+              }
+            }
+            case CONFIGURATION -> {
+              if (!observation.getObservable().getSemantics().is(SemanticType.CONFIGURATION)) {
+                ret = false;
+              }
+            }
+              //          default -> {
+              //            throw new IllegalArgumentException("Unknown type pattern: " + pattern);
+              //          }
+          }
+        }
+      }
     }
     if (ret && !filter.getFunctions().isEmpty()) {
       for (var function : filter.getFunctions()) {

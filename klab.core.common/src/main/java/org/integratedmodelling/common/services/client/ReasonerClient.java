@@ -195,9 +195,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public Concept baseSubstantialType(Semantics concept) {
+  public Concept baseSubstantialType(Semantics concept, Scope scope) {
     // TODO this is called frequently for the same type, should cache
-    return client.post(ServicesAPI.REASONER.CORE_SUBSTANTIAL, concept.asConcept(), Concept.class);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.REASONER.CORE_SUBSTANTIAL, concept.asConcept(), Concept.class);
   }
 
   @Override
@@ -623,13 +625,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public Concept buildConcept(ObservableBuildStrategy builder) {
+  public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public Observable buildObservable(ObservableBuildStrategy builder) {
+  public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
