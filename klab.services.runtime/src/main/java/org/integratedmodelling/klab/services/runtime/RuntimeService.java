@@ -1029,8 +1029,7 @@ public class RuntimeService extends BaseService
    * @param scope
    * @return
    */
-  private Pair<String, Resource> preResolveResource(
-      List<Urn> resourceUrns, ContextScope scope) {
+  private Pair<String, Resource> preResolveResource(List<Urn> resourceUrns, ContextScope scope) {
 
     if (resourceUrns.size() == 1) {
 
@@ -1059,11 +1058,29 @@ public class RuntimeService extends BaseService
 
         if (definition instanceof KimSymbolDefinition symbolDefinition
             && symbolDefinition.getValue() instanceof Map<?, ?> map) {
+
+          // 1. ensure we resolve within the local namespace (TODO) - not legal otherwise
+          // TODO
+
+          // 2. pre-resolve the adapter, which must be embeddable
+          var adapterId = map.get("adapter");
+          boolean adapterOK = false;
+          if (adapterId != null) {
+            var adapter = Utils.Resources.resolveAdapter(adapterId.toString(), scope, this);
+            if (adapter != null) {
+              adapterOK = adapter.isEmbeddable();
+            }
+          }
+
+          if (!adapterOK) {
+            return null;
+          }
+
+          // 3. return the resource once we know we can compute it locally
+
           return Pair.of(
               resourceUrns.getFirst().getUrn(),
-              Resource.builder(resourceUrns.getFirst().getResourceId())
-                  .withInlineDefinition(map)
-                  .build());
+              Resource.builder(resourceUrns.getFirst().getUrn()).withInlineDefinition(map).build());
         }
 
         return Pair.of(resourceUrns.getFirst().getUrn(), null);

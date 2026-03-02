@@ -63,6 +63,8 @@ public interface KlabService extends Service {
     /** */
     RUNTIME(8094),
 
+    DATABASE(8382),
+
     /**
      * The engine is an orchestrator of other k.LAB Services and a provider of scopes at user level
      * and below. It serves the public observation API. It's not implemented as a service in the
@@ -108,7 +110,7 @@ public interface KlabService extends Service {
         case RESOURCES -> ResourcesService.class;
         case RESOLVER -> Resolver.class;
         case RUNTIME -> RuntimeService.class;
-        case DISCOVERY, LEGACY_NODE, NODE, ENGINE -> null;
+        case DISCOVERY, LEGACY_NODE, NODE, ENGINE, DATABASE -> null;
       };
     }
 

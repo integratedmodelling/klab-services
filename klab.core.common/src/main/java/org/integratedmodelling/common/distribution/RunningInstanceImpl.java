@@ -150,7 +150,8 @@ public class RunningInstanceImpl implements RunningInstance {
 
   private int instancePort() {
     return switch (build.getProduct().getProductType()) {
-      case CLI, MODELER -> 0;
+      case CLI, MODELER, LANGUAGE_SERVER -> 0;
+      case DATABASE_SERVER -> KlabService.Type.DATABASE.defaultPort;
       case RESOURCES_SERVICE -> KlabService.Type.RESOURCES.defaultPort;
       case REASONER_SERVICE -> KlabService.Type.REASONER.defaultPort;
       case RESOLVER_SERVICE -> KlabService.Type.RESOLVER.defaultPort;

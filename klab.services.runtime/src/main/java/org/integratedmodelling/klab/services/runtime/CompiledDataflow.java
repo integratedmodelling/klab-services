@@ -216,7 +216,7 @@ public class CompiledDataflow {
   private Resource resolveResource(List<String> urns, Observation observation, ServiceContextScope scope) {
 
     if (urns.size() == 1 && scope.getData().containsKey(urns.getFirst())) {
-      // TODO see if we need to add the observation's geometry to the resource.
+      // namespace-local resource definition. TODO see if we need to add the observation's geometry to the resource.
       return scope.getData().get(urns.getFirst(), Resource.class);
     }
 

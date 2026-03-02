@@ -794,16 +794,20 @@ public class ComponentRegistry {
   }
 
   /**
-   * Find an adapter provided by one of the known services. The correct call sequence for this one
-   * passes the adapter ID from a resolved {@link Resource}, which guarantees that the adapter is
-   * available on the same service the resource comes from.
+   * Find an adapter provided by one of the known services. If the adapter is not present locally and is embeddable,
+   * retrieve the component it's in and load it.
    */
-  public AdapterDescriptor findAdapter(String adapterId, Version version) {
-    // TODO handle permissions
+  public AdapterDescriptor resolveAdapter(String adapterId, Version version, Scope scope) {
 
-    return adapterDescriptorFinder.containsKey(adapterId)
-        ? /* TODO handle version */ adapterDescriptorFinder.get(adapterId).iterator().next()
-        : null;
+    var existing = getAdapter(adapterId, version, scope);
+    if (existing != null) {
+      return existing.getAdapterInfo();
+    }
+
+    
+
+    return null;
+
   }
 
   /**

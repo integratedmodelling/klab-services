@@ -85,6 +85,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
@@ -92,6 +93,7 @@ import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.Instance;
+import org.integratedmodelling.klab.rest.AdapterInfo;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.http.HttpStatus;
@@ -3991,12 +3993,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       if (ret != null) {
         return ret;
-      }
-
-      // dio peto
-      for (var s : scope.getServices(ResourcesService.class)) {
-        var diocan = s.resolve(urn, KlabAsset.KnowledgeClass.NAMESPACE, scope);
-        System.out.println("diocpo");
       }
 
       var result =

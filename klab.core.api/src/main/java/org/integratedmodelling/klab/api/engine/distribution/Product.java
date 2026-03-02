@@ -234,6 +234,56 @@ public interface Product {
             }
 
         },
+        LANGUAGE_SERVER {
+            @Override
+            public String getRemoteUrl(String baseUrl) {
+                return null;
+            }
+
+            @Override
+            public String getId() {
+                return "lsp";
+            }
+
+            @Override
+            public String getName() {
+                return "k.LAB LSP language server";
+            }
+
+            @Override
+            public int getDebugPort() {return -1; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 512;
+            }
+
+        },
+        DATABASE_SERVER {
+            @Override
+            public String getRemoteUrl(String baseUrl) {
+                return baseUrl + "/" + getId();
+            }
+
+            @Override
+            public String getId() {
+                return "graphdb";
+            }
+
+            @Override
+            public String getName() {
+                return "k.LAB Graph database service";
+            }
+
+            @Override
+            public int getDebugPort() {return 5010; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 4096;
+            }
+
+        },
         MODELER {
             @Override
             public String getRemoteUrl(String baseUrl) {

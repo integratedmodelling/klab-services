@@ -10,7 +10,7 @@ public interface RunningInstance {
         UNKNOWN, RUNNING, STOPPED, WAITING, ERROR
     }
 
-    public record Result(boolean result, Throwable error, String log) {}
+    record Result(boolean result, Throwable error, String log) {}
 
     /**
      * The release this is an instance of

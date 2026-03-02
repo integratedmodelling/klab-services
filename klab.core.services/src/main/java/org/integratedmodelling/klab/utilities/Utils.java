@@ -39,6 +39,7 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.ehcache.spi.service.ServiceConfiguration;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -46,14 +47,23 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.springframework.core.io.ClassPathResource;
@@ -62,6 +72,37 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
+
+  public static class Resources extends org.integratedmodelling.common.utils.Utils.Resources {
+    /**
+     * Resolve a resource adapter by URN, using and prioritizing all the available services,
+     * handling any needed dependencies, and checking the local ComponentRegistry for previously
+     * installed adapters.
+     *
+     * @param urn
+     * @param scope
+     * @return
+     */
+    public static Adapter resolveAdapter(String urn, UserScope scope, BaseService targetService) {
+
+      var ret = targetService.getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
+      if (ret != null) {
+        return ret;
+      }
+
+      var result =
+          queryResources(
+              scope, ResourcesService.class, service -> service.resolveResourceAdapter(urn, scope));
+
+      if (!result.isEmpty()) {
+        if (targetService.getComponentRegistry().loadComponents(result, scope)) {
+          return targetService.getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
+        }
+      }
+
+      return null;
+    }
+  }
 
   public static class ServiceConfiguration {
 
