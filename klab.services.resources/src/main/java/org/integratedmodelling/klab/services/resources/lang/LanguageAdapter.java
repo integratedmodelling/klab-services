@@ -219,7 +219,7 @@ public enum LanguageAdapter {
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
     if (semantics.isLeafDeclaration()) {
-      ret.setName(semantics.encode());
+      ret.setName(semantics.getObservable().toString());
     } else {
       if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
         ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
