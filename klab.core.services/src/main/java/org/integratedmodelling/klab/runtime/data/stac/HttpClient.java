@@ -1,11 +1,12 @@
 package org.integratedmodelling.klab.runtime.data.stac;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.geotools.http.DelegateHTTPResponse;
 import org.geotools.http.HTTPResponse;
 import org.geotools.http.SimpleHttpClient;
+
 import org.geotools.util.Base64;
 import org.geotools.util.factory.GeoTools;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -54,7 +55,7 @@ public class HttpClient extends SimpleHttpClient {
 
         connection.connect();
 
-        return new SimpleHTTPResponse(connection);
+        return (HTTPResponse) connection;
     }
 
     @Override
@@ -79,7 +80,7 @@ public class HttpClient extends SimpleHttpClient {
             outputStream.flush();
         }
 
-        return new SimpleHTTPResponse(connection);
+        return (HTTPResponse)connection;
     }
 
     private URLConnection openConnection(URL finalURL) throws IOException {

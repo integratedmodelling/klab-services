@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import org.geotools.api.referencing.datum.Ellipsoid;
 import org.geotools.referencing.GeodeticCalculator;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -13,7 +14,7 @@ import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.locationtech.jts.geom.Point;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.geom.Point2D;
 import java.io.Serial;
@@ -212,12 +213,12 @@ public class GridImpl implements Grid {
         minY = clamp(envelope.getMinY(), -90, 90);
         maxY = clamp(envelope.getMaxY(), -90, 90);
 
-        GeodeticCalculator gc = new GeodeticCalculator(crs);
+        GeodeticCalculator gc = new GeodeticCalculator((Ellipsoid) crs);
         gc.setStartingGeographicPoint(minX, (maxY - minY) / 2.0);
         gc.setDestinationGeographicPoint(maxX, (maxY - minY) / 2.0);
         double width =
             (minX == -180 && maxX == 180) ? EQUATOR_LENGTH_METERS : gc.getOrthodromicDistance();
-        gc = new GeodeticCalculator(crs);
+        gc = new GeodeticCalculator((Ellipsoid) crs);
         gc.setStartingGeographicPoint((maxX - minX) / 2.0, minY);
         gc.setDestinationGeographicPoint((maxX - minX) / 2.0, maxY);
         double height = gc.getOrthodromicDistance();

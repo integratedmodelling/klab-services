@@ -432,11 +432,31 @@
             <artifactId>gt-referencing</artifactId>
             <version>${geotools.version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>javax</groupId>
-                    <artifactId>javaee-api</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>javax</groupId>-->
+<!--                    <artifactId>javaee-api</artifactId>-->
+<!--                </exclusion>-->
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-coverage</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-swing</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-transform</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-render</artifactId>
+            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -475,6 +495,11 @@
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
+            <artifactId>gt-metadata</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
             <artifactId>gt-process-raster</artifactId>
             <version>${geotools.version}</version>
             <exclusions>
@@ -498,6 +523,17 @@
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson-core</artifactId>
             <version>${geotools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-main</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.opengis</groupId>
+            <artifactId>geoapi</artifactId>
+            <version>3.0.2</version>
         </dependency>
 
         <dependency>
