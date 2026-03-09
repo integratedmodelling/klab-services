@@ -183,6 +183,37 @@ public class Utils {
       prop.list(new PrintWriter(writer));
       return writer.getBuffer().toString();
     }
+
+    public static class Container {
+
+      protected java.util.Properties properties;
+      private boolean empty;
+
+      protected Container(URL url) {
+        properties = new java.util.Properties();
+        try (var input = url.openStream()) {
+          properties.load(input);
+        } catch (IOException e) {
+          empty = true;
+        }
+      }
+
+      public java.util.Properties getProperties() {
+        return properties;
+      }
+
+      public void setProperties(java.util.Properties properties) {
+        this.properties = properties;
+      }
+
+      public boolean isEmpty() {
+        return empty;
+      }
+
+      public void setEmpty(boolean empty) {
+        this.empty = empty;
+      }
+    }
   }
 
   public static class Urns {
@@ -440,7 +471,7 @@ public class Utils {
      * Merge two or more resource sets into a new one. If the same resources are available keep the
      * one with the most recent version. Behaves well with no arguments or just one.
      *
-     * @param resourceSets
+     * @param rSets
      * @return
      */
     public static ResourceSet merge(ResourceSet... rSets) {

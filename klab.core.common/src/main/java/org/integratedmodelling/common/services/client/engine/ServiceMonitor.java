@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client.engine;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -21,7 +22,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /**
@@ -280,7 +281,41 @@ public class ServiceMonitor {
     return ret;
   }
 
-  public static void main(String[] dio) {}
+  public static void main(String[] dio) {
+
+    AtomicReference<Engine.Status> engineMonitor = new AtomicReference<>(EngineStatusImpl.inop());
+    var distribution = new DistributionImpl();
+    var user = Utils.Authentication.login();
+    var monitor =
+        new ServiceMonitor(
+            user, SettingsImpl.forEngine(), true, new ArrayList<>(), null, engineMonitor::set);
+
+    System.out.println(distribution.getStatus());
+
+    Utils.CLI
+        .create()
+        .with(
+            "sync",
+            cmds -> {
+//              distribution.sync();
+            })
+        .with(
+            "start",
+            cmds -> {
+              monitor.startLocalServices(null, user);
+            })
+        .with(
+            "stop",
+            cmds -> {
+              monitor.stopLocalServices();
+            })
+        .with(
+            "?",
+            cmds -> {
+              System.out.println(engineMonitor.get());
+            })
+        .run();
+  }
 
   public int stopLocalServices() {
 

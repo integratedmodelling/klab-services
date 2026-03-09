@@ -77,13 +77,13 @@ public interface Modeler extends UIController {
       Map<String, Object> visualizationOptions,
       Class<T> outputType);
 
-  /**
-   * Return all the open contexts for the current session.
-   *
-   * @deprecated this should be an IDE issue, not a Modeler issue
-   * @return
-   */
-  List<ContextScope> getOpenContexts();
+//  /**
+//   * Return all the open contexts for the current session.
+//   *
+//   * @deprecated this should be an IDE issue, not a Modeler issue
+//   * @return
+//   */
+//  List<ContextScope> getOpenContexts();
 
   /**
    * Return a new scope with any engine defaults set by the implementation and its configuration.

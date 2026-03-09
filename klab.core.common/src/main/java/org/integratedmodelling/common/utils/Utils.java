@@ -34,6 +34,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.*;
@@ -54,19 +55,27 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tika.mime.MimeTypes;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -86,6 +95,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
@@ -100,6 +110,61 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
+
+  public static class Authentication {
+
+    /**
+     * Authenticate the default user and return a limited-functionality user scope with a null
+     * engine.
+     *
+     * @return
+     */
+    public static UserScope login() {
+      var authData =
+          org.integratedmodelling.common.authentication.Authentication.INSTANCE.authenticate(
+              SettingsImpl.forEngine());
+      return new ClientUserScope((UserIdentity) authData.getFirst(), null);
+    }
+  }
+
+  /** Ultra-simple console CLI for testing */
+  public static class CLI {
+
+    Map<String, Consumer<String[]>> commands = new HashMap<>();
+
+    public static CLI create() {
+      return new CLI();
+    }
+
+    public CLI with(String command, Consumer<String[]> handler) {
+      commands.put(command, handler);
+      return this;
+    }
+
+    public void run() {
+      Scanner scanner = new Scanner(System.in);
+      System.out.println("This is the CLI testing utility. Type 'exit' to exit.");
+      System.out.println("Available commands: " + String.join(", ", commands.keySet()));
+      while (true) {
+        System.out.print("> ");
+        String input = scanner.nextLine();
+        if (input == null || input.trim().isEmpty()) {
+          continue;
+        }
+        if (input.equals("exit")) {
+          break;
+        }
+        String[] args = input.split("\\s+");
+        Consumer<String[]> handler = commands.get(args[0]);
+        if (handler != null) {
+          handler.accept(
+              args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
+        } else {
+          System.out.println("Unknown command: " + args[0]);
+        }
+      }
+    }
+  }
 
   public static class Exceptions extends org.integratedmodelling.klab.api.utils.Utils.Exceptions {
 

@@ -60,6 +60,11 @@
             <artifactId>klab.services.runtime.server</artifactId>
             <version>${klab.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.support.graphdb</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

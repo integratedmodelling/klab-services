@@ -61,14 +61,6 @@ public class ResolutionGraph {
   // strategies and models, added only after the runtime has successfully resolved them.
   private ResourceSet dependencies = new ResourceSet();
 
-  //  /**
-  //   * A catalog per observable of all resolving sources seen, used by merging their native
-  // coverage
-  //   * with any resolving candidate before new strategies are attempted. Includes resolved
-  //   * observations, resolved models and (eventually) resolved external dataflows.
-  //   */
-  //  private final Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
-
   /**
    * Setting this one in an otherwise null graph means that the observation being resolved has been
    * resolved successfully upstream and we only need to add a reference to it.
@@ -116,7 +108,6 @@ public class ResolutionGraph {
     }
 
     this.rootScope = parent.rootScope;
-    //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
   private ResolutionGraph(

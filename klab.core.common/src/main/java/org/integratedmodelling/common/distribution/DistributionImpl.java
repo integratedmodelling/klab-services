@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
+import org.integratedmodelling.klab.api.engine.distribution.impl.DistributionModel;
 import org.integratedmodelling.klab.api.engine.distribution.impl.LocalProductImpl;
 import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
@@ -26,6 +27,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,25 +49,8 @@ public class DistributionImpl extends AbstractDistributionImpl {
   private String DEFAULT_DISTRIBUTION_DESCRIPTOR =
       "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties";
 
-  private boolean isRemote = false;
   private URL distributionUrl;
-
-  //  /**
-  //   * When the URL is known and the distribution may or may not have been synchronized, use this
-  // to
-  //   * download whatever is necessary and add the URL to the distribution properties. After that,
-  // the
-  //   * other constructor may be used.
-  //   *
-  //   * @param url
-  //   * @param scope
-  //   * @param synchronizeIfIncomplete
-  //   * @param synchronizeAnyway
-  //   */
-  //  public DistributionImpl(
-  //      URL url, Scope scope, boolean synchronizeIfIncomplete, boolean synchronizeAnyway) {
-  //    // TODO launch synchronization with messages to scope
-  //  }
+  private final File workspace;
 
   /**
    * Check if there is any trace of a remote distribution on the filesystem (which may be completely
@@ -114,39 +99,22 @@ public class DistributionImpl extends AbstractDistributionImpl {
   }
 
   public DistributionImpl() {
-    File distributionDirectory =
+    this.workspace =
         new File(Configuration.INSTANCE.getDataPath() + File.separator + "distribution");
-    if (distributionDirectory.isDirectory()) {
-      isRemote = true;
-    }
-    if (!distributionDirectory.isDirectory()) {
-      distributionDirectory =
-          new File(
-              Configuration.INSTANCE.getProperty(
-                  Configuration.KLAB_DEVELOPMENT_SOURCE_REPOSITORY,
-                  System.getProperty("user.home")
-                      + File.separator
-                      + "git"
-                      + File.separator
-                      + "klab"
-                      + "-services"));
-    }
-    if (!distributionDirectory.isDirectory()) {
-      File distributionProperties =
-          new File(
-              distributionDirectory
-                  + File.separator
-                  + "klab"
-                  + ".distribution"
-                  + File.separator
-                  + "target"
-                  + File.separator
-                  + "distribution"
-                  + File.separator
-                  + Distribution.DISTRIBUTION_PROPERTIES_FILE);
-      if (distributionProperties.isFile()) {
-        initialize(distributionProperties);
+    this.workspace.mkdirs();
+    if (this.workspace.isDirectory()) {
+      if (isRemoteDistributionAvailable()) {
+        initialize(
+            new File(
+                Configuration.INSTANCE.getDataPath()
+                    + File.separator
+                    + "distribution"
+                    + File.separator
+                    + DISTRIBUTION_PROPERTIES_FILE));
       }
+    }
+    if (isDevelopmentDistributionAvailable()) {
+      status.setDevelopmentStatus(Product.Status.UP_TO_DATE);
     }
   }
 
@@ -159,28 +127,43 @@ public class DistributionImpl extends AbstractDistributionImpl {
       try {
         this.distributionUrl = new URL(distributionURL);
       } catch (MalformedURLException e) {
-        isRemote = false;
+        status.setDownloadedStatus(Product.Status.UNAVAILABLE);
       }
     } else {
-      isRemote = false;
+      status.setDownloadedStatus(Product.Status.UNAVAILABLE);
     }
+    var available = true;
+    var obsolete = false;
     for (String productName : getProperty(DISTRIBUTION_PRODUCTS_PROPERTY, "").split(",")) {
-      this.getProducts()
-          .add(
-              new LocalProductImpl(
-                  new File(
-                      distributionPath
-                          + File.separator
-                          + productName
-                          + File.separator
-                          + ProductImpl.PRODUCT_PROPERTIES_FILE),
-                  this));
+      var product =
+          new LocalProductImpl(
+              new File(
+                  distributionPath
+                      + File.separator
+                      + productName
+                      + File.separator
+                      + ProductImpl.PRODUCT_PROPERTIES_FILE),
+              this);
+      this.getProducts().add(product);
+      switch (product.getStatus()) {
+        case UP_TO_DATE:
+          break;
+        case UNAVAILABLE:
+          available = false;
+          break;
+        case OBSOLETE:
+          obsolete = true;
+      }
     }
+    status.setDownloadedStatus(
+        available
+            ? (obsolete ? Product.Status.OBSOLETE : Product.Status.UP_TO_DATE)
+            : Product.Status.UNAVAILABLE);
   }
 
   @Override
   public void synchronize(Scope scope, SynchronizationMonitor listener) {
-    if (isRemote && distributionUrl != null) {
+    if (distributionUrl != null) {
 
       var builds = new ArrayList<Build>();
 
@@ -310,7 +293,7 @@ public class DistributionImpl extends AbstractDistributionImpl {
     File f = null;
     try {
       f = File.createTempFile("fls", "txt");
-      FileUtils.copyURLToFile(new URL(distributionUrl + "/filelist.txt"), f);
+      FileUtils.copyURLToFile(new URI(distributionUrl + "/filelist.txt").toURL(), f);
     } catch (Exception e) {
       throw new KlabIOException(e);
     }
@@ -346,7 +329,13 @@ public class DistributionImpl extends AbstractDistributionImpl {
    *
    * @return true if synchronization was successful.
    */
-  public boolean sync(File workspace, SynchronizationMonitor monitor) {
+  public boolean sync(SynchronizationMonitor monitor) {
+
+    var model = new DistributionModel(DEFAULT_DISTRIBUTION_DESCRIPTOR);
+    if (model.isEmpty()) {
+      return false;
+    }
+    var commonFiles = model.getCommonFiles();
 
     var toDownload = new HashMap<String, String>();
     var toRemove = new ArrayList<File>();
@@ -363,8 +352,7 @@ public class DistributionImpl extends AbstractDistributionImpl {
     getLocalFilelist(workspace, local);
 
     // process the filelist.txt entry last, so that the distrib only returns
-    // isComplete when it
-    // got to the end.
+    // isComplete when it got to the end.
     for (String s : remote.keySet()) {
       if (!local.containsKey(s)
           || !local.get(s).equals(remote.get(s))
@@ -472,45 +460,44 @@ public class DistributionImpl extends AbstractDistributionImpl {
   }
 
   public static void main(String[] args) {
-
     var distribution = new DistributionImpl();
-    var resources = distribution.findProduct(Product.ProductType.RESOURCES_SERVICE);
-    var instance =
-        resources.launch(
-            new AbstractDelegatingScope(
-                new ChannelImpl(new AnonymousUser()) {
-                  @Override
-                  public String getDispatchId() {
-                    return "anonymous";
-                  }
-                }) {
-              @Override
-              public <T extends KlabService> T getService(Class<T> serviceClass) {
-                return null;
-              }
+    Utils.CLI
+        .create()
+        .with(
+            "?",
+            ar -> {
+              System.out.println(distribution.getStatus());
+            })
+        .with(
+            "sync",
+            ar -> {
+              distribution.sync(
+                  new SynchronizationMonitor() {
+                    @Override
+                    public void beforeDownload(String file) {}
 
-              @Override
-              public <T extends KlabService> Optional<T> findService(
-                  Class<T> serviceClass, Predicate<T>... selectors) {
-                return Optional.empty();
-              }
+                    @Override
+                    public void notifyDownloadPreparationStart() {}
 
-              @Override
-              public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return null;
-              }
+                    @Override
+                    public void notifyDownloadPreparationEnd() {}
 
-              @Override
-              public Type getType() {
-                return Type.SERVICE;
-              }
-            });
-    while (instance.getStatus() != RunningInstance.Status.STOPPED) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        return;
-      }
-    }
+                    @Override
+                    public void notifyFileProgress(String file, long bytesSoFar, long totalBytes) {}
+
+                    @Override
+                    public void beforeDelete(File localFile) {}
+
+                    @Override
+                    public void notifyDownloadCount(int downloadFilecount, int deleteFileCount) {}
+
+                    @Override
+                    public void notifyError(Exception e) {}
+
+                    @Override
+                    public void transferFinished(Exception e) {}
+                  });
+            })
+        .run();
   }
 }

@@ -21,7 +21,7 @@
         <module>klab.cli</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>
-        <module>support</module>
+<!--        <module>support</module>-->
         <module>support/klab.support.graphdb</module>
         <!--        <module>klab.lsp</module>-->
     </modules>

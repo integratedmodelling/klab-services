@@ -150,6 +150,11 @@ public enum Setting {
       false),
   LOGIN_ANONYMOUSLY(
       Page.DEBUGGING, "Ignore the user certificate and login anonymously", Boolean.class, false),
+  USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE(
+      Page.DEBUGGING,
+      "Use the compiled binary distribution in ~/git/klab-services if available",
+      Boolean.class,
+      Boolean.TRUE),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "

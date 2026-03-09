@@ -48,7 +48,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final DistributionImpl distribution;
   private DistributionImpl developmentDistribution;
   private DistributionImpl downloadedDistribution;
-  private final Distribution.Status distributionStatus;
+  //  private final Distribution.Status distributionStatus;
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
@@ -58,7 +58,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
-    if (DistributionImpl.isDevelopmentDistributionAvailable()) {
+    if (DistributionImpl.isDevelopmentDistributionAvailable()
+        && settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
       this.developmentDistribution = new DevelopmentDistributionImpl();
     }
 
@@ -69,19 +70,6 @@ public class EngineImpl implements Engine, PropertyHolder {
         this.developmentDistribution == null
             ? this.downloadedDistribution
             : this.developmentDistribution;
-
-    var status = new AbstractDistributionImpl.StatusImpl();
-    status.setAvailableDevelopmentVersion(
-        // TODO should use the Git status
-        this.developmentDistribution == null ? Version.EMPTY_VERSION : Version.CURRENT_VERSION);
-    status.setDevelopmentStatus(
-        this.developmentDistribution == null
-            ? Product.Status.UNAVAILABLE
-            : Product.Status.UP_TO_DATE);
-
-    // TODO -- no handling for now; the downloaded distro should carry the latest version available
-
-    this.distributionStatus = status;
   }
 
   public ServiceMonitor getServiceMonitor() {
@@ -90,7 +78,7 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public Distribution.Status getDistributionStatus() {
-    return this.distributionStatus;
+    return distribution.getStatus();
   }
 
   public UserScope getUser() {

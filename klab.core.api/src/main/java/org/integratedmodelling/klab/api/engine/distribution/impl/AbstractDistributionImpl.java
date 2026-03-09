@@ -9,8 +9,10 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * {@link Distribution} bean which implements all the properties and can be initialized from and
@@ -65,7 +67,23 @@ public abstract class AbstractDistributionImpl extends PropertyBean implements D
     public void setAvailableDevelopmentVersion(Version availableDevelopmentVersion) {
       this.availableDevelopmentVersion = availableDevelopmentVersion;
     }
+
+    @Override
+    public String toString() {
+      return "StatusImpl{"
+          + "developmentStatus="
+          + developmentStatus
+          + ", downloadedStatus="
+          + downloadedStatus
+          + ", installedDownloadedVersion="
+          + installedDownloadedVersion
+          + ", availableDevelopmentVersion="
+          + availableDevelopmentVersion
+          + '}';
+    }
   }
+
+  protected StatusImpl status = new StatusImpl();
 
   private Collection<Product> products = new ArrayList<>();
 
@@ -90,6 +108,11 @@ public abstract class AbstractDistributionImpl extends PropertyBean implements D
       }
     }
     return null;
+  }
+
+  @Override
+  public Status getStatus() {
+    return status;
   }
 
   /**

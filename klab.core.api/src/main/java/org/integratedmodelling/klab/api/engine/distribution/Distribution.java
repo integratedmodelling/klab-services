@@ -108,6 +108,8 @@ public interface Distribution {
 
   boolean isUsable();
 
+  Status getStatus();
+
   /**
    * A distribution is a list of products. Each may be individually versioned.
    *

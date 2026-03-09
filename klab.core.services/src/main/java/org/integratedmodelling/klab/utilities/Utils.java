@@ -457,197 +457,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     }
   }
 
-  /** Functions to access Maven artifacts */
-  //  public static class Maven {
-  //
-  //    static final String LOCAL_REPO_PATH = System.getProperty("user.home") + "/.m2/repository";
-  //    static final String MAVEN_CENTRAL_PATH = "https://repo.maven.apache.org/maven2/";
-  //    static final String MAVEN_CENTRAL_SNAPSHOT_PATH =
-  //        "https://oss.sonatype.org/content/repositories/snapshots/";
-  //
-  //    private static final MavenFetcher mavenFetcher =
-  //        new MavenFetcher()
-  //            .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
-  //            .addRemoteRepository(
-  //                "ossrh-snapshots", "https://central.sonatype.com/repository/maven-snapshots/")
-  //            .addRemoteRepository(
-  //                "ossrh-staging",
-  //
-  // "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/");
-  //
-  //    public static File getLocalJarArtifact(
-  //        String mavenGroupId, String mavenArtifactId, String version) {
-  //
-  //      var artifact = new DefaultArtifact(mavenGroupId + ":" + mavenArtifactId + ":" + version);
-  //      ArtifactRequest request = new ArtifactRequest();
-  //      request.setArtifact(artifact);
-  //      var session = Maven.buildSession(Maven.DEFAULT_REPO_LOCAL);
-  //
-  //      ArtifactResult zoaz = null;
-  //      try {
-  //        zoaz = Maven.system.resolveArtifact(session, request);
-  //      } catch (ArtifactResolutionException e) {
-  //        Logging.INSTANCE.info(
-  //            "Artifact "
-  //                + mavenGroupId
-  //                + ":"
-  //                + mavenArtifactId
-  //                + ":"
-  //                + version
-  //                + " not found in local repository");
-  //        return null;
-  //      }
-  //
-  //      if (zoaz.isResolved() && zoaz.getLocalArtifactResult().isAvailable()) {
-  //        return zoaz.getLocalArtifactResult().getFile();
-  //      }
-  //
-  //      return null;
-  //    }
-  //
-  //    /**
-  //     * True if the artifact is not in the local repository or it is there with a different hash.
-  //     * Should work with SNAPSHOT artifacts to determine if there is a new build available.
-  //     *
-  //     * <p>TODO pass a local file and verify vs the hash. Should add the hash to the repo
-  //     *
-  //     * @param mavenGroupId
-  //     * @param mavenArtifactId
-  //     * @param version
-  //     */
-  //    public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String
-  // version) {
-  //
-  //      if (version.contains("SNAPSHOT")) {}
-  //      return getLocalJarArtifact(mavenGroupId, mavenArtifactId, version) == null;
-  //    }
-  //
-  //    public static File synchronizeArtifact(
-  //        String mavenGroupId, String mavenArtifactId, String version, boolean verifySignature) {
-  //      if (true || needsUpdate(mavenGroupId, mavenArtifactId, version)) {
-  //        var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" +
-  // version);
-  //        request = request.retrievingOptionals();
-  //        var result = mavenFetcher.fetchArtifacts(request);
-  //        if (result.artifacts().findAny().isPresent()) {
-  //          Logging.INSTANCE.info(
-  //              "Artifact "
-  //                  + mavenGroupId
-  //                  + ":"
-  //                  + mavenArtifactId
-  //                  + ":"
-  //                  + version
-  //                  + " successfully synchronized from "
-  //                  + mavenFetcher.remoteRepositories());
-  //          return result.artifacts().toList().getFirst().path().toFile();
-  //        }
-  //      }
-  //      return getLocalJarArtifact(mavenGroupId, mavenArtifactId, version);
-  //    }
-  //
-  //    private static final String DEFAULT_REPO_LOCAL =
-  //        String.format("%s/.m2/repository", System.getProperty("user.home"));
-  //    private static final RemoteRepository DEFAULT_REPO_REMOTE =
-  //        new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/")
-  //            .build();
-  //    private static final Set<String> DEFAULT_SCOPES = Set.of(JavaScopes.RUNTIME);
-  //
-  //    private static final RepositorySystem system;
-  //
-  //    static {
-  //      var locator = MavenRepositorySystemUtils.newServiceLocator();
-  //
-  //      locator.addService(RepositoryConnectorFactory.class,
-  // BasicRepositoryConnectorFactory.class);
-  //      locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-  //      locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-  //      //            locator.addService(TransporterFactory.class,
-  // ClasspathTransporterFactory.class);
-  //
-  //      system = locator.getService(RepositorySystem.class);
-  //    }
-  //
-  //    public static List<String> resolve(String... coords)
-  //        throws DependencyResolutionException, NoLocalRepositoryManagerException {
-  //      return resolve(
-  //          List.of(coords), DEFAULT_SCOPES, DEFAULT_REPO_LOCAL, List.of(DEFAULT_REPO_REMOTE));
-  //    }
-  //
-  //    /**
-  //     * resolve
-  //     *
-  //     * @param coords eg: org.apache.logging.log4j:log4j-core:2.19.0
-  //     * @param scopes default to DEFAULT_SCOPES if null or empty
-  //     * @param localRepo default to DEFAULT_REPO_LOCAL if null
-  //     * @param remoteRepos default to DEFAULT_REPO_REMOTE if null or empty
-  //     * @return jar files absolute path
-  //     */
-  //    public static List<String> resolve(
-  //        List<String> coords,
-  //        Set<String> scopes,
-  //        String localRepo,
-  //        List<RemoteRepository> remoteRepos)
-  //        throws DependencyResolutionException, NoLocalRepositoryManagerException {
-  //      if (coords.isEmpty()) return java.util.Collections.emptyList();
-  //      if (scopes == null || scopes.isEmpty()) scopes = DEFAULT_SCOPES;
-  //      if (localRepo == null) localRepo = DEFAULT_REPO_LOCAL;
-  //      if (remoteRepos == null || remoteRepos.isEmpty()) remoteRepos =
-  // List.of(DEFAULT_REPO_REMOTE);
-  //
-  //      RepositorySystemSession session = buildSession(localRepo);
-  //
-  //      List<Dependency> dependencies =
-  //          coords.stream()
-  //              .map(DefaultArtifact::new)
-  //              .map(artifact -> new Dependency(artifact, null))
-  //              .toList();
-  //      var collectRequest = new CollectRequest(dependencies, null, remoteRepos);
-  //
-  //      var request =
-  //          new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scopes));
-  //      DependencyResult result = system.resolveDependencies(session, request);
-  //
-  //      var nodeListGenerator = new PreorderNodeListGenerator();
-  //      result.getRoot().accept(nodeListGenerator);
-  //
-  //      return nodeListGenerator.getFiles().stream().map(File::getAbsolutePath).toList();
-  //    }
-  //
-  //    private static RepositorySystemSession buildSession(String localRepo) {
-  //      var session = MavenRepositorySystemUtils.newSession();
-  //      session.setLocalRepositoryManager(
-  //          system.newLocalRepositoryManager(session, new LocalRepository(localRepo)));
-  //      session.setCache(new DefaultRepositoryCache());
-  //      return session;
-  //    }
-  //
-  //    public static void main(String[] args)
-  //        throws DependencyResolutionException, NoLocalRepositoryManagerException {
-  //      var dio = new com.squareup.tools.maven.resolution.ArtifactResolver();
-  //      var resolved = dio.artifactFor("org.apache.logging.log4j:log4j-core:2.19.0");
-  //      var can = dio.resolve(resolved);
-  //      if (can.component2() instanceof ResolvedArtifact resolved2) {
-  //        var resolved23 = resolved2.subArtifact("component", "md5");
-  //        var status = dio.downloadSubArtifact(resolved23);
-  //        System.out.println(status);
-  //      }
-  //      test();
-  //    }
-  //
-  //    public static void test()
-  //        throws DependencyResolutionException, NoLocalRepositoryManagerException {
-  //      String localRepo = "out";
-  //      RemoteRepository aliRepo =
-  //          new RemoteRepository.Builder(
-  //                  "aliyun", "default", "https://maven.aliyun.com/repository/central")
-  //              .build();
-  //      List<RemoteRepository> remotes = List.of(DEFAULT_REPO_REMOTE, aliRepo);
-  //      var coords = List.of("org.integratedmodelling:klab.component.geospatial:1.0-SNAPSHOT");
-  //      List<String> jars = resolve(coords, null, localRepo, remotes);
-  //      System.out.printf(">>>>>> jars: %s%n", jars);
-  //    }
-  //  }
-
   /** Utility class for Maven Central operations, including checking snapshot release dates. */
   public static class Maven {
 
@@ -1714,7 +1523,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         for (RemoteConfig remoteConfig : git.remoteList().call()) {
           if ("origin".equals(remoteConfig.getName()) && !remoteConfig.getURIs().isEmpty()) {
             for (var uri : remoteConfig.getURIs()) {
-              credentials = Authentication.INSTANCE.getCredentials(uri.toString(), scope);
+              credentials =
+                  org.integratedmodelling.common.authentication.Authentication.INSTANCE
+                      .getCredentials(uri.toString(), scope);
               if (credentials != null) {
                 break;
               }
@@ -1989,7 +1800,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
       CredentialsProvider credentialsProvider =
-          getCredentialsProvider(Authentication.INSTANCE.getCredentials(url, scope));
+          getCredentialsProvider(
+              org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(
+                  url, scope));
 
       try (org.eclipse.jgit.api.Git result =
           org.eclipse.jgit.api.Git.cloneRepository()

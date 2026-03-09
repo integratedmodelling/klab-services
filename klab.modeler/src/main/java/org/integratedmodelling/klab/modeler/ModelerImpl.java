@@ -339,10 +339,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ret;
   }
 
-  @Override
-  public List<ContextScope> getOpenContexts() {
-    return new ArrayList<>(contexts.values());
-  }
+//  @Override
+//  public List<ContextScope> getOpenContexts() {
+//    return new ArrayList<>(contexts.values());
+//  }
 
   @Override
   public ContextScope createDefaultContext() {
@@ -542,9 +542,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ((EngineImpl) engine()).getUser();
   }
 
-  public Future<Boolean> startLocalServices() {
-    return CompletableFuture.completedFuture(false);
-  }
+//  public Future<Boolean> startLocalServices() {
+//    return CompletableFuture.completedFuture(false);
+//  }
 
   public CompletableFuture<Boolean> shutdownLocalServices() {
 
