@@ -1,19 +1,47 @@
 package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A {@link Distribution} is the top-level object in a k.LAB software stack. It contains one or more
  * {@link Product}s. It can be built from a local or remote distribution file or URL; if remote, the
  * distribution will be able of synchronizing its contents with the network.
+ *
+ * @deprecated should keep the name but switch to the new logic in DistributionImpl
  */
 public interface Distribution {
+
+  /**
+   * Represents an entry in the filelist that accompanies each build in the distribution. Used as a
+   * key for the files to inspect and/or download, represented by {@link FileTarget}.
+   *
+   * @param hash
+   * @param name
+   * @param size
+   */
+  record FileData(String hash, String name, long size) {
+    public static FileData of(String string) {
+      var parts = string.split("\\s+");
+      return new FileData(
+          parts[0],
+          parts[1].startsWith("./") ? parts[1].substring(2) : parts[1],
+          Long.parseLong(parts[2]));
+    }
+  }
+
+  /**
+   * Represents the URL and destination file for a file to be downloaded after the distribution has
+   * been synchronized to a folder.
+   *
+   * @param sourceUrl
+   * @param destinationFile
+   */
+  record FileTarget(URL sourceUrl, java.io.File destinationFile) {}
 
   /**
    * This gets sent to the engine messaging system to inform of the status of the possible
@@ -30,53 +58,86 @@ public interface Distribution {
     Version getAvailableDownloadedVersion();
   }
 
-  /**
-   * Use one of these to implement progress monitoring for downloads.
-   *
-   * @author Ferd
-   */
-  interface SynchronizationMonitor {
+  interface Synchronization {
 
     /**
-     * @param file
+     * Return false here to skip synchronization and only perform statistics without creating any
+     * directory
      */
-    void beforeDownload(String file);
+    boolean isSynchronizing();
 
     /**
-     * This is only called when preparing an incremental update from a previous distribution, which
-     * can run relatively long.
-     */
-    void notifyDownloadPreparationStart();
-
-    /**
-     * This is only called when preparing an incremental update from a previous distribution, which
-     * can run relatively long.
-     */
-    void notifyDownloadPreparationEnd();
-
-    void notifyFileProgress(String file, long bytesSoFar, long totalBytes);
-
-    /**
-     * @param localFile
-     */
-    void beforeDelete(File localFile);
-
-    /**
-     * @param downloadFilecount
-     * @param deleteFileCount
-     */
-    void notifyDownloadCount(int downloadFilecount, int deleteFileCount);
-
-    /**
-     * Notify an error
+     * Notify what needs to be downloaded and the respective sizes. If #isSynchronizing() returns
+     * false, no other method is called.
      *
-     * @param e an exception
+     * <p>If this returns false,
+     *
+     * @param totalSize
+     * @param downloadSize
+     * @param fullList
+     * @param downloadList
      */
-    void notifyError(Exception e);
+    boolean notifyDownload(
+        long totalSize,
+        long downloadSize,
+        Map<FileData, FileTarget> fullList,
+        Map<FileData, FileTarget> downloadList);
 
-    /** */
-    void transferFinished(Exception e);
+    boolean download(URL url, File file, FileData fileData);
+
+    boolean link(File file, File destination);
+
+    void delete(File file);
   }
+
+//  /**
+//   * Use one of these to implement progress monitoring for downloads.
+//   *
+//   * @deprecated use the other
+//   * @author Ferd
+//   */
+//  interface SynchronizationMonitor {
+//
+//    /**
+//     * @param file
+//     */
+//    void beforeDownload(String file);
+//
+//    /**
+//     * This is only called when preparing an incremental update from a previous distribution, which
+//     * can run relatively long.
+//     */
+//    void notifyDownloadPreparationStart();
+//
+//    /**
+//     * This is only called when preparing an incremental update from a previous distribution, which
+//     * can run relatively long.
+//     */
+//    void notifyDownloadPreparationEnd();
+//
+//    void notifyFileProgress(String file, long bytesSoFar, long totalBytes);
+//
+//    /**
+//     * @param localFile
+//     */
+//    void beforeDelete(File localFile);
+//
+//    /**
+//     * @param downloadFilecount
+//     * @param deleteFileCount
+//     */
+//    void notifyDownloadCount(int downloadFilecount, int deleteFileCount);
+//
+//    /**
+//     * Notify an error
+//     *
+//     * @param e an exception
+//     */
+//    void notifyError(Exception e);
+//
+//    /** */
+//    void transferFinished(Exception e);
+//  }
 
   String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
   String DISTRIBUTION_NAME_PROPERTY = "klab.distribution.name";
@@ -84,27 +145,27 @@ public interface Distribution {
   String DISTRIBUTION_PRODUCTS_PROPERTY = "klab.distribution.products";
   String DISTRIBUTION_URL_PROPERTY = "klab.distribution.url";
 
-  /**
-   * Synchronize with the remote peer, if there is one. In order to know if there is any
-   * synchronization to be done, scan the products and compare versions. Synchronization will use
-   * the scope using send() to monitor all events implied in the operations and handle
-   * interruptions. The scope may also determine which products can be accessed and how.
-   *
-   * <p>TODO we should add optional parameters for sync of the latest version only, or whichever
-   * release is defined in the product as the currently chosen one.
-   *
-   * @param scope
-   */
-  void synchronize(Scope scope, SynchronizationMonitor listener);
+//  /**
+//   * Synchronize with the remote peer, if there is one. In order to know if there is any
+//   * synchronization to be done, scan the products and compare versions. Synchronization will use
+//   * the scope using send() to monitor all events implied in the operations and handle
+//   * interruptions. The scope may also determine which products can be accessed and how.
+//   *
+//   * <p>TODO we should add optional parameters for sync of the latest version only, or whichever
+//   * release is defined in the product as the currently chosen one.
+//   *
+//   * @param scope
+//   */
+//  void synchronize(Scope scope, SynchronizationMonitor listener);
 
-  /**
-   * If true, synchronize() may be called to update the distribution. This will return false without
-   * exceptions also in case of connection errors or other failures.
-   *
-   * @param scope
-   * @return true if synchronization is needed
-   */
-  boolean needsSynchronization(Scope scope);
+//  /**
+//   * If true, synchronize() may be called to update the distribution. This will return false without
+//   * exceptions also in case of connection errors or other failures.
+//   *
+//   * @param scope
+//   * @return true if synchronization is needed
+//   */
+//  boolean needsSynchronization(Scope scope);
 
   boolean isUsable();
 

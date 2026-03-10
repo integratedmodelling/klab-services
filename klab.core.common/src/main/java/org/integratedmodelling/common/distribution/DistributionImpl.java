@@ -1,10 +1,8 @@
 package org.integratedmodelling.common.distribution;
 
 import org.apache.commons.io.FileUtils;
-import org.integratedmodelling.common.authentication.AnonymousUser;
-import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -15,14 +13,11 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
-import org.integratedmodelling.klab.api.engine.distribution.impl.DistributionModel;
 import org.integratedmodelling.klab.api.engine.distribution.impl.LocalProductImpl;
 import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,9 +26,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
-import java.util.function.Predicate;
 
 /**
  * The main {@link Distribution} implementation looks up a synchronized, remote distribution in the
@@ -45,9 +38,6 @@ import java.util.function.Predicate;
  * testing when the code artifacts are there.
  */
 public class DistributionImpl extends AbstractDistributionImpl {
-
-  private String DEFAULT_DISTRIBUTION_DESCRIPTOR =
-      "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties";
 
   private URL distributionUrl;
   private final File workspace;
@@ -159,30 +149,6 @@ public class DistributionImpl extends AbstractDistributionImpl {
         available
             ? (obsolete ? Product.Status.OBSOLETE : Product.Status.UP_TO_DATE)
             : Product.Status.UNAVAILABLE);
-  }
-
-  @Override
-  public void synchronize(Scope scope, SynchronizationMonitor listener) {
-    if (distributionUrl != null) {
-
-      var builds = new ArrayList<Build>();
-
-      for (var product : getProducts()) {
-        for (var release : product.getReleases()) {
-          for (var build : release.getBuilds()) {
-            builds.add(build);
-          }
-        }
-      }
-
-      for (var build : builds) {}
-    }
-  }
-
-  @Override
-  public boolean needsSynchronization(Scope scope) {
-    // TODO
-    return false;
   }
 
   @Override
@@ -322,181 +288,120 @@ public class DistributionImpl extends AbstractDistributionImpl {
         && new File(workspace + File.separator + "filelist.txt").exists();
   }
 
-  /**
-   * Synchronize the necessary files. Will do nothing (and return true) if we have elected to use a
-   * local installation. Will return false if we're not network-enabled or the selected server is
-   * offline.
-   *
-   * @return true if synchronization was successful.
-   */
-  public boolean sync(SynchronizationMonitor monitor) {
-
-    var model = new DistributionModel(DEFAULT_DISTRIBUTION_DESCRIPTOR);
-    if (model.isEmpty()) {
-      return false;
-    }
-    var commonFiles = model.getCommonFiles();
-
-    var toDownload = new HashMap<String, String>();
-    var toRemove = new ArrayList<File>();
-
-    var remote = new HashMap<String, String>();
-    var local = new HashMap<String, String>();
-
-    var exec = new HashSet<PosixFilePermission>();
-    exec.add(PosixFilePermission.OWNER_EXECUTE);
-    exec.add(PosixFilePermission.OWNER_READ);
-    exec.add(PosixFilePermission.OWNER_WRITE);
-
-    getRemoteFilelist(remote);
-    getLocalFilelist(workspace, local);
-
-    // process the filelist.txt entry last, so that the distrib only returns
-    // isComplete when it got to the end.
-    for (String s : remote.keySet()) {
-      if (!local.containsKey(s)
-          || !local.get(s).equals(remote.get(s))
-          || !getDestinationFile(workspace, s).exists()) {
-        if (!s.equals("filelist.txt")) toDownload.put(s, remote.get(s));
-      }
-    }
-    toDownload.put("filelist.txt", null);
-
-    /*
-     * TODO scan workspace and schedule anything that isn't in the file list for
-     * deletion.
-     */
-    scanForDeletion(workspace, workspace, remote, toRemove);
-
-    if (monitor != null) {
-      monitor.notifyDownloadCount(toDownload.size(), toRemove.size());
-    }
-
-    workspace.mkdirs();
-    Exception downloadError = null;
-
-    for (String f : toDownload.keySet()) {
-      if (monitor != null) {
-        monitor.beforeDownload(f);
-      }
-      try {
-        new Downloader(
-                new URL(distributionUrl + "/" + f),
-                getDestinationFile(workspace, f),
-                (sofar, total) -> {
-                  if (monitor != null) {
-                    monitor.notifyFileProgress(f, sofar, total);
-                  }
-                },
-                toDownload.get(f))
-            .download();
-
-        if (f.endsWith(".sh")) {
-          // bit of a hack, but that should make things work on Linux
-          // and MacOS.
-          Files.setPosixFilePermissions(getDestinationFile(workspace, f).toPath(), exec);
+  // Synchronizer for testing, outputting on console only
+  static Synchronization loggingSynchronizer =
+      new Synchronization() {
+        @Override
+        public boolean isSynchronizing() {
+          return false;
         }
-      } catch (UnsupportedOperationException e) {
-        // ignore
-      } catch (IOException e) {
-        monitor.notifyError(e);
-        break;
-      } catch (KlabException e) {
-        monitor.notifyError(e);
-        if (e.getCause() instanceof KlabIOException) {
-          downloadError = e;
+
+        @Override
+        public boolean notifyDownload(
+            long totalSize,
+            long downloadSize,
+            Map<Distribution.FileData, Distribution.FileTarget> fullList,
+            Map<Distribution.FileData, Distribution.FileTarget> downloadList) {
+
+          System.out.println(
+              "Must synchronize "
+                  + downloadList.size()
+                  + " files: "
+                  + FileUtils.byteCountToDisplaySize(downloadSize)
+                  + " out of "
+                  + FileUtils.byteCountToDisplaySize(totalSize)
+                  + " total storage in "
+                  + fullList.size()
+                  + " files.");
+
+          return false;
         }
-        break;
-      }
-    }
-    if (downloadError == null) {
-      for (var f : toRemove) {
-        if (monitor != null) {
-          monitor.beforeDelete(f);
+
+        @Override
+        public boolean download(URL url, File file, FileData fileData) {
+          System.out.println("DOWNLOAD " + url + " -> " + file);
+          return true;
         }
-        FileUtils.deleteQuietly(f);
-      }
-    }
-    if (monitor != null) {
-      monitor.transferFinished(downloadError);
-    }
 
-    return true;
-  }
+        @Override
+        public boolean link(File file, File destination) {
+          System.out.println("LINK " + file + " -> " + destination);
+          return true;
+        }
 
-  private void scanForDeletion(
-      File workspace, File file, HashMap<String, String> remote, ArrayList<File> toRemove) {
+        @Override
+        public void delete(File file) {
+          System.out.println("DELETE " + file);
+        }
+      };
 
-    if (file.isDirectory()) {
-      for (File f : file.listFiles()) {
-        scanForDeletion(workspace, f, remote, toRemove);
-      }
-    } else {
+  static Synchronization actingSynchronizer =
+      new Synchronization() {
+        @Override
+        public boolean isSynchronizing() {
+          return true;
+        }
 
-      String fname =
-          ("." + file.toString().substring(workspace.toString().length())).replaceAll("\\\\", "/");
+        @Override
+        public boolean notifyDownload(
+            long totalSize,
+            long downloadSize,
+            Map<FileData, FileTarget> fullList,
+            Map<FileData, FileTarget> downloadList) {
 
-      if (fname.startsWith(".")) fname = fname.substring(1);
-      if (fname.startsWith("/")) fname = fname.substring(1);
+          System.out.println(
+              "Synchronizing "
+                  + downloadList.size()
+                  + " files: "
+                  + FileUtils.byteCountToDisplaySize(downloadSize)
+                  + " out of "
+                  + FileUtils.byteCountToDisplaySize(totalSize)
+                  + " total storage in "
+                  + fullList.size()
+                  + " files.");
+          return true;
+        }
 
-      if (!fname.isEmpty()
-          && !fname.equals("filelist.txt")
-          && !fname.endsWith(".log")
-          && !remote.containsKey(fname)) {
-        toRemove.add(file);
-      }
-    }
-  }
+        @Override
+        public boolean download(URL url, File file, FileData fileData) {
+          System.out.println("Downloading " + url + " -> " + file);
+          try {
+            FileUtils.copyURLToFile(url, file);
+          } catch (IOException e) {
+            return false;
+          }
+          return true;
+        }
 
-  private File getDestinationFile(File workspace, String f) {
+        @Override
+        public boolean link(File file, File destination) {
+          System.out.println("Linking " + file + " -> " + destination);
+          return Utils.Files.symlink(file, destination);
+        }
 
-    String[] fpath = f.split("\\/");
-    String pref = workspace.toString();
-    for (int i = 0; i < fpath.length - 1; i++) {
-      pref += File.separator + fpath[i];
-    }
-    new File(pref).mkdirs();
-    return new File(pref + File.separator + fpath[fpath.length - 1]);
-  }
+        @Override
+        public void delete(File file) {
+          System.out.println("Deleting " + file);
+          FileUtils.deleteQuietly(file);
+        }
+      };
 
   public static void main(String[] args) {
-    var distribution = new DistributionImpl();
+
+    var distribution = new DistributionModel(SettingsImpl.forEngine());
     Utils.CLI
         .create()
         .with(
-            "?",
+            "status",
             ar -> {
-              System.out.println(distribution.getStatus());
+              distribution.synchronize(
+                  Configuration.INSTANCE.getDataPath("distribution"), loggingSynchronizer);
             })
         .with(
             "sync",
             ar -> {
-              distribution.sync(
-                  new SynchronizationMonitor() {
-                    @Override
-                    public void beforeDownload(String file) {}
-
-                    @Override
-                    public void notifyDownloadPreparationStart() {}
-
-                    @Override
-                    public void notifyDownloadPreparationEnd() {}
-
-                    @Override
-                    public void notifyFileProgress(String file, long bytesSoFar, long totalBytes) {}
-
-                    @Override
-                    public void beforeDelete(File localFile) {}
-
-                    @Override
-                    public void notifyDownloadCount(int downloadFilecount, int deleteFileCount) {}
-
-                    @Override
-                    public void notifyError(Exception e) {}
-
-                    @Override
-                    public void transferFinished(Exception e) {}
-                  });
+              distribution.synchronize(
+                  Configuration.INSTANCE.getDataPath("distribution"), actingSynchronizer);
             })
         .run();
   }

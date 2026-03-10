@@ -155,6 +155,11 @@ public enum Setting {
       "Use the compiled binary distribution in ~/git/klab-services if available",
       Boolean.class,
       Boolean.TRUE),
+  DISTRIBUTION_SOURCE_URL(
+      Page.DEBUGGING,
+      "Alternative source URL for the k.LAB stack distribution",
+      String.class,
+      "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties"),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "

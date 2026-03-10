@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -1061,6 +1062,23 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return tempFile;
       } catch (IOException e) {
         throw new KlabIOException(e);
+      }
+    }
+
+    public static boolean symlink(File file, File destination) {
+      if (file == null || destination == null) {
+        return false;
+      }
+      try {
+        if (OS.get() == OS.WIN) {
+          // only dev mode users can do symbolic on win - screw it
+          java.nio.file.Files.createLink(destination.toPath(), file.toPath());
+        } else {
+          java.nio.file.Files.createSymbolicLink(destination.toPath(), file.toPath());
+        }
+        return true;
+      } catch (IOException e) {
+        return false;
       }
     }
   }
