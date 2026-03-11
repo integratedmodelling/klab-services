@@ -455,14 +455,40 @@ public class DistributionModel extends Utils.Properties.Container {
             }
           }
 
+          /*
+           * Last sync step: remove any files that don't belong and link any common files whose link
+           * was lost.
+           */
           if (buildDirectory.isDirectory()) {
-            // FIXME NOO WRONG DIOCAN - this will remove all that were not downloaded this time
-            //  ALSO any files in commons are not re-linked if they went missing. Must rescan starting
-            //  at the filelist
-            for (var file : buildDirectory.listFiles()) {
-              // check if any existing file does not exist in download list
-              if (!accepted.contains(file) && !file.toString().endsWith(".properties")) {
-                monitor.delete(file);
+            var existingFileNames =
+                Arrays.stream(buildDirectory.listFiles())
+                    .map(File::getName)
+                    .collect(Collectors.toSet());
+            var requiredFileNames =
+                build.getFiles().stream()
+                    .map(Distribution.FileData::name)
+                    .collect(Collectors.toSet());
+            existingFileNames.removeAll(requiredFileNames);
+            for (var fileName : existingFileNames) {
+              if (fileName.endsWith(".properties")) {
+                continue;
+              }
+              var file = new File(buildDirectory.getAbsolutePath() + File.separator + fileName);
+              monitor.delete(file);
+            }
+            for (var file : build.getFiles()) {
+              var expected =
+                  new File(buildDirectory.getAbsolutePath() + File.separator + file.name());
+              if (!expected.exists()) {
+                if (common.containsKey(file)) {
+                  if (!monitor.link(common.get(file).destinationFile(), expected)) {
+                    return false;
+                  }
+                } else {
+                  // shouldn't happen
+                  System.out.println("DIO BULLO È SUCCESSO");
+                  return false;
+                }
               }
             }
           }
@@ -519,6 +545,7 @@ public class DistributionModel extends Utils.Properties.Container {
   public String getName() {
     return name;
   }
+
   public void setName(String name) {
     this.name = name;
   }
