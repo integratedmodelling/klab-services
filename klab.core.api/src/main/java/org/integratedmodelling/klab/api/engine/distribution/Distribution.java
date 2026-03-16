@@ -12,7 +12,9 @@ import java.util.Map;
  * {@link Product}s. It can be built from a local or remote distribution file or URL; if remote, the
  * distribution will be able of synchronizing its contents with the network.
  *
- * @deprecated should keep the name but switch to the new logic in DistributionImpl
+ * TODO the hierarchy should be distribution/version/release/build/product, not distribution/release/product/build
+ *
+ * FIXME should keep the name but switch to the new logic in DistributionImpl/ DistributionModel
  */
 public interface Distribution {
 
@@ -90,82 +92,12 @@ public interface Distribution {
     void delete(File file);
   }
 
-//  /**
-//   * Use one of these to implement progress monitoring for downloads.
-//   *
-//   * @deprecated use the other
-//   * @author Ferd
-//   */
-//  interface SynchronizationMonitor {
-//
-//    /**
-//     * @param file
-//     */
-//    void beforeDownload(String file);
-//
-//    /**
-//     * This is only called when preparing an incremental update from a previous distribution, which
-//     * can run relatively long.
-//     */
-//    void notifyDownloadPreparationStart();
-//
-//    /**
-//     * This is only called when preparing an incremental update from a previous distribution, which
-//     * can run relatively long.
-//     */
-//    void notifyDownloadPreparationEnd();
-//
-//    void notifyFileProgress(String file, long bytesSoFar, long totalBytes);
-//
-//    /**
-//     * @param localFile
-//     */
-//    void beforeDelete(File localFile);
-//
-//    /**
-//     * @param downloadFilecount
-//     * @param deleteFileCount
-//     */
-//    void notifyDownloadCount(int downloadFilecount, int deleteFileCount);
-//
-//    /**
-//     * Notify an error
-//     *
-//     * @param e an exception
-//     */
-//    void notifyError(Exception e);
-//
-//    /** */
-//    void transferFinished(Exception e);
-//  }
-
   String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
   String DISTRIBUTION_NAME_PROPERTY = "klab.distribution.name";
   String DISTRIBUTION_DATE_PROPERTY = "klab.distribution.date";
   String DISTRIBUTION_PRODUCTS_PROPERTY = "klab.distribution.products";
+  String DISTRIBUTION_VERSION_PROPERTY = "klab.distribution.version";
   String DISTRIBUTION_URL_PROPERTY = "klab.distribution.url";
-
-//  /**
-//   * Synchronize with the remote peer, if there is one. In order to know if there is any
-//   * synchronization to be done, scan the products and compare versions. Synchronization will use
-//   * the scope using send() to monitor all events implied in the operations and handle
-//   * interruptions. The scope may also determine which products can be accessed and how.
-//   *
-//   * <p>TODO we should add optional parameters for sync of the latest version only, or whichever
-//   * release is defined in the product as the currently chosen one.
-//   *
-//   * @param scope
-//   */
-//  void synchronize(Scope scope, SynchronizationMonitor listener);
-
-//  /**
-//   * If true, synchronize() may be called to update the distribution. This will return false without
-//   * exceptions also in case of connection errors or other failures.
-//   *
-//   * @param scope
-//   * @return true if synchronization is needed
-//   */
-//  boolean needsSynchronization(Scope scope);
 
   boolean isUsable();
 

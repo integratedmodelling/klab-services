@@ -33,6 +33,7 @@
                     <outputDirectory>target/distribution</outputDirectory>
                     <distributionName>klab</distributionName>
                     <distributionVersion>${klab.version}</distributionVersion>
+                    <distributionRootUrl>https://resources.integratedmodelling.org/klab/products</distributionRootUrl>
                 </configuration>
             </plugin>
         </plugins>

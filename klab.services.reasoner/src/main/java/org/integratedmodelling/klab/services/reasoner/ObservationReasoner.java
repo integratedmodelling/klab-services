@@ -164,7 +164,72 @@ public class ObservationReasoner {
             }
           }
           case CONFIGURATION -> {
-            if (!semantics.is(SemanticType.QUALITY)) {
+            if (!semantics.is(SemanticType.CONFIGURATION)) {
+              return false;
+            }
+          }
+          case INSTANTIATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.INSTANTIATION) {
+              return false;
+            }
+          }
+          case DETECTION -> {
+            if (semantics.getDescriptionType() != DescriptionType.DETECTION) {
+              return false;
+            }
+          }
+          case SIMULATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.SIMULATION) {
+              return false;
+            }
+          }
+          case MEASURE -> {
+            if (semantics.getDescriptionType() != DescriptionType.MEASURE) {
+              return false;
+            }
+          }
+          case QUANTIFICATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.QUANTIFICATION) {
+              return false;
+            }
+          }
+          case VALUATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.VALUATION) {
+              return false;
+            }
+          }
+          case CATEGORIZATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.CATEGORIZATION) {
+              return false;
+            }
+          }
+          case VERIFICATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.VERIFICATION) {
+              return false;
+            }
+          }
+          case CLASSIFICATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.CLASSIFICATION) {
+              return false;
+            }
+          }
+          case CHARACTERIZATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.CHARACTERIZATION) {
+              return false;
+            }
+          }
+          case TRANSFORMATION -> {
+            if (semantics.getDescriptionType() != DescriptionType.TRANSFORMATION) {
+              return false;
+            }
+          }
+          case ACKNOWLEDGEMENT -> {
+            if (semantics.getDescriptionType() != DescriptionType.ACKNOWLEDGEMENT) {
+              return false;
+            }
+          }
+          case CONNECTION -> {
+            if (semantics.getDescriptionType() != DescriptionType.CONNECTION) {
               return false;
             }
           }

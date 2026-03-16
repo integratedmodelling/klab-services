@@ -82,7 +82,20 @@ public interface KimObservationStrategy extends KlabStatement {
       SUBJECT,
       PROCESS,
       EVENT,
-      CONFIGURATION
+      CONFIGURATION,
+      INSTANTIATION,
+      DETECTION,
+      SIMULATION,
+      MEASURE,
+      QUANTIFICATION,
+      VALUATION,
+      CATEGORIZATION,
+      VERIFICATION,
+      CLASSIFICATION,
+      CHARACTERIZATION,
+      TRANSFORMATION,
+      ACKNOWLEDGEMENT,
+      CONNECTION
     }
 
     boolean isNegated();

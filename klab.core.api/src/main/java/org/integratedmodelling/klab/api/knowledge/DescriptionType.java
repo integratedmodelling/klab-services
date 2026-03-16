@@ -29,7 +29,7 @@ public enum DescriptionType {
   /** The observation activity that produces a dynamic account of a process */
   SIMULATION(false, "process", Artifact.Type.PROCESS, "simulator"),
   /** The observation activity that produces a measurable quality with units */
-  MEASUREMENT(false, "number", Artifact.Type.QUANTITY, "quantifier"),
+  MEASURE(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /** The observation activity that produces a numeric quality */
   QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantifier"),
   /** The observation activity that produces a numeric quality that quantifies value */
@@ -165,7 +165,7 @@ public enum DescriptionType {
     } else if (type.contains(SemanticType.PRESENCE)) {
       return VERIFICATION;
     } else if (type.contains(SemanticType.EXTENSIVE) || type.contains(SemanticType.INTENSIVE)) {
-      return MEASUREMENT;
+      return MEASURE;
     } else if (type.contains(SemanticType.VALUE) || type.contains(SemanticType.MONETARY_VALUE)) {
       return VALUATION;
     } else if (type.contains(SemanticType.QUALITY)) {

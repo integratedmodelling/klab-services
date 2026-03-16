@@ -1437,6 +1437,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return ResourceSet.empty();
     }
 
+    if (observable.getDescriptionType() == DescriptionType.TRANSFORMATION) {
+      System.out.println("ZIO PETO");
+    }
+
     ResourceSet results = new ResourceSet();
     // FIXME use the observation's scale (pass the observation)
     for (ModelReference model : this.kbox.query(observable, scope)) {

@@ -157,6 +157,23 @@ public class Utils {
     }
 
     /**
+     * Load properties from URL without ancient Java issues
+     *
+     * @param url
+     * @param properties
+     * @return true if successful
+     */
+    public static boolean load(URL url, java.util.Properties properties) {
+
+      try (var input = url.openStream()) {
+        properties.load(input);
+      } catch (IOException e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
      * Save properties to file without ancient Java issues
      *
      * @param file
@@ -3795,6 +3812,20 @@ public class Utils {
       }
       try {
         java.nio.file.Files.writeString(file.toPath(), template);
+        return file;
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
+    }
+
+    public static File writeStringsToFile(Collection<String> lines, File file) {
+      // Ensure path to file is available
+      var path = file.getParentFile();
+      if (path != null && !path.exists()) {
+        path.mkdirs();
+      }
+      try {
+        java.nio.file.Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
         return file;
       } catch (IOException e) {
         throw new KlabIOException(e);

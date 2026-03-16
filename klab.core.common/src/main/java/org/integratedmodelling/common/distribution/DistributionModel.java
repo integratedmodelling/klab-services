@@ -20,6 +20,7 @@ public class DistributionModel extends Utils.Properties.Container {
   private String name;
   private Instant releaseDate;
   private List<ProductModel> products = new ArrayList<>();
+  private Version version;
 
   public static class ProductModel extends Utils.Properties.Container {
 
@@ -281,15 +282,24 @@ public class DistributionModel extends Utils.Properties.Container {
 
   public boolean needsSync(Distribution.FileData file, Distribution.FileTarget target) {
     var exists = target.destinationFile().exists();
+    // FIXME should check only jars like this; others should be hash-checked always
     if (exists && file.name().contains("SNAPSHOT")) {
       if (target.destinationFile().length() != file.size()) {
         return true;
       }
-      // TODO COMPARE HASH IF THE SIZE IS THE SAME
+      // TODO COMPARE HASH IF JAR WITH SAME SIZE OR NON-JAR
     }
     return !exists;
   }
 
+  /**
+   * FIXME THIS SHOULD COMPARE TO THE LATEST BUILD - A NEW BUILD WILL CONTAIN MANY EQUAL FILES IN
+   * DIFFERENT DIRS
+   *
+   * @param rootDirectory
+   * @param monitor
+   * @return
+   */
   public boolean synchronize(File rootDirectory, Distribution.Synchronization monitor) {
 
     var counter = getFileCounts();
@@ -493,6 +503,13 @@ public class DistributionModel extends Utils.Properties.Container {
             }
           }
 
+          // recreate the filelist so that a newer build can reuse the files
+          Utils.Files.writeStringsToFile(
+              build.getFiles().stream()
+                  .map(e -> e.hash() + " " + e.name() + " " + e.size())
+                  .collect(Collectors.toList()),
+              new File(buildDirectory, "filelist.txt"));
+
           //          monitor.buildDone(build);
         }
       }
@@ -521,6 +538,8 @@ public class DistributionModel extends Utils.Properties.Container {
     super(propertiesUrl);
     if (!isEmpty()) {
       this.name = this.properties.getProperty(Distribution.DISTRIBUTION_NAME_PROPERTY);
+      this.version =
+          Version.create(this.properties.getProperty(Distribution.DISTRIBUTION_VERSION_PROPERTY));
       this.releaseDate =
           Instant.parse(this.properties.getProperty(Distribution.DISTRIBUTION_DATE_PROPERTY));
       for (var key :
