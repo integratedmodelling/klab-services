@@ -65,18 +65,6 @@ public interface DistributionGiusta {
 
   class Build extends Utils.Properties.Container {
 
-    static final String DEVELOP_RELEASE = "develop";
-    static final String LATEST_RELEASE = "latest";
-    static final String RELEASE = "release";
-    static final String DEFAULT_RELEASE_URL = "https://products.integratedmodelling.org/klab/";
-    static final String BUILD_PROPERTIES_FILE = "build.properties";
-    static final String BUILD_DIGEST_FILE = "filelist.txt";
-    static final String PRODUCT_OSSPECIFIC_PROPERTY = "klab.build.osspecific";
-    static final String BUILD_VERSION_PROPERTY = "klab.build.version";
-    static final String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
-    static final String BUILD_TIME_PROPERTY = "klab.build.time";
-    static final String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
-
     private String url;
     private String name;
     private String description;
@@ -185,13 +173,6 @@ public interface DistributionGiusta {
   }
 
   class Product extends Utils.Properties.Container {
-
-    String PRODUCT_PROPERTIES_FILE = "product.properties";
-    String PRODUCT_NAME_PROPERTY = "klab.product.name";
-    String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
-    String PRODUCT_TYPE_PROPERTY = "klab.product.type";
-    String PRODUCT_CLASS_PROPERTY = "klab.product.class";
-    String RELEASE_NAMES_PROPERTY = "klab.product.releases";
 
     private String name;
     private String description;
@@ -487,17 +468,17 @@ public interface DistributionGiusta {
       this.type = Type.valueOf(this.properties.getProperty(PRODUCT_CLASS_PROPERTY));
       this.platform = Platform.forOption(PRODUCT_TYPE_PROPERTY);
       this.description = this.properties.getProperty(PRODUCT_DESCRIPTION_PROPERTY);
-      for (var key : this.properties.getProperty(RELEASE_NAMES_PROPERTY).split(",")) {
-        var releaseUrl =
-            url.toString().substring(0, url.toString().indexOf(PRODUCT_PROPERTIES_FILE))
-                + key
-                + "/release.properties";
-        var release = new Release(Utils.URLs.newURL(releaseUrl));
-        if (release.isEmpty()) {
-          setEmpty(true);
-        }
-        this.releases.add(release);
-      }
+//      for (var key : this.properties.getProperty(RELEASE_NAMES_PROPERTY).split(",")) {
+//        var releaseUrl =
+//            url.toString().substring(0, url.toString().indexOf(PRODUCT_PROPERTIES_FILE))
+//                + key
+//                + "/release.properties";
+//        var release = new Release(Utils.URLs.newURL(releaseUrl));
+//        if (release.isEmpty()) {
+//          setEmpty(true);
+//        }
+//        this.releases.add(release);
+//      }
     }
 
     public String getDescription() {
@@ -628,9 +609,36 @@ public interface DistributionGiusta {
   String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
   String DISTRIBUTION_NAME_PROPERTY = "klab.distribution.name";
   String DISTRIBUTION_DATE_PROPERTY = "klab.distribution.date";
-  String DISTRIBUTION_PRODUCTS_PROPERTY = "klab.distribution.products";
-  String DISTRIBUTION_VERSION_PROPERTY = "klab.distribution.version";
-  String DISTRIBUTION_URL_PROPERTY = "klab.distribution.url";
+  String DISTRIBUTION_VERSIONS_PROPERTY = "klab.distribution.versions";
+
+  String VERSION_PROPERTIES_FILE = "version.properties";
+  String VERSION_NAME_PROPERTY = "klab.version.name";
+  String VERSION_RELEASES_PROPERTY = "klab.version.releases";
+
+  String RELEASE_PROPERTIES_FILE = "release.properties";
+  String RELEASE_NAME_PROPERTY = "klab.release.name";
+  String RELEASE_BUILDS_PROPERTY = "klab.release.builds";
+
+  String BUILD_PRODUCTS_PROPERTY = "klab.build.products";
+  String BUILD_NAME_PROPERTY = "klab.build.name";
+
+  String PRODUCT_PROPERTIES_FILE = "product.properties";
+  String PRODUCT_NAME_PROPERTY = "klab.product.name";
+  String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
+  String PRODUCT_TYPE_PROPERTY = "klab.product.type";
+  String PRODUCT_CLASS_PROPERTY = "klab.product.class";
+
+  String DEVELOP_RELEASE = "develop";
+  String LATEST_RELEASE = "latest";
+  String RELEASE = "release";
+  String DEFAULT_RELEASE_URL = "https://products.integratedmodelling.org/klab/";
+  String BUILD_PROPERTIES_FILE = "build.properties";
+  String BUILD_DIGEST_FILE = "filelist.txt";
+  String PRODUCT_OSSPECIFIC_PROPERTY = "klab.build.osspecific";
+  String BUILD_VERSION_PROPERTY = "klab.build.version";
+  String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
+  String BUILD_TIME_PROPERTY = "klab.build.time";
+  String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
 
   /**
    * The distribution name, e.g. <code>klab</code>
@@ -646,6 +654,16 @@ public interface DistributionGiusta {
    * @return
    */
   Version getVersion();
+
+  /**
+   * If true, this means that the distribution has a findable online counterpart - not that it is
+   * available, synchronized or anything else. It will return false for a completely up to date
+   * distribution whose online counterpart isn't accessible, or true for a distribution that is
+   * online but not available locally.
+   *
+   * @return
+   */
+  boolean isOnline();
 
   /**
    * Return all available tags for this distribution. If there are locally available tags, the

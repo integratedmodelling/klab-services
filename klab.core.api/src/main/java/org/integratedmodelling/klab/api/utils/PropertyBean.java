@@ -12,6 +12,8 @@ import java.util.Properties;
 /**
  * Simple object that can load a properties file and save the modified properties back to the same file. Will
  * behave nicely if the passed file is null.
+ *
+ * @deprecated better choices in Utils.Properties
  */
 public class PropertyBean {
 

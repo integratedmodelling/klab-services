@@ -44,6 +44,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
@@ -201,17 +202,67 @@ public class Utils {
       return writer.getBuffer().toString();
     }
 
+    /**
+     * Create the properties from a URL, optionally passing key/value pairs for initial or
+     * overridden properties. The URL isn't saved. Check {@link Container#isEmpty()}} after the fact
+     * to see if the read was successful.
+     *
+     * @param url
+     * @param initialProperties
+     */
+    public static Container create(URL url, String... initialProperties) {
+      return new Container(url, initialProperties);
+    }
+
+    /**
+     * Create the properties from a URL, optionally passing key/value pairs for initial or
+     * overridden properties. The URL isn't saved. Check {@link Container#isEmpty()}} after the fact
+     * to see if the read was successful.
+     *
+     * @param url
+     * @param initialProperties
+     */
+    public static Container create(File url, String... initialProperties) {
+      return new Container(URLs.newURL(url), initialProperties);
+    }
+
+
+    /**
+     * Just set up an initial property object for later saving.
+     *
+     * @param initialProperties
+     */
+    public static Container create(String... initialProperties) {
+      return new Container(initialProperties);
+    }
+
     public static class Container {
 
       protected java.util.Properties properties;
       private boolean empty;
 
-      protected Container(URL url) {
+      protected Container(URL url, String... initialProperties) {
         properties = new java.util.Properties();
         try (var input = url.openStream()) {
           properties.load(input);
+          if (initialProperties != null) {
+            for (int i = 0; i < initialProperties.length; i++) {
+              // if you pass an odd number of properties, your problem
+              properties.setProperty(initialProperties[i], initialProperties[++i]);
+            }
+          }
         } catch (IOException e) {
           empty = true;
+        }
+      }
+
+      protected Container(String... initialProperties) {
+        properties = new java.util.Properties();
+        if (initialProperties != null) {
+          for (int i = 0; i < initialProperties.length; i++) {
+            // if you pass an odd number of properties, your problem
+            properties.setProperty(initialProperties[i], initialProperties[++i]);
+          }
         }
       }
 
@@ -219,16 +270,51 @@ public class Utils {
         return properties;
       }
 
-      public void setProperties(java.util.Properties properties) {
-        this.properties = properties;
-      }
-
+      /**
+       * Empty means exclusively that reading from the original URL has failed.
+       *
+       * @return
+       */
       public boolean isEmpty() {
         return empty;
       }
 
+      /**
+       * Empty flag can be set from outside in case the properties aren't valid for the purpose or
+       * other error condition.
+       *
+       * @param empty
+       */
       public void setEmpty(boolean empty) {
         this.empty = empty;
+      }
+
+      public void setProperty(String propertyName, String propertyValue) {
+        getProperties().setProperty(propertyName, propertyValue);
+      }
+
+      public void setProperty(String propertyName, String propertyValue, String defaultValue) {
+        getProperties()
+            .setProperty(propertyName, propertyValue == null ? defaultValue : propertyValue);
+      }
+
+      public String getProperty(String propertyName) {
+        return getProperties().getProperty(propertyName);
+      }
+
+      public String getProperty(String propertyName, String defaultValue) {
+        return getProperties().getProperty(propertyName, defaultValue);
+      }
+
+      public Container save(File propertiesFile) {
+        if (propertiesFile != null) {
+          try (var output = new FileOutputStream(propertiesFile)) {
+            getProperties().store(output, "Created by k.LAB on " + Instant.now());
+          } catch (IOException e) {
+            throw new KlabIOException(e);
+          }
+        }
+        return this;
       }
     }
   }
@@ -5030,6 +5116,14 @@ public class Utils {
     public static URL newURL(String s) {
       try {
         return new URI(s).toURL();
+      } catch (Exception e) {
+        throw new KlabIllegalArgumentException(e.getMessage());
+      }
+    }
+
+    public static URL newURL(File f) {
+      try {
+        return f.toURI().toURL();
       } catch (Exception e) {
         throw new KlabIllegalArgumentException(e.getMessage());
       }
