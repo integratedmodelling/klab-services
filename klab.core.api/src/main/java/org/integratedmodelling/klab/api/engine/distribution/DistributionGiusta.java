@@ -78,7 +78,7 @@ public interface DistributionGiusta {
     protected Build(String name, URL url) {
       super(url);
       this.name = name;
-      this.mainClass = this.properties.getProperty(BUILD_MAINCLASS_PROPERTY);
+      this.mainClass = this.properties.getProperty(PRODUCT_MAINCLASS_PROPERTY);
       this.timestamp = Long.parseLong(this.properties.getProperty(BUILD_TIME_PROPERTY));
       this.version = Version.create(this.properties.getProperty(BUILD_VERSION_PROPERTY));
       this.osSpecific =
@@ -425,7 +425,7 @@ public interface DistributionGiusta {
       public abstract int defaultMaxMemoryLimitMB();
     }
 
-    enum Platform {
+    public enum Platform {
       UNKNOWN("unknown"),
 
       /**
@@ -465,7 +465,7 @@ public interface DistributionGiusta {
     protected Product(String name, URL url) {
       super(url);
       this.name = name;
-      this.type = Type.valueOf(this.properties.getProperty(PRODUCT_CLASS_PROPERTY));
+      this.type = Type.valueOf(this.properties.getProperty(PRODUCT_PLATFORM_PROPERTY));
       this.platform = Platform.forOption(PRODUCT_TYPE_PROPERTY);
       this.description = this.properties.getProperty(PRODUCT_DESCRIPTION_PROPERTY);
 //      for (var key : this.properties.getProperty(RELEASE_NAMES_PROPERTY).split(",")) {
@@ -626,17 +626,16 @@ public interface DistributionGiusta {
   String PRODUCT_NAME_PROPERTY = "klab.product.name";
   String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
   String PRODUCT_TYPE_PROPERTY = "klab.product.type";
-  String PRODUCT_CLASS_PROPERTY = "klab.product.class";
+  String PRODUCT_PLATFORM_PROPERTY = "klab.product.platform";
 
   String DEVELOP_RELEASE = "develop";
   String LATEST_RELEASE = "latest";
-  String RELEASE = "release";
-  String DEFAULT_RELEASE_URL = "https://products.integratedmodelling.org/klab/";
+
   String BUILD_PROPERTIES_FILE = "build.properties";
   String BUILD_DIGEST_FILE = "filelist.txt";
-  String PRODUCT_OSSPECIFIC_PROPERTY = "klab.build.osspecific";
+  String PRODUCT_OSSPECIFIC_PROPERTY = "klab.product.osspecific";
   String BUILD_VERSION_PROPERTY = "klab.build.version";
-  String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
+  String PRODUCT_MAINCLASS_PROPERTY = "klab.build.main";
   String BUILD_TIME_PROPERTY = "klab.build.time";
   String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
 
