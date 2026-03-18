@@ -2,17 +2,16 @@ package org.integratedmodelling.common.distribution;
 
 import java.io.*;
 import java.net.URL;
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.*;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 public class DistributionImpl extends Utils.Properties.Container implements Distribution {
 
@@ -20,23 +19,23 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
     var developmentDistribution = developmentDistribution(distributionName);
 
-    var localDistributions =
-        distributions(
-            distributionName,
-            Utils.URLs.newURL(
-                new File(
-                    Configuration.INSTANCE.getDataPath("distribution")
-                        + File.separator
-                        + distributionName)));
-
-    var remoteDistributions =
-        distributions(
-            distributionName,
-            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
+    //    var localDistributions =
+    //        distributions(
+    //            distributionName,
+    //            Utils.URLs.newURL(
+    //                new File(
+    //                    Configuration.INSTANCE.getDataPath("distribution")
+    //                        + File.separator
+    //                        + distributionName)));
+    //
+    //    var remoteDistributions =
+    //        distributions(
+    //            distributionName,
+    //            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
 
     // TODO merge or sync
 
-    return List.of();
+    return List.of(developmentDistribution);
   }
 
   public static Distribution developmentDistribution(String distributionName) {
@@ -250,6 +249,27 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           new File(rootDirectory + File.separator + this.name + File.separator + "common");
       commonDirectory.mkdirs();
     }
+
+    // create version directory if not there, then release, then build and products. They may
+    // all be there
+    var versionDirectory =
+        new File(rootDirectory + File.separator + this.name + File.separator + this.version);
+    versionDirectory.mkdirs();
+    // sync any contents of distribution.properties to contain the current version
+
+    for (var release : releases) {
+      var releaseDirectory =
+          new File(versionDirectory.getAbsolutePath() + File.separator + release);
+      releaseDirectory.mkdirs();
+      // sync any contents of version.properties to contain the current release
+
+      for (var build : release.getBuilds()) {
+        var buildDirectory =
+            new File(releaseDirectory.getAbsolutePath() + File.separator + build.getName());
+        buildDirectory.mkdirs();
+      }
+    }
+
     //    for (var product : products) {
     //      if (monitor.isSynchronizing()) {
     //        // create product directory
@@ -475,22 +495,124 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   public static void main(String[] args) {
 
-    var distribution = distributions("klab", SettingsImpl.forEngine());
+    var distributions = distributions("klab", SettingsImpl.forEngine());
 
-    //      Utils.CLI
-    //          .create()
-    //          .with(
-    //              "status",
-    //              ar -> {
-    //                distribution.synchronize(
-    //                    Configuration.INSTANCE.getDataPath("distribution"), loggingSynchronizer);
-    //              })
-    //          .with(
-    //              "sync",
-    //              ar -> {
-    //                distribution.synchronize(
-    //                    Configuration.INSTANCE.getDataPath("distribution"), actingSynchronizer);
-    //              })
-    //          .run();
+    var distribution = distributions.getFirst();
+
+    Utils.CLI
+        .create()
+        .with(
+            "status",
+            ar -> {
+              ((DistributionImpl) distribution)
+                  .synchronize(
+                      Configuration.INSTANCE.getDataPath("distribution"), loggingSynchronizer);
+            })
+        .with(
+            "sync",
+            ar -> {
+              ((DistributionImpl) distribution)
+                  .synchronize(
+                      Configuration.INSTANCE.getDataPath("distribution"), actingSynchronizer);
+            })
+        .run();
   }
+
+  // Synchronizer for testing, outputting on console only
+  static Synchronization loggingSynchronizer =
+      new Synchronization() {
+        @Override
+        public boolean isSynchronizing() {
+          return false;
+        }
+
+        @Override
+        public boolean notifyDownload(
+            long totalSize,
+            long downloadSize,
+            Map<FileData, FileTarget> fullList,
+            Map<FileData, FileTarget> downloadList) {
+
+          System.out.println(
+              "Must synchronize "
+                  + downloadList.size()
+                  + " files: "
+                  + FileUtils.byteCountToDisplaySize(downloadSize)
+                  + " out of "
+                  + FileUtils.byteCountToDisplaySize(totalSize)
+                  + " total storage in "
+                  + fullList.size()
+                  + " files.");
+
+          return false;
+        }
+
+        @Override
+        public boolean download(URL url, File file, FileData fileData) {
+          System.out.println("DOWNLOAD " + url + " -> " + file);
+          return true;
+        }
+
+        @Override
+        public boolean link(File file, File destination) {
+          System.out.println("LINK " + file + " -> " + destination);
+          return true;
+        }
+
+        @Override
+        public void delete(File file) {
+          System.out.println("DELETE " + file);
+        }
+      };
+
+  static Synchronization actingSynchronizer =
+      new Synchronization() {
+        @Override
+        public boolean isSynchronizing() {
+          return true;
+        }
+
+        @Override
+        public boolean notifyDownload(
+            long totalSize,
+            long downloadSize,
+            Map<FileData, FileTarget> fullList,
+            Map<FileData, FileTarget> downloadList) {
+
+          System.out.println(
+              "Synchronizing "
+                  + downloadList.size()
+                  + " files: "
+                  + FileUtils.byteCountToDisplaySize(downloadSize)
+                  + " out of "
+                  + FileUtils.byteCountToDisplaySize(totalSize)
+                  + " total storage in "
+                  + fullList.size()
+                  + " files.");
+          return true;
+        }
+
+        @Override
+        public boolean download(URL url, File file, FileData fileData) {
+          System.out.println("Downloading " + url + " -> " + file);
+          try {
+            FileUtils.copyURLToFile(url, file);
+          } catch (IOException e) {
+            return false;
+          }
+          return true;
+        }
+
+        @Override
+        public boolean link(File file, File destination) {
+          System.out.println("Linking " + file + " -> " + destination);
+          return Utils.Files.symlink(file, destination);
+        }
+
+        @Override
+        public void delete(File file) {
+          System.out.println("Deleting " + file);
+          FileUtils.deleteQuietly(file);
+        }
+      };
 }
