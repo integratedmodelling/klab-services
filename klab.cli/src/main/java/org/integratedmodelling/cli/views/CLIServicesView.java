@@ -7,7 +7,6 @@ import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
@@ -360,23 +359,23 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
     public void run() {
 
       PrintWriter out = commandSpec.commandLine().getOut();
-      var dStatus = KlabCLI.INSTANCE.engine().getDistributionStatus();
-      if (dStatus.getDevelopmentStatus() == Product.Status.UP_TO_DATE) {
-        out.println("Starting services from local source distribution");
-      } else if (dStatus.getDownloadedStatus() != Product.Status.UNAVAILABLE) {
-        out.println(
-            CommandLine.Help.Ansi.AUTO.string(
-                "Starting services from "
-                    + (dStatus.getDownloadedStatus() == Product.Status.OBSOLETE
-                        ? "@|yellow obsolete|@ "
-                        : "up to date ")
-                    + "local source distribution"));
-      } else {
-        out.println(
-            CommandLine.Help.Ansi.AUTO.string(
-                "@|yellow No k.LAB distribution is available locally|@"));
-        return;
-      }
+//      var dStatus = KlabCLI.INSTANCE.engine().getDistributionStatus();
+//      if (dStatus.getDevelopmentStatus() == Product.Status.UP_TO_DATE) {
+//        out.println("Starting services from local source distribution");
+//      } else if (dStatus.getDownloadedStatus() != Product.Status.UNAVAILABLE) {
+//        out.println(
+//            CommandLine.Help.Ansi.AUTO.string(
+//                "Starting services from "
+//                    + (dStatus.getDownloadedStatus() == Product.Status.OBSOLETE
+//                        ? "@|yellow obsolete|@ "
+//                        : "up to date ")
+//                    + "local source distribution"));
+//      } else {
+//        out.println(
+//            CommandLine.Help.Ansi.AUTO.string(
+//                "@|yellow No k.LAB distribution is available locally|@"));
+//        return;
+//      }
 
       KlabCLI.INSTANCE.engine().startLocalServices();
     }

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.view.modeler;
 
 import java.io.File;
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -44,6 +43,10 @@ public interface Modeler extends UIController {
   /**
    * If the associated engine has a k.LAB distribution available, return it.
    *
+   * <p>FIXME we should have the getAvailableDistribution() method here, and choose one (or not)
+   * independent of the modeler API, which should not make assumptions about the distributions
+   * available.
+   *
    * @return the available distribution or null
    */
   Distribution getDistribution();
@@ -76,14 +79,6 @@ public interface Modeler extends UIController {
       ContextScope contextScope,
       Map<String, Object> visualizationOptions,
       Class<T> outputType);
-
-//  /**
-//   * Return all the open contexts for the current session.
-//   *
-//   * @deprecated this should be an IDE issue, not a Modeler issue
-//   * @return
-//   */
-//  List<ContextScope> getOpenContexts();
 
   /**
    * Return a new scope with any engine defaults set by the implementation and its configuration.
@@ -129,14 +124,14 @@ public interface Modeler extends UIController {
    */
   void deleteProject(ResourcesService service, String projectUrl);
 
-    boolean updateDocument(
-            ResourcesService service,
-            String projectName,
-            String documentUrn,
-            ProjectStorage.ResourceType documentType,
-            String updatedContent);
+  boolean updateDocument(
+      ResourcesService service,
+      String projectName,
+      String documentUrn,
+      ProjectStorage.ResourceType documentType,
+      String updatedContent);
 
-    /**
+  /**
    * Call the correspondent API on the service and ingest all modifications, propagating UI events
    * as needed.
    *

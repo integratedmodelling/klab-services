@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.configuration;
 
-import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 
 import java.io.File;
 import java.util.Map;
@@ -62,17 +62,17 @@ public enum Setting {
       Page.RESOLVER,
       "Maximum memory for the local resolver in MB",
       Integer.class,
-      Product.ProductType.RESOLVER_SERVICE.defaultMaxMemoryLimitMB()),
+      Distribution.Product.Type.RESOLVER_SERVICE.defaultMaxMemoryLimitMB()),
   MAX_REASONER_SERVICE_MEMORY(
       Page.REASONER,
       "Maximum memory for the local reasoner in MB",
       Integer.class,
-      Product.ProductType.REASONER_SERVICE.defaultMaxMemoryLimitMB()),
+      Distribution.Product.Type.REASONER_SERVICE.defaultMaxMemoryLimitMB()),
   MAX_RUNTIME_SERVICE_MEMORY(
       Page.RUNTIME,
       "Maximum memory for the local runtime in MB",
       Integer.class,
-      Product.ProductType.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
+      Distribution.Product.Type.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
   USE_SHORT_FLOAT_REPRESENTATION(
       Page.RUNTIME,
       "If set, use short floats to save space instead of doubles, at the expense of precision",
@@ -117,7 +117,7 @@ public enum Setting {
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",
       Integer.class,
-      Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB()),
+      Distribution.Product.Type.RESOURCES_SERVICE.defaultMaxMemoryLimitMB()),
   MAVEN_SNAPSHOT_CHECK_INTERVAL(
       Page.RESOURCES,
       "Interval in seconds for checking for new Maven snapshot components (0 to disable)",
@@ -163,25 +163,25 @@ public enum Setting {
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "
-          + Product.ProductType.RESOURCES_SERVICE.getDebugPort(),
+          + Distribution.Product.Type.RESOURCES_SERVICE.getDebugPort(),
       Boolean.class,
       false),
   START_RESOLVER_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resolver in debug mode on port "
-          + Product.ProductType.RESOLVER_SERVICE.getDebugPort(),
+          + Distribution.Product.Type.RESOLVER_SERVICE.getDebugPort(),
       Boolean.class,
       false),
   START_REASONER_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local reasoner in debug mode on port "
-          + Product.ProductType.REASONER_SERVICE.getDebugPort(),
+          + Distribution.Product.Type.REASONER_SERVICE.getDebugPort(),
       Boolean.class,
       false),
   START_RUNTIME_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local runtime service in debug mode on port "
-          + Product.ProductType.RUNTIME_SERVICE.getDebugPort(),
+          + Distribution.Product.Type.RUNTIME_SERVICE.getDebugPort(),
       Boolean.class,
       false),
   RESET_ALL_SERVICE_CONFIGURATION(

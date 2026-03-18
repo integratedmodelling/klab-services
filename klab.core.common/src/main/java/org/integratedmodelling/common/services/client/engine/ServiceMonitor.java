@@ -8,7 +8,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
@@ -16,7 +15,7 @@ import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -41,6 +40,7 @@ public class ServiceMonitor {
   List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
   EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
   boolean firstTimeOnline = false;
+  Distribution.Tag distributionTag = Distribution.Tag.LATEST_STABLE;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
@@ -284,20 +284,20 @@ public class ServiceMonitor {
   public static void main(String[] dio) {
 
     AtomicReference<Engine.Status> engineMonitor = new AtomicReference<>(EngineStatusImpl.inop());
-    var distribution = new DistributionImpl();
+//    var distribution = new Distribution();
     var user = Utils.Authentication.login();
     var monitor =
         new ServiceMonitor(
             user, SettingsImpl.forEngine(), true, new ArrayList<>(), null, engineMonitor::set);
 
-    System.out.println(distribution.getStatus());
+    //    System.out.println(distribution.getStatus());
 
     Utils.CLI
         .create()
         .with(
             "sync",
             cmds -> {
-//              distribution.sync();
+              //              distribution.sync();
             })
         .with(
             "start",
@@ -354,11 +354,11 @@ public class ServiceMonitor {
   }
 
   public Map<KlabService.Type, KlabService> startLocalServices(
-      DistributionImpl distribution, UserScope user) {
+      Distribution distribution, UserScope user) {
 
     var ret = new HashMap<KlabService.Type, KlabService>();
 
-    if (distribution != null && distribution.isUsable()) {
+    if (distribution != null /*&& distribution.isUsable()*/) {
 
       var status = lastRecordedStatus;
       status.setShutdown(false);
@@ -375,9 +375,11 @@ public class ServiceMonitor {
             KlabService.Type.RUNTIME,
             KlabService.Type.RESOLVER
           }) {
-        var product = distribution.findProduct(Product.ProductType.forService(serviceType));
+        var product =
+            distribution.product(
+                Distribution.Product.Type.forService(serviceType), distributionTag);
         if (product != null) {
-          var instance = product.getInstance(user);
+          var instance = distribution.getInstance(product);
           if (serviceType == KlabService.Type.RUNTIME
               && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
             serviceStartupOptions.setStartLocalBroker(true);

@@ -1,15 +1,12 @@
 package org.integratedmodelling.klab.api.engine;
 
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
-import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
  * The k.LAB engine is a service orchestrator that maintains scopes and clients for all services
@@ -20,11 +17,12 @@ import java.util.function.Predicate;
  * applications such as command-line or graphical IDEs.
  *
  * <p>The engine instantiates user scopes upon authentication, or anonymously. All scopes access
- * their services through the {@link UserScope#getService(Class, Predicate[])} and {@link
+ * their services through the {@link UserScope#getService(Class)} and {@link
  * UserScope#getServices(Class)} methods. There is no specific API related to authentication, except
  * defining the model for {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
  *
- * <p>The engine detects and exposes k.LAB local {@link Distribution} and if one is present, methods
+ * <p>The engine detects and exposes k.LAB local {@link
+ * org.integratedmodelling.klab.api.engine.distribution.Distribution} and if one is present, methods
  * are exposed for booting and shutting down local services, which are transparently added to the
  * list of available services for all scopes. If the user has a compiled source distribution in its
  * filesystem that can be found in the standard ~/git/klab-services directory, that takes over the
@@ -142,7 +140,7 @@ public interface Engine /*extends KlabService*/ {
    */
   boolean isOnline();
 
-  Distribution.Status getDistributionStatus();
+  //  Distribution.Status getDistributionStatus();
 
   /**
    * Return all the user scopes currently connected to the engine.

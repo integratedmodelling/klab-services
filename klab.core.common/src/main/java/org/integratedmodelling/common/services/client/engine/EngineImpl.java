@@ -6,9 +6,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
-import org.integratedmodelling.common.distribution.DistributionImpl;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
@@ -16,13 +13,9 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
-import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
-import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -45,9 +38,9 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final String serviceId = Utils.Names.shortUUID();
   private final Settings settings = SettingsImpl.forEngine();
   private ServiceMonitor serviceMonitor;
-  private final DistributionImpl distribution;
-  private DistributionImpl developmentDistribution;
-  private DistributionImpl downloadedDistribution;
+  private Distribution distribution;
+//  private Distribution developmentDistribution;
+//  private Distribution downloadedDistribution;
   //  private final Distribution.Status distributionStatus;
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
@@ -58,28 +51,30 @@ public class EngineImpl implements Engine, PropertyHolder {
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
-    if (DistributionImpl.isDevelopmentDistributionAvailable()
-        && settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
-      this.developmentDistribution = new DevelopmentDistributionImpl();
-    }
+    // TODO sync distribution and determine/restore tag
+
+//    if (DistributionObsoleteImpl.isDevelopmentDistributionAvailable()
+//        && settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
+////      this.developmentDistribution = new DevelopmentDistributionObsoleteImpl();
+//    }
 
     this.serviceStatusMonitor = serviceStatusMonitor;
     this.engineStatusMonitor = engineStatusMonitor;
-    this.downloadedDistribution = new DistributionImpl();
-    this.distribution =
-        this.developmentDistribution == null
-            ? this.downloadedDistribution
-            : this.developmentDistribution;
+//    this.downloadedDistribution = new DistributionObsoleteImpl();
+//    this.distribution =
+//        this.developmentDistribution == null
+//            ? this.downloadedDistribution
+//            : this.developmentDistribution;
   }
 
   public ServiceMonitor getServiceMonitor() {
     return serviceMonitor;
   }
 
-  @Override
-  public Distribution.Status getDistributionStatus() {
-    return distribution.getStatus();
-  }
+  //  @Override
+  //  public DistributionObsolete.Status getDistributionStatus() {
+  //    return distribution.getStatus();
+  //  }
 
   public UserScope getUser() {
     return !this.users.isEmpty() ? users.getFirst() : null;

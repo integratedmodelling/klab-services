@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 
 import java.util.function.Consumer;
 
+@Deprecated
 public interface RunningInstance {
 
     enum Status {
@@ -15,7 +16,7 @@ public interface RunningInstance {
     /**
      * The release this is an instance of
      */
-    Build getBuild();
+    Distribution.Product getBuild();
 
     /**
      * The current status of the instance.

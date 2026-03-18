@@ -7,7 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -37,7 +37,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.UIView;
@@ -136,7 +135,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     pre-built view controllers. View implementations will self-register upon creation.
      */
     registerViewController(new ServicesViewControllerImpl(this));
-    registerViewController(new DistributionViewImplController(this));
+//    registerViewController(new DistributionViewImplController(this));
     registerViewController(new ResourcesNavigatorControllerImpl(this));
     registerViewController(new ContextInspectorControllerImpl(this));
     registerViewController(new AuthenticationViewControllerImpl(this));

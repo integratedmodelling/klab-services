@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.api.view;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -10,17 +12,12 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-//import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Anything that reacts to UI events implements this interface. The enums and the inherent
@@ -51,7 +48,7 @@ public interface UIReactor {
     DocumentEditor(ViewCategory.Panel, NavigableDocument.class),
     KnowledgeNavigator(ViewCategory.View),
     KnowledgeInspector(ViewCategory.View),
-    DistributionView(ViewCategory.Panel),
+//    DistributionView(ViewCategory.Panel),
     KnowledgeEditor(ViewCategory.Panel),
     ResourceNavigator(ViewCategory.View),
     ProjectPropertyEditor(ViewCategory.Panel),
@@ -129,7 +126,7 @@ public interface UIReactor {
      */
     ReportChangeOfPositionInDocument(Integer.class),
     RequestChangeOfPositionInDocument(Integer.class),
-    SelectDistribution(Distribution.class),
+//    SelectDistribution(DistributionObsolete.class),
     FocusService(KlabService.ServiceCapabilities.class);
     //        SelectService(KlabService.ServiceCapabilities.class);
 
@@ -202,8 +199,8 @@ public interface UIReactor {
     NewProjectRequest(EventDirection.ViewToEngine, String.class),
     ImportProjectRequest(EventDirection.ViewToEngine, String.class),
     Notification(EventDirection.Bidirectional, Notification.class),
-    DistributionAvailable(EventDirection.EngineToView, Distribution.class),
-    DistributionSelected(EventDirection.ViewToView, Distribution.class),
+//    DistributionAvailable(EventDirection.EngineToView, DistributionObsolete.class),
+//    DistributionSelected(EventDirection.ViewToView, DistributionObsolete.class),
     //        ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
     UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
 
