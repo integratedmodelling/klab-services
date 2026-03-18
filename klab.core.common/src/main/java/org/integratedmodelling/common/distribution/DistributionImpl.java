@@ -15,19 +15,31 @@ import org.integratedmodelling.klab.api.engine.distribution.*;
 
 public class DistributionImpl extends Utils.Properties.Container implements Distribution {
 
-  static List<Distribution> distributions(String distributionName, Settings settings) {
+  private static final Map<Tag, Distribution> TAGS = new HashMap<>();
 
+  static List<Tag> distributions(String distributionName, Settings settings) {
+
+    var ret = new ArrayList<Tag>();
     var developmentDistribution = developmentDistribution(distributionName);
+    if (developmentDistribution != null) {
+      for (var tag : developmentDistribution.getTags()) {
+        var devTag = new Tag(Version.HEAD, tag.release(), tag.build(), tag.availableLocally());
+        TAGS.put(devTag, developmentDistribution);
+        ret.add(devTag);
+      }
+    }
 
-    //    var localDistributions =
-    //        distributions(
-    //            distributionName,
-    //            Utils.URLs.newURL(
-    //                new File(
-    //                    Configuration.INSTANCE.getDataPath("distribution")
-    //                        + File.separator
-    //                        + distributionName)));
-    //
+    var localDistributions =
+        distributions(
+            distributionName,
+            Utils.URLs.newURL(
+                new File(
+                    Configuration.INSTANCE.getDataPath("distribution")
+                        + File.separator
+                        + distributionName)));
+    ret.addAll(
+        localDistributions.stream().map(Distribution::getTags).flatMap(List::stream).toList());
+
     //    var remoteDistributions =
     //        distributions(
     //            distributionName,
@@ -35,7 +47,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
     // TODO merge or sync
 
-    return List.of(developmentDistribution);
+    return ret;
   }
 
   public static Distribution developmentDistribution(String distributionName) {
@@ -466,7 +478,14 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   @Override
   public List<Tag> getTags() {
-    return List.of();
+    var ret = new ArrayList<Tag>();
+    for (var release : releases) {
+      for (var build : release.getBuilds()) {
+        ret.add(
+            new Tag(this.version, release.getName(), build.getName(), build.isAvailableLocally()));
+      }
+    }
+    return ret;
   }
 
   @Override
@@ -481,6 +500,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   @Override
   public Product product(Product.Type productType, Tag chosenRelease) {
+    // FIXME this needs to be static
+    var distribution = TAGS.get(chosenRelease);
+    if (distribution != null) {
+//      return distribution.product(productType, chosenRelease);
+    }
     return null;
   }
 
@@ -496,8 +520,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   public static void main(String[] args) {
 
     var distributions = distributions("klab", SettingsImpl.forEngine());
-
-    var distribution = distributions.getFirst();
+    var distribution = TAGS.get(distributions.getFirst());
 
     Utils.CLI
         .create()

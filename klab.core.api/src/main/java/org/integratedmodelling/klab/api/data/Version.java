@@ -36,6 +36,8 @@ public class Version implements Comparable<Version>, Serializable {
   public static final Version ANY_VERSION = new Version("255.255.255");
   public static final String CURRENT = "1.0.0-alpha1";
   public static final Version CURRENT_VERSION = new Version(CURRENT);
+  ///  A version meaning "the bleeding-edge local version
+  public static final Version HEAD = new Version("999.999.999");
 
   public static class Constraint implements Serializable {
 
@@ -394,6 +396,9 @@ public class Version implements Comparable<Version>, Serializable {
    */
   @Override
   public String toString() {
+    if (major == 999 && minor == 999 && build == 999) {
+      return "HEAD";
+    }
     String ret = "" + major + SEPARATOR + minor + SEPARATOR + build;
     if (!modifier.isEmpty()) {
       ret += "-" + modifier;

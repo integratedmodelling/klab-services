@@ -25,6 +25,8 @@ public interface Distribution {
    * and the build. Initial status synchronization should return all tags that are available both
    * locally and remotely.
    *
+   * <p>TODO this should implement Comparable<Tag>
+   *
    * @param version the overall version of the distribution. If Version.ANY_VERSION is passed, the
    *     latest available version is located.
    * @param release null means "official", normally master or main.
@@ -83,6 +85,10 @@ public interface Distribution {
 
     public List<Product> getProducts() {
       return products;
+    }
+
+    public boolean isAvailableLocally() {
+      return products.stream().allMatch(p -> p.localPath.exists());
     }
   }
 
