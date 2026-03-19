@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
+import org.integratedmodelling.common.configuration.CommonConfiguration;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
@@ -34,7 +35,9 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -77,6 +80,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * @version $Id: $Id
  */
 public enum ServiceConfiguration {
+
   INSTANCE;
 
   private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
@@ -94,7 +98,7 @@ public enum ServiceConfiguration {
      * "injector" for the crucial k.LAB constructors
      */
     Klab.INSTANCE.setConfiguration(
-        new Klab.Configuration() {
+        new CommonConfiguration() {
 
           private Projection defaultProjection =
               new ProjectionImpl(ProjectionImpl.DEFAULT_PROJECTION_CODE);

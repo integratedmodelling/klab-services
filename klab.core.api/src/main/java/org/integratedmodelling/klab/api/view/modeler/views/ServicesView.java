@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.View;
 
 public interface ServicesView extends View {

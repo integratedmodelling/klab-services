@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -618,8 +619,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public Distribution getDistribution() {
-    return engine() instanceof EngineImpl engine ? engine.getDistribution() : null;
+  public Stack getSoftwareStack() {
+    return engine() instanceof EngineImpl engine ? engine.getSoftwareStack() : null;
   }
 
   @Override

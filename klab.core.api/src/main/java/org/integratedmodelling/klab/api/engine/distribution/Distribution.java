@@ -21,28 +21,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public interface Distribution {
 
   /**
-   * The tag is the current choice of distribution, incorporating the overall version, the release
-   * and the build. Initial status synchronization should return all tags that are available both
-   * locally and remotely.
-   *
-   * <p>TODO this should implement Comparable<Tag>
-   *
-   * @param version the overall version of the distribution. If Version.ANY_VERSION is passed, the
-   *     latest available version is located.
-   * @param release null means "official", normally master or main.
-   * @param build apart from the physical build name, the "latest" build is also admitted.
-   * @param availableLocally true if the distribution is available locally
-   */
-  record Tag(Version version, String release, String build, boolean availableLocally) {
-    static Tag of(Version version, String release, String build, boolean availableLocally) {
-      return new Tag(version, release, build, availableLocally);
-    }
-
-    public static Tag LATEST_STABLE = Tag.of(Version.ANY_VERSION, null, "latest", true);
-    public static Tag LATEST_DEVELOP = Tag.of(Version.ANY_VERSION, "develop", "latest", true);
-  }
-
-  /**
    * Represents an entry in the filelist that accompanies each build in the distribution. Used as a
    * key for the files to inspect and/or download, represented by {@link FileTarget}.
    *
@@ -104,6 +82,7 @@ public interface Distribution {
     private URL url;
     private List<FileData> files = new ArrayList<>();
     private File localPath;
+    private String executable;
 
     public enum Type {
       CLI {
@@ -131,6 +110,11 @@ public interface Distribution {
         public int defaultMaxMemoryLimitMB() {
           return 1024;
         }
+
+        @Override
+        public boolean isService() {
+          return false;
+        }
       },
       RESOURCES_SERVICE {
         @Override
@@ -156,6 +140,11 @@ public interface Distribution {
         @Override
         public int defaultMaxMemoryLimitMB() {
           return 4096;
+        }
+
+        @Override
+        public boolean isService() {
+          return true;
         }
       },
       REASONER_SERVICE {
@@ -183,6 +172,11 @@ public interface Distribution {
         public int defaultMaxMemoryLimitMB() {
           return 2048;
         }
+
+        @Override
+        public boolean isService() {
+          return true;
+        }
       },
       RESOLVER_SERVICE {
         @Override
@@ -208,6 +202,11 @@ public interface Distribution {
         @Override
         public int defaultMaxMemoryLimitMB() {
           return 2048;
+        }
+
+        @Override
+        public boolean isService() {
+          return true;
         }
       },
       RUNTIME_SERVICE {
@@ -235,6 +234,11 @@ public interface Distribution {
         public int defaultMaxMemoryLimitMB() {
           return 4096;
         }
+
+        @Override
+        public boolean isService() {
+          return true;
+        }
       },
       LANGUAGE_SERVER {
         @Override
@@ -260,6 +264,11 @@ public interface Distribution {
         @Override
         public int defaultMaxMemoryLimitMB() {
           return 512;
+        }
+
+        @Override
+        public boolean isService() {
+          return true;
         }
       },
       DATABASE_SERVER {
@@ -287,6 +296,11 @@ public interface Distribution {
         public int defaultMaxMemoryLimitMB() {
           return 4096;
         }
+
+        @Override
+        public boolean isService() {
+          return true;
+        }
       },
       MODELER {
         @Override
@@ -312,6 +326,11 @@ public interface Distribution {
         @Override
         public int defaultMaxMemoryLimitMB() {
           return 2048;
+        }
+
+        @Override
+        public boolean isService() {
+          return false;
         }
       };
 
@@ -343,11 +362,12 @@ public interface Distribution {
 
       public abstract int getDebugPort();
 
+      public abstract boolean isService();
+
       public abstract int defaultMaxMemoryLimitMB();
     }
 
     public enum Platform {
-      UNKNOWN("unknown"),
 
       /**
        * Jar packaging with bin/, lib/ and a main jar file with a main class in properties, OS
@@ -355,18 +375,15 @@ public interface Distribution {
        */
       JAR("jar"),
 
-      /** Installer executable packaging. */
-      INSTALLER_EXECUTABLE("installer"),
-
-      /** Direct executable packaging. */
-      DIRECT_EXE("exe"),
-
-      /** Eclipse packaging with a zipped or unzipped distribution per supported OS. */
-      ECLIPSE("eclipse");
+      /**
+       * Direct executable packaging. The main class executor named in the product must be the full
+       * name of the executable file, without path.
+       */
+      EXE("exe");
 
       // user-defined name of the product in build.properties options, set in Maven
       // configuration of klab.product plugin
-      public String userOption;
+      public final String userOption;
 
       Platform(String userOption) {
         this.userOption = userOption;
@@ -379,6 +396,7 @@ public interface Distribution {
       this.name = name;
       this.type = Type.valueOf(getProperty(PRODUCT_TYPE_PROPERTY));
       this.platform = Platform.valueOf(getProperty(PRODUCT_PLATFORM_PROPERTY));
+      this.executable = getProperty(PRODUCT_MAINCLASS_PROPERTY);
       this.url = Utils.URLs.newURL(url.toString().substring(0, url.toString().lastIndexOf("/")));
       if (this.url.getProtocol().equals("file")) {
         this.localPath = new File(this.url.getFile());
@@ -415,6 +433,20 @@ public interface Distribution {
 
     public Platform getPlatform() {
       return platform;
+    }
+
+    public String getExecutable() {
+      return executable;
+    }
+
+    /**
+     * This will only be null if the product is not available locally. If not null, it comes from a
+     * verified distribution.
+     *
+     * @return
+     */
+    public File getLocalPath() {
+      return localPath;
     }
   }
 
@@ -496,6 +528,8 @@ public interface Distribution {
     boolean link(File file, File destination);
 
     void delete(File file);
+
+    void notifyProductSynchronized(Product product);
   }
 
   String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
@@ -567,19 +601,16 @@ public interface Distribution {
    *
    * @return all available tags both locally and online
    */
-  List<Tag> getTags();
+  List<Stack.Tag> getTags();
 
   /**
-   * Ensure that the passed tag is available locally, downloading whatever is necessary. May run
-   * long. A tag that available locally may be verified at the discretion of the implementation.
    *
-   * <p>The synchronization should refer to a local directory chosen by the implementation.
-   *
-   * @param tag
+   * @param rootFolder
    * @param sync
    * @return
    */
-  boolean synchronize(Tag tag, Synchronization sync);
+  boolean synchronize(File rootFolder, Synchronization sync);
+
 
   /**
    * Verify the consistency of a locally available tag by comparing all file hashes in the
@@ -588,23 +619,5 @@ public interface Distribution {
    * @param tag
    * @return
    */
-  boolean verify(Tag tag);
-
-  /**
-   * Find the product of the specified type in the specified tag, which must be locally available.
-   * Null tag means use the latest available.
-   *
-   * @param productType
-   * @return a product or null if the tag is not available.
-   */
-  Product product(Product.Type productType, Tag chosenRelease);
-
-  /**
-   * Get an instance of the passed product, which will refer to a specific locally available tag.
-   * The instance may be already running or requiring startup.
-   *
-   * @param product
-   * @return
-   */
-  RunningInstance getInstance(Product product);
+  boolean verify(Stack.Tag tag);
 }

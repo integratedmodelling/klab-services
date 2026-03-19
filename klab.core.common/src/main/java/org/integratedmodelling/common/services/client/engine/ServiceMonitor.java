@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -40,7 +41,6 @@ public class ServiceMonitor {
   List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
   EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
   boolean firstTimeOnline = false;
-  Distribution.Tag distributionTag = Distribution.Tag.LATEST_STABLE;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
@@ -284,13 +284,12 @@ public class ServiceMonitor {
   public static void main(String[] dio) {
 
     AtomicReference<Engine.Status> engineMonitor = new AtomicReference<>(EngineStatusImpl.inop());
-//    var distribution = new Distribution();
+    //    var distribution = new Distribution();
     var user = Utils.Authentication.login();
+    var settings = SettingsImpl.forEngine();
     var monitor =
-        new ServiceMonitor(
-            user, SettingsImpl.forEngine(), true, new ArrayList<>(), null, engineMonitor::set);
-
-    //    System.out.println(distribution.getStatus());
+        new ServiceMonitor(user, settings, true, new ArrayList<>(), null, engineMonitor::set);
+    var softwareStack = Stack.of("klab", settings);
 
     Utils.CLI
         .create()
@@ -302,7 +301,7 @@ public class ServiceMonitor {
         .with(
             "start",
             cmds -> {
-              monitor.startLocalServices(null, user);
+              monitor.startLocalServices(softwareStack, Stack.Tag.LATEST_STABLE, user);
             })
         .with(
             "stop",
@@ -354,11 +353,11 @@ public class ServiceMonitor {
   }
 
   public Map<KlabService.Type, KlabService> startLocalServices(
-      Distribution distribution, UserScope user) {
+      Stack softwareStack, Stack.Tag distributionTag, UserScope user) {
 
     var ret = new HashMap<KlabService.Type, KlabService>();
 
-    if (distribution != null /*&& distribution.isUsable()*/) {
+    if (softwareStack.verify(distributionTag)) {
 
       var status = lastRecordedStatus;
       status.setShutdown(false);
@@ -374,18 +373,14 @@ public class ServiceMonitor {
             KlabService.Type.REASONER,
             KlabService.Type.RUNTIME,
             KlabService.Type.RESOLVER
+                  // TODO add database and, when needed, language server and AMQP server
           }) {
         var product =
-            distribution.product(
+            softwareStack.instance(
                 Distribution.Product.Type.forService(serviceType), distributionTag);
-        if (product != null) {
-          var instance = distribution.getInstance(product);
-          if (serviceType == KlabService.Type.RUNTIME
-              && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
-            serviceStartupOptions.setStartLocalBroker(true);
-          }
 
-          if (instance.start()) {
+        if (product != null) {
+          if (product.start()) {
             user.info(
                 "Service is starting: will be attempting connection to locally running "
                     + serviceType);

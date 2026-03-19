@@ -6,7 +6,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -214,6 +216,8 @@ public enum Klab {
 
     Envelope getSpatialEnvelope(
         double minX, double minY, double maxX, double maxY, Projection projection);
+
+    Stack createSoftwareStack(String name, Settings settings);
   }
 
   private Configuration configuration;

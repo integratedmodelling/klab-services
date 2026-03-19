@@ -12,10 +12,15 @@ public interface LocalInstance {
     ERROR
   }
 
-  record Result(boolean result, Throwable error, String log) {}
-
   /** The release this is an instance of */
-  Distribution.Product getBuild();
+  Distribution.Product getProduct();
+
+  /**
+   * The release tag of the distribution that defined this instance.
+   *
+   * @return
+   */
+  Stack.Tag getTag();
 
   /**
    * The current status of the instance.
@@ -23,13 +28,6 @@ public interface LocalInstance {
    * @return
    */
   Status getStatus();
-
-  /**
-   * The settings for this instance
-   *
-   * @return
-   */
-  StartupOptions getSettings();
 
   /**
    * Start the instance, returning immediately. A true return value means that the instance has been
@@ -51,9 +49,9 @@ public interface LocalInstance {
   boolean stop();
 
   /**
-   * Return true if the instance is currently running.
+   * The settings for this instance
    *
    * @return
    */
-  boolean isRunning();
+  StartupOptions getSettings();
 }

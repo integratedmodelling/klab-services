@@ -9,23 +9,27 @@ import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.*;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 
 public class DistributionImpl extends Utils.Properties.Container implements Distribution {
 
-  private static final Map<Tag, Distribution> TAGS = new HashMap<>();
+  static Map<Stack.Tag, DistributionImpl> distributions(
+      String distributionName, Settings settings) {
 
-  static List<Tag> distributions(String distributionName, Settings settings) {
+    var ret = new LinkedHashMap<Stack.Tag, DistributionImpl>();
 
-    var ret = new ArrayList<Tag>();
-    var developmentDistribution = developmentDistribution(distributionName);
-    if (developmentDistribution != null) {
-      for (var tag : developmentDistribution.getTags()) {
-        var devTag = new Tag(Version.HEAD, tag.release(), tag.build(), tag.availableLocally());
-        TAGS.put(devTag, developmentDistribution);
-        ret.add(devTag);
+    if (settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
+      var developmentDistribution = developmentDistribution(distributionName);
+      if (developmentDistribution != null) {
+        for (var tag : developmentDistribution.getTags()) {
+          var devTag =
+              new Stack.Tag(Version.HEAD, tag.release(), tag.build(), tag.availableLocally());
+          ret.put(devTag, developmentDistribution);
+        }
       }
     }
 
@@ -37,8 +41,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                     Configuration.INSTANCE.getDataPath("distribution")
                         + File.separator
                         + distributionName)));
-    ret.addAll(
-        localDistributions.stream().map(Distribution::getTags).flatMap(List::stream).toList());
+
+    // nah needs to sync first
+    for (var localDistribution : localDistributions) {
+      localDistribution.getTags().forEach(tag -> ret.put(tag, localDistribution));
+    }
 
     //    var remoteDistributions =
     //        distributions(
@@ -50,7 +57,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     return ret;
   }
 
-  public static Distribution developmentDistribution(String distributionName) {
+  static DistributionImpl developmentDistribution(String distributionName) {
 
     File distributionDirectory =
         new File(
@@ -89,12 +96,12 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     return null;
   }
 
-  static List<Distribution> distributions(String distributionName, URL url) {
+  static List<DistributionImpl> distributions(String distributionName, URL url) {
 
     /*
      * Remote first. This may fail
      */
-    var ret = new ArrayList<Distribution>();
+    var ret = new ArrayList<DistributionImpl>();
     var properties = Utils.Properties.create(Utils.URLs.newURL(url + "/distribution.properties"));
     if (!properties.isEmpty()) {
       for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
@@ -238,7 +245,6 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
     var totalSize = fullList.keySet().stream().mapToLong(Distribution.FileData::size).sum();
     var downloadSize = downloadList.keySet().stream().mapToLong(Distribution.FileData::size).sum();
-
     if (!monitor.notifyDownload(totalSize, downloadSize, fullList, downloadList)) {
       return true;
     }
@@ -279,140 +285,91 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         var buildDirectory =
             new File(releaseDirectory.getAbsolutePath() + File.separator + build.getName());
         buildDirectory.mkdirs();
+        build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
+
+        for (var product : build.getProducts()) {
+
+          var productDirectory =
+              new File(buildDirectory.getAbsolutePath() + File.separator + product.getName());
+          productDirectory.mkdirs();
+
+          Set<File> accepted = new HashSet<>();
+          for (var file : product.getFiles()) {
+            // TODO must download and/or link, then delete spurious
+            if (downloadList.containsKey(file)) {
+
+              if (!downloaded.contains(file)) {
+                if (!monitor.download(
+                    downloadList.get(file).sourceUrl(),
+                    downloadList.get(file).destinationFile(),
+                    file)) {
+                  return false;
+                }
+                downloaded.add(file);
+              }
+
+              var destination =
+                  new File(productDirectory.getAbsolutePath() + File.separator + file.name());
+
+              accepted.add(destination);
+
+              if (common.containsKey(file)) {
+                if (!monitor.link(downloadList.get(file).destinationFile(), destination)) {
+                  return false;
+                }
+              }
+            }
+          }
+
+          /* Last sync step: remove any files that don't belong and link any common
+          files whose link was lost. */
+          if (productDirectory.isDirectory()) {
+            var existingFileNames =
+                Arrays.stream(productDirectory.listFiles())
+                    .map(File::getName)
+                    .collect(Collectors.toSet());
+            var requiredFileNames =
+                product.getFiles().stream()
+                    .map(Distribution.FileData::name)
+                    .collect(Collectors.toSet());
+            existingFileNames.removeAll(requiredFileNames);
+            for (var fileName : existingFileNames) {
+              if (fileName.endsWith(".properties")) {
+                continue;
+              }
+              var file = new File(productDirectory.getAbsolutePath() + File.separator + fileName);
+              monitor.delete(file);
+            }
+            for (var file : product.getFiles()) {
+              var expected =
+                  new File(productDirectory.getAbsolutePath() + File.separator + file.name());
+              if (!expected.exists()) {
+                if (common.containsKey(file)) {
+                  if (!monitor.link(common.get(file).destinationFile(), expected)) {
+                    return false;
+                  }
+                } else {
+                  // shouldn't happen
+                  System.out.println("DIO BULLO È SUCCESSO");
+                  return false;
+                }
+              }
+            }
+          }
+
+          // recreate the filelist so that a newer build can reuse the files
+          Utils.Files.writeStringsToFile(
+              product.getFiles().stream()
+                  .map(e -> e.hash() + " " + e.name() + " " + e.size())
+                  .collect(Collectors.toList()),
+              new File(buildDirectory, "filelist.txt"));
+
+          monitor.notifyProductSynchronized(product);
+
+          build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
+        }
       }
     }
-
-    //    for (var product : products) {
-    //      if (monitor.isSynchronizing()) {
-    //        // create product directory
-    //        var productDirectory =
-    //            new File(
-    //                rootDirectory + File.separator + this.name + File.separator +
-    // product.getName());
-    //        if (!productDirectory.exists()) {
-    //          productDirectory.mkdirs();
-    //        }
-    //        Utils.Properties.save(
-    //            new File(productDirectory, Product.PRODUCT_PROPERTIES_FILE),
-    // product.getProperties());
-    //      }
-    //      for (var release : product.getReleases()) {
-    //        if (monitor.isSynchronizing()) {
-    //          // create release directory
-    //          var releaseDirectory =
-    //              new File(
-    //                  rootDirectory
-    //                      + File.separator
-    //                      + this.name
-    //                      + File.separator
-    //                      + product.getName()
-    //                      + File.separator
-    //                      + release.name);
-    //
-    //          releaseDirectory.mkdirs();
-    //          Utils.Properties.save(
-    //              new File(releaseDirectory, Release.RELEASE_PROPERTIES_FILE),
-    // release.getProperties());
-    //        }
-    //
-    //        for (var build : release.getBuilds()) {
-    //          var buildDirectory =
-    //              new File(
-    //                  rootDirectory
-    //                      + File.separator
-    //                      + this.name
-    //                      + File.separator
-    //                      + product.getName()
-    //                      + File.separator
-    //                      + release.name
-    //                      + File.separator
-    //                      + build.name);
-    //
-    //          if (monitor.isSynchronizing()) {
-    //            // create build directory
-    //            buildDirectory.mkdirs();
-    //            Utils.Properties.save(
-    //                new File(buildDirectory, Build.BUILD_PROPERTIES_FILE), build.getProperties());
-    //          }
-    //          Set<File> accepted = new HashSet<>();
-    //          for (var file : build.getFiles()) {
-    //            // TODO must download and/or link, then delete spurious
-    //            if (downloadList.containsKey(file)) {
-    //
-    //              if (!downloaded.contains(file)) {
-    //                if (!monitor.download(
-    //                    downloadList.get(file).sourceUrl(),
-    //                    downloadList.get(file).destinationFile(),
-    //                    file)) {
-    //                  return false;
-    //                }
-    //                downloaded.add(file);
-    //              }
-    //
-    //              var destination =
-    //                  new File(buildDirectory.getAbsolutePath() + File.separator + file.name());
-    //
-    //              accepted.add(destination);
-    //
-    //              if (common.containsKey(file)) {
-    //                if (!monitor.link(downloadList.get(file).destinationFile(), destination)) {
-    //                  return false;
-    //                }
-    //              }
-    //            }
-    //          }
-    //
-    //          /*
-    //           * Last sync step: remove any files that don't belong and link any common files
-    // whose link
-    //           * was lost.
-    //           */
-    //          if (buildDirectory.isDirectory()) {
-    //            var existingFileNames =
-    //                Arrays.stream(buildDirectory.listFiles())
-    //                    .map(File::getName)
-    //                    .collect(Collectors.toSet());
-    //            var requiredFileNames =
-    //                build.getFiles().stream()
-    //                    .map(Distribution.FileData::name)
-    //                    .collect(Collectors.toSet());
-    //            existingFileNames.removeAll(requiredFileNames);
-    //            for (var fileName : existingFileNames) {
-    //              if (fileName.endsWith(".properties")) {
-    //                continue;
-    //              }
-    //              var file = new File(buildDirectory.getAbsolutePath() + File.separator +
-    // fileName);
-    //              monitor.delete(file);
-    //            }
-    //            for (var file : build.getFiles()) {
-    //              var expected =
-    //                  new File(buildDirectory.getAbsolutePath() + File.separator + file.name());
-    //              if (!expected.exists()) {
-    //                if (common.containsKey(file)) {
-    //                  if (!monitor.link(common.get(file).destinationFile(), expected)) {
-    //                    return false;
-    //                  }
-    //                } else {
-    //                  // shouldn't happen
-    //                  System.out.println("DIO BULLO È SUCCESSO");
-    //                  return false;
-    //                }
-    //              }
-    //            }
-    //          }
-    //
-    //          // recreate the filelist so that a newer build can reuse the files
-    //          Utils.Files.writeStringsToFile(
-    //              build.getFiles().stream()
-    //                  .map(e -> e.hash() + " " + e.name() + " " + e.size())
-    //                  .collect(Collectors.toList()),
-    //              new File(buildDirectory, "filelist.txt"));
-    //
-    //          //          monitor.buildDone(build);
-    //        }
-    //      }
-    //    }
 
     return false;
   }
@@ -477,68 +434,25 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   }
 
   @Override
-  public List<Tag> getTags() {
-    var ret = new ArrayList<Tag>();
+  public List<Stack.Tag> getTags() {
+    var ret = new ArrayList<Stack.Tag>();
     for (var release : releases) {
       for (var build : release.getBuilds()) {
         ret.add(
-            new Tag(this.version, release.getName(), build.getName(), build.isAvailableLocally()));
+            Stack.Tag.of(
+                this.version, release.getName(), build.getName(), build.isAvailableLocally()));
       }
     }
     return ret;
   }
 
   @Override
-  public boolean synchronize(Tag tag, Synchronization sync) {
+  public boolean verify(Stack.Tag tag) {
     return false;
-  }
-
-  @Override
-  public boolean verify(Tag tag) {
-    return false;
-  }
-
-  @Override
-  public Product product(Product.Type productType, Tag chosenRelease) {
-    // FIXME this needs to be static
-    var distribution = TAGS.get(chosenRelease);
-    if (distribution != null) {
-//      return distribution.product(productType, chosenRelease);
-    }
-    return null;
-  }
-
-  @Override
-  public RunningInstance getInstance(Product product) {
-    return null;
   }
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public static void main(String[] args) {
-
-    var distributions = distributions("klab", SettingsImpl.forEngine());
-    var distribution = TAGS.get(distributions.getFirst());
-
-    Utils.CLI
-        .create()
-        .with(
-            "status",
-            ar -> {
-              ((DistributionImpl) distribution)
-                  .synchronize(
-                      Configuration.INSTANCE.getDataPath("distribution"), loggingSynchronizer);
-            })
-        .with(
-            "sync",
-            ar -> {
-              ((DistributionImpl) distribution)
-                  .synchronize(
-                      Configuration.INSTANCE.getDataPath("distribution"), actingSynchronizer);
-            })
-        .run();
   }
 
   // Synchronizer for testing, outputting on console only
@@ -586,6 +500,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         public void delete(File file) {
           System.out.println("DELETE " + file);
         }
+
+        @Override
+        public void notifyProductSynchronized(Product product) {}
       };
 
   static Synchronization actingSynchronizer =
@@ -637,5 +554,35 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           System.out.println("Deleting " + file);
           FileUtils.deleteQuietly(file);
         }
+
+        @Override
+        public void notifyProductSynchronized(Product product) {}
       };
+
+  public Product findProduct(Product.Type productType, Stack.Tag chosenRelease) {
+    var build = findBuild(chosenRelease);
+    return build == null
+        ? null
+        : build.getProducts().stream()
+            .filter(p -> p.getType() == productType)
+            .findFirst()
+            .orElse(null);
+  }
+
+  public Release findRelease(Stack.Tag chosenRelease) {
+    return releases.stream()
+        .filter(r -> r.getName().equals(chosenRelease.release()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  public Build findBuild(Stack.Tag chosenRelease) {
+    var release = findRelease(chosenRelease);
+    return release == null
+        ? null
+        : release.getBuilds().stream()
+            .filter(b -> b.getName().equals(chosenRelease.build()))
+            .findFirst()
+            .orElse(null);
+  }
 }

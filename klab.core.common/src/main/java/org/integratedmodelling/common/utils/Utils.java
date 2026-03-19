@@ -158,8 +158,16 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         String[] args = input.split("\\s+");
         Consumer<String[]> handler = commands.get(args[0]);
         if (handler != null) {
-          handler.accept(
-              args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
+          try {
+            handler.accept(
+                args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
+          } catch (Throwable e) {
+            System.out.println(
+                "Handler threw "
+                    + Paths.getLast(e.getClass().getSimpleName(), '.')
+                    + " exception: "
+                    + e.getMessage());
+          }
         } else {
           System.out.println("Unknown command: " + args[0]);
         }

@@ -36,6 +36,22 @@ public enum Setting {
       "The directory where all k.LAB files are stored",
       File.class,
       new File(System.getProperty("user.home") + File.separator + ".klab")),
+  RUN_DIRECTORY(
+      Page.GENERAL,
+      "The directory where PIDs and other runtime files are stored",
+      File.class,
+      new File(
+          System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run")),
+  DISTRIBUTION_DIRECTORY(
+      Page.GENERAL,
+      "The directory where k.LAB distribution files will be stored for the . Contents will be large.",
+      File.class,
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + ".klab"
+              + File.separator
+              + "distribution")),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",
@@ -53,6 +69,11 @@ public enum Setting {
       false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
   LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false),
+  DISTRIBUTION_SOURCE_URL(
+      Page.SERVICES,
+      "Alternative source URL for the k.LAB stack distribution",
+      String.class,
+      "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties"),
   DETECT_LOCAL_HUB(
       Page.DEBUGGING,
       "Look for a hub running on localhost for authentication",
@@ -155,11 +176,16 @@ public enum Setting {
       "Use the compiled binary distribution in ~/git/klab-services if available",
       Boolean.class,
       Boolean.TRUE),
-  DISTRIBUTION_SOURCE_URL(
+  DISTRIBUTION_SOURCE_LOCATION(
       Page.DEBUGGING,
-      "Alternative source URL for the k.LAB stack distribution",
-      String.class,
-      "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties"),
+      "Location of the k.LAB software distribution",
+      File.class,
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + "git"
+              + File.separator
+              + "klab-services")),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "

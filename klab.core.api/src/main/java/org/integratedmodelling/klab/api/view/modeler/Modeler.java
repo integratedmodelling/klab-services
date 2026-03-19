@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -41,15 +42,12 @@ public interface Modeler extends UIController {
   UserScope authenticate();
 
   /**
-   * If the associated engine has a k.LAB distribution available, return it.
+   * Return the software stack available to the modeler for local running. This will never be null,
+   * but the tags may be empty.
    *
-   * <p>FIXME we should have the getAvailableDistribution() method here, and choose one (or not)
-   * independent of the modeler API, which should not make assumptions about the distributions
-   * available.
-   *
-   * @return the available distribution or null
+   * @return the software stack
    */
-  Distribution getDistribution();
+  Stack getSoftwareStack();
 
   /**
    * User action that obtains or find an asset from a URN and tells the modeler to observe it,

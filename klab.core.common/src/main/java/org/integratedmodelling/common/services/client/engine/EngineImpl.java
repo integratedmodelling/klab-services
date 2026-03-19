@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -38,33 +39,19 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final String serviceId = Utils.Names.shortUUID();
   private final Settings settings = SettingsImpl.forEngine();
   private ServiceMonitor serviceMonitor;
-  private Distribution distribution;
-//  private Distribution developmentDistribution;
-//  private Distribution downloadedDistribution;
-  //  private final Distribution.Status distributionStatus;
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
   private boolean onlineStatusNotified = false;
+  private Stack softwareStack;
+  private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
-    // TODO sync distribution and determine/restore tag
-
-//    if (DistributionObsoleteImpl.isDevelopmentDistributionAvailable()
-//        && settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
-////      this.developmentDistribution = new DevelopmentDistributionObsoleteImpl();
-//    }
-
     this.serviceStatusMonitor = serviceStatusMonitor;
     this.engineStatusMonitor = engineStatusMonitor;
-//    this.downloadedDistribution = new DistributionObsoleteImpl();
-//    this.distribution =
-//        this.developmentDistribution == null
-//            ? this.downloadedDistribution
-//            : this.developmentDistribution;
   }
 
   public ServiceMonitor getServiceMonitor() {
@@ -110,8 +97,8 @@ public class EngineImpl implements Engine, PropertyHolder {
     return serviceMonitor.stopLocalServices();
   }
 
-  public Distribution getDistribution() {
-    return distribution;
+  public Stack getSoftwareStack() {
+    return softwareStack;
   }
 
   @Override
@@ -119,7 +106,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     // this will force a re-advertising of services when they all come up, as long as the engine
     // becomes operational again only when the 4 local are available
     onlineStatusNotified = false;
-    return serviceMonitor.startLocalServices(distribution, defaultUser);
+    return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
   }
 
   @Override
@@ -153,6 +140,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       messagingChannel.setupMessaging(
           federation, federation.getId(), messagingChannel.defaultQueues());
     }
+
+    this.softwareStack = Stack.of("klab", settings);
   }
 
   private void notifyLocalEngine(Engine.Status status) {
