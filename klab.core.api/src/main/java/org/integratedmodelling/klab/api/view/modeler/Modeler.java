@@ -42,14 +42,6 @@ public interface Modeler extends UIController {
   UserScope authenticate();
 
   /**
-   * Return the software stack available to the modeler for local running. This will never be null,
-   * but the tags may be empty.
-   *
-   * @return the software stack
-   */
-  Stack getSoftwareStack();
-
-  /**
    * User action that obtains or find an asset from a URN and tells the modeler to observe it,
    * whatever that means. The asset should be classified and only valid contexts should be handled.
    * The UI may alert for illegitimate use of this action.

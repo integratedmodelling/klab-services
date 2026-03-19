@@ -66,7 +66,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   private SimpleWebServer httpServer = null;
   private File tempDirectory;
   private int serverPort;
-
   EngineConfiguration workbench;
   File workbenchDefinition;
 
@@ -136,7 +135,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     pre-built view controllers. View implementations will self-register upon creation.
      */
     registerViewController(new ServicesViewControllerImpl(this));
-//    registerViewController(new DistributionViewImplController(this));
+    //    registerViewController(new DistributionViewImplController(this));
     registerViewController(new ResourcesNavigatorControllerImpl(this));
     registerViewController(new ContextInspectorControllerImpl(this));
     registerViewController(new AuthenticationViewControllerImpl(this));
@@ -339,10 +338,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ret;
   }
 
-//  @Override
-//  public List<ContextScope> getOpenContexts() {
-//    return new ArrayList<>(contexts.values());
-//  }
+  //  @Override
+  //  public List<ContextScope> getOpenContexts() {
+  //    return new ArrayList<>(contexts.values());
+  //  }
 
   @Override
   public ContextScope createDefaultContext() {
@@ -542,9 +541,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ((EngineImpl) engine()).getUser();
   }
 
-//  public Future<Boolean> startLocalServices() {
-//    return CompletableFuture.completedFuture(false);
-//  }
+  //  public Future<Boolean> startLocalServices() {
+  //    return CompletableFuture.completedFuture(false);
+  //  }
 
   public CompletableFuture<Boolean> shutdownLocalServices() {
 
@@ -616,11 +615,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     return engine().shutdown();
-  }
-
-  @Override
-  public Stack getSoftwareStack() {
-    return engine() instanceof EngineImpl engine ? engine.getSoftwareStack() : null;
   }
 
   @Override

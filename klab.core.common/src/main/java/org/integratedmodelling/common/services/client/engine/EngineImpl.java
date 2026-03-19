@@ -15,7 +15,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -97,8 +96,25 @@ public class EngineImpl implements Engine, PropertyHolder {
     return serviceMonitor.stopLocalServices();
   }
 
+  @Override
   public Stack getSoftwareStack() {
     return softwareStack;
+  }
+
+  @Override
+  public boolean hasValidSoftwareStack() {
+    return softwareStack != null
+        && distributionTag != null
+        && softwareStack.verify(distributionTag);
+  }
+
+  public void setDistributionTag(Stack.Tag distributionTag) {
+    this.distributionTag = distributionTag;
+  }
+
+  @Override
+  public Stack.Tag getDistributionTag() {
+    return distributionTag;
   }
 
   @Override

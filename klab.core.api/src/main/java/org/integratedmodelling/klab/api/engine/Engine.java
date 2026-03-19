@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 
@@ -193,4 +194,26 @@ public interface Engine /*extends KlabService*/ {
    * @return the current settings.
    */
   Settings getSettings();
+
+  /**
+   * Return the k.LAB software stack configured for this engine.
+   *
+   * @return
+   */
+  Stack getSoftwareStack();
+
+  /**
+   * Return the distribution tag for the software stack. The default should be {@link
+   * Stack.Tag#LATEST_STABLE}.
+   *
+   * @return
+   */
+  Stack.Tag getDistributionTag();
+
+  /**
+   * Return true if the software stack is valid and is tuned on a locally verifiable distribution
+   *
+   * @return
+   */
+  boolean hasValidSoftwareStack();
 }
