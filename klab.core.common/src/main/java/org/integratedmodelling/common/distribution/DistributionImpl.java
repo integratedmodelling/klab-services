@@ -101,7 +101,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
           if (Version.CURRENT_VERSION.compatible(Version.create(version))) {
             return new DistributionImpl(
-                distributionName, Utils.URLs.newURL(new File(distributionFolder, version)));
+                distributionName,
+                Utils.URLs.newURL(distributionFolder),
+                Utils.URLs.newURL(new File(distributionFolder, version)));
           }
         }
       }
@@ -116,14 +118,16 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
      * Remote first. This may fail
      */
     var ret = new ArrayList<DistributionImpl>();
+    var distributionUrl = Utils.URLs.newURL(url + "/" + distributionName);
     var properties =
-        Utils.Properties.create(
-            Utils.URLs.newURL(url + "/" + distributionName + "/distribution.properties"));
+        Utils.Properties.create(Utils.URLs.newURL(distributionUrl + "/distribution.properties"));
     if (!properties.isEmpty()) {
       for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
         ret.add(
             new DistributionImpl(
-                distributionName, Utils.URLs.newURL(url + "/" + distributionName + "/" + version)));
+                distributionName,
+                distributionUrl,
+                Utils.URLs.newURL(url + "/" + distributionName + "/" + version)));
       }
       return ret;
     }
@@ -148,11 +152,13 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   private Version version;
   private List<Release> releases = new ArrayList<>();
 
-  public DistributionImpl(String distributionName, URL versionUrl) {
-    super(Utils.URLs.newURL(versionUrl + "/version.properties"));
+  public DistributionImpl(String distributionName, URL distributionUrl, URL versionUrl) {
+    super(Utils.URLs.newURL(distributionUrl + "/" + DISTRIBUTION_PROPERTIES_FILE));
     this.name = distributionName;
-    this.version = Version.create(getProperty(VERSION_NAME_PROPERTY));
-    for (var release : getProperty(VERSION_RELEASES_PROPERTY).split(",")) {
+    var versionProperties =
+        Utils.Properties.create(Utils.URLs.newURL(versionUrl + "/version.properties"));
+    this.version = Version.create(versionProperties.getProperty(VERSION_NAME_PROPERTY));
+    for (var release : versionProperties.getProperty(VERSION_RELEASES_PROPERTY).split(",")) {
       this.releases.add(
           new Distribution.Release(
               Utils.URLs.newURL(versionUrl + "/" + release + "/" + RELEASE_PROPERTIES_FILE)));
@@ -289,10 +295,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         distributionDirectory.mkdirs();
       }
 
-      // NO FIXME ADD TO EXISTING
-      Utils.Properties.save(
+      synchronizeProperties(
+          this.getProperties(),
           new File(distributionDirectory, Distribution.DISTRIBUTION_PROPERTIES_FILE),
-          this.getProperties());
+          DISTRIBUTION_VERSIONS_PROPERTY,
+          this.version.toString());
 
       // create common directory
       var commonDirectory =
@@ -306,27 +313,54 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         new File(rootDirectory + File.separator + this.name + File.separator + this.version);
     versionDirectory.mkdirs();
 
-    // TODO sync any contents of distribution.properties to contain the current version
-    Utils.Properties.create(
+    var versionProperties =
+        Utils.Properties.create(
             Distribution.VERSION_NAME_PROPERTY,
             this.version.toString(),
             Distribution.VERSION_RELEASES_PROPERTY,
-            String.join(",", releases.stream().map(Release::getName).toList()))
-        .save(new File(versionDirectory, Distribution.VERSION_PROPERTIES_FILE));
+            "");
+
+    versionProperties.save(new File(versionDirectory, Distribution.VERSION_PROPERTIES_FILE));
 
     for (var release : releases) {
+
+      // sync any contents of version.properties to contain the current release
+      synchronizeProperties(
+          versionProperties.getProperties(),
+          new File(versionDirectory, Distribution.VERSION_PROPERTIES_FILE),
+          VERSION_RELEASES_PROPERTY,
+          release.getName());
+
       var releaseDirectory =
           new File(versionDirectory.getAbsolutePath() + File.separator + release.getName());
       releaseDirectory.mkdirs();
-      // TODO sync any contents of version.properties to contain the current release
+
+      var releaseProperties =
+          Utils.Properties.create(
+              Distribution.RELEASE_NAME_PROPERTY,
+              release.getName(),
+              Distribution.RELEASE_BUILDS_PROPERTY,
+              "");
+
+      releaseProperties.save(new File(releaseDirectory, Distribution.RELEASE_PROPERTIES_FILE));
 
       for (var build : release.getBuilds()) {
+
+        // sync any contents of release.properties to contain the current build
+        synchronizeProperties(
+            releaseProperties.getProperties(),
+            new File(releaseDirectory, Distribution.RELEASE_PROPERTIES_FILE),
+            RELEASE_BUILDS_PROPERTY,
+            build.getName());
+
         var buildDirectory =
             new File(releaseDirectory.getAbsolutePath() + File.separator + build.getName());
         buildDirectory.mkdirs();
         build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
 
         for (var product : build.getProducts()) {
+
+          // FIXME missing release.properties in release
 
           var productDirectory =
               new File(buildDirectory.getAbsolutePath() + File.separator + product.getName());
@@ -411,7 +445,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
               product.getFiles().stream()
                   .map(e -> e.hash() + " " + e.name() + " " + e.size())
                   .collect(Collectors.toList()),
-              new File(buildDirectory, "filelist.txt"));
+              new File(productDirectory, "filelist.txt"));
+
+          product.save(new File(productDirectory, PRODUCT_PROPERTIES_FILE));
 
           monitor.notifyProductSynchronized(product);
 
@@ -439,9 +475,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         new File(syncDirectory + File.separator + this.name + File.separator + "common");
 
     for (var tag : getTags()) {
+
       if (tag == beingSynced || !tag.availableLocally()) {
         continue;
       }
+
       var build = findBuild(tag);
       for (var product : build.getProducts()) {
         for (var file : product.getFiles()) {
@@ -699,7 +737,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       if (Utils.Properties.load(possiblyExistingPopertiesFile, existingProperties)) {
         var existingBuildIds = existingProperties.getProperty(buildPropertyToMergeWith);
         if (existingBuildIds != null) {
-          var existingBuildIdsList = Arrays.asList(existingBuildIds.split(","));
+          var existingBuildIdsList =
+              new ArrayList<>(
+                  Arrays.stream(existingBuildIds.split(",")).filter(s -> !s.isBlank()).toList());
           if (!existingBuildIdsList.contains(thisBuildId)) {
             existingBuildIdsList.addFirst(thisBuildId);
             propertiesToSave.setProperty(
