@@ -36,11 +36,12 @@ public interface Stack {
       return new Tag(version, release, build, availableLocally);
     }
 
-    public static Tag LATEST_STABLE = Tag.of(Version.ANY_VERSION, null, "latest", true);
-    public static Tag LATEST_DEVELOP = Tag.of(Version.ANY_VERSION, "develop", "latest", true);
+    public static Tag LATEST_STABLE = Tag.of(Version.ANY_VERSION, null, "stable", true);
+    public static Tag LATEST_DEVELOP = Tag.of(Version.ANY_VERSION, null, "develop", true);
 
     @Override
     public int compareTo(Tag other) {
+      // TODO this is a hack to be revised
       return Comparator.comparing(Tag::version)
           .thenComparing(Tag::release)
           .thenComparing(Tag::build)

@@ -13,7 +13,9 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -56,11 +58,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   public ServiceMonitor getServiceMonitor() {
     return serviceMonitor;
   }
-
-  //  @Override
-  //  public DistributionObsolete.Status getDistributionStatus() {
-  //    return distribution.getStatus();
-  //  }
 
   public UserScope getUser() {
     return !this.users.isEmpty() ? users.getFirst() : null;
@@ -158,17 +155,25 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     this.softwareStack = Stack.of("klab", settings);
+
+    if (settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
+      softwareStack.tags().stream()
+          .filter(tag -> tag.version() == Version.HEAD)
+          .findFirst()
+          .ifPresent(head -> this.distributionTag = head);
+    }
+    if (this.distributionTag.version() != Version.HEAD
+        && getUser().getUser().getGroups().stream()
+            .anyMatch(group -> group.getName().equals("DEVELOPERS"))) {
+      this.distributionTag = Stack.Tag.LATEST_DEVELOP;
+    }
+
+    // TODO explore how to best save and restore the chosen tag - we have just established a default
+
+    // TODO now check what is available and default to any admissible defaults if present
   }
 
   private void notifyLocalEngine(Engine.Status status) {
-
-    //    Logging.INSTANCE.info(
-    //        "STRONZ: "
-    //            + status
-    //            + " ("
-    //            + (status.isOperational() ? "operational" : "not operational")
-    //            + (onlineStatusNotified ? " notified " : " not notified ")
-    //            + ")");
 
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);

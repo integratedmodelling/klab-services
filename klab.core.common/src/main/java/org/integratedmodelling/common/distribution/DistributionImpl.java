@@ -26,8 +26,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       var developmentDistribution = developmentDistribution(distributionName);
       if (developmentDistribution != null) {
         for (var tag : developmentDistribution.getTags()) {
-          var devTag =
-              new Stack.Tag(Version.HEAD, tag.release(), tag.build(), tag.availableLocally());
+          var devTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true);
           ret.put(devTag, developmentDistribution);
         }
       }
@@ -42,17 +41,18 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                         + File.separator
                         + distributionName)));
 
-    // nah needs to sync first
-    for (var localDistribution : localDistributions) {
-      localDistribution.getTags().forEach(tag -> ret.put(tag, localDistribution));
-    }
-
     //    var remoteDistributions =
     //        distributions(
     //            distributionName,
     //            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
 
-    // TODO merge or sync
+    // TODO merge or sync - local overrides same version of remote. Verification could be manual or
+    //  automatic
+
+    // nah needs to sync first
+    for (var localDistribution : localDistributions) {
+      localDistribution.getTags().forEach(tag -> ret.put(tag, localDistribution));
+    }
 
     return ret;
   }
@@ -448,6 +448,15 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   @Override
   public boolean verify(Stack.Tag tag) {
+    var build = findBuild(tag);
+    if (build != null) {
+      for (var product : build.getProducts()) {
+        if (product.getLocalPath() == null || !product.getLocalPath().exists()) {
+          return false;
+        }
+      }
+      return true;
+    }
     return false;
   }
 

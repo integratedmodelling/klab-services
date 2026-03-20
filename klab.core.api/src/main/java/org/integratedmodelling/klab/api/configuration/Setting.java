@@ -64,7 +64,7 @@ public enum Setting {
               + "klab.cert")),
   LAUNCH_PRODUCT(
       Page.GENERAL,
-      "Launch a local service if there is no online service and a distribution is " + "available",
+      "Launch local services automatically if a distribution is available",
       Boolean.class,
       false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
@@ -74,6 +74,21 @@ public enum Setting {
       "Alternative source URL for the k.LAB stack distribution",
       String.class,
       "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties"),
+  STOP_AUXILIARY_SERVICES(
+      Page.SERVICES,
+      "Stop local auxiliary services such as thee graph database and AMQP broker when the k.LAB services are stopped",
+      Boolean.class,
+      false),
+  SYNCHRONIZE_STACK_ON_STARTUP(
+      Page.SERVICES,
+      "Automatically update the software stack with any new releases when the modeler is started with no services running",
+      Boolean.class,
+      false),
+  CHECK_FOR_UPDATES_INTERVAL_MINUTES(
+      Page.SERVICES,
+      "Interval in minutes between automatic software stack update checks. Set to 0 to disable.",
+      Integer.class,
+      5),
   DETECT_LOCAL_HUB(
       Page.DEBUGGING,
       "Look for a hub running on localhost for authentication",
