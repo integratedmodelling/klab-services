@@ -288,6 +288,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       if (!distributionDirectory.exists()) {
         distributionDirectory.mkdirs();
       }
+
+      // NO FIXME ADD TO EXISTING
       Utils.Properties.save(
           new File(distributionDirectory, Distribution.DISTRIBUTION_PROPERTIES_FILE),
           this.getProperties());
@@ -303,13 +305,20 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     var versionDirectory =
         new File(rootDirectory + File.separator + this.name + File.separator + this.version);
     versionDirectory.mkdirs();
-    // sync any contents of distribution.properties to contain the current version
+
+    // TODO sync any contents of distribution.properties to contain the current version
+    Utils.Properties.create(
+            Distribution.VERSION_NAME_PROPERTY,
+            this.version.toString(),
+            Distribution.VERSION_RELEASES_PROPERTY,
+            String.join(",", releases.stream().map(Release::getName).toList()))
+        .save(new File(versionDirectory, Distribution.VERSION_PROPERTIES_FILE));
 
     for (var release : releases) {
       var releaseDirectory =
-          new File(versionDirectory.getAbsolutePath() + File.separator + release);
+          new File(versionDirectory.getAbsolutePath() + File.separator + release.getName());
       releaseDirectory.mkdirs();
-      // sync any contents of version.properties to contain the current release
+      // TODO sync any contents of version.properties to contain the current release
 
       for (var build : release.getBuilds()) {
         var buildDirectory =
@@ -667,5 +676,38 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
             .filter(b -> b.getName().equals(chosenRelease.build()))
             .findFirst()
             .orElse(null);
+  }
+
+  /**
+   * Pass a properties object, the file to save it on, and a field whose value must be merged with
+   * the passed value. If the properties don't exist, create as is, otherwise read them, add the
+   * missing values to the property in the originalProperties if not there already, and save the
+   * result.
+   *
+   * @param propertiesToSave
+   * @param possiblyExistingPopertiesFile
+   * @param buildPropertyToMergeWith
+   * @param thisBuildId
+   */
+  private void synchronizeProperties(
+      Properties propertiesToSave,
+      File possiblyExistingPopertiesFile,
+      String buildPropertyToMergeWith,
+      String thisBuildId) {
+    if (possiblyExistingPopertiesFile.exists()) {
+      var existingProperties = new Properties();
+      if (Utils.Properties.load(possiblyExistingPopertiesFile, existingProperties)) {
+        var existingBuildIds = existingProperties.getProperty(buildPropertyToMergeWith);
+        if (existingBuildIds != null) {
+          var existingBuildIdsList = Arrays.asList(existingBuildIds.split(","));
+          if (!existingBuildIdsList.contains(thisBuildId)) {
+            existingBuildIdsList.addFirst(thisBuildId);
+            propertiesToSave.setProperty(
+                buildPropertyToMergeWith, String.join(",", existingBuildIdsList));
+          }
+        }
+      }
+    }
+    Utils.Properties.save(possiblyExistingPopertiesFile, propertiesToSave);
   }
 }

@@ -122,60 +122,19 @@ public class Version implements Comparable<Version>, Serializable {
   }
 
   private void parseString(final String str) {
-
-    major = 0;
-    minor = 0;
-    build = 0;
-    modifier = "";
-    StringTokenizer st = new StringTokenizer(str, "" + SEPARATOR, false);
-    // major segment
-    if (!st.hasMoreTokens()) {
-      return;
+    var split = str.split("-");
+    if (split.length > 1) {
+      this.modifier = split[1];
     }
-    String token = st.nextToken();
-    try {
-      major = Integer.parseInt(token, 10);
-    } catch (NumberFormatException nfe) {
-      modifier = token;
-      while (st.hasMoreTokens()) {
-        modifier += st.nextToken();
-      }
-      return;
-    }
-    // minor segment
-    if (!st.hasMoreTokens()) {
-      return;
-    }
-    token = st.nextToken();
-    try {
-      minor = Integer.parseInt(token, 10);
-    } catch (NumberFormatException nfe) {
-      modifier = token;
-      while (st.hasMoreTokens()) {
-        modifier += st.nextToken();
-      }
-      return;
-    }
-    // build segment
-    if (!st.hasMoreTokens()) {
-      return;
-    }
-    token = st.nextToken();
-    try {
-      build = Integer.parseInt(token, 10);
-    } catch (NumberFormatException nfe) {
-      modifier = token;
-      while (st.hasMoreTokens()) {
-        modifier += st.nextToken();
-      }
-      return;
-    }
-    // name segment
+    StringTokenizer st = new StringTokenizer(split[0], ".");
     if (st.hasMoreTokens()) {
-      modifier = st.nextToken();
-      while (st.hasMoreTokens()) {
-        modifier += st.nextToken();
-      }
+      this.major = Integer.parseInt(st.nextToken());
+    }
+    if (st.hasMoreTokens()) {
+      this.minor = Integer.parseInt(st.nextToken());
+    }
+    if (st.hasMoreTokens()) {
+      this.build = Integer.parseInt(st.nextToken());
     }
   }
 
