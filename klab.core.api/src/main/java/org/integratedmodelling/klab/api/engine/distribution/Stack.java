@@ -30,14 +30,16 @@ public interface Stack {
    * @param build apart from the physical build name, the "latest" build is also admitted.
    * @param availableLocally true if the distribution is available locally
    */
-  record Tag(Version version, String release, String build, boolean availableLocally)
+  record Tag(
+      Version version, String release, String build, boolean availableLocally, boolean orphan)
       implements Comparable<Tag> {
-    public static Tag of(Version version, String release, String build, boolean availableLocally) {
-      return new Tag(version, release, build, availableLocally);
+    public static Tag of(
+        Version version, String release, String build, boolean availableLocally, boolean orphan) {
+      return new Tag(version, release, build, availableLocally, orphan);
     }
 
-    public static Tag LATEST_STABLE = Tag.of(Version.ANY_VERSION, null, "stable", true);
-    public static Tag LATEST_DEVELOP = Tag.of(Version.ANY_VERSION, null, "develop", true);
+    public static Tag LATEST_STABLE = Tag.of(Version.ANY_VERSION, null, "stable", true, false);
+    public static Tag LATEST_DEVELOP = Tag.of(Version.ANY_VERSION, null, "develop", true, false);
 
     @Override
     public int compareTo(Tag other) {

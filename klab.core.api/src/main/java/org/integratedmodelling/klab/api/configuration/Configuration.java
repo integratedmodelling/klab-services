@@ -77,7 +77,7 @@ public enum Configuration {
   /** The klab relative work path. */
   public String KLAB_RELATIVE_WORK_PATH = ".klab";
 
-  private Configuration() {
+  Configuration() {
 
     if (System.getProperty(KLAB_DATA_DIRECTORY) != null) {
       this.dataPath = new File(System.getProperty(KLAB_DATA_DIRECTORY));

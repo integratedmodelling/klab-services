@@ -2,11 +2,11 @@ package org.integratedmodelling.common.distribution;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
-import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -26,9 +26,20 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       var developmentDistribution = developmentDistribution(distributionName);
       if (developmentDistribution != null) {
         for (var tag : developmentDistribution.getTags()) {
-          var devTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true);
+          var devTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true, false);
           ret.put(devTag, developmentDistribution);
         }
+      }
+    }
+
+    var remoteDistributions =
+        distributions(
+            distributionName,
+            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
+
+    for (var remoteDistribution : remoteDistributions) {
+      for (var tag : remoteDistribution.getTags()) {
+        ret.put(tag, remoteDistribution);
       }
     }
 
@@ -41,17 +52,20 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                         + File.separator
                         + distributionName)));
 
-    //    var remoteDistributions =
-    //        distributions(
-    //            distributionName,
-    //            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
-
-    // TODO merge or sync - local overrides same version of remote. Verification could be manual or
-    //  automatic
-
-    // nah needs to sync first
+    /* This overrides existing distribution tags with their local counterpart, which is what we want */
     for (var localDistribution : localDistributions) {
-      localDistribution.getTags().forEach(tag -> ret.put(tag, localDistribution));
+      var orphan = !ret.containsKey(localDistribution);
+      localDistribution
+          .getTags()
+          .forEach(
+              tag -> {
+                var actualTag = tag;
+                if (orphan) {
+                  // TODO flag the tag as orphaned
+                  actualTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true, true);
+                }
+                ret.put(tag, localDistribution);
+              });
     }
 
     return ret;
@@ -102,13 +116,14 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
      * Remote first. This may fail
      */
     var ret = new ArrayList<DistributionImpl>();
-    var properties = Utils.Properties.create(Utils.URLs.newURL(url + "/distribution.properties"));
+    var properties =
+        Utils.Properties.create(
+            Utils.URLs.newURL(url + "/" + distributionName + "/distribution.properties"));
     if (!properties.isEmpty()) {
       for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
         ret.add(
             new DistributionImpl(
-                distributionName,
-                Utils.URLs.newURL(url + "/" + version + "/distribution.properties")));
+                distributionName, Utils.URLs.newURL(url + "/" + distributionName + "/" + version)));
       }
       return ret;
     }
@@ -158,7 +173,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     return counter;
   }
 
-  public boolean needsSync(Distribution.FileData file, Distribution.FileTarget target) {
+  public boolean needsSync(
+      FileData file, FileTarget target, Map<FileData, FileTarget> previouslyAvailable) {
+    if (previouslyAvailable.containsKey(file)) {
+      return false;
+    }
     var exists = target.destinationFile().exists();
     // FIXME should check only jars like this; others should be hash-checked always
     if (exists && file.name().contains("SNAPSHOT")) {
@@ -174,11 +193,16 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
    * FIXME THIS SHOULD COMPARE TO THE LATEST BUILD - A NEW BUILD WILL CONTAIN MANY EQUAL FILES IN
    * DIFFERENT DIRS
    *
+   * <p>FIXME BASED ON SETTINGS, PREVIOUS BUILDS MAY OR MAY NOT BE REMOVED AFTER SYNC OF A NEW ONE
+   *
    * @param rootDirectory
+   * @param beingSynced the tag is used to establish which files may come from OTHER builds and may
+   *     be copied instead of downloaded or linked.
    * @param monitor
    * @return
    */
-  public boolean synchronize(File rootDirectory, Distribution.Synchronization monitor) {
+  public boolean synchronize(
+      File rootDirectory, Stack.Tag beingSynced, Distribution.Synchronization monitor) {
 
     var counter = getFileCounts();
     var commonFiles =
@@ -190,6 +214,12 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     Set<Distribution.FileData> commonFilesChecked = new HashSet<>();
     Map<Distribution.FileData, Distribution.FileTarget> targets = new HashMap<>();
     Map<Distribution.FileData, Distribution.FileTarget> common = new HashMap<>();
+    Map<Distribution.FileData, Distribution.FileTarget> previouslyAvailable =
+        recoverOtherNonCommonFiles(beingSynced, rootDirectory);
+
+    // TODO fill in previouslyAvailable with the latest build of the same
+    // distribution/version/release if
+    // any exist in this distribution.
 
     for (var release : releases) {
       for (var build : release.getBuilds()) {
@@ -197,7 +227,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           for (var file : product.getFiles()) {
             var target =
                 new Distribution.FileTarget(
-                    Utils.URLs.newURL(product.getUrl() + file.name()),
+                    Utils.URLs.newURL(product.getUrl() + "/" + file.name()),
                     new File(
                         rootDirectory
                             + File.separator
@@ -217,7 +247,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
               common.put(
                   file,
                   new Distribution.FileTarget(
-                      Utils.URLs.newURL(product.getUrl() + file.name()),
+                      Utils.URLs.newURL(product.getUrl() + "/" + file.name()),
                       new File(
                           rootDirectory
                               + File.separator
@@ -238,7 +268,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     for (var product : targets.keySet()) {
       var choice = common.containsKey(product) ? common.get(product) : targets.get(product);
       fullList.put(product, choice);
-      if (needsSync(product, choice)) {
+      if (needsSync(product, choice, previouslyAvailable)) {
         downloadList.put(product, choice);
       }
     }
@@ -293,31 +323,41 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
               new File(buildDirectory.getAbsolutePath() + File.separator + product.getName());
           productDirectory.mkdirs();
 
+          monitor.notifyProductSynchronizing(product);
+
           Set<File> accepted = new HashSet<>();
           for (var file : product.getFiles()) {
             // TODO must download and/or link, then delete spurious
             if (downloadList.containsKey(file)) {
 
-              if (!downloaded.contains(file)) {
-                if (!monitor.download(
-                    downloadList.get(file).sourceUrl(),
-                    downloadList.get(file).destinationFile(),
-                    file)) {
-                  return false;
-                }
-                downloaded.add(file);
-              }
-
               var destination =
                   new File(productDirectory.getAbsolutePath() + File.separator + file.name());
 
-              accepted.add(destination);
-
-              if (common.containsKey(file)) {
-                if (!monitor.link(downloadList.get(file).destinationFile(), destination)) {
+              if (previouslyAvailable.containsKey(file)) {
+                // use the copy function so we can delete the previous build without consequences
+                if (!monitor.copy(previouslyAvailable.get(file).destinationFile(), destination)) {
                   return false;
                 }
+
+              } else {
+
+                if (!downloaded.contains(file)) {
+                  if (!monitor.download(
+                      downloadList.get(file).sourceUrl(),
+                      downloadList.get(file).destinationFile(),
+                      file)) {
+                    return false;
+                  }
+                  downloaded.add(file);
+                }
+
+                if (common.containsKey(file)) {
+                  if (!monitor.link(downloadList.get(file).destinationFile(), destination)) {
+                    return false;
+                  }
+                }
               }
+              accepted.add(destination);
             }
           }
 
@@ -375,6 +415,45 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   }
 
   /**
+   * Return a map of all files that are not in the common distro but are part of builds that are not
+   * the one being synchronized. Used to check when a required file is already present in a previous
+   * build.
+   *
+   * @param beingSynced
+   * @return
+   */
+  private Map<FileData, FileTarget> recoverOtherNonCommonFiles(
+      Stack.Tag beingSynced, File syncDirectory) {
+
+    var ret = new HashMap<FileData, FileTarget>();
+    var commonDirectory =
+        new File(syncDirectory + File.separator + this.name + File.separator + "common");
+
+    for (var tag : getTags()) {
+      if (tag == beingSynced || !tag.availableLocally()) {
+        continue;
+      }
+      var build = findBuild(tag);
+      for (var product : build.getProducts()) {
+        for (var file : product.getFiles()) {
+          if (ret.containsKey(file)) {
+            continue;
+          }
+          var fileInCommon = new File(commonDirectory, file.name());
+          if (fileInCommon.exists()) {
+            continue;
+          }
+          var existing = new File(product.getLocalPath(), file.name());
+          if (existing.isFile()) {
+            ret.put(file, new FileTarget(Utils.URLs.newURL(existing), existing));
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /**
    * Total size of distribution in bytes.
    *
    * @return
@@ -389,35 +468,6 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         .map(Map.Entry::getKey)
         .collect(Collectors.toSet());
   }
-
-  //  public DistributionImpl(URL propertiesUrl) {
-  //    super(propertiesUrl);
-  //    if (!isEmpty()) {
-  //      this.name = this.properties.getProperty(Distribution.DISTRIBUTION_NAME_PROPERTY);
-  //      this.version =
-  //
-  // Version.create(this.properties.getProperty(Distribution.DISTRIBUTION_VERSION_PROPERTY));
-  //      this.releaseDate =
-  //          Instant.parse(this.properties.getProperty(Distribution.DISTRIBUTION_DATE_PROPERTY));
-  //      for (var key :
-  //          this.properties.getProperty(Distribution.DISTRIBUTION_PRODUCTS_PROPERTY).split(",")) {
-  //        var productUrl =
-  //            propertiesUrl
-  //                    .toString()
-  //                    .substring(
-  //                        0,
-  //
-  // propertiesUrl.toString().indexOf(Distribution.DISTRIBUTION_PROPERTIES_FILE))
-  //                + key
-  //                + "/product.properties";
-  //        var product = new ProductModel(key, Utils.URLs.newURL(productUrl));
-  //        if (product.isEmpty()) {
-  //          setEmpty(true);
-  //        }
-  //        this.products.add(product);
-  //      }
-  //    }
-  //  }
 
   public String getName() {
     return name;
@@ -440,7 +490,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       for (var build : release.getBuilds()) {
         ret.add(
             Stack.Tag.of(
-                this.version, release.getName(), build.getName(), build.isAvailableLocally()));
+                this.version,
+                release.getName(),
+                build.getName(),
+                build.isAvailableLocally(),
+                false));
       }
     }
     return ret;
@@ -480,15 +534,13 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
             Map<FileData, FileTarget> downloadList) {
 
           System.out.println(
-              "Must synchronize "
-                  + downloadList.size()
-                  + " files: "
+              "Download size is "
                   + FileUtils.byteCountToDisplaySize(downloadSize)
                   + " out of "
                   + FileUtils.byteCountToDisplaySize(totalSize)
-                  + " total storage in "
+                  + " of total storage ("
                   + fullList.size()
-                  + " files.");
+                  + " files).");
 
           return false;
         }
@@ -509,6 +561,15 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         public void delete(File file) {
           System.out.println("DELETE " + file);
         }
+
+        @Override
+        public boolean copy(File source, File destination) {
+          System.out.println("COPY " + source + " TO " + destination);
+          return true;
+        }
+
+        @Override
+        public void notifyProductSynchronizing(Product product) {}
 
         @Override
         public void notifyProductSynchronized(Product product) {}
@@ -563,6 +624,19 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           System.out.println("Deleting " + file);
           FileUtils.deleteQuietly(file);
         }
+
+        @Override
+        public boolean copy(File source, File destination) {
+          try {
+            Files.copy(source.toPath(), destination.toPath());
+            return true;
+          } catch (IOException e) {
+            return false;
+          }
+        }
+
+        @Override
+        public void notifyProductSynchronizing(Product product) {}
 
         @Override
         public void notifyProductSynchronized(Product product) {}

@@ -73,7 +73,7 @@ public enum Setting {
       Page.SERVICES,
       "Alternative source URL for the k.LAB stack distribution",
       String.class,
-      "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties"),
+      "https://resources.integratedmodelling.org/klab/products/klab"),
   STOP_AUXILIARY_SERVICES(
       Page.SERVICES,
       "Stop local auxiliary services such as thee graph database and AMQP broker when the k.LAB services are stopped",

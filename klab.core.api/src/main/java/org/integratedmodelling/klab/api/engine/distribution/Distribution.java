@@ -66,7 +66,7 @@ public interface Distribution {
     }
 
     public boolean isAvailableLocally() {
-      return products.stream().allMatch(p -> p.localPath.exists());
+      return products.stream().allMatch(p -> p.localPath != null && p.localPath.exists());
     }
   }
 
@@ -529,6 +529,28 @@ public interface Distribution {
 
     void delete(File file);
 
+    /**
+     * Copy a file from source to destination. Used for copying files from previous builds that may
+     * get lost. In some OSs, using hard links is OK here.
+     *
+     * @param source
+     * @param destination
+     * @return
+     */
+    boolean copy(File source, File destination);
+
+    /**
+     * Heads-up that the product is about to be synchronized.
+     *
+     * @param product
+     */
+    void notifyProductSynchronizing(Product product);
+
+    /**
+     * Heads-up that the product has been synchronized.
+     *
+     * @param product
+     */
     void notifyProductSynchronized(Product product);
   }
 
@@ -604,13 +626,11 @@ public interface Distribution {
   List<Stack.Tag> getTags();
 
   /**
-   *
    * @param rootFolder
    * @param sync
    * @return
    */
-  boolean synchronize(File rootFolder, Synchronization sync);
-
+  boolean synchronize(File rootFolder, Stack.Tag beingSynchronized, Synchronization sync);
 
   /**
    * Verify the consistency of a locally available tag by comparing all file hashes in the

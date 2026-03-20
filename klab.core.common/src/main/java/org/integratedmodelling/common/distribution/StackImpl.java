@@ -6,6 +6,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
@@ -31,6 +32,11 @@ public class StackImpl implements Stack {
   public StackImpl(String name, Settings settings) {
     this.name = name;
     this.settings = settings;
+    refreshTags();
+  }
+
+  private void refreshTags() {
+    TAGS.clear();
     TAGS.putAll(DistributionImpl.distributions(name, settings));
   }
 
@@ -57,6 +63,7 @@ public class StackImpl implements Stack {
     AtomicReference<Status> ret = new AtomicReference<>(null);
     if (distribution.synchronize(
         settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class),
+        tag,
         new Distribution.Synchronization() {
 
           @Override
@@ -76,16 +83,24 @@ public class StackImpl implements Stack {
 
           @Override
           public boolean download(URL url, File file, Distribution.FileData fileData) {
-            return false;
+            return true;
           }
 
           @Override
           public boolean link(File file, File destination) {
-            return false;
+            return true;
           }
 
           @Override
           public void delete(File file) {}
+
+          @Override
+          public boolean copy(File source, File destination) {
+            return true;
+          }
+
+          @Override
+          public void notifyProductSynchronizing(Distribution.Product product) {}
 
           @Override
           public void notifyProductSynchronized(Distribution.Product product) {}
@@ -150,17 +165,23 @@ public class StackImpl implements Stack {
         .with(
             "status",
             ar -> {
-              //              ((DistributionImpl) distribution)
-              //                  .synchronize(
-              //                      Configuration.INSTANCE.getDataPath("distribution"),
-              // loggingSynchronizer);
+              var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
+              if (distributionTag.version() == Version.HEAD) {
+                System.out.println("Compiled distribution from source code is available");
+              } else {
+                var distribution = TAGS.get(distributionTag);
+                distribution.synchronize(
+                    ((StackImpl) klab).settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class),
+                    distributionTag,
+                    DistributionImpl.loggingSynchronizer);
+              }
             })
         .with(
             "tags",
             ar -> {
               int n = 1;
               for (var t : klab.tags()) {
-                System.out.println(n + ". " + t);
+                System.out.println((n++) + ". " + t + " " + (t == tag.get() ? "(current)" : ""));
               }
             })
         .with(
@@ -215,15 +236,23 @@ public class StackImpl implements Stack {
             ar -> {
               int n = Integer.parseInt(ar[0]);
               tag.set(klab.tags().get(n - 1));
-              System.out.println("Set tag to " + tag.get());
+              System.out.println("Set current tag to " + tag.get());
             })
         .with(
             "sync",
             ar -> {
-              //              ((DistributionImpl) distribution)
-              //                  .synchronize(
-              //                      Configuration.INSTANCE.getDataPath("distribution"),
-              // actingSynchronizer);
+              var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
+              if (distributionTag.version() == Version.HEAD) {
+                System.out.println(
+                    "Compiled distribution from source code does not need to be synchronized");
+              } else {
+                var distribution = TAGS.get(distributionTag);
+                distribution.synchronize(
+                    ((StackImpl) klab).settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class),
+                    distributionTag,
+                    DistributionImpl.actingSynchronizer);
+                ((StackImpl) klab).refreshTags();
+              }
             })
         .run();
   }
