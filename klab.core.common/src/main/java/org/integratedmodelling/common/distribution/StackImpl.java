@@ -32,12 +32,39 @@ public class StackImpl implements Stack {
   public StackImpl(String name, Settings settings) {
     this.name = name;
     this.settings = settings;
-    refreshTags();
+    TAGS.putAll(DistributionImpl.distributions(name, settings));
+    // still needs to use a scan to establish update status for the locals distributions
   }
 
-  private void refreshTags() {
-    TAGS.clear();
-    TAGS.putAll(DistributionImpl.distributions(name, settings));
+  private void refreshTags(DistributionImpl... distributions) {
+
+    if (distributions != null) {
+      for (var distribution : distributions) {
+        var dFile =
+            new File(
+                settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), distribution.getName());
+        if (dFile.exists() && dFile.isDirectory()) {
+          var updated =
+              new DistributionImpl(
+                  distribution.getName(),
+                  distribution.getVersion(),
+                  Utils.URLs.newURL(dFile),
+                  Utils.URLs.newURL(new File(dFile, distribution.getVersion().toString())));
+          List<Tag> tagsToRemove = new ArrayList<>();
+
+          // this pain is needed for now - comparison succeeds but tag isn't swapped
+          for (var tag : TAGS.keySet()) {
+            if (TAGS.get(tag) == distribution) {
+              tagsToRemove.add(tag);
+            }
+          }
+          tagsToRemove.forEach(TAGS::remove);
+          for (var tag : updated.getTags()) {
+            TAGS.put(tag, updated);
+          }
+        }
+      }
+    }
   }
 
   @Override
@@ -112,6 +139,17 @@ public class StackImpl implements Stack {
 
   @Override
   public boolean synchronize(Tag tag, Distribution.Synchronization sync) {
+
+    if (tag.version() == Version.HEAD) {
+      return true;
+    }
+    var distribution = TAGS.get(tag);
+    if (distribution != null
+        && distribution.synchronize(
+            settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), tag, sync)) {
+      refreshTags(distribution);
+      return true;
+    }
     return false;
   }
 
@@ -166,15 +204,7 @@ public class StackImpl implements Stack {
             "status",
             ar -> {
               var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
-              if (distributionTag.version() == Version.HEAD) {
-                System.out.println("Compiled distribution from source code is available");
-              } else {
-                var distribution = TAGS.get(distributionTag);
-                distribution.synchronize(
-                    ((StackImpl) klab).settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class),
-                    distributionTag,
-                    DistributionImpl.loggingSynchronizer);
-              }
+              klab.synchronize(distributionTag, DistributionImpl.loggingSynchronizer);
             })
         .with(
             "tags",
@@ -242,17 +272,7 @@ public class StackImpl implements Stack {
             "sync",
             ar -> {
               var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
-              if (distributionTag.version() == Version.HEAD) {
-                System.out.println(
-                    "Compiled distribution from source code does not need to be synchronized");
-              } else {
-                var distribution = TAGS.get(distributionTag);
-                distribution.synchronize(
-                    ((StackImpl) klab).settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class),
-                    distributionTag,
-                    DistributionImpl.actingSynchronizer);
-                ((StackImpl) klab).refreshTags();
-              }
+              klab.synchronize(distributionTag, DistributionImpl.actingSynchronizer);
             })
         .run();
   }

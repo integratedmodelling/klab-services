@@ -105,8 +105,13 @@ public interface Stack {
   Distribution.Product product(Distribution.Product.Type productType, Stack.Tag chosenRelease);
 
   /**
-   * Retrieve the synchronization status of the passed tag. If the tag is not available locally or
-   * does not exist, return {@link Status#ABSENT}.
+   * Retrieve the synchronization status for the distribution that the passed tag belongs to. If the
+   * tag is not available locally or does not exist, return {@link Status#ABSENT}.
+   *
+   * <p>If this returns an updatable status, the distribution should be synchronized. The updates
+   * in a normal situation will refer to new builds available remotely. No file that is available
+   * locally (either in the common area or in a previous build) will be counted as a necessary
+   * download.
    *
    * @param tag
    * @return
@@ -116,6 +121,15 @@ public interface Stack {
   /**
    * Synchronize the passed tag to disk w.r.t. the remote distribution. Use the passed
    * synchronization monitor/actuator to perform operations.
+   *
+   * <p>The entire distribution is synchronized, i.e. all new builds are added to the local file
+   * cache. Any missing file in previous builds will be restored. If the build is no longer
+   * available remotely, its tag will be tagged as orphan.
+   *
+   * <p>On a source code development stack, the synchronization will return true without any action.
+   *
+   * <p>NOTE the {@link #tags()} will be different after this call has returned true, unless the
+   * synchronizer does nothing.
    *
    * @param tag
    * @param sync

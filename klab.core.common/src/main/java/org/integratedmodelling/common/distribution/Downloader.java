@@ -53,12 +53,7 @@ public class Downloader {
 
   /** Start a download thread and return. */
   public void startDownload() {
-    new Thread() {
-      @Override
-      public void run() {
-        download();
-      }
-    }.start();
+    Thread.ofVirtual().start(this::download);
   }
 
   /** Start downloading and block until success or failure. */

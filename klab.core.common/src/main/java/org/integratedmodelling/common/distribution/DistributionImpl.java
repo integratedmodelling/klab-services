@@ -102,6 +102,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           if (Version.CURRENT_VERSION.compatible(Version.create(version))) {
             return new DistributionImpl(
                 distributionName,
+                Version.create(version),
                 Utils.URLs.newURL(distributionFolder),
                 Utils.URLs.newURL(new File(distributionFolder, version)));
           }
@@ -126,24 +127,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         ret.add(
             new DistributionImpl(
                 distributionName,
+                Version.create(version),
                 distributionUrl,
                 Utils.URLs.newURL(url + "/" + distributionName + "/" + version)));
       }
-      return ret;
     }
-
-    /*
-     * Now check locally and see if (1) we have OTHER distributions and (2) the ones we have are
-     * synchronized
-     */
-
-    /*
-     * Check if a development distro is available. Use settings to override the dev folder
-     */
-
-    /*
-     * Build the tags for all existing distributions
-     */
 
     return ret;
   }
@@ -152,12 +140,13 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   private Version version;
   private List<Release> releases = new ArrayList<>();
 
-  public DistributionImpl(String distributionName, URL distributionUrl, URL versionUrl) {
+  public DistributionImpl(
+      String distributionName, Version version, URL distributionUrl, URL versionUrl) {
     super(Utils.URLs.newURL(distributionUrl + "/" + DISTRIBUTION_PROPERTIES_FILE));
     this.name = distributionName;
     var versionProperties =
         Utils.Properties.create(Utils.URLs.newURL(versionUrl + "/version.properties"));
-    this.version = Version.create(versionProperties.getProperty(VERSION_NAME_PROPERTY));
+    this.version = version;
     for (var release : versionProperties.getProperty(VERSION_RELEASES_PROPERTY).split(",")) {
       this.releases.add(
           new Distribution.Release(
@@ -456,7 +445,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       }
     }
 
-    return false;
+    return true;
   }
 
   /**
@@ -522,7 +511,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   @Override
   public Version getVersion() {
-    return null;
+    return this.version;
   }
 
   @Override
