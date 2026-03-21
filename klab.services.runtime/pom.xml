@@ -83,14 +83,16 @@
         <!-- query builder for Cypher -->
         <dependency>
             <groupId>org.neo4j</groupId>
-            <artifactId>neo4j-cypher-dsl</artifactId>
-            <version>2024.4.0</version>
+            <artifactId>neo4j-cypher-dsl-parser</artifactId>
+            <version>2025.0.1</version>
+<!--
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.jaxrs</groupId>
                     <artifactId>jackson-jaxrs-providers</artifactId>
                 </exclusion>
             </exclusions>
+-->
         </dependency>
 
 
@@ -98,44 +100,45 @@
  they didn't want their f'ing money to make it distributed and production-level. Consider moving to
  dgraph or memgraph for production.
   -->
+<!--
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <!--
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>jakarta.validation</groupId>
                                     <artifactId>jakarta.validation-api</artifactId>
                                 </exclusion>
-                -->
+                &ndash;&gt;
             </exclusions>
-            <!--
+            &lt;!&ndash;
                         <exclusions>
                             <exclusion>
                                 <groupId>commons-logging</groupId>
                                 <artifactId>commons-logging</artifactId>
                             </exclusion>
                         </exclusions>
-            -->
+            &ndash;&gt;
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-spatial-index</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <!--
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>commons-logging</groupId>
                                     <artifactId>commons-logging</artifactId>
                                 </exclusion>
-                -->
-                <!--
+                &ndash;&gt;
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>org.neo4j</groupId>
                                     <artifactId>neo4j-slf4j-provider</artifactId>
                                 </exclusion>
-                -->
+                &ndash;&gt;
             </exclusions>
         </dependency>
         <dependency>
@@ -143,20 +146,21 @@
             <artifactId>neo4j-bolt</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <!--
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>commons-logging</groupId>
                                     <artifactId>commons-logging</artifactId>
                                 </exclusion>
-                -->
-                <!--
+                &ndash;&gt;
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>org.neo4j</groupId>
                                     <artifactId>neo4j-slf4j-provider</artifactId>
                                 </exclusion>
-                -->
+                &ndash;&gt;
             </exclusions>
         </dependency>
+-->
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
@@ -176,23 +180,24 @@
                 -->
             </exclusions>
         </dependency>
+<!--
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-record-storage-engine</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <!--
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>commons-logging</groupId>
                                     <artifactId>commons-logging</artifactId>
                                 </exclusion>
-                -->
-                <!--
+                &ndash;&gt;
+                &lt;!&ndash;
                                 <exclusion>
                                     <groupId>org.neo4j</groupId>
                                     <artifactId>neo4j-slf4j-provider</artifactId>
                                 </exclusion>
-                -->
+                &ndash;&gt;
             </exclusions>
         </dependency>
 
@@ -201,6 +206,7 @@
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
         </dependency>
+-->
         <!--
                 <dependency>
                     <groupId>org.springframework.boot</groupId>

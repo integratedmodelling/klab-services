@@ -58,7 +58,7 @@ import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
-import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JClient;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -149,8 +149,8 @@ public class RuntimeService extends BaseService
 
   private boolean createMainKnowledgeGraph() {
     // TODO choose the DB from configuration - client or embedded server
-    var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
-    this.knowledgeGraph = new KnowledgeGraphNeo4JEmbedded(path);
+    //    var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
+    this.knowledgeGraph = new KnowledgeGraphNeo4JClient();
     return this.knowledgeGraph.isOnline();
   }
 
