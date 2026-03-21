@@ -570,11 +570,19 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           System.out.println(
               "Download size is "
                   + FileUtils.byteCountToDisplaySize(downloadSize)
-                  + " out of "
+                  + "("
+                  + downloadList.size()
+                  + " files) out of "
                   + FileUtils.byteCountToDisplaySize(totalSize)
                   + " of total storage ("
                   + fullList.size()
                   + " files).");
+          if (downloadList.size() <= 15) {
+            System.out.println("Files to download:");
+            for (var file : downloadList.keySet()) {
+              System.out.println("   " + file);
+            }
+          }
 
           return false;
         }
