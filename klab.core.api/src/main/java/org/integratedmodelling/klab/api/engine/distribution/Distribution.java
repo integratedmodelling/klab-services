@@ -14,16 +14,20 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
- * A {@link Distribution} is the top-level object in a k.LAB software stack, corresponding to a
- * software distribution in a given version. The distribution contains a number of releases, each of
- * which can contain builds which contain products.
+ * {@link Distribution}s compose a k.LAB software stack, corresponding to a software distribution in
+ * a given version. The distribution contains a number of releases, each of which can contain builds
+ * which contain products.
+ *
+ * <p>A Distribution is lower-level compared to {@link Stack} and should not be used directly at
+ * client side. It is the first-class object for server-side operations when distributions are built
+ * and synchronized.
  */
 public interface Distribution {
 
   /**
    * Represents an entry in the filelist that accompanies each build in the distribution. Used as a
    * key for the files to inspect and/or download, represented by {@link FileTarget}.
-   *
+   *tags
    * @param hash
    * @param name
    * @param size
@@ -476,6 +480,12 @@ public interface Distribution {
       super(url);
       this.name = this.properties.getProperty(RELEASE_NAME_PROPERTY);
       for (var key : this.properties.getProperty(RELEASE_BUILDS_PROPERTY).split(",")) {
+
+        if (key.isEmpty()) {
+          // DIOCAN why?
+          continue;
+        }
+
         var buildUrl =
             url.toString().substring(0, url.toString().indexOf(RELEASE_PROPERTIES_FILE))
                 + key

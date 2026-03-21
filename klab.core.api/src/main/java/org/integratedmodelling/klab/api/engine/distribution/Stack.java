@@ -10,12 +10,17 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 
 /**
- * Software stacks coordinate distributions for a specific software stack, corresponding to a
- * distribution name and a version number. May contain one or more builds and be or not be
- * synchronized to disk. This is lower-level to {@link Stack}, which should be used to resolve tags
- * and launch products.
+ * Software stacks coordinate availability and upgrades of a specific software stack identified by a
+ * stack name. The stack gives access to all its available versions, releases and builds in the form
+ * of {@link Tag}s, that are presented to the user in descending order of currency.
  *
- * <p>TAG should go here
+ * <p>If a compiled source stack is available and the settings allow it, the correspondent tag will
+ * be added first, with version {@link Version#HEAD}. Each tag may or may not be available locally.
+ * The {@link #synchronize(Tag, Distribution.Synchronization)} operation will synchronize the entire
+ * distribution to which the tag belongs, making all its builds available locally. The tags will be
+ * updated after it has succeeded. Similarly, the #status(Tag) operation will return the status of
+ * the entire distribution that the tag belongs to, indicating the true number of bytes that the
+ * synchronization operation needs to move to bring all the distribution's tags to the cache.
  */
 public interface Stack {
 
@@ -108,15 +113,15 @@ public interface Stack {
    * Retrieve the synchronization status for the distribution that the passed tag belongs to. If the
    * tag is not available locally or does not exist, return {@link Status#ABSENT}.
    *
-   * <p>If this returns an updatable status, the distribution should be synchronized. The updates
-   * in a normal situation will refer to new builds available remotely. No file that is available
+   * <p>If this returns an updatable status, the distribution should be synchronized. The updates in
+   * a normal situation will refer to new builds available remotely. No file that is available
    * locally (either in the common area or in a previous build) will be counted as a necessary
    * download.
    *
    * @param tag
    * @return
    */
-  Status getStatus(Tag tag);
+  Status status(Tag tag);
 
   /**
    * Synchronize the passed tag to disk w.r.t. the remote distribution. Use the passed

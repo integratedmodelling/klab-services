@@ -46,11 +46,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     var localDistributions =
         distributions(
             distributionName,
-            Utils.URLs.newURL(
-                new File(
-                    Configuration.INSTANCE.getDataPath("distribution")
-                        + File.separator
-                        + distributionName)));
+            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class)));
 
     /* This overrides existing distribution tags with their local counterpart, which is what we want */
     for (var localDistribution : localDistributions) {
@@ -62,9 +58,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                 var actualTag = tag;
                 if (orphan) {
                   // TODO flag the tag as orphaned
-                  actualTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true, true);
+                  actualTag = Stack.Tag.of(tag.version(), tag.release(), tag.build(), true, true);
                 }
-                ret.put(tag, localDistribution);
+                ret.put(actualTag, localDistribution);
               });
     }
 
@@ -210,7 +206,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     Map<Distribution.FileData, Distribution.FileTarget> targets = new HashMap<>();
     Map<Distribution.FileData, Distribution.FileTarget> common = new HashMap<>();
     Map<Distribution.FileData, Distribution.FileTarget> previouslyAvailable =
-        recoverOtherNonCommonFiles(beingSynced, rootDirectory);
+        listExistingFilesNotInCommon(beingSynced, rootDirectory);
 
     // TODO fill in previouslyAvailable with the latest build of the same
     // distribution/version/release if
@@ -330,8 +326,6 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
               release.getName(),
               Distribution.RELEASE_BUILDS_PROPERTY,
               "");
-
-      releaseProperties.save(new File(releaseDirectory, Distribution.RELEASE_PROPERTIES_FILE));
 
       for (var build : release.getBuilds()) {
 
@@ -456,20 +450,24 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
    * @param beingSynced
    * @return
    */
-  private Map<FileData, FileTarget> recoverOtherNonCommonFiles(
+  private Map<FileData, FileTarget> listExistingFilesNotInCommon(
       Stack.Tag beingSynced, File syncDirectory) {
 
     var ret = new HashMap<FileData, FileTarget>();
     var commonDirectory =
         new File(syncDirectory + File.separator + this.name + File.separator + "common");
 
-    for (var tag : getTags()) {
+    Map<Stack.Tag, DistributionImpl> localTags = new HashMap<>();
+    distributions(this.name, Utils.URLs.newURL(syncDirectory))
+        .forEach(d -> d.getTags().forEach(t -> localTags.put(t, d)));
+
+    for (var tag : localTags.keySet()) {
 
       if (tag == beingSynced || !tag.availableLocally()) {
         continue;
       }
 
-      var build = findBuild(tag);
+      var build = localTags.get(tag).findBuild(tag);
       for (var product : build.getProducts()) {
         for (var file : product.getFiles()) {
           if (ret.containsKey(file)) {
@@ -736,6 +734,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           }
         }
       }
+    } else {
+      propertiesToSave.setProperty(buildPropertyToMergeWith, thisBuildId);
     }
     Utils.Properties.save(possiblyExistingPopertiesFile, propertiesToSave);
   }

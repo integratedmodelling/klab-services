@@ -82,7 +82,7 @@ public class StackImpl implements Stack {
   }
 
   @Override
-  public Status getStatus(Tag tag) {
+  public Status status(Tag tag) {
     var distribution = TAGS.get(tag);
     if (distribution == null) {
       return Status.ABSENT;
