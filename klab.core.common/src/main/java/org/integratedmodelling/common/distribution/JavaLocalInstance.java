@@ -80,7 +80,7 @@ public class JavaLocalInstance extends LocalInstanceImpl {
           settings.get(Setting.START_RESOLVER_SERVICE_IN_DEBUG_MODE, Boolean.class);
       case RUNTIME_SERVICE ->
           settings.get(Setting.START_RUNTIME_SERVICE_IN_DEBUG_MODE, Boolean.class);
-      case LANGUAGE_SERVER, CLI, MODELER, DATABASE_SERVER -> false;
+      case LANGUAGE_SERVER, CLI, DATABASE_SERVER, AMQP_BROKER -> false;
     };
   }
 
@@ -91,7 +91,7 @@ public class JavaLocalInstance extends LocalInstanceImpl {
    */
   private int instancePort() {
     return switch (getProduct().getType()) {
-      case CLI, MODELER, LANGUAGE_SERVER -> 0;
+      case CLI, LANGUAGE_SERVER, AMQP_BROKER -> 0;
       case DATABASE_SERVER -> KlabService.Type.DATABASE.defaultPort;
       case RESOURCES_SERVICE -> KlabService.Type.RESOURCES.defaultPort;
       case REASONER_SERVICE -> KlabService.Type.REASONER.defaultPort;

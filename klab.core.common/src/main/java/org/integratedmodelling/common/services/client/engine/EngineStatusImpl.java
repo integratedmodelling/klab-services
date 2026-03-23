@@ -1,13 +1,11 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status {
 
@@ -15,6 +13,8 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
   private Set<String> connectedUsernames = new HashSet<>();
   private Map<KlabService.Type, ServiceProvision> servicesProvision = new HashMap<>();
   private EngineCondition condition = EngineCondition.INOPERATIVE;
+  private Set<Distribution.Product.Type> activeAuxiliaryServices =
+      EnumSet.noneOf(Distribution.Product.Type.class);
 
   public static EngineStatusImpl inop() {
     return new EngineStatusImpl();
@@ -45,6 +45,11 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
 
   public void setServicesProvision(Map<KlabService.Type, ServiceProvision> servicesProvision) {
     this.servicesProvision = servicesProvision;
+  }
+
+  @Override
+  public Set<Distribution.Product.Type> getActiveAuxiliaryServices() {
+    return activeAuxiliaryServices;
   }
 
   @Override

@@ -144,6 +144,11 @@ public enum Setting {
       "Maximum idle lifetime in minutes for a digital twin configured to be reinitialized on timeout",
       Integer.class,
       120),
+  GRAPH_DATABASE_URL(
+      Page.RUNTIME,
+      "The Bolt URL for the connected neo4j database",
+      String.class,
+      "bolt://0.0.0.0:7687"),
   USE_LOCAL_FEDERATION(
       Page.RUNTIME,
       "Use the local federation with the broker embedded in the runtime until downtime",

@@ -63,7 +63,21 @@ public interface KlabService extends Service {
     /** */
     RUNTIME(8094),
 
+    /**
+     * The database port is for maintenance and health checks and is only used in a local
+     * configuration. The port is not used for database communication, which happens through other
+     * configured protocols.
+     */
     DATABASE(8382),
+
+    /** The LSP server operates through I/O redirection, not REST */
+    LANGUAGE_SERVER(0),
+
+    /**
+     * The AMQP broker exposes the amqp:// protocol to the outside world and is configured
+     * separately for now.'
+     */
+    AMQP_BROKER(0),
 
     /**
      * The engine is an orchestrator of other k.LAB Services and a provider of scopes at user level
@@ -110,7 +124,7 @@ public interface KlabService extends Service {
         case RESOURCES -> ResourcesService.class;
         case RESOLVER -> Resolver.class;
         case RUNTIME -> RuntimeService.class;
-        case DISCOVERY, LEGACY_NODE, NODE, ENGINE, DATABASE -> null;
+        case DISCOVERY, LEGACY_NODE, NODE, ENGINE, DATABASE, AMQP_BROKER, LANGUAGE_SERVER -> null;
       };
     }
 
@@ -321,7 +335,7 @@ public interface KlabService extends Service {
   /**
    * Change a setting on the service and return a future for the value once the change is complete.
    *
-   * TODO also add a get() API as the settings() should be local to the service implementation
+   * <p>TODO also add a get() API as the settings() should be local to the service implementation
    *
    * @param setting
    * @param value

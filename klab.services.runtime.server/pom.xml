@@ -61,6 +61,16 @@
                     <productClass>RUNTIME_SERVICE</productClass>
                     <productMain>org.integratedmodelling.klab.services.runtime.server.RuntimeServer</productMain>
                     <productDescription>The reference implementation of the k.LAB Runtime server</productDescription>
+                    <componentClass/>
+                    <componentDescription/>
+                    <componentLicenseName/>
+                    <componentName/>
+                    <componentUsageRights/>
+                    <componentVendorEmail/>
+                    <componentVendorName/>
+                    <distributionName/>
+                    <distributionVersion/>
+                    <releaseName/>
                 </configuration>
             </plugin>
             <plugin>

@@ -8,6 +8,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -26,8 +28,8 @@ public interface Distribution {
 
   /**
    * Represents an entry in the filelist that accompanies each build in the distribution. Used as a
-   * key for the files to inspect and/or download, represented by {@link FileTarget}.
-   *tags
+   * key for the files to inspect and/or download, represented by {@link FileTarget}. tags
+   *
    * @param hash
    * @param name
    * @param size
@@ -306,7 +308,8 @@ public interface Distribution {
           return true;
         }
       },
-      MODELER {
+
+      AMQP_BROKER {
         @Override
         public String getRemoteUrl(String baseUrl) {
           return baseUrl + "/" + getId() + "/" + Utils.OS.get().toString().toLowerCase();
@@ -314,12 +317,12 @@ public interface Distribution {
 
         @Override
         public String getId() {
-          return "kmodeler";
+          return "klab.amqp.broker";
         }
 
         @Override
         public String getName() {
-          return "k.LAB Modeler";
+          return "k.LAB local AMQP broker";
         }
 
         @Override
@@ -329,12 +332,12 @@ public interface Distribution {
 
         @Override
         public int defaultMaxMemoryLimitMB() {
-          return 2048;
+          return 1024;
         }
 
         @Override
         public boolean isService() {
-          return false;
+          return true;
         }
       };
 
@@ -344,9 +347,15 @@ public interface Distribution {
           case RESOURCES -> RESOURCES_SERVICE;
           case RESOLVER -> RESOLVER_SERVICE;
           case RUNTIME -> RUNTIME_SERVICE;
-          default -> throw new KlabIllegalArgumentException("wrong service type for product");
+          case DATABASE -> DATABASE_SERVER;
+          default ->
+              throw new KlabIllegalArgumentException(
+                  "wrong service type for product: " + serviceType);
         };
       }
+
+      public static Set<Type> PRIMARY_SERVICES =
+          Set.of(REASONER_SERVICE, RESOURCES_SERVICE, RESOLVER_SERVICE, RUNTIME_SERVICE);
 
       /**
        * The id used in paths

@@ -3,8 +3,11 @@ package org.integratedmodelling.klab.api.engine;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -110,6 +113,13 @@ public interface Engine /*extends KlabService*/ {
      * @return
      */
     Map<KlabService.Type, KlabService.ServiceStatus> getServicesStatus();
+
+    /**
+     * Return the types of auxiliary services that are currently active.
+     *
+     * @return
+     */
+    Set<Distribution.Product.Type> getActiveAuxiliaryServices();
 
     /**
      * User names for all users that have currently active scopes. List may be filtered according to

@@ -32,7 +32,7 @@ public interface LocalInstance {
   /**
    * Start the instance, returning immediately. A true return value means that the instance has been
    * started correctly and is either in WAITING, RUNNING or ERROR state; it does not mean that it is
-   * running. A false return value means that the instance could not be started, because of a
+   * ready for use. A false return value means that the instance could not be started, because of a
    * corrupted product or some other issue.
    *
    * @return whether the startup process has been initiated correctly

@@ -39,6 +39,16 @@
                     <productClass>CLI</productClass>
                     <productMain>org.integratedmodelling.cli.KlabCLI</productMain>
                     <productDescription>The k.LAB command line shell</productDescription>
+                    <componentClass/>
+                    <componentDescription/>
+                    <componentLicenseName/>
+                    <componentName/>
+                    <componentUsageRights/>
+                    <componentVendorEmail/>
+                    <componentVendorName/>
+                    <distributionName/>
+                    <distributionVersion/>
+                    <releaseName/>
                 </configuration>
             </plugin>
             <plugin>

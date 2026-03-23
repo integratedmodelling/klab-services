@@ -153,7 +153,7 @@ public interface Stack {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
       throw new KlabIllegalStateException(
-          "k.LAB environment not configured to promote a geometry to a scale");
+          "k.LAB environment not configured to provide a software stack");
     }
     return configuration.createSoftwareStack(name, settings);
   }

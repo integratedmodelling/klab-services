@@ -74,15 +74,17 @@ public class StackImpl implements Stack {
 
   @Override
   public Distribution.Product product(Distribution.Product.Type productType, Tag chosenRelease) {
-    var distribution = TAGS.get(chosenRelease);
+    var tag = disambiguateTag(chosenRelease);
+    var distribution = TAGS.get(tag);
     if (distribution != null) {
-      return distribution.findProduct(productType, chosenRelease);
+      return distribution.findProduct(productType, tag);
     }
     return null;
   }
 
   @Override
   public Status status(Tag tag) {
+    tag = disambiguateTag(tag);
     var distribution = TAGS.get(tag);
     if (distribution == null) {
       return Status.ABSENT;
@@ -143,6 +145,8 @@ public class StackImpl implements Stack {
     if (tag.version() == Version.HEAD) {
       return true;
     }
+
+    tag = disambiguateTag(tag);
     var distribution = TAGS.get(tag);
     if (distribution != null
         && distribution.synchronize(
@@ -155,10 +159,11 @@ public class StackImpl implements Stack {
 
   @Override
   public LocalInstance instance(Distribution.Product.Type productType, Tag chosenRelease) {
-    var product = product(productType, chosenRelease);
+    var tag = disambiguateTag(chosenRelease);
+    var product = product(productType, tag);
     if (product != null && product.getLocalPath() != null) {
       return switch (product.getPlatform()) {
-        case JAR -> new JavaLocalInstance(product, settings, chosenRelease);
+        case JAR -> new JavaLocalInstance(product, settings, tag);
         // TODO exe
         default -> null;
       };
@@ -186,6 +191,11 @@ public class StackImpl implements Stack {
    * @return
    */
   private Tag disambiguateTag(Tag tag) {
+    if (tag == Tag.LATEST_STABLE) {
+      return tags().stream().filter(t -> t.release().equals("master")).findFirst().orElse(null);
+    } else if (tag == Tag.LATEST_DEVELOP) {
+      return tags().stream().findFirst().orElse(null);
+    }
     return tag;
   }
 

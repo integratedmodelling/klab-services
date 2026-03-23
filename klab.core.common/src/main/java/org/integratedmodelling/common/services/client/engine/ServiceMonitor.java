@@ -8,14 +8,18 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import org.integratedmodelling.common.configuration.CommonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -35,12 +39,16 @@ import org.integratedmodelling.klab.rest.ServiceReference;
  */
 public class ServiceMonitor {
 
-  Map<BaseServiceClient, KlabService.ServiceStatus> clients =
+  private Map<BaseServiceClient, KlabService.ServiceStatus> clients =
       Collections.synchronizedMap(new LinkedHashMap<>());
-  List<BiConsumer<KlabService, KlabService.ServiceStatus>> serviceConsumers = new ArrayList<>();
-  List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
-  EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
-  boolean firstTimeOnline = false;
+  private List<BiConsumer<KlabService, KlabService.ServiceStatus>> serviceConsumers =
+      new ArrayList<>();
+  private List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
+  private EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
+  private Map<KlabService.Type, LocalInstance> serviceInstances = new HashMap<>();
+  private Settings settings;
+  private boolean handleAMQPService = false;
+  private boolean handleLanguageServer = false;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
@@ -51,6 +59,7 @@ public class ServiceMonitor {
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceChangeMonitor,
       Consumer<Engine.Status> engineChangeMonitor) {
 
+    this.settings = settings;
     serviceConsumers.add(serviceChangeMonitor);
     engineConsumers.add(engineChangeMonitor);
     var accepted =
@@ -209,6 +218,20 @@ public class ServiceMonitor {
     status.setOperational(online.size() > 3 && localTransitioningCount == 0);
     status.setShutdown(!shutdown.isEmpty());
 
+    var database = serviceInstances.get(KlabService.Type.DATABASE);
+    var langServ = serviceInstances.get(KlabService.Type.LANGUAGE_SERVER);
+    var msBroker = serviceInstances.get(KlabService.Type.AMQP_BROKER);
+
+    if (database != null && database.getStatus() == LocalInstance.Status.RUNNING) {
+      status.getActiveAuxiliaryServices().add(Distribution.Product.Type.DATABASE_SERVER);
+    }
+    if (langServ != null && langServ.getStatus() == LocalInstance.Status.RUNNING) {
+      status.getActiveAuxiliaryServices().add(Distribution.Product.Type.LANGUAGE_SERVER);
+    }
+    if (msBroker != null && msBroker.getStatus() == LocalInstance.Status.RUNNING) {
+      status.getActiveAuxiliaryServices().add(Distribution.Product.Type.AMQP_BROKER);
+    }
+
     var localOperationalCount =
         status.getServicesProvision().values().stream()
             .filter(p -> p.isOperational() && p.isLocal())
@@ -276,12 +299,15 @@ public class ServiceMonitor {
       ret = !this.lastRecordedStatus.getServicesProvision().equals(status.getServicesProvision());
     }
 
+
     this.lastRecordedStatus = status;
 
     return ret;
   }
 
   public static void main(String[] dio) {
+
+    Klab.INSTANCE.setConfiguration(new CommonConfiguration());
 
     AtomicReference<Engine.Status> engineMonitor = new AtomicReference<>(EngineStatusImpl.inop());
     //    var distribution = new Distribution();
@@ -301,7 +327,7 @@ public class ServiceMonitor {
         .with(
             "start",
             cmds -> {
-              monitor.startLocalServices(softwareStack, Stack.Tag.LATEST_STABLE, user);
+              monitor.startLocalServices(softwareStack, Stack.Tag.LATEST_DEVELOP, user);
             })
         .with(
             "stop",
@@ -312,6 +338,9 @@ public class ServiceMonitor {
             "?",
             cmds -> {
               System.out.println(engineMonitor.get());
+              for (var service : monitor.clients.keySet()) {
+                System.out.println(service + ": " + service.status());
+              }
             })
         .run();
   }
@@ -349,6 +378,16 @@ public class ServiceMonitor {
       }
     }
 
+    for (var service : serviceInstances.values()) {
+
+      if (!Distribution.Product.Type.PRIMARY_SERVICES.contains(service.getProduct().getType())
+          && !settings.get(Setting.STOP_AUXILIARY_SERVICES, Boolean.class)) {
+        continue;
+      }
+
+      service.stop();
+    }
+
     return tasks.size();
   }
 
@@ -372,21 +411,34 @@ public class ServiceMonitor {
             KlabService.Type.RESOURCES,
             KlabService.Type.REASONER,
             KlabService.Type.RUNTIME,
-            KlabService.Type.RESOLVER
-                  // TODO add database and, when needed, language server and AMQP server
+            KlabService.Type.RESOLVER,
+            KlabService.Type.DATABASE
+            // TODO add database and, when needed, language server and AMQP server
           }) {
+
         var product =
             softwareStack.instance(
                 Distribution.Product.Type.forService(serviceType), distributionTag);
 
         if (product != null) {
-          if (product.start()) {
+
+          this.serviceInstances.put(serviceType, product);
+
+          if (product.getStatus() == LocalInstance.Status.STOPPED) {
+            if (product.start()) {
+              user.info("Service " + serviceType + " is starting");
+            }
+          } else {
             user.info(
-                "Service is starting: will be attempting connection to locally running "
+                "Service "
+                    + serviceType
+                    + " is already running: will be attempting connection to locally running "
                     + serviceType);
           }
         }
       }
+    } else {
+      user.error("Software stack " + softwareStack + " is not usable");
     }
 
     return ret;

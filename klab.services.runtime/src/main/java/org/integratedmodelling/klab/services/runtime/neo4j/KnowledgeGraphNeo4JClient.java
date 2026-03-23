@@ -1,9 +1,12 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -13,17 +16,73 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.ExecutableQuery;
+import org.neo4j.driver.GraphDatabase;
 
 import java.net.URL;
 import java.util.List;
 
 public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
-  // TODO connect to a DB and run a driver
+  boolean online = false;
+
+  public KnowledgeGraphNeo4JClient(Settings settings) {
+    this.driver = GraphDatabase.driver(settings.get(Setting.GRAPH_DATABASE_URL, String.class));
+    try {
+      // TODO launch a timed something to verify connectivity periodically
+      this.driver.verifyConnectivity();
+      online = true;
+    } catch (Exception e) {
+      online = false;
+    }
+    configureDatabase();
+  }
+
+  private KnowledgeGraphNeo4JClient(
+      KnowledgeGraphNeo4JClient parent, String scopeId, UserIdentity user) {
+    this.online = parent.online;
+    this.driver = parent.driver;
+    this.klab = getOrCreateAgent("k.LAB", "AI");
+    this.user = getOrCreateAgent(user.getUsername(), "USER");
+    this.rootContextId = scopeId;
+    this.serviceId = parent.serviceId;
+  }
+
+  private void configureDatabase() {
+
+    // TODO if the DB is new, add all the indices! So far the DB is unindexed.
+
+    //        IndexDefinition usernamesIndex;
+    //        try ( Transaction tx = graphDb.beginTx() )
+    //        {
+    //            Schema schema = tx.schema();
+    //            usernamesIndex = schema.indexFor(Label.label( "User" ) )
+    //                                   .on( "username" )
+    //                                   .withName( "usernames" )
+    //                                   .create();
+    //            tx.commit();
+    //        }
+  }
 
   @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
-    return null;
+  public KnowledgeGraph contextualize(
+      DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
+
+    // idempotence
+    if (digitalTwinConfig.getId().equals(rootContextId)) {
+      return this;
+    }
+
+    var ret = new KnowledgeGraphNeo4JClient(this, digitalTwinConfig.getId(), userScope.getUser());
+
+    ret.initializeContext(
+        digitalTwinConfig.getId(),
+        digitalTwinConfig.getName(),
+        userScope,
+        digitalTwinConfig.getAccessRights(),
+        digitalTwinConfig.getDescription(),
+        digitalTwinConfig.getPersistence());
+
+    return ret;
   }
 
   @Override
@@ -33,7 +92,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
 
   @Override
   public boolean isOnline() {
-    return false;
+    return this.online;
   }
 
   @Override

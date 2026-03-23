@@ -26,6 +26,16 @@
                     <productClass>RESOLVER_SERVICE</productClass>
                     <productMain>org.integratedmodelling.klab.services.resolver.server.ResolverServer</productMain>
                     <productDescription>The reference implementation of the k.LAB Resolver server</productDescription>
+                    <componentClass/>
+                    <componentDescription/>
+                    <componentLicenseName/>
+                    <componentName/>
+                    <componentUsageRights/>
+                    <componentVendorEmail/>
+                    <componentVendorName/>
+                    <distributionName/>
+                    <distributionVersion/>
+                    <releaseName/>
                 </configuration>
             </plugin>
             <plugin>
