@@ -382,6 +382,11 @@ public class Version implements Comparable<Version>, Serializable {
     return modifier.toLowerCase().compareTo(obj.modifier.toLowerCase());
   }
 
+  public static void main(String[] args) {
+    var dio = Version.create("1.0.0-alpha1.202603241406");
+    System.out.println(dio);
+  }
+
   public void setMajor(int major) {
     this.major = major;
   }

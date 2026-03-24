@@ -6,6 +6,9 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageClient;
 
+/**
+ * FIXME this must go in the editor distribution or in the IDE package
+ */
 class KlabLanguageClient implements LanguageClient {
 
     private final DiagnosticsService diagnosticsService = DiagnosticsService.getInstance();

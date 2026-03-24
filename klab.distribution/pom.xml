@@ -66,6 +66,11 @@
             <artifactId>klab.support.graphdb</artifactId>
             <version>${klab.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.lsp</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

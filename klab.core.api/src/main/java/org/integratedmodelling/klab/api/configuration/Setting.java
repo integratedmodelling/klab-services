@@ -76,12 +76,12 @@ public enum Setting {
       "https://resources.integratedmodelling.org/klab/products/klab"),
   STOP_AUXILIARY_SERVICES(
       Page.SERVICES,
-      "Stop local auxiliary services such as thee graph database and AMQP broker when the k.LAB services are stopped",
+      "Stop local auxiliary services (graph database, AMQP broker) when k.LAB services are stopped",
       Boolean.class,
       false),
   SYNCHRONIZE_STACK_ON_STARTUP(
       Page.SERVICES,
-      "Automatically update the software stack with any new releases when the modeler is started with no services running",
+      "Automatically update the software stack when the modeler is started with no services running",
       Boolean.class,
       false),
   CHECK_FOR_UPDATES_INTERVAL_MINUTES(
@@ -111,12 +111,12 @@ public enum Setting {
       Distribution.Product.Type.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
   USE_SHORT_FLOAT_REPRESENTATION(
       Page.RUNTIME,
-      "If set, use short floats to save space instead of doubles, at the expense of precision",
+      "Use short floats to save space instead of doubles, at the expense of precision",
       Boolean.class,
       Boolean.FALSE),
   DO_NOT_PARALLELIZE_OBSERVATIONS(
       Page.RUNTIME,
-      "If set, use a single data buffer for all observations, disregarding all settings",
+      "Use a single data buffer for all observations, disregarding all split settings",
       Boolean.class,
       Boolean.FALSE),
   REINITIALIZE_DATABASE(

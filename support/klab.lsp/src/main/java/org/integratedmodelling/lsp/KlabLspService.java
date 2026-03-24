@@ -15,6 +15,20 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageServer;
 
+/**
+ * TODO needs this supported by LocalInstance:
+ *
+ *     ProcessBuilder pb =
+ *         new ProcessBuilder(
+ *             "java",
+ *             "-Dxtext.disable.standalone.setup=true",
+ *             "org.eclipse.xtext.ide.server.ServerLauncher");
+ *
+ *     // put CLASSPATH in an env var so that the CL doesn't kill Windows
+ *     pb.environment().put("CLASSPATH", classpath);
+ *     pb.directory(workspaceRoot.toFile());
+ *     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+ */
 public class KlabLspService {
 
   private static final KlabLspService INSTANCE = new KlabLspService();

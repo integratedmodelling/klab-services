@@ -17,13 +17,12 @@
         <module>klab.services.runtime.server</module>
         <module>klab.services.runtime</module>
         <module>klab.services.resolver</module>
-        <!--        <module>p2</module>-->
         <module>klab.cli</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>
 <!--        <module>support</module>-->
         <module>support/klab.support.graphdb</module>
-        <!--        <module>klab.lsp</module>-->
+        <module>support/klab.lsp</module>
     </modules>
 
     <licenses>

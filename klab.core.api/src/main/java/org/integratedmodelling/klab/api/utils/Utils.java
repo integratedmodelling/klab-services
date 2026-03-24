@@ -226,7 +226,6 @@ public class Utils {
       return new Container(URLs.newURL(url), initialProperties);
     }
 
-
     /**
      * Just set up an initial property object for later saving.
      *
@@ -264,6 +263,10 @@ public class Utils {
             properties.setProperty(initialProperties[i], initialProperties[++i]);
           }
         }
+      }
+
+      public String toString() {
+        return Properties.toString(properties);
       }
 
       public java.util.Properties getProperties() {
