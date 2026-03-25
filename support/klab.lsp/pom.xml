@@ -114,6 +114,14 @@
             <artifactId>org.eclipse.lsp4j.jsonrpc</artifactId>
             <version>0.21.0</version>
         </dependency>
+        <!-- The observable.ide transitive dependency for org.eclipse.emf.ecore is an Eclipse
+             feature descriptor (no Java classes), not the actual plugin. Add the real artifact
+             explicitly so that ResourceImpl and other EMF classes are present at runtime. -->
+        <dependency>
+            <groupId>org.eclipse.emf</groupId>
+            <artifactId>org.eclipse.emf.ecore</artifactId>
+            <version>2.36.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageServer;
+import org.eclipse.xtext.ide.server.ServerLauncher;
 
 /**
  * TODO needs this supported by LocalInstance:
@@ -207,7 +208,6 @@ public class KlabLspService {
   }
 
   public static void main(String[] diocan) throws Exception {
-    Path workspaceRoot = Paths.get(System.getProperty("user.home") + "/git/klab-ide");
-    KlabLspService.getInstance().startIfNeeded(workspaceRoot);
+    ServerLauncher.main(new String[] {});
   }
 }
