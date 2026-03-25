@@ -2,6 +2,8 @@ package org.integratedmodelling.common.distribution;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
@@ -34,6 +36,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected DefaultExecutor executor;
   protected ExecuteWatchdog watchdog;
   protected ExecuteStreamHandler streamHandler;
+  protected Process process;
   protected Long pid;
 
   /**
@@ -81,6 +84,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
           if (isProcessRunning(savedPid)) {
             if (savedType == null || savedType.equals(product.getType().getId())) {
               this.pid = savedPid;
+//              this.process = new ExternalProcess(savedPid);
               this.status.set(Status.RUNNING);
               monitorAlreadyRunningProcess(savedPid);
               Logging.INSTANCE.info(
@@ -170,7 +174,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
           protected Process launch(
               CommandLine command, Map<String, String> env, File workingDirectory)
               throws IOException {
-            Process process = super.launch(command, env, workingDirectory);
+            process = super.launch(command, env, workingDirectory);
             pid = process.pid();
             persistState(pid);
             return process;
@@ -239,15 +243,27 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       watchdog.destroyProcess();
       watchdog = null;
       executor = null;
+      process = null;
       return true;
     }
     if (pid != null) {
       ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
       cleanupState();
       status.set(Status.STOPPED);
+      process = null;
       return true;
     }
     return false;
+  }
+
+  @Override
+  public OutputStream getOutputStream() {
+    return process != null ? process.getOutputStream() : null;
+  }
+
+  @Override
+  public InputStream getInputStream() {
+    return process != null ? process.getInputStream() : null;
   }
 
   @Override
@@ -259,4 +275,48 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   public Stack.Tag getTag() {
     return tag;
   }
+
+//  private static class ExternalProcess extends Process {
+//
+//    private final long pid;
+//
+//    public ExternalProcess(long pid) {
+//      this.pid = pid;
+//    }
+//
+//    @Override
+//    public OutputStream getOutputStream() {
+//      return null;
+//    }
+//
+//    @Override
+//    public InputStream getInputStream() {
+//      return null;
+//    }
+//
+//    @Override
+//    public InputStream getErrorStream() {
+//      return null;
+//    }
+//
+//    @Override
+//    public int waitFor() {
+//      return 0;
+//    }
+//
+//    @Override
+//    public int exitValue() {
+//      return 0;
+//    }
+//
+//    @Override
+//    public void destroy() {
+//      ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
+//    }
+//
+//    @Override
+//    public long pid() {
+//      return pid;
+//    }
+//  }
 }

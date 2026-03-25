@@ -146,6 +146,7 @@ public class EngineImpl implements Engine, PropertyHolder {
             .getIdentity()
             .getData()
             .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
     /* No federation even with local services, which will message to downstream scopes */
     if (federation != null
         && !Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
@@ -171,6 +172,8 @@ public class EngineImpl implements Engine, PropertyHolder {
     // TODO explore how to best save and restore the chosen tag - we have just established a default
 
     // TODO now check what is available and default to any admissible defaults if present
+
+    // TODO see if we need the local federation and if so, ensure the local broker is running
   }
 
   private void notifyLocalEngine(Engine.Status status) {
