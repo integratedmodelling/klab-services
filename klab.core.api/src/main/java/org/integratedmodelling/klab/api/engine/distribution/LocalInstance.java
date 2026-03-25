@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.engine.distribution;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 
 public interface LocalInstance {
@@ -54,4 +56,18 @@ public interface LocalInstance {
    * @return
    */
   StartupOptions getSettings();
+
+  /**
+   * Returns the standard input stream of the process, if running.
+   *
+   * @return
+   */
+  OutputStream getOutputStream();
+
+  /**
+   * Returns the standard output stream of the process, if running.
+   *
+   * @return
+   */
+  InputStream getInputStream();
 }
