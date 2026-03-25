@@ -26,7 +26,19 @@
         <spring-security.version>6.4.4</spring-security.version>
         <neo4j.version>2025.10.1</neo4j.version>
         <netty.version>4.2.6.Final</netty.version>
+        <googleJibVersion>3.3.1</googleJibVersion>
     </properties>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -94,6 +106,7 @@
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
+                <version>${googleJibVersion}</version>
                 <configuration>
                     <!-- we don't want jib to execute on this module -->
                     <skip>true</skip>
