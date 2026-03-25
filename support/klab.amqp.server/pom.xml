@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>klab.amqp.server</artifactId>
+    <groupId>org.integratedmodelling</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+    <description>AMQP broker for messaging in local configurations</description>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <klab.version>1.0.0-SNAPSHOT</klab.version>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <configuration>
+                    <!-- we don't want jib to execute on this module -->
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.integratedmodelling</groupId>
+                <artifactId>klab.product</artifactId>
+                <version>1.0.1-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>package-release</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>target/build</outputDirectory>
+                    <productName>klab.amqp.server</productName>
+                    <productClass>AMQP_BROKER</productClass>
+                    <productMain>org.integratedmodelling.amqp.AmqpServerApplication</productMain>
+                    <productDescription>Qupid AMQP server for messaging in local configurations</productDescription>
+                    <componentClass/>
+                    <componentDescription/>
+                    <componentLicenseName/>
+                    <componentName/>
+                    <componentUsageRights/>
+                    <componentVendorEmail/>
+                    <componentVendorName/>
+                    <distributionName/>
+                    <distributionVersion/>
+                    <releaseName/>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.common</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.api</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <!-- Embedded QPid to enable simple/local DT messaging when requested and there is no broker configured.
+     Note that the below is qpid-broker-core and *not* qpid-broker. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-core</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <!-- AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <!-- If a different store type is required it needs to be included here -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-memory-store</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+    </dependencies>
+
+</project>

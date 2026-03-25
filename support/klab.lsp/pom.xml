@@ -71,6 +71,17 @@
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.observable.ide</artifactId>
+            <version>${klab.languages.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.worldview</artifactId>
             <version>${klab.languages.version}</version>
         </dependency>
@@ -78,6 +89,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.worldview.ide</artifactId>
             <version>${klab.languages.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -88,6 +105,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.kim.ide</artifactId>
             <version>${klab.languages.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -98,6 +121,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observation.ide</artifactId>
             <version>${klab.languages.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -108,6 +137,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.kactors.ide</artifactId>
             <version>${klab.languages.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.lsp4j</groupId>

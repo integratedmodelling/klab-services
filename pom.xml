@@ -20,9 +20,9 @@
         <module>klab.cli</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>
-<!--        <module>support</module>-->
         <module>support/klab.support.graphdb</module>
         <module>support/klab.lsp</module>
+        <module>support/klab.amqp.server</module>
     </modules>
 
     <licenses>
