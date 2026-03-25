@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
-import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -62,7 +61,6 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JCl
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 public class RuntimeService extends BaseService
@@ -72,7 +70,7 @@ public class RuntimeService extends BaseService
   private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
   private RuntimeConfiguration configuration;
   private KnowledgeGraphNeo4j knowledgeGraph;
-  private SystemLauncher systemLauncher;
+//  private SystemLauncher systemLauncher;
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -119,7 +117,7 @@ public class RuntimeService extends BaseService
   private void initializeMessaging() {
     if (startupOptions.isStartLocalBroker()) {
       Utils.DebugFile.println("Starting embedded broker for local messaging");
-      this.embeddedBroker = new EmbeddedBroker();
+//      this.embeddedBroker = new EmbeddedBroker();
     } else {
       Utils.DebugFile.println("NOT starting embedded broker for local messaging");
     }
@@ -304,9 +302,9 @@ public class RuntimeService extends BaseService
       }
     }
 
-    if (systemLauncher != null) {
-      systemLauncher.shutdown();
-    }
+//    if (systemLauncher != null) {
+//      systemLauncher.shutdown();
+//    }
     if (knowledgeGraph != null) {
       knowledgeGraph.shutdown();
     }
@@ -328,7 +326,7 @@ public class RuntimeService extends BaseService
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setBroker(getEmbeddedBroker() != null);
+//    ret.setBroker(getEmbeddedBroker() != null);
 
     // TODO this enables creating DTs from the passed scope
     ret.getPermissions()

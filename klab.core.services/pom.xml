@@ -578,12 +578,13 @@
 
         <!-- Embedded QPid to enable simple/local DT messaging when requested and there is no broker configured.
              Note that the below is qpid-broker-core and *not* qpid-broker. -->
+<!--
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-core</artifactId>
             <version>9.2.0</version>
         </dependency>
-        <!-- AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. -->
+        &lt;!&ndash; AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. &ndash;&gt;
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
@@ -594,12 +595,13 @@
             <artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
             <version>9.2.0</version>
         </dependency>
-        <!-- If a different store type is required it needs to be included here -->
+        &lt;!&ndash; If a different store type is required it needs to be included here &ndash;&gt;
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-plugins-memory-store</artifactId>
             <version>9.2.0</version>
         </dependency>
+-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>

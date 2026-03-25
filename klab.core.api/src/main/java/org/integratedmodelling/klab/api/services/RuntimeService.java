@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -17,10 +17,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes
@@ -177,15 +173,15 @@ public interface RuntimeService extends KlabService {
 
     Set<CRUDOperation> getPermissions();
 
-    /**
-     * True if this runtime provides an AMQP broker service on {@link
-     * org.integratedmodelling.klab.api.services.runtime.Channel#LOCAL_BROKER_URL} for local
-     * messaging. This should only return true in a local service authenticated with a user
-     * certificate.
-     *
-     * @return
-     */
-    boolean isBroker();
+//    /**
+//     * True if this runtime provides an AMQP broker service on {@link
+//     * org.integratedmodelling.klab.api.services.runtime.Channel#LOCAL_BROKER_URL} for local
+//     * messaging. This should only return true in a local service authenticated with a user
+//     * certificate.
+//     *
+//     * @return
+//     */
+//    boolean isBroker();
   }
 
   /**

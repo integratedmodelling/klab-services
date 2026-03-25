@@ -47,7 +47,8 @@ public enum Klab {
     localFederation =
         localRuntimeService == null
             ? null
-            : localRuntimeService.capabilities(null).isBroker() ? Federation.local() : null;
+            : /*localRuntimeService.capabilities(null).isBroker() ? */ Federation
+                .local() /* : null*//* : null*/;
     return localFederation;
   }
 

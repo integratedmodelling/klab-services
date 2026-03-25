@@ -83,6 +83,16 @@ public class StackImpl implements Stack {
   }
 
   @Override
+  public Distribution.Build build(Tag chosenRelease) {
+    var tag = disambiguateTag(chosenRelease);
+    var distribution = TAGS.get(tag);
+    if (distribution != null) {
+      return distribution.findBuild(tag);
+    }
+    return null;
+  }
+
+  @Override
   public Status status(Tag tag) {
     tag = disambiguateTag(tag);
     var distribution = TAGS.get(tag);

@@ -101,6 +101,14 @@ public interface Stack {
   List<Tag> tags();
 
   /**
+   * Retrieve the build corresponding to the passed tag. Products may be unavailable.
+   *
+   * @param chosenRelease
+   * @return
+   */
+  Distribution.Build build(Tag chosenRelease);
+
+  /**
    * Retrieve the required product for the specified tag.
    *
    * @param productType

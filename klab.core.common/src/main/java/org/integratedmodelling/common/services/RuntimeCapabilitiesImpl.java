@@ -35,14 +35,14 @@ public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities
     return permissions;
   }
 
-  @Override
-  public boolean isBroker() {
-    return broker;
-  }
-
-  public void setBroker(boolean broker) {
-    this.broker = broker;
-  }
+//  @Override
+//  public boolean isBroker() {
+//    return broker;
+//  }
+//
+//  public void setBroker(boolean broker) {
+//    this.broker = broker;
+//  }
 
   public void setPermissions(Set<CRUDOperation> permissions) {
     this.permissions = permissions;

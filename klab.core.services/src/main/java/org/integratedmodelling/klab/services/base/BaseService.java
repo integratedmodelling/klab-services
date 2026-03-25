@@ -59,7 +59,6 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /**
@@ -71,7 +70,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 public abstract class BaseService implements KlabService {
 
   private final Type type;
-  protected EmbeddedBroker embeddedBroker;
+//  protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
   private URL url;
   protected AtomicBoolean available = new AtomicBoolean(false);
@@ -178,9 +177,9 @@ public abstract class BaseService implements KlabService {
     }
   }
 
-  public EmbeddedBroker getEmbeddedBroker() {
-    return embeddedBroker;
-  }
+//  public EmbeddedBroker getEmbeddedBroker() {
+//    return embeddedBroker;
+//  }
 
   /**
    * The scope manager is created on demand as not all services need it.
