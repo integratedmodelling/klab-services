@@ -148,7 +148,7 @@ public enum Setting {
       Page.RUNTIME,
       "The Bolt URL for the connected neo4j database",
       String.class,
-      "bolt://neo4j:7687"),
+      "bolt://0.0.0.0:7687"),
   USE_LOCAL_FEDERATION(
       Page.RUNTIME,
       "Use the local federation with the broker embedded in the runtime until downtime",
