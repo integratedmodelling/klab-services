@@ -594,6 +594,7 @@ public interface Distribution {
   String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
   String PRODUCT_TYPE_PROPERTY = "klab.product.type";
   String PRODUCT_PLATFORM_PROPERTY = "klab.product.platform";
+  String PRODUCT_JAVA_OPTIONS_PROPERTY = "klab.product.options.java";
 
   String DEVELOP_RELEASE = "develop";
   String LATEST_RELEASE = "latest";

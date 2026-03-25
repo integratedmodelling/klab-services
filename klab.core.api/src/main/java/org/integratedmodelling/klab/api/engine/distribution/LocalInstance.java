@@ -31,7 +31,9 @@ public interface LocalInstance {
    */
   Status getStatus();
 
-  /**
+    boolean forceRestart();
+
+    /**
    * Start the instance, returning immediately. A true return value means that the instance has been
    * started correctly and is either in WAITING, RUNNING or ERROR state; it does not mean that it is
    * ready for use. A false return value means that the instance could not be started, because of a

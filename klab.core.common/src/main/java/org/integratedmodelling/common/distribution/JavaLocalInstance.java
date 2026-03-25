@@ -28,6 +28,7 @@ public class JavaLocalInstance extends LocalInstanceImpl {
     CommandLine ret = new CommandLine(JreModel.INSTANCE.getJavaExecutable());
     ret.addArguments(
         getJavaOptions(
+            getProduct(),
             512,
             getProduct().getType().defaultMaxMemoryLimitMB(),
             getProduct().getType().isService()));
@@ -121,9 +122,14 @@ public class JavaLocalInstance extends LocalInstanceImpl {
     return ret.toString();
   }
 
-  private String[] getJavaOptions(int minMemM, int maxMemM, boolean isServer) {
+  private String[] getJavaOptions(
+      Distribution.Product product, int minMemM, int maxMemM, boolean isServer) {
 
     var ret = new ArrayList<String>();
+
+    if (product.getProperty(Distribution.PRODUCT_JAVA_OPTIONS_PROPERTY) != null) {
+      ret.add(product.getProperty(Distribution.PRODUCT_JAVA_OPTIONS_PROPERTY));
+    }
 
     ret.add("-Xms" + minMemM + "M");
     ret.add("-Xmx" + maxMemM + "M");

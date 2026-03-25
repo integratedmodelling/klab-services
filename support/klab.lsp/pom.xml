@@ -33,12 +33,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observable.ide</artifactId>
             <version>${klab.languages.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>*</groupId>-->
+<!--                    <artifactId>*</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -142,7 +142,8 @@
                     <outputDirectory>target/build</outputDirectory>
                     <productName>klab.lsp</productName>
                     <productClass>LANGUAGE_SERVER</productClass>
-                    <productMain>org.integratedmodelling.lsp.KlabLspService</productMain>
+                    <javaOptions>-Dxtext.disable.standalone.setup=true</javaOptions>
+                    <productMain>org.eclipse.xtext.ide.server.ServerLauncher</productMain>
                     <productDescription>LSP service for the k.IM, k.Actors, k.Observation and k.Worldview languages
                     </productDescription>
                     <componentClass/>

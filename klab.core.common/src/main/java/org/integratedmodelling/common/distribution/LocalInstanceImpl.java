@@ -84,7 +84,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
           if (isProcessRunning(savedPid)) {
             if (savedType == null || savedType.equals(product.getType().getId())) {
               this.pid = savedPid;
-//              this.process = new ExternalProcess(savedPid);
+              //              this.process = new ExternalProcess(savedPid);
               this.status.set(Status.RUNNING);
               monitorAlreadyRunningProcess(savedPid);
               Logging.INSTANCE.info(
@@ -154,6 +154,12 @@ public abstract class LocalInstanceImpl implements LocalInstance {
    */
   public void setStreamHandler(ExecuteStreamHandler streamHandler) {
     this.streamHandler = streamHandler;
+  }
+
+  @Override
+  public boolean forceRestart() {
+    stop();
+    return start();
   }
 
   @Override
@@ -276,47 +282,47 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     return tag;
   }
 
-//  private static class ExternalProcess extends Process {
-//
-//    private final long pid;
-//
-//    public ExternalProcess(long pid) {
-//      this.pid = pid;
-//    }
-//
-//    @Override
-//    public OutputStream getOutputStream() {
-//      return null;
-//    }
-//
-//    @Override
-//    public InputStream getInputStream() {
-//      return null;
-//    }
-//
-//    @Override
-//    public InputStream getErrorStream() {
-//      return null;
-//    }
-//
-//    @Override
-//    public int waitFor() {
-//      return 0;
-//    }
-//
-//    @Override
-//    public int exitValue() {
-//      return 0;
-//    }
-//
-//    @Override
-//    public void destroy() {
-//      ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
-//    }
-//
-//    @Override
-//    public long pid() {
-//      return pid;
-//    }
-//  }
+  //  private static class ExternalProcess extends Process {
+  //
+  //    private final long pid;
+  //
+  //    public ExternalProcess(long pid) {
+  //      this.pid = pid;
+  //    }
+  //
+  //    @Override
+  //    public OutputStream getOutputStream() {
+  //      return null;
+  //    }
+  //
+  //    @Override
+  //    public InputStream getInputStream() {
+  //      return null;
+  //    }
+  //
+  //    @Override
+  //    public InputStream getErrorStream() {
+  //      return null;
+  //    }
+  //
+  //    @Override
+  //    public int waitFor() {
+  //      return 0;
+  //    }
+  //
+  //    @Override
+  //    public int exitValue() {
+  //      return 0;
+  //    }
+  //
+  //    @Override
+  //    public void destroy() {
+  //      ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
+  //    }
+  //
+  //    @Override
+  //    public long pid() {
+  //      return pid;
+  //    }
+  //  }
 }
