@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.ExecutableQuery;
 import org.neo4j.driver.GraphDatabase;
@@ -26,7 +27,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   boolean online = false;
 
   public KnowledgeGraphNeo4JClient(Settings settings) {
-    this.driver = GraphDatabase.driver(settings.get(Setting.GRAPH_DATABASE_URL, String.class));
+    this.driver = GraphDatabase.driver(settings.get(Setting.GRAPH_DATABASE_URL, String.class), AuthTokens.none());
     try {
       // TODO launch a timed something to verify connectivity periodically
       this.driver.verifyConnectivity();
