@@ -14,6 +14,11 @@ public interface LocalInstance {
     ERROR
   }
 
+  enum Option {
+    PROVIDE_INPUT_STREAM,
+    PROVIDE_OUTPUT_STREAM
+  }
+
   /** The release this is an instance of */
   Distribution.Product getProduct();
 
@@ -31,9 +36,9 @@ public interface LocalInstance {
    */
   Status getStatus();
 
-    boolean forceRestart();
+  boolean forceRestart(Option... options);
 
-    /**
+  /**
    * Start the instance, returning immediately. A true return value means that the instance has been
    * started correctly and is either in WAITING, RUNNING or ERROR state; it does not mean that it is
    * ready for use. A false return value means that the instance could not be started, because of a
@@ -41,7 +46,7 @@ public interface LocalInstance {
    *
    * @return whether the startup process has been initiated correctly
    */
-  boolean start();
+  boolean start(Option... options);
 
   /**
    * Stop the instance, returning immediately. The instance after this is called can be in any

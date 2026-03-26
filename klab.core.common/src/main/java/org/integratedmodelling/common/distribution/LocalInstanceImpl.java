@@ -1,9 +1,6 @@
 package org.integratedmodelling.common.distribution;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
@@ -38,6 +35,9 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected ExecuteStreamHandler streamHandler;
   protected Process process;
   protected Long pid;
+
+  protected InputStream inputStream;
+  protected OutputStream outputStream;
 
   /**
    * Subclasses must implement this to provide the command line to launch the product.
@@ -157,13 +157,13 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   }
 
   @Override
-  public boolean forceRestart() {
+  public boolean forceRestart(Option... options) {
     stop();
-    return start();
+    return start(options);
   }
 
   @Override
-  public synchronized boolean start() {
+  public synchronized boolean start(Option... options) {
 
     if (status.get() == Status.RUNNING) {
       return true;
@@ -182,6 +182,14 @@ public abstract class LocalInstanceImpl implements LocalInstance {
               throws IOException {
             process = super.launch(command, env, workingDirectory);
             pid = process.pid();
+            if (streamHandler == null) {
+              streamHandler =
+                  new PumpStreamHandler(
+                      process.getOutputStream(),
+                      process.getOutputStream(),
+                      process.getInputStream());
+            }
+            executor.setStreamHandler(streamHandler);
             persistState(pid);
             return process;
           }
@@ -190,29 +198,6 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(watchdog);
     executor.setWorkingDirectory(product.getLocalPath());
-
-    if (streamHandler == null) {
-      streamHandler =
-          new PumpStreamHandler() /* {
-                                    @Override
-                                    public void setProcessInputStream(OutputStream os) {
-                                      // we do NOT want the input stream to be closed if we don't provide one,
-                                      // as we want to be able to use it later through getOutputStream().
-                                      // Default PumpStreamHandler implementation closes it if input is null.
-                                    }
-
-                                    public void setProcessErrorStream(OutputStream os) {
-
-                                    }
-
-                                    public void setProcessOutputStream(OutputStream os) {
-                                    }
-                                  }*/; // Does not solve shit. We
-                                                                         // should predefine the
-                                                                         // streams and launch with
-                                                                         // those.
-    }
-    executor.setStreamHandler(streamHandler);
 
     DefaultExecuteResultHandler resultHandler =
         new DefaultExecuteResultHandler() {
