@@ -3,6 +3,7 @@ package org.integratedmodelling.common.distribution;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.exec.CommandLine;
@@ -33,11 +34,11 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected DefaultExecutor executor;
   protected ExecuteWatchdog watchdog;
   protected ExecuteStreamHandler streamHandler;
+  protected boolean customStreamHandler;
   protected Process process;
-  protected Long pid;
-
-  protected InputStream inputStream;
   protected OutputStream outputStream;
+  protected InputStream inputStream;
+  protected Long pid;
 
   /**
    * Subclasses must implement this to provide the command line to launch the product.
@@ -154,6 +155,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
    */
   public void setStreamHandler(ExecuteStreamHandler streamHandler) {
     this.streamHandler = streamHandler;
+    this.customStreamHandler = streamHandler != null;
   }
 
   @Override
@@ -174,6 +176,18 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       return false;
     }
 
+    EnumSet<Option> startOptions = EnumSet.noneOf(Option.class);
+    if (options != null) {
+      for (Option option : options) {
+        if (option != null) {
+          startOptions.add(option);
+        }
+      }
+    }
+
+    boolean provideOutputStream = startOptions.contains(Option.PROVIDE_OUTPUT_STREAM);
+    boolean provideInputStream = startOptions.contains(Option.PROVIDE_INPUT_STREAM);
+
     executor =
         new DefaultExecutor() {
           @Override
@@ -182,14 +196,12 @@ public abstract class LocalInstanceImpl implements LocalInstance {
               throws IOException {
             process = super.launch(command, env, workingDirectory);
             pid = process.pid();
-            if (streamHandler == null) {
-              streamHandler =
-                  new PumpStreamHandler(
-                      process.getOutputStream(),
-                      process.getOutputStream(),
-                      process.getInputStream());
+            if (provideOutputStream) {
+              outputStream = process.getOutputStream();
             }
-            executor.setStreamHandler(streamHandler);
+            if (provideInputStream) {
+              inputStream = process.getInputStream();
+            }
             persistState(pid);
             return process;
           }
@@ -198,6 +210,10 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(watchdog);
     executor.setWorkingDirectory(product.getLocalPath());
+    if (!customStreamHandler) {
+      streamHandler = new LocalStreamHandler(provideInputStream, provideOutputStream);
+    }
+    executor.setStreamHandler(streamHandler);
 
     DefaultExecuteResultHandler resultHandler =
         new DefaultExecuteResultHandler() {
@@ -244,6 +260,8 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       Logging.INSTANCE.error("Failed to delete PID file: " + e.getMessage());
     }
     this.pid = null;
+    this.inputStream = null;
+    this.outputStream = null;
   }
 
   @Override
@@ -253,6 +271,8 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       watchdog = null;
       executor = null;
       process = null;
+      inputStream = null;
+      outputStream = null;
       return true;
     }
     if (pid != null) {
@@ -260,6 +280,8 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       cleanupState();
       status.set(Status.STOPPED);
       process = null;
+      inputStream = null;
+      outputStream = null;
       return true;
     }
     return false;
@@ -267,12 +289,12 @@ public abstract class LocalInstanceImpl implements LocalInstance {
 
   @Override
   public OutputStream getOutputStream() {
-    return process != null ? process.getOutputStream() : null;
+    return process != null ? outputStream : null;
   }
 
   @Override
   public InputStream getInputStream() {
-    return process != null ? process.getInputStream() : null;
+    return process != null ? inputStream : null;
   }
 
   @Override
@@ -283,6 +305,95 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   @Override
   public Stack.Tag getTag() {
     return tag;
+  }
+
+  /**
+   * Default stream handler that only drains streams that are not exposed through start options.
+   */
+  private static class LocalStreamHandler implements ExecuteStreamHandler {
+
+    private final boolean exposeStdout;
+    private final boolean exposeStdin;
+    private InputStream processOutputStream;
+    private InputStream processErrorStream;
+    private OutputStream processInputStream;
+    private Thread stdoutThread;
+    private Thread stderrThread;
+
+    private LocalStreamHandler(boolean exposeStdout, boolean exposeStdin) {
+      this.exposeStdout = exposeStdout;
+      this.exposeStdin = exposeStdin;
+    }
+
+    @Override
+    public void setProcessInputStream(OutputStream os) {
+      this.processInputStream = os;
+    }
+
+    @Override
+    public void setProcessOutputStream(InputStream is) {
+      this.processOutputStream = is;
+    }
+
+    @Override
+    public void setProcessErrorStream(InputStream is) {
+      this.processErrorStream = is;
+    }
+
+    @Override
+    public void start() throws IOException {
+      if (!exposeStdout && processOutputStream != null) {
+        stdoutThread = createDrainer(processOutputStream);
+        stdoutThread.start();
+      }
+      if (processErrorStream != null) {
+        stderrThread = createDrainer(processErrorStream);
+        stderrThread.start();
+      }
+      if (!exposeStdin && processInputStream != null) {
+        processInputStream.close();
+      }
+    }
+
+    @Override
+    public void stop() throws IOException {
+      join(stdoutThread);
+      join(stderrThread);
+    }
+
+    private static Thread createDrainer(InputStream input) {
+      Thread thread =
+          new Thread(
+              () -> {
+                byte[] buffer = new byte[8192];
+                try {
+                  while (input.read(buffer) != -1) {
+                    // Drain stream to avoid subprocess blocking.
+                  }
+                } catch (IOException ignored) {
+                  // Stream may close on process termination.
+                } finally {
+                  try {
+                    input.close();
+                  } catch (IOException ignored) {
+                    // Ignore cleanup exceptions.
+                  }
+                }
+              },
+              "local-instance-stream-drainer");
+      thread.setDaemon(true);
+      return thread;
+    }
+
+    private static void join(Thread thread) {
+      if (thread != null) {
+        try {
+          thread.join(2000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
   }
 
   //  private static class ExternalProcess extends Process {

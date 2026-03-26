@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -135,6 +136,11 @@ public class EngineImpl implements Engine, PropertyHolder {
     // becomes operational again only when the 4 local are available
     onlineStatusNotified = false;
     return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
+  }
+
+  @Override
+  public LocalInstance getServiceInstance(KlabService.Type type) {
+    return serviceMonitor.getServiceInstance(type);
   }
 
   @Override
