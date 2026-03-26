@@ -154,6 +154,11 @@ public enum Setting {
       "The Bolt URL for the connected neo4j database",
       String.class,
       "bolt://0.0.0.0:7687"),
+  GRAPH_REMOTE_DATABASE_URL(
+          Page.RUNTIME,
+          "The Bolt URL for the connected neo4j database on docker",
+          String.class,
+          "bolt://neo4j:7687"),
   USE_LOCAL_FEDERATION(
       Page.RUNTIME,
       "Use the local federation with the broker embedded in the runtime until downtime",

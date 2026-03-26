@@ -27,7 +27,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   boolean online = false;
 
   public KnowledgeGraphNeo4JClient(Settings settings) {
-    this.driver = GraphDatabase.driver(settings.get(Setting.GRAPH_DATABASE_URL, String.class), AuthTokens.none());
+    this.driver = GraphDatabase.driver(settings.get(Setting.GRAPH_REMOTE_DATABASE_URL, String.class), AuthTokens.none());
     try {
       // TODO launch a timed something to verify connectivity periodically
       this.driver.verifyConnectivity();
