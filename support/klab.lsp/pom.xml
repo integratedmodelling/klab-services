@@ -33,12 +33,14 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observable.ide</artifactId>
             <version>${klab.languages.version}</version>
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>*</groupId>-->
-<!--                    <artifactId>*</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
+<!--
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+-->
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>

@@ -192,7 +192,25 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     executor.setWorkingDirectory(product.getLocalPath());
 
     if (streamHandler == null) {
-      streamHandler = new PumpStreamHandler();
+      streamHandler =
+          new PumpStreamHandler() /* {
+                                    @Override
+                                    public void setProcessInputStream(OutputStream os) {
+                                      // we do NOT want the input stream to be closed if we don't provide one,
+                                      // as we want to be able to use it later through getOutputStream().
+                                      // Default PumpStreamHandler implementation closes it if input is null.
+                                    }
+
+                                    public void setProcessErrorStream(OutputStream os) {
+
+                                    }
+
+                                    public void setProcessOutputStream(OutputStream os) {
+                                    }
+                                  }*/; // Does not solve shit. We
+                                                                         // should predefine the
+                                                                         // streams and launch with
+                                                                         // those.
     }
     executor.setStreamHandler(streamHandler);
 
