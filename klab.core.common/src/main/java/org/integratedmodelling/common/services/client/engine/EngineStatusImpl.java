@@ -25,6 +25,7 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
     return servicesStatus;
   }
 
+
   public void setServicesStatus(Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus) {
     this.servicesStatus = servicesStatus;
   }

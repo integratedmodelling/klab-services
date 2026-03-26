@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /**
@@ -299,7 +300,6 @@ public class ServiceMonitor {
       ret = !this.lastRecordedStatus.getServicesProvision().equals(status.getServicesProvision());
     }
 
-
     this.lastRecordedStatus = status;
 
     return ret;
@@ -389,6 +389,31 @@ public class ServiceMonitor {
     }
 
     return tasks.size();
+  }
+
+  /**
+   * Start the LSP server. This uses I/O from the standard streams so it must be stopped and
+   * restarted if running, to capture them.
+   *
+   * @param softwareStack
+   * @param distributionTag
+   * @param user
+   * @return
+   */
+  public boolean startLSPServer(Stack softwareStack, Stack.Tag distributionTag, UserScope user) {
+
+    var languageServer =
+        softwareStack.instance(Distribution.Product.Type.LANGUAGE_SERVER, distributionTag);
+    if (languageServer != null) {
+      // required even if the server already runs
+      if (languageServer.getStatus() == LocalInstance.Status.RUNNING) {
+        languageServer.stop();
+      }
+      this.serviceInstances.put(KlabService.Type.LANGUAGE_SERVER, languageServer);
+
+      return languageServer.start();
+    }
+    return false;
   }
 
   public Map<KlabService.Type, KlabService> startLocalServices(

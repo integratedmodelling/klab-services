@@ -110,6 +110,21 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
+  public boolean startAuxiliaryServices(KlabService.Type... types) {
+    if (types != null) {
+      for (KlabService.Type type : types) {
+        if (type == KlabService.Type.LANGUAGE_SERVER) {
+          return serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser);
+        } else {
+          throw new UnsupportedOperationException(
+              "Auxiliary service type not yet supported: " + type);
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
   public Stack.Tag getDistributionTag() {
     return distributionTag;
   }

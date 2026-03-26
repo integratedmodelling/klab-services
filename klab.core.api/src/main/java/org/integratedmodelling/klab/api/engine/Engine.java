@@ -187,6 +187,14 @@ public interface Engine /*extends KlabService*/ {
   Map<KlabService.Type, KlabService> startLocalServices();
 
   /**
+   * Launch the passed auxiliary services and return true if all were started successfully.
+   *
+   * @param types
+   * @return
+   */
+  boolean startAuxiliaryServices(KlabService.Type... types);
+
+  /**
    * To facilitate implementations, we expose the boot and shutdown as explicitly called phases.
    * Booting the engine should start with authentication. Messages should be sent to listeners after
    * authentication and at each new service activation.
