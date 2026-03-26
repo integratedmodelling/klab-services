@@ -89,6 +89,11 @@ public enum Setting {
       "Interval in minutes between automatic software stack update checks. Set to 0 to disable.",
       Integer.class,
       5),
+  START_LSP_SERVER_ON_STARTUP(
+      Page.EDITOR,
+      "Automatically start and restart the k.LAB LSP language server if a software stack is available.",
+      Boolean.class,
+      true),
   DETECT_LOCAL_HUB(
       Page.DEBUGGING,
       "Look for a hub running on localhost for authentication",

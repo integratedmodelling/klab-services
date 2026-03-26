@@ -8,6 +8,7 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -185,6 +186,14 @@ public interface Engine /*extends KlabService*/ {
    * @return
    */
   Map<KlabService.Type, KlabService> startLocalServices();
+
+  /**
+   * Return the instance of the service of the passed type, if it is available locally and running.
+   *
+   * @param type
+   * @return
+   */
+  LocalInstance getServiceInstance(KlabService.Type type);
 
   /**
    * Launch the passed auxiliary services and return true if all were started successfully.

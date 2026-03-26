@@ -138,6 +138,10 @@ public class ServiceMonitor {
     }
   }
 
+  public LocalInstance getServiceInstance(KlabService.Type type) {
+    return serviceInstances.get(type);
+  }
+
   @SuppressWarnings("unchecked")
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
 
@@ -335,11 +339,16 @@ public class ServiceMonitor {
               monitor.stopLocalServices();
             })
         .with(
+            "lsp",
+            cmds -> {
+              monitor.startLSPServer(softwareStack, Stack.Tag.LATEST_DEVELOP, user);
+            })
+        .with(
             "?",
             cmds -> {
               System.out.println(engineMonitor.get());
-              for (var service : monitor.clients.keySet()) {
-                System.out.println(service + ": " + service.status());
+              for (var service : monitor.serviceInstances.keySet()) {
+                System.out.println(service + ": " + monitor.serviceInstances.get(service));
               }
             })
         .run();
@@ -411,7 +420,8 @@ public class ServiceMonitor {
       }
       this.serviceInstances.put(KlabService.Type.LANGUAGE_SERVER, languageServer);
 
-      return languageServer.start();
+      return languageServer.start(
+          LocalInstance.Option.PROVIDE_INPUT_STREAM, LocalInstance.Option.PROVIDE_OUTPUT_STREAM);
     }
     return false;
   }
