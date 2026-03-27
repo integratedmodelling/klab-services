@@ -136,6 +136,20 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+			<dependency>
+				<groupId>org.geotools</groupId>
+				<artifactId>gt-bom</artifactId>
+				<version>${geotools.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.geotools</groupId>
+				<artifactId>gt-platform-dependencies</artifactId>
+				<version>${geotools.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -144,22 +158,18 @@
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite</artifactId>
-            <version>4.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-jackson-mapper</artifactId>
-            <version>4.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-rocksdb-adapter</artifactId>
-            <version>4.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-spatial</artifactId>
-            <version>4.3.0</version>
         </dependency>
 
         <dependency>
@@ -211,7 +221,7 @@
         <dependency>
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>4.0.25</version>
+            <version>${groovy.version}</version>
             <type>pom</type>
         </dependency>
 
@@ -219,7 +229,7 @@
         <dependency>
             <groupId>org.orbisgis</groupId>
             <artifactId>h2gis</artifactId>
-            <version>2.2.0</version>
+            <version>${h2gis.version}</version>
         </dependency>
 
         <dependency>
@@ -232,7 +242,6 @@
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
-            <version>3.2.2</version>
         </dependency>
 
         <!--        &lt;!&ndash; MapDB for various persistent caches. Simple, used it a lot, never-->
@@ -363,12 +372,10 @@
                                 </exclusion>
                 -->
             </exclusions>
-            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
-            <version>${spring-boot.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -389,7 +396,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -430,7 +436,6 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-referencing</artifactId>
-            <version>${geotools.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax</groupId>
@@ -441,42 +446,34 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-epsg-hsql</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geotiff</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-epsg-extension</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-brewer</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-process</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-process-raster</artifactId>
-            <version>${geotools.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.antlr</groupId>
@@ -487,17 +484,14 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-process-feature</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools.jdbc</groupId>
             <artifactId>gt-jdbc-postgis</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson-core</artifactId>
-            <version>${geotools.version}</version>
         </dependency>
 
         <dependency>
@@ -509,7 +503,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.18.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
