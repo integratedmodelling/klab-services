@@ -9,4 +9,7 @@ target
 **/*.puml
 .mvn/wrapper/maven-wrapper.jar
 **/*.run.xml
+.classpath
+.project
+.settings
 /support/klab.support.graphdb/var/
