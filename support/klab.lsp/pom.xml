@@ -63,6 +63,11 @@
             <artifactId>org.eclipse.xtext.ide</artifactId>
             <version>${xtextVersion}</version>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.xtext</groupId>
+            <artifactId>org.eclipse.xtext.xbase.ide</artifactId>
+            <version>${xtextVersion}</version>
+        </dependency>
         <!-- possible needed dependencies
         <dependency>
             <groupId>org.eclipse.xtext</groupId>
