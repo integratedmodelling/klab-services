@@ -10,6 +10,7 @@ public class RuntimeConfiguration extends ServiceConfiguration {
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
   private Storage.Type numericStorageType = Storage.Type.DOUBLE;
+  private String databaseRemoteUrl = "bolt://0.0.0.0:7687";
 
   public List<String> getAllowedGroups() {
     return allowedGroups;
@@ -40,4 +41,12 @@ public class RuntimeConfiguration extends ServiceConfiguration {
   public void setNumericStorageType(Storage.Type numericStorageType) {
     this.numericStorageType = numericStorageType;
   }
+
+    public String getDatabaseRemoteUrl() {
+        return databaseRemoteUrl;
+    }
+
+    public void setDatabaseRemoteUrl(String databaseRemoteUrl) {
+        this.databaseRemoteUrl = databaseRemoteUrl;
+    }
 }
