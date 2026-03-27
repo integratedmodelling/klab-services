@@ -10,6 +10,7 @@ public class RuntimeConfiguration extends ServiceConfiguration {
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
   private Storage.Type numericStorageType = Storage.Type.DOUBLE;
+  private String graphDatabaseUrl = "bolt://0.0.0.0:7687";
 
   public List<String> getAllowedGroups() {
     return allowedGroups;
@@ -17,6 +18,14 @@ public class RuntimeConfiguration extends ServiceConfiguration {
 
   public void setAllowedGroups(List<String> allowedGroups) {
     this.allowedGroups = allowedGroups;
+  }
+
+  public String getGraphDatabaseUrl() {
+    return graphDatabaseUrl;
+  }
+
+  public void setGraphDatabaseUrl(String graphDatabaseUrl) {
+    this.graphDatabaseUrl = graphDatabaseUrl;
   }
 
   public String getUrl() {

@@ -147,7 +147,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept parent(Semantics target) {
-    return client.post(ServicesAPI.REASONER.PARENTS, target.asConcept(), Concept.class);
+    return client.post(ServicesAPI.REASONER.PARENT, target.asConcept(), Concept.class);
   }
 
   @Override
@@ -450,6 +450,12 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   public Collection<Concept> relationshipTargets(Semantics relationship) {
     return client.postCollection(
         ServicesAPI.REASONER.RELATIONSHIP_TARGETS, relationship.asConcept(), Concept.class);
+  }
+
+  @Override
+  public Collection<Concept> resolving(Semantics relationship) {
+    return client.postCollection(
+            ServicesAPI.REASONER.RESOLVING, relationship.asConcept(), Concept.class);
   }
 
   @Override

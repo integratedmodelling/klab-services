@@ -270,6 +270,10 @@ public class ModelKbox extends ObservableKbox {
 
     List<ModelReference> ret = new ArrayList<>();
 
+    if (observable.getUrn().equals("data:Normalized of geography:Elevation")) {
+      System.out.println("DIO TUFO");
+    }
+
     if (!database.hasTable("model")) {
       return ret;
     }

@@ -330,6 +330,8 @@ public interface ServicesAPI {
 
     String SATISFIABLE = API_BASE + "/satisfiable";
 
+    String RESOLVING = API_BASE + "/resolving";
+
     String RELATIONSHIP_TARGET = API_BASE + "/relationshipTarget";
 
     String RELATIONSHIP_SOURCES = API_BASE + "/relationshipSources";

@@ -71,6 +71,14 @@ public interface Reasoner extends KlabService {
   boolean resolves(Semantics toResolve, Semantics candidate, Semantics context);
 
   /**
+   * Return all the known concepts that can resolve the passed observable.
+   *
+   * @param semantics
+   * @return
+   */
+  Collection<Concept> resolving(Semantics semantics);
+
+  /**
    * Basic reasoning operation for subsumption between concepts.
    *
    * @param conceptImpl the concept being checked for subsumption by <code>other</code>
