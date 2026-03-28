@@ -119,12 +119,15 @@ public class Downloader {
       }
     }
   }
-  /*
+
   public static void main(String[] args) throws Exception {
-  	URL url = new URL("http://www.integratedmodelling.org/downloads/IALE15_ehabitat_JML.pdf");
-  	File file = new File(System.getProperty("user.home") + File.separator + "dio.pdf");
-  	Downloader downloader = new Downloader(url, file, (sofar, total) -> System.out.println("Downloaded " + sofar + "/" + total));
-  	downloader.download();
+    URL url = new URL("https://download.fshub.io/releases/lrm-setup-5.9.4.zip");
+    File file = new File(System.getProperty("user.home") + File.separator + "dio.zip");
+    Downloader downloader =
+        new Downloader(
+            url,
+            file,
+            (sofar, total) -> System.out.println("Downloaded " + sofar + "/" + total + "\r"));
+    downloader.download();
   }
-     */
 }
