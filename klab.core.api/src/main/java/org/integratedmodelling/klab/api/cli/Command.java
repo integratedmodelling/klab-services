@@ -7,9 +7,49 @@ import java.util.function.Function;
 
 public class Command {
 
+  private String name;
+  private String shortDescription;
+  private String longDescription;
   List<Option> options = new ArrayList<>();
-  List<Command> subCommands = new ArrayList<>();
+  List<Command> subcommands = new ArrayList<>();
   private Function<CommandLine, Object> handler;
+  protected Command parent;
+
+  public String getName() {
+    return name;
+  }
+
+  public String getShortDescription() {
+    return shortDescription;
+  }
+
+  public String getLongDescription() {
+    return longDescription;
+  }
+
+  public String getPath() {
+    return parent == null ? name : parent.getPath() + "." + name;
+  }
+
+  public String getDescription() {
+    return shortDescription;
+  }
+
+  public List<Option> getOptions() {
+    return options;
+  }
+
+  public List<Command> getSubcommands() {
+    return subcommands;
+  }
+
+  public void addOption(Option option) {
+    this.options.add(option);
+  }
+
+  public void addSubcommand(Command subcommand) {
+    this.subcommands.add(subcommand);
+  }
 
   public static class Builder {
 
@@ -19,8 +59,17 @@ public class Command {
     private Function<CommandLine, Object> commandConsumer;
     private String commandName;
     private String commandDescription;
-    private String commandSyntax;
+    private String commandShortDescription;
     private String commandHelp;
+    private Builder parent;
+
+    CLI cli;
+
+    public Builder() {}
+
+    Builder(CLI cli) {
+      this.cli = cli;
+    }
 
     public Builder handler(Function<CommandLine, Object> handler) {
       this.handler = handler;
@@ -37,39 +86,98 @@ public class Command {
       return this;
     }
 
-    public Builder syntax(String syntax) {
-      this.commandSyntax = syntax;
-      return this;
-    }
-
+    /**
+     * Add an option with an argument
+     *
+     * @param name
+     * @param shortName
+     * @param description
+     * @param shortDescription
+     * @param valueClass
+     * @param defaultValue
+     * @return
+     */
     public Builder option(
         String name,
         String shortName,
         String description,
+        String shortDescription,
         Class<?> valueClass,
         Object defaultValue) {
-      var option = new Option(name, shortName, description, valueClass, defaultValue);
+
+      var option =
+          new Option(name, shortName, description, shortDescription, valueClass, defaultValue);
       options.add(option);
       return this;
     }
 
-    public Builder subCommand(String name) {
-      Builder builder = new Builder();
-      builder.commandName = name;
-      subCommands.add(builder);
-      return builder;
+    /**
+     * Add an option without an argument
+     *
+     * @param name
+     * @param shortName
+     * @param description
+     * @param shortDescription
+     * @return
+     */
+    public Builder option(
+        String name, String shortName, String description, String shortDescription) {
+
+      var option = new Option(name, shortName, description, shortDescription, Void.class, null);
+      options.add(option);
+      return this;
+    }
+
+    /**
+     * Add a sub-command. When done, call parent() to return to building the parent command.
+     *
+     * @param commandName
+     * @param commandDescription
+     * @param commandShortDescription
+     * @return
+     */
+    public Builder subCommand(
+        String commandName, String commandDescription, String commandShortDescription) {
+      // No CLI in this one
+      var ret = Command.builder(commandName, commandDescription, commandShortDescription);
+      ret.parent = this;
+      subCommands.add(ret);
+      return ret;
+    }
+
+    public Builder parent() {
+      return this.parent;
     }
 
     public Command build() {
       var ret = new Command();
+      ret.name = commandName;
+      ret.shortDescription = commandShortDescription;
+      ret.longDescription = commandDescription;
       ret.handler = handler;
       ret.options.addAll(options);
-      subCommands.forEach(b -> ret.subCommands.add(b.build()));
+      ret.subcommands.addAll(subCommands.stream().map(Builder::build).toList());
+      for (var sub : ret.subcommands) {
+        sub.parent = ret;
+      }
+      if (cli != null) {
+        cli.registerCommand(ret);
+      }
       return ret;
+    }
+
+    public Builder shortDescription(String shortDescription) {
+      this.commandShortDescription = shortDescription;
+      return this;
     }
   }
 
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(
+      String commandName, String commandDescription, String commandShortDescription) {
+    var ret = new Builder();
+    ret.commandName = commandName;
+    ret.commandDescription = commandDescription;
+    ret.commandShortDescription = commandShortDescription;
+    return ret;
   }
 }

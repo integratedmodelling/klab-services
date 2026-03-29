@@ -1,19 +1,57 @@
 package org.integratedmodelling.klab.api.cli;
 
 public class Option {
-
   private final String name;
-  private final String shortName;
-  private final String description;
-  private final Class<?> valueClass;
+  private final String shortDescription;
+  private final String longDescription;
+  private final boolean hasValue;
   private final Object defaultValue;
+  private final Class<?> valueClass;
 
   public Option(
-      String name, String shortName, String description, Class<?> valueClass, Object defaultValue) {
+      String name,
+      String shortName,
+      String description,
+      String shortDescription,
+      Class<?> valueClass,
+      Object defaultValue) {
     this.name = name;
-    this.shortName = shortName;
-    this.description = description;
+    this.shortDescription = shortDescription;
+    this.longDescription = description;
+    this.hasValue = valueClass != null;
     this.valueClass = valueClass;
     this.defaultValue = defaultValue;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getShortDescription() {
+    return shortDescription;
+  }
+
+  public String getLongDescription() {
+    return longDescription;
+  }
+
+  public String getDescription() {
+    return shortDescription;
+  }
+
+  public boolean hasValue() {
+    return hasValue;
+  }
+
+  public boolean isHasValue() {
+    return hasValue;
+  }
+
+  public Object getDefaultValue() {
+    return defaultValue;
+  }
+
+  public Class<?> getValueClass() {
+    return valueClass;
   }
 }
