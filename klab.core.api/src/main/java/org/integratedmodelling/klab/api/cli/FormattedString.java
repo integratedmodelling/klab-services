@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class FormattedString {
 
-  protected record Fragment(String text, java.awt.Color color, Style style) {}
+  public record Fragment(String text, java.awt.Color color, Style style) {}
 
   List<Fragment> fragmentList = new ArrayList<>();
 
@@ -52,6 +52,17 @@ public class FormattedString {
     STRIKETHROUGH
   }
 
+  public interface Renderer {
+    String render(Fragment fragment);
+  }
+
+  public static class PlainRenderer implements Renderer {
+    @Override
+    public String render(Fragment fragment) {
+      return fragment.text;
+    }
+  }
+
   void add(String text, Color color, Style style) {
     fragmentList.add(new Fragment(text, color.getColor(), style));
   }
@@ -76,22 +87,13 @@ public class FormattedString {
     fragmentList.add(new Fragment(text, null, null));
   }
 
-  public String render() {
+  public String render(Renderer renderer) {
     StringBuffer buffer = new StringBuffer();
-    fragmentList.forEach(fragment -> buffer.append(renderFragment(fragment)));
+    fragmentList.forEach(fragment -> buffer.append(renderer.render(fragment)));
     return buffer.toString();
   }
 
-  /**
-   * Render a fragment. Override this function to support different rendering engines.
-   *
-   * @param fragment the fragment to render. Both style and color can be null to mean the engine's
-   *     default.
-   * @return
-   */
-  protected String renderFragment(Fragment fragment) {
-    return fragment.text;
-  }
+  // TODO add links, lists and headers
 
   void addLine(String text, Color color, Style style) {
     add(text + "\n", color, style);
@@ -122,8 +124,6 @@ public class FormattedString {
   }
 
   public String toString() {
-    StringBuffer buffer = new StringBuffer();
-    fragmentList.forEach(fragment -> buffer.append(fragment.text));
-    return buffer.toString();
+    return render(new PlainRenderer());
   }
 }

@@ -15,6 +15,15 @@ public class Command {
   private Function<CommandLine, Object> handler;
   protected Command parent;
 
+  /**
+   * Return the depth of this command in the command tree. Root is 1.
+   *
+   * @return
+   */
+  public int depth() {
+    return parent == null ? 1 : parent.depth() + 1;
+  }
+
   public String getName() {
     return name;
   }
@@ -49,6 +58,10 @@ public class Command {
 
   public void addSubcommand(Command subcommand) {
     this.subcommands.add(subcommand);
+  }
+
+  public Function<CommandLine, Object> getHandler() {
+    return handler;
   }
 
   public static class Builder {

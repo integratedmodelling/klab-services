@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.cli;
 
+import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +42,18 @@ public abstract class CLI {
 
   public Object submit(String commandLine) {
     var cl = parse(commandLine);
-    // locate command
-    // execute handler, return value
+    if (cl == null) {
+      return new KlabCommandLineError("Command line parsing failed for: " + commandLine);
+    }
+    if (cl.isError()) {
+      return new KlabCommandLineError(cl.getErrorMessage());
+    } else if (cl.getCommand() != null && cl.getCommand().getHandler() != null) {
+      try {
+        return cl.getCommand().getHandler().apply(cl);
+      } catch (Throwable t) {
+        return t;
+      }
+    }
     return null;
   }
 
@@ -51,5 +63,24 @@ public abstract class CLI {
     }
     commandMap.put(ret.getPath(), ret);
     ret.subcommands.forEach(this::registerCommand);
+  }
+
+  protected Command findCommand(String[] args) {
+    if (args.length > 0) {
+      var command = commandMap.get(args[0]);
+      int next = 1;
+      var current = command;
+      while (current != null && args.length > next) {
+        var nextLevel = command.getPath() + "." + args[next];
+        current = commandMap.get(nextLevel);
+        if (current == null) {
+          break;
+        }
+        command = current;
+        next++;
+      }
+      return command;
+    }
+    return null;
   }
 }

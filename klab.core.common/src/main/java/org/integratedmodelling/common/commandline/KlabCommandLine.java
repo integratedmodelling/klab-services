@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -42,33 +43,35 @@ public class KlabCommandLine extends CLI {
   public CommandLine parse(String commandLine) {
     var args = commandLine.split("\\s+");
     var command = findCommand(args);
-    if (command == null) {
-      return CommandLine.error(commandLine, "Unknown command: " + args[0]);
-    }
-    var options = commandOptions.computeIfAbsent(command.getPath(), k -> computeOptions(command));
-    try {
-      parser.parse(options, args);
-    } catch (ParseException e) {
-      return CommandLine.error(commandLine, e.getMessage());
+    if (command != null) {
+      var options = commandOptions.computeIfAbsent(command.getPath(), k -> computeOptions(command));
+      try {
+        var cl = parser.parse(options, Arrays.copyOfRange(args, command.depth(), args.length));
+        CommandLine ret = new CommandLine();
+        ret.setCommandLine(commandLine);
+        ret.setCommand(command);
+        if (scopeSupplier != null) {
+          ret.setScope(scopeSupplier.get());
+        }
+        for (var option : cl.getOptions()) {
+          ret.getOptions().put(option.getOpt(), option.getValue());
+        }
+        for (var arg : cl.getArgs()) {
+          ret.getParameters().add(arg);
+        }
+
+        return ret;
+      } catch (ParseException e) {
+        return CommandLine.error(commandLine, e.getMessage());
+      }
     }
 
-    CommandLine ret = new CommandLine();
-    ret.setCommandLine(commandLine);
-    ret.setCommand(command);
-    if (scopeSupplier != null) {
-      ret.setScope(scopeSupplier.get());
-    }
-
-    return ret;
+    return CommandLine.error(commandLine, "Unknown command: " + args[0]);
   }
 
   private Options computeOptions(Command command) {
     var options = new Options();
     // TODO
     return options;
-  }
-
-  private Command findCommand(String[] args) {
-    return null;
   }
 }
