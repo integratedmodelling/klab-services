@@ -148,7 +148,7 @@ public class RuntimeService extends BaseService
   private boolean createMainKnowledgeGraph() {
     // TODO choose the DB from configuration - client or embedded server
     //    var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
-    this.knowledgeGraph = new KnowledgeGraphNeo4JClient(settings);
+    this.knowledgeGraph = new KnowledgeGraphNeo4JClient(this.configuration.getGraphDatabaseUrl());
     return this.knowledgeGraph.isOnline();
   }
 
