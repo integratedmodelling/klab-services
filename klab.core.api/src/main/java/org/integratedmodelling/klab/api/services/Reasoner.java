@@ -158,17 +158,25 @@ public interface Reasoner extends KlabService {
   Collection<Concept> closure(Semantics target);
 
   /**
-   * @param target
-   * @return
+   * Compute a semantic distance score between two concepts. Evaluates the distance between the
+   * different dimensions, including inherency and all clauses.
+   *
+   * <p>Caution: NOT idempotent!
+   *
+   * @param target the least specific concept to be compared
+   * @param other the most specific concept to be compared
+   * @return zero if the concepts are equivalent; a positive integer if the concepts are
+   *     semantically distant but compatible; a negative integer if the concepts are semantically
+   *     incompatible
    */
   int semanticDistance(Semantics target, Semantics other);
 
   /**
-   * Contextual version of {@link #semanticDistance(Semantics, Semantics)}.
+   * Contextual version of {@link #semanticDistance(Semantics, Semantics)}. NOT idempotent!
    *
-   * @param target
-   * @param other
-   * @param context
+   * @param target the least specific concept to be compared
+   * @param other the most specific concept to be compared
+   * @param context an optional context to contextualize the comparison
    * @return
    */
   int semanticDistance(Semantics target, Semantics other, Semantics context);

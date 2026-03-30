@@ -45,6 +45,12 @@ public class KlabCommandLine extends CLI {
             "resolving", "Resolution closure", "List all known concepts that resolve the input")
         .handler(ReasonCommands::resolving)
         .parent()
+        .subCommand(
+            "distance",
+            "Semantic distance",
+            "Compute the semantic distance between two concepts (add a third for context if needed)")
+        .handler(ReasonCommands::distance)
+        .parent()
         .build();
   }
 

@@ -20,7 +20,6 @@ public class FormattedString {
   List<Fragment> fragmentList = new ArrayList<>();
 
   public enum Color {
-    DEFAULT,
     RED,
     GREEN,
     YELLOW,
@@ -32,7 +31,6 @@ public class FormattedString {
 
     java.awt.Color getColor() {
       return switch (this) {
-        case DEFAULT -> null;
         case RED -> java.awt.Color.RED;
         case GREEN -> java.awt.Color.GREEN;
         case YELLOW -> java.awt.Color.YELLOW;

@@ -5,7 +5,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
-
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
@@ -15,28 +14,28 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.services.client.ServiceClientCatalog;
-import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.common.lang.Axiom;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -53,7 +52,6 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -659,7 +657,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var inherent = directInherent(semantics);
     if (inherent != null) {
       ret.addAll(
-          parents(inherent).stream()
+          allParents(inherent).stream()
               .map(ctx -> SemanticsBuilder.create(base, this, scope).of(ctx).buildConcept())
               .toList());
     }
@@ -673,7 +671,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public int semanticDistance(Semantics target, Semantics other) {
     return semanticMatcher.semanticDistance(
-        target.asConcept(), other.asConcept(), null, true, null);
+        target.asConcept(), other.asConcept(), null, true, null, serviceScope());
   }
 
   @Override
@@ -683,7 +681,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         other.asConcept(),
         context == null ? null : context.asConcept(),
         true,
-        null);
+        null,
+        serviceScope());
   }
 
   //
