@@ -385,23 +385,10 @@ public abstract class ObservableKbox extends H2Kbox {
 
     Set<Concept> ret = new HashSet<>();
     for (Concept main : getAcceptableParents(concept, resolvedPredicates)) {
-
       Set<String> defs = coreTypeHash.get(main.getUrn());
       if (defs != null) {
         for (String def : defs) {
-          Concept candidate = conceptHash.get(def);
-          boolean ok = true;
-
-          //                    if (candidate.is(SemanticType.PREDICATE)) {
-          //                        // inherency must align with the resolution mode
-          //                        boolean hasDistributedInherency =
-          // scope.getService(Reasoner.class).hasDistributedInherency(candidate);
-          //                        ok = (hasDistributedInherency && instantiation) ||
-          // (!hasDistributedInherency && !instantiation);
-          //                    }
-          if (ok) {
-            ret.add(candidate);
-          }
+          ret.add(conceptHash.get(def));
         }
       }
     }
@@ -419,22 +406,8 @@ public abstract class ObservableKbox extends H2Kbox {
   private List<Concept> getAcceptableParents(
       Concept concept, Collection<Pair<Concept, Concept>> resolvedPredicates) {
 
-    List<Concept> ret = new ArrayList<>();
-    ret.add(concept);
-    if (concept.is(SemanticType.TRAIT) || concept.is(SemanticType.ROLE)) {
-      Concept base = scope.getService(Reasoner.class).lexicalRoot(concept);
-      if (base == null) {
-        return ret;
-      }
-      for (; ; ) {
-        concept = scope.getService(Reasoner.class).parent(concept);
-        ret.add(concept);
-        if (concept.isAbstract() || concept.equals(base)) {
-          break;
-        }
-      }
-    }
-
+    var reasoner = scope.getService(Reasoner.class);
+    var ret = new ArrayList<>(reasoner.resolving(concept));
     if (resolvedPredicates != null && !resolvedPredicates.isEmpty()) {
       List<Concept> rabs = new ArrayList<>();
       for (Concept r : ret) {

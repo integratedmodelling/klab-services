@@ -226,6 +226,25 @@ public class ReasonerController {
   }
 
   /**
+   * POST /resolving
+   *
+   * @param target
+   * @return
+   */
+  @Operation(
+      summary = "Get concepts resolving another",
+      description = "Computes the concepts that resolve an observable")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Resolvers retrieved successfully")
+      })
+  @PostMapping(ServicesAPI.REASONER.RESOLVING)
+  public @ResponseBody Collection<Concept> resolving(
+      @Parameter(description = "Target concept") @RequestBody Concept target) {
+    return reasoner.klabService().resolving(target);
+  }
+
+  /**
    * POST /parent
    *
    * @param c

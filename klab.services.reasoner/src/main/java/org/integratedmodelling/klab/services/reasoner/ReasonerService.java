@@ -22,7 +22,7 @@ import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
@@ -35,9 +35,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -634,6 +631,43 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      */
 
     return semanticDistance(toResolve, other, context) >= 0;
+  }
+
+  /*
+   * TODO this is used in resolution and can be work, so it should cache
+   *
+   * FIXME concrete observables must remain the same; inherent and clauses should be generalized to all parents
+   * FIXME value operators should be all added back as they are
+   *
+   * @param semantics
+   * @return
+   */
+  @Override
+  public Collection<Concept> resolving(Semantics semantics) {
+
+    var concept = semantics.asConcept();
+    Set<Concept> ret = new LinkedHashSet<>();
+
+    ret.add(concept);
+
+    var base =
+        SemanticsBuilder.create(concept.asConcept(), this, scope)
+            .without(SemanticRole.INHERENT)
+            .without(SemanticRole.modifiers())
+            .buildConcept();
+
+    var inherent = directInherent(semantics);
+    if (inherent != null) {
+      ret.addAll(
+          parents(inherent).stream()
+              .map(ctx -> SemanticsBuilder.create(base, this, scope).of(ctx).buildConcept())
+              .toList());
+    }
+
+    // TODO do the same with the clauses
+    for (var role : SemanticClause.values()) {}
+
+    return ret;
   }
 
   @Override

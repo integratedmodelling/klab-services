@@ -80,7 +80,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   public ModelerImpl(UIView uiView) {
     super(uiView);
-    // TODO read the workbench config - NAH this probably pertains to the IDE
   }
 
   private void dispatchServerMessage(

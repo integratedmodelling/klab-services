@@ -307,9 +307,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     return tag;
   }
 
-  /**
-   * Default stream handler that only drains streams that are not exposed through start options.
-   */
+  /** Default stream handler that only drains streams that are not exposed through start options. */
   private static class LocalStreamHandler implements ExecuteStreamHandler {
 
     private final boolean exposeStdout;
@@ -395,48 +393,4 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       }
     }
   }
-
-  //  private static class ExternalProcess extends Process {
-  //
-  //    private final long pid;
-  //
-  //    public ExternalProcess(long pid) {
-  //      this.pid = pid;
-  //    }
-  //
-  //    @Override
-  //    public OutputStream getOutputStream() {
-  //      return null;
-  //    }
-  //
-  //    @Override
-  //    public InputStream getInputStream() {
-  //      return null;
-  //    }
-  //
-  //    @Override
-  //    public InputStream getErrorStream() {
-  //      return null;
-  //    }
-  //
-  //    @Override
-  //    public int waitFor() {
-  //      return 0;
-  //    }
-  //
-  //    @Override
-  //    public int exitValue() {
-  //      return 0;
-  //    }
-  //
-  //    @Override
-  //    public void destroy() {
-  //      ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
-  //    }
-  //
-  //    @Override
-  //    public long pid() {
-  //      return pid;
-  //    }
-  //  }
 }

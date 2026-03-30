@@ -37,6 +37,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
       // TODO launch a timed something to verify connectivity periodically
       this.driver.verifyConnectivity();
       online = true;
+      System.out.println("Connected to Neo4J at "+url);
     } catch (Exception e) {
       online = false;
     }
