@@ -29,6 +29,11 @@ public class KlabCommandLine extends CLI {
   public KlabCommandLine(Supplier<Scope> scopeSupplier) {
     super();
     this.scopeSupplier = scopeSupplier;
+
+    command("help", "Help", "Show help for all commands or a specified one")
+        .handler(this::help)
+        .build();
+
     command("reason", "Reasoner commands", "Reasoner commands")
         .subCommand("parents", "Parent hierarchy", "List parents of a concept")
         .handler(ReasonCommands::parents)

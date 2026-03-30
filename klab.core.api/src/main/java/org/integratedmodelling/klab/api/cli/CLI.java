@@ -1,11 +1,8 @@
 package org.integratedmodelling.klab.api.cli;
 
+import java.util.*;
 import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 public abstract class CLI {
 
@@ -82,5 +79,35 @@ public abstract class CLI {
       return command;
     }
     return null;
+  }
+
+  public FormattedString help(CommandLine commandLine) {
+
+    var ret = new FormattedString();
+    var cmdLength =
+        commandMap.values().stream().mapToInt(c -> c.getName().length()).max().orElse(0) + 3;
+
+    ret.addLine("Commands: \n");
+
+    for (var command : commands) {
+      documentCommand(command, ret, 2, cmdLength);
+    }
+
+    return ret;
+  }
+
+  private void documentCommand(Command command, FormattedString output, int level, int cmdLength) {
+    var spacer = " ".repeat(level);
+    output.add(
+        spacer + Utils.Strings.fillUpLeftAligned(command.getName(), " ", cmdLength),
+        FormattedString.Style.BOLD);
+    output.add(command.getLongDescription(), FormattedString.Style.ITALIC);
+    output.addLine();
+    for (var option : command.getOptions()) {
+      // TODO
+    }
+    for (var subcommand : command.getSubcommands()) {
+      documentCommand(subcommand, output, level + 2, cmdLength);
+    }
   }
 }

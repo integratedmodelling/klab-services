@@ -3295,20 +3295,22 @@ public class Utils {
       if (value.length() >= length) {
         return value;
       }
-      while (value.length() < length) {
-        value += fill;
+      StringBuilder valueBuilder = new StringBuilder(value);
+      while (valueBuilder.length() < length) {
+        valueBuilder.append(fill);
       }
-      return value;
+      return valueBuilder.toString();
     }
 
     public static String fillUpRightAligned(String value, String fill, int length) {
       if (value.length() >= length) {
         return value;
       }
-      while (value.length() < length) {
-        value = fill + value;
+      StringBuilder valueBuilder = new StringBuilder(value);
+      while (valueBuilder.length() < length) {
+        valueBuilder.insert(0, fill);
       }
-      return value;
+      return valueBuilder.toString();
     }
 
     public static String fillUpCenterAligned(String value, String fill, int length) {
