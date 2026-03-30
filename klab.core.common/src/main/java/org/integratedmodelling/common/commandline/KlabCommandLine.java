@@ -1,5 +1,9 @@
 package org.integratedmodelling.common.commandline;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
@@ -7,14 +11,7 @@ import org.apache.commons.cli.ParseException;
 import org.integratedmodelling.klab.api.cli.CLI;
 import org.integratedmodelling.klab.api.cli.Command;
 import org.integratedmodelling.klab.api.cli.CommandLine;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Reasoner;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class KlabCommandLine extends CLI {
 
@@ -35,6 +32,13 @@ public class KlabCommandLine extends CLI {
     command("reason", "Reasoner commands", "Reasoner commands")
         .subCommand("parents", "Parent hierarchy", "List parents of a concept")
         .handler(ReasonCommands::parents)
+        .parent()
+        .subCommand("children", "Child hierarchy", "List children of a concept")
+        .handler(ReasonCommands::children)
+        .parent()
+        .subCommand(
+            "resolving", "Resolution closure", "List all known concepts that resolve the input")
+        .handler(ReasonCommands::resolving)
         .parent()
         .build();
   }

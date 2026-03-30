@@ -1,11 +1,16 @@
 package org.integratedmodelling.klab.api.cli;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.scope.Scope;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /** Object passed to the command handler. */
 public class CommandLine {
@@ -24,10 +29,6 @@ public class CommandLine {
     result.error = true;
     result.commandLine = commandLine;
     return result;
-  }
-
-  public Scope scope() {
-    return null;
   }
 
   public Parameters<String> getOptions() {
@@ -90,7 +91,35 @@ public class CommandLine {
    * @return
    * @param <T>
    */
-  public <T> T get(int n, Class<T> tClass) {
+  public <T> T getAs(int n, Class<T> tClass) {
+    var param = parameters.size() > n ? parameters.get(n) : null;
+    return param == null ? null : convert(param, tClass);
+  }
+
+  public <T> T getAs(Class<T> tClass) {
+    if (!parameters.isEmpty()) {
+      return convert(Utils.Strings.join(parameters, " "), tClass);
+    }
+    return null;
+  }
+
+  private <T> T convert(String string, Class<T> tClass) {
+
+    if (Utils.Data.isPODClass(tClass)) {
+      return Utils.Data.asType(string, tClass);
+    } else if (Concept.class.isAssignableFrom(tClass) && scope != null) {
+      return (T) scope.getService(Reasoner.class).resolveConcept(string);
+    } else if (Observable.class.isAssignableFrom(tClass) && scope != null) {
+      return (T) scope.getService(Reasoner.class).resolveObservable(string);
+    } else if (KimConcept.class.isAssignableFrom(tClass) && scope != null) {
+      return (T) scope.getService(ResourcesService.class).declareConcept(string);
+    } else if (KimObservable.class.isAssignableFrom(tClass) && scope != null) {
+      return (T) scope.getService(ResourcesService.class).declareObservable(string);
+    }
+
+    this.errorMessage = "Cannot convert '" + string + "' to " + tClass.getSimpleName();
+    this.error = true;
+
     return null;
   }
 

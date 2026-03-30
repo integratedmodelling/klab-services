@@ -1,5 +1,31 @@
 package org.integratedmodelling.klab.api.utils;
 
+import java.awt.*;
+import java.io.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.net.*;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -30,33 +56,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
-
-import java.awt.*;
-import java.io.*;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.net.*;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Utils {
 
@@ -4521,6 +4520,14 @@ public class Utils {
       return longs;
     }
 
+    public static boolean isPODClass(Class<?> cls) {
+      return cls.isPrimitive()
+          || cls.equals(String.class)
+          || Number.class.isAssignableFrom(cls)
+          || cls.isEnum()
+          || cls.equals(Boolean.class);
+    }
+
     public static boolean isPOD(Object value) {
       if (value instanceof Class<?>) {
         return Number.class.isAssignableFrom((Class<?>) value)
@@ -4750,13 +4757,6 @@ public class Utils {
         }
         if (cls.equals(Boolean.class)) {
           return (T) Boolean.valueOf((String) ret);
-        }
-        if (cls.equals(Concept.class)) {
-          // IConceptService service =
-          // Services.INSTANCE.getService(IConceptService.class);
-          // if (service != null) {
-          // return (T)service.declare(service.declare(ret.toString()));
-          // }
         }
       }
 
