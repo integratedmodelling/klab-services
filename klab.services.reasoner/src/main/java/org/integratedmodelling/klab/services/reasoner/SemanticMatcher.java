@@ -7,15 +7,18 @@ import java.util.*;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 
 /**
  * Computes semantic distance between concepts, with configurable caching. Clients should also
  * provide similar caching to minimize network traffic.
  *
- * TODO integrate within ReasonerService and remove the corresponding code from there.
+ * <p>TODO integrate within ReasonerService and remove the corresponding code from there.
  */
 public class SemanticMatcher {
 
@@ -37,9 +40,7 @@ public class SemanticMatcher {
                 }
               });
 
-  /**
-   * Cache for contextual matching with inherency=true and no abstract predicates incarnation
-   */
+  /** Cache for contextual matching with inherency=true and no abstract predicates incarnation */
   private final LoadingCache<Triple<Semantics, Semantics, Semantics>, Integer> ternaryMatchCache =
       CacheBuilder.newBuilder()
           .concurrencyLevel(20)
@@ -63,7 +64,8 @@ public class SemanticMatcher {
 
   // TODO use cache except in special cases
   public int semanticDistance(Semantics target, Semantics other) {
-    return semanticDistance(target.asConcept(), other.asConcept(), null, true, null);
+    return semanticDistance(
+        target.asConcept(), other.asConcept(), null, true, null, reasonerService.serviceScope());
   }
 
   // TODO use cache except in special cases
@@ -73,7 +75,8 @@ public class SemanticMatcher {
         other.asConcept(),
         context == null ? null : context.asConcept(),
         true,
-        null);
+        null,
+        reasonerService.serviceScope());
   }
 
   /**
@@ -99,7 +102,8 @@ public class SemanticMatcher {
       Concept to,
       Concept context,
       boolean compareInherency,
-      Map<Concept, Concept> resolvedAbstractPredicates) {
+      Map<Concept, Concept> resolvedAbstractPredicates,
+      Scope scope) {
 
     int distance = 0;
 
@@ -108,7 +112,7 @@ public class SemanticMatcher {
     // System.out.println("Does " + resolving + " resolve " + resolved + "?");
 
     int mainDistance =
-        coreDistance(from, to, context, compareInherency, resolvedAbstractPredicates);
+        coreDistance(from, to, context, compareInherency, resolvedAbstractPredicates, scope);
     distance += mainDistance * 50;
     if (distance < 0) {
       return distance;
@@ -274,7 +278,8 @@ public class SemanticMatcher {
       Concept to,
       Concept context,
       boolean compareInherency,
-      Map<Concept, Concept> resolvedAbstractPredicates) {
+      Map<Concept, Concept> resolvedAbstractPredicates,
+      Scope scope) {
 
     if (from == to || from.equals(to)) {
       return 0;
@@ -298,11 +303,18 @@ public class SemanticMatcher {
           c2ops.getFirst(),
           context,
           compareInherency,
-          resolvedAbstractPredicates);
+          resolvedAbstractPredicates,
+          scope);
     }
 
-    Concept core1 = reasonerService.coreObservable(c1ops.getFirst());
-    Concept core2 = reasonerService.coreObservable(c2ops.getFirst());
+    var core1 =
+        SemanticsBuilder.create(c1ops.getFirst(), reasonerService, scope)
+            .without(SemanticRole.modifiers())
+            .buildConcept();
+    var core2 =
+        SemanticsBuilder.create(c2ops.getFirst(), reasonerService, scope)
+            .without(SemanticRole.modifiers())
+            .buildConcept();
 
     /*
      * FIXME this must check: have operator ? (operator == operator && coreObs ==
