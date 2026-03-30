@@ -70,7 +70,7 @@ public class RuntimeService extends BaseService
   private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
   private RuntimeConfiguration configuration;
   private KnowledgeGraphNeo4j knowledgeGraph;
-//  private SystemLauncher systemLauncher;
+  //  private SystemLauncher systemLauncher;
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -117,7 +117,7 @@ public class RuntimeService extends BaseService
   private void initializeMessaging() {
     if (startupOptions.isStartLocalBroker()) {
       Utils.DebugFile.println("Starting embedded broker for local messaging");
-//      this.embeddedBroker = new EmbeddedBroker();
+      //      this.embeddedBroker = new EmbeddedBroker();
     } else {
       Utils.DebugFile.println("NOT starting embedded broker for local messaging");
     }
@@ -178,8 +178,8 @@ public class RuntimeService extends BaseService
     }
 
     if (createMainKnowledgeGraph()) {
-      // TODO internal libraries
-      getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime");
+      // internal libraries
+      getComponentRegistry().loadExtensions("org.integratedmodelling.klab.services.runtime");
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
@@ -302,9 +302,9 @@ public class RuntimeService extends BaseService
       }
     }
 
-//    if (systemLauncher != null) {
-//      systemLauncher.shutdown();
-//    }
+    //    if (systemLauncher != null) {
+    //      systemLauncher.shutdown();
+    //    }
     if (knowledgeGraph != null) {
       knowledgeGraph.shutdown();
     }
@@ -326,7 +326,7 @@ public class RuntimeService extends BaseService
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-//    ret.setBroker(getEmbeddedBroker() != null);
+    //    ret.setBroker(getEmbeddedBroker() != null);
 
     // TODO this enables creating DTs from the passed scope
     ret.getPermissions()

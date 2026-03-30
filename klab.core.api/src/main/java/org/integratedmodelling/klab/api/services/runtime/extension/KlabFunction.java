@@ -86,17 +86,16 @@ public @interface KlabFunction {
 
   /**
    * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
-   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
-   * Storage.Shard} to define a dependency by name and type.
-   * The name will become a requirement from the dependencies in the model and the type will be
-   * validated. This can also be declared in the main prototype.
+   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link Storage.Shard} to define
+   * a dependency by name and type. The name will become a requirement from the dependencies in the
+   * model and the type will be validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
   @interface Input {
 
-    String name();
+    String name() default "";
 
-    Artifact.Type[] type();
+    Artifact.Type[] type() default {};
 
     String observable() default "";
 
@@ -112,26 +111,25 @@ public @interface KlabFunction {
      *
      * @return
      */
-    String description();
+    String description() default "";
 
     boolean optional() default false;
   }
 
   /**
    * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
-   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
-   * Storage.Shard} to define an additional output by name
-   * and type. The name will become a requirement from the dependencies in the model and the type
-   * will be validated. This can also be declared in the main prototype.
+   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link Storage.Shard} to define
+   * an additional output by name and type. The name will become a requirement from the dependencies
+   * in the model and the type will be validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
   @interface Output {
 
-    String name();
+    String name() default "";
 
-    Artifact.Type[] type();
+    Artifact.Type[] type() default {};
 
-    String observable();
+    String observable() default "";
 
     /**
      * Where appropriate. Either a unit or a currency.
@@ -145,7 +143,7 @@ public @interface KlabFunction {
      *
      * @return
      */
-    String description();
+    String description() default "";
 
     boolean optional() default false;
   }
@@ -243,8 +241,8 @@ public @interface KlabFunction {
   long minSizeForSplitting() default 0;
 
   /**
-   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The resolver will
-   * skip functions that do not meet this requirement.
+   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The
+   * resolver will skip functions that do not meet this requirement.
    *
    * @return
    */
