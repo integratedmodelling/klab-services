@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Simple helper to decompose a URN into its constituents and access them with proper semantics.
@@ -44,6 +45,8 @@ public class Urn implements Serializable {
     OBSERVABLE,
     /** An http-based URL, observable only when it points to a remote observation (no guarantee) */
     REMOTE_URL,
+    /** An non-http-based URL */
+    URL,
     /** Returned by classify() when the passed string cannot be understood as one of the above */
     UNKNOWN
   }
@@ -206,8 +209,11 @@ public class Urn implements Serializable {
 
   public static Type classify(String urn) {
 
-    if (urn.startsWith("http") && urn.contains("//:")) {
+    /** FIXME many of these tests are weak */
+    if (urn.startsWith("http") && urn.contains("//:") && !urn.contains(" ")) {
       return Type.REMOTE_URL;
+    } else if (urn.contains("/:") && !urn.contains(" ")) {
+      return Type.URL;
     } else if (URN_RESOURCE_PATTERN.matcher(urn).find()) {
       return Type.RESOURCE;
     } else if (URN_KIM_OBJECT_PATTERN.matcher(urn).find()) {
@@ -242,6 +248,22 @@ public class Urn implements Serializable {
 
   public String getLocalUrn(String resourceId, Project project, String owner) {
     return "local:" + owner + ":" + project.getUrn() + ":" + resourceId;
+  }
+
+  public static void main(String[] a) {
+    Utils.CLI
+        .create()
+        .with(
+            "classify",
+            args -> {
+              if (args.length <= 1) {
+                System.out.println("Usage: classify <resourceId>");
+                return;
+              }
+              String resourceId = String.join(" ", args);
+              System.out.println(resourceId + " => " + classify(resourceId));
+            })
+        .run();
   }
 
   /**

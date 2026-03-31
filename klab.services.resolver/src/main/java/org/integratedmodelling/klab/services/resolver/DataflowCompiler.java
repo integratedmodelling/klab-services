@@ -60,7 +60,8 @@ public class DataflowCompiler {
       return Dataflow.empty();
     }
 
-    System.out.println(Utils.Graphs.dump(resolutionGraph.graph()));
+    var dump = Utils.Graphs.dump(resolutionGraph.graph());
+    System.out.println(dump);
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
@@ -80,7 +81,9 @@ public class DataflowCompiler {
     }
 
     // TODO remove
-    System.out.println(Utils.Dataflows.encode(ret, scope));
+    var encoded = Utils.Dataflows.encode(ret, scope);
+    System.out.println(encoded);
+
 
     return ret;
   }

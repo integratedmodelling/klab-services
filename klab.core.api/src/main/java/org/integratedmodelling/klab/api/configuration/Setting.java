@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.api.configuration;
 
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-
 import java.io.File;
 import java.util.Map;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 
 /**
  * Settings for all products (engine, modeler, services, user etc.) that can be changed at runtime
@@ -35,7 +34,10 @@ public enum Setting {
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
       File.class,
-      new File(System.getProperty("user.home") + File.separator + ".klab")),
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + Configuration.KLAB_RELATIVE_WORK_PATH)),
   RUN_DIRECTORY(
       Page.GENERAL,
       "The directory where PIDs and other runtime files are stored",

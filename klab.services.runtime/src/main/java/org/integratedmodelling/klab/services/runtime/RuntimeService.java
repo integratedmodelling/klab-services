@@ -935,11 +935,37 @@ public class RuntimeService extends BaseService
      */
     for (var contextualizable : contextualizables) {
       if (contextualizable.getServiceCall() != null) {
-        var resolution =
-            resourcesService.resolveServiceCall(
-                contextualizable.getServiceCall().getUrn(),
-                contextualizable.getServiceCall().getRequiredVersion(),
-                scope);
+
+        ResourceSet resolution = ResourceSet.empty();
+
+        /*
+        first check if we have the service in our own catalog.
+        */
+        var executor =
+            getComponentRegistry().getFunctionDescriptor(contextualizable.getServiceCall());
+
+        if (executor != null && !executor.isEmpty()) {
+          resolution =
+              ResourceSet.of(
+                  new ResourceSet.Resource(
+                      this.serviceId(),
+                      contextualizable.getServiceCall().getUrn(),
+                      null,
+                      Version.CURRENT_VERSION,
+                      KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION,
+                      false));
+        } else {
+
+          /*
+          Lookup a component that implements the service
+           */
+          resolution =
+              resourcesService.resolveServiceCall(
+                  contextualizable.getServiceCall().getUrn(),
+                  contextualizable.getServiceCall().getRequiredVersion(),
+                  scope);
+        }
+
         if (resolution.isEmpty()) {
           return resolution;
         }

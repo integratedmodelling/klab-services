@@ -9,9 +9,11 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
@@ -26,7 +28,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /** */
@@ -51,7 +52,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
-
+    Configuration.INSTANCE.setDefaults(settings);
     this.serviceStatusMonitor = serviceStatusMonitor;
     this.engineStatusMonitor = engineStatusMonitor;
   }

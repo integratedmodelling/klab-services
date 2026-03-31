@@ -4236,6 +4236,53 @@ public class Utils {
     }
   }
 
+  /** Ultra-simple console CLI for testing */
+  public static class CLI {
+
+    Map<String, Consumer<String[]>> commands = new HashMap<>();
+
+    public static CLI create() {
+      return new CLI();
+    }
+
+    public CLI with(String command, Consumer<String[]> handler) {
+      commands.put(command, handler);
+      return this;
+    }
+
+    public void run() {
+      Scanner scanner = new Scanner(System.in);
+      System.out.println("This is the CLI testing utility. Type 'exit' to exit.");
+      System.out.println("Available commands: " + String.join(", ", commands.keySet()));
+      while (true) {
+        System.out.print("> ");
+        String input = scanner.nextLine();
+        if (input == null || input.trim().isEmpty()) {
+          continue;
+        }
+        if (input.equals("exit")) {
+          break;
+        }
+        String[] args = input.split("\\s+");
+        Consumer<String[]> handler = commands.get(args[0]);
+        if (handler != null) {
+          try {
+            handler.accept(
+                args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
+          } catch (Throwable e) {
+            System.out.println(
+                "Handler threw "
+                    + Paths.getLast(e.getClass().getSimpleName(), '.')
+                    + " exception: "
+                    + e.getMessage());
+          }
+        } else {
+          System.out.println("Unknown command: " + args[0]);
+        }
+      }
+    }
+  }
+
   public static class Data {
 
     public static List<Object> convertArrayToList(Object array) {
