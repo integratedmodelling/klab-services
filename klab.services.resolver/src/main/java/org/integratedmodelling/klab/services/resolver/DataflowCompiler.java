@@ -84,7 +84,6 @@ public class DataflowCompiler {
     var encoded = Utils.Dataflows.encode(ret, scope);
     System.out.println(encoded);
 
-
     return ret;
   }
 
@@ -154,8 +153,13 @@ public class DataflowCompiler {
       var child = resolutionGraph.graph().getEdgeTarget(edge);
       var coverage = edge.coverage;
 
+      // TODO HERE can be 1+ nodes: if OBS it's the result of a RESOLVE, otherwise a MODEL (result
+      //  of OBSERVE) or the result of an APPLY (not sure what happens then). Must handle them all
+      //  and then link appropriately - the link may be coverage-related or transformer-related
       if (child instanceof Model model) {
         compileModel(observationActuator, observation, coverage, observationStrategy, model);
+      } else {
+        System.out.println("FIXME must handle " + child);
       }
     }
   }
