@@ -7,6 +7,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 
+import java.util.function.LongConsumer;
+
 @Library(
     name = "klab.data",
     description =
@@ -35,29 +37,12 @@ public class DataLibrary {
       @KlabFunction.Output Storage.DoubleScanner output,
       ServiceCall call) {
 
-      var histogram = filler.shard().getHistogram();
-
-
-
-    //    var range = call.getParameters().get("range", NumericRange.create(0., 4000., false,
-    // false));
-    //    var xy = scale.getSpace().getShape();
-    //    var xx = xy.get(0);
-    //    var yy = xy.get(1);
-    //    var terrain =
-    //        new Terrain(
-    //            call.getParameters().get("detail", 8),
-    //            call.getParameters().get("roughness", 0.55),
-    //            range.getLowerBound(),
-    //            range.getUpperBound());
-    //
-    //    double dx = 1.0 / (double) xx;
-    //    double dy = 1.0 / (double) yy;
-    //
-    //    for (int x = 0; x < xx; x++) {
-    //      for (int y = 0; y < yy; y++) {
-    //        filler.add(terrain.getAltitude(x * dx, y * dy));
-    //      }
-    //    }
+    var histogram = filler.shard().getHistogram();
+    filler.forEachRemaining(
+        (LongConsumer)
+            n ->
+                output.add(
+                    (filler.get() - histogram.getMin())
+                        / (histogram.getMax() - histogram.getMin())));
   }
 }
