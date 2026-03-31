@@ -148,6 +148,8 @@ public class DataflowCompiler {
       Geometry scale,
       ObservationStrategy observationStrategy) {
 
+    var actuators = new ArrayList<Actuator>();
+
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
 
       var child = resolutionGraph.graph().getEdgeTarget(edge);
@@ -157,11 +159,16 @@ public class DataflowCompiler {
       //  of OBSERVE) or the result of an APPLY (not sure what happens then). Must handle them all
       //  and then link appropriately - the link may be coverage-related or transformer-related
       if (child instanceof Model model) {
+        // this one adds the contextualizers to the current actuator
         compileModel(observationActuator, observation, coverage, observationStrategy, model);
-      } else {
-        System.out.println("FIXME must handle " + child);
+      } else if (child instanceof Observation childObservation) {
+        // this one produces new actuators as children
+        compileObservation(childObservation, coverage, observationStrategy);
       }
     }
+
+    // HERE we must link the actuators depending on the observation
+    System.out.println("VEDIAMO UN PO'RCODIO");
   }
 
   /**
