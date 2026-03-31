@@ -148,7 +148,7 @@ public class DataflowCompiler {
       Geometry scale,
       ObservationStrategy observationStrategy) {
 
-    var actuators = new ArrayList<Actuator>();
+    var strategyDeps = new ArrayList<Actuator>();
 
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
 
@@ -163,12 +163,14 @@ public class DataflowCompiler {
         compileModel(observationActuator, observation, coverage, observationStrategy, model);
       } else if (child instanceof Observation childObservation) {
         // this one produces new actuators as children
-        compileObservation(childObservation, coverage, observationStrategy);
+        strategyDeps.addAll(compileObservation(childObservation, coverage, observationStrategy));
       }
     }
 
     // HERE we must link the actuators depending on the observation
     System.out.println("VEDIAMO UN PO'RCODIO");
+
+    // THEN any APPLY must be added to the actuator
   }
 
   /**
