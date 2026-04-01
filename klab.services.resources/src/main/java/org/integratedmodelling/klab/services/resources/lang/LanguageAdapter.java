@@ -982,6 +982,7 @@ public enum LanguageAdapter {
       if (operation.getType() != null) {
         o.setType(KimObservationStrategy.Operation.Type.valueOf(operation.getType().name()));
       }
+
       o.setLocalId(operation.getId());
       o.setTransformationTarget(operation.getTransformationTarget());
 

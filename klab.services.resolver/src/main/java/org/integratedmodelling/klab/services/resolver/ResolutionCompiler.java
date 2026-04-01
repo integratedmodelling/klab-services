@@ -182,7 +182,7 @@ public class ResolutionCompiler {
           if (!cov.isRelevant()) {
             return ResolutionGraph.empty();
           }
-          ret.merge(observableResolution);
+          ret.merge(observableResolution, operation.getId());
         }
         case OBSERVE -> {
           boolean complete = false;
@@ -210,7 +210,7 @@ public class ResolutionCompiler {
 
           if (complete) {
             for (var modelGraph : modelGraphs) {
-              ret.merge(modelGraph);
+              ret.merge(modelGraph, operation.getTransformationTarget());
             }
           } else {
             return ResolutionGraph.empty();
