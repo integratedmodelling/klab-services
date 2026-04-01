@@ -56,6 +56,22 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
      * @return
      */
     List<List<Operation>> getContextualStrategies();
+
+    /**
+     * Strategy-scoped internal identifier for internal reference, used in RESOLVE operations to
+     * identify transformation targets and in OBSERVE operations when referenced in dataflows.
+     *
+     * @return
+     */
+    String getId();
+
+    /**
+     * Transformation target for OBSERVE operations that were defined as 'transform TT through
+     * OBSERVABLE'.
+     *
+     * @return
+     */
+    String getTransformationTarget();
   }
 
   /**

@@ -1,18 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
-
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
-import org.integratedmodelling.klab.api.knowledge.Urn;
-import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
-import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
-import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-import org.integratedmodelling.klab.api.lang.kim.impl.*;
-import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.collections.Identifier;
@@ -23,10 +12,19 @@ import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.*;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.RangeLiteral;
@@ -984,6 +982,9 @@ public enum LanguageAdapter {
       if (operation.getType() != null) {
         o.setType(KimObservationStrategy.Operation.Type.valueOf(operation.getType().name()));
       }
+      o.setLocalId(operation.getId());
+      o.setTransformationTarget(operation.getTransformationTarget());
+
       if (operation.getObservable() != null) {
         o.setObservable(
             adaptObservable(

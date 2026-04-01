@@ -148,8 +148,6 @@ public class DataflowCompiler {
       Geometry scale,
       ObservationStrategy observationStrategy) {
 
-    var strategyDeps = new ArrayList<Actuator>();
-
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
 
       var child = resolutionGraph.graph().getEdgeTarget(edge);
@@ -159,11 +157,20 @@ public class DataflowCompiler {
       //  of OBSERVE) or the result of an APPLY (not sure what happens then). Must handle them all
       //  and then link appropriately - the link may be coverage-related or transformer-related
       if (child instanceof Model model) {
-        // this one adds the contextualizers to the current actuator
+        /**
+         * Result of OBSERVE in the strategy. Depending on the model's description type, the
+         * result may be transforming the dependencies and must be appropriately linked. This happens
+         * using the transformation ID that must be brought along from the strategy's operation.
+         */
         compileModel(observationActuator, observation, coverage, observationStrategy, model);
+
       } else if (child instanceof Observation childObservation) {
-        // this one produces new actuators as children
-        strategyDeps.addAll(compileObservation(childObservation, coverage, observationStrategy));
+        // new dependencies brought in by the strategy
+        observationActuator
+            .getChildren()
+            .addAll(compileObservation(childObservation, coverage, observationStrategy));
+        // TODO if this observation is the target of a transformation, it must carry the internal ID from the strategy
+        //   so that we can link it to the transformation
       }
     }
 
@@ -206,6 +213,8 @@ public class DataflowCompiler {
     }
 
     for (var contextualizer : model.getComputation()) {
+      // TODO if there is a link from the strategy, the contextualizer must carry the transformation ID as
+      //  the input target, which must be tagged in the function's ServiceInfo
       observationActuator.getComputation().add(adaptContextualizer(contextualizer));
     }
     var shardingStrategy = new Data.ShardingStrategy();

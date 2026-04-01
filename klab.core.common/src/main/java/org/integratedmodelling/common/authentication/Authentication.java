@@ -51,6 +51,12 @@ public enum Authentication {
   public static final String FEDERATION_FLAG_GROUP_PROPERTY = "federation.id";
 
   /**
+   * Predefined, brings in additional features and "expert mode" in UIs and other applications
+   * without changing privileges.
+   */
+  public static final String DEVELOPERS_GROUP = "DEVELOPERS";
+
+  /**
    * Any group that is a federation must specify the URL of the messaging broker used for
    * communication. The URL must be accessible to every client in the federation and to all the
    * users that can access its DTs.

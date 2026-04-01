@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.services.reasoner;
 
 import com.google.common.collect.Sets;
+import java.util.*;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -18,8 +18,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
-
-import java.util.*;
 
 /**
  * Specialized functions to infer observation strategies. Kept separately for clarity as this is a
@@ -273,7 +271,7 @@ public class ObservationReasoner {
         continue;
       }
 
-      QuickSemanticFilter filter = quickFilters.get(strategy.getUrn());
+      var filter = quickFilters.get(strategy.getUrn());
 
       if (filter.fixedVariablesUsed.contains("context") && scope.getContextObservation() == null) {
         continue;
@@ -364,10 +362,11 @@ public class ObservationReasoner {
       Observation observation,
       KimObservationStrategy strategy,
       Map<String, Object> patternVariableValues) {
-    var os = new ObservationStrategyImpl();
 
+    var os = new ObservationStrategyImpl();
     os.setDocumentation(strategy.getDescription()); // TODO compile template
     os.setUrn(strategy.getUrn());
+
     if (observation.getContextualizationData() != null
         && !observation.getContextualizationData().validate()) {
       var op = new ObservationStrategyImpl.OperationImpl();
@@ -380,6 +379,8 @@ public class ObservationReasoner {
 
       var op = new ObservationStrategyImpl.OperationImpl();
       op.setType(operation.getType());
+      op.setId(operation.getLocalId());
+      op.setTransformationTarget(operation.getTransformationTarget());
 
       if (operation.getObservable() != null) {
         op.setObservable(

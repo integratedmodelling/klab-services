@@ -25,6 +25,8 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     private Observable observable;
     private List<Contextualizable> contextualizables = new ArrayList<>();
     private List<List<Operation>> contextualStrategies = new ArrayList<>();
+    private String id;
+    private String transformationTarget;
 
     @Override
     public KimObservationStrategy.Operation.Type getType() {
@@ -60,6 +62,24 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
     public void setContextualStrategies(List<List<Operation>> contextualStrategies) {
       this.contextualStrategies = contextualStrategies;
+    }
+
+    @Override
+    public String getId() {
+      return id;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
+
+    @Override
+    public String getTransformationTarget() {
+      return transformationTarget;
+    }
+
+    public void setTransformationTarget(String transformationTarget) {
+      this.transformationTarget = transformationTarget;
     }
 
     @Override
