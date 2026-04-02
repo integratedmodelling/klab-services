@@ -328,6 +328,76 @@ public class Utils {
     public static final String VOID_URN_PREFIX = "urn:klab:void:";
     public static final String LOCAL_FILE_PREFIX = "file:";
 
+    // Pattern for valid characters in URN components (lowercase letters, numbers, dots,
+    // underscores)
+    private static final Pattern VALID_COMPONENT_PATTERN = Pattern.compile("^[a-z0-9_.]+$");
+
+    // Pattern for valid dot-separated path (like Java package names)
+    private static final Pattern VALID_PATH_PATTERN =
+        Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$");
+
+    /**
+     * Sanitizes a URN component to ensure it contains only lowercase, meaningful components without
+     * strange characters. Each component may be a dot-separated path using a hierarchical
+     * convention similar to Java package names.
+     *
+     * @param component The component to sanitize
+     * @return A sanitized component
+     */
+    public static String sanitizeUrnComponent(String component) {
+
+      if (component == null || component.isEmpty()) {
+        return "default";
+      }
+
+      // Convert to lowercase
+      component = component.toLowerCase();
+
+      // Check if it's already a valid dot-separated path
+      if (VALID_PATH_PATTERN.matcher(component).matches()) {
+        return component;
+      }
+
+      // Replace invalid characters with underscores
+      component = component.replaceAll("[^a-z0-9_.-]", "_");
+
+      // Ensure it doesn't start with a number or underscore
+      if (!component.isEmpty() && !Character.isLetter(component.charAt(0))) {
+        component = "x" + component;
+      }
+
+      // Handle consecutive dots and ensure each segment starts with a letter
+      String[] segments = component.split("\\.");
+      StringBuilder result = new StringBuilder();
+
+      for (int i = 0; i < segments.length; i++) {
+        String segment = segments[i];
+
+        // Skip empty segments
+        if (segment.isEmpty()) {
+          continue;
+        }
+
+        // Ensure segment starts with a letter
+        if (!Character.isLetter(segment.charAt(0))) {
+          segment = "x" + segment;
+        }
+
+        // Add the segment to the result
+        if (result.length() > 0) {
+          result.append(".");
+        }
+        result.append(segment);
+      }
+
+      // If we end up with an empty string, use "default"
+      if (result.length() == 0) {
+        return "default";
+      }
+
+      return result.toString();
+    }
+
     /**
      * Create a unique URN that won't be accepted in any production resource catalog. For testing.
      *

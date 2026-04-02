@@ -1131,27 +1131,7 @@ public class ComponentRegistry {
 
     ret.setName(namespacePrefix + annotation.name());
     ret.setDescription(annotation.description());
-    //    ret.setFilter(annotation.filter());
-    //    ret.setGeometry(
-    //            annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-    //    ret.setLabel(annotation.dataflowLabel());
-    //    ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.VERB);
-
-    //    for (Artifact.Type a : annotation.type()) {
-    //      ret.getType().add(a);
-    //    }
-
-    //    for (KlabFunction.Argument argument : annotation.parameters()) {
-    //      var arg = createArgument(argument);
-    //      ret.getArguments().put(arg.getName(), arg);
-    //    }
-    //
-    //    AnnotationImpl storageAnnotation = null;
-    //
-    //    if (storageAnnotation != null) {
-    //      ret.getAnnotations().add(storageAnnotation);
-    //    }
 
     return ret;
   }

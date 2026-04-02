@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.resolver;
 
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -11,7 +12,13 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-/** Encode a dataflow into a k.LAB-compatible serialized form. */
+/**
+ * Encode a dataflow into a k.LAB-compatible serialized form.
+ *
+ * <p>TODO also make a version that returns a {@link
+ * org.integratedmodelling.klab.api.cli.FormattedString} for the UIs, with colored keywords, strings
+ * and concepts.
+ */
 public class DataflowEncoder {
 
   private final Dataflow dataflow;
@@ -24,7 +31,7 @@ public class DataflowEncoder {
 
   public void encode(PrintWriter outWriter) {
     encodePreamble(outWriter);
-    outWriter.append("\n");
+    outWriter.append("\n\n");
     encodeDefinitions(outWriter);
     for (Actuator actuator : dataflow.getComputation()) {
       encodeActuator(actuator, outWriter, 0);
@@ -44,6 +51,8 @@ public class DataflowEncoder {
         actuator.getActuatorType() == Actuator.Type.RESOLVE
             ? ("obs" + actuator.getId())
             : actuator.getObservation().getObservable().getUrn());
+    outWriter.append(" as ");
+    outWriter.append(actuator.getName());
 
     if (actuator.getStrategyUrn() != null) {
       outWriter
@@ -90,16 +99,9 @@ public class DataflowEncoder {
   private void encodeDefinitions(PrintWriter outWriter) {}
 
   private void encodePreamble(PrintWriter outWriter) {
-    outWriter.append(
-        "dataflow " + sanitize(scope.getName() == null ? scope.getId() : scope.getName()));
-    outWriter.append("\n;");
-  }
-
-  private String sanitize(String name) {
-    return "cotechino";
-    //        var ret = name.replace(" ", ".").toLowerCase();
-    //        // TODO more
-    //        return ret;
+    outWriter.append("dataflow " + Utils.Urns.sanitizeUrnComponent(dataflow.getName()));
+    // TODO the rest of the preamble
+    outWriter.append(";");
   }
 
   @Override

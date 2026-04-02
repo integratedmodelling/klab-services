@@ -1,13 +1,14 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
 import java.util.function.Function;
-import java.util.regex.Pattern;
+
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * A class that can take a Resource object and either create or sanitize its URN. The URN is a
@@ -15,13 +16,6 @@ import org.integratedmodelling.klab.services.resources.ResourcesProvider;
  * part: namespace - Fourth part: resource name (corresponds to the localName of the resource)
  */
 public class UrnManager {
-
-  // Pattern for valid characters in URN components (lowercase letters, numbers, dots, underscores)
-  private static final Pattern VALID_COMPONENT_PATTERN = Pattern.compile("^[a-z0-9_.]+$");
-
-  // Pattern for valid dot-separated path (like Java package names)
-  private static final Pattern VALID_PATH_PATTERN =
-      Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$");
 
   /**
    * Creates or sanitizes a URN for the given resource.
@@ -64,7 +58,7 @@ public class UrnManager {
       Resource resource, String serviceName, Function<String, Boolean> isUniqueChecker) {
 
     // Sanitize the service name
-    String sanitizedServiceName = sanitizeComponent(serviceName);
+    String sanitizedServiceName = Utils.Urns.sanitizeUrnComponent(serviceName);
 
     // A new resource's catalog is always "staging"
     String catalog = "staging";
@@ -74,14 +68,14 @@ public class UrnManager {
     if (namespace == null || namespace.isEmpty()) {
       namespace = "default";
     }
-    String sanitizedNamespace = sanitizeComponent(namespace);
+    String sanitizedNamespace = Utils.Urns.sanitizeUrnComponent(namespace);
 
     // Use the resource's local name as the resource name, or generate one if not available
     String resourceName = resource.getLocalName();
     if (resourceName == null || resourceName.isEmpty()) {
       resourceName = generateResourceName(resource);
     }
-    String sanitizedResourceName = sanitizeComponent(resourceName);
+    String sanitizedResourceName = Utils.Urns.sanitizeUrnComponent(resourceName);
 
     // Combine the components to form the URN
     String urn =
@@ -120,14 +114,14 @@ public class UrnManager {
 
     // Sanitize each component
     String sanitizedServiceName =
-        isStaging ? service.serviceName() : sanitizeComponent(components[0]);
-    String sanitizedCatalog = isStaging ? "staging" : sanitizeComponent(components[1]);
-    String sanitizedNamespace = sanitizeComponent(components[2]);
-    String sanitizedResourceName = sanitizeComponent(components[3]);
+        isStaging ? service.serviceName() : Utils.Urns.sanitizeUrnComponent(components[0]);
+    String sanitizedCatalog = isStaging ? "staging" : Utils.Urns.sanitizeUrnComponent(components[1]);
+    String sanitizedNamespace = Utils.Urns.sanitizeUrnComponent(components[2]);
+    String sanitizedResourceName = Utils.Urns.sanitizeUrnComponent(components[3]);
 
     // Update the resource name from the resource's local name if available
     if (resource.getLocalName() != null && !resource.getLocalName().isEmpty()) {
-      sanitizedResourceName = sanitizeComponent(resource.getLocalName());
+      sanitizedResourceName = Utils.Urns.sanitizeUrnComponent(resource.getLocalName());
     }
 
     // Combine the components to form the URN
@@ -138,68 +132,6 @@ public class UrnManager {
 
     // Ensure the URN is unique
     return ensureUniqueUrn(urn, isUniqueChecker);
-  }
-
-  /**
-   * Sanitizes a URN component to ensure it contains only lowercase, meaningful components without
-   * strange characters. Each component may be a dot-separated path using a hierarchical convention
-   * similar to Java package names.
-   *
-   * @param component The component to sanitize
-   * @return A sanitized component
-   */
-  private String sanitizeComponent(String component) {
-
-    if (component == null || component.isEmpty()) {
-      return "default";
-    }
-
-    // Convert to lowercase
-    component = component.toLowerCase();
-
-    // Check if it's already a valid dot-separated path
-    if (VALID_PATH_PATTERN.matcher(component).matches()) {
-      return component;
-    }
-
-    // Replace invalid characters with underscores
-    component = component.replaceAll("[^a-z0-9_.-]", "_");
-
-    // Ensure it doesn't start with a number or underscore
-    if (!component.isEmpty() && !Character.isLetter(component.charAt(0))) {
-      component = "x" + component;
-    }
-
-    // Handle consecutive dots and ensure each segment starts with a letter
-    String[] segments = component.split("\\.");
-    StringBuilder result = new StringBuilder();
-
-    for (int i = 0; i < segments.length; i++) {
-      String segment = segments[i];
-
-      // Skip empty segments
-      if (segment.isEmpty()) {
-        continue;
-      }
-
-      // Ensure segment starts with a letter
-      if (!Character.isLetter(segment.charAt(0))) {
-        segment = "x" + segment;
-      }
-
-      // Add the segment to the result
-      if (result.length() > 0) {
-        result.append(".");
-      }
-      result.append(segment);
-    }
-
-    // If we end up with an empty string, use "default"
-    if (result.length() == 0) {
-      return "default";
-    }
-
-    return result.toString();
   }
 
   /**

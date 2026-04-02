@@ -22,10 +22,20 @@ public class DataflowGraph implements Dataflow {
   private final KnowledgeGraph database;
   private final ContextScope scope;
   private long transientId = Klab.getNextId();
+  private String name;
 
   public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {
     this.database = database;
     this.scope = contextScope;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override

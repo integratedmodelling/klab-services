@@ -6,6 +6,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -13,10 +14,12 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -65,7 +68,7 @@ public class DataflowCompiler {
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
-    //    ret.setTarget(observation);
+    ret.setName(observation.getName() + "_" + scope.getId());
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     for (var node : resolutionGraph.rootNodes()) {
       /*
@@ -77,7 +80,10 @@ public class DataflowCompiler {
       ret.getComputation()
           .addAll(
               compileObservation(
-                  observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
+                  observation,
+                  GeometryRepository.INSTANCE.scale(observation.getGeometry()),
+                  null,
+                  null));
     }
 
     // TODO remove
@@ -97,13 +103,19 @@ public class DataflowCompiler {
    * @return
    */
   List<Actuator> compileObservation(
-      Observation observation, Geometry coverage, ObservationStrategy strategy) {
+      Observation observation, Geometry coverage, ObservationStrategy strategy, String localName) {
 
     // compile references for any obs with ID > 0 (coming from the remote KG) or already compiled
     if (observation.getId() > 0 || catalog.contains(observation.getId())) {
       var ret = new ActuatorImpl();
       ret.setObservation(observation);
       ret.setId(observation.getId());
+      ret.setName(
+          localName == null
+              ? (observation.getObservable().is(SemanticType.COUNTABLE)
+                  ? observation.getName()
+                  : observation.getObservable().getName())
+              : localName);
       ret.setCoverage(coverage.as(Geometry.class));
       ret.setActuatorType(Actuator.Type.REFERENCE);
       return List.of(ret);
@@ -120,6 +132,7 @@ public class DataflowCompiler {
       if (child instanceof ObservationStrategy observationStrategy) {
         var actuator = new ActuatorImpl();
         actuator.setObservation(observation);
+        actuator.setName(localName == null ? observation.getObservable().getName() : localName);
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
         actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
@@ -161,13 +174,16 @@ public class DataflowCompiler {
          * the transformation ID that brought along from the strategy's operation, which is the
          * localName in the edge connecting to the strategy.
          */
-        compileModel(observationActuator, observation, coverage, observationStrategy, model, edge.localName);
+        compileModel(
+            observationActuator, observation, coverage, observationStrategy, model, edge.localName);
 
       } else if (child instanceof Observation childObservation) {
         // new dependencies brought in by the strategy
         observationActuator
             .getChildren()
-            .addAll(compileObservation(childObservation, coverage, observationStrategy));
+            .addAll(
+                compileObservation(
+                    childObservation, coverage, observationStrategy, edge.localName));
         // TODO if this observation is the target of a transformation, it must carry the internal ID
         // from the strategy
         //   so that we can link it to the transformation
@@ -194,7 +210,8 @@ public class DataflowCompiler {
       Observation observation,
       Geometry scale,
       ObservationStrategy observationStrategy,
-      Model model, String localName) {
+      Model model,
+      String localName) {
 
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
 
@@ -204,7 +221,8 @@ public class DataflowCompiler {
       if (child instanceof Observation dependentObservation) {
         observationActuator
             .getChildren()
-            .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
+            .addAll(
+                compileObservation(dependentObservation, coverage, observationStrategy, localName));
       } else if (child instanceof Observable observable) {
         observationActuator
             .getChildren()
@@ -213,10 +231,24 @@ public class DataflowCompiler {
     }
 
     for (var contextualizer : model.getComputation()) {
-      // TODO if there is a link from the strategy, the contextualizer must carry the transformation
-      // ID as
-      //  the input target, which must be tagged in the function's ServiceInfo
-      observationActuator.getComputation().add(adaptContextualizer(contextualizer));
+
+      Map<String, Object> overriddenParameters = new HashMap<>();
+      // If there is a link from the strategy, the contextualizer carries the transformation
+      //  localName to be matched with any input tags from the prototype
+      if (contextualizer.getServiceCall() != null) {
+        var prototype = resolutionGraph.getServiceInfo(contextualizer.getServiceCall().getUrn());
+        if (prototype != null) {
+          prototype.listInputs().stream()
+              .filter(
+                  a -> a.getTags().contains(ServiceInfo.Tag.INPUT) || a.getName().equals(localName))
+              .findFirst()
+              .ifPresent(
+                  input -> overriddenParameters.put(input.getName(), Identifier.create(localName)));
+        }
+      }
+      observationActuator
+          .getComputation()
+          .add(adaptContextualizer(contextualizer, overriddenParameters));
     }
     var shardingStrategy = new Data.ShardingStrategy();
     Utils.Annotations.getAnnotations(model, true)
@@ -267,12 +299,16 @@ public class DataflowCompiler {
    * @param contextualizer
    * @return
    */
-  private ServiceCall adaptContextualizer(Contextualizable contextualizer) {
+  private ServiceCall adaptContextualizer(
+      Contextualizable contextualizer, Map<String, Object> parameters) {
 
     ServiceCall ret = null;
 
     if (contextualizer.getServiceCall() != null) {
-      ret = contextualizer.getServiceCall();
+      ret =
+          parameters.isEmpty()
+              ? contextualizer.getServiceCall()
+              : new ServiceCallImpl(contextualizer.getServiceCall(), parameters);
     } else if (!contextualizer.getResourceUrns().isEmpty()) {
       ret =
           new ServiceCallImpl(
