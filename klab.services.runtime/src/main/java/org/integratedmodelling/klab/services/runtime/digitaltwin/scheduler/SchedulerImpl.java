@@ -50,7 +50,7 @@ public class SchedulerImpl implements Scheduler {
   private Event initializationEvent;
 
   /*
-   * The event processor is a fully replayable, multicasting one with synchronized behavior.
+   * The event processor is a fully replayable multicast with synchronized behavior.
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
    * as a provenance agent and is recorded as the agent for activities triggered by temporal events.
    */

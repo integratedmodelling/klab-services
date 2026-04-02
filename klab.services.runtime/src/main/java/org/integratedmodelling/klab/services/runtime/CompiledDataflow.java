@@ -333,13 +333,6 @@ public class CompiledDataflow {
      */
     var rootRole = Observation.classifyRole(rootObservation);
 
-    // TODO do we need a collective if the root observation is an individual and we're not in a
-    //  collective scope? Probably - which means we have a manually instantiated collective and
-    //  resolution is user-driven (activity and plan should be stored as such). If the collective
-    //  is already there, we may need criteria for collision - probably based on identities - and
-    //  resolution of new collectives for that observable will return the reference to the existing
-    //  collective.
-
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
     dependentObservations
         .values()
