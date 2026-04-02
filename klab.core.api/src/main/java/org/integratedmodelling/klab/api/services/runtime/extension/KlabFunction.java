@@ -90,6 +90,7 @@ public @interface KlabFunction {
    * a dependency by name and type. The name will become a requirement from the dependencies in the
    * model and the type will be validated. This can also be declared in the main prototype.
    */
+  @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.PARAMETER})
   @interface Input {
 
@@ -122,6 +123,7 @@ public @interface KlabFunction {
    * an additional output by name and type. The name will become a requirement from the dependencies
    * in the model and the type will be validated. This can also be declared in the main prototype.
    */
+  @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.PARAMETER})
   @interface Output {
 

@@ -153,23 +153,23 @@ public class DataflowCompiler {
       var child = resolutionGraph.graph().getEdgeTarget(edge);
       var coverage = edge.coverage;
 
-      // TODO HERE can be 1+ nodes: if OBS it's the result of a RESOLVE, otherwise a MODEL (result
-      //  of OBSERVE) or the result of an APPLY (not sure what happens then). Must handle them all
-      //  and then link appropriately - the link may be coverage-related or transformer-related
+      // There can be 1+ nodes: if OBS it's the result of a RESOLVE, otherwise a MODEL.
       if (child instanceof Model model) {
         /**
-         * Result of OBSERVE in the strategy. Depending on the model's description type, the
-         * result may be transforming the dependencies and must be appropriately linked. This happens
-         * using the transformation ID that must be brought along from the strategy's operation.
+         * Result of OBSERVE in the strategy. Depending on the model's description type, the result
+         * may be transforming the dependencies and must be appropriately linked. This happens using
+         * the transformation ID that brought along from the strategy's operation, which is the
+         * localName in the edge connecting to the strategy.
          */
-        compileModel(observationActuator, observation, coverage, observationStrategy, model);
+        compileModel(observationActuator, observation, coverage, observationStrategy, model, edge.localName);
 
       } else if (child instanceof Observation childObservation) {
         // new dependencies brought in by the strategy
         observationActuator
             .getChildren()
             .addAll(compileObservation(childObservation, coverage, observationStrategy));
-        // TODO if this observation is the target of a transformation, it must carry the internal ID from the strategy
+        // TODO if this observation is the target of a transformation, it must carry the internal ID
+        // from the strategy
         //   so that we can link it to the transformation
       }
     }
@@ -194,7 +194,7 @@ public class DataflowCompiler {
       Observation observation,
       Geometry scale,
       ObservationStrategy observationStrategy,
-      Model model) {
+      Model model, String localName) {
 
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
 
@@ -213,7 +213,8 @@ public class DataflowCompiler {
     }
 
     for (var contextualizer : model.getComputation()) {
-      // TODO if there is a link from the strategy, the contextualizer must carry the transformation ID as
+      // TODO if there is a link from the strategy, the contextualizer must carry the transformation
+      // ID as
       //  the input target, which must be tagged in the function's ServiceInfo
       observationActuator.getComputation().add(adaptContextualizer(contextualizer));
     }

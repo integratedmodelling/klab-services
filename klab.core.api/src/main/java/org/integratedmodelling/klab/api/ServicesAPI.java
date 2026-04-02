@@ -24,19 +24,13 @@ public interface ServicesAPI {
    */
   String SCOPE_HEADER = "klab-scope";
 
-  /**
-   * Should be checked at each request at production
-   */
+  /** Should be checked at each request at production */
   String KLAB_VERSION_HEADER = "klab-version";
 
-  /**
-   * For resolution requests
-   */
+  /** For resolution requests */
   String RESOLUTION_PROJECT_HEADER = "klab-resolution-project";
 
-  /**
-   * For resolution requests
-   */
+  /** For resolution requests */
   String RESOLUTION_NAMESPACE_HEADER = "klab-resolution-namespace";
 
   /**
@@ -365,6 +359,8 @@ public interface ServicesAPI {
     String CONNECT = API_BASE + "/connect";
 
     String GET_COMMIT_INFO = API_BASE + "/commit";
+
+    String GET_SERVICE_INFO = API_BASE + "/service/{urn}";
 
     /**
      * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.

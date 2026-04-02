@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -604,6 +605,16 @@ public class RuntimeServerController {
       }
     }
     return false;
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.GET_SERVICE_INFO)
+  public @ResponseBody ServiceInfo retrieveServiceInfo(
+      @PathVariable(name = "urn") String urn, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope = authorization.getScope(Scope.class);
+      return runtimeService.klabService().getServiceInfo(urn, scope);
+    }
+    throw new KlabInternalErrorException("Request authorization doesn't carry a context scope");
   }
 
   @GetMapping(ServicesAPI.RUNTIME.GET_COMMIT_INFO)

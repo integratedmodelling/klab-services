@@ -433,6 +433,12 @@ public class RuntimeService extends BaseService
     return null;
   }
 
+  @Override
+  public ServiceInfo getServiceInfo(String urn, Scope scope) {
+    var ret = getComponentRegistry().getFunctionDescriptor(urn, Version.ANY_VERSION);
+    return ret.isEmpty() ? null : ret.stream().map(s -> s.serviceInfo).findFirst().orElse(null);
+  }
+
   /**
    * Submission is entirely within a transaction, created new at the root submission. Observations
    * are directly used as keys for everything, so the object must never be substituted by another.
