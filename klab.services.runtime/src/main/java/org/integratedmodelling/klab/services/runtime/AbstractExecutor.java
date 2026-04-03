@@ -63,9 +63,30 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       }
       var localShardingStrategy =
           callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
+
       if (localShardingStrategy == null) {
         cause = new KlabIllegalStateException("No sharding strategy available for " + observation);
         return false;
+      } else if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
+        // if have a dependent quality, copy the sharding strategy from its storage, given that it
+        // has already been initialized.
+        var dependentQuality =
+            dependencies.values().stream()
+                .filter(d -> d.getObservable().is(SemanticType.QUALITY))
+                .findFirst()
+                .orElse(null);
+        if (dependentQuality != null) {
+          localShardingStrategy =
+              contextScope
+                  .getDigitalTwin()
+                  .getStorageManager()
+                  .getStorage(dependentQuality)
+                  .getNativeShardingStrategy();
+        } else {
+          // use the default sharding strategy if nothing else is known.
+          localShardingStrategy =
+              contextScope.getService(RuntimeService.class).getDefaultShardingStrategy(observation);
+        }
       }
 
       try {

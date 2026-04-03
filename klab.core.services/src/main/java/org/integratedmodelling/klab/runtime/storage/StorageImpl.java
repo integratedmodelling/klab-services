@@ -32,7 +32,7 @@ public class StorageImpl implements Storage {
 
   private final Observation observation;
   private final ContextScope scope;
-  private final Data.ShardingStrategy nativeShardingStrategy;
+  private Data.ShardingStrategy nativeShardingStrategy;
   private final StorageManagerImpl storageManager;
   private DataKey dataKey;
 
@@ -273,6 +273,11 @@ public class StorageImpl implements Storage {
       Data.ShardingStrategy shardingStrategy,
       Class<T> scannerClass,
       boolean readOnly) {
+    if (this.nativeShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED
+        && shardingStrategy.getCurve() != Data.FillCurve.UNSPECIFIED) {
+      this.nativeShardingStrategy = shardingStrategy;
+    }
+
     if (this.nativeShardingStrategy.equals(shardingStrategy)) {
       return getNativeShards(locator).stream().map(shard -> (T) getNativeScanner(shard)).toList();
     }
@@ -297,8 +302,8 @@ public class StorageImpl implements Storage {
     }
 
     /**
-     * TODO if there is a need for mediation, we should create a MediatingScanner with the appropriate
-     *  type. All mediation should be in the scanner and nowhere else.
+     * TODO if there is a need for mediation, we should create a MediatingScanner with the
+     * appropriate type. All mediation should be in the scanner and nowhere else.
      */
     return switch (shard.getShardingStrategy().getDataType()) {
       case DOUBLE -> new LocalDoubleScanner((ShardImpl) shard, st.data, st.histogram);
@@ -432,7 +437,7 @@ public class StorageImpl implements Storage {
     protected long index = 0L;
 
     public BaseScanner(
-            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       this.shard = shard;
       this.size = shard.getGeometry().size();
       this.data = data;
@@ -464,7 +469,7 @@ public class StorageImpl implements Storage {
   class LocalDoubleScanner extends BaseScanner implements Storage.DoubleScanner {
 
     public LocalDoubleScanner(
-            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -490,7 +495,7 @@ public class StorageImpl implements Storage {
   class LocalFloatScanner extends BaseScanner implements Storage.FloatScanner {
 
     public LocalFloatScanner(
-            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -516,7 +521,7 @@ public class StorageImpl implements Storage {
   class LocalIntScanner extends BaseScanner implements Storage.IntScanner {
 
     public LocalIntScanner(
-            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
@@ -542,7 +547,7 @@ public class StorageImpl implements Storage {
   class LocalLongScanner extends BaseScanner implements Storage.LongScanner {
 
     public LocalLongScanner(
-            ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
+        ShardImpl shard, BufferArray data, com.dynatrace.dynahist.Histogram histogram) {
       super(shard, data, histogram);
     }
 
