@@ -70,7 +70,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 public abstract class BaseService implements KlabService {
 
   private final Type type;
-//  protected EmbeddedBroker embeddedBroker;
+  //  protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
   private URL url;
   protected AtomicBoolean available = new AtomicBoolean(false);
@@ -177,9 +177,9 @@ public abstract class BaseService implements KlabService {
     }
   }
 
-//  public EmbeddedBroker getEmbeddedBroker() {
-//    return embeddedBroker;
-//  }
+  //  public EmbeddedBroker getEmbeddedBroker() {
+  //    return embeddedBroker;
+  //  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -228,6 +228,7 @@ public abstract class BaseService implements KlabService {
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
     ret.setOperational(operational);
+    ret.getAdvisories().addAll(serviceNotifications());
     ret.setConnected(true); // obviously
     ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     return ret;
@@ -286,7 +287,7 @@ public abstract class BaseService implements KlabService {
    * Called when all the essential services are available. The non-essential "operational" services
    * will not necessarily be available yet.
    */
-  public abstract void initializeService();
+  public abstract boolean initializeService();
 
   /**
    * Called when all non-essential operational services become available. The return value will be
@@ -388,8 +389,11 @@ public abstract class BaseService implements KlabService {
    *
    * @param b
    */
-  public void setOperational(boolean b) {
+  public void setOperational(boolean b, Notification... notifications) {
     this.operational = true;
+    if (notifications != null) {
+      this.serviceNotifications.addAll(Arrays.asList(notifications));
+    }
   }
 
   /**

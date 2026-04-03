@@ -29,10 +29,10 @@ public class RemoteAdapterExecutor extends AbstractExecutor
   public RemoteAdapterExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ContextScope scope) {
 
-    super(callInfo, observation, scope, localNames);
+    super(callInfo, observation, scope, dependencies);
 
     this.resource = callInfo.resource();
 
@@ -88,7 +88,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
       contextualizer =
-          new RemoteResourceContextualizer(service.get(), res, observation, localNames);
+          new RemoteResourceContextualizer(service.get(), res, observation, dependencies);
     }
     return contextualizer.contextualize(scanner, event, scope);
   }

@@ -33,8 +33,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
       Adapter adapter,
       Resource resource,
       Observation observation,
-      Map<String, Observable> localNames) {
-    super(resource, observation, localNames);
+      Map<String, Observation> dependencies) {
+    super(resource, observation, dependencies);
     this.adapter = adapter;
   }
 
@@ -52,8 +52,9 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
 
     if (scanner != null) {
       builder.setScanner("self", scanner);
-      for (var entry : localNames.keySet()) {
-        Observation observation = null; // TODO get the obs with the keyed observable
+      for (var entry : dependencies.keySet()) {
+        Observation observation =
+            dependencies.get(entry); // TODO get the obs with the keyed observable
         if (observation != null) {
           var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
           var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);

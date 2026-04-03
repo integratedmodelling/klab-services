@@ -38,10 +38,10 @@ public class ContextualizerExecutor extends AbstractExecutor
       ComponentRegistry componentRegistry,
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ServiceCall call,
       ContextScope scope) {
-    super(callInfo, observation, scope, localNames);
+    super(callInfo, observation, scope, dependencies);
     this.componentRegistry = componentRegistry;
     this.call = call;
   }

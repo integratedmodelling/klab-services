@@ -162,9 +162,15 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var scopeId =
-        client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
-    return scopeId == null ? null : setupMessaging(sessionScope, userScope, scopeId);
+    try {
+      var scopeId =
+          client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
+      return scopeId == null ? null : setupMessaging(sessionScope, userScope, scopeId);
+
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(this.serviceName() + " failed to declare session scope", t);
+    }
+    return null;
   }
 
   @Override
@@ -180,13 +186,17 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var scopeId =
-        client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
-
-    if (scopeId != null) {
-      setupMessaging(contextScope, sessionScope, scopeId);
+    try {
+      var scopeId =
+          client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
+      if (scopeId != null) {
+        setupMessaging(contextScope, sessionScope, scopeId);
+      }
+      return scopeId;
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(this.serviceName() + " failed to declare context scope", t);
     }
-    return scopeId;
+    return null;
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {

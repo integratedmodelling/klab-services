@@ -35,17 +35,17 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   protected final Observation observation;
   protected Throwable cause;
   protected Storage storage;
-  protected Map<String, Observable> localNames;
+  protected Map<String, Observation> dependencies = new HashMap<>();
 
   public AbstractExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
       ContextScope scope,
-      Map<String, Observable> localNames) {
+      Map<String, Observation> dependencies) {
     this.callInfo = callInfo;
     this.observation = observation;
     this.scope = scope;
-    this.localNames = localNames;
+    this.dependencies = dependencies;
   }
 
   @Override

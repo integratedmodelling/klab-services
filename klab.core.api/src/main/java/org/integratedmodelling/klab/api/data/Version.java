@@ -359,7 +359,7 @@ public class Version implements Comparable<Version>, Serializable {
       return "HEAD";
     }
     String ret = "" + major + SEPARATOR + minor + SEPARATOR + build;
-    if (!modifier.isEmpty()) {
+    if (modifier != null && !modifier.isEmpty()) {
       ret += "-" + modifier;
     }
     return ret;

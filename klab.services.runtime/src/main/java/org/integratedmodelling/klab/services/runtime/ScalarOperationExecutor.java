@@ -21,9 +21,9 @@ public class ScalarOperationExecutor extends AbstractExecutor
   public ScalarOperationExecutor(
       ScalarComputation.Builder builder,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ContextScope scope) {
-    super(null, observation, scope, localNames);
+    super(null, observation, scope, dependencies);
     this.scalarBuilder = builder;
   }
 

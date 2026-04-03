@@ -162,7 +162,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public void initializeService() {
+  public boolean initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
 
@@ -183,7 +183,14 @@ public class RuntimeService extends BaseService
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
+    } else {
+      Logging.INSTANCE.error("Cannot connect to the knowledge graph database");
+      this.setOperational(
+          false, Notification.error("Cannot connect to the knowledge graph database"));
+      return false;
     }
+
+    return true;
   }
 
   @Override

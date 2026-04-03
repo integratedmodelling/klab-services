@@ -256,7 +256,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         lexer.consume();
 
         /*
-         * Encode into a one-character-per-token to recognize the remaining patterns:
+         * Encode into a one-character-per-token string to recognize the remaining patterns:
          *
          * ., ( and ) are literal;
          * I = known identifier

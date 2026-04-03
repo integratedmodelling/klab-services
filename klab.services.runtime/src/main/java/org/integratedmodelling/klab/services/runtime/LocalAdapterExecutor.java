@@ -24,9 +24,9 @@ public class LocalAdapterExecutor extends AbstractExecutor
   public LocalAdapterExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ContextScope scope) {
-    super(callInfo, observation, scope, localNames);
+    super(callInfo, observation, scope, dependencies);
     this.adapter = callInfo.embeddedAdapter();
     this.resource = callInfo.resource();
   }
@@ -47,7 +47,7 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
     // enqueue data extraction from adapter method TODO needs the scanner
     final var contextualizer =
-        new LocalResourceContextualizer(adapter, res, observation, localNames);
+        new LocalResourceContextualizer(adapter, res, observation, dependencies);
 
     // TODO this cannot be the simple executor, needs the scanner to be passed after
     return contextualizer.contextualize(scanner, event, scope);

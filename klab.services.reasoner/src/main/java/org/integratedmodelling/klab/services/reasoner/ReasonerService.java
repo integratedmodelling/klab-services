@@ -281,12 +281,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public void initializeService() {
+  public boolean initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Reasoner service: ");
     for (ProjectConfiguration authority : configuration.getAuthorities()) {
       loadAuthority(authority);
     }
+
+    var ret = false;
 
     this.observationReasoner = new ObservationReasoner(this);
     this.syntacticMatcher =
@@ -332,13 +334,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           }
         }
         var notifications = loadKnowledge(worldview, serviceScope());
-
         if (!Utils.Resources.hasErrors(notifications)) {
           //                    setOperational(false);
           //                    serviceScope().warn("Worldview loading failed: reasoner is
           //                    disabled");
           //                } else {
           setOperational(true);
+          ret = true;
           serviceScope().info("Worldview loaded into local reasoner");
 
           // TODO if there were previous logical notifications they should be deleted now
@@ -352,6 +354,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
       }
     }
+    return ret;
   }
 
   @Override
