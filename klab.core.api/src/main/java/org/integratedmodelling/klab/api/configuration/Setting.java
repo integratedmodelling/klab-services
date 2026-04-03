@@ -69,6 +69,11 @@ public enum Setting {
       "Launch local services automatically if a distribution is available",
       Boolean.class,
       false),
+  EXIT_WHEN_STOPPING(
+      Page.GENERAL,
+      "Close main and aux services and exit the engine/modeler on local services stop",
+      Boolean.class,
+      false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
   LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false),
   DISTRIBUTION_SOURCE_URL(

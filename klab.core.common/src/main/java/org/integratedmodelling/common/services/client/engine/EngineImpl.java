@@ -1,6 +1,8 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -92,7 +94,12 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public int stopLocalServices() {
-    return serviceMonitor.stopLocalServices();
+    var ret = serviceMonitor.stopLocalServices();
+    if (settings.get(Setting.EXIT_WHEN_STOPPING, Boolean.class)) {
+      serviceMonitor.stopAuxServices();
+      Executors.newScheduledThreadPool(1).schedule(() -> System.exit(0), 2, TimeUnit.SECONDS);
+    }
+    return ret;
   }
 
   @Override

@@ -478,4 +478,13 @@ public class ServiceMonitor {
 
     return ret;
   }
+
+  public void stopAuxServices() {
+    for (var service : serviceInstances.values()) {
+      if (Distribution.Product.Type.PRIMARY_SERVICES.contains(service.getProduct().getType())) {
+        continue;
+      }
+      service.stop();
+    }
+  }
 }
