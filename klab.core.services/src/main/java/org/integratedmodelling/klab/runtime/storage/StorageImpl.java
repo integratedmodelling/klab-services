@@ -346,8 +346,9 @@ public class StorageImpl implements Storage {
    * @param <T>
    * @return
    */
-  private <T extends Scanner> List<T> remapScanners(
+  public static <T extends Scanner> List<T> remapScanners(
       List<Scanner> nativeScanners, Data.ShardingStrategy shardingStrategy, Class<T> scannerClass) {
+
     // TODO! two steps: 1) splits & curve; 2) data type casting
     return (List<T>) nativeScanners;
   }

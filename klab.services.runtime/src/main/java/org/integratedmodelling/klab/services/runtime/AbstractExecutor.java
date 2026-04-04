@@ -89,6 +89,12 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         }
       }
 
+      /*
+       * All dependencies must be coerced into a scanner structure that
+       * is compatible with the local sharding strategy.
+       */
+
+
       try {
         for (var scanner :
             storage.scan(
@@ -263,8 +269,17 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       Observation observation,
       Storage.Scanner scanner) {
 
-    if (observations.containsKey(argument.getName())) {
+    if (dependencies.containsKey(argument.getName())) {
 
+      var obs = dependencies.get(argument.getName());
+      // TODO we need the correspondent shard
+//      if (Observation.class.isAssignableFrom(argument.getType())) {
+//        return obs;
+//      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
+//        return scanner;
+//      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
+//        return scanner == null ? null : scanner.shard();
+//      }
     } else {
 
       if (Observation.class.isAssignableFrom(argument.getType())) {
