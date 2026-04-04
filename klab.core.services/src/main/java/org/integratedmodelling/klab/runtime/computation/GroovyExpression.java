@@ -44,6 +44,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class GroovyExpression /*extends Expression*/ implements Expression {
@@ -157,7 +158,7 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
 //              binding.setVariable("space", localScale.getSpace());
 //              binding.setVariable("time", localScale.getTime());
 
-            } else if ("self".equals(key)
+            } else if (Dataflow.SELF_ID.equals(key)
                 && value instanceof Observation observation
                 && observation.getObservable().is(SemanticType.COUNTABLE)) {
 

@@ -643,7 +643,7 @@ public class CompiledDataflow {
     }
 
     private void defineLocalNames(Actuator actuator, Map<String, Observation> localReferences) {
-      localReferences.put("self", observation);
+      localReferences.put(Dataflow.SELF_ID, observation);
       // only scan the direct dependents, references or not.
       for (var child : actuator.getChildren()) {
         localReferences.put(

@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -21,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -51,7 +50,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     //
     // ese to describe the sequence of steps
     class Step {
-      String target = "self";
+      String target = Dataflow.SELF_ID;
       boolean scalar = true;
       Expression.Descriptor expressionDescriptor;
       // TODO compiled LUT and the like
@@ -185,7 +184,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
       }
 
       // we need it for the type
-      scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
+      scalarBuffers.put(
+          Dataflow.SELF_ID, new VarInfo(Dataflow.SELF_ID, getTypeDeclaration(selfStorage), 0));
 
       // buffer creation
       codeInfo

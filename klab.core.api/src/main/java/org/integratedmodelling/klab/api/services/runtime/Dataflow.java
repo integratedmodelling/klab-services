@@ -46,6 +46,12 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  */
 public interface Dataflow extends Serializable, RuntimeAsset {
 
+  /**
+   * The identifier for the target observation or its value in method calls, expressions and datflow
+   * code.
+   */
+  String SELF_ID = "self";
+
   default RuntimeAsset.Type classify() {
     return Type.DATAFLOW;
   }

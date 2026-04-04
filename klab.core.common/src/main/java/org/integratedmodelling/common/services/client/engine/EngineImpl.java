@@ -95,7 +95,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public int stopLocalServices() {
     var ret = serviceMonitor.stopLocalServices();
-    if (settings.get(Setting.EXIT_WHEN_STOPPING, Boolean.class)) {
+    if (settings.get(Setting.EXIT_WHEN_STOPPING_SERVICES, Boolean.class)) {
       serviceMonitor.stopAuxServices();
       Executors.newScheduledThreadPool(1).schedule(() -> System.exit(0), 2, TimeUnit.SECONDS);
     }

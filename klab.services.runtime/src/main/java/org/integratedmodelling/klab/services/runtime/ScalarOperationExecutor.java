@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
@@ -28,8 +29,8 @@ public class ScalarOperationExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
-    return scalarMapper.execute(scanner.shard().getGeometry(), event, scope);
+  protected boolean run(Scheduler.Event event, Map<String,Storage.Scanner> scanners, ContextScope scope) {
+    return scalarMapper.execute(scanners.get(Dataflow.SELF_ID).shard().getGeometry(), event, scope);
   }
 
   @Override

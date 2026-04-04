@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
 
@@ -51,7 +52,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope, null);
 
     if (scanner != null) {
-      builder.setScanner("self", scanner);
+      builder.setScanner(Dataflow.SELF_ID, scanner);
       for (var entry : dependencies.keySet()) {
         Observation observation =
             dependencies.get(entry); // TODO get the obs with the keyed observable

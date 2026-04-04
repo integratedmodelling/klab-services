@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.lang.reflect.Method;
@@ -89,22 +90,62 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         }
       }
 
+      Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
+      scanners.put(
+          Dataflow.SELF_ID,
+          new ArrayList<>(
+              storage.scan(
+                  event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)));
+
+      var nScanners = scanners.get(Dataflow.SELF_ID).size();
+
       /*
        * All dependencies must be coerced into a scanner structure that
        * is compatible with the local sharding strategy.
        */
+      for (var dependency : dependencies.keySet()) {
 
+        if (dependency.equals(Dataflow.SELF_ID)
+            || !dependencies.get(dependency).getObservable().is(SemanticType.QUALITY)) {
+          continue;
+        }
+
+        var store =
+            contextScope
+                .getDigitalTwin()
+                .getStorageManager()
+                .getStorage(dependencies.get(dependency));
+        scanners.put(
+            dependency,
+            new ArrayList<>(
+                store.scan(
+                    event, localShardingStrategy, localShardingStrategy.getScannerClass(), true)));
+
+        if (scanners.get(dependency).size() != nScanners) {
+          cause =
+              new KlabIllegalStateException(
+                  "Incompatible sharding strategies for " + dependency + " or mediation failed");
+          return false;
+        }
+      }
+
+      List<Map<String, Storage.Scanner>> allScanners = new ArrayList<>();
+      for (int n = 0; n < nScanners; n++) {
+        var map = new HashMap<String, Storage.Scanner>();
+        for (var scanner : scanners.keySet()) {
+          map.put(scanner, scanners.get(scanner).get(n));
+        }
+        allScanners.add(map);
+      }
 
       try {
-        for (var scanner :
-            storage.scan(
-                event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
+        for (var scannerMap : allScanners) {
           tasks.add(
               () -> {
                 // HERE TODO FIXME catch any exceptions
-                var ok = run(event, scanner, contextScope);
+                var ok = run(event, scannerMap, contextScope);
                 if (ok) {
-                  storage.finalizeRun(scanner);
+                  storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
                 }
                 return ok;
               });
@@ -130,16 +171,16 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   /**
-   * Implement for the actual contextualization. NOTE: must also link the storage or
-   * sub-observations to the current transaction in the scope.
+   * Implement for the actual contextualization.
    *
    * @param event
-   * @param scanner
+   * @param scanners the scanners for the output (keyed by Dataflow.SELF_ID) and any quality
+   *     dependencies, mapped to the same shard geometry and keyed by their local name.
    * @param scope
    * @return
    */
   protected abstract boolean run(
-      Scheduler.Event event, Storage.Scanner scanner, ContextScope scope);
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope);
 
   @Override
   public Throwable getCause() {
@@ -171,7 +212,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       Resource resource,
       Geometry geometry,
       Data.Builder builder,
-      Storage.Scanner scanner,
+      Map<String, Storage.Scanner> scanners,
       Observation observation,
       Observable observable,
       Urn urn,
@@ -211,9 +252,14 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         } else if (Storage.Shard.class.isAssignableFrom(argument.getType())
             || Storage.Scanner.class.isAssignableFrom(argument.getType())
             || Observation.class.isAssignableFrom(argument.getType())) {
+          // FIXME HOSTIA
           runArguments.add(
               bindObservationParameter(
-                  argument, observationReferences, digitalTwin, observation, scanner));
+                  argument,
+                  observationReferences,
+                  digitalTwin,
+                  observation,
+                  scanners.get(Dataflow.SELF_ID)));
         } else if (Scale.class.isAssignableFrom(argument.getType())) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
@@ -267,19 +313,19 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       Map<String, Boolean> observations,
       DigitalTwin digitalTwin,
       Observation observation,
-      Storage.Scanner scanner) {
+      Storage.Scanner scanner) { // FIXME must be the map of scanners
 
     if (dependencies.containsKey(argument.getName())) {
 
       var obs = dependencies.get(argument.getName());
       // TODO we need the correspondent shard
-//      if (Observation.class.isAssignableFrom(argument.getType())) {
-//        return obs;
-//      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
-//        return scanner;
-//      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
-//        return scanner == null ? null : scanner.shard();
-//      }
+      //      if (Observation.class.isAssignableFrom(argument.getType())) {
+      //        return obs;
+      //      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
+      //        return scanner;
+      //      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
+      //        return scanner == null ? null : scanner.shard();
+      //      }
     } else {
 
       if (Observation.class.isAssignableFrom(argument.getType())) {
@@ -288,7 +334,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         return scanner;
       } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
         return scanner == null ? null : scanner.shard();
-      }
+      } // TODO else adapt the scanner type if adaptable
     }
     return null;
   }

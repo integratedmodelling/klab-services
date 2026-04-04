@@ -83,7 +83,7 @@ public enum Setting {
       "Launch local services automatically if a distribution is available",
       Boolean.class,
       false),
-  EXIT_WHEN_STOPPING(
+  EXIT_WHEN_STOPPING_SERVICES(
       Page.GENERAL,
       "Close main and aux services and exit the engine/modeler on local services stop",
       Boolean.class,

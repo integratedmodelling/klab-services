@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -47,9 +48,13 @@ public class ContextualizerExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
+  protected boolean run(
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
 
-    var geometry = scanner == null ? observation.getGeometry() : scanner.shard().getGeometry();
+    var geometry =
+        scanners.get(Dataflow.SELF_ID) == null
+            ? observation.getGeometry()
+            : scanners.get(Dataflow.SELF_ID).shard().getGeometry();
 
     if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
@@ -71,7 +76,7 @@ public class ContextualizerExecutor extends AbstractExecutor
               callInfo.resource(),
               geometry,
               builder,
-              scanner,
+              scanners,
               observation,
               observation.getObservable(),
               // TODO can be smarter if a resource or a resource URN is in the parameters

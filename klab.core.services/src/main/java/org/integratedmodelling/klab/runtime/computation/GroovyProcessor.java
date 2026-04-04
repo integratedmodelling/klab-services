@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -190,7 +191,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
                 : output.getObservable().getStatedName();
         knownObservations.put(identifier, output);
         if (i == 0) {
-          knownObservations.put("self", output);
+          knownObservations.put(Dataflow.SELF_ID, output);
         }
       }
 
