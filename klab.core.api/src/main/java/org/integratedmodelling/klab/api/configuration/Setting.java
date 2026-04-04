@@ -46,7 +46,7 @@ public enum Setting {
           System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run")),
   DISTRIBUTION_DIRECTORY(
       Page.GENERAL,
-      "The directory where k.LAB distribution files will be stored for the . Contents will be large.",
+      "The directory where k.LAB distribution files will be stored. Contents will be large.",
       File.class,
       new File(
           System.getProperty("user.home")
@@ -54,6 +54,20 @@ public enum Setting {
               + ".klab"
               + File.separator
               + "distribution")),
+  // WARNING: this is used in the graphdb local service without importing the setting. If changed,
+  // the graphdb service will need to be updated to use the new setting.
+  DATABASE_DIRECTORY(
+      Page.SERVICES,
+      "The directory where the graph database for local runtime will be hosted.",
+      File.class,
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + ".klab"
+              + File.separator
+              + "services"
+              + File.separator
+              + "graphdb")),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",

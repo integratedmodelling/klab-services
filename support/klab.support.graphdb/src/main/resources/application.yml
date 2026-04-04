@@ -12,9 +12,9 @@ app:
     host: 127.0.0.1
     bolt-port: 7687
     http-port: 7474
-    data-directory: ./var/neo4j/data
-    plugins-directory: ./var/neo4j/plugins
+    data-directory: ${user.home}/.klab/services/graphdb/data
+    plugins-directory: ${user.home}/.klab/services/graphdb/plugins
     config:
-      server.directories.logs: ./var/neo4j/logs
+      server.directories.logs: ${user.home}/.klab/services/graphdb/logs
       dbms.logs.query.enabled: VERBOSE
       dbms.security.procedures.unrestricted: '*'
