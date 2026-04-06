@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.engine.distribution;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
+
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 
 public interface LocalInstance {
@@ -63,6 +65,13 @@ public interface LocalInstance {
    * @return
    */
   StartupOptions getSettings();
+
+  /**
+   * Returns the directory where the configuration files are stored, if any.
+   *
+   * @return
+   */
+  Path getConfigurationPath();
 
   /**
    * Returns the standard input stream of the process, if running.

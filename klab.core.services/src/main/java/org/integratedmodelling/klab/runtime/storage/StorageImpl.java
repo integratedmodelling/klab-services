@@ -390,11 +390,6 @@ public class StorageImpl implements Storage {
     return null;
   }
 
-  private <T extends Scanner> T mapShardToScanner(
-      Shard shard, Data.ShardingStrategy request, Class<T> scannerClass) {
-    throw new KlabUnimplementedException("shard mapping unimplemented");
-  }
-
   @Override
   public Histogram getHistogram() {
     return Utils.Data.adaptHistogram(histogram());
