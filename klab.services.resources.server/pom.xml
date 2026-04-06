@@ -105,6 +105,11 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.api</artifactId>
             <version>${klab.version}</version>

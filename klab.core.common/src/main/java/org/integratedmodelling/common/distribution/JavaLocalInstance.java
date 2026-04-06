@@ -1,15 +1,18 @@
 package org.integratedmodelling.common.distribution;
 
 import org.apache.commons.exec.CommandLine;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -137,5 +140,15 @@ public class JavaLocalInstance extends LocalInstanceImpl {
       ret.add("-server");
     }
     return ret.toArray(new String[0]);
+  }
+
+  @Override
+  @Override
+  public Path getConfigurationPath() {
+    // TODO negotiate a possibly reconfigured configuration path (I guess through clients?) Also
+    //  the naming of the subdirectories should be part of the enums
+    return Configuration.INSTANCE.getDataPath().toPath()
+        .resolve("services")
+        .resolve(getProduct().getType().relativeConfigurationPath());
   }
 }

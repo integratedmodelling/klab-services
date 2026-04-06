@@ -2,6 +2,18 @@ server:
   address: 127.0.0.1
   port: 8080
 
+logging:
+  file:
+    name: ${user.home}/.klab/services/graphdb/logs/graphdb.log
+  pattern:
+    file: "[%d{yyyy-MM-dd HH:mm:ss.SSS}] - ${PID:- } %-5level [%thread] --- %logger{39}: %msg%n"
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i"
+      max-file-size: 10MB
+      max-history: 10
+      total-size-cap: 100MB
+
 app:
   security:
     allowed-hosts:
