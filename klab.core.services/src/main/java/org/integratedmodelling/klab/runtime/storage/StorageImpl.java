@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -366,25 +367,25 @@ public class StorageImpl implements Storage {
 
   private Layout histogramLayout(Observable observable) {
     // TODO use sensible types and values for the observable
-    return OpenTelemetryExponentialBucketsLayout.create(10);
+    return OpenTelemetryExponentialBucketsLayout.create(1);
   }
 
   public com.dynatrace.dynahist.Histogram histogram() {
 
     var allBuffers = allShards();
     if (allBuffers.size() == 1) {
-      ;
-      return shardStorage.get(((ShardImpl) allBuffers.getFirst()).getUrn()).histogram;
+      return shardStorage.get((allBuffers.getFirst()).getUrn()).histogram;
     } else if (allBuffers.size() > 1) {
       com.dynatrace.dynahist.Histogram ret = null;
-      var first = shardStorage.get(((ShardImpl) allBuffers.getFirst()).getUrn()).histogram;
+      var first = shardStorage.get((allBuffers.getFirst()).getUrn()).histogram;
       if (first != null) {
         ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
         for (var buffer : allBuffers) {
-          if (shardStorage.get(((ShardImpl) buffer).getUrn()).histogram != null) {
-            ret.addHistogram(shardStorage.get(((ShardImpl) buffer).getUrn()).histogram);
+          if (shardStorage.get(buffer.getUrn()).histogram != null) {
+            ret.addHistogram(shardStorage.get(buffer.getUrn()).histogram);
           }
         }
+        return ret;
       }
     }
     return null;
@@ -402,6 +403,15 @@ public class StorageImpl implements Storage {
 
   @Override
   public void finalizeRun(Scanner scanner) {
+    if (scanner instanceof BaseScanner baseScanner) {
+      Histogram histogram = null;
+      var storage = shardStorage.get(scanner.shard().getUrn());
+      if (storage.histogram != null) {
+        var dynaHistogram = storage.histogram;
+        histogram = Utils.Data.adaptHistogram(dynaHistogram);
+      }
+      baseScanner.shard.setHistogram(histogram);
+    }
     if (scope.getConfiguration().getPersistence().survivesShutdown) {
       storageManager.persistShard(scanner);
     }
@@ -424,7 +434,7 @@ public class StorageImpl implements Storage {
     }
   }
 
-  class BaseScanner implements Storage.Scanner {
+  public static class BaseScanner implements Storage.Scanner {
 
     protected final ShardImpl shard;
     protected final long size;
