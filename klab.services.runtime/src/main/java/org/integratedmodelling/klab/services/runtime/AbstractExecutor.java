@@ -142,7 +142,6 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         for (var scannerMap : allScanners) {
           tasks.add(
               () -> {
-                // HERE TODO FIXME catch any exceptions
                 var ok = run(event, scannerMap, contextScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
@@ -334,25 +333,40 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             .findFirst()
             .orElse(null);
 
-    if (input == null && output == null) {
+    if (input != null) {
       // observations, scanners and storages must be bound as inputs or outputs, not as normal
       // parameters.
-      return null;
+      if (dependencies.containsKey(input.getName())) {
+        return adaptObservationArgument(
+            input, argument, dependencies.get(input.getName()), scanners.get(input.getName()));
+      } else {
+        // single input? Bind to that anyway
+        if (dependencies.keySet().stream().filter(k -> !Dataflow.SELF_ID.equals(k)).count() == 1) {
+          var singleInputKey =
+              dependencies.keySet().stream()
+                  .filter(k -> !Dataflow.SELF_ID.equals(k))
+                  .findFirst()
+                  .orElse(null);
+          if (singleInputKey != null) {
+            return adaptObservationArgument(
+                input, argument, dependencies.get(singleInputKey), scanners.get(singleInputKey));
+          }
+        }
+      }
+    } else if (output != null) {
+
+      /*
+      TODO the situation where the output is not self is not possible yet.
+       */
+      if (dependencies.containsKey(output.getName())) {
+        return adaptObservationArgument(
+            output, argument, dependencies.get(output.getName()), scanners.get(output.getName()));
+      }
+
+      return adaptObservationArgument(output, argument, observation, self);
     }
 
-    // now establish what we have - a lone unreferenced observation gets in the output
-    if (output != null && !dependencies.containsKey(output.getName()) && self != null) {
-      // bind the argument to the input and let destiny take its course if we have > 1
-      return adaptObservationArgument(output, argument, observation, self);
-    } else if (output == null && scanners.containsKey(input.getName())) {
-      // otherwise, we have a scanner bound to the input
-      return adaptObservationArgument(
-          input, argument, dependencies.get(input.getName()), scanners.get(input.getName()));
-    } else if (input != null && self != null) {
-      // bind to the input despite the name, and if there are more suitable args they will be bound
-      // too.
-      return adaptObservationArgument(input, argument, observation, self);
-    }
+    /* either an input or an output must be mapped. Otherwise this is just null. */
 
     return null;
   }
