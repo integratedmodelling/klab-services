@@ -385,6 +385,7 @@ public class StorageImpl implements Storage {
             ret.addHistogram(shardStorage.get(buffer.getUrn()).histogram);
           }
         }
+        return ret;
       }
     }
     return null;

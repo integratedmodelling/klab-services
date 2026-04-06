@@ -161,8 +161,22 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
       var results = executorService.invokeAll(tasks);
-      return results.stream()
-          .noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      var ret =
+          results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      if (!ret) {
+
+        List<Throwable> exceptions = new ArrayList<>();
+        for (var future : results) {
+          if (future.state() == Future.State.FAILED) {
+            exceptions.add(future.exceptionNow());
+          }
+        }
+        cause =
+            exceptions.isEmpty()
+                ? new KlabIllegalStateException("Execution failed")
+                : exceptions.getFirst();
+      }
+      return ret;
     } catch (Throwable t) {
       cause = t;
       return false;
@@ -279,8 +293,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             runArguments.add(schedulerEvent.getTime());
           } else if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
+            runArguments.add(scale == null ? null : scale.getTime());
+          } else {
+            runArguments.add(null);
           }
-          runArguments.add(scale == null ? null : scale.getTime());
         } else if (Scheduler.Event.class.isAssignableFrom(argument.getType())) {
           runArguments.add(schedulerEvent);
         } else if (Resource.class.isAssignableFrom(argument.getType()) && resource != null) {

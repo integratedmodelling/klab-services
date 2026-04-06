@@ -223,9 +223,11 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   public boolean saveBufferArray(BufferArray array, File file, Storage.Type type) {
-    try {
+
+    try (var rFile = new RandomAccessFile(file, "rw")) {
+
+      var channel = rFile.getChannel();
       int elementSize = type.size();
-      FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
       MappedByteBuffer buffer =
           channel.map(FileChannel.MapMode.READ_WRITE, 0, array.count() * elementSize);
       buffer.order(ByteOrder.nativeOrder());
@@ -236,7 +238,7 @@ public class StorageManagerImpl implements StorageManager {
             buffer.putFloat(array.get(i).floatValue());
             break;
           case DOUBLE:
-            buffer.putDouble(array.get(i).doubleValue());
+            buffer.putDouble(array.get(i));
             break;
           case LONG:
             buffer.putLong(array.get(i).longValue());
@@ -250,7 +252,8 @@ public class StorageManagerImpl implements StorageManager {
         }
       }
       channel.close();
-    } catch (IOException e) {
+
+    } catch (Exception e) {
       contextScope.error("Error saving buffer array: " + e.getMessage());
       return false;
     }
@@ -259,8 +262,8 @@ public class StorageManagerImpl implements StorageManager {
 
   // FIXME restore the histogram and return that
   public boolean loadBufferArray(BufferArray array, File file, Storage.Type type) {
-    try {
-      FileChannel channel = new RandomAccessFile(file, "r").getChannel();
+    try (var rFile = new RandomAccessFile(file, "r")) {
+      var channel = rFile.getChannel();
       MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
       buffer.order(ByteOrder.nativeOrder());
 
