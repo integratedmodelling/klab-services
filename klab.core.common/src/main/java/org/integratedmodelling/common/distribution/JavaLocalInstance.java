@@ -143,12 +143,12 @@ public class JavaLocalInstance extends LocalInstanceImpl {
   }
 
   @Override
+  @Override
   public Path getConfigurationPath() {
     // TODO negotiate a possibly reconfigured configuration path (I guess through clients?) Also
     //  the naming of the subdirectories should be part of the enums
-    return Path.of(
-        Configuration.INSTANCE.getDataPath().toPath().toString(),
-        "services",
-        getProduct().getType().relativeConfigurationPath());
+    return Configuration.INSTANCE.getDataPath().toPath()
+        .resolve("services")
+        .resolve(getProduct().getType().relativeConfigurationPath());
   }
 }
