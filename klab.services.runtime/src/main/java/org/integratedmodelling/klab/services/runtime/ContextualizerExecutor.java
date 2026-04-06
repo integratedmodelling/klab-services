@@ -72,6 +72,7 @@ public class ContextualizerExecutor extends AbstractExecutor
 
       var arguments =
           matchArguments(
+              callInfo.serviceInfo().serviceInfo,
               implementation.method,
               callInfo.resource(),
               geometry,

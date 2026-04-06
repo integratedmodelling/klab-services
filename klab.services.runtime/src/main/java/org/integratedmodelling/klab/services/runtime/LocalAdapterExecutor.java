@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.data.LocalResourceContextualizer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
@@ -44,9 +45,16 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
     var res = resource;
     if (adapter.hasContextualizer()) {
-      res =
-          adapter.contextualize(
-              resource, scanners.get(Dataflow.SELF_ID).shard().getGeometry(), scope);
+      try {
+        res =
+            adapter.contextualize(
+                resource,
+                scanners == null ? null : scanners.get(Dataflow.SELF_ID).shard().getGeometry(),
+                scope);
+      } catch (Throwable e) {
+        observation.getNotifications().add(Notification.error(e));
+        return false;
+      }
     }
 
     // TODO do something with the deps
@@ -55,7 +63,13 @@ public class LocalAdapterExecutor extends AbstractExecutor
     final var contextualizer =
         new LocalResourceContextualizer(adapter, res, observation, dependencies);
 
-    // TODO this cannot be the simple executor, needs the scanner to be passed after
-    return contextualizer.contextualize(scanners.get(Dataflow.SELF_ID), event, scope);
+    try {
+      // TODO this cannot be the simple executor, needs the scanner to be passed after
+      return contextualizer.contextualize(
+          scanners == null ? null : scanners.get(Dataflow.SELF_ID), event, scope);
+    } catch (Throwable e) {
+      observation.getNotifications().add(Notification.error(e));
+      return false;
+    }
   }
 }

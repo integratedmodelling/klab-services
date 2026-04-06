@@ -208,6 +208,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
    * @return
    */
   public List<Object> matchArguments(
+      ServiceInfo serviceInfo,
       Method method,
       Resource resource,
       Geometry geometry,
@@ -252,14 +253,14 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         } else if (Storage.Shard.class.isAssignableFrom(argument.getType())
             || Storage.Scanner.class.isAssignableFrom(argument.getType())
             || Observation.class.isAssignableFrom(argument.getType())) {
-          // FIXME HOSTIA
           runArguments.add(
               bindObservationParameter(
+                  serviceInfo,
                   argument,
                   observationReferences,
                   digitalTwin,
                   observation,
-                  scanners.get(Dataflow.SELF_ID)));
+                  scanners));
         } else if (Scale.class.isAssignableFrom(argument.getType())) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
@@ -309,33 +310,78 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   private Object bindObservationParameter(
+      ServiceInfo serviceInfo,
       Parameter argument,
       Map<String, Boolean> observations,
       DigitalTwin digitalTwin,
       Observation observation,
-      Storage.Scanner scanner) { // FIXME must be the map of scanners
+      Map<String, Storage.Scanner> scanners) { // FIXME must be the map of scanners
 
-    if (dependencies.containsKey(argument.getName())) {
+    var self = scanners.get(Dataflow.SELF_ID);
 
-      var obs = dependencies.get(argument.getName());
-      // TODO we need the correspondent shard
-      //      if (Observation.class.isAssignableFrom(argument.getType())) {
-      //        return obs;
-      //      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
-      //        return scanner;
-      //      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
-      //        return scanner == null ? null : scanner.shard();
-      //      }
-    } else {
+    /*
+    if self is null, we bind observation to the first observation, and we let the calling function bind others or the same again.
+     */
+    var input =
+        serviceInfo.listInputs().stream()
+            .filter(i -> i.getName().equals(argument.getName()))
+            .findFirst()
+            .orElse(null);
 
-      if (Observation.class.isAssignableFrom(argument.getType())) {
-        return observation;
-      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
-        return scanner;
-      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
-        return scanner == null ? null : scanner.shard();
-      } // TODO else adapt the scanner type if adaptable
+    var output =
+        serviceInfo.listOutputs().stream()
+            .filter(o -> o.getName().equals(argument.getName()))
+            .findFirst()
+            .orElse(null);
+
+    if (input == null && output == null) {
+      // observations, scanners and storages must be bound as inputs or outputs, not as normal
+      // parameters.
+      return null;
     }
+
+    // now establish what we have - a lone unreferenced observation gets in the output
+    if (output != null && !dependencies.containsKey(output.getName()) && self != null) {
+      // bind the argument to the input and let destiny take its course if we have > 1
+      return adaptObservationArgument(output, argument, observation, self);
+    } else if (output == null && scanners.containsKey(input.getName())) {
+      // otherwise, we have a scanner bound to the input
+      return adaptObservationArgument(
+          input, argument, dependencies.get(input.getName()), scanners.get(input.getName()));
+    } else if (input != null && self != null) {
+      // bind to the input despite the name, and if there are more suitable args they will be bound
+      // too.
+      return adaptObservationArgument(input, argument, observation, self);
+    }
+
+    return null;
+  }
+
+  /**
+   * Once established that the argument should be bound to an observation or its helper objects,
+   * return the adapted argument that the function argument wants.
+   *
+   * @param input
+   * @param argument
+   * @param observation
+   * @param scanner
+   * @return
+   */
+  private Object adaptObservationArgument(
+      ServiceInfo.Argument input,
+      Parameter argument,
+      Observation observation,
+      Storage.Scanner scanner) {
+
+    if (Observation.class.isAssignableFrom(argument.getType())) {
+      return observation;
+    } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
+      // TODO adapt the scanner type and UNIT if adaptable
+      return scanner;
+    } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
+      return scanner == null ? null : scanner.shard();
+    }
+
     return null;
   }
 
