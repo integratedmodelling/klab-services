@@ -86,7 +86,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
         step.scalar =
             step.expressionDescriptor.getIdentifiers().values().stream()
                 .anyMatch(id -> id.observation() != null && id.scalarReferenceCount() > 0);
-
+        // FIXME these notifications must reach the clients
         if (Utils.Notifications.hasErrors(step.expressionDescriptor.getNotifications())) {
           return false;
         }

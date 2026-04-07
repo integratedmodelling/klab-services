@@ -38,7 +38,7 @@ public class ScalarOperationExecutor extends AbstractExecutor
     if (scalarMapper == null) {
       try {
         scalarMapper = scalarBuilder.build();
-      } catch (Exception e) {
+      } catch (Throwable e) {
         cause = e;
         return false;
       }

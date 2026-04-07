@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -554,7 +555,7 @@ public class CompiledDataflow {
       Map<String, Observable> knownObservations = new HashMap<>();
       // TODO fill in the observables
 
-      /**
+      /*
        * Now actually compile each computation, adapting the sharding strategy to whatever the
        * specific computation requires.
        *
@@ -567,13 +568,18 @@ public class CompiledDataflow {
         var callInfo = getCallInfo(call, observation);
         Expression expression = null;
         LookupTable lookupTable = null;
+        var preset = RuntimeService.CoreFunctor.classify(call);
 
-        if (callInfo == null) {
+        if (callInfo == null && preset != RuntimeService.CoreFunctor.EXPRESSION_RESOLVER) {
           scope.error("Cannot compile executor for " + actuator);
+          // FIXME this doesn't get to the clients. Should add notifications to the (empty) dataflow
+          //  instead.
+          observation
+              .getNotifications()
+              .add(Notification.error("Cannot compile executor for " + actuator));
           return false;
         }
 
-        var preset = RuntimeService.CoreFunctor.classify(call);
         if (preset != null) {
           switch (preset) {
             case URN_RESOLVER, ADAPTER_RESOLVER -> {

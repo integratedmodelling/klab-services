@@ -1128,7 +1128,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // if not done, reschedule, else complete. If exception (remote or local), complete
         // exceptionally.
         var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
-        Logging.INSTANCE.info("Polling for job status: " + status);
+//        Logging.INSTANCE.info("Polling for job status: " + status);
         if (status == null) {
           if (noResponseCount == 3) {
             completeExceptionally(
