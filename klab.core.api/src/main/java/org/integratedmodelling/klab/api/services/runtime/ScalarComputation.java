@@ -6,12 +6,14 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
+import java.util.Map;
+
 /**
  * During contextualization, any sequence of scalar operations is compiled into one of these. The
  * API is meant to be run in parallel whenever possible by mapping the computation on a {@link
- * Storage.Shard}. Implementations may use local buffers or build parallel pipelines backed by
- * Spark or other distributed computational engines. In general the computation should be compiled
- * into the fastest-executing strategy, when possible independent from the context so that it can be
+ * Storage.Shard}. Implementations may use local buffers or build parallel pipelines backed by Spark
+ * or other distributed computational engines. In general the computation should be compiled into
+ * the fastest-executing strategy, when possible independent from the context so that it can be
  * processed remotely.
  */
 public interface ScalarComputation {
@@ -46,6 +48,12 @@ public interface ScalarComputation {
   /**
    * Run sequentially or map over the buffer. This may be called on partial buffers or an entire
    * state.
+   *
+   * @param scanners the scanners for the data buffers. "self" is always present and is the scanner
+   *     to write into. TODO Any missing optional dependency should correspond to a dummy no-data
+   *     supplier.
+   * @param event the scheduler event for the computation
+   * @param scope the context scope for the computation
    */
-  boolean execute(Geometry geometry, Scheduler.Event event, ContextScope scope);
+  boolean execute(Map<String, Storage.Scanner> scanners, Scheduler.Event event, ContextScope scope);
 }

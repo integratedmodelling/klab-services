@@ -570,6 +570,8 @@ public class CompiledDataflow {
         LookupTable lookupTable = null;
         var preset = RuntimeService.CoreFunctor.classify(call);
 
+
+        // TODO the entire flow here is a bit backwards. Should be revised
         if (callInfo == null && preset != RuntimeService.CoreFunctor.EXPRESSION_RESOLVER) {
           scope.error("Cannot compile executor for " + actuator);
           // FIXME this doesn't get to the clients. Should add notifications to the (empty) dataflow

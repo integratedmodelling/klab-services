@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resolver;
 import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.utils.Utils;
@@ -63,8 +64,9 @@ public class DataflowCompiler {
       return Dataflow.empty();
     }
 
+    // TODO remove
     var dump = Utils.Graphs.dump(resolutionGraph.graph());
-    System.out.println(dump);
+    Logging.INSTANCE.info(dump);
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
@@ -88,7 +90,7 @@ public class DataflowCompiler {
 
     // TODO remove
     var encoded = Utils.Dataflows.encode(ret, scope);
-    System.out.println(encoded);
+    Logging.INSTANCE.info(encoded);
 
     return ret;
   }

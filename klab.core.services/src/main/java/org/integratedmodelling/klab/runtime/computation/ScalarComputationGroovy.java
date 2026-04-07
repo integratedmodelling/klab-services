@@ -254,9 +254,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   @Override
-  public boolean execute(Geometry geometry, Scheduler.Event event, ContextScope scope) {
+  public boolean execute(Map<String,Storage.Scanner> scanners, Scheduler.Event event, ContextScope scope) {
     try {
-      return script.run(geometry, event, scope);
+      return script.run(scanners, event, scope);
     } catch (Throwable t) {
       System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
       scope.error(t, sourceCode);
