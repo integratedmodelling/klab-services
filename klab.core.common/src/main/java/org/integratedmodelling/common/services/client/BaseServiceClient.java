@@ -140,7 +140,8 @@ public abstract class BaseServiceClient implements KlabService {
   public boolean shutdown() {
     int refCount = monitor.release(this);
     if (refCount == 0 && monitor.isLocal()) {
-      return client.put(ServicesAPI.ADMIN.SHUTDOWN, null, Boolean.class);
+      // FIXME needs the admin user scope
+      return client.withScope(serviceScope).put(ServicesAPI.ADMIN.SHUTDOWN, null, Boolean.class);
     }
     return false;
   }
