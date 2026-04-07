@@ -140,7 +140,7 @@ public abstract class BaseServiceClient implements KlabService {
   public boolean shutdown() {
     int refCount = monitor.release(this);
     if (refCount == 0 && monitor.isLocal()) {
-      // TODO invoke shutdown on the server
+      return client.put(ServicesAPI.ADMIN.SHUTDOWN, null, Boolean.class);
     }
     return false;
   }
@@ -192,7 +192,7 @@ public abstract class BaseServiceClient implements KlabService {
       if (scopeId != null) {
         setupMessaging(contextScope, sessionScope, scopeId);
         // give the server some time to set up the context and inform the other services
-//        Thread.sleep(1000);
+        //        Thread.sleep(1000);
       }
       return scopeId;
     } catch (Throwable t) {
