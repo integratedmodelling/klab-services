@@ -301,6 +301,8 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     try {
 
+      klabService().sampleLoad();
+
       /*
       check all needed services; put self offline if not available or not there, online otherwise; if
       there's a change in online status, report it through the service scope

@@ -5,14 +5,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.h2.util.IOUtils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -20,12 +18,13 @@ import org.integratedmodelling.klab.services.application.security.ServiceAuthori
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.HealthComponent;
+import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +44,14 @@ public class KlabServiceController {
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
+  @Autowired private HealthEndpoint healthEndpoint;
+
+
+  @GetMapping(ServicesAPI.HEALTH)
+  public HealthComponent getHealth() {
+    // Returns the aggregated Health object with all components
+    return healthEndpoint.health();
+  }
   /**
    * Retrieve the capabilities of the service. These have a common part (specified by the {@link
    * org.integratedmodelling.klab.api.services.KlabService.ServiceCapabilities} API) and
