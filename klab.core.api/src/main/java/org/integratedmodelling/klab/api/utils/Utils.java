@@ -328,6 +328,76 @@ public class Utils {
     public static final String VOID_URN_PREFIX = "urn:klab:void:";
     public static final String LOCAL_FILE_PREFIX = "file:";
 
+    // Pattern for valid characters in URN components (lowercase letters, numbers, dots,
+    // underscores)
+    private static final Pattern VALID_COMPONENT_PATTERN = Pattern.compile("^[a-z0-9_.]+$");
+
+    // Pattern for valid dot-separated path (like Java package names)
+    private static final Pattern VALID_PATH_PATTERN =
+        Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$");
+
+    /**
+     * Sanitizes a URN component to ensure it contains only lowercase, meaningful components without
+     * strange characters. Each component may be a dot-separated path using a hierarchical
+     * convention similar to Java package names.
+     *
+     * @param component The component to sanitize
+     * @return A sanitized component
+     */
+    public static String sanitizeUrnComponent(String component) {
+
+      if (component == null || component.isEmpty()) {
+        return "default";
+      }
+
+      // Convert to lowercase
+      component = component.toLowerCase();
+
+      // Check if it's already a valid dot-separated path
+      if (VALID_PATH_PATTERN.matcher(component).matches()) {
+        return component;
+      }
+
+      // Replace invalid characters with underscores
+      component = component.replaceAll("[^a-z0-9_.-]", "_");
+
+      // Ensure it doesn't start with a number or underscore
+      if (!component.isEmpty() && !Character.isLetter(component.charAt(0))) {
+        component = "x" + component;
+      }
+
+      // Handle consecutive dots and ensure each segment starts with a letter
+      String[] segments = component.split("\\.");
+      StringBuilder result = new StringBuilder();
+
+      for (int i = 0; i < segments.length; i++) {
+        String segment = segments[i];
+
+        // Skip empty segments
+        if (segment.isEmpty()) {
+          continue;
+        }
+
+        // Ensure segment starts with a letter
+        if (!Character.isLetter(segment.charAt(0))) {
+          segment = "x" + segment;
+        }
+
+        // Add the segment to the result
+        if (result.length() > 0) {
+          result.append(".");
+        }
+        result.append(segment);
+      }
+
+      // If we end up with an empty string, use "default"
+      if (result.length() == 0) {
+        return "default";
+      }
+
+      return result.toString();
+    }
+
     /**
      * Create a unique URN that won't be accepted in any production resource catalog. For testing.
      *
@@ -4233,6 +4303,53 @@ public class Utils {
             };
       }
       return ret;
+    }
+  }
+
+  /** Ultra-simple console CLI for testing */
+  public static class CLI {
+
+    Map<String, Consumer<String[]>> commands = new HashMap<>();
+
+    public static CLI create() {
+      return new CLI();
+    }
+
+    public CLI with(String command, Consumer<String[]> handler) {
+      commands.put(command, handler);
+      return this;
+    }
+
+    public void run() {
+      Scanner scanner = new Scanner(System.in);
+      System.out.println("This is the CLI testing utility. Type 'exit' to exit.");
+      System.out.println("Available commands: " + String.join(", ", commands.keySet()));
+      while (true) {
+        System.out.print("> ");
+        String input = scanner.nextLine();
+        if (input == null || input.trim().isEmpty()) {
+          continue;
+        }
+        if (input.equals("exit")) {
+          break;
+        }
+        String[] args = input.split("\\s+");
+        Consumer<String[]> handler = commands.get(args[0]);
+        if (handler != null) {
+          try {
+            handler.accept(
+                args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
+          } catch (Throwable e) {
+            System.out.println(
+                "Handler threw "
+                    + Paths.getLast(e.getClass().getSimpleName(), '.')
+                    + " exception: "
+                    + e.getMessage());
+          }
+        } else {
+          System.out.println("Unknown command: " + args[0]);
+        }
+      }
     }
   }
 

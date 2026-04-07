@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -182,7 +183,7 @@ public class ResolutionCompiler {
           if (!cov.isRelevant()) {
             return ResolutionGraph.empty();
           }
-          ret.merge(observableResolution);
+          ret.merge(observableResolution, operation.getId());
         }
         case OBSERVE -> {
           boolean complete = false;
@@ -210,7 +211,7 @@ public class ResolutionCompiler {
 
           if (complete) {
             for (var modelGraph : modelGraphs) {
-              ret.merge(modelGraph);
+              ret.merge(modelGraph, operation.getTransformationTarget());
             }
           } else {
             return ResolutionGraph.empty();
@@ -234,6 +235,8 @@ public class ResolutionCompiler {
             if (requirements.isEmpty()) {
               return ResolutionGraph.empty();
             }
+
+            updateServiceInfo(requirements, ret, scope);
             ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
           }
         }
@@ -241,6 +244,29 @@ public class ResolutionCompiler {
     }
 
     return ret;
+  }
+
+  /*
+   * Retrieve any missing service info from the runtime so that the dataflow compiler
+   * can analyze the prototype and link arguments as required.
+   */
+  private void updateServiceInfo(
+      ResourceSet requirements, ResolutionGraph ret, ContextScope scope) {
+
+    for (var resource : requirements.getResults()) {
+      if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION) {
+        var serviceInfo = ret.getServiceInfo(resource.getResourceUrn());
+        if (serviceInfo == null) {
+          serviceInfo =
+              scope
+                  .getService(RuntimeService.class)
+                  .getServiceInfo(resource.getResourceUrn(), scope);
+          if (serviceInfo != null) {
+            ret.addServiceInfo(resource.getResourceUrn(), serviceInfo);
+          } // null should never happen
+        }
+      }
+    }
   }
 
   /**
@@ -276,6 +302,8 @@ public class ResolutionCompiler {
     if (requirements.isEmpty()) {
       return ResolutionGraph.empty();
     }
+
+    updateServiceInfo(requirements, ret, scope);
     ret.setDependencies(Utils.Resources.merge(requirements, ret.getDependencies()));
 
     /*
@@ -288,7 +316,7 @@ public class ResolutionCompiler {
       var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
-      //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCOverage merges to
+      //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCoverage merges to
       // insufficient the FIRST time only
       var cov = ret.checkCoverage(dependencyResolution);
       if (!cov.isRelevant()) {

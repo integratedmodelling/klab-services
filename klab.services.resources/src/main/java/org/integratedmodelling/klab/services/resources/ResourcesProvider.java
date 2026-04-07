@@ -196,7 +196,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public void initializeService() {
+  public boolean initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Resources service: ");
     //
@@ -250,6 +250,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     //            Message.MessageClass.ServiceLifecycle,
     //            Message.MessageType.ServiceAvailable,
     //            capabilities(serviceScope()));
+    return true;
   }
 
   @Override

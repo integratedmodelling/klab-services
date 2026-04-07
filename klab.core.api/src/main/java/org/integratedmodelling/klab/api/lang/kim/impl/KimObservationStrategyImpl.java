@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim.impl;
 
+import java.util.*;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -8,8 +9,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.util.*;
 
 public class KimObservationStrategyImpl implements KimObservationStrategy {
 
@@ -278,6 +277,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     private Type type;
     private KimObservable observable;
+    private String transformationTarget;
+    private String localId;
     private List<ServiceCall> functions = new ArrayList<>();
     private List<KimObservationStrategy> deferredStrategies = new ArrayList<>();
 
@@ -315,6 +316,24 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
       this.deferredStrategies = deferredStrategies;
+    }
+
+    @Override
+    public String getTransformationTarget() {
+      return transformationTarget;
+    }
+
+    public void setTransformationTarget(String transformationTarget) {
+      this.transformationTarget = transformationTarget;
+    }
+
+    @Override
+    public String getLocalId() {
+      return localId;
+    }
+
+    public void setLocalId(String localId) {
+      this.localId = localId;
     }
   }
 }

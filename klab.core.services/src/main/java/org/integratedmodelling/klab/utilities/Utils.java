@@ -451,7 +451,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           ret.getBins().add(hBin);
         }
       } catch (Throwable e) {
-        Logging.INSTANCE.error("adaptHistogram failed: " + e.toString());
+        Logging.INSTANCE.error("adaptHistogram failed: " + e.getMessage(), e);
       }
       return ret;
     }

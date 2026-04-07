@@ -396,6 +396,10 @@ public class ComponentRegistry {
     return Pair.of(info, ret);
   }
 
+  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(ServiceCall call) {
+    return getFunctionDescriptor(call.getUrn(), call.getRequiredVersion());
+  }
+
   /**
    * Return the function descriptor that corresponds to the passed call, considering any version
    * requirements and arguments. If no version requirements are present, return the highest version
@@ -405,13 +409,11 @@ public class ComponentRegistry {
    * as a service name and the properties as parameters, with "FILE" or "URL" as argument for
    * bytestream-based schemata.
    *
-   * @param call
    * @return
    */
-  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(ServiceCall call) {
-    var version = call.getRequiredVersion();
+  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(String urn, Version version) {
     Extensions.ComponentDescriptor target = null;
-    for (var component : serviceFinder.get(call.getUrn())) {
+    for (var component : serviceFinder.get(urn)) {
       if (version == null) {
         if (target == null || component.version().greater(target.version())) {
           target = component;
@@ -423,23 +425,23 @@ public class ComponentRegistry {
     if (target == null) {
       return null;
     }
-    var ret = target.services().get(call.getUrn());
+    var ret = target.services().get(urn);
     if (ret != null) {
       return ret;
     }
-    ret = target.verbs().get(call.getUrn());
+    ret = target.verbs().get(urn);
     if (ret != null) {
       return ret;
     }
-    ret = target.annotations().get(call.getUrn());
+    ret = target.annotations().get(urn);
     if (ret != null) {
       return ret;
     }
-    ret = target.exporters().get(call.getUrn());
+    ret = target.exporters().get(urn);
     if (ret != null) {
       return ret;
     }
-    ret = target.importers().get(call.getUrn());
+    ret = target.importers().get(urn);
     if (ret != null) {
       return ret;
     }
@@ -588,7 +590,8 @@ public class ComponentRegistry {
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
-            createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class));
+            createContextualizerPrototype(
+                namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } else if (clss.isAnnotationPresent(Verb.class)) {
         var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
@@ -607,7 +610,7 @@ public class ComponentRegistry {
           && method.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, method.getAnnotation(KlabFunction.class));
+                namespacePrefix, method.getAnnotation(KlabFunction.class), method);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
@@ -645,7 +648,8 @@ public class ComponentRegistry {
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
-            createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class));
+            createContextualizerPrototype(
+                namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } else if (clss.isAnnotationPresent(Verb.class)) {
         var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
@@ -663,7 +667,7 @@ public class ComponentRegistry {
           && method.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, method.getAnnotation(KlabFunction.class));
+                namespacePrefix, method.getAnnotation(KlabFunction.class), method);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
@@ -794,8 +798,8 @@ public class ComponentRegistry {
   }
 
   /**
-   * Find an adapter provided by one of the known services. If the adapter is not present locally and is embeddable,
-   * retrieve the component it's in and load it.
+   * Find an adapter provided by one of the known services. If the adapter is not present locally
+   * and is embeddable, retrieve the component it's in and load it.
    */
   public AdapterDescriptor resolveAdapter(String adapterId, Version version, Scope scope) {
 
@@ -804,10 +808,7 @@ public class ComponentRegistry {
       return existing.getAdapterInfo();
     }
 
-    
-
     return null;
-
   }
 
   /**
@@ -1130,33 +1131,13 @@ public class ComponentRegistry {
 
     ret.setName(namespacePrefix + annotation.name());
     ret.setDescription(annotation.description());
-    //    ret.setFilter(annotation.filter());
-    //    ret.setGeometry(
-    //            annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-    //    ret.setLabel(annotation.dataflowLabel());
-    //    ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.VERB);
-
-    //    for (Artifact.Type a : annotation.type()) {
-    //      ret.getType().add(a);
-    //    }
-
-    //    for (KlabFunction.Argument argument : annotation.parameters()) {
-    //      var arg = createArgument(argument);
-    //      ret.getArguments().put(arg.getName(), arg);
-    //    }
-    //
-    //    AnnotationImpl storageAnnotation = null;
-    //
-    //    if (storageAnnotation != null) {
-    //      ret.getAnnotations().add(storageAnnotation);
-    //    }
 
     return ret;
   }
 
   private ServiceInfoImpl createContextualizerPrototype(
-      String namespacePrefix, KlabFunction annotation) {
+      String namespacePrefix, KlabFunction annotation, Method method) {
 
     var ret = new ServiceInfoImpl();
 
@@ -1189,6 +1170,52 @@ public class ComponentRegistry {
     for (KlabFunction.Input argument : annotation.inputs()) {
       var arg = createArgument(argument);
       ret.getOutputs().add(arg);
+    }
+
+    if (method != null) {
+      /*
+       * Scan method parameters for Input/Output annotations and add to parameters if not already
+       * present.
+       */
+      for (var parameter : method.getParameters()) {
+        if (parameter.isAnnotationPresent(KlabFunction.Input.class)) {
+          var def = parameter.getAnnotation(KlabFunction.Input.class);
+          var name = def.name().isEmpty() ? parameter.getName() : def.name();
+          if (ret.getInputs().stream().noneMatch(a -> a.getName().equals(name))) {
+            var arg = new ServiceInfoImpl.ArgumentImpl();
+            arg.setName(name);
+            arg.setDescription(def.description());
+            arg.setOptional(false);
+            arg.setObservableUrn(null);
+            for (Artifact.Type a : def.type()) {
+              arg.getType().add(a);
+            }
+            if (arg.getType().isEmpty()) {
+              // TODO infer type from parameter unless the type is specified
+            }
+            arg.getTags().add(ServiceInfo.Tag.INPUT);
+            ret.getInputs().add(arg);
+          }
+        } else if (parameter.isAnnotationPresent(KlabFunction.Output.class)) {
+          var def = parameter.getAnnotation(KlabFunction.Output.class);
+          var name = def.name().isEmpty() ? parameter.getName() : def.name();
+          if (ret.getInputs().stream().noneMatch(a -> a.getName().equals(name))) {
+            var arg = new ServiceInfoImpl.ArgumentImpl();
+            arg.setName(name);
+            arg.setDescription(def.description());
+            arg.setOptional(false);
+            arg.setObservableUrn(null);
+            for (Artifact.Type a : def.type()) {
+              arg.getType().add(a);
+            }
+            arg.getTags().add(ServiceInfo.Tag.OUTPUT);
+            if (arg.getType().isEmpty()) {
+              // TODO infer type from parameter unless the type is specified
+            }
+            ret.getOutputs().add(arg);
+          }
+        }
+      }
     }
 
     return ret;

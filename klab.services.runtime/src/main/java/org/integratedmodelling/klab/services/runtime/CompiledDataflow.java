@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
 import java.util.*;
-
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -22,18 +21,14 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
@@ -179,7 +174,9 @@ public class CompiledDataflow {
           case URN_RESOLVER -> {
 
             // TODO use all services hostia
-            resource = resolveResource(call.getParameters().getList("urns", String.class), observation, scope);
+            resource =
+                resolveResource(
+                    call.getParameters().getList("urns", String.class), observation, scope);
             if (resource != null) {
 
               embeddedAdapter =
@@ -213,10 +210,12 @@ public class CompiledDataflow {
     return ret;
   }
 
-  private Resource resolveResource(List<String> urns, Observation observation, ServiceContextScope scope) {
+  private Resource resolveResource(
+      List<String> urns, Observation observation, ServiceContextScope scope) {
 
     if (urns.size() == 1 && scope.getData().containsKey(urns.getFirst())) {
-      // namespace-local resource definition. TODO see if we need to add the observation's geometry to the resource.
+      // namespace-local resource definition. TODO see if we need to add the observation's geometry
+      // to the resource.
       return scope.getData().get(urns.getFirst(), Resource.class);
     }
 
@@ -256,11 +255,15 @@ public class CompiledDataflow {
    */
   public boolean compile(Actuator rootActuator) {
 
-    this.computation = sortComputation(rootActuator);
-    this.rootActuator = rootActuator;
-
     // build the observations as required
     requireObservations(rootActuator);
+
+    /**
+     * Sort the actuator by run order and parallelism; establish links between observations and
+     * local names for executors.
+     */
+    this.computation = sortComputation(rootActuator);
+    this.rootActuator = rootActuator;
 
     for (var pair : this.computation) {
       // todo change this with a loop over
@@ -332,13 +335,6 @@ public class CompiledDataflow {
     The links to be made depend on the reciprocal nature of the root and its dependents
      */
     var rootRole = Observation.classifyRole(rootObservation);
-
-    // TODO do we need a collective if the root observation is an individual and we're not in a
-    //  collective scope? Probably - which means we have a manually instantiated collective and
-    //  resolution is user-driven (activity and plan should be stored as such). If the collective
-    //  is already there, we may need criteria for collision - probably based on identities - and
-    //  resolution of new collectives for that observable will return the reference to the existing
-    //  collective.
 
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
     dependentObservations
@@ -509,6 +505,7 @@ public class CompiledDataflow {
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
     private Data.ShardingStrategy nativeShardingStrategy;
+    private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
       this.observation =
@@ -516,6 +513,8 @@ public class CompiledDataflow {
               ? rootObservation
               : dependentObservations.get(actuator.getId());
       this.operational = compile(actuator);
+      defineLocalNames(actuator, this.localReferences);
+
       // TODO if this is restoring an existing observation from the KG, the sharding strategy MUST
       //  be restored too
     }
@@ -579,15 +578,15 @@ public class CompiledDataflow {
           switch (preset) {
             case URN_RESOLVER, ADAPTER_RESOLVER -> {
               if (scalarBuilder != null) {
-                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                if (!getScalarOperator(scalarBuilder, localReferences)) {
                   return false;
                 }
                 scalarBuilder = null;
               }
               ContextualExecutor executor =
                   callInfo.embeddedAdapter() != null
-                      ? new LocalAdapterExecutor(callInfo, observation, knownObservations, scope)
-                      : new RemoteAdapterExecutor(callInfo, observation, knownObservations, scope);
+                      ? new LocalAdapterExecutor(callInfo, observation, localReferences, scope)
+                      : new RemoteAdapterExecutor(callInfo, observation, localReferences, scope);
               if (!executor.validate()) {
                 var cause = executor.getCause();
                 if (cause != null) {
@@ -606,7 +605,7 @@ public class CompiledDataflow {
             }
             case DEFER_RESOLUTION -> {
               if (scalarBuilder != null) {
-                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                if (!getScalarOperator(scalarBuilder, localReferences)) {
                   return false;
                 }
                 scalarBuilder = null;
@@ -618,19 +617,19 @@ public class CompiledDataflow {
           // TODO handle scalar geometry contextualizers! Must add to builder if not preset but
           //  geometry is scalar!!!
           if (scalarBuilder != null) {
-            if (!getScalarOperator(scalarBuilder, knownObservations)) {
+            if (!getScalarOperator(scalarBuilder, localReferences)) {
               return false;
             }
             scalarBuilder = null;
           }
           executors.add(
               new ContextualizerExecutor(
-                  componentRegistry, callInfo, observation, knownObservations, call, scope));
+                  componentRegistry, callInfo, observation, localReferences, call, scope));
         }
       }
 
       if (scalarBuilder != null) {
-        if (!getScalarOperator(scalarBuilder, knownObservations)) {
+        if (!getScalarOperator(scalarBuilder, localReferences)) {
           return false;
         }
       }
@@ -638,8 +637,27 @@ public class CompiledDataflow {
       return true;
     }
 
+    private void defineLocalNames(Actuator actuator, Map<String, Observation> localReferences) {
+      localReferences.put(Dataflow.SELF_ID, observation);
+      // only scan the direct dependents, references or not.
+      for (var child : actuator.getChildren()) {
+        localReferences.put(
+            child.getName(),
+            dependentObservations.values().stream()
+                .filter(
+                    observation ->
+                        observation.getObservable().equals(child.getObservation().getObservable()))
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new KlabInternalErrorException(
+                            "Missing dependent observation for "
+                                + child.getObservation().getObservable())));
+      }
+    }
+
     private boolean getScalarOperator(
-        ScalarComputation.Builder scalarBuilder, Map<String, Observable> knownObservations) {
+        ScalarComputation.Builder scalarBuilder, Map<String, Observation> knownObservations) {
       var executor =
           new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope);
       if (!executor.validate()) {

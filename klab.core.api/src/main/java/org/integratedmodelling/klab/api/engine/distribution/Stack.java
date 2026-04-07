@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
  * Software stacks coordinate availability and upgrades of a specific software stack identified by a

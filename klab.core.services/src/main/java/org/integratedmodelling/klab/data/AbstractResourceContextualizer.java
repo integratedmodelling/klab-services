@@ -21,10 +21,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -37,15 +34,14 @@ public abstract class AbstractResourceContextualizer {
   protected Parameters<String> urnParameters;
   protected Observation observation;
   protected Observable observable;
-  protected final Map<String, Observable> localNames;
+  protected final Map<String, Observation> dependencies = new HashMap<>();
 
   protected AbstractResourceContextualizer(
-      Resource resource, Observation observation, Map<String, Observable> localNames) {
+      Resource resource, Observation observation, Map<String, Observation> dependencies) {
     this.resource = resource;
     this.urn = Urn.of(resource.getUrn());
     this.urnParameters = Parameters.create(this.urn.getParameters());
     this.observation = observation;
-    this.localNames = localNames;
     this.observable = observation.getObservable();
   }
 

@@ -301,6 +301,8 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     try {
 
+      klabService().sampleLoad();
+
       /*
       check all needed services; put self offline if not available or not there, online otherwise; if
       there's a change in online status, report it through the service scope
@@ -345,38 +347,17 @@ public abstract class ServiceInstance<T extends BaseService> {
        */
       if (okEssentials && !initialized.get()) {
         setBusy(true);
-        klabService().initializeService();
-        klabService().setInitialized(true);
-        initialized.set(true);
+        var success = klabService().initializeService();
+        klabService().setInitialized(success);
+        initialized.set(success);
         setBusy(false);
       }
 
-      if (okEssentials && okOperationals && !operationalized.get()) {
+      if (initialized.get() && okEssentials && okOperationals && !operationalized.get()) {
 
         setBusy(true);
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
-
-        //        // register remote components and adapters with our component registry avoiding
-        // clients
-        //        for (var service :
-        // klabService().serviceScope().getServices(ResourcesService.class)) {
-        //
-        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        //        }
-        //        for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-        //
-        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        //        }
-        //        for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-        //
-        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        //        }
-        //        for (var service : klabService().serviceScope().getServices(RuntimeService.class))
-        // {
-        //
-        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        //        }
         setBusy(false);
       }
     } catch (Throwable t) {

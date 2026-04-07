@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.cli;
 
 import java.util.*;
+import java.util.function.Function;
 import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -8,6 +9,8 @@ public abstract class CLI {
 
   List<Command> commands = new ArrayList<>();
   Map<String, Command> commandMap = new HashMap<>();
+
+  private Function<Object, Object> resultHandler = Function.identity();
 
   public static void main(String[] args) {}
 
@@ -35,23 +38,82 @@ public abstract class CLI {
     return ret;
   }
 
+  /**
+   * The result handler will be used to reprocess the result of any command sent through #execute or
+   * #submit. The default is the identity function.
+   *
+   * @param resultHandler
+   */
+  public void setResultHandler(Function<Object, Object> resultHandler) {
+    this.resultHandler = resultHandler;
+  }
+
   public abstract CommandLine parse(String commandLine);
 
+  /**
+   * Submit a command line to the CLI and return the result of the command handler. In case of
+   * errors, the result will be a {@link Throwable}. The specific case of a command not recognized
+   * will result in a {@link KlabCommandLineError} being returned. No exceptions will ever be
+   * thrown.
+   *
+   * <p>The result will be filtered through the installed result handler before being returned. The
+   * default result handler simply returns the result.
+   *
+   * <p>This blocks until the command is executed. Wrap it in a {@link java.util.concurrent.Future}
+   * or thread to process asynchronously.
+   *
+   * @param commandLine
+   * @return
+   */
   public Object submit(String commandLine) {
     var cl = parse(commandLine);
     if (cl == null) {
-      return new KlabCommandLineError("Command line parsing failed for: " + commandLine);
+      return resultHandler.apply(
+          new KlabCommandLineError("Command line parsing failed for: " + commandLine));
     }
     if (cl.isError()) {
-      return new KlabCommandLineError(cl.getErrorMessage());
+      return resultHandler.apply(new KlabCommandLineError(cl.getErrorMessage()));
     } else if (cl.getCommand() != null && cl.getCommand().getHandler() != null) {
       try {
-        return cl.getCommand().getHandler().apply(cl);
+        return resultHandler.apply(cl.getCommand().getHandler().apply(cl));
       } catch (Throwable t) {
-        return t;
+        return resultHandler.apply(t);
       }
     }
-    return null;
+    return resultHandler.apply(null);
+  }
+
+  /**
+   * Submit a command line to the CLI and return the result wrapped in a {@link CommandLine} object
+   * containing all the parsed info. The command result will be available through {@link
+   * CommandLine#getResult()}. Check {@link #submit(String)} for the logic in case of errors and the
+   * use of a custom result handler.
+   *
+   * <p>This blocks until the command is executed. Wrap it in a {@link java.util.concurrent.Future}
+   * or thread to process asynchronously.
+   *
+   * @param commandLine
+   * @return
+   */
+  public CommandLine execute(String commandLine) {
+    var cl = parse(commandLine);
+    if (cl == null) {
+      cl = CommandLine.error(commandLine, "Command line parsing failed for: " + commandLine);
+      cl.setResult(resultHandler.apply(null));
+    }
+    if (cl.isError()) {
+      return cl;
+    } else if (cl.getCommand() != null && cl.getCommand().getHandler() != null) {
+      try {
+        var ret = cl.getCommand().getHandler().apply(cl);
+        cl.setResult(resultHandler.apply(ret));
+      } catch (Throwable t) {
+        cl.setResult(resultHandler.apply(t));
+        cl.setError(true);
+        cl.setErrorMessage(t.getMessage());
+      }
+    }
+    return cl;
   }
 
   public void registerCommand(Command ret) {

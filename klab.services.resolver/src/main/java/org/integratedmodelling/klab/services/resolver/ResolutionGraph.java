@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -53,6 +54,7 @@ public class ResolutionGraph {
   private ResolutionGraph parent;
   private long internalObservationId = -1;
   private Map<Long, Observation> observations;
+  private Map<String, ServiceInfo> serviceInfos;
 
   //  resources installed by resolving observation that come with contextualization data.
   private List<Resource> localResources = new ArrayList<>();
@@ -73,6 +75,7 @@ public class ResolutionGraph {
     this.rootScope = rootScope;
     this.observations = new HashMap<>();
     this.localResources = new ArrayList<>();
+    this.serviceInfos = new HashMap<>();
   }
 
   public Graph<Resolvable, ResolutionEdge> graph() {
@@ -92,6 +95,7 @@ public class ResolutionGraph {
     this.parent = parent;
     this.observations = parent.observations;
     this.localResources = parent.localResources;
+    this.serviceInfos = parent.serviceInfos;
 
     /**
      * Models are resolved from full down, intersecting the coverage of the dependencies. Everything
@@ -120,6 +124,7 @@ public class ResolutionGraph {
     this.parent = parent;
     this.observations = parent.observations;
     this.localResources = parent.localResources;
+    this.serviceInfos = parent.serviceInfos;
     this.resolved = resolvedObservation;
     this.target = target;
     this.targetCoverage =
@@ -300,6 +305,14 @@ public class ResolutionGraph {
     localResources.add(resource);
   }
 
+  public ServiceInfo getServiceInfo(String resourceUrn) {
+    return serviceInfos.get(resourceUrn);
+  }
+
+  public void addServiceInfo(String resourceUrn, ServiceInfo serviceInfo) {
+    serviceInfos.put(resourceUrn, serviceInfo);
+  }
+
   /**
    * The RESOLVED_BY edge, only including the resolution coverage for now. Each resolvable may have
    * >1 resolving nodes, successively covering the extents up to "sufficient" coverage.
@@ -314,6 +327,7 @@ public class ResolutionGraph {
 
     public ResolutionEdge(Coverage coverage, String localName) {
       this.coverage = coverage;
+      this.localName = localName;
     }
   }
 }

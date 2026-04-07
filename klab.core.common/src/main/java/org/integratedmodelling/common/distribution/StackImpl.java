@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
 import java.net.URL;

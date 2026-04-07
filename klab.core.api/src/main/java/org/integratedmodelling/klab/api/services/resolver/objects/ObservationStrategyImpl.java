@@ -1,16 +1,13 @@
 package org.integratedmodelling.klab.api.services.resolver.objects;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
-import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 public class ObservationStrategyImpl implements ObservationStrategy {
 
@@ -28,6 +25,8 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     private Observable observable;
     private List<Contextualizable> contextualizables = new ArrayList<>();
     private List<List<Operation>> contextualStrategies = new ArrayList<>();
+    private String id;
+    private String transformationTarget;
 
     @Override
     public KimObservationStrategy.Operation.Type getType() {
@@ -63,6 +62,24 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
     public void setContextualStrategies(List<List<Operation>> contextualStrategies) {
       this.contextualStrategies = contextualStrategies;
+    }
+
+    @Override
+    public String getId() {
+      return id;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
+
+    @Override
+    public String getTransformationTarget() {
+      return transformationTarget;
+    }
+
+    public void setTransformationTarget(String transformationTarget) {
+      this.transformationTarget = transformationTarget;
     }
 
     @Override
@@ -139,10 +156,8 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
   @Override
   public String toString() {
-    return "(S) urn="
-        + urn
-        + (operations.isEmpty()
+    return "(S) urn=" + urn + " #" + operations.size() /*(operations.isEmpty()
             ? ""
-            : (", operations=\n   " + Utils.Strings.join(operations, "\n   ")));
+            : (", operations=\n   " + Utils.Strings.join(operations, "\n   ")))*/;
   }
 }

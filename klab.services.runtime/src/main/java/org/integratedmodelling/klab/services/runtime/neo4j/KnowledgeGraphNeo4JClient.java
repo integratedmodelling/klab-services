@@ -38,10 +38,10 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
       this.driver.verifyConnectivity();
       online = true;
       System.out.println("Connected to Neo4J at "+url);
+      configureDatabase();
     } catch (Exception e) {
       online = false;
     }
-    configureDatabase();
   }
 
   private KnowledgeGraphNeo4JClient(

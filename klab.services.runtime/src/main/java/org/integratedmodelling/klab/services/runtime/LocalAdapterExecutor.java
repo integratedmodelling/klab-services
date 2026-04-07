@@ -10,6 +10,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.data.LocalResourceContextualizer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
@@ -24,9 +26,9 @@ public class LocalAdapterExecutor extends AbstractExecutor
   public LocalAdapterExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ContextScope scope) {
-    super(callInfo, observation, scope, localNames);
+    super(callInfo, observation, scope, dependencies);
     this.adapter = callInfo.embeddedAdapter();
     this.resource = callInfo.resource();
   }
@@ -38,18 +40,36 @@ public class LocalAdapterExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
+  protected boolean run(
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
 
     var res = resource;
     if (adapter.hasContextualizer()) {
-      res = adapter.contextualize(resource, scanner.shard().getGeometry(), scope);
+      try {
+        res =
+            adapter.contextualize(
+                resource,
+                scanners == null ? null : scanners.get(Dataflow.SELF_ID).shard().getGeometry(),
+                scope);
+      } catch (Throwable e) {
+        observation.getNotifications().add(Notification.error(e));
+        return false;
+      }
     }
+
+    // TODO do something with the deps
 
     // enqueue data extraction from adapter method TODO needs the scanner
     final var contextualizer =
-        new LocalResourceContextualizer(adapter, res, observation, localNames);
+        new LocalResourceContextualizer(adapter, res, observation, dependencies);
 
-    // TODO this cannot be the simple executor, needs the scanner to be passed after
-    return contextualizer.contextualize(scanner, event, scope);
+    try {
+      // TODO this cannot be the simple executor, needs the scanner to be passed after
+      return contextualizer.contextualize(
+          scanners == null ? null : scanners.get(Dataflow.SELF_ID), event, scope);
+    } catch (Throwable e) {
+      observation.getNotifications().add(Notification.error(e));
+      return false;
+    }
   }
 }

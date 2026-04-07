@@ -22,6 +22,7 @@ public class CommandLine {
   private String errorMessage;
   private boolean error;
   private Command command;
+  private Object result;
 
   public static CommandLine error(String commandLine, String message) {
     var result = new CommandLine();
@@ -83,6 +84,10 @@ public class CommandLine {
     return command;
   }
 
+  public Object getResult() {
+    return result;
+  }
+
   /**
    * Return the value of the nth parameter turned into the given class with any admitted conversion.
    *
@@ -129,5 +134,9 @@ public class CommandLine {
 
   public void setCommand(Command command) {
     this.command = command;
+  }
+
+  public void setResult(Object ret) {
+    this.result = ret;
   }
 }

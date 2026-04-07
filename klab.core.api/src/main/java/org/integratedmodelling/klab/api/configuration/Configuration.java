@@ -13,15 +13,14 @@
  */
 package org.integratedmodelling.klab.api.configuration;
 
-import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.utils.Utils.OS;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Level;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.utils.Utils.OS;
 
 /**
  * Basic interface for the configuration stored in klab.properties and access to the shared
@@ -75,24 +74,21 @@ public enum Configuration {
   private Level notificationLevel = Level.INFO;
 
   /** The klab relative work path. */
-  public String KLAB_RELATIVE_WORK_PATH = ".klab";
+  public static final String KLAB_RELATIVE_WORK_PATH = ".klab";
 
   Configuration() {
+    setupDataPath(
+        new File(System.getProperty("user.home") + File.separator + KLAB_RELATIVE_WORK_PATH));
+  }
 
-    if (System.getProperty(KLAB_DATA_DIRECTORY) != null) {
-      this.dataPath = new File(System.getProperty(KLAB_DATA_DIRECTORY));
-    } else {
-      String home = System.getProperty("user.home");
-      if (System.getProperty(KLAB_WORK_DIRECTORY) != null) {
-        KLAB_RELATIVE_WORK_PATH = System.getProperty(KLAB_WORK_DIRECTORY);
-      }
-      this.dataPath = new File(home + File.separator + KLAB_RELATIVE_WORK_PATH);
+  private void setupDataPath(File dataPath) {
+    String home = System.getProperty("user.home");
+    this.dataPath = dataPath;
 
-      /*
-       * make sure it's available for substitution in property files etc.
-       */
-      System.setProperty(KLAB_DATA_DIRECTORY, this.dataPath.toString());
-    }
+    /*
+     * make sure it's available for substitution in property files etc.
+     */
+    System.setProperty(KLAB_DATA_DIRECTORY, this.dataPath.toString());
 
     this.dataPath.mkdirs();
 
@@ -273,5 +269,12 @@ public enum Configuration {
   public File getServiceDataPath() {
     // TODO this should reflect the service
     return getDataPath();
+  }
+
+  public void setDefaults(Settings settings) {
+    var dataPath = settings.get(Setting.WORK_DIRECTORY, File.class);
+    if (dataPath != null) {
+      setupDataPath(dataPath);
+    }
   }
 }

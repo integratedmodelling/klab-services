@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.api.configuration;
 
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-
 import java.io.File;
 import java.util.Map;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 
 /**
  * Settings for all products (engine, modeler, services, user etc.) that can be changed at runtime
@@ -35,7 +34,10 @@ public enum Setting {
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
       File.class,
-      new File(System.getProperty("user.home") + File.separator + ".klab")),
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + Configuration.KLAB_RELATIVE_WORK_PATH)),
   RUN_DIRECTORY(
       Page.GENERAL,
       "The directory where PIDs and other runtime files are stored",
@@ -44,7 +46,7 @@ public enum Setting {
           System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run")),
   DISTRIBUTION_DIRECTORY(
       Page.GENERAL,
-      "The directory where k.LAB distribution files will be stored for the . Contents will be large.",
+      "The directory where k.LAB distribution files will be stored. Contents will be large.",
       File.class,
       new File(
           System.getProperty("user.home")
@@ -52,6 +54,20 @@ public enum Setting {
               + ".klab"
               + File.separator
               + "distribution")),
+  // WARNING: this is used in the graphdb local service without importing the setting. If changed,
+  // the graphdb service will need to be updated to use the new setting.
+  DATABASE_DIRECTORY(
+      Page.SERVICES,
+      "The directory where the graph database for local runtime will be hosted.",
+      File.class,
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + ".klab"
+              + File.separator
+              + "services"
+              + File.separator
+              + "graphdb")),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",
@@ -65,6 +81,11 @@ public enum Setting {
   LAUNCH_PRODUCT(
       Page.GENERAL,
       "Launch local services automatically if a distribution is available",
+      Boolean.class,
+      false),
+  EXIT_WHEN_STOPPING_SERVICES(
+      Page.GENERAL,
+      "Close main and aux services and exit the engine/modeler on local services stop",
       Boolean.class,
       false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),

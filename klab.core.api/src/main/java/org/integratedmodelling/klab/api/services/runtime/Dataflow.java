@@ -46,9 +46,22 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  */
 public interface Dataflow extends Serializable, RuntimeAsset {
 
+  /**
+   * The identifier for the target observation or its value in method calls, expressions and datflow
+   * code.
+   */
+  String SELF_ID = "self";
+
   default RuntimeAsset.Type classify() {
     return Type.DATAFLOW;
   }
+
+  /**
+   * The name is only relevant in imported dataflows.
+   *
+   * @return
+   */
+  String getName();
 
   /**
    * An empty dataflow is a valid dataflow that produces an {@link Artifact#isEmpty() empty
@@ -126,6 +139,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       @Serial private static final long serialVersionUID = -1115441423700817816L;
 
       @Override
+      public String getName() {
+        return "empty_dataflow";
+      }
+
+      @Override
       public boolean isEmpty() {
         return true;
       }
@@ -183,6 +201,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       }
 
       @Serial private static final long serialVersionUID = -1115441423700817816L;
+
+      @Override
+      public String getName() {
+        return "trivial_dataflow";
+      }
 
       @Override
       public boolean isEmpty() {

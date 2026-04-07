@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -249,6 +250,14 @@ public class RuntimeClient extends BaseServiceClient
         .withScope(scope)
         .get(ServicesAPI.RUNTIME.GET_COMMIT_INFO, KnowledgeGraph.Commit.class, "id", commitId);
   }
+
+  @Override
+  public ServiceInfo getServiceInfo(String urn, Scope scope) {
+    return client
+            .withScope(scope)
+            .get(ServicesAPI.RUNTIME.GET_SERVICE_INFO, ServiceInfo.class, "urn", urn);
+  }
+
 
   public <T extends RuntimeAsset> T getAsset(long id, Class<T> assetClass, Scope scope) {
     return client

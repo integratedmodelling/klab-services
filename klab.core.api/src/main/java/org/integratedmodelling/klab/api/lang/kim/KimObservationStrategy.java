@@ -164,6 +164,29 @@ public interface KimObservationStrategy extends KlabStatement {
      * @return
      */
     List<KimObservationStrategy> getDeferredStrategies();
+
+    /**
+     * If this is not null, the operation is an OBSERVE type specified through a <code>
+     * transform ID through OBSERVABLE</id></code>. The method returns the ID of the corresponding
+     * <code>resolve</code> observation operation, and the observable must resolve to a filtering
+     * description type ({@link
+     * org.integratedmodelling.klab.api.knowledge.DescriptionType#CLASSIFICATION}, {@link
+     * org.integratedmodelling.klab.api.knowledge.DescriptionType#CHARACTERIZATION} or
+     * org.integratedmodelling.klab.api.knowledge.DescriptionType#TRANSFORMATION}).
+     *
+     * @return
+     */
+    String getTransformationTarget();
+
+    /**
+     * The local ID for the observable, specified through `as` in the language (not the `named`
+     * clause in the observable). Applies to RESOLVE and is used to link to functions for
+     * transformations, as well as specifying the internal name of an observation within a dataflow
+     * (specified through <code>named</code> observables in k.IM).
+     *
+     * @return
+     */
+    String getLocalId();
   }
 
   /**

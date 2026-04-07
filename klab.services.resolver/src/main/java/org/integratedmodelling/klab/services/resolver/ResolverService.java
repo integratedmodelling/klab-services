@@ -220,7 +220,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public void initializeService() {
+  public boolean initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
 
@@ -262,6 +262,7 @@ public class ResolverService extends BaseService implements Resolver {
     //            Message.MessageClass.ServiceLifecycle,
     //            Message.MessageType.ServiceAvailable,
     //            capabilities(serviceScope()));
+    return true;
   }
 
   @Override

@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.api;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
-import java.io.StringBufferInputStream;
-
 /**
  * TODO add accepted http requests and payload types for both input (POST) and output
  *
@@ -24,19 +22,13 @@ public interface ServicesAPI {
    */
   String SCOPE_HEADER = "klab-scope";
 
-  /**
-   * Should be checked at each request at production
-   */
+  /** Should be checked at each request at production */
   String KLAB_VERSION_HEADER = "klab-version";
 
-  /**
-   * For resolution requests
-   */
+  /** For resolution requests */
   String RESOLUTION_PROJECT_HEADER = "klab-resolution-project";
 
-  /**
-   * For resolution requests
-   */
+  /** For resolution requests */
   String RESOLUTION_NAMESPACE_HEADER = "klab-resolution-namespace";
 
   /**
@@ -72,6 +64,7 @@ public interface ServicesAPI {
   String ANONYMOUS_TOKEN = "018fc355-c123-7608-be4a-89ea1059c33e";
 
   String CAPABILITIES = "/public/capabilities";
+  String HEALTH = "/public/health";
   String STATUS = "/public/status";
 
   String URN_PARAMETER = "{urn}";
@@ -365,6 +358,8 @@ public interface ServicesAPI {
     String CONNECT = API_BASE + "/connect";
 
     String GET_COMMIT_INFO = API_BASE + "/commit";
+
+    String GET_SERVICE_INFO = API_BASE + "/service/{urn}";
 
     /**
      * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.

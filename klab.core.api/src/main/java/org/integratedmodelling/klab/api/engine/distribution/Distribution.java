@@ -357,6 +357,21 @@ public interface Distribution {
       public static Set<Type> PRIMARY_SERVICES =
           Set.of(REASONER_SERVICE, RESOURCES_SERVICE, RESOLVER_SERVICE, RUNTIME_SERVICE);
 
+      public String relativeConfigurationPath() {
+        return switch (this) {
+          case CLI -> "cli";
+          case RESOURCES_SERVICE -> "resources";
+          case REASONER_SERVICE -> "reasoner";
+          case RESOLVER_SERVICE -> "resolver";
+          case RUNTIME_SERVICE -> "runtime";
+          case DATABASE_SERVER -> "graphdb";
+          case AMQP_BROKER -> "broker";
+          default ->
+              throw new KlabIllegalArgumentException(
+                  "product does not have a configuration path: " + this);
+        };
+      }
+
       /**
        * The id used in paths
        *

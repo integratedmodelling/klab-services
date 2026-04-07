@@ -26,6 +26,7 @@ public class DataflowImpl implements Dataflow {
   private long parentId = -1000;
   private double resolvedCoverage;
   private int childrenCount = -1;
+  private String name;
   @Deprecated private long id;
 
   @Override
@@ -62,6 +63,15 @@ public class DataflowImpl implements Dataflow {
 
   public void setComputation(List<Actuator> computation) {
     this.computation = computation;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override

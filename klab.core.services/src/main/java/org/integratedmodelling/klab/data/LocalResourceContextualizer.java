@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
 
@@ -33,8 +34,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
       Adapter adapter,
       Resource resource,
       Observation observation,
-      Map<String, Observable> localNames) {
-    super(resource, observation, localNames);
+      Map<String, Observation> dependencies) {
+    super(resource, observation, dependencies);
     this.adapter = adapter;
   }
 
@@ -51,9 +52,10 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope, null);
 
     if (scanner != null) {
-      builder.setScanner("self", scanner);
-      for (var entry : localNames.keySet()) {
-        Observation observation = null; // TODO get the obs with the keyed observable
+      builder.setScanner(Dataflow.SELF_ID, scanner);
+      for (var entry : dependencies.keySet()) {
+        Observation observation =
+            dependencies.get(entry); // TODO get the obs with the keyed observable
         if (observation != null) {
           var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
           var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);

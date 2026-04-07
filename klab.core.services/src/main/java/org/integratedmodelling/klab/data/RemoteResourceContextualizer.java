@@ -33,8 +33,8 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
       ResourcesService service,
       Resource resource,
       Observation observation,
-      Map<String, Observable> localNames) {
-    super(resource, observation, localNames);
+      Map<String, Observation> dependencies) {
+    super(resource, observation, dependencies);
     this.service = service;
   }
 

@@ -31,7 +31,6 @@ import java.util.Collection;
 public interface KlabAsset extends Serializable {
 
   enum KnowledgeClass {
-
     CONCEPT,
     OBSERVABLE,
     MODEL,
@@ -50,6 +49,7 @@ public interface KlabAsset extends Serializable {
     WORLDVIEW,
     WORKSPACE,
     CONCEPT_STATEMENT,
+    SERVICE_IMPLEMENTATION,
     OBSERVATION;
 
     public Class<? extends KlabAsset> getAssetClass() {

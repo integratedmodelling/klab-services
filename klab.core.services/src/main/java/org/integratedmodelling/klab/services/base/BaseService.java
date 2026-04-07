@@ -5,6 +5,7 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import java.io.*;
 import java.lang.annotation.Annotation;
+import java.lang.management.ManagementFactory;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -70,7 +72,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 public abstract class BaseService implements KlabService {
 
   private final Type type;
-//  protected EmbeddedBroker embeddedBroker;
+  //  protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
   private URL url;
   protected AtomicBoolean available = new AtomicBoolean(false);
@@ -84,6 +86,17 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegistry;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
+  private AtomicInteger cachedLoadPercentage = new AtomicInteger(-1);
+  private static final com.sun.management.OperatingSystemMXBean OS_MX_BEAN;
+
+  static {
+    var mxBean = ManagementFactory.getOperatingSystemMXBean();
+    // TODO/FIXME: on modular JDK configurations this import may require an explicit --add-exports
+    //  flag
+    OS_MX_BEAN =
+        mxBean instanceof com.sun.management.OperatingSystemMXBean sunBean ? sunBean : null;
+  }
+
   protected Settings settings;
   protected Settings settingsForSlaveServices;
   private Identity identity;
@@ -177,9 +190,9 @@ public abstract class BaseService implements KlabService {
     }
   }
 
-//  public EmbeddedBroker getEmbeddedBroker() {
-//    return embeddedBroker;
-//  }
+  //  public EmbeddedBroker getEmbeddedBroker() {
+  //    return embeddedBroker;
+  //  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -228,9 +241,26 @@ public abstract class BaseService implements KlabService {
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
     ret.setOperational(operational);
+    ret.getAdvisories().addAll(serviceNotifications());
     ret.setConnected(true); // obviously
     ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
+    ret.setLoadPercentage(cachedLoadPercentage.get());
     return ret;
+  }
+
+  /**
+   * Samples the current JVM process CPU load and caches it as a 0–1000 integer for the next {@link
+   * #status()} call. Intended to be called periodically from an external scheduler (e.g. every 5 s)
+   * so that {@code getProcessCpuLoad()} always has a meaningful elapsed-time window to measure
+   * against. Returns immediately if the platform does not support the measurement.
+   */
+  public void sampleLoad() {
+    if (OS_MX_BEAN != null) {
+      double cpu = OS_MX_BEAN.getProcessCpuLoad();
+      if (cpu >= 0) {
+        cachedLoadPercentage.set((int) Math.round(cpu * 1000.0));
+      }
+    }
   }
 
   /**
@@ -286,7 +316,7 @@ public abstract class BaseService implements KlabService {
    * Called when all the essential services are available. The non-essential "operational" services
    * will not necessarily be available yet.
    */
-  public abstract void initializeService();
+  public abstract boolean initializeService();
 
   /**
    * Called when all non-essential operational services become available. The return value will be
@@ -388,8 +418,11 @@ public abstract class BaseService implements KlabService {
    *
    * @param b
    */
-  public void setOperational(boolean b) {
+  public void setOperational(boolean b, Notification... notifications) {
     this.operational = true;
+    if (notifications != null) {
+      this.serviceNotifications.addAll(Arrays.asList(notifications));
+    }
   }
 
   /**

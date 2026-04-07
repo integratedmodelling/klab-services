@@ -140,7 +140,8 @@ public abstract class BaseServiceClient implements KlabService {
   public boolean shutdown() {
     int refCount = monitor.release(this);
     if (refCount == 0 && monitor.isLocal()) {
-      // TODO invoke shutdown on the server
+      // FIXME needs the admin user scope
+      return client.withScope(serviceScope).put(ServicesAPI.ADMIN.SHUTDOWN, null, Boolean.class);
     }
     return false;
   }
@@ -162,9 +163,15 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var scopeId =
-        client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
-    return scopeId == null ? null : setupMessaging(sessionScope, userScope, scopeId);
+    try {
+      var scopeId =
+          client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
+      return scopeId == null ? null : setupMessaging(sessionScope, userScope, scopeId);
+
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(this.serviceName() + " failed to declare session scope", t);
+    }
+    return null;
   }
 
   @Override
@@ -180,13 +187,19 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var scopeId =
-        client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
-
-    if (scopeId != null) {
-      setupMessaging(contextScope, sessionScope, scopeId);
+    try {
+      var scopeId =
+          client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
+      if (scopeId != null) {
+        setupMessaging(contextScope, sessionScope, scopeId);
+        // give the server some time to set up the context and inform the other services
+        //        Thread.sleep(1000);
+      }
+      return scopeId;
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(this.serviceName() + " failed to declare context scope", t);
     }
-    return scopeId;
+    return null;
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {
@@ -373,7 +386,7 @@ public abstract class BaseServiceClient implements KlabService {
           "Failed to notify remote service of new user scope: deactivating service client");
       // TODO deactivate (operational should return false)
     } else {
-      Logging.INSTANCE.info("Successfully notified remote service of new user scope");
+      Logging.INSTANCE.info("Successfully notified " + serviceName() + " of new user scope");
     }
   }
 

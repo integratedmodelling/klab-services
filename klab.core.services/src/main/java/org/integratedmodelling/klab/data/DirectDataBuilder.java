@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.*;
@@ -93,7 +94,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
 
   @Override
   public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
-    return adapt(scanners.get("self"), scannerClass);
+    return adapt(scanners.get(Dataflow.SELF_ID), scannerClass);
   }
 
   @Override

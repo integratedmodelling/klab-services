@@ -5,11 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+import javax.annotation.PreDestroy;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
@@ -26,13 +37,16 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.DefaultHealthContributorRegistry;
+import org.springframework.boot.actuate.health.HealthContributorRegistry;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -46,17 +60,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import javax.annotation.PreDestroy;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 /**
  * Abstract wrapper for a {@link org.integratedmodelling.klab.api.services.KlabService} that is
@@ -97,7 +100,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   private String contactEmail = "info@integratedmodelling.org";
   @Autowired private ConfigurableApplicationContext applicationContext;
   @Autowired private Environment environment;
-  @Autowired ServiceAuthorizationManager authorizationManager;
+  @Autowired protected ServiceAuthorizationManager authorizationManager;
+  @Autowired protected ApplicationAvailability applicationAvailability;
   private SimpMessagingTemplate webSocket;
 
   @Override
@@ -168,10 +172,30 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     try {
       SpringApplication app = new SpringApplication(cls);
       Map<String, Object> props = new HashMap<>();
+      String filePattern =
+          "[%d{yyyy-MM-dd HH:mm:ss.SSS}] - ${PID:- } %-5level [%thread] --- %logger{39}: %msg%n";
+      String rolloverPattern = "${LOG_FILE}.%d{yyyy-MM-dd}.%i";
+
+      /*
+       * Logging is initialized very early in the Spring lifecycle; set system properties explicitly
+       * so every service picks up the same file format and rolling policy.
+       */
+      System.setProperty("logging.file.name", logFile.toPath().toString());
+      System.setProperty("logging.pattern.file", filePattern);
+      System.setProperty("logging.logback.rollingpolicy.file-name-pattern", rolloverPattern);
+      System.setProperty("logging.logback.rollingpolicy.max-file-size", "10MB");
+      System.setProperty("logging.logback.rollingpolicy.max-history", "10");
+      System.setProperty("logging.logback.rollingpolicy.total-size-cap", "100MB");
+
       props.put("klab.service.options", options);
       props.put("server.port", "" + options.getPort());
       props.put("spring.main.banner-mode", "off");
       props.put("logging.file.name", logFile.toPath().toString());
+      props.put("logging.pattern.file", filePattern);
+      props.put("logging.logback.rollingpolicy.file-name-pattern", rolloverPattern);
+      props.put("logging.logback.rollingpolicy.max-file-size", "10MB");
+      props.put("logging.logback.rollingpolicy.max-history", "10");
+      props.put("logging.logback.rollingpolicy.total-size-cap", "100MB");
       props.put("server.servlet.contextPath", options.getContextPath());
       props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
       props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
@@ -202,10 +226,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       } catch (MalformedURLException | URISyntaxException e) {
         throw new KlabIllegalStateException(e);
       }
-      System.out.println(
-          "Capabilities: "
-              + url
-              + ServicesAPI.CAPABILITIES);
+      System.out.println("Capabilities: " + url + ServicesAPI.CAPABILITIES);
     } catch (Throwable e) {
       Logging.INSTANCE.error(e);
       return false;

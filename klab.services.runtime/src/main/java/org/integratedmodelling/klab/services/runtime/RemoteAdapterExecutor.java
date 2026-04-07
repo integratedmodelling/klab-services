@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.data.RemoteResourceContextualizer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -29,10 +30,10 @@ public class RemoteAdapterExecutor extends AbstractExecutor
   public RemoteAdapterExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
-      Map<String, Observable> localNames,
+      Map<String, Observation> dependencies,
       ContextScope scope) {
 
-    super(callInfo, observation, scope, localNames);
+    super(callInfo, observation, scope, dependencies);
 
     this.resource = callInfo.resource();
 
@@ -58,7 +59,8 @@ public class RemoteAdapterExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner, ContextScope scope) {
+  protected boolean run(
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
 
     if (resource == null) {
       cause = new KlabResourceAccessException("Resource not found " + resource.getUrn());
@@ -82,15 +84,20 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
       var res = this.resource;
       // TODO validate type chain
+      // TODO DEPS!
       if (adapterInfo.isContextualizing()) {
-        res = service.get().contextualizeResource(resource, scanner.shard().getGeometry(), scope);
+        res =
+            service
+                .get()
+                .contextualizeResource(
+                    resource, scanners.get(Dataflow.SELF_ID).shard().getGeometry(), scope);
       }
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
       contextualizer =
-          new RemoteResourceContextualizer(service.get(), res, observation, localNames);
+          new RemoteResourceContextualizer(service.get(), res, observation, dependencies);
     }
-    return contextualizer.contextualize(scanner, event, scope);
+    return contextualizer.contextualize(scanners.get(Dataflow.SELF_ID), event, scope);
   }
 
   @Override

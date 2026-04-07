@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -173,15 +174,15 @@ public interface RuntimeService extends KlabService {
 
     Set<CRUDOperation> getPermissions();
 
-//    /**
-//     * True if this runtime provides an AMQP broker service on {@link
-//     * org.integratedmodelling.klab.api.services.runtime.Channel#LOCAL_BROKER_URL} for local
-//     * messaging. This should only return true in a local service authenticated with a user
-//     * certificate.
-//     *
-//     * @return
-//     */
-//    boolean isBroker();
+    //    /**
+    //     * True if this runtime provides an AMQP broker service on {@link
+    //     * org.integratedmodelling.klab.api.services.runtime.Channel#LOCAL_BROKER_URL} for local
+    //     * messaging. This should only return true in a local service authenticated with a user
+    //     * certificate.
+    //     *
+    //     * @return
+    //     */
+    //    boolean isBroker();
   }
 
   /**
@@ -257,11 +258,26 @@ public interface RuntimeService extends KlabService {
    */
   KnowledgeGraph.Commit getCommit(long commitId, ContextScope scope);
 
+  /**
+   * Return the prototype of a callable service available in the runtime, or null if not found. User
+   * during resolution to match parameters to service calls in dataflows. Should only be called
+   * after the service has been notified as available after a {@link #resolveContextualizables(List,
+   * ContextScope)} call.
+   *
+   * @param urn
+   * @param scope
+   * @return
+   */
+  ServiceInfo getServiceInfo(String urn, Scope scope);
+
   interface Admin {
 
     /**
      * If runtime exceptions have caused the building of test cases, retrieve them as a map of case
      * class->source code, with the option of deleting them after responding.
+     *
+     * <p>FIXME this is probably overkill and in general we deprecate the Admin interfaces, so it
+     *  should be removed or implemented differently (e.g. through messaging).
      *
      * @param scope if service scope, send all; otherwise send those pertaining to the scope
      * @param deleteExisting delete after sending

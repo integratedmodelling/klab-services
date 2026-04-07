@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -10,10 +8,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -21,8 +17,6 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.ojalgo.array.BufferArray;
-import org.ojalgo.concurrent.Parallelism;
-import picocli.CommandLine;
 
 import java.io.*;
 import java.nio.ByteOrder;
@@ -48,11 +42,7 @@ public class StorageManagerImpl implements StorageManager {
   private final File propertyFile;
   private final RuntimeService service;
   private final File workspace;
-  private final File floatBackupFile;
-  private final File doubleBackupFile;
-  private final File intBackupFile;
-  private final File longBackupFile;
-  private final File booleanBackupFile;
+  private final List<File> mappedBufferFiles = Collections.synchronizedList(new ArrayList<>());
   private final int histogramBinSize = 20;
   private final Map<Observation, Storage> storage = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(0);
@@ -87,11 +77,9 @@ public class StorageManagerImpl implements StorageManager {
     if (persistentSpace.isDirectory()) {
       existingData = true;
     }
-    this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
-    this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
-    this.longBackupFile = new File(this.workspace + File.separator + "lstorage.bin");
-    this.intBackupFile = new File(this.workspace + File.separator + "istorage.bin");
-    this.booleanBackupFile = new File(this.workspace + File.separator + "bstorage.bin");
+    if (!this.workspace.exists()) {
+      this.workspace.mkdirs();
+    }
     this.contextScope = scope;
     this.propertyFile =
         ServiceConfiguration.INSTANCE.getFileWithTemplate(
@@ -101,105 +89,42 @@ public class StorageManagerImpl implements StorageManager {
     readConfiguration();
   }
 
-  // FIXME this is for floats; there should be factories created on demand for each type and size.
-  // Put
-  //  this in the
-  //  constructor
-  BufferArray.MappedFileFactory floatMappedArrayFactory = null;
-  BufferArray.MappedFileFactory doubleMappedArrayFactory = null;
-  BufferArray.MappedFileFactory intMappedArrayFactory = null;
-  BufferArray.MappedFileFactory longMappedArrayFactory = null;
-  BufferArray.MappedFileFactory booleanMappedArrayFactory = null;
-
-  private synchronized BufferArray.MappedFileFactory getFloatFactory() {
-    if (this.floatMappedArrayFactory == null) {
-      this.floatMappedArrayFactory = BufferArray.R032.newMapped(this.floatBackupFile);
-    }
-    return this.floatMappedArrayFactory;
-  }
-
-  private synchronized BufferArray.MappedFileFactory getLongFactory() {
-    if (this.longMappedArrayFactory == null) {
-      this.longMappedArrayFactory = BufferArray.Z032.newMapped(this.longBackupFile);
-    }
-    return this.longMappedArrayFactory;
-  }
-
-  private synchronized BufferArray.MappedFileFactory getDoubleFactory() {
-    if (this.doubleMappedArrayFactory == null) {
-      this.doubleMappedArrayFactory = BufferArray.R064.newMapped(this.doubleBackupFile);
-    }
-    return this.doubleMappedArrayFactory;
-  }
-
-  /*
-  SHORT int. For now we use floats to encode longs
-   */
-  private synchronized BufferArray.MappedFileFactory getIntFactory() {
-    if (this.intMappedArrayFactory == null) {
-      this.intMappedArrayFactory = BufferArray.Z016.newMapped(this.intBackupFile);
-    }
-    return this.intMappedArrayFactory;
-  }
-
-  /**
-   * Bytes. Not sure we should have the overhead of packing bytes but maybe we should as bitmaps
-   * make wonderful cheap masks and they may intersect more cheaply than 2D geometries.
-   *
-   * @return
-   */
-  private synchronized BufferArray.MappedFileFactory getBooleanFactory() {
-    if (this.booleanMappedArrayFactory == null) {
-      this.booleanMappedArrayFactory = BufferArray.Z008.newMapped(this.booleanBackupFile);
-    }
-    return this.booleanMappedArrayFactory;
+  private synchronized File nextBufferFile(String prefix) {
+    var ret = new File(this.workspace, prefix + nextBufferId() + ".bin");
+    mappedBufferFiles.add(ret);
+    return ret;
   }
 
   public void close() {
 
     storage.clear();
 
-    // TODO this is crucial for everything, ensure it's complete
-    if (doubleMappedArrayFactory != null) {
-      doubleMappedArrayFactory = null;
-      Utils.Files.deleteQuietly(doubleBackupFile);
-    }
-    if (floatMappedArrayFactory != null) {
-      floatMappedArrayFactory = null;
-      Utils.Files.deleteQuietly(floatBackupFile);
-    }
-    if (intMappedArrayFactory != null) {
-      intMappedArrayFactory = null;
-      Utils.Files.deleteQuietly(intBackupFile);
-    }
-    if (booleanMappedArrayFactory != null) {
-      booleanMappedArrayFactory = null;
-      Utils.Files.deleteQuietly(booleanBackupFile);
-    }
-    if (longMappedArrayFactory != null) {
-      longMappedArrayFactory = null;
-      Utils.Files.deleteQuietly(longBackupFile);
+    synchronized (mappedBufferFiles) {
+      for (var file : mappedBufferFiles) {
+        Utils.Files.deleteQuietly(file);
+      }
+      mappedBufferFiles.clear();
     }
   }
 
   public synchronized BufferArray getIntBuffer(long sliceSize) {
-    return getIntFactory().make(sliceSize);
+    return BufferArray.Z016.newMapped(nextBufferFile("istorage-")).make(sliceSize);
   }
 
   public synchronized BufferArray getLongBuffer(long sliceSize) {
-    return getLongFactory().make(sliceSize);
+    return BufferArray.Z032.newMapped(nextBufferFile("lstorage-")).make(sliceSize);
   }
 
   public synchronized BufferArray getFloatBuffer(long sliceSize) {
-    return getFloatFactory().make(sliceSize);
+    return BufferArray.R032.newMapped(nextBufferFile("fstorage-")).make(sliceSize);
   }
 
   public synchronized BufferArray getBooleanBuffer(long sliceSize) {
-    return getBooleanFactory().make(sliceSize);
+    return BufferArray.Z008.newMapped(nextBufferFile("bstorage-")).make(sliceSize);
   }
 
   public synchronized BufferArray getDoubleBuffer(long sliceSize) {
-    return getDoubleFactory().make(sliceSize);
+    return BufferArray.R064.newMapped(nextBufferFile("dstorage-")).make(sliceSize);
   }
 
   public int getHistogramBinSize() {
@@ -298,9 +223,11 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   public boolean saveBufferArray(BufferArray array, File file, Storage.Type type) {
-    try {
+
+    try (var rFile = new RandomAccessFile(file, "rw")) {
+
+      var channel = rFile.getChannel();
       int elementSize = type.size();
-      FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
       MappedByteBuffer buffer =
           channel.map(FileChannel.MapMode.READ_WRITE, 0, array.count() * elementSize);
       buffer.order(ByteOrder.nativeOrder());
@@ -311,7 +238,7 @@ public class StorageManagerImpl implements StorageManager {
             buffer.putFloat(array.get(i).floatValue());
             break;
           case DOUBLE:
-            buffer.putDouble(array.get(i).doubleValue());
+            buffer.putDouble(array.get(i));
             break;
           case LONG:
             buffer.putLong(array.get(i).longValue());
@@ -325,7 +252,8 @@ public class StorageManagerImpl implements StorageManager {
         }
       }
       channel.close();
-    } catch (IOException e) {
+
+    } catch (Exception e) {
       contextScope.error("Error saving buffer array: " + e.getMessage());
       return false;
     }
@@ -334,8 +262,8 @@ public class StorageManagerImpl implements StorageManager {
 
   // FIXME restore the histogram and return that
   public boolean loadBufferArray(BufferArray array, File file, Storage.Type type) {
-    try {
-      FileChannel channel = new RandomAccessFile(file, "r").getChannel();
+    try (var rFile = new RandomAccessFile(file, "r")) {
+      var channel = rFile.getChannel();
       MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
       buffer.order(ByteOrder.nativeOrder());
 

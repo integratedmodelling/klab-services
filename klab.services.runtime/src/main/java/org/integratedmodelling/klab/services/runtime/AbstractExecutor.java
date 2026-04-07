@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.lang.reflect.Method;
@@ -35,17 +36,17 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   protected final Observation observation;
   protected Throwable cause;
   protected Storage storage;
-  protected Map<String, Observable> localNames;
+  protected Map<String, Observation> dependencies = new HashMap<>();
 
   public AbstractExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
       ContextScope scope,
-      Map<String, Observable> localNames) {
+      Map<String, Observation> dependencies) {
     this.callInfo = callInfo;
     this.observation = observation;
     this.scope = scope;
-    this.localNames = localNames;
+    this.dependencies = dependencies;
   }
 
   @Override
@@ -63,21 +64,87 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       }
       var localShardingStrategy =
           callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
+
       if (localShardingStrategy == null) {
         cause = new KlabIllegalStateException("No sharding strategy available for " + observation);
         return false;
+      } else if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
+        // if have a dependent quality, copy the sharding strategy from its storage, given that it
+        // has already been initialized.
+        var dependentQuality =
+            dependencies.values().stream()
+                .filter(d -> d.getObservable().is(SemanticType.QUALITY))
+                .findFirst()
+                .orElse(null);
+        if (dependentQuality != null) {
+          localShardingStrategy =
+              contextScope
+                  .getDigitalTwin()
+                  .getStorageManager()
+                  .getStorage(dependentQuality)
+                  .getNativeShardingStrategy();
+        } else {
+          // use the default sharding strategy if nothing else is known.
+          localShardingStrategy =
+              contextScope.getService(RuntimeService.class).getDefaultShardingStrategy(observation);
+        }
+      }
+
+      Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
+      scanners.put(
+          Dataflow.SELF_ID,
+          new ArrayList<>(
+              storage.scan(
+                  event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)));
+
+      var nScanners = scanners.get(Dataflow.SELF_ID).size();
+
+      /*
+       * All dependencies must be coerced into a scanner structure that
+       * is compatible with the local sharding strategy.
+       */
+      for (var dependency : dependencies.keySet()) {
+
+        if (dependency.equals(Dataflow.SELF_ID)
+            || !dependencies.get(dependency).getObservable().is(SemanticType.QUALITY)) {
+          continue;
+        }
+
+        var store =
+            contextScope
+                .getDigitalTwin()
+                .getStorageManager()
+                .getStorage(dependencies.get(dependency));
+        scanners.put(
+            dependency,
+            new ArrayList<>(
+                store.scan(
+                    event, localShardingStrategy, localShardingStrategy.getScannerClass(), true)));
+
+        if (scanners.get(dependency).size() != nScanners) {
+          cause =
+              new KlabIllegalStateException(
+                  "Incompatible sharding strategies for " + dependency + " or mediation failed");
+          return false;
+        }
+      }
+
+      List<Map<String, Storage.Scanner>> allScanners = new ArrayList<>();
+      for (int n = 0; n < nScanners; n++) {
+        var map = new HashMap<String, Storage.Scanner>();
+        for (var scanner : scanners.keySet()) {
+          map.put(scanner, scanners.get(scanner).get(n));
+        }
+        allScanners.add(map);
       }
 
       try {
-        for (var scanner :
-            storage.scan(
-                event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
+        for (var scannerMap : allScanners) {
           tasks.add(
               () -> {
-                // HERE TODO FIXME catch any exceptions
-                var ok = run(event, scanner, contextScope);
+                var ok = run(event, scannerMap, contextScope);
                 if (ok) {
-                  storage.finalizeRun(scanner);
+                  storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
                 }
                 return ok;
               });
@@ -94,8 +161,22 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
       var results = executorService.invokeAll(tasks);
-      return results.stream()
-          .noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      var ret =
+          results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      if (!ret) {
+
+        List<Throwable> exceptions = new ArrayList<>();
+        for (var future : results) {
+          if (future.state() == Future.State.FAILED) {
+            exceptions.add(future.exceptionNow());
+          }
+        }
+        cause =
+            exceptions.isEmpty()
+                ? new KlabIllegalStateException("Execution failed")
+                : exceptions.getFirst();
+      }
+      return ret;
     } catch (Throwable t) {
       cause = t;
       return false;
@@ -103,16 +184,16 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   /**
-   * Implement for the actual contextualization. NOTE: must also link the storage or
-   * sub-observations to the current transaction in the scope.
+   * Implement for the actual contextualization.
    *
    * @param event
-   * @param scanner
+   * @param scanners the scanners for the output (keyed by Dataflow.SELF_ID) and any quality
+   *     dependencies, mapped to the same shard geometry and keyed by their local name.
    * @param scope
    * @return
    */
   protected abstract boolean run(
-      Scheduler.Event event, Storage.Scanner scanner, ContextScope scope);
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope);
 
   @Override
   public Throwable getCause() {
@@ -140,11 +221,12 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
    * @return
    */
   public List<Object> matchArguments(
+      ServiceInfo serviceInfo,
       Method method,
       Resource resource,
       Geometry geometry,
       Data.Builder builder,
-      Storage.Scanner scanner,
+      Map<String, Storage.Scanner> scanners,
       Observation observation,
       Observable observable,
       Urn urn,
@@ -186,7 +268,12 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             || Observation.class.isAssignableFrom(argument.getType())) {
           runArguments.add(
               bindObservationParameter(
-                  argument, observationReferences, digitalTwin, observation, scanner));
+                  serviceInfo,
+                  argument,
+                  observationReferences,
+                  digitalTwin,
+                  observation,
+                  scanners));
         } else if (Scale.class.isAssignableFrom(argument.getType())) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
@@ -206,8 +293,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             runArguments.add(schedulerEvent.getTime());
           } else if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
+            runArguments.add(scale == null ? null : scale.getTime());
+          } else {
+            runArguments.add(null);
           }
-          runArguments.add(scale == null ? null : scale.getTime());
         } else if (Scheduler.Event.class.isAssignableFrom(argument.getType())) {
           runArguments.add(schedulerEvent);
         } else if (Resource.class.isAssignableFrom(argument.getType()) && resource != null) {
@@ -236,24 +325,93 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   private Object bindObservationParameter(
+      ServiceInfo serviceInfo,
       Parameter argument,
       Map<String, Boolean> observations,
       DigitalTwin digitalTwin,
       Observation observation,
+      Map<String, Storage.Scanner> scanners) { // FIXME must be the map of scanners
+
+    var self = scanners.get(Dataflow.SELF_ID);
+
+    /*
+    if self is null, we bind observation to the first observation, and we let the calling function bind others or the same again.
+     */
+    var input =
+        serviceInfo.listInputs().stream()
+            .filter(i -> i.getName().equals(argument.getName()))
+            .findFirst()
+            .orElse(null);
+
+    var output =
+        serviceInfo.listOutputs().stream()
+            .filter(o -> o.getName().equals(argument.getName()))
+            .findFirst()
+            .orElse(null);
+
+    if (input != null) {
+      // observations, scanners and storages must be bound as inputs or outputs, not as normal
+      // parameters.
+      if (dependencies.containsKey(input.getName())) {
+        return adaptObservationArgument(
+            input, argument, dependencies.get(input.getName()), scanners.get(input.getName()));
+      } else {
+        // single input? Bind to that anyway
+        if (dependencies.keySet().stream().filter(k -> !Dataflow.SELF_ID.equals(k)).count() == 1) {
+          var singleInputKey =
+              dependencies.keySet().stream()
+                  .filter(k -> !Dataflow.SELF_ID.equals(k))
+                  .findFirst()
+                  .orElse(null);
+          if (singleInputKey != null) {
+            return adaptObservationArgument(
+                input, argument, dependencies.get(singleInputKey), scanners.get(singleInputKey));
+          }
+        }
+      }
+    } else if (output != null) {
+
+      /*
+      TODO the situation where the output is not self is not possible yet.
+       */
+      if (dependencies.containsKey(output.getName())) {
+        return adaptObservationArgument(
+            output, argument, dependencies.get(output.getName()), scanners.get(output.getName()));
+      }
+
+      return adaptObservationArgument(output, argument, observation, self);
+    }
+
+    /* either an input or an output must be mapped. Otherwise this is just null. */
+
+    return null;
+  }
+
+  /**
+   * Once established that the argument should be bound to an observation or its helper objects,
+   * return the adapted argument that the function argument wants.
+   *
+   * @param input
+   * @param argument
+   * @param observation
+   * @param scanner
+   * @return
+   */
+  private Object adaptObservationArgument(
+      ServiceInfo.Argument input,
+      Parameter argument,
+      Observation observation,
       Storage.Scanner scanner) {
 
-    if (observations.containsKey(argument.getName())) {
-
-    } else {
-
-      if (Observation.class.isAssignableFrom(argument.getType())) {
-        return observation;
-      } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
-        return scanner;
-      } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
-        return scanner == null ? null : scanner.shard();
-      }
+    if (Observation.class.isAssignableFrom(argument.getType())) {
+      return observation;
+    } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
+      // TODO adapt the scanner type and UNIT if adaptable
+      return scanner;
+    } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
+      return scanner == null ? null : scanner.shard();
     }
+
     return null;
   }
 
