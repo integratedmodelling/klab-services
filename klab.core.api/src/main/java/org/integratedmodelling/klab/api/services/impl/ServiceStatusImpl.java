@@ -33,7 +33,7 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
   }
 
   @Override
-  public int getLoadPercentage() {
+  public int getLoadMilliPercentage() {
     return this.loadPercentage;
   }
 

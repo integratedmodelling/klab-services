@@ -7,8 +7,10 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.availability.LivenessStateHealthIndicator;
 import org.springframework.boot.actuate.availability.ReadinessStateHealthIndicator;
+import org.springframework.boot.actuate.health.HealthContributorRegistry;
 import org.springframework.boot.actuate.system.DiskSpaceHealthIndicator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -27,6 +29,8 @@ import org.springframework.util.unit.DataSize;
       "org.integratedmodelling.klab.services.runtime.server.controllers"
     })
 public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
+
+  @Autowired private HealthContributorRegistry healthContributorRegistry;
 
   @Override
   protected KlabService.Type serviceType() {
@@ -59,7 +63,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
     healthContributorRegistry.registerContributor(
         "diskspace",
         new DiskSpaceHealthIndicator(
-            ServiceConfiguration.INSTANCE.getDataPath(), DataSize.ofGigabytes(200)));
+            ServiceConfiguration.INSTANCE.getDataPath(), DataSize.ofMegabytes(500)));
     healthContributorRegistry.registerContributor(
         "readiness", new ReadinessStateHealthIndicator(this.applicationAvailability));
     healthContributorRegistry.registerContributor(

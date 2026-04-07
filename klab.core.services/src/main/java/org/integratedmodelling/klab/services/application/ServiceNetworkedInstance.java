@@ -104,9 +104,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   @Autowired protected ApplicationAvailability applicationAvailability;
   private SimpMessagingTemplate webSocket;
 
-  protected final HealthContributorRegistry healthContributorRegistry =
-      new DefaultHealthContributorRegistry();
-
   @Override
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
     /**

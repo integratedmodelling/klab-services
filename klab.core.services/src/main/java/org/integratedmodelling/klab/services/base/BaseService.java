@@ -91,6 +91,8 @@ public abstract class BaseService implements KlabService {
 
   static {
     var mxBean = ManagementFactory.getOperatingSystemMXBean();
+    // TODO/FIXME: on modular JDK configurations this import may require an explicit --add-exports
+    //  flag
     OS_MX_BEAN =
         mxBean instanceof com.sun.management.OperatingSystemMXBean sunBean ? sunBean : null;
   }

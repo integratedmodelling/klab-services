@@ -200,7 +200,7 @@ public interface KlabService extends Service {
      *
      * @return
      */
-    int getLoadPercentage();
+    int getLoadMilliPercentage();
 
     long getMemoryAvailableBytes();
 
