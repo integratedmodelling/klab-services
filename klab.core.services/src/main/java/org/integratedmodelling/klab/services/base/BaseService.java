@@ -5,6 +5,7 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import java.io.*;
 import java.lang.annotation.Annotation;
+import java.lang.management.ManagementFactory;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -84,6 +86,15 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegistry;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
+  private AtomicInteger cachedLoadPercentage = new AtomicInteger(-1);
+  private static final com.sun.management.OperatingSystemMXBean OS_MX_BEAN;
+
+  static {
+    var mxBean = ManagementFactory.getOperatingSystemMXBean();
+    OS_MX_BEAN =
+        mxBean instanceof com.sun.management.OperatingSystemMXBean sunBean ? sunBean : null;
+  }
+
   protected Settings settings;
   protected Settings settingsForSlaveServices;
   private Identity identity;
@@ -231,7 +242,23 @@ public abstract class BaseService implements KlabService {
     ret.getAdvisories().addAll(serviceNotifications());
     ret.setConnected(true); // obviously
     ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
+    ret.setLoadPercentage(cachedLoadPercentage.get());
     return ret;
+  }
+
+  /**
+   * Samples the current JVM process CPU load and caches it as a 0–1000 integer for the next {@link
+   * #status()} call. Intended to be called periodically from an external scheduler (e.g. every 5 s)
+   * so that {@code getProcessCpuLoad()} always has a meaningful elapsed-time window to measure
+   * against. Returns immediately if the platform does not support the measurement.
+   */
+  public void sampleLoad() {
+    if (OS_MX_BEAN != null) {
+      double cpu = OS_MX_BEAN.getProcessCpuLoad();
+      if (cpu >= 0) {
+        cachedLoadPercentage.set((int) Math.round(cpu * 1000.0));
+      }
+    }
   }
 
   /**

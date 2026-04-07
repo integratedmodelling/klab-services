@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.api;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
-import java.io.StringBufferInputStream;
-
 /**
  * TODO add accepted http requests and payload types for both input (POST) and output
  *
@@ -66,6 +64,7 @@ public interface ServicesAPI {
   String ANONYMOUS_TOKEN = "018fc355-c123-7608-be4a-89ea1059c33e";
 
   String CAPABILITIES = "/public/capabilities";
+  String HEALTH = "/public/health";
   String STATUS = "/public/status";
 
   String URN_PARAMETER = "{urn}";

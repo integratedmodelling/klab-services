@@ -1,5 +1,14 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.io.InputStream;
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URL;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -17,17 +26,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
-
-import java.io.InputStream;
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URL;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -187,10 +185,21 @@ public interface KlabService extends Service {
      */
     boolean isOperational();
 
+    /**
+     * Busy status should be temporary. Requests will be queued so checking this should not be
+     * routinely necessary.
+     *
+     * @return
+     */
     boolean isBusy();
 
     int getHealthPercentage();
 
+    /**
+     * Load is actually on a 0-1000 basis, not 0-100.
+     *
+     * @return
+     */
     int getLoadPercentage();
 
     long getMemoryAvailableBytes();
