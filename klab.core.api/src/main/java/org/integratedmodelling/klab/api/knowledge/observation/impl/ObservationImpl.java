@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -121,10 +122,19 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public boolean validate() {
-      // simply check the adapterId for now; later we should validate the parameters but it should
-      // be done at setup/creation.
-      return this.adapterId != null;
+    public boolean validate(Observation observation) {
+      if (this.adapterId != null) {
+        return true;
+      }
+      if (this.nativeShardingStrategy == null
+          && observation.getObservable().is(SemanticType.QUALITY)) {
+        // submitted without any sharding strategy, so we assume neutral
+        this.nativeShardingStrategy = Data.ShardingStrategy.neutral();
+      } else
+        return this.nativeShardingStrategy == null
+            || observation.getObservable().is(SemanticType.QUALITY);
+      // TODO this always returns true for now. Should check for inconsistency
+      return true;
     }
 
     public void setPersistent(boolean persistent) {

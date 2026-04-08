@@ -122,9 +122,10 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * Checked before usage in case the data exist but are not usable for lack of specification or
      * previous error.
      *
+     * @param observation the observation to validate against
      * @return
      */
-    boolean validate();
+    boolean validate(Observation observation);
   }
 
   /**

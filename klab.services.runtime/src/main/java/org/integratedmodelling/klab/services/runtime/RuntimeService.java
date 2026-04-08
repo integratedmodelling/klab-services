@@ -588,7 +588,7 @@ public class RuntimeService extends BaseService
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
-      if (contextualizationData.validate()
+      if (contextualizationData.validate(observation)
           && observation.getContextualizationData() == null
           && observation instanceof ObservationImpl observationImpl) {
         observationImpl.setContextualizationData(contextualizationData);
@@ -1249,7 +1249,8 @@ public class RuntimeService extends BaseService
                   "Unexpected observable type for sharding strategy");
         });
 
-    // apply settings to modify defaults. TODO may need the short float option in the scope config too
+    // apply settings to modify defaults. TODO may need the short float option in the scope config
+    // too
     var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
     var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
     if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {
