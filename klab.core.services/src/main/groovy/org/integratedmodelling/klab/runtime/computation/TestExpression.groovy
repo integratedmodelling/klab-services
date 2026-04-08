@@ -1,68 +1,46 @@
-//package org.integratedmodelling.klab.runtime.computation
-//
-//
-//import org.integratedmodelling.klab.api.digitaltwin.Scheduler
-//import org.integratedmodelling.klab.api.geometry.Geometry
-//import org.integratedmodelling.klab.api.knowledge.observation.Observation
-//import org.integratedmodelling.klab.api.scope.ContextScope
-//import org.integratedmodelling.klab.api.utils.Utils
-//import org.integratedmodelling.klab.services.scopes.ServiceContextScope
-//
-//// translates
-////  set to [elevation - slope/slope.max]
-//class TestExpression extends ExpressionBase {
-//
-//    Observation __elevation;
-//    Observation __slope;
-//    Observation __self;
-//    @Lazy
-//    ObservationWrapper elevationObs = { new ObservationWrapper(__elevation) }()
-//    @Lazy
-//    ObservationWrapper slopeObs = { new ObservationWrapper(__slope) }()
-//    @Lazy
-//    ObservationWrapper selfObs = { new ObservationWrapper(__self) }()
-//
-//    /**
-//     * Knows that elevation, slope are qualities and exist. This is for a naïve parallelization honoring
-//     * any @split and/or @fillcurve annotation and is meant for scalars only. Split strategy MUST be
-//     * coordinated across all observations.
-//     *
-//     * @param self
-//     * @param elevation
-//     * @param scope
-//     */
-//    TestExpression(ServiceContextScope scope, Observation self, Observation elevation, Observation slope) {
-//        super(scope, self)
-//        this.__self = self
-//        this.__elevation = elevation
-//        this.__slope = slope
-//    }
-//
-//    @Override
-//    boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
-//
-//        /* TODO need to build the buffers here based on the geometry */
-//        def eventTime = event == null ? null : event.time
-//        def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry, eventTime)
-//        def elevationBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__elevation).buffers(geometry, eventTime)
-//        def slopeBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__slope).buffers(geometry, eventTime)
-//
-//        def bufferSets = Utils.Collections.transpose(selfBuffers, elevationBuffers, slopeBuffers)
-//
-//        return Utils.Java.distributeComputation( // template - this allows Spark templates to be different if the buffer is a spark thing
-//                bufferSets,
-//                { bufferArray ->
-//                    var scannerArray = bufferArray.stream().map({ b->b.scan()}).toArray();
-//                    while (scannerArray[0].hasNext()) { // template ends here
-//                        // TODO THESE use the proper non-boxed type
-//                        double elevation = scannerArray[1].get()
-//                        double slope = scannerArray[2].get()
-//                        // THIS
-//                        double self = ((elevation - elevationObs.max) / slope)
-//                        // TODO any other transformations
-//                        // TODO add() for any other targets
-//                        scannerArray[0].add(self) // template
-//                    }
-//                })
-//    }
-//}
+import org.integratedmodelling.klab.api.data.Storage
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler
+import org.integratedmodelling.klab.api.knowledge.observation.Observation
+import org.integratedmodelling.klab.api.scope.ContextScope
+import org.integratedmodelling.klab.runtime.computation.ExpressionBase
+
+import java.util.function.LongConsumer
+
+/** This one is generated (and cleaned up) */
+class ScalarComputation_8xnlsc1yk extends ExpressionBase {
+
+    Observation __elevation
+    Observation __slope
+
+    ScalarComputation_8xnlsc1yk(ContextScope scope, Observation self, Observation elevation, Observation slope) {
+        super(scope, self)
+        this.__elevation = elevation
+        this.__slope = slope
+    }
+
+    @Override
+    boolean run(Map<String, Storage.Scanner> scanners, Scheduler.Event event, ContextScope scope) {
+
+        try {
+            def elevationObs = new ObservationWrapper(__elevation, event)
+            def selfBuffer = (Storage.DoubleScanner) scanners.get("self")
+            def elevationBuffer = (Storage.DoubleScanner) scanners.get("elevation")
+            def slopeBuffer = (Storage.DoubleScanner) scanners.get("slope")
+
+            selfBuffer.forEachRemaining((LongConsumer) { n ->
+                def elevation = elevationBuffer.get()
+                def slope = slopeBuffer.get()
+                selfBuffer.add(
+                        /* START COMPILED SCALAR CODE */
+                        (elevationObs.max - elevation) / slope
+                        /* END COMPILED SCALAR CODE */)
+            })
+        } catch (Throwable t) {
+            __self.getNotifications().add(Notification.error(t.getMessage(), t))
+            return false;
+        }
+
+        return true;
+    }
+}
+

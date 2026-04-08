@@ -428,8 +428,11 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation, ServiceContextScope scope, Actuator actuator) {
-    return ScalarComputationGroovy.builder(observation, scope, actuator);
+      Observation observation,
+      ServiceContextScope scope,
+      Actuator actuator,
+      Map<String, Observation> observations) {
+    return ScalarComputationGroovy.builder(observation, scope, actuator, observations);
   }
 
   @Override
@@ -670,11 +673,14 @@ public class RuntimeService extends BaseService
           .exceptionally(
               t -> {
                 resolutionScope.fail(t);
-                return Dataflow.empty();
+                var ret = Dataflow.empty();
+                ret.getNotifications().add(Notification.error(t.getMessage(), t));
+                return ret;
               })
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
+                observation.getNotifications().addAll(dataflow.getNotifications());
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit() >= 0) {
@@ -709,13 +715,16 @@ public class RuntimeService extends BaseService
                 } else {
                   submission.setName("SUB FAIL");
                   submissionScope.fail();
+                  o.getNotifications().add(Notification.error("Submission failed"));
                 }
                 return o;
               })
           .exceptionally(
               t -> {
                 submissionScope.fail(t);
-                return Observation.empty();
+                var ret = Observation.empty();
+                ret.getNotifications().add(Notification.error(t.getMessage(), t));
+                return ret;
               });
     }
     throw new KlabInternalErrorException(
@@ -1225,7 +1234,9 @@ public class RuntimeService extends BaseService
    *
    * @return
    */
-  public Data.ShardingStrategy getDefaultShardingStrategy(Observation observation) {
+  @Override
+  public Data.ShardingStrategy getDefaultShardingStrategy(
+      Observation observation, ContextScope scope) {
 
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
@@ -1238,7 +1249,7 @@ public class RuntimeService extends BaseService
                   "Unexpected observable type for sharding strategy");
         });
 
-    // apply settings to modify defaults
+    // apply settings to modify defaults. TODO may need the short float option in the scope config too
     var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
     var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
     if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {

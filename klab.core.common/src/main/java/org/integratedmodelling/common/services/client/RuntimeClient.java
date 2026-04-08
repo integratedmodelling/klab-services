@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
@@ -17,6 +16,7 @@ import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -45,6 +45,14 @@ public class RuntimeClient extends BaseServiceClient
       Settings settings,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
     super(monitor, userScope, settings, statusListeners);
+  }
+
+  @Override
+  public Data.ShardingStrategy getDefaultShardingStrategy(
+      Observation observation, ContextScope scope) {
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY, observation, Data.ShardingStrategy.class);
   }
 
   @Override
@@ -254,10 +262,9 @@ public class RuntimeClient extends BaseServiceClient
   @Override
   public ServiceInfo getServiceInfo(String urn, Scope scope) {
     return client
-            .withScope(scope)
-            .get(ServicesAPI.RUNTIME.GET_SERVICE_INFO, ServiceInfo.class, "urn", urn);
+        .withScope(scope)
+        .get(ServicesAPI.RUNTIME.GET_SERVICE_INFO, ServiceInfo.class, "urn", urn);
   }
-
 
   public <T extends RuntimeAsset> T getAsset(long id, Class<T> assetClass, Scope scope) {
     return client

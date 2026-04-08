@@ -373,6 +373,8 @@ public interface ServicesAPI {
      */
     String SUBMIT_OBSERVATION = API_BASE + "/submit";
 
+    String GET_SHARDING_STRATEGY = API_BASE + "/sharding";
+
     /** Structured Knowledge Graph query */
     String QUERY = API_BASE + "/query";
 
