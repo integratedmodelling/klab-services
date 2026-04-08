@@ -513,8 +513,8 @@ public class CompiledDataflow {
           actuator.getId() == rootObservation.getId()
               ? rootObservation
               : dependentObservations.get(actuator.getId());
-      this.operational = compile(actuator);
       defineLocalNames(actuator, this.localReferences);
+      this.operational = compile(actuator);
 
       // TODO if this is restoring an existing observation from the KG, the sharding strategy MUST
       //  be restored too
@@ -548,7 +548,7 @@ public class CompiledDataflow {
               nativeShardingStrategy.override(
                   actuator.getShardingStrategy(),
                   scope.getShardingStrategy(observation),
-                  runtimeService.getDefaultShardingStrategy(observation));
+                  runtimeService.getDefaultShardingStrategy(observation, scope));
         }
       }
 
@@ -569,7 +569,6 @@ public class CompiledDataflow {
         Expression expression = null;
         LookupTable lookupTable = null;
         var preset = RuntimeService.CoreFunctor.classify(call);
-
 
         // TODO the entire flow here is a bit backwards. Should be revised
         if (callInfo == null && preset != RuntimeService.CoreFunctor.EXPRESSION_RESOLVER) {
@@ -607,7 +606,8 @@ public class CompiledDataflow {
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
                       ? (scalarBuilder =
-                          runtimeService.getComputationBuilder(observation, scope, actuator))
+                          runtimeService.getComputationBuilder(
+                              observation, scope, actuator, localReferences))
                       : scalarBuilder)
                   .add(call);
             }

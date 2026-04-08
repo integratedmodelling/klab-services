@@ -180,8 +180,6 @@ public class SchedulerImpl implements Scheduler {
   private boolean contextualize(
       Observation observation, Geometry geometry, ServiceContextScope scope, Event causingEvent) {
 
-    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
-
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
     for (var affecting :
@@ -247,6 +245,7 @@ public class SchedulerImpl implements Scheduler {
                     }
                   })) {}
         } catch (Throwable t) {
+          observation.getNotifications().add(Notification.error(t.getMessage(), t));
           scope.error(t);
           return false;
         }
@@ -378,8 +377,8 @@ public class SchedulerImpl implements Scheduler {
    * <p>TODO add info for filtering, e.g. a <em>substantial</em> flag to filter initialization
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
-   * observation events affect it, given that contextualization actions are handled through
-   * the influence diagram in the DT.
+   * observation events affect it, given that contextualization actions are handled through the
+   * influence diagram in the DT.
    *
    * @param observation
    * @param type

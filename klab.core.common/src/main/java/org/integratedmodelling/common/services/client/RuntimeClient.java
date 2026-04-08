@@ -17,6 +17,7 @@ import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -45,6 +46,11 @@ public class RuntimeClient extends BaseServiceClient
       Settings settings,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
     super(monitor, userScope, settings, statusListeners);
+  }
+
+  @Override
+  public Data.ShardingStrategy getDefaultShardingStrategy(Observation observation, ContextScope scope) {
+    return null;
   }
 
   @Override

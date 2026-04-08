@@ -1,5 +1,11 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
@@ -21,13 +27,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public abstract class AbstractExecutor implements CompiledDataflow.ContextualExecutor {
 
@@ -86,7 +85,9 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         } else {
           // use the default sharding strategy if nothing else is known.
           localShardingStrategy =
-              contextScope.getService(RuntimeService.class).getDefaultShardingStrategy(observation);
+              contextScope
+                  .getService(RuntimeService.class)
+                  .getDefaultShardingStrategy(observation, contextScope);
         }
       }
 

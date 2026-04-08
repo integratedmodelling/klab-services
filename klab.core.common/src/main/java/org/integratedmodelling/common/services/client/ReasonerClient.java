@@ -198,7 +198,10 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   public Concept baseSubstantialType(Semantics concept, Scope scope) {
     // TODO this is called frequently for the same type, should cache
     return client
-        .withScope(scope)
+        // using the user scope because it's guaranteed to be there even just after the context
+        // scope was created, to avoid missing the user scope because it's being broadcast at the
+        // moment of the call
+        .withScope(scope.getParentScope(Scope.Type.USER, UserScope.class))
         .post(ServicesAPI.REASONER.CORE_SUBSTANTIAL, concept.asConcept(), Concept.class);
   }
 
@@ -455,7 +458,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   @Override
   public Collection<Concept> resolving(Semantics relationship) {
     return client.postCollection(
-            ServicesAPI.REASONER.RESOLVING, relationship.asConcept(), Concept.class);
+        ServicesAPI.REASONER.RESOLVING, relationship.asConcept(), Concept.class);
   }
 
   @Override

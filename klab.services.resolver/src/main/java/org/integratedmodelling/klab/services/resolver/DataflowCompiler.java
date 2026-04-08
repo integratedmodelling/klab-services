@@ -64,9 +64,9 @@ public class DataflowCompiler {
       return Dataflow.empty();
     }
 
-    // TODO remove
+    // TODO remove eventually, or make it debug-level
     var dump = Utils.Graphs.dump(resolutionGraph.graph());
-    Logging.INSTANCE.info(dump);
+    Logging.INSTANCE.info("Resolution graph for " + observation + ":\n\n" + dump);
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
@@ -88,9 +88,9 @@ public class DataflowCompiler {
                   null));
     }
 
-    // TODO remove
+    // TODO remove eventually, or make it debug-level
     var encoded = Utils.Dataflows.encode(ret, scope);
-    Logging.INSTANCE.info(encoded);
+    Logging.INSTANCE.info("Dataflow for " + observation + ":\n\n" + encoded);
 
     return ret;
   }
@@ -228,7 +228,9 @@ public class DataflowCompiler {
       } else if (child instanceof Observable observable) {
         observationActuator
             .getChildren()
-            .add(compileReference(resolutionGraph.getResolved(edge.observationId), coverage));
+            .add(
+                compileReference(
+                    resolutionGraph.getResolved(edge.observationId), coverage, localName));
       }
     }
 
@@ -286,10 +288,11 @@ public class DataflowCompiler {
     ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
   }
 
-  private Actuator compileReference(Observation observation, Coverage coverage) {
+  private Actuator compileReference(Observation observation, Coverage coverage, String localName) {
     var ret = new ActuatorImpl();
     ret.setObservation(observation);
     ret.setId(observation.getId());
+    ret.setName(localName == null ? observation.getObservable().getName() : localName);
     ret.setCoverage(coverage.as(Geometry.class));
     ret.setActuatorType(Actuator.Type.REFERENCE);
     return ret;

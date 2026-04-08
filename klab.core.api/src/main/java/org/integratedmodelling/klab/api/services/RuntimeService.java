@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -31,6 +32,8 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  * @author Ferd
  */
 public interface RuntimeService extends KlabService {
+
+  Data.ShardingStrategy getDefaultShardingStrategy(Observation observation, ContextScope scope);
 
   /**
    * The core functors for k.LAB dataflow supporting the primary k.IM constructs such as inline
@@ -277,7 +280,7 @@ public interface RuntimeService extends KlabService {
      * class->source code, with the option of deleting them after responding.
      *
      * <p>FIXME this is probably overkill and in general we deprecate the Admin interfaces, so it
-     *  should be removed or implemented differently (e.g. through messaging).
+     * should be removed or implemented differently (e.g. through messaging).
      *
      * @param scope if service scope, send all; otherwise send those pertaining to the scope
      * @param deleteExisting delete after sending
