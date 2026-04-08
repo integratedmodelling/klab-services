@@ -106,10 +106,10 @@ public class CompiledDataflow {
     public Data.ShardingStrategy shardingStrategy() {
       if (adapterDescriptor != null) {
         return adapterDescriptor.shardingStrategy();
-      } else if (serviceInfo != null) {
+      } else if (serviceInfo != null && serviceInfo.serviceInfo.getShardingStrategy() != null) {
         return serviceInfo.serviceInfo.getShardingStrategy();
       }
-      return null;
+      return Data.ShardingStrategy.neutral();
     }
   }
 

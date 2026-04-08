@@ -64,10 +64,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       var localShardingStrategy =
           callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
 
-      if (localShardingStrategy == null) {
-        cause = new KlabIllegalStateException("No sharding strategy available for " + observation);
-        return false;
-      } else if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
+      if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
         // if have a dependent quality, copy the sharding strategy from its storage, given that it
         // has already been initialized.
         var dependentQuality =

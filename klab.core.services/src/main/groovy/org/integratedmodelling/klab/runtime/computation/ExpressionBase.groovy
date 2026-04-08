@@ -18,20 +18,9 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
 
     @Lazy
     def reasoner = { scope.getService(Reasoner.class) }()
-    @Lazy
-    def resourcesService = { scope.getService(ResourcesService.class) }()
-    @Lazy
-    def resourcesServices = { scope.getServices(ResourcesService.class) }()
-    @Lazy
-    def resolver = { scope.getService(Resolver.class) }()
-    @Lazy
-    def runtime = { scope.getService(RuntimeService.class) }()
-    @Lazy
-    def runtimes = { scope.getServices(RuntimeService.class) }()
 
     ContextScope scope
     Observation __self
-    Observation selfObs = { new ObservationWrapper(__self) }()
 
     // constructor takes all the observations used by the code
     ExpressionBase(ContextScope scope, Observation observation) {

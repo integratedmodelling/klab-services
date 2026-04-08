@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -228,8 +229,15 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
-      var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
-      return new ScalarComputationGroovy(compiled, scope, output.toString());
+      try {
+        var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
+        return new ScalarComputationGroovy(compiled, scope, output.toString());
+      } catch (Throwable t) {
+        target
+            .getNotifications()
+            .add(Notification.error("Failed to compile expression code: " + t.getMessage(), t));
+        throw t;
+      }
     }
 
     private String getScannerType(Observation observation, TemplateCodeInfo codeInfo) {
