@@ -1,23 +1,23 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -37,7 +37,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -103,6 +102,18 @@ public class RuntimeServerController {
         return serviceContextScope
             .getJobManager()
             .submit(ret, "Resolution of " + resolutionRequest.getObservation());
+      }
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY)
+  public @ResponseBody Data.ShardingStrategy getDefaultShardingStrategy(
+      @RequestBody Observation observation, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      if (contextScope instanceof ServiceContextScope serviceContextScope) {
+        return runtimeService.klabService().getDefaultShardingStrategy(observation, contextScope);
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");

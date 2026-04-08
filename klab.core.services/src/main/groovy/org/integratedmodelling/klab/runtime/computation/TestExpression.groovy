@@ -3,7 +3,6 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.runtime.computation.ExpressionBase
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
 import java.util.function.LongConsumer
 

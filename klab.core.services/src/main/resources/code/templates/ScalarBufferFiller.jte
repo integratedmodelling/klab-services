@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.runtime.computation.ExpressionBase
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 @for(var localImport : codeInfo.getAdditionalImports()) {
     ${localImport}
 @endfor

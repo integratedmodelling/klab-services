@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -233,31 +234,21 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     private String getScannerType(Observation observation, TemplateCodeInfo codeInfo) {
 
-      var shardingStrategy =
-          observation.getContextualizationData() == null
-              ? scope
-                  .getService(RuntimeService.class)
-                  .getDefaultShardingStrategy(observation, scope)
-              : observation.getContextualizationData().getNativeShardingStrategy();
+      var shardingStrategy = resolveShardingStrategy(observation);
 
       return switch (shardingStrategy.getDataType()) {
         case DOUBLE -> "Storage.DoubleScanner";
-        case FLOAT -> "Storage.ObjectScanner";
-        case INTEGER -> "Storage.IntegerScanner";
+        case FLOAT -> "Storage.FloatScanner";
+        case INTEGER -> "Storage.IntScanner";
         case LONG -> "Storage.LongScanner";
-        case KEYED -> "Storage.KeyedScanner";
+        case KEYED -> "Storage.KeyScanner";
         case BOOLEAN -> "Storage.BooleanScanner";
       };
     }
 
     private String getTypeDeclaration(Observation observation) {
 
-      var shardingStrategy =
-          observation.getContextualizationData() == null
-              ? scope
-                  .getService(RuntimeService.class)
-                  .getDefaultShardingStrategy(observation, scope)
-              : observation.getContextualizationData().getNativeShardingStrategy();
+      var shardingStrategy = resolveShardingStrategy(observation);
 
       return switch (shardingStrategy.getDataType()) {
         case DOUBLE -> "double";
@@ -267,6 +258,13 @@ public class ScalarComputationGroovy implements ScalarComputation {
         case KEYED -> "Concept";
         case BOOLEAN -> "boolean";
       };
+    }
+
+    private Data.ShardingStrategy resolveShardingStrategy(Observation observation) {
+      if (observation.getContextualizationData() != null) {
+        return observation.getContextualizationData().getNativeShardingStrategy();
+      }
+      return scope.getService(RuntimeService.class).getDefaultShardingStrategy(observation, scope);
     }
   }
 
@@ -287,7 +285,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     try {
       return script.run(scanners, event, scope);
     } catch (Throwable t) {
-      System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
+      // TODO this must reach the client
       scope.error(t, sourceCode);
     }
     return false;
