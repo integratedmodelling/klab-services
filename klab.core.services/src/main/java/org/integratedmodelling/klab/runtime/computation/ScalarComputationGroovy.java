@@ -261,7 +261,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
     }
 
     private Data.ShardingStrategy resolveShardingStrategy(Observation observation) {
-      if (observation.getContextualizationData() != null) {
+      if (observation.getContextualizationData() != null
+          && observation.getContextualizationData().getNativeShardingStrategy() != null) {
         return observation.getContextualizationData().getNativeShardingStrategy();
       }
       return scope.getService(RuntimeService.class).getDefaultShardingStrategy(observation, scope);

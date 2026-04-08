@@ -112,7 +112,7 @@ public class RuntimeServerController {
       @RequestBody Observation observation, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      if (contextScope instanceof ServiceContextScope serviceContextScope) {
+      if (contextScope != null) {
         return runtimeService.klabService().getDefaultShardingStrategy(observation, contextScope);
       }
     }
@@ -246,10 +246,12 @@ public class RuntimeServerController {
       DigitalTwinImpl digitalTwin = null;
       ServiceSessionScope sessionScope;
       if (scope instanceof ServiceContextScope contextScope && id.equals(contextScope.getId())) {
-        if (contextScope.getDigitalTwin() instanceof DigitalTwinImpl digitalTwin1) {}
-        digitalTwin = digitalTwin;
-      } else {
-        sessionScope = scope.getParentScope(Scope.Type.SESSION, ServiceSessionScope.class);
+        if (contextScope.getDigitalTwin() instanceof DigitalTwinImpl digitalTwin1) {
+          digitalTwin = digitalTwin1;
+          // TODO continue
+        } else {
+          sessionScope = scope.getParentScope(Scope.Type.SESSION, ServiceSessionScope.class);
+        }
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
