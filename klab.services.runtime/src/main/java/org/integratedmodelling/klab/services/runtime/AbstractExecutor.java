@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 public abstract class AbstractExecutor implements CompiledDataflow.ContextualExecutor {
@@ -113,24 +114,42 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                 var ok = run(event, scannerMap, contextScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
+                } else {
+                  observation
+                      .getNotifications()
+                      .add(Notification.error("Contextualization of " + observation + " failed"));
                 }
                 return ok;
               });
         }
       } catch (Throwable t) {
+        observation
+            .getNotifications()
+            .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
         cause = t;
         return false;
       }
 
     } else {
       // non-quality
-      tasks.add(() -> run(event, null, contextScope));
+      try {
+        tasks.add(() -> run(event, null, contextScope));
+      } catch (Throwable t) {
+        observation
+            .getNotifications()
+            .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
+        cause = t;
+        return false;
+      }
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
       var results = executorService.invokeAll(tasks);
       var ret =
-          results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+          results.stream()
+              .allMatch(
+                  f -> f.state() == Future.State.SUCCESS && Boolean.TRUE.equals(f.resultNow()));
+
       if (!ret) {
 
         List<Throwable> exceptions = new ArrayList<>();
