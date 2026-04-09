@@ -659,7 +659,13 @@ public class CompiledDataflow {
               if (!executor.validate()) {
                 var cause = executor.getCause();
                 if (cause != null) {
+                  observation.getNotifications().add(Notification.error(cause.getMessage(), cause));
                   scope.error(cause);
+                } else {
+                  observation
+                      .getNotifications()
+                      .add(Notification.error("Unknown error in adapter executor"));
+                  scope.error("Unknown error in adapter executor");
                 }
                 return false;
               }
