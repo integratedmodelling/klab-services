@@ -54,6 +54,16 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     List<Callable<Object>> tasks = new ArrayList<>();
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
+
+      /*
+       * Align the sharding strategies along the dependency chain. TODO this needs more sophistication
+       * eventually, and its own "reasoner" which is also an optimizer.
+       *
+       * TODO also needs more documentation and communication to clients. Ideally an INFO message
+       *  if things change w.r.t. the defaults, and a summary of the overall sharding strategy
+       *  to come along with the main contextualization activity.
+       */
+
       if (storage == null) {
         storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
       }

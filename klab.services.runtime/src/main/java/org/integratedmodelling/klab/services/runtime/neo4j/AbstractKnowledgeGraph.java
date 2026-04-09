@@ -152,7 +152,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
           ret.put("start", activity.getStart());
-          ret.put("parentId", activity.getParentId());
           ret.put("schedulerTime", activity.getSchedulerTime());
           ret.put("size", activity.getSize());
           ret.put("type", activity.getType().name());

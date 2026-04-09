@@ -588,7 +588,7 @@ public class RuntimeService extends BaseService
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
-      if (contextualizationData.validate(observation)
+      if (contextualizationData.validate(observation, scope)
           && observation.getContextualizationData() == null
           && observation instanceof ObservationImpl observationImpl) {
         observationImpl.setContextualizationData(contextualizationData);

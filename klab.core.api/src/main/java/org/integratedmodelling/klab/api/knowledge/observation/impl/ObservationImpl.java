@@ -14,6 +14,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
@@ -122,7 +125,7 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public boolean validate(Observation observation) {
+    public boolean validate(Observation observation, ContextScope scope) {
       if (this.adapterId != null) {
         return true;
       }
@@ -130,6 +133,12 @@ public class ObservationImpl implements Observation {
           && observation.getObservable().is(SemanticType.QUALITY)) {
         // submitted without any sharding strategy, so we assume neutral
         this.nativeShardingStrategy = Data.ShardingStrategy.neutral();
+        if (scope != null) {
+          var runtime = scope.getService(RuntimeService.class);
+          if (runtime != null) {
+            this.nativeShardingStrategy = runtime.getDefaultShardingStrategy(observation, scope);
+          }
+        }
       } else
         return this.nativeShardingStrategy == null
             || observation.getObservable().is(SemanticType.QUALITY);
