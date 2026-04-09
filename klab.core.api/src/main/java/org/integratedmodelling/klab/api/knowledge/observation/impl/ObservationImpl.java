@@ -124,28 +124,6 @@ public class ObservationImpl implements Observation {
       return persistent;
     }
 
-//    @Override
-//    public boolean validate(Observation observation, ContextScope scope) {
-//      if (this.adapterId != null) {
-//        return true;
-//      }
-//      if (this.nativeShardingStrategy == null
-//          && observation.getObservable().is(SemanticType.QUALITY)) {
-//        // submitted without any sharding strategy, so we assume neutral
-//        this.nativeShardingStrategy = Data.ShardingStrategy.neutral();
-//        if (scope != null) {
-//          var runtime = scope.getService(RuntimeService.class);
-//          if (runtime != null) {
-//            this.nativeShardingStrategy = runtime.getDefaultShardingStrategy(observation, scope);
-//          }
-//        }
-//      } else
-//        return this.nativeShardingStrategy == null
-//            || observation.getObservable().is(SemanticType.QUALITY);
-//      // TODO this always returns true for now. Should check for inconsistency
-//      return true;
-//    }
-
     public void setPersistent(boolean persistent) {
       this.persistent = persistent;
     }

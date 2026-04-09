@@ -15,6 +15,8 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import java.net.URL;
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -24,9 +26,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.net.URL;
-import java.util.List;
 
 /**
  * The interface Observation, which is the semantic equivalent of an Artifact and represents an
@@ -117,17 +116,7 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     boolean isPersistent();
-
-//    /**
-//     * Checked before usage in case the data exist but are not usable for lack of specification or
-//     * previous error. Fills in the sharding strategy in quality observations if not already set;
-//     * the strategy may be adjusted during contextualization to optimize data transfer.
-//     *
-//     * @param observation the observation to validate against
-//     * @param scope the scope where the observation is being validated
-//     * @return false if the observation cannot be used in the scope or has inconsistent data.
-//     */
-//    boolean validate(Observation observation, ContextScope scope);
+    
   }
 
   /**

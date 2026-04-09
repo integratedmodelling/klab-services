@@ -338,11 +338,10 @@ public class CompiledDataflow {
       // last remaining check: we have splits and don't need them (i.e., geometry w/o time
       //  has size 1). This must be done on the scale, as the geometry may be parametric and not
       //  know its actual size yet.
-      var splitsAreUnnecessary =
-          !GeometryRepository.INSTANCE
-              .scale(actuator.getObservation().getGeometry())
-              .getSpace() // TODO may need to consider other non-temporal dimensions eventually
-              .distributed();
+      // TODO space may eventually not be the only distributable extent.
+      var space =
+          GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).getSpace();
+      var splitsAreUnnecessary = space == null || !space.distributed();
 
       if (splitsAreUnnecessary
           || !runtime.settings().get(Setting.PARALLELIZE_OBSERVATIONS, Boolean.class)) {
