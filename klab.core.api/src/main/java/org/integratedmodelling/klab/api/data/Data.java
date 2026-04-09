@@ -179,7 +179,7 @@ public interface Data {
             if (ret.suggestedSplits == -1 || other.suggestedSplits != -1) {
               ret.suggestedSplits = other.suggestedSplits;
             }
-            if (ret.minSplitSize == 0 || other.suggestedSplits != 0) {
+            if (ret.minSplitSize == 0 || other.minSplitSize != 0) {
               ret.minSplitSize = other.minSplitSize;
             }
             if (ret.maxBufferSize == 0 || other.maxBufferSize != 0) {

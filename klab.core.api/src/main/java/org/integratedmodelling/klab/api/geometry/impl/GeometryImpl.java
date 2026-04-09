@@ -22,7 +22,7 @@ public class GeometryImpl implements Geometry {
   @Serial private static final long serialVersionUID = 8430057200107796568L;
 
   public void setEmpty(boolean b) {
-    this.empty = false;
+    this.empty = b;
   }
 
   /** Key for the original geometry in the metadata, when this is the result of a split */
