@@ -181,7 +181,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (buffer.getHistogram() != null) {
             ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
           }
-          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
           ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
           ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());

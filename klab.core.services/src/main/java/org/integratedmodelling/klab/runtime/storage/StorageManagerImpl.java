@@ -163,8 +163,15 @@ public class StorageManagerImpl implements StorageManager {
 
   @Override
   public Storage createStorage(Observation observation) {
+    var cd = observation.getContextualizationData();
+    if (cd == null || cd.getNativeShardingStrategy() == null) {
+      throw new KlabIllegalStateException(
+          "Cannot create storage for "
+              + observation
+              + ": contextualization data or native sharding strategy is not set");
+    }
     return this.storage.computeIfAbsent(
-        observation, urn -> createShard(observation, observation.getContextualizationData().getNativeShardingStrategy(), contextScope));
+        observation, obs -> createShard(obs, cd.getNativeShardingStrategy(), contextScope));
   }
 
   @Override
