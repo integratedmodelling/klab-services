@@ -14,6 +14,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
@@ -119,22 +122,6 @@ public class ObservationImpl implements Observation {
     @Override
     public boolean isPersistent() {
       return persistent;
-    }
-
-    @Override
-    public boolean validate(Observation observation) {
-      if (this.adapterId != null) {
-        return true;
-      }
-      if (this.nativeShardingStrategy == null
-          && observation.getObservable().is(SemanticType.QUALITY)) {
-        // submitted without any sharding strategy, so we assume neutral
-        this.nativeShardingStrategy = Data.ShardingStrategy.neutral();
-      } else
-        return this.nativeShardingStrategy == null
-            || observation.getObservable().is(SemanticType.QUALITY);
-      // TODO this always returns true for now. Should check for inconsistency
-      return true;
     }
 
     public void setPersistent(boolean persistent) {

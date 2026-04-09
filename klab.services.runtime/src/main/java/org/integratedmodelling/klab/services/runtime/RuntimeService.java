@@ -62,6 +62,7 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.ojalgo.concurrent.Parallelism;
 
 public class RuntimeService extends BaseService
     implements org.integratedmodelling.klab.api.services.RuntimeService,
@@ -309,9 +310,6 @@ public class RuntimeService extends BaseService
       }
     }
 
-    //    if (systemLauncher != null) {
-    //      systemLauncher.shutdown();
-    //    }
     if (knowledgeGraph != null) {
       knowledgeGraph.shutdown();
     }
@@ -588,8 +586,7 @@ public class RuntimeService extends BaseService
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
-      if (contextualizationData.validate(observation)
-          && observation.getContextualizationData() == null
+      if (observation.getContextualizationData() == null
           && observation instanceof ObservationImpl observationImpl) {
         observationImpl.setContextualizationData(contextualizationData);
       }
@@ -1252,12 +1249,29 @@ public class RuntimeService extends BaseService
     // apply settings to modify defaults. TODO may need the short float option in the scope config
     // too
     var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
-    var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
+    var forceScalar = !settings.get(Setting.PARALLELIZE_OBSERVATIONS, Boolean.class);
     if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {
       ret.setDataType(Storage.Type.FLOAT);
     }
+
+    var geometrySlice = observation.getGeometry().without(Geometry.Dimension.Type.TIME);
+    var space = geometrySlice.dimension(Geometry.Dimension.Type.SPACE);
+
+    var fillCurve = Data.FillCurve.D1_LINEAR;
+    if (space != null && space.isRegular()) {
+      fillCurve =
+          switch (space.getDimensionality()) {
+            case 2 -> Data.FillCurve.D2_XY;
+            case 3 -> Data.FillCurve.D3_XYZ;
+            default -> Data.FillCurve.D1_LINEAR;
+          };
+    }
+    ret.setCurve(fillCurve);
+
     if (forceScalar) {
       ret.setSuggestedSplits(1);
+    } else {
+      ret.setSuggestedSplits(Parallelism.CORES.getAsInt());
     }
 
     return ret;

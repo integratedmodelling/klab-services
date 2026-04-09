@@ -351,7 +351,7 @@ public class ObservationReasoner {
           if we get here, the strategy definition is a match: compile the observation strategy
           operations for the observable and scope
         */
-        ret.add(contextualizeStrategy(observation, strategy, patternVariableValues));
+        ret.add(contextualizeStrategy(observation, strategy, patternVariableValues, scope));
       }
     }
 
@@ -361,14 +361,15 @@ public class ObservationReasoner {
   private ObservationStrategy contextualizeStrategy(
       Observation observation,
       KimObservationStrategy strategy,
-      Map<String, Object> patternVariableValues) {
+      Map<String, Object> patternVariableValues,
+      ContextScope scope) {
 
     var os = new ObservationStrategyImpl();
     os.setDocumentation(strategy.getDescription()); // TODO compile template
     os.setUrn(strategy.getUrn());
 
     if (observation.getContextualizationData() != null
-        && !observation.getContextualizationData().validate(observation)) {
+        && observation.getContextualizationData().getAdapterId() != null) {
       var op = new ObservationStrategyImpl.OperationImpl();
       op.setType(KimObservationStrategy.Operation.Type.APPLY);
       op.getContextualizables()
@@ -398,7 +399,8 @@ public class ObservationReasoner {
                     ServiceCallImpl.create(
                         RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
                         "strategy",
-                        contextualizeStrategy(observation, deferred, patternVariableValues))));
+                        contextualizeStrategy(
+                            observation, deferred, patternVariableValues, scope))));
       }
       os.getOperations().add(op);
     }

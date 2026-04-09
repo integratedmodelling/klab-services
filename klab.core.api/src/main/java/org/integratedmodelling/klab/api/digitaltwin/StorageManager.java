@@ -37,13 +37,12 @@ public interface StorageManager {
 
   /**
    * Create storage for the passed observation, using the observation's scale and ID and honoring
-   * the passed sharding strategy.
+   * the sharding strategy in the observation's contextualization data, which must be set .
    *
    * @param observation
-   * @param shardingStrategy
    * @return the newly created storage
    */
-  Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
+  Storage createStorage(Observation observation);
 
   /**
    * Get a temporary scanner for a transparently managed chunk of storage of the passed size and

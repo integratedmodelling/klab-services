@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 public abstract class AbstractExecutor implements CompiledDataflow.ContextualExecutor {
@@ -52,48 +53,20 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
+    var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
-      if (storage == null) {
-        storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
-      }
-      if (storage == null) {
-        cause = new KlabIllegalStateException("No storage available for " + observation);
-        return false;
-      }
-      var localShardingStrategy =
-          callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
 
-      if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
-        // if have a dependent quality, copy the sharding strategy from its storage, given that it
-        // has already been initialized.
-        var dependentQuality =
-            dependencies.values().stream()
-                .filter(d -> d.getObservable().is(SemanticType.QUALITY))
-                .findFirst()
-                .orElse(null);
-        if (dependentQuality != null) {
-          localShardingStrategy =
-              contextScope
-                  .getDigitalTwin()
-                  .getStorageManager()
-                  .getStorage(dependentQuality)
-                  .getNativeShardingStrategy();
-        } else {
-          // use the default sharding strategy if nothing else is known.
-          localShardingStrategy =
-              contextScope
-                  .getService(RuntimeService.class)
-                  .getDefaultShardingStrategy(observation, contextScope);
-        }
-      }
+      /*
+       * Guaranteed to be there by the dataflow compilation process.
+       */
+      var shardingStrategy = observation.getContextualizationData().getNativeShardingStrategy();
 
       Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
       scanners.put(
           Dataflow.SELF_ID,
           new ArrayList<>(
-              storage.scan(
-                  event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)));
+              storage.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), false)));
 
       var nScanners = scanners.get(Dataflow.SELF_ID).size();
 
@@ -116,8 +89,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         scanners.put(
             dependency,
             new ArrayList<>(
-                store.scan(
-                    event, localShardingStrategy, localShardingStrategy.getScannerClass(), true)));
+                store.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), true)));
 
         if (scanners.get(dependency).size() != nScanners) {
           cause =
@@ -136,31 +108,49 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         allScanners.add(map);
       }
 
-      try {
-        for (var scannerMap : allScanners) {
-          tasks.add(
-              () -> {
+      for (var scannerMap : allScanners) {
+        tasks.add(
+            () -> {
+              try {
                 var ok = run(event, scannerMap, contextScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
+                } else {
+                  threadNotifications.add(
+                      Notification.error("Contextualization of " + observation + " failed"));
                 }
                 return ok;
-              });
-        }
-      } catch (Throwable t) {
-        cause = t;
-        return false;
+              } catch (Throwable t) {
+                threadNotifications.add(
+                    Notification.error("Error running dataflow task: " + t.getMessage(), t));
+                cause = t;
+                return false;
+              }
+            });
       }
 
     } else {
       // non-quality
-      tasks.add(() -> run(event, null, contextScope));
+      tasks.add(
+          () -> {
+            try {
+              return run(event, null, contextScope);
+            } catch (Throwable t) {
+              threadNotifications.add(
+                  Notification.error("Error running dataflow task: " + t.getMessage(), t));
+              cause = t;
+              return false;
+            }
+          });
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
       var results = executorService.invokeAll(tasks);
       var ret =
-          results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+          results.stream()
+              .allMatch(
+                  f -> f.state() == Future.State.SUCCESS && Boolean.TRUE.equals(f.resultNow()));
+
       if (!ret) {
 
         List<Throwable> exceptions = new ArrayList<>();
@@ -174,9 +164,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                 ? new KlabIllegalStateException("Execution failed")
                 : exceptions.getFirst();
       }
+
+      observation.getNotifications().addAll(threadNotifications);
+
       return ret;
     } catch (Throwable t) {
       cause = t;
+      observation.getNotifications().add(Notification.error(t.getMessage(), t));
       return false;
     }
   }

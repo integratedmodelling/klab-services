@@ -152,7 +152,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
           ret.put("start", activity.getStart());
-          ret.put("parentId", activity.getParentId());
           ret.put("schedulerTime", activity.getSchedulerTime());
           ret.put("size", activity.getSize());
           ret.put("type", activity.getType().name());
@@ -182,7 +181,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (buffer.getHistogram() != null) {
             ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
           }
-          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
           ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
           ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());

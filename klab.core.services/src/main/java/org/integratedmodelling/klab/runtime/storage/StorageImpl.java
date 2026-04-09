@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -19,7 +18,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -125,12 +123,7 @@ public class StorageImpl implements Storage {
     this.storageManager = storageManager;
     this.nativeShardingStrategy = shardingStrategy;
 
-    if (observation.getContextualizationData()
-        instanceof ObservationImpl.ContextualizationDataImpl data) {
-      data.setNativeShardingStrategy(shardingStrategy);
-    }
-
-    /**
+    /*
      * If the observation comes from the KG, we load any pre-existing shards into lazy containers.
      */
     if (observation.getId() > 0) {
