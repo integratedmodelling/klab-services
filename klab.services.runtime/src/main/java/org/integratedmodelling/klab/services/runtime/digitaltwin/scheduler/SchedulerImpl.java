@@ -310,7 +310,7 @@ public class SchedulerImpl implements Scheduler {
       Time geometryTime,
       DigitalTwin.Transaction transaction) {
     if (observation instanceof ObservationImpl observation1) {
-      var timestamps = new ArrayList<Long>(observation.getEventTimestamps());
+      var timestamps = new ArrayList<>(observation.getEventTimestamps());
       if (event.getType() == Event.Type.INITIALIZATION && observation1.isSubstantialQuality()) {
         timestamps.add(0L);
         if (geometryTime != null && geometryTime.getStart() != null) {

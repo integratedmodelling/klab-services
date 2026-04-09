@@ -205,6 +205,7 @@ public class DigitalTwinImpl implements DigitalTwin {
             } else if (datum instanceof Observation observation) {
               // only link contextualization to the contextualized observation
               if (activity.getType() == Activity.Type.CONTEXTUALIZATION) {
+                this.graph.addVertex(observation);
                 this.graph.addEdge(
                     activity,
                     observation,
