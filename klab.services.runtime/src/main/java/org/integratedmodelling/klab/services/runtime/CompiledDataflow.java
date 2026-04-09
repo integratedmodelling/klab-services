@@ -326,7 +326,16 @@ public class CompiledDataflow {
       priorityOrder.addFirst(modelDriven); // second-tier
       priorityOrder.addFirst(localDriven); // first-tier
       priorityOrder.add(runtimeDriven); // highest priority
-      var leastPriority = priorityOrder.stream().filter(Objects::nonNull).findFirst().orElseThrow();
+      var leastPriority =
+          priorityOrder.stream()
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new KlabInternalErrorException(
+                          "No sharding strategy could be determined for "
+                              + actuator.getObservation().getObservable()));
+
       ret = leastPriority.mergeUndefined(priorityOrder.toArray(Data.ShardingStrategy[]::new));
 
       /*
