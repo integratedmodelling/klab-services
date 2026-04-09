@@ -25,6 +25,7 @@ public class GeometryImpl implements Geometry {
     this.empty = b;
   }
 
+
   /** Key for the original geometry in the metadata, when this is the result of a split */
   public static final String OVERALL_PARENT_GEOMETRY_KEY = "overall.parent.geometry";
 

@@ -852,19 +852,6 @@ public interface Data {
    */
   List<Data> children();
 
-  //  /**
-  //   * Annotations are important because they contain indications re: fill curve, splits and any
-  //   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and
-  // <code>
-  //   * split</code>.
-  //   *
-  //   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
-  //   * level
-  //   *
-  //   * @return a collection of annotations associated with this data object
-  //   */
-  //  Collection<Annotation> annotations();
-
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
    * DescriptionType} is {@link DescriptionType#CATEGORIZATION}. In this case the data object will
@@ -890,15 +877,6 @@ public interface Data {
    * @return true if this data object contains state values, false otherwise
    */
   boolean hasStates();
-
-  //  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
-  //    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-  //    if (configuration == null) {
-  //      throw new KlabIllegalStateException(
-  //          "k.LAB environment not configured to create a data builder");
-  //    }
-  //    return configuration.getDataBuilder(name, observable, geometry);
-  //  }
 
   static Data empty(Notification notification) {
 
@@ -942,11 +920,6 @@ public interface Data {
       public List<Data> children() {
         return List.of();
       }
-
-      //      @Override
-      //      public Collection<Annotation> annotations() {
-      //        return List.of();
-      //      }
 
       @Override
       public Map<Integer, String> dataKey() {
