@@ -348,8 +348,8 @@ public class CompiledDataflow {
       //  has size 1). This must be done on the scale, as the geometry may be parametric and not
       //  know its actual size yet.
       // TODO space may eventually not be the only distributable extent.
-      var space =
-          GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).getSpace();
+      var scale = GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry());
+      var space = scale == null ? null : scale.getSpace();
       var splitsAreUnnecessary = space == null || !space.distributed();
 
       if (splitsAreUnnecessary
