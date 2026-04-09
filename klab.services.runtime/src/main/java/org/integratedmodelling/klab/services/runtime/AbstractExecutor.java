@@ -56,54 +56,15 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     if (observation.getObservable().is(SemanticType.QUALITY)) {
 
       /*
-       * Align the sharding strategies along the dependency chain. TODO this needs more sophistication
-       * eventually, and its own "reasoner" which is also an optimizer.
-       *
-       * TODO also needs more documentation and communication to clients. Ideally an INFO message
-       *  if things change w.r.t. the defaults, and a summary of the overall sharding strategy
-       *  to come along with the main contextualization activity.
+       * Guaranteed to be there by the dataflow compilation process.
        */
-
-      if (storage == null) {
-        storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
-      }
-      if (storage == null) {
-        cause = new KlabIllegalStateException("No storage available for " + observation);
-        return false;
-      }
-      var localShardingStrategy =
-          callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
-
-      if (localShardingStrategy.getCurve() == Data.FillCurve.UNSPECIFIED) {
-        // if have a dependent quality, copy the sharding strategy from its storage, given that it
-        // has already been initialized.
-        var dependentQuality =
-            dependencies.values().stream()
-                .filter(d -> d.getObservable().is(SemanticType.QUALITY))
-                .findFirst()
-                .orElse(null);
-        if (dependentQuality != null) {
-          localShardingStrategy =
-              contextScope
-                  .getDigitalTwin()
-                  .getStorageManager()
-                  .getStorage(dependentQuality)
-                  .getNativeShardingStrategy();
-        } else {
-          // use the default sharding strategy if nothing else is known.
-          localShardingStrategy =
-              contextScope
-                  .getService(RuntimeService.class)
-                  .getDefaultShardingStrategy(observation, contextScope);
-        }
-      }
+      var shardingStrategy = observation.getContextualizationData().getNativeShardingStrategy();
 
       Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
       scanners.put(
           Dataflow.SELF_ID,
           new ArrayList<>(
-              storage.scan(
-                  event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)));
+              storage.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), false)));
 
       var nScanners = scanners.get(Dataflow.SELF_ID).size();
 
@@ -126,8 +87,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         scanners.put(
             dependency,
             new ArrayList<>(
-                store.scan(
-                    event, localShardingStrategy, localShardingStrategy.getScannerClass(), true)));
+                store.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), true)));
 
         if (scanners.get(dependency).size() != nScanners) {
           cause =

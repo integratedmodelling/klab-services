@@ -158,7 +158,7 @@ public interface Data {
      * @param others
      * @return
      */
-    public ShardingStrategy override(ShardingStrategy... others) {
+    public ShardingStrategy mergeUndefined(ShardingStrategy... others) {
       var ret = this.copy();
       if (others != null) {
         for (var other : others) {

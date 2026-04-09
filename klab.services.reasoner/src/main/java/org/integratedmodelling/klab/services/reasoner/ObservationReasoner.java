@@ -369,7 +369,7 @@ public class ObservationReasoner {
     os.setUrn(strategy.getUrn());
 
     if (observation.getContextualizationData() != null
-        && !observation.getContextualizationData().validate(observation, scope)) {
+        && observation.getContextualizationData().getAdapterId() != null) {
       var op = new ObservationStrategyImpl.OperationImpl();
       op.setType(KimObservationStrategy.Operation.Type.APPLY);
       op.getContextualizables()

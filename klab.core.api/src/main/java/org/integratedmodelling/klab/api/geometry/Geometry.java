@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.geometry;
 
+import java.io.Serializable;
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
@@ -7,9 +9,6 @@ import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * TODO obsolete - revise these javadocs!
@@ -490,6 +489,15 @@ public interface Geometry extends Serializable, Locator {
    * @return
    */
   boolean infiniteTime();
+
+  /**
+   * Return a new geometry with the passed dimension removed. If the dimension is not present,
+   * return this.
+   *
+   * @param type
+   * @return
+   */
+  Geometry without(Dimension.Type type);
 
   static GeometryBuilder builder() {
     return new GeometryBuilder();

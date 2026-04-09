@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.geometry.impl;
 
+import java.io.Serial;
+import java.util.*;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -14,9 +16,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.io.Serial;
-import java.util.*;
 
 public class GeometryImpl implements Geometry {
 

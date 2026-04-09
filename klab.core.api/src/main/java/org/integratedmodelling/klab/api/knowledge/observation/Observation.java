@@ -118,16 +118,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      */
     boolean isPersistent();
 
-    /**
-     * Checked before usage in case the data exist but are not usable for lack of specification or
-     * previous error. Fills in the sharding strategy in quality observations if not already set;
-     * the strategy may be adjusted during contextualization to optimize data transfer.
-     *
-     * @param observation the observation to validate against
-     * @param scope the scope where the observation is being validated
-     * @return false if the observation cannot be used in the scope or has inconsistent data.
-     */
-    boolean validate(Observation observation, ContextScope scope);
+//    /**
+//     * Checked before usage in case the data exist but are not usable for lack of specification or
+//     * previous error. Fills in the sharding strategy in quality observations if not already set;
+//     * the strategy may be adjusted during contextualization to optimize data transfer.
+//     *
+//     * @param observation the observation to validate against
+//     * @param scope the scope where the observation is being validated
+//     * @return false if the observation cannot be used in the scope or has inconsistent data.
+//     */
+//    boolean validate(Observation observation, ContextScope scope);
   }
 
   /**
