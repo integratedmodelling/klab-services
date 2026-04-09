@@ -229,15 +229,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
-      try {
-        var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
-        return new ScalarComputationGroovy(compiled, scope, output.toString());
-      } catch (Throwable t) {
-        target
-            .getNotifications()
-            .add(Notification.error("Failed to compile expression code: " + t.getMessage(), t));
-        throw t;
-      }
+      var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
+      return new ScalarComputationGroovy(compiled, scope, output.toString());
     }
 
     private String getScannerType(Observation observation, TemplateCodeInfo codeInfo) {

@@ -53,6 +53,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
+    var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
 
@@ -115,15 +116,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
                 } else {
-                  observation
-                      .getNotifications()
-                      .add(Notification.error("Contextualization of " + observation + " failed"));
+                  threadNotifications.add(
+                      Notification.error("Contextualization of " + observation + " failed"));
                 }
                 return ok;
               } catch (Throwable t) {
-                observation
-                    .getNotifications()
-                    .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
+                threadNotifications.add(
+                    Notification.error("Error running dataflow task: " + t.getMessage(), t));
                 cause = t;
                 return false;
               }
@@ -137,9 +136,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             try {
               return run(event, null, contextScope);
             } catch (Throwable t) {
-              observation
-                  .getNotifications()
-                  .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
+              threadNotifications.add(
+                  Notification.error("Error running dataflow task: " + t.getMessage(), t));
               cause = t;
               return false;
             }
@@ -166,9 +164,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                 ? new KlabIllegalStateException("Execution failed")
                 : exceptions.getFirst();
       }
+
+      observation.getNotifications().addAll(threadNotifications);
+
       return ret;
     } catch (Throwable t) {
       cause = t;
+      observation.getNotifications().add(Notification.error(t.getMessage(), t));
       return false;
     }
   }
