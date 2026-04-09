@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -39,6 +40,10 @@ public class ScalarOperationExecutor extends AbstractExecutor
     if (scalarMapper == null) {
       try {
         scalarMapper = scalarBuilder.build();
+        if (scalarMapper == null) {
+          cause = new KlabIllegalStateException("Scalar operation failed to compile");
+          return false;
+        }
       } catch (Throwable e) {
         cause = e;
         return false;
