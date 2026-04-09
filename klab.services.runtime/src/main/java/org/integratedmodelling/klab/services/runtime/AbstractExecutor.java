@@ -107,10 +107,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         allScanners.add(map);
       }
 
-      try {
-        for (var scannerMap : allScanners) {
-          tasks.add(
-              () -> {
+      for (var scannerMap : allScanners) {
+        tasks.add(
+            () -> {
+              try {
                 var ok = run(event, scannerMap, contextScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
@@ -120,27 +120,30 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                       .add(Notification.error("Contextualization of " + observation + " failed"));
                 }
                 return ok;
-              });
-        }
-      } catch (Throwable t) {
-        observation
-            .getNotifications()
-            .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
-        cause = t;
-        return false;
+              } catch (Throwable t) {
+                observation
+                    .getNotifications()
+                    .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
+                cause = t;
+                return false;
+              }
+            });
       }
 
     } else {
       // non-quality
-      try {
-        tasks.add(() -> run(event, null, contextScope));
-      } catch (Throwable t) {
-        observation
-            .getNotifications()
-            .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
-        cause = t;
-        return false;
-      }
+      tasks.add(
+          () -> {
+            try {
+              return run(event, null, contextScope);
+            } catch (Throwable t) {
+              observation
+                  .getNotifications()
+                  .add(Notification.error("Error running dataflow task: " + t.getMessage(), t));
+              cause = t;
+              return false;
+            }
+          });
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
