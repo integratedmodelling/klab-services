@@ -304,7 +304,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       if (parent == null) {
-        var kgTransaction = knowledgeGraph.createTransaction();
+        var kgTransaction = knowledgeGraph.createTransaction(scope);
         var stored = new ArrayList<RuntimeAsset>();
         var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
