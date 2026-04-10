@@ -59,7 +59,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       /*
        * Created by the main execution sequence before calling execute()
        */
-      var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+      var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
 
       /*
        * Guaranteed to be there by the dataflow compilation process.

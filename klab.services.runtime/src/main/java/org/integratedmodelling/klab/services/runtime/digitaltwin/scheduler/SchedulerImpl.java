@@ -243,7 +243,14 @@ public class SchedulerImpl implements Scheduler {
                     } catch (Exception e) {
                       return false;
                     }
-                  })) {}
+                  })) {
+            observation
+                .getNotifications()
+                .add(
+                    Notification.error(
+                        "Some concurrent tasks failed during contextualization of " + observation));
+            return false;
+          }
         } catch (Throwable t) {
           observation.getNotifications().add(Notification.error(t.getMessage(), t));
           scope.error(t);

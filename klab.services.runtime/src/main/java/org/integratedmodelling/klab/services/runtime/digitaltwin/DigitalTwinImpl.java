@@ -249,21 +249,21 @@ public class DigitalTwinImpl implements DigitalTwin {
         graph.addVertex(source);
         graph.addVertex(destination);
         graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
-      }
 
-      // TODO do this for all others as well?
-      if (source instanceof ObservationImpl sourceObs
-          && destination instanceof ObservationImpl targetObs
-          && relationship == GraphModel.Relationship.HAS_CHILD) {
-        sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
-        update(sourceObs);
-        targetObs.setParentTransientId(sourceObs.getTransientId());
-      } else if (source instanceof CohortImpl sourceCohort
-          && destination instanceof ObservationImpl targetObs
-          && relationship == GraphModel.Relationship.HAS_MEMBER) {
-        sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
-        update(sourceCohort);
-        targetObs.setParentTransientId(sourceCohort.getTransientId());
+        // TODO do this for all others as well?
+        if (source instanceof ObservationImpl sourceObs
+            && destination instanceof ObservationImpl targetObs
+            && relationship == GraphModel.Relationship.HAS_CHILD) {
+          sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
+          update(sourceObs);
+          targetObs.setParentTransientId(sourceObs.getTransientId());
+        } else if (source instanceof CohortImpl sourceCohort
+            && destination instanceof ObservationImpl targetObs
+            && relationship == GraphModel.Relationship.HAS_MEMBER) {
+          sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
+          update(sourceCohort);
+          targetObs.setParentTransientId(sourceCohort.getTransientId());
+        }
       }
     }
 
