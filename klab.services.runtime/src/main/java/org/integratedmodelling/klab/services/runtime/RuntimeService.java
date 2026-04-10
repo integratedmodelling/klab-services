@@ -699,6 +699,11 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
+
+                // FIXME this comes from the original submission while the executors and storage
+                //  have been registered with the observations in the actuators. These are only
+                //  correct if the observations have been created at compilation.
+
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
@@ -880,6 +885,12 @@ public class RuntimeService extends BaseService
         }
 
         if (!executionSequence.store(transactionImpl)) {
+          scope
+              .getCurrentTransaction()
+              .fail(
+                  new KlabCompilationError(
+                      "Could not store execution sequence for target observation "
+                          + rootObservation));
           return false;
         }
       }
@@ -887,6 +898,7 @@ public class RuntimeService extends BaseService
       return true;
     }
 
+    // won't happen
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected transaction implementation");
   }
