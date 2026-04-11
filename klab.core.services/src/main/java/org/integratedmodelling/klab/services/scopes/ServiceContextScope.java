@@ -7,6 +7,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -24,6 +26,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -57,6 +60,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private static long MAX_CACHED_OBSERVATIONS = 100;
   private static long MAX_CACHED_GEOMETRIES = 20;
   private DigitalTwin.Configuration configuration;
+  private final AtomicLong idGenerator;
 
   private Observation observer;
   private Observation contextObservation;
@@ -95,6 +99,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.currentTransaction = parent.currentTransaction;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
+    this.idGenerator = parent.idGenerator;
     copyMessagingSetup(parent);
   }
 
@@ -116,6 +121,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.data = Parameters.create();
     this.data.putAll(parent.data);
     this.configuration = configuration;
+    this.idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy
     this.shardingStrategy = Data.ShardingStrategy.neutral();
@@ -825,5 +831,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   /** Reinitialize a context scope after a timeout if so configured. */
   public void reinitialize() {
     // TODO zap the KG and all caches; leave a trace somewhere for provenance.
+  }
+
+  @Override
+  public Observation.Builder observation(Observable observable) {
+
+    return new ObservationBuilderImpl(observable, this) {
+      @Override
+      public CompletableFuture<Observation> submit() {
+        return null;
+      }
+
+      @Override
+      public Observation register() {
+        return null;
+      }
+    };
   }
 }

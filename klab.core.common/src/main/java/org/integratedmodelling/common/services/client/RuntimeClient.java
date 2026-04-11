@@ -72,6 +72,11 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
+  public Observation register(Observation observation, ContextScope scope) {
+    return null;
+  }
+
+  @Override
   public Capabilities capabilities(Scope scope) {
     return capabilities == null
         ? getCapabilities(scope, RuntimeCapabilitiesImpl.class)

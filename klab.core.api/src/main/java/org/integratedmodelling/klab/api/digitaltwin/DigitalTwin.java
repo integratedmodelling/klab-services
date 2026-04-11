@@ -390,6 +390,7 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   void dispose();
 
+  @Deprecated // FIXME remove, put one in each service-side ContextScope
   AtomicLong idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
 
   /**
@@ -402,6 +403,7 @@ public interface DigitalTwin extends RuntimeAsset {
    * @param scope any valid scope, used to resolve semantics.
    * @param resolvables
    * @return a new unresolved observation, or null if the parameters do not resolve to a valid one
+   * @deprecated use the improved ContextScope API
    */
   static ObservationImpl createObservation(Scope scope, Object... resolvables) {
 

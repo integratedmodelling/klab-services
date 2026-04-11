@@ -150,6 +150,26 @@ public interface RuntimeService extends KlabService {
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
   /**
+   * Return an unresolved observation after checking the validity w.r.t. the scope and assigning a
+   * negative ID that is unique within the scope. If the observation already exists at a concrete
+   * knowledge graph insertion point as specified by the scope, return the corresponding resolved
+   * observation with its positive ID. The observation will be empty if the scope is invalid or if
+   * the observation is not compatible with it.
+   *
+   * <p>The observation must mandatorily have id {@link Observation#UNASSIGNED_ID}. If the scope has
+   * resolved contextual observations, the position will be checked against the resolved ones. If
+   * the observation is a substantial, the identity will be checked against the corresponding cohort
+   * in the knowledge graph.
+   *
+   * @param observation
+   * @param scope
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+   *     observation is resolved or already registered.
+   * @return
+   */
+  Observation register(Observation observation, ContextScope scope);
+
+  /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.
    * The incoming request will propose to use resources, functions and the like; the runtime may
    * provide some of those natively or use the resources services to locate them and load them. If

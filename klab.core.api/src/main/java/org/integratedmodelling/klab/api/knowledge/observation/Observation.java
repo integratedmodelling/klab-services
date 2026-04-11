@@ -17,12 +17,15 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -35,10 +38,9 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * to actor files that will provide behaviors for their instances (or a subset thereof). Once made
  * reactive, they can interact with each other and the system.
  *
- * <p>The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
- * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
- * unresolved and does not exist in the knowledge graph. So a client may <em>send</em> an unresolved
- * observation (normally created with {@link
+ * <p>The ID of an observation is a positive long for efficiency. If the ID is negative, the
+ * observation is unresolved and does not yet exist in the knowledge graph. So a client may
+ * <em>submit</em> an unresolved observation (normally created with {@link
  * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope, Object...)} but
  * will never <em>receive</em> one, except in case of resolution error.
  *
@@ -51,7 +53,64 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
+  /**
+   * An observation whose ID is -1 has not been registered with a runtime for submission and is
+   * always illegal to use.
+   */
   long UNASSIGNED_ID = -1;
+
+  /**
+   * A builder for creating new observations is only created by a context scope, which communicates
+   * with the assigned runtime service. To obtain a builder, get a context scope and call {@link
+   * ContextScope#observation(Observable)} on it. The builder does not have a <code>build</code>
+   * method but will accept {@link #submit()} (the normal operation to trigger resolution) or {@link
+   * #register()} when the submission to the runtime is managed directly through the API.
+   */
+  interface Builder {
+
+    /**
+     * Mandatory for all observations except dependents, which inherit their geometry from their
+     * context (which must be defined in the scope that provides the builder).
+     *
+     * @param geometry
+     * @return
+     */
+    Builder geometry(Geometry geometry);
+
+    Builder definition(KimSymbolDefinition definition);
+
+    Builder contextualizationData(ContextualizationData contextualizationData);
+
+    Builder value(Object value);
+
+    /**
+     * Mandatory for substantials, causes an illegal state exception on dependents.
+     *
+     * @param namespace
+     * @param name
+     * @return
+     */
+    Builder identity(String namespace, String name);
+
+    Builder metadata(String key, Object value);
+
+    /**
+     * Submit the observation for resolution. The returned future will complete when the observation
+     * is resolved or fails.
+     *
+     * @return
+     */
+    CompletableFuture<Observation> submit();
+
+    /**
+     * Return an observation that has been registered by the runtime service but not submitted for
+     * resolution. Only used when the resolution is managed directly using the {@link
+     * org.integratedmodelling.klab.api.services.RuntimeService} API.
+     *
+     * @return
+     */
+    Observation register();
+  }
 
   /**
    * In resolved observations, reports adapter and its parameters, if any, plus the service ID where
@@ -116,7 +175,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     boolean isPersistent();
-    
   }
 
   /**

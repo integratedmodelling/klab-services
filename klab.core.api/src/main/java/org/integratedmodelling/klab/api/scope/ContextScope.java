@@ -239,8 +239,25 @@ public interface ContextScope extends SessionScope {
    * @return a {@link Future} producing the resolved observation when resolution is finished and the
    *     observation is part of the knowledge graph. If resolution has failed, the observation in
    *     the future will be {@link Observation#isEmpty() empty}.
+   * @deprecated use observation...submit() instead.
    */
   CompletableFuture<Observation> submit(Observation observation);
+
+  /**
+   * Define an observation for inclusion into the knowledge graph at the point implied by the
+   * current scope. The resulting builder should normally be finished by calling {@link
+   * Observation.Builder#submit()} which starts resolution and/or validation and returning a future
+   * for the resolved observation or for an {@link Observation#isEmpty() empty} one with
+   * notifications in case of failure.
+   *
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the observable
+   *     is incompatible with the scope on which this is called: dependents must have a context
+   *     observation set, relationships must have both source and target set. For substantials, any
+   *     context set in the scope is ignored.
+   * @param observable
+   * @return a builder for the observation to be submitted.
+   */
+  Observation.Builder observation(Observable observable);
 
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an

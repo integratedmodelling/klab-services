@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -148,6 +149,22 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       submissionContext = (ClientContextScope) submissionContext.within(null);
     }
     return runtime.submit(observation, submissionContext);
+  }
+
+  @Override
+  public Observation.Builder observation(Observable observable) {
+
+    return new ObservationBuilderImpl(observable, this) {
+      @Override
+      public CompletableFuture<Observation> submit() {
+        return null;
+      }
+
+      @Override
+      public Observation register() {
+        return null;
+      }
+    };
   }
 
   @Override

@@ -776,6 +776,12 @@ public class RuntimeService extends BaseService
     return null;
   }
 
+  @Override
+  public Observation register(Observation observation, ContextScope scope) {
+//    observation.setId(idGenerator.getAndIncrement());
+    return observation;
+  }
+
   private Cohort getCohortFor(Observation observation, ContextScope scope) {
 
     var needsCohort =
