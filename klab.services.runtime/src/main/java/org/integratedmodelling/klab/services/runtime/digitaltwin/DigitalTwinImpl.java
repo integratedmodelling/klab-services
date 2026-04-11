@@ -276,15 +276,6 @@ public class DigitalTwinImpl implements DigitalTwin {
         var source = checkPresentAsset(sourceOrig);
         var destination = checkPresentAsset(destinationOrig);
 
-        if (source instanceof Cohort cohort && destination instanceof Observation observation) {
-          System.out.println("DIO INFAME");
-        }
-
-        if (sourceOrig instanceof Cohort cohort
-            && destinationOrig instanceof Observation observation) {
-          System.out.println("DIO INFAME");
-        }
-
         graph.addVertex(source);
         graph.addVertex(destination);
         graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
