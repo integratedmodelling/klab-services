@@ -390,7 +390,7 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   void dispose();
 
-  AtomicLong idGenerator = new AtomicLong();
+  AtomicLong idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
 
   /**
    * Assemble the passed parameters into an unresolved Observation, to be inserted into the

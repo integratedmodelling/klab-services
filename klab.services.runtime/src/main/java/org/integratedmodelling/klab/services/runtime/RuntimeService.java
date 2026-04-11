@@ -643,7 +643,9 @@ public class RuntimeService extends BaseService
                   ? GraphModel.Relationship.HAS_MEMBER
                   : GraphModel.Relationship.HAS_CHILD);
 
-      if (cohort != null && scope.getContextObservation() != null) {
+      if (cohort != null
+          && scope.getContextObservation() != null
+          && observation.getObservable().is(SemanticType.COUNTABLE)) {
         // ALSO link the observation to the cohort, which wasn't done in the previous statement
         submissionScope
             .getCurrentTransaction()

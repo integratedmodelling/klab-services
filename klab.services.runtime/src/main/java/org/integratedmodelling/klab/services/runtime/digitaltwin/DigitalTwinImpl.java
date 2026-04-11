@@ -1,16 +1,14 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.data.impl.LinkImpl;
@@ -32,7 +30,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
@@ -271,13 +268,22 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void link(
-        RuntimeAsset source,
-        RuntimeAsset destination,
+        RuntimeAsset sourceOrig,
+        RuntimeAsset destinationOrig,
         GraphModel.Relationship relationship,
         Object... data) {
       synchronized (graph) {
-        source = checkPresentAsset(source);
-        destination = checkPresentAsset(destination);
+        var source = checkPresentAsset(sourceOrig);
+        var destination = checkPresentAsset(destinationOrig);
+
+        if (source instanceof Cohort cohort && destination instanceof Observation observation) {
+          System.out.println("DIO INFAME");
+        }
+
+        if (sourceOrig instanceof Cohort cohort
+            && destinationOrig instanceof Observation observation) {
+          System.out.println("DIO INFAME");
+        }
 
         graph.addVertex(source);
         graph.addVertex(destination);

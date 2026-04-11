@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -379,6 +380,14 @@ public class CompiledDataflow {
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
+    // restart our ID numbering from the lowest ID resolved to avoid conflicts with observations
+    // created in the resolver.
+    var minId =
+        dependentObservations.values().stream()
+            .map(RuntimeAsset::getId)
+            .filter(id -> id < 0)
+            .min(Long::compare);
+    minId.ifPresent(DigitalTwin.idGenerator::set);
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
