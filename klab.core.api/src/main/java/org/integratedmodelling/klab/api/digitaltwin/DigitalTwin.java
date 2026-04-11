@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
@@ -382,44 +384,20 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   Dataflow getDataflowGraph(ContextScope context);
 
-  //  /**
-  //   * Ingest the contextualized data coming from a resource contextualization into the passed
-  //   * observation target.
-  //   *
-  //   * <p>TODO this ingests a single shard at a time.
-  //   *
-  //   * @param data
-  //   * @param target
-  //   * @param event
-  //   * @param shardingStrategy the sharding strategy adopted for the resource contextualization,
-  // which
-  //   *     may differ from the native strategy in the observation. Null may be passed, which must
-  // be
-  //   *     substituted by the original observations's native strategy.
-  //   * @param scope
-  //   * @return true if ingestion was successful
-  //   * @deprecated this should become unnecessary. Ingestion of child observations should be
-  // called
-  //   *     from within the ContextualExecutors, and scanners are set up to handle transfer to
-  // storage.
-  //   *     The scheduler must be notified in there.
-  //   */
-  //  boolean ingest(
-  //      Data data,
-  //      Observation target,
-  //      Scheduler.Event event,
-  //      Data.ShardingStrategy shardingStrategy,
-  //      ContextScope scope);
-
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether
    * the disposal is permanent depends on the graph database used and its configuration.
    */
   void dispose();
 
+  AtomicLong idGenerator = new AtomicLong();
+
   /**
    * Assemble the passed parameters into an unresolved Observation, to be inserted into the
    * knowledge graph and resolved.
+   *
+   * <p>The observation will have a negative ID (meaning "unresolved") unless a long parameter is
+   * passed with <code>resolvables</code> to serve as the ID. The ID is never repeated across a VM.
    *
    * @param scope any valid scope, used to resolve semantics.
    * @param resolvables
@@ -547,7 +525,7 @@ public interface DigitalTwin extends RuntimeAsset {
       ret.setObservable(observable);
       ret.setValue(defaultValue);
       ret.setName(name);
-      ret.setId(id);
+      ret.setId(id == Observation.UNASSIGNED_ID ? idGenerator.decrementAndGet() : id);
       ret.setType(observable.getArtifactType());
       ret.setContextualizationData(contextualizationData);
 

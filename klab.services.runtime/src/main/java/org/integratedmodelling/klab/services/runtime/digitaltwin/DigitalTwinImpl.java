@@ -98,6 +98,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     return Type.CONTEXT;
   }
 
+  /**
+   * The transactional graph is a directed acyclic graph that represents the execution of a digital
+   * twin activity, capturing the relationships and changes between assets. The graph is robust to
+   * identity switching between assets as long as their ID remains consistent.
+   */
   public class TransactionImpl implements Transaction {
 
     private final Set<RuntimeAsset> modified = new HashSet<>();
@@ -205,11 +210,18 @@ public class DigitalTwinImpl implements DigitalTwin {
             } else if (datum instanceof Observation observation) {
               // only link contextualization to the contextualized observation
               if (activity.getType() == Activity.Type.CONTEXTUALIZATION) {
-                this.graph.addVertex(observation);
-                this.graph.addEdge(
-                    activity,
-                    observation,
-                    new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+                var obs =
+                    graph.vertexSet().stream()
+                        .filter(
+                            a -> a instanceof Observation oo && oo.getId() == observation.getId())
+                        .findFirst()
+                        .orElse(observation);
+                try {
+                  this.graph.addEdge(
+                      activity, obs, new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+                } catch (Exception e) {
+                  Logging.INSTANCE.error(e, obs);
+                }
               }
             } // TODO see if we need anything else
           }
@@ -231,12 +243,30 @@ public class DigitalTwinImpl implements DigitalTwin {
       return this.activity;
     }
 
+    /**
+     * This allows us to keep the graph consistent without having to enforce object identity during
+     * contextualization. The logic only applies to observations, as all other assets are generated
+     * contextually to the transaction and their IDs may overlap those of observations.
+     *
+     * @param asset
+     * @return
+     */
+    private RuntimeAsset checkPresentAsset(RuntimeAsset asset) {
+      return asset instanceof Observation
+          ? graph.vertexSet().stream()
+              .filter(a -> a instanceof Observation && a.getId() == asset.getId())
+              .findFirst()
+              .orElse(asset)
+          : asset;
+    }
+
     @Override
     public void add(RuntimeAsset asset) {
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         graph.addVertex(asset);
+        added.add(asset);
       }
-      added.add(asset);
     }
 
     @Override
@@ -246,6 +276,9 @@ public class DigitalTwinImpl implements DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data) {
       synchronized (graph) {
+        source = checkPresentAsset(source);
+        destination = checkPresentAsset(destination);
+
         graph.addVertex(source);
         graph.addVertex(destination);
         graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
@@ -269,7 +302,9 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void update(RuntimeAsset asset) {
-      modified.add(asset);
+      synchronized (graph) {
+        modified.add(checkPresentAsset(asset));
+      }
     }
 
     @Override
@@ -465,6 +500,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset) {
       var ret = new ArrayList<KnowledgeGraph.Link>();
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.incomingEdgesOf(asset)) {
             var link = new LinkImpl(graph.getEdgeSource(edge), asset, edge.relationship);
@@ -481,6 +517,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Collection<KnowledgeGraph.Link> outgoing(RuntimeAsset asset) {
       var ret = new ArrayList<KnowledgeGraph.Link>();
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.outgoingEdgesOf(asset)) {
             var link = new LinkImpl(asset, graph.getEdgeTarget(edge), edge.relationship);

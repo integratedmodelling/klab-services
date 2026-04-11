@@ -7,6 +7,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -471,7 +473,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public ServiceContextScope contextualizeFor(Observation observation) {
     if (contextObservation != null && observation.getObservable().is(SemanticType.COUNTABLE)) {
-        return within(null);
+      return within(null);
     }
     return this;
   }
@@ -808,6 +810,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public void fail(Object... details) {
+    Throwable throwable = null;
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.FAILURE);
       activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
@@ -816,10 +819,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             && (notification.getLevel() == Notification.Level.Error
                 || notification.getLevel() == Notification.Level.Error)) {
           activity.setDescription(notification.getMessage());
+        } else if (detail instanceof Throwable t) {
+          throwable = t;
         }
       }
     }
-    this.currentTransaction.fail(null);
+    this.currentTransaction.fail(throwable);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 

@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -35,8 +36,7 @@ public class ResolutionCompiler {
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
-  // FIXME this weak strategy can probably be removed, just using the objects from the graph as keys
-  private AtomicLong nextResolutionId = new AtomicLong(-1);
+  private AtomicLong idGenerator = new AtomicLong();
 
   public ResolutionCompiler(ResolverService service) {
     this.resolutionCache.addVertex(RuntimeAsset.CONTEXT_ASSET);
@@ -51,6 +51,7 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
+    idGenerator.set(observation.getId());
     return resolve(observation, scope, ResolverService.getResolutionGraph(scope));
   }
 
@@ -466,14 +467,13 @@ public class ResolutionCompiler {
       }
     }
 
+    ret.setId(idGenerator.decrementAndGet());
     resolutionCache.addVertex(ret);
     var parent =
         candidateScope.getContextObservation() == null
             ? RuntimeAsset.CONTEXT_ASSET
             : scope.getContextObservation();
     resolutionCache.addEdge(parent, ret);
-
-    ret.setId(nextResolutionId.decrementAndGet());
 
     return ret;
   }
