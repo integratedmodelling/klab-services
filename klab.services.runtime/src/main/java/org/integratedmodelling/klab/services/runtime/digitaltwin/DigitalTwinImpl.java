@@ -257,12 +257,15 @@ public class DigitalTwinImpl implements DigitalTwin {
      * @return
      */
     private RuntimeAsset checkPresentAsset(RuntimeAsset asset) {
-      return asset instanceof Observation
-          ? graph.vertexSet().stream()
-              .filter(a -> a instanceof Observation && a.getId() == asset.getId())
-              .findFirst()
-              .orElse(asset)
-          : asset;
+      if (!(asset instanceof Observation) || asset.getId() == Observation.UNASSIGNED_ID) {
+        return asset; // should never happen, but just in case, never deduplicate UNASSIGNED_ID —
+                      // IDs are not yet
+        // stable
+      }
+      return graph.vertexSet().stream()
+          .filter(a -> a instanceof Observation && a.getId() == asset.getId())
+          .findFirst()
+          .orElse(asset);
     }
 
     @Override

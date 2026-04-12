@@ -98,7 +98,9 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   @Override
   public Observation.Builder identity(Urn urn) {
     this.identity = urn;
-    this.name = Utils.Paths.getLast(urn.toString(), ':');
+    if (urn != null) {
+      this.name = Utils.Paths.getLast(urn.toString(), ':');
+    }
     return this;
   }
 

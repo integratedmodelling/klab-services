@@ -85,11 +85,17 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
           continue;
         }
 
-        var store =
-            contextScope
-                .getDigitalTwin()
-                .getStorageManager()
-                .getStorage(dependencies.get(dependency));
+        Storage store;
+        try {
+          store =
+              contextScope
+                  .getDigitalTwin()
+                  .getStorageManager()
+                  .getStorage(dependencies.get(dependency));
+        } catch (Throwable t) {
+          cause = new KlabIllegalStateException("Error scanning dependencies");
+          return false;
+        }
 
         scanners.put(
             dependency,

@@ -779,8 +779,8 @@ public class RuntimeService extends BaseService
     }
 
     var mayExistInCohort =
-        !SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
-            && observation.getObservable().getSemantics().isCollective();
+        SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+            && !observation.getObservable().getSemantics().isCollective();
 
     if (observation instanceof ObservationImpl observationImpl
         && scope instanceof ServiceContextScope serviceContextScope) {
