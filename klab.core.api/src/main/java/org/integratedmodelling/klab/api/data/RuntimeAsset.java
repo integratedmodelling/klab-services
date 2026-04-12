@@ -98,10 +98,7 @@ public interface RuntimeAsset /*extends KlabAsset*/ {
       if (Storage.Shard.class.isAssignableFrom(assetClass)) {
         return DATA;
       }
-      //      if (Artifact.class.isAssignableFrom(assetClass)
-      //          || Storage.class.isAssignableFrom(assetClass)) {
-      //        return ARTIFACT;
-      //      }
+
       throw new KlabIllegalArgumentException("No runtime asset class for " + assetClass);
     }
   }

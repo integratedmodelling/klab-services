@@ -64,7 +64,8 @@ public class ResolutionCompiler {
 
     var geometry = observation.getGeometry();
     if (geometry == null) {
-      if (observation.getType().isDependent() && scope.getContextObservation() != null) {
+      if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())
+          && scope.getContextObservation() != null) {
         geometry = scope.getContextObservation().getGeometry();
       }
     }

@@ -370,14 +370,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
   Provenance getProvenance();
 
   /**
-   * The type of this artifact. Types are a small set meant to enable more efficient storage and
-   * correct contextualization.
-   *
-   * @return the type
-   */
-  Type getType();
-
-  /**
    * Call when the artifact can be disposed of. This should schedule the removal of any storage and
    * free any resources without terminating the object itself, according to the implementation of
    * the storage provider. Calling release() is optional and should be done only on temporary

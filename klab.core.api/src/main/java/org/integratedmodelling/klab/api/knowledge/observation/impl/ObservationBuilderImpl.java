@@ -139,11 +139,13 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
         // TODO must be either collective or quality. Geometry is supplied externally and it's
         //  illegal here.
         if (geometry != null) {
-          scope.error(
-              "Geometry cannot be supplied when contextualization data are given. Observation: "
-                  + symbol.getUrn());
+          notifications.add(
+              Notification.error(
+                  "Geometry cannot be supplied when contextualization data are given. Observation: "
+                      + symbol.getUrn()));
+        } else {
+          contextualizationData = defineContextualization(contextualization, scope);
         }
-        contextualizationData = defineContextualization(contextualization, scope);
       }
 
       for (var key : definition.keySet()) {
@@ -185,7 +187,6 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
     ret.setValue(defaultValue);
-    ret.setType(observable.getArtifactType());
     ret.setContextualizationData(contextualizationData);
 
     if (identity != null) {
@@ -206,6 +207,8 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
               Notification.error(
                   "Observations of individual substantials must specify a unique identity, passed as a Urn object <namespace>:<identifier>"));
     }
+
+    ret.getNotifications().addAll(notifications);
 
     if (Utils.Notifications.hasErrors(ret.getNotifications())) {
       ret.setEmpty(true);
