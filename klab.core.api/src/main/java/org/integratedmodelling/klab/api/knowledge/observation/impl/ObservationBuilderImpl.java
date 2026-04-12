@@ -197,29 +197,28 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.setObservable(observable);
     ret.setValue(defaultValue);
     ret.setContextualizationData(contextualizationData);
+    ret.setName(name);
 
     if (identity != null) {
       // mandatory for substantials, and must be namespace:name
       if (identity.length() != 2) {
-        ret.getNotifications().add(Notification.error("Identity must be in the form namespace:id"));
+        notifications.add(Notification.error("Identity must be in the form namespace:id"));
       }
     }
 
-    if (observable != null) {
-      if (!observable.getSemantics().isCollective()
-          && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+    if (observable != null
+        && !observable.getSemantics().isCollective()
+        && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+      if (identity == null) {
+        notifications.add(
+            Notification.error(
+                "Observations of individual substantials must specify a unique identity, passed as a Urn object <namespace>:<identifier>"));
+      } else {
         ret.setUrn(identity.getUrn());
-      } else if (!observable.getSemantics().isCollective()
-          && SemanticType.isSubstantial(observable.getSemantics().getType())) {
-        ret.getNotifications()
-            .add(
-                Notification.error(
-                    "Observations of individual substantials must specify a unique identity, passed as a Urn object <namespace>:<identifier>"));
       }
     }
 
     ret.getNotifications().addAll(notifications);
-
     if (Utils.Notifications.hasErrors(ret.getNotifications())) {
       ret.setEmpty(true);
     }
