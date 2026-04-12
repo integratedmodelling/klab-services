@@ -33,6 +33,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private Metadata metadata = Metadata.create();
   private Observation.ContextualizationData contextualizationData;
   private List<Notification> notifications = new ArrayList<>();
+  private String name;
 
   private final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
@@ -61,6 +62,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       var namespace = data.name().contains(":") ? data.name().split(":")[0] : scope.getId();
       var name = data.name().contains(":") ? data.name().split(":")[1] : data.name();
       this.identity = Urn.of(namespace + ":" + name);
+      this.name = name;
     }
     metadata.putAll(data.metadata());
   }
@@ -96,6 +98,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   @Override
   public Observation.Builder identity(Urn urn) {
     this.identity = urn;
+    this.name = Utils.Paths.getLast(urn.toString(), ':');
     return this;
   }
 
@@ -176,6 +179,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   @Override
   public Observation.Builder identity(String namespace, String name) {
     this.identity = Urn.of(namespace + ":" + name);
+    this.name = name;
     return this;
   }
 
