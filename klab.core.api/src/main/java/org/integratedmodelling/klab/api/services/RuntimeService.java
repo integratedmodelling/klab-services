@@ -128,15 +128,15 @@ public interface RuntimeService extends KlabService {
    * dependent is normally not given a URN upon submission; it will contain one after it's resolved.
    *
    * <p>The submit operation is transactional, i.e., a failed submission will leave the knowledge
-   * graph unaltered. Note that observations of individual substantials, i.e. non-collective
+   * graph unaltered. Note that observations of individual substantials, i.e., non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
    * resolver, i.e., the ID/URN will be valid and the knowledge graph will contain the observation.
    * All other observations will complete exceptionally if no dataflow can be built for them, and
    * the knowledge graph will not contain the observation submitted after completion.
    *
    * <p>During submission, all activities generated will be sent to the scope and can be intercepted
-   * for monitoring. Upon successful completion, all activities, plans and observations will also be
-   * committed to the knowledge graph.
+   * for monitoring. Upon successful completion, all activities, plans, and observations will also
+   * be committed to the knowledge graph.
    *
    * @param observation the observation to submit. If a resolved observation (or one that resolves
    *     to one) is submitted, the result will be a completed future containing it.

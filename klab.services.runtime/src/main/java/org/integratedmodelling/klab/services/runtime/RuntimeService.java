@@ -455,15 +455,17 @@ public class RuntimeService extends BaseService
    * contextualization of all resolved observations. Instantiators cause other submissions within
    * the same transaction.
    *
-   * @param observation the observation to submit
+   * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
    * @return the submission task
    */
   @Override
-  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
-    if (observation.getId() > 0) {
-      return CompletableFuture.completedFuture(observation);
+    var observation = register(submitted, scope);
+
+    if (observation.getId() > 0 || observation.isEmpty()) {
+      return CompletableFuture.completedFuture(submitted);
     }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
@@ -625,13 +627,6 @@ public class RuntimeService extends BaseService
 
       var cohort = getCohortFor(observation, submissionScope);
 
-      if (cohort != null) {
-        var identity = checkIdentity(observation, cohort, submissionScope);
-        if (identity != null) {
-          return CompletableFuture.completedFuture(identity);
-        }
-      }
-
       submissionScope
           .getCurrentTransaction()
           .link(
@@ -778,8 +773,62 @@ public class RuntimeService extends BaseService
 
   @Override
   public Observation register(Observation observation, ContextScope scope) {
-//    observation.setId(idGenerator.getAndIncrement());
-    return observation;
+
+    if (observation.getId() < -1 || observation.getId() > 0 || observation.isEmpty()) {
+      return observation;
+    }
+
+    var mayExistInCohort =
+        !SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+            && observation.getObservable().getSemantics().isCollective();
+
+    if (observation instanceof ObservationImpl observationImpl
+        && scope instanceof ServiceContextScope serviceContextScope) {
+
+      // TODO this will need to be more sophisticated re: contextualization when looking for events
+      //  and relationships
+
+      if (mayExistInCohort) {
+        // query for the object's identity within the cohort. If existing, extract and return it
+        var cohort = getCohortFor(observation, scope);
+        if (cohort != null) { // should never happen
+          var existing = checkIdentity(observation, cohort, serviceContextScope);
+          if (existing != null) {
+            return existing;
+          }
+        }
+      } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
+
+        if (serviceContextScope.getContextObservation() == null
+            && serviceContextScope.getContextObservation().getId() > 0) {
+          // check for pre-resolved observation at the same location
+          var existing =
+              serviceContextScope
+                  .getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .query(Observation.class, scope)
+                  .source(scope.getContextObservation()) // can't be null
+                  .along(GraphModel.Relationship.HAS_CHILD)
+                  .where(
+                      GraphModel.Observation.SEMANTICS_FIELD,
+                      KnowledgeGraph.Query.Operator.EQUALS,
+                      observation.getObservable().getSemantics().asConcept().getUrn())
+                  .run(serviceContextScope);
+
+          if (!existing.isEmpty()) {
+            return existing.getFirst();
+          }
+        } // TODO if the ctx ID is < -1, we should look into the current transaction if there is
+          //  one. Not sure that's necessary. Also services don't track transactions at the moment.
+      }
+
+      observationImpl.setId(serviceContextScope.getNextObservationId());
+
+      return observation;
+    }
+
+    throw new KlabInternalErrorException(
+        "RuntimeService::register() called with unexpected scope implementation");
   }
 
   private Cohort getCohortFor(Observation observation, ContextScope scope) {

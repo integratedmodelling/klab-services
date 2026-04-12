@@ -73,7 +73,13 @@ public class RuntimeClient extends BaseServiceClient
 
   @Override
   public Observation register(Observation observation, ContextScope scope) {
-    return null;
+
+    if (observation.getId() > 0 || observation.getId() < Observation.UNASSIGNED_ID) {
+      return observation;
+    }
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RUNTIME.REGISTER_OBSERVATION, observation, Observation.class);
   }
 
   @Override

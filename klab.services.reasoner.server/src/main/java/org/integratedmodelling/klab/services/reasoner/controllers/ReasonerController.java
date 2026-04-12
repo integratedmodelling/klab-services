@@ -100,7 +100,7 @@ public class ReasonerController {
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
   @PostMapping(ServicesAPI.REASONER.COMPUTE_IDENTIFICATION_STRATEGY)
-  public @ResponseBody ObservationStrategy inferIdentificationStrategy(
+  public @ResponseBody IdentificationStrategy inferIdentificationStrategy(
       @Parameter(description = "Resolution request") @RequestBody ResolutionRequest request,
       Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {

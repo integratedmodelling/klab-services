@@ -102,6 +102,7 @@ public class DigitalTwinImpl implements DigitalTwin {
    */
   public class TransactionImpl implements Transaction {
 
+    private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified = new HashSet<>();
     private final Set<RuntimeAsset> added = new HashSet<>();
     private Observation target;
@@ -136,6 +137,11 @@ public class DigitalTwinImpl implements DigitalTwin {
         scheduler.registerExecutor(
             observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
       }
+    }
+
+    @Override
+    public String getId() {
+      return id;
     }
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
@@ -182,6 +188,8 @@ public class DigitalTwinImpl implements DigitalTwin {
               new RelationshipEdge(GraphModel.Relationship.HAS_CHILD));
         }
       }
+
+      scope.registerTransaction(this);
     }
 
     private TransactionImpl(TransactionImpl parent, Activity activity, Object... data) {
@@ -430,6 +438,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " OK");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
+      scope.unregisterTransaction(this);
+
       return ret;
     }
 
@@ -483,6 +493,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         this.failures.add(compilationError);
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
       }
+      scope.unregisterTransaction(this);
       return this;
     }
 

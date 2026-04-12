@@ -2,12 +2,9 @@ package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -24,7 +21,6 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -36,7 +32,8 @@ public class ResolutionCompiler {
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
-  private AtomicLong idGenerator = new AtomicLong();
+
+  //  private AtomicLong idGenerator = new AtomicLong();
 
   public ResolutionCompiler(ResolverService service) {
     this.resolutionCache.addVertex(RuntimeAsset.CONTEXT_ASSET);
@@ -51,7 +48,6 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
-    idGenerator.set(observation.getId());
     return resolve(observation, scope, ResolverService.getResolutionGraph(scope));
   }
 
@@ -431,43 +427,16 @@ public class ResolutionCompiler {
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
 
-    /*
-     * We must check for existing observations in the local or remote knowledge graph iif:
-     *
-     * <p>1. the observable is a dependent and the context observation is resolved, OR 2. the
-     * observation is a collective (check in root scope).
-     *
-     * <p>Otherwise we just keep the one we created and resolve it locally.
+    /**
+     * Validate and register an observation with a unique ID with the digital twin. If the ID is
+     * negative, the observation will be resolved.
      */
     var candidateScope = observable.getSemantics().isCollective() ? scope.within(null) : scope;
-    var ret = DigitalTwin.createObservation(scope, observable, geometry);
-    var mayAlreadyExist =
-        (!SemanticType.isSubstantial(observable.getSemantics().getType())
-                && candidateScope.getContextObservation() != null
-                && candidateScope.getContextObservation().getId() > 0)
-            || observable.getSemantics().isCollective();
-
-    if (mayAlreadyExist) {
-
-      for (var obs :
-          resolutionCache.outgoingEdgesOf(
-              candidateScope.getContextObservation() == null
-                  ? RuntimeAsset.CONTEXT_ASSET
-                  : candidateScope.getContextObservation())) {
-        if (obs instanceof Observation observation
-            && observation.getObservable().getSemantics().equals(observable.getSemantics())) {
-          // TODO also compare the URN of provenance in case it's an independent subject
-          return observation;
-        }
-      }
-
-      var existing = candidateScope.getObservation(ret);
-      if (existing != null && !existing.isEmpty()) {
-        return existing;
-      }
+    var ret = candidateScope.observation(observable).geometry(geometry).register();
+    if (ret.getId() > 0 || ret.isEmpty()) {
+      return ret;
     }
 
-    ret.setId(idGenerator.decrementAndGet());
     resolutionCache.addVertex(ret);
     var parent =
         candidateScope.getContextObservation() == null

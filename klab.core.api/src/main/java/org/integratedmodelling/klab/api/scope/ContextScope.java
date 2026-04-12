@@ -24,30 +24,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
- * The scope for an observation context and any observations made within it. The observation scope
- * is the handle to the "digital twin" of the observations made in it and contains all the methods
- * that give access to the observation, dataflow and provenance graphs. These are available from the
- * GraphQL API served by the {@link org.integratedmodelling.klab.api.services.RuntimeService}.
+ * The <code>ContextScope</code> is the handle to a {@link DigitalTwin}. Creating a ContextScope
+ * also creates a digital twin unless an existing digital twin URL is provided. In any case a
+ * ContextScope cannot exist without an associated DT.
  *
- * <p>The context scope always has an observer that can be switched to another when making
- * observations. The observer is an observation of an agent that also specifies an observed geometry
- * in addition to its own. The calling client should explicitly provide an observer; if not, the
- * digital twin should provide one by default, using information from the parent scopes (session
- * user identity, including any roles specified in the user groups subscribed to). Observations of
- * the same observable with different observers are different observations.
+ * <p>A context scope is used to add observations, which will trigger resolution, through the {@link
+ * Observation.Builder#submit()} call on a builder obtained calling {@link
+ * #observation(Observable)}. The scope represents the point of insertion of the future observation
+ * in the knowledge graph. carrying information (context observation of dependents/source-target of
+ * relationships, observer) that locates the point of insertion, plus optional resolution
+ * constraints that affect how the observation will be resolved (namespace, project, scenarios).
+ * Such info is passed across network boundaries, encoded in the scope header added to requests that
+ * trigger resolution. If resolution in the runtime fails, the resulting observation will be {@link
+ * Observation#isEmpty() empty} and will carry notification explaining why.
  *
- * <p>A context scope is used to add observations, which will trigger resolution, through {@link
- * #submit(Observation)} and carries information (parent observation, observer, namespace, project,
- * scenarios) that is relevant to the resolver. Scopes can be specialized to customize resolution
- * before {@link #submit(Observation)} is called, and their status is passed across network
- * boundaries, encoded in the scope header added to requests that trigger resolution. If resolution
- * in the runtime fails, the resulting observation will be in an unresolved state, unusable to make
- * any further resolution, and the context is inconsistent unless all the inconsistent observations
- * are substantials that can simply be stated. In the runtime service API, the GraphQL endpoint is
- * used to submit observations to a digital twin for resolution through a mutation.
- *
- * <p>The context scope carries the URL of the digital twin (a GraphQL endpoint) and can be
- * connected to another to form larger, multi-observer, distributed scopes.
+ * <p>The context scope carries the URL of the digital twin and can be connected to another to form
+ * larger, multi-observer, distributed scopes.
  *
  * @author Ferd
  */
@@ -150,21 +142,27 @@ public interface ContextScope extends SessionScope {
   Data getData(Observation... observations);
 
   /**
-   * Return the consistent observations made in the root context using {@link #submit(Observation)}.
-   * The resulting collection must iterate in order of observation, established by provenance. All
-   * the root observations must be direct, so they cannot be inconsistent even if they are
-   * unresolved.
-   *
-   * @return
-   */
-  Collection<Observation> getRootObservations();
-
-  /**
    * If this scope is focused on a specific subject, return it.
    *
    * @return the context observation or null
    */
   Observation getContextObservation();
+
+  /**
+   * If the scope is focused on the source and target of a relationship, return the source
+   * observation.
+   *
+   * @return
+   */
+  Observation getSourceObservation();
+
+  /**
+   * If the scope is focused on the source and target of a relationship, return the target
+   * observation.
+   *
+   * @return
+   */
+  Observation getTargetObservation();
 
   /**
    * Return a child scope with the passed observer instead of ours.
@@ -210,38 +208,46 @@ public interface ContextScope extends SessionScope {
    */
   ContextScope connect(ContextScope remoteContext);
 
-  /**
-   * Submit an observation for inclusion into the knowledge graph at the point implied by the
-   * current scope, starting its resolution and/or validation and returning a future for the
-   * resolved observation or for an {@link Observation#isEmpty() empty} one in case of failure. This
-   * method is the key operation to operate on a digital twin in k.LAB.
-   *
-   * <p>The scope is notified of any events related to the resolution. Messages will be sent for
-   * each activity undertaken, including resolution and initialization of any secondary
-   * observations. Any connected scope will receive all messages related to the same digital twin.
-   *
-   * <p>If the observation contains {@link
-   * org.integratedmodelling.klab.api.knowledge.observation.Observation.ContextualizationData},
-   * these are used to resolve it from existing services or artifacts instead of using the {@link
-   * org.integratedmodelling.klab.api.services.Resolver} linked to the scope. The object must
-   * contain a valid adapter ID and all the necessary parameters for it to be used to contextualize
-   * the observation. If validation and ingestion at the appropriate position in the knowledge graph
-   * succeeds, the resolved observation, now part of the knowledge graph, is returned.
-   *
-   * <p>If resolution has been performed normally, the contextualization data in the resolved
-   * observation will be present. The resolved observation has a valid ID (strictly >0) and URN
-   * where the unresolved one always has UNASSIGNED_ID and UNASSIGNED_URN (null). Besides these
-   * signals, the result observation should always be checked for {@link Observation#isEmpty()}
-   * which means resolution has failed and the observation could not be accepted without resolution.
-   *
-   * @param observation an unresolved observation to be resolved by the runtime and added to the
-   *     knowledge graph.
-   * @return a {@link Future} producing the resolved observation when resolution is finished and the
-   *     observation is part of the knowledge graph. If resolution has failed, the observation in
-   *     the future will be {@link Observation#isEmpty() empty}.
-   * @deprecated use observation...submit() instead.
-   */
-  CompletableFuture<Observation> submit(Observation observation);
+  //  /**
+  //   * Submit an observation for inclusion into the knowledge graph at the point implied by the
+  //   * current scope, starting its resolution and/or validation and returning a future for the
+  //   * resolved observation or for an {@link Observation#isEmpty() empty} one in case of failure.
+  // This
+  //   * method is the key operation to operate on a digital twin in k.LAB.
+  //   *
+  //   * <p>The scope is notified of any events related to the resolution. Messages will be sent for
+  //   * each activity undertaken, including resolution and initialization of any secondary
+  //   * observations. Any connected scope will receive all messages related to the same digital
+  // twin.
+  //   *
+  //   * <p>If the observation contains {@link
+  //   * org.integratedmodelling.klab.api.knowledge.observation.Observation.ContextualizationData},
+  //   * these are used to resolve it from existing services or artifacts instead of using the
+  // {@link
+  //   * org.integratedmodelling.klab.api.services.Resolver} linked to the scope. The object must
+  //   * contain a valid adapter ID and all the necessary parameters for it to be used to
+  // contextualize
+  //   * the observation. If validation and ingestion at the appropriate position in the knowledge
+  // graph
+  //   * succeeds, the resolved observation, now part of the knowledge graph, is returned.
+  //   *
+  //   * <p>If resolution has been performed normally, the contextualization data in the resolved
+  //   * observation will be present. The resolved observation has a valid ID (strictly >0) and URN
+  //   * where the unresolved one always has UNASSIGNED_ID and UNASSIGNED_URN (null). Besides these
+  //   * signals, the result observation should always be checked for {@link Observation#isEmpty()}
+  //   * which means resolution has failed and the observation could not be accepted without
+  // resolution.
+  //   *
+  //   * @param observation an unresolved observation to be resolved by the runtime and added to the
+  //   *     knowledge graph.
+  //   * @return a {@link Future} producing the resolved observation when resolution is finished and
+  // the
+  //   *     observation is part of the knowledge graph. If resolution has failed, the observation
+  // in
+  //   *     the future will be {@link Observation#isEmpty() empty}.
+  //   * @deprecated use observation...submit() instead.
+  //   */
+  //  CompletableFuture<Observation> submit(Observation observation);
 
   /**
    * Define an observation for inclusion into the knowledge graph at the point implied by the
@@ -438,6 +444,13 @@ public interface ContextScope extends SessionScope {
       return scopeId() == null;
     }
   }
+
+  /**
+   * If the scope reflects an ongoing transaction, return its ID. Otherwise, return null.
+   *
+   * @return
+   */
+  String getTransactionId();
 
   /**
    * Obtain the properly formatted scope token for the {@link

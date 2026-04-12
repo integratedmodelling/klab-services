@@ -32,6 +32,10 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   private Observation observer;
   private Observation contextObservation;
+  private Observation sourceObservation;
+  private Observation targetObservation;
+  private String transactionId;
+
   private final Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   private ClientDigitalTwin digitalTwin;
@@ -138,8 +142,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return null;
   }
 
-  @Override
-  public CompletableFuture<Observation> submit(Observation observation) {
+  private CompletableFuture<Observation> submit(Observation observation) {
     var runtime = getService(RuntimeService.class);
     var submissionContext = this;
     // substantials are always submitted at root level
@@ -157,12 +160,17 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return new ObservationBuilderImpl(observable, this) {
       @Override
       public CompletableFuture<Observation> submit() {
-        return null;
+        var observation = build();
+        // save a call
+        if (observation.getId() > 0 || observation.isEmpty()) {
+          return CompletableFuture.completedFuture(observation);
+        }
+        return ClientContextScope.this.submit(observation);
       }
 
       @Override
       public Observation register() {
-        return null;
+        return runtimeService.register(build(), ClientContextScope.this);
       }
     };
   }
@@ -279,7 +287,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
-  @Override
+  //  @Override
   public Collection<Observation> getRootObservations() {
     return getRootContextScope().getObservations();
   }
@@ -442,5 +450,20 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public DigitalTwin.Configuration getConfiguration() {
     return configuration;
+  }
+
+  @Override
+  public Observation getSourceObservation() {
+    return sourceObservation;
+  }
+
+  @Override
+  public Observation getTargetObservation() {
+    return targetObservation;
+  }
+
+  @Override
+  public String getTransactionId() {
+    return transactionId;
   }
 }

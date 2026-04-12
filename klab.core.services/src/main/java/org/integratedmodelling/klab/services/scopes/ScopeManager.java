@@ -56,18 +56,6 @@ public class ScopeManager {
 
     this.service = service;
 
-    //    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
-    //      /*
-    //       * boot the actor system right away, so that we can call login() before boot().
-    //       */
-    //      this.actorSystem =
-    //          new
-    // ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-    //              .initReActorSystem();
-    //
-    //      Logging.INSTANCE.info("Actor system booted");
-    //    }
-
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
 
@@ -194,7 +182,9 @@ public class ScopeManager {
    * @return
    */
   public ContextScope contextualizeScope(
-      ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
+      ServiceContextScope rootScope,
+      ContextScope.ScopeData contextualization,
+      Map<String, String> requestHeaders) {
 
     ServiceContextScope ret = rootScope;
 
@@ -209,7 +199,7 @@ public class ScopeManager {
                   + "found in context "
                   + ret.getName());
         }
-        ret = (ServiceContextScope) ret.within(observation);
+        ret = ret.within(observation);
       }
     }
 
@@ -226,6 +216,50 @@ public class ScopeManager {
       ret = ret.withObserver(observer);
     }
 
+    if (ret instanceof ServiceContextScope serviceContextScope) {
+
+      // the scope
+      if (requestHeaders.containsKey(ServicesAPI.TRANSACTION_ID_HEADER)) {
+        if (service instanceof RuntimeService runtimeService) {
+
+          var transaction =
+              ((ServiceContextScope) ret)
+                  .getTransaction(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+          if (transaction != null) {
+            ret = ((ServiceContextScope) ret).withTransaction(transaction);
+          }
+
+        } else {
+          ret = new ServiceContextScope(serviceContextScope);
+          ((ServiceContextScope) ret)
+              .setRemoteTransactionId(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+        }
+      }
+
+      if (service instanceof RuntimeService runtimeService) {
+        if (requestHeaders.containsKey(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)) {
+          // lookup observations either in the current transaction or knowledge graph
+          var ctx =
+              ((ServiceContextScope) ret)
+                  .getObservation(
+                      Long.parseLong(
+                          requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
+          ret = ((ServiceContextScope) ret).within(ctx);
+        }
+
+        if (requestHeaders.containsKey(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
+            && requestHeaders.containsKey(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)) {
+          // lookup observations either in the current transaction or knowledge graph
+          var src =
+              ret.getObservation(
+                  Long.parseLong(requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)));
+          var tgt =
+              ret.getObservation(
+                  Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
+          ret = (ServiceContextScope) ret.between(src, tgt);
+        }
+      }
+    }
     return ret;
   }
 

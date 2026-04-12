@@ -380,16 +380,6 @@ public class CompiledDataflow {
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
-    // restart our ID numbering from the lowest ID resolved so far to avoid conflicts with
-    // observations created in the resolver.
-    // FIXME move the logic to the resolver call in the runtime and synchronize resolutions
-    var minId =
-        dependentObservations.values().stream()
-            .map(RuntimeAsset::getId)
-            .filter(id -> id < 0)
-            .min(Long::compare);
-    minId.ifPresent(
-        min -> DigitalTwin.idGenerator.set(Math.min(DigitalTwin.idGenerator.get(), min)));
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {

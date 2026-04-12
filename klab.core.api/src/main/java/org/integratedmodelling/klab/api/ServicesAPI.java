@@ -37,6 +37,11 @@ public interface ServicesAPI {
    */
   String SERVICE_ID_HEADER = "klab-service";
 
+  String TRANSACTION_ID_HEADER = "klab-transaction";
+  String CONTEXT_OBSERVATION_ID_HEADER = "klab-context-observation";
+  String SOURCE_OBSERVATION_ID_HEADER = "klab-source-observation";
+  String TARGET_OBSERVATION_ID_HEADER = "klab-target-observation";
+
   /**
    * Request header to communicate and reconstruct the calling scope at server side when requests
    * need a session or context scope. The value is formatted according to the syntax parsed by the
@@ -372,6 +377,8 @@ public interface ServicesAPI {
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
      */
     String SUBMIT_OBSERVATION = API_BASE + "/submit";
+
+    String REGISTER_OBSERVATION = API_BASE + "/register";
 
     String GET_SHARDING_STRATEGY = API_BASE + "/sharding";
 

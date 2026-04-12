@@ -154,9 +154,9 @@ public class CLIReasonerView {
         return;
       }
 
-      var observation =
-          DigitalTwin.createObservation(
-              ctx /*KlabCLI.INSTANCE.modeler().getCurrentScope()*/, observable, geometry);
+//      var observation =
+//          DigitalTwin.createObservation(
+//              ctx /*KlabCLI.INSTANCE.modeler().getCurrentScope()*/, observable, geometry);
 
       out.println(
           AUTO.string(
@@ -165,12 +165,12 @@ public class CLIReasonerView {
                   + "|@ of @|green "
                   + observable.getUrn()
                   + "|@:"));
-      for (var strategy : reasoner.computeObservationStrategies(observation, ctx)) {
-        out.println(
-            Utils.Strings.indent(
-                strategy.toString(),
-                Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ", 4)));
-      }
+//      for (var strategy : reasoner.computeObservationStrategies(observation, ctx)) {
+//        out.println(
+//            Utils.Strings.indent(
+//                strategy.toString(),
+//                Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ", 4)));
+//      }
     }
 
     private DigitalTwin.Configuration defaultDigitalTwinConfiguration() {

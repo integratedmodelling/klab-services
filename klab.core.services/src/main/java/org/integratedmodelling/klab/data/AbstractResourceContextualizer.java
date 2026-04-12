@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.slf4j.Logger;
@@ -84,7 +85,8 @@ public abstract class AbstractResourceContextualizer {
                     () -> {
                       var result =
                           observationScope
-                              .submit(child)
+                              .getService(RuntimeService.class)
+                              .submit(child, observationScope)
                               .thenAccept(
                                   (obs -> {
                                     // TODO if states are there, should use a `klab.inline` adapter
