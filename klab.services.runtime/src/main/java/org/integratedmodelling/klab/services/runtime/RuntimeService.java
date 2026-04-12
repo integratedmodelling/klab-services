@@ -465,7 +465,7 @@ public class RuntimeService extends BaseService
     var observation = register(submitted, scope);
 
     if (observation.getId() > 0 || observation.isEmpty()) {
-      return CompletableFuture.completedFuture(submitted);
+      return CompletableFuture.completedFuture(observation);
     }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
@@ -799,7 +799,7 @@ public class RuntimeService extends BaseService
         }
       } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
 
-        if (serviceContextScope.getContextObservation() == null
+        if (serviceContextScope.getContextObservation() != null
             && serviceContextScope.getContextObservation().getId() > 0) {
           // check for pre-resolved observation at the same location
           var existing =

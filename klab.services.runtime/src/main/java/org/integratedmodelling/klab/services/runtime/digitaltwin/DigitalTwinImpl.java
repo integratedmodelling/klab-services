@@ -445,7 +445,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets) {
-      return new TransactionImpl(this, activity, runtimeAssets);
+      var ret = new TransactionImpl(this, activity, runtimeAssets);
+      if (scope instanceof ServiceContextScope serviceContextScope) {
+        serviceContextScope.registerTransaction(ret);
+      }
+      return ret;
     }
 
     private Object[] getRelationshipData(RelationshipEdge edge) {
