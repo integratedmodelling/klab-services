@@ -130,7 +130,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.data = Parameters.create();
     this.data.putAll(parent.data);
     this.configuration = configuration;
-    this.transactions = new HashMap<>();
+    this.transactions = new ConcurrentHashMap<>();
     this.idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy

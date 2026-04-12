@@ -54,7 +54,9 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     this.scope = scope;
     observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
     geometry = data.geometry();
-    if (observable.getSemantics().is(SemanticType.COUNTABLE)
+    if (observable == null) {
+      notifications.add(Notification.error("Cannot resolve observable: " + data.semantics()));
+    } else if (observable.getSemantics().is(SemanticType.COUNTABLE)
         && !observable.getSemantics().isCollective()) {
       var namespace = data.name().contains(":") ? data.name().split(":")[0] : scope.getId();
       var name = data.name().contains(":") ? data.name().split(":")[1] : data.name();
@@ -83,8 +85,11 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
               contextScope.getService(Reasoner.class).resolveObservable(concept.getUrn());
       case KimObservable obs ->
           this.observable = contextScope.getService(Reasoner.class).resolveObservable(obs.getUrn());
-      default ->
-          throw new KlabIllegalArgumentException("Cannot create observation from: " + observable);
+      default -> {}
+    }
+
+    if (this.observable == null) {
+      notifications.add(Notification.error("Cannot resolve observable: " + observable));
     }
   }
 

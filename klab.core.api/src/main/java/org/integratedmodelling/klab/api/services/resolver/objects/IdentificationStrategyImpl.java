@@ -10,11 +10,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBu
 public class IdentificationStrategyImpl extends ObservationStrategyImpl implements IdentificationStrategy {
 
     public IdentificationStrategyImpl(ObservationStrategy strategy) {
+        // TODO not used yet
         throw new KlabUnimplementedException("Identification strategies are not yet implemented");
     }
 
     @Override
     public int compare(Observation o1, Observation o2) {
+        // TODO
         throw new KlabUnimplementedException("Identification strategies are not yet implemented");
     }
 }
