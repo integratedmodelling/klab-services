@@ -500,7 +500,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ContextScope between(Observation source, Observation target) {
-    return null;
+    var ret = new ServiceContextScope(this);
+    ret.sourceObservation = source;
+    ret.targetObservation = target;
+    return ret;
   }
 
   @Override
