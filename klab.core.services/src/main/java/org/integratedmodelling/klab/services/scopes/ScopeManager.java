@@ -219,45 +219,40 @@ public class ScopeManager {
     if (ret instanceof ServiceContextScope serviceContextScope) {
 
       // the scope
-      if (requestHeaders.containsKey(ServicesAPI.TRANSACTION_ID_HEADER)) {
+      if (requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER) != null) {
         if (service instanceof RuntimeService runtimeService) {
 
           var transaction =
-              ((ServiceContextScope) ret)
-                  .getTransaction(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+              ret.getTransaction(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
           if (transaction != null) {
-            ret = ((ServiceContextScope) ret).withTransaction(transaction);
+            ret = ret.withTransaction(transaction);
           }
 
         } else {
           ret = new ServiceContextScope(serviceContextScope);
-          ((ServiceContextScope) ret)
-              .setRemoteTransactionId(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+          ret.setRemoteTransactionId(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
         }
       }
 
-      if (service instanceof RuntimeService runtimeService) {
-        if (requestHeaders.containsKey(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)) {
-          // lookup observations either in the current transaction or knowledge graph
-          var ctx =
-              ((ServiceContextScope) ret)
-                  .getObservation(
-                      Long.parseLong(
-                          requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
-          ret = ((ServiceContextScope) ret).within(ctx);
-        }
+      if (service instanceof RuntimeService runtimeService
+          && requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER) != null) {
+        // lookup observations either in the current transaction or knowledge graph
+        var ctx =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
+        ret = ret.within(ctx);
+      }
 
-        if (requestHeaders.containsKey(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
-            && requestHeaders.containsKey(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)) {
-          // lookup observations either in the current transaction or knowledge graph
-          var src =
-              ret.getObservation(
-                  Long.parseLong(requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)));
-          var tgt =
-              ret.getObservation(
-                  Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
-          ret = (ServiceContextScope) ret.between(src, tgt);
-        }
+      if (requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER) != null
+          && requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER) != null) {
+        // lookup observations either in the current transaction or knowledge graph
+        var src =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)));
+        var tgt =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
+        ret = (ServiceContextScope) ret.between(src, tgt);
       }
     }
     return ret;

@@ -799,27 +799,32 @@ public class RuntimeService extends BaseService
         }
       } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
 
-        if (serviceContextScope.getContextObservation() != null
-            && serviceContextScope.getContextObservation().getId() > 0) {
-          // check for pre-resolved observation at the same location
+        if (serviceContextScope.getContextObservation() != null) {
+
           var existing =
               serviceContextScope
-                  .getDigitalTwin()
-                  .getKnowledgeGraph()
-                  .query(Observation.class, scope)
-                  .source(scope.getContextObservation()) // can't be null
-                  .along(GraphModel.Relationship.HAS_CHILD)
-                  .where(
-                      GraphModel.Observation.SEMANTICS_FIELD,
-                      KnowledgeGraph.Query.Operator.EQUALS,
-                      observation.getObservable().getSemantics().asConcept().getUrn())
-                  .run(serviceContextScope);
+                  .getChildrenOf(serviceContextScope.getContextObservation())
+                  .stream()
+                  .filter(
+                      child ->
+                          child instanceof Observation oChild
+                              && oChild
+                                  .getObservable()
+                                  .asConcept()
+                                  .getUrn()
+                                  .equals(
+                                      observation
+                                          .getObservable()
+                                          .getSemantics()
+                                          .asConcept()
+                                          .getUrn()))
+                  .findFirst()
+                  .orElse(null);
 
-          if (!existing.isEmpty()) {
-            return existing.getFirst();
+          if (existing instanceof ObservationImpl existingImpl) {
+            return existingImpl;
           }
-        } // TODO if the ctx ID is < -1, we should look into the current transaction if there is
-          //  one. Not sure that's necessary. Also services don't track transactions at the moment.
+        }
       }
 
       observationImpl.setId(serviceContextScope.getNextObservationId());
