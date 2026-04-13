@@ -21,6 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <xtextVersion>2.32.0</xtextVersion>
         <googleJibVersion>3.3.1</googleJibVersion>
+        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
     <dependencies>
