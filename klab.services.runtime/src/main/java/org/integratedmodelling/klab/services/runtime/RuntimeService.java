@@ -847,17 +847,19 @@ public class RuntimeService extends BaseService
       var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
 
       // local uncommitted
-      var existing =
-          scope.getCurrentTransaction().assets().stream()
-              .filter(
-                  a ->
-                      a instanceof Cohort cohort
-                          && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
-              .findFirst()
-              .orElse(null);
+      if (scope.getCurrentTransaction() != null) {
+        var existing =
+            scope.getCurrentTransaction().assets().stream()
+                .filter(
+                    a ->
+                        a instanceof Cohort cohort
+                            && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+                .findFirst()
+                .orElse(null);
 
-      if (existing != null) {
-        return (Cohort) existing;
+        if (existing != null) {
+          return (Cohort) existing;
+        }
       }
 
       var result =
