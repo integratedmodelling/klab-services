@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -31,6 +32,10 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   private Observation observer;
   private Observation contextObservation;
+  private Observation sourceObservation;
+  private Observation targetObservation;
+  private String transactionId;
+
   private final Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   private ClientDigitalTwin digitalTwin;
@@ -137,8 +142,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return null;
   }
 
-  @Override
-  public CompletableFuture<Observation> submit(Observation observation) {
+  private CompletableFuture<Observation> submit(Observation observation) {
     var runtime = getService(RuntimeService.class);
     var submissionContext = this;
     // substantials are always submitted at root level
@@ -148,6 +152,27 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       submissionContext = (ClientContextScope) submissionContext.within(null);
     }
     return runtime.submit(observation, submissionContext);
+  }
+
+  @Override
+  public Observation.Builder observation(Observable observable) {
+
+    return new ObservationBuilderImpl(observable, this) {
+      @Override
+      public CompletableFuture<Observation> submit() {
+        var observation = build();
+        // save a call
+        if (observation.getId() > 0 || observation.isEmpty()) {
+          return CompletableFuture.completedFuture(observation);
+        }
+        return ClientContextScope.this.submit(observation);
+      }
+
+      @Override
+      public Observation register() {
+        return runtimeService.register(build(), ClientContextScope.this);
+      }
+    };
   }
 
   @Override
@@ -262,7 +287,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
-  @Override
+  //  @Override
   public Collection<Observation> getRootObservations() {
     return getRootContextScope().getObservations();
   }
@@ -425,5 +450,20 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public DigitalTwin.Configuration getConfiguration() {
     return configuration;
+  }
+
+  @Override
+  public Observation getSourceObservation() {
+    return sourceObservation;
+  }
+
+  @Override
+  public Observation getTargetObservation() {
+    return targetObservation;
+  }
+
+  @Override
+  public String getTransactionId() {
+    return transactionId;
   }
 }

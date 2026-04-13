@@ -3,15 +3,14 @@ package org.integratedmodelling.common.runtime;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class DataflowImpl implements Dataflow {
 
@@ -27,6 +26,8 @@ public class DataflowImpl implements Dataflow {
   private double resolvedCoverage;
   private int childrenCount = -1;
   private String name;
+  private List<Notification> notifications = new ArrayList<>();
+
   @Deprecated private long id;
 
   @Override
@@ -100,6 +101,15 @@ public class DataflowImpl implements Dataflow {
     }
 
     computeCoverage();
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
   }
 
   @Override

@@ -88,6 +88,11 @@ public enum Setting {
       "Close main and aux services and exit the engine/modeler on local services stop",
       Boolean.class,
       false),
+  REMEMBER_WORKBENCH_CONFIGURATION(
+      Page.APPEARANCE,
+      "Record editing history and restore open workspaces and editors when a service is connected",
+      Boolean.class,
+      false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
   LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false),
   DISTRIBUTION_SOURCE_URL(
@@ -140,10 +145,11 @@ public enum Setting {
       "Use short floats to save space instead of doubles, at the expense of precision",
       Boolean.class,
       Boolean.FALSE),
-  DO_NOT_PARALLELIZE_OBSERVATIONS(
+  PARALLELIZE_OBSERVATIONS(
       Page.RUNTIME,
-      "Use a single data buffer for all observations, disregarding all split settings",
+      "Honor configured parallelism strategy and splits when processing quality observations with multiple states",
       Boolean.class,
+      // default is FALSE for now. Will eventually become true.
       Boolean.FALSE),
   REINITIALIZE_DATABASE(
       Page.RUNTIME,

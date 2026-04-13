@@ -19,22 +19,12 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
@@ -104,12 +94,22 @@ public interface Dataflow extends Serializable, RuntimeAsset {
   List<Actuator> getComputation();
 
   /**
+   * A dataflow may arrive with notifications. Particularly important are those that come with an
+   * empty dataflow, which should always contain the reason why the resolution failed.
+   *
+   * @return
+   */
+  List<Notification> getNotifications();
+
+  /**
    * Return a new empty dataflow, signaling failure of a mandatory resolution.
    *
    * @return
    */
   static Dataflow empty() {
     return new Dataflow() {
+
+      List<Notification> notifications = new ArrayList<>();
 
       @Override
       public long getId() {
@@ -162,6 +162,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       public List<Actuator> getComputation() {
         return Collections.emptyList();
       }
+
+      @Override
+      public List<Notification> getNotifications() {
+        return notifications;
+      }
     };
   }
 
@@ -174,6 +179,8 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    */
   static Dataflow trivial() {
     return new Dataflow() {
+
+      List<Notification> notifications = new ArrayList<>();
 
       @Override
       public long getId() {
@@ -225,6 +232,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       @Override
       public List<Actuator> getComputation() {
         return Collections.emptyList();
+      }
+
+      @Override
+      public List<Notification> getNotifications() {
+        return notifications;
       }
     };
   }

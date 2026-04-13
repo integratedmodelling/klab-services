@@ -9,10 +9,14 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
@@ -43,7 +47,6 @@ public class ObservationImpl implements Observation {
   private String urn;
   private Object value;
   private String name;
-  private Artifact.Type type = Artifact.Type.OBSERVATION;
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
@@ -120,13 +123,6 @@ public class ObservationImpl implements Observation {
       return persistent;
     }
 
-    @Override
-    public boolean validate() {
-      // simply check the adapterId for now; later we should validate the parameters but it should
-      // be done at setup/creation.
-      return this.adapterId != null;
-    }
-
     public void setPersistent(boolean persistent) {
       this.persistent = persistent;
     }
@@ -199,11 +195,6 @@ public class ObservationImpl implements Observation {
   public Provenance getProvenance() {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override
-  public Artifact.Type getType() {
-    return type;
   }
 
   @Override
@@ -374,10 +365,6 @@ public class ObservationImpl implements Observation {
 
   public void setNotifications(List<Notification> notifications) {
     this.notifications = notifications;
-  }
-
-  public void setType(Artifact.Type type) {
-    this.type = type;
   }
 
   /**

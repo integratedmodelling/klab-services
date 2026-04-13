@@ -62,6 +62,7 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.ojalgo.concurrent.Parallelism;
 
 public class RuntimeService extends BaseService
     implements org.integratedmodelling.klab.api.services.RuntimeService,
@@ -309,9 +310,6 @@ public class RuntimeService extends BaseService
       }
     }
 
-    //    if (systemLauncher != null) {
-    //      systemLauncher.shutdown();
-    //    }
     if (knowledgeGraph != null) {
       knowledgeGraph.shutdown();
     }
@@ -428,8 +426,11 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation, ServiceContextScope scope, Actuator actuator) {
-    return ScalarComputationGroovy.builder(observation, scope, actuator);
+      Observation observation,
+      ServiceContextScope scope,
+      Actuator actuator,
+      Map<String, Observation> observations) {
+    return ScalarComputationGroovy.builder(observation, scope, actuator, observations);
   }
 
   @Override
@@ -454,14 +455,16 @@ public class RuntimeService extends BaseService
    * contextualization of all resolved observations. Instantiators cause other submissions within
    * the same transaction.
    *
-   * @param observation the observation to submit
+   * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
    * @return the submission task
    */
   @Override
-  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
-    if (observation.getId() > 0) {
+    var observation = register(submitted, scope);
+
+    if (observation.getId() > 0 || observation.isEmpty()) {
       return CompletableFuture.completedFuture(observation);
     }
 
@@ -585,8 +588,7 @@ public class RuntimeService extends BaseService
 
       contextualizationData.setServiceId(serviceId());
       contextualizationData.setServiceUrl(getUrl());
-      if (contextualizationData.validate()
-          && observation.getContextualizationData() == null
+      if (observation.getContextualizationData() == null
           && observation instanceof ObservationImpl observationImpl) {
         observationImpl.setContextualizationData(contextualizationData);
       }
@@ -623,14 +625,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var cohort = getCohortFor(observation, submissionScope);
-
-      if (cohort != null) {
-        var identity = checkIdentity(observation, cohort, submissionScope);
-        if (identity != null) {
-          return CompletableFuture.completedFuture(identity);
-        }
-      }
+      var cohort = getCohortFor(observation, submissionScope, true);
 
       submissionScope
           .getCurrentTransaction()
@@ -643,7 +638,9 @@ public class RuntimeService extends BaseService
                   ? GraphModel.Relationship.HAS_MEMBER
                   : GraphModel.Relationship.HAS_CHILD);
 
-      if (cohort != null && scope.getContextObservation() != null) {
+      if (cohort != null
+          && scope.getContextObservation() != null
+          && observation.getObservable().is(SemanticType.COUNTABLE)) {
         // ALSO link the observation to the cohort, which wasn't done in the previous statement
         submissionScope
             .getCurrentTransaction()
@@ -670,11 +667,14 @@ public class RuntimeService extends BaseService
           .exceptionally(
               t -> {
                 resolutionScope.fail(t);
-                return Dataflow.empty();
+                var ret = Dataflow.empty();
+                ret.getNotifications().add(Notification.error(t.getMessage(), t));
+                return ret;
               })
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
+                observation.getNotifications().addAll(dataflow.getNotifications());
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit() >= 0) {
@@ -696,6 +696,11 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
+
+                // FIXME this comes from the original submission while the executors and storage
+                //  have been registered with the observations in the actuators. These are only
+                //  correct if the observations have been created at compilation.
+
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
@@ -709,13 +714,16 @@ public class RuntimeService extends BaseService
                 } else {
                   submission.setName("SUB FAIL");
                   submissionScope.fail();
+                  o.getNotifications().add(Notification.error("Submission failed"));
                 }
                 return o;
               })
           .exceptionally(
               t -> {
                 submissionScope.fail(t);
-                return Observation.empty();
+                var ret = Observation.empty();
+                ret.getNotifications().add(Notification.error(t.getMessage(), t));
+                return ret;
               });
     }
     throw new KlabInternalErrorException(
@@ -763,7 +771,73 @@ public class RuntimeService extends BaseService
     return null;
   }
 
-  private Cohort getCohortFor(Observation observation, ContextScope scope) {
+  @Override
+  public Observation register(Observation observation, ContextScope scope) {
+
+    if (observation.getId() < -1 || observation.getId() > 0 || observation.isEmpty()) {
+      return observation;
+    }
+
+    var mayExistInCohort =
+        SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+            && !observation.getObservable().getSemantics().isCollective();
+
+    if (observation instanceof ObservationImpl observationImpl
+        && scope instanceof ServiceContextScope serviceContextScope) {
+
+      // TODO this will need to be more sophisticated re: contextualization when looking for events
+      //  and relationships
+
+      if (mayExistInCohort) {
+        // query for the object's identity within the cohort. If existing, extract and return it
+        var cohort = getCohortFor(observation, scope, false);
+        if (cohort != null) { // should never happen
+          var existing = checkIdentity(observation, cohort, serviceContextScope);
+          if (existing != null) {
+            return existing;
+          }
+        }
+      } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
+
+        if (serviceContextScope.getContextObservation() != null) {
+
+          var existing =
+              serviceContextScope
+                  .getChildrenOf(serviceContextScope.getContextObservation())
+                  .stream()
+                  .filter(
+                      child ->
+                          child instanceof Observation oChild
+                              && oChild
+                                  .getObservable()
+                                  .asConcept()
+                                  .getUrn()
+                                  .equals(
+                                      observation
+                                          .getObservable()
+                                          .getSemantics()
+                                          .asConcept()
+                                          .getUrn()))
+                  .findFirst()
+                  .orElse(null);
+
+          if (existing instanceof ObservationImpl existingImpl) {
+            return existingImpl;
+          }
+        }
+      }
+
+      observationImpl.setId(serviceContextScope.getNextObservationId());
+
+      return observation;
+    }
+
+    throw new KlabInternalErrorException(
+        "RuntimeService::register() called with unexpected scope implementation");
+  }
+
+  private Cohort getCohortFor(
+      Observation observation, ContextScope scope, boolean addCohortIfMissing) {
 
     var needsCohort =
         observation.getObservable().is(SemanticType.COUNTABLE)
@@ -774,17 +848,19 @@ public class RuntimeService extends BaseService
       var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
 
       // local uncommitted
-      var existing =
-          scope.getCurrentTransaction().assets().stream()
-              .filter(
-                  a ->
-                      a instanceof Cohort cohort
-                          && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
-              .findFirst()
-              .orElse(null);
+      if (scope.getCurrentTransaction() != null) {
+        var existing =
+            scope.getCurrentTransaction().assets().stream()
+                .filter(
+                    a ->
+                        a instanceof Cohort cohort
+                            && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+                .findFirst()
+                .orElse(null);
 
-      if (existing != null) {
-        return (Cohort) existing;
+        if (existing != null) {
+          return (Cohort) existing;
+        }
       }
 
       var result =
@@ -801,14 +877,17 @@ public class RuntimeService extends BaseService
               .run(scope);
 
       if (result.isEmpty()) {
-        var cohort = new CohortImpl();
-        cohort.setObservable(Observable.promote(cohortObservable));
-        cohort.setChildrenCount(0);
-        scope.getCurrentTransaction().add(cohort);
-        scope
-            .getCurrentTransaction()
-            .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
-        return cohort;
+
+        if (addCohortIfMissing) {
+          var cohort = new CohortImpl();
+          cohort.setObservable(Observable.promote(cohortObservable));
+          cohort.setChildrenCount(0);
+          scope.getCurrentTransaction().add(cohort);
+          scope
+              .getCurrentTransaction()
+              .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
+          return cohort;
+        }
       } else {
         return result.getFirst();
       }
@@ -874,6 +953,12 @@ public class RuntimeService extends BaseService
         }
 
         if (!executionSequence.store(transactionImpl)) {
+          scope
+              .getCurrentTransaction()
+              .fail(
+                  new KlabCompilationError(
+                      "Could not store execution sequence for target observation "
+                          + rootObservation));
           return false;
         }
       }
@@ -881,6 +966,7 @@ public class RuntimeService extends BaseService
       return true;
     }
 
+    // won't happen
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected transaction implementation");
   }
@@ -1225,7 +1311,9 @@ public class RuntimeService extends BaseService
    *
    * @return
    */
-  public Data.ShardingStrategy getDefaultShardingStrategy(Observation observation) {
+  @Override
+  public Data.ShardingStrategy getDefaultShardingStrategy(
+      Observation observation, ContextScope scope) {
 
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
@@ -1238,14 +1326,32 @@ public class RuntimeService extends BaseService
                   "Unexpected observable type for sharding strategy");
         });
 
-    // apply settings to modify defaults
+    // apply settings to modify defaults. TODO may need the short float option in the scope config
+    // too
     var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
-    var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
+    var forceScalar = !settings.get(Setting.PARALLELIZE_OBSERVATIONS, Boolean.class);
     if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {
       ret.setDataType(Storage.Type.FLOAT);
     }
+
+    var geometrySlice = observation.getGeometry().without(Geometry.Dimension.Type.TIME);
+    var space = geometrySlice.dimension(Geometry.Dimension.Type.SPACE);
+
+    var fillCurve = Data.FillCurve.D1_LINEAR;
+    if (space != null && space.isRegular()) {
+      fillCurve =
+          switch (space.getDimensionality()) {
+            case 2 -> Data.FillCurve.D2_XY;
+            case 3 -> Data.FillCurve.D3_XYZ;
+            default -> Data.FillCurve.D1_LINEAR;
+          };
+    }
+    ret.setCurve(fillCurve);
+
     if (forceScalar) {
       ret.setSuggestedSplits(1);
+    } else {
+      ret.setSuggestedSplits(Parallelism.CORES.getAsInt());
     }
 
     return ret;

@@ -749,7 +749,7 @@ public interface Reasoner extends KlabService {
    * @param scope
    * @return
    */
-  ObservationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope);
+  IdentificationStrategy computeIdentificationStrategies(Observable observable, ContextScope scope);
 
   /**
    * Entry point of the assisted semantic search behind interactive concept definition. If the

@@ -15,18 +15,22 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.net.URL;
-import java.util.List;
 
 /**
  * The interface Observation, which is the semantic equivalent of an Artifact and represents an
@@ -36,12 +40,11 @@ import java.util.List;
  * to actor files that will provide behaviors for their instances (or a subset thereof). Once made
  * reactive, they can interact with each other and the system.
  *
- * <p>The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
- * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
- * unresolved and does not exist in the knowledge graph. So a client may <em>send</em> an unresolved
- * observation (normally created with {@link
- * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope, Object...)} but
- * will never <em>receive</em> one, except in case of resolution error.
+ * <p>The ID of an observation is a positive long for efficiency. If the ID is negative, the
+ * observation is unresolved and does not yet exist in the knowledge graph. Apart from an ID of
+ * Observation.UNASSIGNED_ID, which is the initial value of an observation that hasn't been
+ * registered with a runtime yet, the ID (either negative or positive) is unique within the the
+ * scope where it was created.
  *
  * <p>TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and
  * State, then everything else is taken care of by the semantics (folder ==
@@ -52,7 +55,92 @@ import java.util.List;
  */
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
+  /**
+   * An observation whose ID is -1 has not been registered with a runtime for submission and is
+   * always illegal to use.
+   */
   long UNASSIGNED_ID = -1;
+
+  /**
+   * A builder for creating new observations is only created by a context scope, which communicates
+   * with the assigned runtime service. To obtain a builder, get a context scope and call {@link
+   * ContextScope#observation(Observable)} on it. The builder does not have a <code>build</code>
+   * method but will accept {@link #submit()} (the normal operation to trigger resolution) or {@link
+   * #register()} when the submission to the runtime is managed directly through the API.
+   */
+  interface Builder {
+
+    /**
+     * Mandatory for all observations except dependents, which inherit their geometry from their
+     * context (which must be defined in the scope that provides the builder).
+     *
+     * @param geometry
+     * @return
+     */
+    Builder geometry(Geometry geometry);
+
+    /**
+     * Observation of qualities may come with a scalar value, which must be acceptable for the
+     * semantics.
+     *
+     * @param value
+     * @return
+     */
+    Builder value(Object value);
+
+    /**
+     * Mandatory for substantials, causes an illegal state exception on dependents. Use this or the
+     * other but not both.
+     *
+     * @param namespace
+     * @param name
+     * @return
+     */
+    Builder identity(String namespace, String name);
+
+    /**
+     * Mandatory for substantials, causes an illegal state exception on dependents. Use this or the
+     * other but not both.
+     *
+     * @param urn
+     * @return
+     */
+    Builder identity(Urn urn);
+
+    /**
+     * One metadata entry.
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    Builder metadata(String key, Object value);
+
+    /**
+     * Whole ingestion of metadata object.
+     *
+     * @param metadata
+     * @return
+     */
+    Builder metadata(Map<String, Object> metadata);
+
+    /**
+     * Submit the observation for resolution. The returned future will complete when the observation
+     * is resolved or fails.
+     *
+     * @return
+     */
+    CompletableFuture<Observation> submit();
+
+    /**
+     * Return an observation that has been registered by the runtime service but not submitted for
+     * resolution. Only used when the resolution is managed directly using the {@link
+     * org.integratedmodelling.klab.api.services.RuntimeService} API.
+     *
+     * @return
+     */
+    Observation register();
+  }
 
   /**
    * In resolved observations, reports adapter and its parameters, if any, plus the service ID where
@@ -117,14 +205,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     boolean isPersistent();
-
-    /**
-     * Checked before usage in case the data exist but are not usable for lack of specification or
-     * previous error.
-     *
-     * @return
-     */
-    boolean validate();
   }
 
   /**
@@ -234,6 +314,41 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * @return
    */
   double getResolvedCoverage();
+
+  /**
+   * A trivial builder that does not support submission or registration and exposes a {@link
+   * #make()} method to produce an unregistered observation. Only to be used when the service API is
+   * used directly. Normal use is to create observations with {@link
+   * ContextScope#observation(Observable)} and submit through that builder.
+   */
+  class NaiveBuilder extends ObservationBuilderImpl {
+
+    public NaiveBuilder(Observable observable, ContextScope contextScope) {
+      super(observable, contextScope);
+    }
+
+    public NaiveBuilder(Data data, ContextScope scope) {
+      super(data, scope);
+    }
+
+    public NaiveBuilder(KlabStatement observable, ContextScope contextScope) {
+      super(observable, contextScope);
+    }
+
+    public Observation make() {
+      return build();
+    }
+
+    @Override
+    public CompletableFuture<Observation> submit() {
+      throw new KlabIllegalStateException("The naive builder cannot submit observations.");
+    }
+
+    @Override
+    public Observation register() {
+      throw new KlabIllegalStateException("The naive builder cannot register observations.");
+    }
+  }
 
   static Role classifyRole(Observation observation) {
 

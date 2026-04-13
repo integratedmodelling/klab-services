@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.computation
 
+import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
@@ -17,20 +18,9 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
 
     @Lazy
     def reasoner = { scope.getService(Reasoner.class) }()
-    @Lazy
-    def resourcesService = { scope.getService(ResourcesService.class) }()
-    @Lazy
-    def resourcesServices = { scope.getServices(ResourcesService.class) }()
-    @Lazy
-    def resolver = { scope.getService(Resolver.class) }()
-    @Lazy
-    def runtime = { scope.getService(RuntimeService.class) }()
-    @Lazy
-    def runtimes = { scope.getServices(RuntimeService.class) }()
 
     ContextScope scope
     Observation __self
-    Observation selfObs = {new ObservationWrapper(__self)}()
 
     // constructor takes all the observations used by the code
     ExpressionBase(ContextScope scope, Observation observation) {
@@ -38,6 +28,6 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
         this.__self = observation
     }
 
-    abstract boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
+    abstract boolean run(Map<String, Storage.Scanner> scanners, Scheduler.Event event, ContextScope scope);
 
 }

@@ -1,17 +1,16 @@
 package org.integratedmodelling.klab.runtime.knowledge;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-
-import java.util.List;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * A server side implementation of a dataflow that uses the knowledge graph and can be adapted to a
@@ -23,6 +22,7 @@ public class DataflowGraph implements Dataflow {
   private final ContextScope scope;
   private long transientId = Klab.getNextId();
   private String name;
+  private List<Notification> notifications = new ArrayList<>();
 
   public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {
     this.database = database;
@@ -89,5 +89,14 @@ public class DataflowGraph implements Dataflow {
   @Override
   public long getParentId() {
     return DATAFLOW_ASSET.getParentId();
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
   }
 }

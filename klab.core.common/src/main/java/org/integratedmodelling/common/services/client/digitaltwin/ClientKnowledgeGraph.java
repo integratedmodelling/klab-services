@@ -302,7 +302,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public Transaction createTransaction() {
+  public Transaction createTransaction(ContextScope scope) {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
   }

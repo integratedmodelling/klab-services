@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resolver;
 import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.utils.Utils;
@@ -63,8 +64,9 @@ public class DataflowCompiler {
       return Dataflow.empty();
     }
 
+    // TODO remove eventually, or make it debug-level
     var dump = Utils.Graphs.dump(resolutionGraph.graph());
-    System.out.println(dump);
+    Logging.INSTANCE.info("Resolution graph for " + observation + ":\n\n" + dump);
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
@@ -86,9 +88,9 @@ public class DataflowCompiler {
                   null));
     }
 
-    // TODO remove
+    // TODO remove eventually, or make it debug-level
     var encoded = Utils.Dataflows.encode(ret, scope);
-    System.out.println(encoded);
+    Logging.INSTANCE.info("Dataflow for " + observation + ":\n\n" + encoded);
 
     return ret;
   }
@@ -226,7 +228,9 @@ public class DataflowCompiler {
       } else if (child instanceof Observable observable) {
         observationActuator
             .getChildren()
-            .add(compileReference(resolutionGraph.getResolved(edge.observationId), coverage));
+            .add(
+                compileReference(
+                    resolutionGraph.getResolved(edge.observationId), coverage, localName));
       }
     }
 
@@ -250,44 +254,50 @@ public class DataflowCompiler {
           .getComputation()
           .add(adaptContextualizer(contextualizer, overriddenParameters));
     }
-    var shardingStrategy = new Data.ShardingStrategy();
-    Utils.Annotations.getAnnotations(model, true)
-        .forEach(
-            annotation -> {
-              switch (annotation.getName()) {
-                case "type" ->
-                    shardingStrategy.setDataType(
-                        Storage.Type.valueOf(
-                            annotation
-                                .get(Annotation.VALUE_PARAMETER_KEY)
-                                .toString()
-                                .toUpperCase()));
-                case "split" ->
-                    shardingStrategy.setSuggestedSplits(
-                        Integer.parseInt(
-                            annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "maxSize" ->
-                    shardingStrategy.setMaxBufferSize(
-                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "minSplitSize" ->
-                    shardingStrategy.setMinSplitSize(
-                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "fillCurve" ->
-                    shardingStrategy.setCurve(
-                        Data.FillCurve.valueOf(
-                            annotation
-                                .get(Annotation.VALUE_PARAMETER_KEY)
-                                .toString()
-                                .toUpperCase()));
-              }
-            });
-    ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
+
+    if (observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
+      var shardingStrategy = new Data.ShardingStrategy();
+      Utils.Annotations.getAnnotations(model, true)
+          .forEach(
+              annotation -> {
+                switch (annotation.getName()) {
+                  case "type" ->
+                      shardingStrategy.setDataType(
+                          Storage.Type.valueOf(
+                              annotation
+                                  .get(Annotation.VALUE_PARAMETER_KEY)
+                                  .toString()
+                                  .toUpperCase()));
+                  case "split" ->
+                      shardingStrategy.setSuggestedSplits(
+                          Integer.parseInt(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "maxSize" ->
+                      shardingStrategy.setMaxBufferSize(
+                          Long.parseLong(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "minSplitSize" ->
+                      shardingStrategy.setMinSplitSize(
+                          Long.parseLong(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "fillCurve" ->
+                      shardingStrategy.setCurve(
+                          Data.FillCurve.valueOf(
+                              annotation
+                                  .get(Annotation.VALUE_PARAMETER_KEY)
+                                  .toString()
+                                  .toUpperCase()));
+                }
+              });
+      ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
+    }
   }
 
-  private Actuator compileReference(Observation observation, Coverage coverage) {
+  private Actuator compileReference(Observation observation, Coverage coverage, String localName) {
     var ret = new ActuatorImpl();
     ret.setObservation(observation);
     ret.setId(observation.getId());
+    ret.setName(localName == null ? observation.getObservable().getName() : localName);
     ret.setCoverage(coverage.as(Geometry.class));
     ret.setActuatorType(Actuator.Type.REFERENCE);
     return ret;

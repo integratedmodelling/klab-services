@@ -180,8 +180,6 @@ public class SchedulerImpl implements Scheduler {
   private boolean contextualize(
       Observation observation, Geometry geometry, ServiceContextScope scope, Event causingEvent) {
 
-    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
-
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
     for (var affecting :
@@ -245,8 +243,16 @@ public class SchedulerImpl implements Scheduler {
                     } catch (Exception e) {
                       return false;
                     }
-                  })) {}
+                  })) {
+            observation
+                .getNotifications()
+                .add(
+                    Notification.error(
+                        "Some concurrent tasks failed during contextualization of " + observation));
+            return false;
+          }
         } catch (Throwable t) {
+          observation.getNotifications().add(Notification.error(t.getMessage(), t));
           scope.error(t);
           return false;
         }
@@ -311,7 +317,7 @@ public class SchedulerImpl implements Scheduler {
       Time geometryTime,
       DigitalTwin.Transaction transaction) {
     if (observation instanceof ObservationImpl observation1) {
-      var timestamps = new ArrayList<Long>(observation.getEventTimestamps());
+      var timestamps = new ArrayList<>(observation.getEventTimestamps());
       if (event.getType() == Event.Type.INITIALIZATION && observation1.isSubstantialQuality()) {
         timestamps.add(0L);
         if (geometryTime != null && geometryTime.getStart() != null) {
@@ -378,8 +384,8 @@ public class SchedulerImpl implements Scheduler {
    * <p>TODO add info for filtering, e.g. a <em>substantial</em> flag to filter initialization
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
-   * observation events affect it, given that contextualization actions are handled through
-   * the influence diagram in the DT.
+   * observation events affect it, given that contextualization actions are handled through the
+   * influence diagram in the DT.
    *
    * @param observation
    * @param type

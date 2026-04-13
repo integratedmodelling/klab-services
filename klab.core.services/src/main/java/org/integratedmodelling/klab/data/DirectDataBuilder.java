@@ -86,7 +86,8 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
 
   @Override
   public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
-    var observation = DigitalTwin.createObservation(scope, name, observable, geometry, identity);
+    var observation =
+        scope.observation(observable).geometry(geometry).identity(identity).register();
     var builder = new DirectDataBuilder(name, null, observation, scope, identity);
     objects.add(builder);
     return builder;

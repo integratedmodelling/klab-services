@@ -2,10 +2,14 @@ package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
 import java.util.*;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -15,7 +19,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -25,6 +28,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -56,9 +60,7 @@ public class CompiledDataflow {
 
     for (var operation : operations.values()) {
       if (operation.observation.getObservable().is(SemanticType.QUALITY)) {
-        digitalTwin
-            .getStorageManager()
-            .createStorage(operation.observation, operation.nativeShardingStrategy);
+        digitalTwin.getStorageManager().createStorage(operation.observation);
       }
     }
   }
@@ -105,10 +107,10 @@ public class CompiledDataflow {
     public Data.ShardingStrategy shardingStrategy() {
       if (adapterDescriptor != null) {
         return adapterDescriptor.shardingStrategy();
-      } else if (serviceInfo != null) {
+      } else if (serviceInfo != null && serviceInfo.serviceInfo.getShardingStrategy() != null) {
         return serviceInfo.serviceInfo.getShardingStrategy();
       }
-      return null;
+      return Data.ShardingStrategy.neutral();
     }
   }
 
@@ -258,6 +260,10 @@ public class CompiledDataflow {
     // build the observations as required
     requireObservations(rootActuator);
 
+    // harmonize the sharding strategies according to runtime configuration, native strategy and
+    // model annotations
+    harmonizeSharding(rootActuator);
+
     /**
      * Sort the actuator by run order and parallelism; establish links between observations and
      * local names for executors.
@@ -276,7 +282,101 @@ public class CompiledDataflow {
     return true;
   }
 
-  private void requireObservations(Actuator rootActuator) {
+  /**
+   * Harmonize the sharding strategy along quality dependency chains, compatibly with runtime
+   * settings and pre-defined sharding.
+   *
+   * <p>TODO this should be implemented in a separate optimizer.
+   *
+   * @param rootActuator
+   */
+  private void harmonizeSharding(Actuator rootActuator) {
+    harmonizeShardingInternal(rootActuator);
+  }
+
+  private Data.ShardingStrategy harmonizeShardingInternal(Actuator actuator) {
+
+    Data.ShardingStrategy ret = null;
+
+    List<Data.ShardingStrategy> priorityOrder = new ArrayList<>();
+    for (var child : actuator.getChildren()) {
+      priorityOrder.add(harmonizeShardingInternal(child));
+    }
+
+    if (actuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
+
+      var localDriven =
+          actuator.getObservation().getContextualizationData() == null
+              ? null
+              : actuator.getObservation().getContextualizationData().getNativeShardingStrategy();
+
+      if (actuator.getObservation().getId() > 0) {
+        // what was done was done -- TODO assert that localDriven != null
+        return localDriven;
+      }
+
+      var modelDriven = actuator.getShardingStrategy();
+      var runtimeDriven =
+          scope
+              .getService(RuntimeService.class)
+              .getDefaultShardingStrategy(actuator.getObservation(), scope);
+
+      // add local and model strategies in increasing priority order. At least one strategy is
+      // guaranteed non-null. At this stage the runtime settings only override what is NOT
+      // specified.
+      priorityOrder.addFirst(modelDriven); // second-tier
+      priorityOrder.addFirst(localDriven); // first-tier
+      priorityOrder.add(runtimeDriven); // highest priority
+      var leastPriority =
+          priorityOrder.stream()
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new KlabInternalErrorException(
+                          "No sharding strategy could be determined for "
+                              + actuator.getObservation().getObservable()));
+
+      ret = leastPriority.mergeUndefined(priorityOrder.toArray(Data.ShardingStrategy[]::new));
+
+      /*
+       * Any definitions from downstream actuators are ignored if the runtime wants to avoid
+       * parallelization. So we check out the service settings explicitly
+       */
+      var runtime = scope.getService(RuntimeService.class);
+
+      // last remaining check: we have splits and don't need them (i.e., geometry w/o time
+      //  has size 1). This must be done on the scale, as the geometry may be parametric and not
+      //  know its actual size yet.
+      // TODO space may eventually not be the only distributable extent.
+      var scale = GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry());
+      var space = scale == null ? null : scale.getSpace();
+      var splitsAreUnnecessary = space == null || !space.distributed();
+
+      if (splitsAreUnnecessary
+          || !runtime.settings().get(Setting.PARALLELIZE_OBSERVATIONS, Boolean.class)) {
+        // force any splits to 0
+        ret.setSuggestedSplits(1);
+        ret.setMinSplitSize(0);
+        ret.setMaxBufferSize(0);
+      }
+
+      if (ret.getDataType() == Storage.Type.DOUBLE
+          && runtime.settings().get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)) {
+        // force to float
+        ret.setDataType(Storage.Type.FLOAT);
+      }
+
+      if (actuator.getObservation().getContextualizationData()
+          instanceof ObservationImpl.ContextualizationDataImpl cd) {
+        cd.setNativeShardingStrategy(ret);
+      }
+    }
+
+    return ret;
+  }
+
+  private synchronized void requireObservations(Actuator rootActuator) {
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
@@ -293,28 +393,22 @@ public class CompiledDataflow {
     }
   }
 
-  // CHECK this seems correct but triple-checking is in order. The obs comes from the dataflow
-  // with either an id < 0 (i.e., must be created) or > 0 (i.e., the peer obs in the KG/cache must
-  // be used).
   private Observation requireObservation(Actuator actuator) {
-    if (actuator.getId() < 0 && actuator instanceof ActuatorImpl actuator1) {
-      var ret =
-          DigitalTwin.createObservation(
-              scope,
-              actuator.getObservation().getObservable(),
-              actuator1.getResolvedGeometry(),
-              actuator.getName(),
-              scope.getContextObservation());
+    if (actuator.getId() < 0) {
+      var ret = actuator.getObservation();
       var transaction = scope.getCurrentTransaction();
       if (transaction != null) {
         transaction.add(ret);
       }
-      if (ret instanceof ObservationImpl obs) {
-        var data = new ObservationImpl.ContextualizationDataImpl();
-        data.setServiceUrl(runtimeService.getUrl());
-        data.setServiceId(runtimeService.serviceId());
-        obs.setContextualizationData(data);
+      var contextualizationData =
+          (ObservationImpl.ContextualizationDataImpl) ret.getContextualizationData();
+      if (contextualizationData == null) {
+        contextualizationData = new ObservationImpl.ContextualizationDataImpl();
+        ((ObservationImpl) ret).setContextualizationData(contextualizationData);
       }
+      contextualizationData.setServiceUrl(runtimeService.getUrl());
+      contextualizationData.setServiceId(runtimeService.serviceId());
+
       return ret;
     }
     return scope.getObservation(actuator.getId());
@@ -508,12 +602,9 @@ public class CompiledDataflow {
     private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
-      this.observation =
-          actuator.getId() == rootObservation.getId()
-              ? rootObservation
-              : dependentObservations.get(actuator.getId());
-      this.operational = compile(actuator);
+      this.observation = actuator.getObservation();
       defineLocalNames(actuator, this.localReferences);
+      this.operational = compile(actuator);
 
       // TODO if this is restoring an existing observation from the KG, the sharding strategy MUST
       //  be restored too
@@ -527,34 +618,7 @@ public class CompiledDataflow {
 
       ScalarComputation.Builder scalarBuilder = null;
 
-      if (observation.getObservable().is(SemanticType.QUALITY) && nativeShardingStrategy == null) {
-        for (var call : actuator.getComputation()) {
-          // set to the strategy for the computation adjusted by the actuator's
-          var callInfo = getCallInfo(call, observation);
-          var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
-          nativeShardingStrategy =
-              nativeShardingStrategy == null
-                  ? computationStrategy
-                  : nativeShardingStrategy.override(computationStrategy);
-        }
-
-        if (nativeShardingStrategy != null) {
-          // apply any forcings to the merged sharding strategy obtained so far. The actuator's
-          // strategy (coming from model annotations) is first to override; scope is next, and
-          // service
-          // is last, overriding scope settings if needed. This may be revised.
-          nativeShardingStrategy =
-              nativeShardingStrategy.override(
-                  actuator.getShardingStrategy(),
-                  scope.getShardingStrategy(observation),
-                  runtimeService.getDefaultShardingStrategy(observation));
-        }
-      }
-
-      Map<String, Observable> knownObservations = new HashMap<>();
-      // TODO fill in the observables
-
-      /**
+      /*
        * Now actually compile each computation, adapting the sharding strategy to whatever the
        * specific computation requires.
        *
@@ -567,13 +631,19 @@ public class CompiledDataflow {
         var callInfo = getCallInfo(call, observation);
         Expression expression = null;
         LookupTable lookupTable = null;
+        var preset = RuntimeService.CoreFunctor.classify(call);
 
-        if (callInfo == null) {
+        // TODO the entire flow here is a bit backwards. Should be revised
+        if (callInfo == null && preset != RuntimeService.CoreFunctor.EXPRESSION_RESOLVER) {
           scope.error("Cannot compile executor for " + actuator);
+          // FIXME this doesn't get to the clients. Should add notifications to the (empty) dataflow
+          //  instead.
+          observation
+              .getNotifications()
+              .add(Notification.error("Cannot compile executor for " + actuator));
           return false;
         }
 
-        var preset = RuntimeService.CoreFunctor.classify(call);
         if (preset != null) {
           switch (preset) {
             case URN_RESOLVER, ADAPTER_RESOLVER -> {
@@ -590,7 +660,13 @@ public class CompiledDataflow {
               if (!executor.validate()) {
                 var cause = executor.getCause();
                 if (cause != null) {
+                  observation.getNotifications().add(Notification.error(cause.getMessage(), cause));
                   scope.error(cause);
+                } else {
+                  observation
+                      .getNotifications()
+                      .add(Notification.error("Unknown error in adapter executor"));
+                  scope.error("Unknown error in adapter executor");
                 }
                 return false;
               }
@@ -599,7 +675,8 @@ public class CompiledDataflow {
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
                       ? (scalarBuilder =
-                          runtimeService.getComputationBuilder(observation, scope, actuator))
+                          runtimeService.getComputationBuilder(
+                              observation, scope, actuator, localReferences))
                       : scalarBuilder)
                   .add(call);
             }

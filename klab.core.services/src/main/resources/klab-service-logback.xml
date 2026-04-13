@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <property name="LOG_FILE" value="${logging.file.name:-./klab.log}"/>
+  <property
+      name="FILE_LOG_PATTERN"
+      value="${logging.pattern.file:-[%d{yyyy-MM-dd HH:mm:ss.SSS}] %-5level [%thread] %logger{39}: %msg%n}"/>
+  <property
+      name="CONSOLE_LOG_PATTERN"
+      value="${logging.pattern.console:-%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n}"/>
+  <property
+      name="ROLLING_FILE_NAME_PATTERN"
+      value="${logging.logback.rollingpolicy.file-name-pattern:-${LOG_FILE}.%d{yyyy-MM-dd}.%i}"/>
+  <property
+      name="ROLLING_MAX_FILE_SIZE"
+      value="${logging.logback.rollingpolicy.max-file-size:-10MB}"/>
+  <property name="ROLLING_MAX_HISTORY" value="${logging.logback.rollingpolicy.max-history:-10}"/>
+  <property
+      name="ROLLING_TOTAL_SIZE_CAP"
+      value="${logging.logback.rollingpolicy.total-size-cap:-100MB}"/>
+  <property name="ASYNC_FILE_QUEUE_SIZE" value="${logging.async.file.queue-size:-2048}"/>
+  <property
+      name="ASYNC_FILE_MAX_FLUSH_TIME_MS"
+      value="${logging.async.file.max-flush-time-ms:-1000}"/>
+  <property name="ASYNC_CONSOLE_QUEUE_SIZE" value="${logging.async.console.queue-size:-512}"/>
+  <property
+      name="ASYNC_CONSOLE_MAX_FLUSH_TIME_MS"
+      value="${logging.async.console.max-flush-time-ms:-500}"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_FILE}</file>
+    <append>true</append>
+    <immediateFlush>true</immediateFlush>
+    <encoder>
+      <pattern>${FILE_LOG_PATTERN}</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${ROLLING_FILE_NAME_PATTERN}</fileNamePattern>
+      <maxFileSize>${ROLLING_MAX_FILE_SIZE}</maxFileSize>
+      <maxHistory>${ROLLING_MAX_HISTORY}</maxHistory>
+      <totalSizeCap>${ROLLING_TOTAL_SIZE_CAP}</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>${ASYNC_CONSOLE_QUEUE_SIZE}</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <neverBlock>false</neverBlock>
+    <maxFlushTime>${ASYNC_CONSOLE_MAX_FLUSH_TIME_MS}</maxFlushTime>
+    <appender-ref ref="CONSOLE"/>
+  </appender>
+
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>${ASYNC_FILE_QUEUE_SIZE}</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <neverBlock>false</neverBlock>
+    <maxFlushTime>${ASYNC_FILE_MAX_FLUSH_TIME_MS}</maxFlushTime>
+    <appender-ref ref="FILE"/>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="ASYNC_CONSOLE"/>
+    <appender-ref ref="ASYNC_FILE"/>
+  </root>
+</configuration>

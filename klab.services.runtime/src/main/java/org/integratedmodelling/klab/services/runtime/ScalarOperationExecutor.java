@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -29,8 +30,9 @@ public class ScalarOperationExecutor extends AbstractExecutor
   }
 
   @Override
-  protected boolean run(Scheduler.Event event, Map<String,Storage.Scanner> scanners, ContextScope scope) {
-    return scalarMapper.execute(scanners.get(Dataflow.SELF_ID).shard().getGeometry(), event, scope);
+  protected boolean run(
+      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
+    return scalarMapper.execute(scanners, event, scope);
   }
 
   @Override
@@ -38,7 +40,11 @@ public class ScalarOperationExecutor extends AbstractExecutor
     if (scalarMapper == null) {
       try {
         scalarMapper = scalarBuilder.build();
-      } catch (Exception e) {
+        if (scalarMapper == null) {
+          cause = new KlabIllegalStateException("Scalar operation failed to compile");
+          return false;
+        }
+      } catch (Throwable e) {
         cause = e;
         return false;
       }

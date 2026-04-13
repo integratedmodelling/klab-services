@@ -85,7 +85,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               observation.getName() == null
                   ? observation.getObservable().codeName()
                   : observation.getName());
-          ret.put("type", observation.getType().name());
+          ret.put("type", observation.getObservable().getArtifactType().name());
           ret.put("urn", observation.getUrn());
           ret.put("childrenCount", observation.getChildrenCount());
           ret.put(
@@ -100,10 +100,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
-          //          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
-          //          if (instanceUrn != null) {
-          //            ret.put("instanceUrn", instanceUrn);
-          //          }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
             ret.put("adapterId", data.getAdapterId());
@@ -152,7 +148,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
           ret.put("start", activity.getStart());
-          ret.put("parentId", activity.getParentId());
           ret.put("schedulerTime", activity.getSchedulerTime());
           ret.put("size", activity.getSize());
           ret.put("type", activity.getType().name());
@@ -182,7 +177,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (buffer.getHistogram() != null) {
             ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
           }
-          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
           ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
           ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
           ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());

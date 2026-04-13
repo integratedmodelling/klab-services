@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -382,7 +383,7 @@ public class ServiceAuthorizationManager {
                 .get()
                 .klabService()
                 .getScopeManager()
-                .contextualizeScope(serviceContextScope, scopeData);
+                .contextualizeScope(serviceContextScope, scopeData, requestHeaders);
       }
     }
 
@@ -397,6 +398,7 @@ public class ServiceAuthorizationManager {
 
     ret.setInfo(
         "scopeHeader=" + scopeHeader + "; serverKey=" + serverKey + "; runtimeId=" + runtimeId);
+
     ret.setScope(resolvedScope);
 
     return ret;

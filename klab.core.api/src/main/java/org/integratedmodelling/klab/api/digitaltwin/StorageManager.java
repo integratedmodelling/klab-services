@@ -37,13 +37,12 @@ public interface StorageManager {
 
   /**
    * Create storage for the passed observation, using the observation's scale and ID and honoring
-   * the passed sharding strategy.
+   * the sharding strategy in the observation's contextualization data, which must be set .
    *
    * @param observation
-   * @param shardingStrategy
    * @return the newly created storage
    */
-  Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
+  Storage createStorage(Observation observation);
 
   /**
    * Get a temporary scanner for a transparently managed chunk of storage of the passed size and
@@ -60,6 +59,17 @@ public interface StorageManager {
    */
   <T extends Storage.Scanner> T getTemporaryScanner(
       Geometry geometry, Data.FillCurve fillCurve, Class<T> scannerClass);
+
+  /**
+   * This one must be called when a temporary storage is finalized. The temporary storage will be
+   * deleted and replaced with a permanent one with the passed ID. The knowledge graph MUST call
+   * this upon commit and final ID assignment, also setting the observation up for persistence.
+   *
+   * @param temporaryId
+   * @param finalizedId
+   * @return true if the storage was found and finalized, false if it was not found
+   */
+  boolean finalizeStorage(long temporaryId, long finalizedId);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

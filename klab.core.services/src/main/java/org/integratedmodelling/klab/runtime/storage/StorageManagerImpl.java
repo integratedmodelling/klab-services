@@ -1,5 +1,14 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import java.io.*;
+import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -12,21 +21,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.ojalgo.array.BufferArray;
-
-import java.io.*;
-import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * There is one separate <code>StorageScope</code> in each {@link ContextScope}. It's built on
@@ -44,7 +43,7 @@ public class StorageManagerImpl implements StorageManager {
   private final File workspace;
   private final List<File> mappedBufferFiles = Collections.synchronizedList(new ArrayList<>());
   private final int histogramBinSize = 20;
-  private final Map<Observation, Storage> storage = new ConcurrentHashMap<>();
+  private final Map<Long, Storage> storage = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(0);
   private final Executor shardMaintenance = Executors.newSingleThreadExecutor();
   private final File persistentSpace;
@@ -133,7 +132,7 @@ public class StorageManagerImpl implements StorageManager {
 
   public Storage getStorage(Observation observation) {
 
-    var ret = this.storage.get(observation);
+    var ret = this.storage.get(observation.getId());
     if (ret == null && this.existingData) {
       ret = reconstructStorage(observation);
     }
@@ -163,9 +162,17 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
+  public Storage createStorage(Observation observation) {
+    var cd = observation.getContextualizationData();
+    if (cd == null || cd.getNativeShardingStrategy() == null) {
+      throw new KlabIllegalStateException(
+          "Cannot create storage for "
+              + observation
+              + ": contextualization data or native sharding strategy is not set");
+    }
     return this.storage.computeIfAbsent(
-        observation, urn -> createShard(observation, shardingStrategy, contextScope));
+        observation.getId(),
+        obs -> createShard(observation, cd.getNativeShardingStrategy(), contextScope));
   }
 
   @Override
@@ -173,6 +180,23 @@ public class StorageManagerImpl implements StorageManager {
       Geometry geometry, Data.FillCurve fillCurve, Class<T> scannerClass) {
     // TODO
     return null;
+  }
+
+  /**
+   * Finalize a temporary storage by moving it to a permanent ID when the observation is committed
+   * to the knowledge graph. MUST be called upon commit. Also sets the observation up for
+   * persistence.
+   */
+  @Override
+  public boolean finalizeStorage(long temporaryId, long finalizedId) {
+    var storage = this.storage.get(temporaryId);
+    if (storage == null) {
+      return false;
+    }
+    this.storage.put(finalizedId, storage);
+    this.storage.remove(temporaryId);
+    // TODO shard persistence should start here
+    return true;
   }
 
   private Storage createShard(
@@ -294,6 +318,8 @@ public class StorageManagerImpl implements StorageManager {
     return true;
   }
 
+  // TODO check that this is executed transparently and only after the obs is finalized
+  // TODO also clean up the persisted storage for orphan shards on startup and periodically
   public void persistShard(Storage.Scanner scanner) {
     if (scanner instanceof StorageImpl.BaseScanner baseScanner) {
       final var shard = baseScanner.shard();

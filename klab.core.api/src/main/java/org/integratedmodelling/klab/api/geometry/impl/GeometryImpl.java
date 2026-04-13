@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.geometry.impl;
 
+import java.io.Serial;
+import java.util.*;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -15,16 +17,14 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Re
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.io.Serial;
-import java.util.*;
-
 public class GeometryImpl implements Geometry {
 
   @Serial private static final long serialVersionUID = 8430057200107796568L;
 
   public void setEmpty(boolean b) {
-    this.empty = false;
+    this.empty = b;
   }
+
 
   /** Key for the original geometry in the metadata, when this is the result of a split */
   public static final String OVERALL_PARENT_GEOMETRY_KEY = "overall.parent.geometry";

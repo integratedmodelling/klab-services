@@ -1128,7 +1128,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // if not done, reschedule, else complete. If exception (remote or local), complete
         // exceptionally.
         var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
-        Logging.INSTANCE.info("Polling for job status: " + status);
+        //        Logging.INSTANCE.info("Polling for job status: " + status);
         if (status == null) {
           if (noResponseCount == 3) {
             completeExceptionally(
@@ -1376,6 +1376,25 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         if (scope instanceof ContextScope contextScope) {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
           ret.headers.put(ServicesAPI.SERVICE_ID_HEADER, contextScope.getHostServiceId());
+          if (contextScope.getTransactionId() != null) {
+            ret.headers.put(ServicesAPI.TRANSACTION_ID_HEADER, contextScope.getTransactionId());
+          }
+          if (contextScope.getContextObservation() != null) {
+            ret.headers.put(
+                ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
+                contextScope.getContextObservation().getId() + "");
+          }
+          if (contextScope.getSourceObservation() != null) {
+            ret.headers.put(
+                ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
+                contextScope.getSourceObservation().getId() + "");
+          }
+          if (contextScope.getTargetObservation() != null) {
+            ret.headers.put(
+                ServicesAPI.TARGET_OBSERVATION_ID_HEADER,
+                contextScope.getTargetObservation().getId() + "");
+          }
+
         } else if (scope instanceof SessionScope sessionScope) {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, sessionScope.getId());
           ret.headers.put(ServicesAPI.SERVICE_ID_HEADER, sessionScope.getHostServiceId());

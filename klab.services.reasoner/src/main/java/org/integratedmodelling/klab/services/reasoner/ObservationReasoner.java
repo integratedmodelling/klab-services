@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.objects.IdentificationStrategyImpl;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -351,7 +352,7 @@ public class ObservationReasoner {
           if we get here, the strategy definition is a match: compile the observation strategy
           operations for the observable and scope
         */
-        ret.add(contextualizeStrategy(observation, strategy, patternVariableValues));
+        ret.add(contextualizeStrategy(observation, strategy, patternVariableValues, scope));
       }
     }
 
@@ -361,14 +362,15 @@ public class ObservationReasoner {
   private ObservationStrategy contextualizeStrategy(
       Observation observation,
       KimObservationStrategy strategy,
-      Map<String, Object> patternVariableValues) {
+      Map<String, Object> patternVariableValues,
+      ContextScope scope) {
 
     var os = new ObservationStrategyImpl();
     os.setDocumentation(strategy.getDescription()); // TODO compile template
     os.setUrn(strategy.getUrn());
 
     if (observation.getContextualizationData() != null
-        && !observation.getContextualizationData().validate()) {
+        && observation.getContextualizationData().getAdapterId() != null) {
       var op = new ObservationStrategyImpl.OperationImpl();
       op.setType(KimObservationStrategy.Operation.Type.APPLY);
       op.getContextualizables()
@@ -398,7 +400,8 @@ public class ObservationReasoner {
                     ServiceCallImpl.create(
                         RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
                         "strategy",
-                        contextualizeStrategy(observation, deferred, patternVariableValues))));
+                        contextualizeStrategy(
+                            observation, deferred, patternVariableValues, scope))));
       }
       os.getOperations().add(op);
     }
@@ -634,13 +637,18 @@ public class ObservationReasoner {
     return ret;
   }
 
-  public ObservationStrategy computeIdentificationStrategy(
+  public IdentificationStrategy computeIdentificationStrategy(
       Observable observable, ContextScope scope) {
     // bit of a stretch, but no harm done
+    // TODO check this - won't be called for the time being
     var observation =
-        DigitalTwin.createObservation(
-            scope, observable, Geometry.UNIVERSAL, "dummy", Urn.of("urn:dummy"));
+        scope
+            .observation(observable)
+            .geometry(Geometry.UNIVERSAL)
+            .identity("dummy", "name")
+            .register();
+
     var strategies = computeMatchingStrategies(observation, scope, false);
-    return strategies.isEmpty() ? null : strategies.getFirst();
+    return strategies.isEmpty() ? null : new IdentificationStrategyImpl(strategies.getFirst());
   }
 }
