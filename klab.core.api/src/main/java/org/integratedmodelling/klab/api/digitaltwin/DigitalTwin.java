@@ -211,7 +211,7 @@ public interface DigitalTwin extends RuntimeAsset {
      * code the commit result should be checked against this to know if the transaction was a
      * root-level one, the only one that .
      */
-    long INTERMEDIATE_COMMIT_ID = 0l;
+    long INTERMEDIATE_COMMIT_ID = 0L;
 
     /**
      * Transactions are identified by a unique ID so that the context scope can keep track of them
