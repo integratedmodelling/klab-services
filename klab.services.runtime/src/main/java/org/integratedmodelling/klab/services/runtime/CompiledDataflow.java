@@ -595,7 +595,6 @@ public class CompiledDataflow {
 
     private final Observation observation;
     protected List<ContextualExecutor> executors = new ArrayList<>();
-    private boolean scalar;
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
     private Map<String, Observation> localReferences = new HashMap<>();

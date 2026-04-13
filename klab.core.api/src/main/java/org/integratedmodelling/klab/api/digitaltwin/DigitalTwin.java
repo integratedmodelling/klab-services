@@ -182,6 +182,17 @@ public interface DigitalTwin extends RuntimeAsset {
    * dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s and
    * reconstructed from them. Executors, like actuators, may cover partial geometries, so more than
    * one can coexist for the same observation.
+   *
+   * <p>Executors run a sequence of compiled contextualizers (see Dataflow) to implement the
+   * DescriptionType. If the latter is collective, each observation produced or transformed must be
+   * resolved individually afterwards.
+   *
+   * <p>TODO this can report the observation (with its DescriptionType implemented by the executor)
+   * and should track the results.
+   *
+   * <p>The runtime tracks the outputs of an executor. When each executor has finished computing, it
+   * must report its outputs re: the observation to the runtime, so that secondary resolutions can
+   * be enqueued for any collective observation made.
    */
   interface Executor {
 
@@ -191,7 +202,8 @@ public interface DigitalTwin extends RuntimeAsset {
      * @param geometry
      * @param event
      * @param scope
-     * @return true if execution was successful
+     * @return true if execution was successful. TODO this would be the place to report a summary of
+     *     the outputs instead, so that they can be reported to the runtime.
      */
     boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
   }
