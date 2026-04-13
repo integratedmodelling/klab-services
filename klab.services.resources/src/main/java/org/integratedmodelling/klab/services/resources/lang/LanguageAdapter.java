@@ -1007,13 +1007,13 @@ public enum LanguageAdapter {
                                 KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY))
                     .toList());
       }
-      if (!operation.getDeferredStrategies().isEmpty()) {
-        o.getDeferredStrategies()
-            .addAll(
-                operation.getDeferredStrategies().stream()
-                    .map(s -> adaptStrategy(s, namespace, projectName))
-                    .toList());
-      }
+      //      if (!operation.getDeferredStrategies().isEmpty()) {
+      //        o.getDeferredStrategies()
+      //            .addAll(
+      //                operation.getDeferredStrategies().stream()
+      //                    .map(s -> adaptStrategy(s, namespace, projectName))
+      //                    .toList());
+      //      }
       ret.getOperations().add(o);
     }
 
