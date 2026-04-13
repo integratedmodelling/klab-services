@@ -78,7 +78,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         case EXPRESSION_RESOLVER -> null; // TODO
         case LUT_RESOLVER -> null; // TODO
         case CONSTANT_RESOLVER -> null; // TODO
-        case DEFER_RESOLUTION -> null; // TODO
         case ADAPTER_RESOLVER -> null; // TODO
       };
     }

@@ -83,12 +83,7 @@ public interface RuntimeService extends KlabService {
      * resource on the fly in the runtime. Reserved for submissions from federated clients that have
      * computed storage independently.
      */
-    ADAPTER_RESOLVER("klab.core.adapter.resolver"),
-    /**
-     * Defer the resolution of the observations produced by this contextualization. Comes with a
-     * 'strategy' parameter containing the contextualized ObservationStrategy to use.
-     */
-    DEFER_RESOLUTION("klab.core.resolution.defer");
+    ADAPTER_RESOLVER("klab.core.adapter.resolver");
 
     private final String serviceCallUrn;
     private Map<String, Artifact.Type> arguments;

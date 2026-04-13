@@ -598,16 +598,12 @@ public class CompiledDataflow {
     private boolean scalar;
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
-    private Data.ShardingStrategy nativeShardingStrategy;
     private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
       this.observation = actuator.getObservation();
       defineLocalNames(actuator, this.localReferences);
       this.operational = compile(actuator);
-
-      // TODO if this is restoring an existing observation from the KG, the sharding strategy MUST
-      //  be restored too
     }
 
     private boolean compile(Actuator actuator) {
@@ -679,15 +675,6 @@ public class CompiledDataflow {
                               observation, scope, actuator, localReferences))
                       : scalarBuilder)
                   .add(call);
-            }
-            case DEFER_RESOLUTION -> {
-              if (scalarBuilder != null) {
-                if (!getScalarOperator(scalarBuilder, localReferences)) {
-                  return false;
-                }
-                scalarBuilder = null;
-              }
-              throw new KlabUnimplementedException("Deferral execution not yet implemented");
             }
           }
         } else {
