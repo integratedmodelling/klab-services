@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.collect.Sets;
 import java.util.*;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
-import org.integratedmodelling.common.lang.ServiceCallImpl;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -14,7 +12,6 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.objects.IdentificationStrategyImpl;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -393,16 +390,16 @@ public class ObservationReasoner {
       for (var function : operation.getFunctions()) {
         op.getContextualizables().add(new ContextualizableImpl(function));
       }
-      for (var deferred : operation.getDeferredStrategies()) {
-        op.getContextualizables()
-            .add(
-                new ContextualizableImpl(
-                    ServiceCallImpl.create(
-                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
-                        "strategy",
-                        contextualizeStrategy(
-                            observation, deferred, patternVariableValues, scope))));
-      }
+//      for (var deferred : operation.getDeferredStrategies()) {
+//        op.getContextualizables()
+//            .add(
+//                new ContextualizableImpl(
+//                    ServiceCallImpl.create(
+//                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
+//                        "strategy",
+//                        contextualizeStrategy(
+//                            observation, deferred, patternVariableValues, scope))));
+//      }
       os.getOperations().add(op);
     }
     return os;
