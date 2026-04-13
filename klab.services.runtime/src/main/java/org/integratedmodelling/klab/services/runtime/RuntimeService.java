@@ -625,7 +625,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var cohort = getCohortFor(observation, submissionScope);
+      var cohort = getCohortFor(observation, submissionScope, true);
 
       submissionScope
           .getCurrentTransaction()
@@ -790,7 +790,7 @@ public class RuntimeService extends BaseService
 
       if (mayExistInCohort) {
         // query for the object's identity within the cohort. If existing, extract and return it
-        var cohort = getCohortFor(observation, scope);
+        var cohort = getCohortFor(observation, scope, false);
         if (cohort != null) { // should never happen
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
@@ -836,7 +836,8 @@ public class RuntimeService extends BaseService
         "RuntimeService::register() called with unexpected scope implementation");
   }
 
-  private Cohort getCohortFor(Observation observation, ContextScope scope) {
+  private Cohort getCohortFor(
+      Observation observation, ContextScope scope, boolean addCohortIfMissing) {
 
     var needsCohort =
         observation.getObservable().is(SemanticType.COUNTABLE)
@@ -847,17 +848,19 @@ public class RuntimeService extends BaseService
       var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
 
       // local uncommitted
-      var existing =
-          scope.getCurrentTransaction().assets().stream()
-              .filter(
-                  a ->
-                      a instanceof Cohort cohort
-                          && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
-              .findFirst()
-              .orElse(null);
+      if (scope.getCurrentTransaction() != null) {
+        var existing =
+            scope.getCurrentTransaction().assets().stream()
+                .filter(
+                    a ->
+                        a instanceof Cohort cohort
+                            && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+                .findFirst()
+                .orElse(null);
 
-      if (existing != null) {
-        return (Cohort) existing;
+        if (existing != null) {
+          return (Cohort) existing;
+        }
       }
 
       var result =
@@ -874,14 +877,17 @@ public class RuntimeService extends BaseService
               .run(scope);
 
       if (result.isEmpty()) {
-        var cohort = new CohortImpl();
-        cohort.setObservable(Observable.promote(cohortObservable));
-        cohort.setChildrenCount(0);
-        scope.getCurrentTransaction().add(cohort);
-        scope
-            .getCurrentTransaction()
-            .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
-        return cohort;
+
+        if (addCohortIfMissing) {
+          var cohort = new CohortImpl();
+          cohort.setObservable(Observable.promote(cohortObservable));
+          cohort.setChildrenCount(0);
+          scope.getCurrentTransaction().add(cohort);
+          scope
+              .getCurrentTransaction()
+              .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
+          return cohort;
+        }
       } else {
         return result.getFirst();
       }

@@ -30,9 +30,9 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private Urn identity;
   private Geometry geometry;
   private Object defaultValue;
-  private Metadata metadata = Metadata.create();
+  private final Metadata metadata = Metadata.create();
   private Observation.ContextualizationData contextualizationData;
-  private List<Notification> notifications = new ArrayList<>();
+  private final List<Notification> notifications = new ArrayList<>();
   private String name;
 
   private final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
@@ -253,7 +253,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     return ret;
   }
 
-  static Geometry defineGeometry(Map<?, ?> definition) {
+  private Geometry defineGeometry(Map<?, ?> definition) {
     var geometryBuilder = Geometry.builder();
     if (definition.containsKey("space")) {
       var spaceBuilder = geometryBuilder.space();
@@ -273,8 +273,9 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
           var split = spaceDefinition.get("shape").toString().split(" ");
           spaceBuilder.projection(split[0]);
         } else {
-          // TODO last resort; should warn or use configured value for default projection
           spaceBuilder.projection("EPSG:4326");
+          notifications.add(
+              Notification.warning("No spatial projection in shape: assuming EPSG:4326"));
         }
         // TODO add bounding box etc
       }
