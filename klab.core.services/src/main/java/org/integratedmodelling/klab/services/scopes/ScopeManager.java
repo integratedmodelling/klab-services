@@ -240,7 +240,13 @@ public class ScopeManager {
         var ctx =
             ret.getObservation(
                 Long.parseLong(requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
-        ret = ret.within(ctx);
+        if (ctx != null) {
+          ret = ret.within(ctx);
+        } else {
+          Logging.INSTANCE.error(
+              "Null observations for relationship header"
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+        }
       }
 
       if (requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER) != null
@@ -252,7 +258,13 @@ public class ScopeManager {
         var tgt =
             ret.getObservation(
                 Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
-        ret = (ServiceContextScope) ret.between(src, tgt);
+        if (src != null || tgt != null) {
+          ret = (ServiceContextScope) ret.between(src, tgt);
+        } else {
+          Logging.INSTANCE.error(
+              "Null observations for relationship header"
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+        }
       }
     }
     return ret;
