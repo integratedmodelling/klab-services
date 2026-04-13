@@ -67,8 +67,9 @@ public interface StorageManager {
    *
    * @param temporaryId
    * @param finalizedId
+   * @return true if the storage was found and finalized, false if it was not found
    */
-  void finalizeStorage(long temporaryId, long finalizedId);
+  boolean finalizeStorage(long temporaryId, long finalizedId);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

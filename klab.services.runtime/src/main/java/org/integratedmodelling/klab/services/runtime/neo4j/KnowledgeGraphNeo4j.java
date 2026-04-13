@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
@@ -1073,7 +1074,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     + ":"
                     + observation.getUrn());
         if (scope != null && observation.getObservable().is(SemanticType.QUALITY)) {
-          scope.getDigitalTwin().getStorageManager().finalizeStorage(temporaryId, id);
+          if (!scope.getDigitalTwin().getStorageManager().finalizeStorage(temporaryId, id)) {
+            observation.getNotifications().add(Notification.error("Problem finalizing storage"));
+          }
         }
       }
       case ActuatorImpl actuator -> actuator.setId(id);

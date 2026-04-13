@@ -188,15 +188,15 @@ public class StorageManagerImpl implements StorageManager {
    * persistence.
    */
   @Override
-  public void finalizeStorage(long temporaryId, long finalizedId) {
+  public boolean finalizeStorage(long temporaryId, long finalizedId) {
     var storage = this.storage.get(temporaryId);
     if (storage == null) {
-      throw new KlabIllegalStateException(
-          "cannot finalize storage: no storage found for " + temporaryId);
+      return false;
     }
     this.storage.put(finalizedId, storage);
     this.storage.remove(temporaryId);
     // TODO shard persistence should start here
+    return true;
   }
 
   private Storage createShard(
