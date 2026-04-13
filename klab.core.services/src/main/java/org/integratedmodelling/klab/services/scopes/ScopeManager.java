@@ -258,7 +258,7 @@ public class ScopeManager {
         var tgt =
             ret.getObservation(
                 Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
-        if (src != null || tgt != null) {
+        if (src != null && tgt != null) {
           ret = (ServiceContextScope) ret.between(src, tgt);
         } else {
           Logging.INSTANCE.error(
