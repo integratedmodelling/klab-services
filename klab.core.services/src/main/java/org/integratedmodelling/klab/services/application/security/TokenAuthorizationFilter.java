@@ -26,7 +26,11 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
     ServicesAPI.SERVICE_ID_HEADER,
     ServicesAPI.RESOLUTION_NAMESPACE_HEADER,
     ServicesAPI.RESOLUTION_PROJECT_HEADER,
-    ServicesAPI.KLAB_VERSION_HEADER
+    ServicesAPI.KLAB_VERSION_HEADER,
+    ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
+    ServicesAPI.TRANSACTION_ID_HEADER,
+    ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
+    ServicesAPI.TARGET_OBSERVATION_ID_HEADER
   };
 
   public TokenAuthorizationFilter(
@@ -51,8 +55,7 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
 
     if (tokenString != null) {
       try {
-        EngineAuthorization token =
-            authorizationManager.validateToken(tokenString, requestHeaders);
+        EngineAuthorization token = authorizationManager.validateToken(tokenString, requestHeaders);
         if (token != null && token.isAuthenticated()) {
           SecurityContextHolder.getContext().setAuthentication(token);
         }

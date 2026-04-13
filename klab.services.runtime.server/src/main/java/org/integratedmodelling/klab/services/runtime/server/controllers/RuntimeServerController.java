@@ -107,6 +107,34 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  /**
+   * Observations are set into the digital twin by the context after creating them in an unresolved
+   * state. The return long ID is the handle to the resolution; according to the messaging protocol,
+   * the observation tasks should monitor resolution until completion.
+   *
+   * @return
+   */
+  @Operation(
+      summary = "Register an observation for resolution",
+      description =
+          "Returns an observation that may be resolved if present, or empty if invalid in the scope")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Observation submitted successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
+  @PostMapping(ServicesAPI.RUNTIME.REGISTER_OBSERVATION)
+  public @ResponseBody Observation register(
+      @RequestBody Observation observation, Principal principal)
+      throws ExecutionException, InterruptedException {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      return runtimeService.klabService().register(observation, contextScope);
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
   @PostMapping(ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY)
   public @ResponseBody Data.ShardingStrategy getDefaultShardingStrategy(
       @RequestBody Observation observation, Principal principal) {

@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.objects.IdentificationStrategyImpl;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -636,13 +637,18 @@ public class ObservationReasoner {
     return ret;
   }
 
-  public ObservationStrategy computeIdentificationStrategy(
+  public IdentificationStrategy computeIdentificationStrategy(
       Observable observable, ContextScope scope) {
     // bit of a stretch, but no harm done
+    // TODO check this - won't be called for the time being
     var observation =
-        DigitalTwin.createObservation(
-            scope, observable, Geometry.UNIVERSAL, "dummy", Urn.of("urn:dummy"));
+        scope
+            .observation(observable)
+            .geometry(Geometry.UNIVERSAL)
+            .identity("dummy", "name")
+            .register();
+
     var strategies = computeMatchingStrategies(observation, scope, false);
-    return strategies.isEmpty() ? null : strategies.getFirst();
+    return strategies.isEmpty() ? null : new IdentificationStrategyImpl(strategies.getFirst());
   }
 }

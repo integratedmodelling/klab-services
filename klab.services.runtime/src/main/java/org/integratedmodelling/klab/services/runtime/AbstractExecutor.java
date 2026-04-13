@@ -35,7 +35,6 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   protected final CompiledDataflow.CallDescriptors callInfo;
   protected final Observation observation;
   protected Throwable cause;
-  protected Storage storage;
   protected Map<String, Observation> dependencies = new HashMap<>();
 
   public AbstractExecutor(
@@ -56,6 +55,11 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
+
+      /*
+       * Created by the main execution sequence before calling execute()
+       */
+      var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
 
       /*
        * Guaranteed to be there by the dataflow compilation process.
@@ -81,11 +85,18 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
           continue;
         }
 
-        var store =
-            contextScope
-                .getDigitalTwin()
-                .getStorageManager()
-                .getStorage(dependencies.get(dependency));
+        Storage store;
+        try {
+          store =
+              contextScope
+                  .getDigitalTwin()
+                  .getStorageManager()
+                  .getStorage(dependencies.get(dependency));
+        } catch (Throwable t) {
+          cause = new KlabIllegalStateException("Error scanning dependencies");
+          return false;
+        }
+
         scanners.put(
             dependency,
             new ArrayList<>(

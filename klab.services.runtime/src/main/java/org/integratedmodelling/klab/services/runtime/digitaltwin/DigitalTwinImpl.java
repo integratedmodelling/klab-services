@@ -1,16 +1,14 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.data.impl.LinkImpl;
@@ -32,7 +30,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
@@ -98,8 +95,14 @@ public class DigitalTwinImpl implements DigitalTwin {
     return Type.CONTEXT;
   }
 
+  /**
+   * The transactional graph is a directed acyclic graph that represents the execution of a digital
+   * twin activity, capturing the relationships and changes between assets. The graph is robust to
+   * identity switching between assets as long as their ID remains consistent.
+   */
   public class TransactionImpl implements Transaction {
 
+    private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified = new HashSet<>();
     private final Set<RuntimeAsset> added = new HashSet<>();
     private Observation target;
@@ -134,6 +137,11 @@ public class DigitalTwinImpl implements DigitalTwin {
         scheduler.registerExecutor(
             observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
       }
+    }
+
+    @Override
+    public String getId() {
+      return id;
     }
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
@@ -180,6 +188,8 @@ public class DigitalTwinImpl implements DigitalTwin {
               new RelationshipEdge(GraphModel.Relationship.HAS_CHILD));
         }
       }
+
+      scope.registerTransaction(this);
     }
 
     private TransactionImpl(TransactionImpl parent, Activity activity, Object... data) {
@@ -205,10 +215,18 @@ public class DigitalTwinImpl implements DigitalTwin {
             } else if (datum instanceof Observation observation) {
               // only link contextualization to the contextualized observation
               if (activity.getType() == Activity.Type.CONTEXTUALIZATION) {
-                this.graph.addEdge(
-                    activity,
-                    observation,
-                    new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+                var obs =
+                    graph.vertexSet().stream()
+                        .filter(
+                            a -> a instanceof Observation oo && oo.getId() == observation.getId())
+                        .findFirst()
+                        .orElse(observation);
+                try {
+                  this.graph.addEdge(
+                      activity, obs, new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+                } catch (Exception e) {
+                  Logging.INSTANCE.error(e, obs);
+                }
               }
             } // TODO see if we need anything else
           }
@@ -230,45 +248,71 @@ public class DigitalTwinImpl implements DigitalTwin {
       return this.activity;
     }
 
+    /**
+     * This allows us to keep the graph consistent without having to enforce object identity during
+     * contextualization. The logic only applies to observations, as all other assets are generated
+     * contextually to the transaction and their IDs may overlap those of observations.
+     *
+     * @param asset
+     * @return
+     */
+    private RuntimeAsset checkPresentAsset(RuntimeAsset asset) {
+      if (!(asset instanceof Observation) || asset.getId() == Observation.UNASSIGNED_ID) {
+        return asset; // should never happen, but just in case, never deduplicate UNASSIGNED_ID —
+                      // IDs are not yet
+        // stable
+      }
+      return graph.vertexSet().stream()
+          .filter(a -> a instanceof Observation && a.getId() == asset.getId())
+          .findFirst()
+          .orElse(asset);
+    }
+
     @Override
     public void add(RuntimeAsset asset) {
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         graph.addVertex(asset);
+        added.add(asset);
       }
-      added.add(asset);
     }
 
     @Override
     public void link(
-        RuntimeAsset source,
-        RuntimeAsset destination,
+        RuntimeAsset sourceOrig,
+        RuntimeAsset destinationOrig,
         GraphModel.Relationship relationship,
         Object... data) {
       synchronized (graph) {
+        var source = checkPresentAsset(sourceOrig);
+        var destination = checkPresentAsset(destinationOrig);
+
         graph.addVertex(source);
         graph.addVertex(destination);
         graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
-      }
 
-      // TODO do this for all others as well?
-      if (source instanceof ObservationImpl sourceObs
-          && destination instanceof ObservationImpl targetObs
-          && relationship == GraphModel.Relationship.HAS_CHILD) {
-        sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
-        update(sourceObs);
-        targetObs.setParentTransientId(sourceObs.getTransientId());
-      } else if (source instanceof CohortImpl sourceCohort
-          && destination instanceof ObservationImpl targetObs
-          && relationship == GraphModel.Relationship.HAS_MEMBER) {
-        sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
-        update(sourceCohort);
-        targetObs.setParentTransientId(sourceCohort.getTransientId());
+        // TODO do this for all others as well?
+        if (source instanceof ObservationImpl sourceObs
+            && destination instanceof ObservationImpl targetObs
+            && relationship == GraphModel.Relationship.HAS_CHILD) {
+          sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
+          update(sourceObs);
+          targetObs.setParentTransientId(sourceObs.getTransientId());
+        } else if (source instanceof CohortImpl sourceCohort
+            && destination instanceof ObservationImpl targetObs
+            && relationship == GraphModel.Relationship.HAS_MEMBER) {
+          sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
+          update(sourceCohort);
+          targetObs.setParentTransientId(sourceCohort.getTransientId());
+        }
       }
     }
 
     @Override
     public void update(RuntimeAsset asset) {
-      modified.add(asset);
+      synchronized (graph) {
+        modified.add(checkPresentAsset(asset));
+      }
     }
 
     @Override
@@ -303,7 +347,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       if (parent == null) {
-        var kgTransaction = knowledgeGraph.createTransaction();
+        var kgTransaction = knowledgeGraph.createTransaction(scope);
         var stored = new ArrayList<RuntimeAsset>();
         var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
@@ -397,12 +441,18 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " OK");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
+      scope.unregisterTransaction(this);
+
       return ret;
     }
 
     @Override
     public Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets) {
-      return new TransactionImpl(this, activity, runtimeAssets);
+      var ret = new TransactionImpl(this, activity, runtimeAssets);
+      if (scope instanceof ServiceContextScope serviceContextScope) {
+        serviceContextScope.registerTransaction(ret);
+      }
+      return ret;
     }
 
     private Object[] getRelationshipData(RelationshipEdge edge) {
@@ -450,6 +500,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         this.failures.add(compilationError);
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
       }
+      scope.unregisterTransaction(this);
       return this;
     }
 
@@ -464,6 +515,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset) {
       var ret = new ArrayList<KnowledgeGraph.Link>();
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.incomingEdgesOf(asset)) {
             var link = new LinkImpl(graph.getEdgeSource(edge), asset, edge.relationship);
@@ -480,6 +532,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Collection<KnowledgeGraph.Link> outgoing(RuntimeAsset asset) {
       var ret = new ArrayList<KnowledgeGraph.Link>();
       synchronized (graph) {
+        asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.outgoingEdgesOf(asset)) {
             var link = new LinkImpl(asset, graph.getEdgeTarget(edge), edge.relationship);

@@ -6,8 +6,12 @@ import com.google.common.cache.LoadingCache;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
@@ -21,11 +25,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -34,7 +37,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -60,12 +62,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private static long MAX_CACHED_OBSERVATIONS = 100;
   private static long MAX_CACHED_GEOMETRIES = 20;
   private DigitalTwin.Configuration configuration;
-
+  private final AtomicLong idGenerator;
+  private final Map<String, DigitalTwin.Transaction> transactions;
   private Observation observer;
   private Observation contextObservation;
+  private Observation sourceObservation;
+  private Observation targetObservation;
   private URL url;
   private DigitalTwin digitalTwin;
   private Data.ShardingStrategy shardingStrategy;
+  private String remoteTransactionId;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
@@ -84,13 +90,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   LoadingCache<Long, Observation> observationCache;
   private DigitalTwin.Transaction currentTransaction;
 
-  private ServiceContextScope(ServiceContextScope parent) {
+  public ServiceContextScope(ServiceContextScope parent) {
     super(parent);
     this.parent = parent;
     this.splits = parent.splits;
     this.observer = parent.observer;
     this.data = parent.data;
     this.contextObservation = parent.contextObservation;
+    this.sourceObservation = parent.sourceObservation;
+    this.targetObservation = parent.targetObservation;
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;
     this.serviceMap.putAll(parent.serviceMap);
@@ -98,6 +106,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.currentTransaction = parent.currentTransaction;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
+    this.idGenerator = parent.idGenerator;
+    this.transactions = parent.transactions;
+    this.remoteTransactionId = parent.remoteTransactionId;
     copyMessagingSetup(parent);
   }
 
@@ -118,8 +129,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-    //    this.resolutionCache = new HashMap<>();
     this.configuration = configuration;
+    this.transactions = new ConcurrentHashMap<>();
+    this.idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy
     this.shardingStrategy = Data.ShardingStrategy.neutral();
@@ -219,7 +231,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
-  @Override
+  //  @Override
   public Collection<Observation> getRootObservations() {
     return getRootContextScope().getObservations();
   }
@@ -240,14 +252,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  @Override
-  public CompletableFuture<Observation> submit(Observation observation) {
-    if (!isOperative()) {
-      return null;
-    }
-    var runtime = getService(RuntimeService.class);
-    return runtime.submit(observation, this);
-  }
+  //  @Override
+  //  public CompletableFuture<Observation> submit(Observation observation) {
+  //    if (!isOperative()) {
+  //      return null;
+  //    }
+  //    var runtime = getService(RuntimeService.class);
+  //    return runtime.submit(observation, this);
+  //  }
 
   @Override
   public Provenance getProvenance() {
@@ -429,6 +441,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public Observation getSourceObservation() {
+    return sourceObservation;
+  }
+
+  @Override
+  public Observation getTargetObservation() {
+    return targetObservation;
+  }
+
+  @Override
   public ServiceContextScope within(Observation contextObservation) {
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
@@ -471,14 +493,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public ServiceContextScope contextualizeFor(Observation observation) {
     if (contextObservation != null && observation.getObservable().is(SemanticType.COUNTABLE)) {
-        return within(null);
+      return within(null);
     }
     return this;
   }
 
   @Override
   public ContextScope between(Observation source, Observation target) {
-    return null;
+    var ret = new ServiceContextScope(this);
+    ret.sourceObservation = source;
+    ret.targetObservation = target;
+    return ret;
   }
 
   @Override
@@ -562,6 +587,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public DigitalTwin.Configuration getConfiguration() {
     return configuration;
+  }
+
+  @Override
+  public String getTransactionId() {
+    return currentTransaction == null ? remoteTransactionId : currentTransaction.getId();
+  }
+
+  public void setRemoteTransactionId(String remoteTransactionId) {
+    this.remoteTransactionId = remoteTransactionId;
   }
 
   @Override
@@ -808,6 +842,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public void fail(Object... details) {
+    Throwable throwable = null;
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.FAILURE);
       activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
@@ -816,15 +851,74 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             && (notification.getLevel() == Notification.Level.Error
                 || notification.getLevel() == Notification.Level.Error)) {
           activity.setDescription(notification.getMessage());
+        } else if (detail instanceof Throwable t) {
+          throwable = t;
         }
       }
     }
-    this.currentTransaction.fail(null);
+    this.currentTransaction.fail(throwable);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 
   /** Reinitialize a context scope after a timeout if so configured. */
   public void reinitialize() {
     // TODO zap the KG and all caches; leave a trace somewhere for provenance.
+  }
+
+  @Override
+  public Observation.Builder observation(Observable observable) {
+
+    return new ObservationBuilderImpl(observable, this) {
+      @Override
+      public CompletableFuture<Observation> submit() {
+        var observation = build();
+        // save a call
+        if (observation.getId() > 0 || observation.isEmpty()) {
+          return CompletableFuture.completedFuture(observation);
+        }
+        return getService(RuntimeService.class).submit(observation, ServiceContextScope.this);
+      }
+
+      @Override
+      public Observation register() {
+        return getService(RuntimeService.class).register(build(), ServiceContextScope.this);
+      }
+    };
+  }
+
+  /**
+   * Get a unique ID for a new observation to be registered in this scope before being submitted for
+   * resolution.
+   *
+   * @return
+   */
+  public long getNextObservationId() {
+    return idGenerator.decrementAndGet();
+  }
+
+  public void registerTransaction(DigitalTwin.Transaction transaction) {
+    transactions.put(transaction.getId(), transaction);
+  }
+
+  public void unregisterTransaction(DigitalTwin.Transaction transaction) {
+    transactions.remove(transaction.getId());
+  }
+
+  public DigitalTwin.Transaction getTransaction(String key) {
+    return transactions.get(key);
+  }
+
+  /**
+   * ONLY to be used when reconstructing scopes from remote requests. The transaction is there to
+   * locate observations that haven't been committed yet. NO operations should be performed on this
+   * scope.
+   *
+   * @param transaction
+   * @return
+   */
+  public ServiceContextScope withTransaction(DigitalTwin.Transaction transaction) {
+    var ret = new ServiceContextScope(this);
+    ret.currentTransaction = transaction;
+    return ret;
   }
 }

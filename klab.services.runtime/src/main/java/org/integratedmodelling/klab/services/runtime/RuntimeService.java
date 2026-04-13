@@ -455,14 +455,16 @@ public class RuntimeService extends BaseService
    * contextualization of all resolved observations. Instantiators cause other submissions within
    * the same transaction.
    *
-   * @param observation the observation to submit
+   * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
    * @return the submission task
    */
   @Override
-  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
-    if (observation.getId() > 0) {
+    var observation = register(submitted, scope);
+
+    if (observation.getId() > 0 || observation.isEmpty()) {
       return CompletableFuture.completedFuture(observation);
     }
 
@@ -625,13 +627,6 @@ public class RuntimeService extends BaseService
 
       var cohort = getCohortFor(observation, submissionScope);
 
-      if (cohort != null) {
-        var identity = checkIdentity(observation, cohort, submissionScope);
-        if (identity != null) {
-          return CompletableFuture.completedFuture(identity);
-        }
-      }
-
       submissionScope
           .getCurrentTransaction()
           .link(
@@ -643,7 +638,9 @@ public class RuntimeService extends BaseService
                   ? GraphModel.Relationship.HAS_MEMBER
                   : GraphModel.Relationship.HAS_CHILD);
 
-      if (cohort != null && scope.getContextObservation() != null) {
+      if (cohort != null
+          && scope.getContextObservation() != null
+          && observation.getObservable().is(SemanticType.COUNTABLE)) {
         // ALSO link the observation to the cohort, which wasn't done in the previous statement
         submissionScope
             .getCurrentTransaction()
@@ -699,6 +696,11 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
+
+                // FIXME this comes from the original submission while the executors and storage
+                //  have been registered with the observations in the actuators. These are only
+                //  correct if the observations have been created at compilation.
+
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
                   submissionScope.contextualize(o);
@@ -767,6 +769,71 @@ public class RuntimeService extends BaseService
     }
 
     return null;
+  }
+
+  @Override
+  public Observation register(Observation observation, ContextScope scope) {
+
+    if (observation.getId() < -1 || observation.getId() > 0 || observation.isEmpty()) {
+      return observation;
+    }
+
+    var mayExistInCohort =
+        SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+            && !observation.getObservable().getSemantics().isCollective();
+
+    if (observation instanceof ObservationImpl observationImpl
+        && scope instanceof ServiceContextScope serviceContextScope) {
+
+      // TODO this will need to be more sophisticated re: contextualization when looking for events
+      //  and relationships
+
+      if (mayExistInCohort) {
+        // query for the object's identity within the cohort. If existing, extract and return it
+        var cohort = getCohortFor(observation, scope);
+        if (cohort != null) { // should never happen
+          var existing = checkIdentity(observation, cohort, serviceContextScope);
+          if (existing != null) {
+            return existing;
+          }
+        }
+      } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
+
+        if (serviceContextScope.getContextObservation() != null) {
+
+          var existing =
+              serviceContextScope
+                  .getChildrenOf(serviceContextScope.getContextObservation())
+                  .stream()
+                  .filter(
+                      child ->
+                          child instanceof Observation oChild
+                              && oChild
+                                  .getObservable()
+                                  .asConcept()
+                                  .getUrn()
+                                  .equals(
+                                      observation
+                                          .getObservable()
+                                          .getSemantics()
+                                          .asConcept()
+                                          .getUrn()))
+                  .findFirst()
+                  .orElse(null);
+
+          if (existing instanceof ObservationImpl existingImpl) {
+            return existingImpl;
+          }
+        }
+      }
+
+      observationImpl.setId(serviceContextScope.getNextObservationId());
+
+      return observation;
+    }
+
+    throw new KlabInternalErrorException(
+        "RuntimeService::register() called with unexpected scope implementation");
   }
 
   private Cohort getCohortFor(Observation observation, ContextScope scope) {
@@ -880,6 +947,12 @@ public class RuntimeService extends BaseService
         }
 
         if (!executionSequence.store(transactionImpl)) {
+          scope
+              .getCurrentTransaction()
+              .fail(
+                  new KlabCompilationError(
+                      "Could not store execution sequence for target observation "
+                          + rootObservation));
           return false;
         }
       }
@@ -887,6 +960,7 @@ public class RuntimeService extends BaseService
       return true;
     }
 
+    // won't happen
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected transaction implementation");
   }

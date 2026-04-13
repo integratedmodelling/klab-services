@@ -256,7 +256,7 @@ public interface KnowledgeGraph {
    *
    * @return a new transaction
    */
-  Transaction createTransaction();
+  Transaction createTransaction(ContextScope scope);
 
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the

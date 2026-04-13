@@ -85,7 +85,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               observation.getName() == null
                   ? observation.getObservable().codeName()
                   : observation.getName());
-          ret.put("type", observation.getType().name());
+          ret.put("type", observation.getObservable().getArtifactType().name());
           ret.put("urn", observation.getUrn());
           ret.put("childrenCount", observation.getChildrenCount());
           ret.put(
@@ -100,10 +100,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
-          //          var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
-          //          if (instanceUrn != null) {
-          //            ret.put("instanceUrn", instanceUrn);
-          //          }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
             ret.put("adapterId", data.getAdapterId());

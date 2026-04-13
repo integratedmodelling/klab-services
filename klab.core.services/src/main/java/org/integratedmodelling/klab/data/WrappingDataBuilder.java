@@ -60,13 +60,12 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     for (var child : data.children()) {
       var observable = reasoner.resolveObservable(child.semantics());
       var observation =
-          DigitalTwin.createObservation(
-              scope,
-              child.name(),
-              observable,
-              child.geometry(),
-              child.metadata(),
-              child.identity());
+          scope
+              .observation(observable)
+              .geometry(child.geometry())
+              .identity(child.identity())
+              .metadata(child.metadata())
+              .register();
       if (observation.getContextualizationData()
           instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
         contextualizationData.setAdapterId(adapterId);

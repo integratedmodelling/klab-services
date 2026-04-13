@@ -47,7 +47,6 @@ public class ObservationImpl implements Observation {
   private String urn;
   private Object value;
   private String name;
-  private Artifact.Type type = Artifact.Type.OBSERVATION;
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
@@ -196,11 +195,6 @@ public class ObservationImpl implements Observation {
   public Provenance getProvenance() {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override
-  public Artifact.Type getType() {
-    return type;
   }
 
   @Override
@@ -371,10 +365,6 @@ public class ObservationImpl implements Observation {
 
   public void setNotifications(List<Notification> notifications) {
     this.notifications = notifications;
-  }
-
-  public void setType(Artifact.Type type) {
-    this.type = type;
   }
 
   /**

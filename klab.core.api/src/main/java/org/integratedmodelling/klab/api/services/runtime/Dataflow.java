@@ -19,6 +19,7 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -108,6 +109,8 @@ public interface Dataflow extends Serializable, RuntimeAsset {
   static Dataflow empty() {
     return new Dataflow() {
 
+      List<Notification> notifications = new ArrayList<>();
+
       @Override
       public long getId() {
         return 0;
@@ -162,7 +165,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
 
       @Override
       public List<Notification> getNotifications() {
-        return List.of();
+        return notifications;
       }
     };
   }
@@ -176,6 +179,8 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    */
   static Dataflow trivial() {
     return new Dataflow() {
+
+      List<Notification> notifications = new ArrayList<>();
 
       @Override
       public long getId() {
@@ -231,7 +236,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
 
       @Override
       public List<Notification> getNotifications() {
-        return List.of();
+        return notifications;
       }
     };
   }

@@ -2846,7 +2846,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public ObservationStrategy computeIdentificationStrategies(
+  public IdentificationStrategy computeIdentificationStrategies(
       Observable observable, ContextScope scope) {
     return observationReasoner.computeIdentificationStrategy(observable, scope);
   }

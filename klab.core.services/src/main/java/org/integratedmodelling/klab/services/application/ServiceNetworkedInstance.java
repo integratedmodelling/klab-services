@@ -172,37 +172,43 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       String filePattern =
           "[%d{yyyy-MM-dd HH:mm:ss.SSS}] - ${PID:- } %-5level [%thread] --- %logger{39}: %msg%n";
       String rolloverPattern = "${LOG_FILE}.%d{yyyy-MM-dd}.%i";
+      String loggingConfig = "classpath:klab-service-logback.xml";
 
       /*
        * Logging is initialized very early in the Spring lifecycle; set system properties explicitly
        * so every service picks up the same file format and rolling policy.
        */
+      System.setProperty("logging.config", loggingConfig);
       System.setProperty("logging.file.name", logFile.toPath().toString());
       System.setProperty("logging.pattern.file", filePattern);
       System.setProperty("logging.logback.rollingpolicy.file-name-pattern", rolloverPattern);
       System.setProperty("logging.logback.rollingpolicy.max-file-size", "10MB");
       System.setProperty("logging.logback.rollingpolicy.max-history", "10");
       System.setProperty("logging.logback.rollingpolicy.total-size-cap", "100MB");
+      System.setProperty("logging.async.file.queue-size", "2048");
+      System.setProperty("logging.async.file.max-flush-time-ms", "1000");
+      System.setProperty("logging.async.console.queue-size", "512");
+      System.setProperty("logging.async.console.max-flush-time-ms", "500");
 
       props.put("klab.service.options", options);
       props.put("server.port", "" + options.getPort());
       props.put("spring.main.banner-mode", "off");
+      props.put("logging.config", loggingConfig);
       props.put("logging.file.name", logFile.toPath().toString());
       props.put("logging.pattern.file", filePattern);
       props.put("logging.logback.rollingpolicy.file-name-pattern", rolloverPattern);
       props.put("logging.logback.rollingpolicy.max-file-size", "10MB");
       props.put("logging.logback.rollingpolicy.max-history", "10");
       props.put("logging.logback.rollingpolicy.total-size-cap", "100MB");
+      props.put("logging.async.file.queue-size", "2048");
+      props.put("logging.async.file.max-flush-time-ms", "1000");
+      props.put("logging.async.console.queue-size", "512");
+      props.put("logging.async.console.max-flush-time-ms", "500");
       props.put("server.servlet.contextPath", options.getContextPath());
       props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
       props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
-      props.put("spring.jmx.enabled", "true");
-      props.put("management.endpoints.web.exposure.include", "hawtio,jolokia");
-      props.put("hawtio.authenticationEnabled", "false"); // FIXME FOR TESTING ONLY
       app.setDefaultProperties(props);
       app.run(options.getArguments());
-      // Environment environment = this.context.getEnvironment();
-      // setPropertiesFromEnvironment(environment);
       System.out.println("\n" + Branding.SERVICE_BANNER);
       System.out.println(
           "\nStartup successful: "

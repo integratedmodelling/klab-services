@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -50,6 +51,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
@@ -138,8 +140,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private final Map<Long, RuntimeAsset> idCache = new HashMap<>();
     private final List<Pair<Long, Long>> links = new ArrayList<>();
     private boolean closed;
+    private final ContextScope contextScope;
 
-    TransactionImpl() {
+    TransactionImpl(ContextScope contextScope) {
+      this.contextScope = contextScope;
       this.transaction =
           driver
               .session() // new session should make this thread safe
@@ -159,7 +163,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       try {
         var id =
-            KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
+            KnowledgeGraphNeo4j.this.store(transaction, asset, contextScope, additionalProperties);
         if (id > 0) {
           stored.add(asset);
           idCache.put(id, asset);
@@ -200,7 +204,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       } catch (Exception e) {
         closed = true;
-        Logging.INSTANCE.error("DIO CARAMBOLA LINK", e);
       }
     }
 
@@ -292,8 +295,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public Transaction createTransaction() {
-    return new TransactionImpl();
+  public Transaction createTransaction(ContextScope contextScope) {
+    return new TransactionImpl(contextScope);
   }
 
   protected synchronized EagerResult query(
@@ -790,7 +793,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("properties", props),
             scope);
     if (result != null && result.records().size() == 1) {
-      setId(asset, ret);
+      setId(asset, ret, null);
       var geometry =
           switch (asset) {
             case Observation observation -> observation.getGeometry();
@@ -811,7 +814,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   protected long store(
       org.neo4j.driver.Transaction transaction,
       RuntimeAsset asset,
-      Scope scope,
+      ContextScope scope,
       Object... additionalProperties) {
 
     var type = getLabel(asset);
@@ -842,7 +845,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("properties", props),
             scope);
     if (result != null && result.hasNext()) {
-      setId(asset, ret);
+      setId(asset, ret, scope);
       var geometry =
           switch (asset) {
             case Observation observation -> observation.getGeometry();
@@ -1057,9 +1060,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return ret;
   }
 
-  private void setId(RuntimeAsset asset, long id) {
+  private void setId(RuntimeAsset asset, long id, ContextScope scope) {
     switch (asset) {
       case ObservationImpl observation -> {
+        var temporaryId = observation.getId();
         observation.setId(id);
         observation.setUrn(
             observation.getUrn() == null
@@ -1069,6 +1073,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     + ObservationImpl.INDIVIDUALS_CATALOG_NAME
                     + ":"
                     + observation.getUrn());
+        if (scope != null && observation.getObservable().is(SemanticType.QUALITY)) {
+          if (!scope.getDigitalTwin().getStorageManager().finalizeStorage(temporaryId, id)) {
+            observation.getNotifications().add(Notification.error("Problem finalizing storage"));
+          }
+        }
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case ShardImpl buffer -> buffer.setId(id);

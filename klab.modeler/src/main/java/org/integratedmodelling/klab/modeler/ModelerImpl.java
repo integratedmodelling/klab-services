@@ -21,13 +21,10 @@ import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.identities.Federation;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -178,12 +175,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
-    boolean isObserver = false;
+    //    boolean isObserver = false;
 
     /** Assets are observed by URN unless they're models or observation definitions */
     if (asset instanceof NavigableKlabStatement<?> navigableAsset) {
       asset = navigableAsset.getDelegate();
     }
+
+    Observation.NaiveBuilder builder = null;
 
     if (asset instanceof KlabStatement statement) {
 
@@ -194,50 +193,44 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         constraints.add(
             ResolutionConstraint.of(
                 ResolutionConstraint.Type.ResolutionProject, statement.getProjectName()));
+        builder = new Observation.NaiveBuilder(statement, currentContext);
       }
-
       if (statement instanceof KimModel model) {
         resolvables.add(model.getObservables().getFirst());
         constraints.add(
             ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel, model.getUrn()));
+        builder = new Observation.NaiveBuilder(model, currentContext);
       } else if (statement instanceof KimSymbolDefinition definition) {
         if ("observation".equals(definition.getDefineClass())) {
           resolvables.add(statement);
+          builder = new Observation.NaiveBuilder(definition, currentContext);
         } else if ("observer".equals(definition.getDefineClass())) {
           resolvables.add(statement);
-          isObserver = true;
+          //          isObserver = true;
           constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UseAsObserver));
         }
       } else if (statement instanceof KimConceptStatement conceptStatement) {
         // TODO check observable vs. context (qualities w/ their context etc.)
         resolvables.add(conceptStatement);
+        builder = new Observation.NaiveBuilder(conceptStatement, currentContext);
       } else if (statement instanceof KimObservable conceptStatement) {
         // TODO check observable vs. context (qualities w/ their context etc.)
         resolvables.add(conceptStatement);
+        builder = new Observation.NaiveBuilder(conceptStatement, currentContext);
       }
-    } else if (asset instanceof String || asset instanceof Urn) {
-      resolvables.add(asset.toString());
     }
 
     /*
     TODO add scenario constraints - scenario controller (TBI) should keep them between contexts
      */
 
-    if (resolvables.isEmpty()) {
+    if (builder == null) {
       currentContext.warn("No resolvable assets: observation not started");
       return CompletableFuture.completedFuture(Observation.empty());
     }
 
-    var observation = DigitalTwin.createObservation(currentContext, resolvables.toArray());
+    var observation = builder.make();
 
-    if (observation == null) {
-      currentContext.error("Cannot create an observation out of " + asset + ": aborting");
-      return CompletableFuture.completedFuture(Observation.empty());
-    }
-
-    final boolean observering = isObserver;
-
-    // for the benefit of linked DTs - ACHTUNG, this has no ID yet, should be sent by the scope
     currentContext.send(
         Message.MessageClass.DigitalTwin,
         Message.MessageType.ObservationSubmissionStarted,
@@ -249,9 +242,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         currentContext.getService(RuntimeService.class),
         observation);
 
-    return currentContext
-        .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
-        .submit(observation)
+    var submissionContext =
+        currentContext.withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new));
+
+    return submissionContext
+        .getService(RuntimeService.class)
+        .submit(observation, submissionContext)
         .exceptionally(
             t -> {
               // for the benefit of linked DTs
@@ -278,6 +274,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .thenApply(
             obs -> {
               // for the benefit of linked DTs
+              obs.getNotifications().forEach(currentContext::send);
               currentContext.send(
                   Message.MessageClass.DigitalTwin,
                   Message.MessageType.ObservationSubmissionFinished,
@@ -291,29 +288,31 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
               if (obs.isEmpty()) {
                 currentContext.error(
                     "Observation " + observation + " was not resolved due to errors");
-              } else {
-                if (observering) {
-                  // Send a DT focus event with observer emphasis. The
-                  //  observation will be in the KG anyway.
-                  currentContext.send(
-                      Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved, obs);
-                  //                  setCurrentContext(currentContext.withObserver(obs));
-                  currentContext.ui(
-                      Message.create(
-                          currentContext,
-                          Message.MessageClass.UserInterface,
-                          Message.MessageType.CurrentContextModified));
-                  dispatch(
-                      this,
-                      UIEvent.ObserverResolved,
-                      currentContext,
-                      currentContext.getService(RuntimeService.class),
-                      obs);
-                  currentContext.info(obs + " is now the current observer");
-                } else {
-                  currentContext.info("Observation of " + obs + " resolved successfully");
-                }
-              }
+              } // else {
+              //                if (observering) {
+              //                  // Send a DT focus event with observer emphasis. The
+              //                  //  observation will be in the KG anyway.
+              //                  currentContext.send(
+              //                      Message.MessageClass.DigitalTwin,
+              // Message.MessageType.ObserverResolved, obs);
+              //                  //
+              // setCurrentContext(currentContext.withObserver(obs));
+              //                  currentContext.ui(
+              //                      Message.create(
+              //                          currentContext,
+              //                          Message.MessageClass.UserInterface,
+              //                          Message.MessageType.CurrentContextModified));
+              //                  dispatch(
+              //                      this,
+              //                      UIEvent.ObserverResolved,
+              //                      currentContext,
+              //                      currentContext.getService(RuntimeService.class),
+              //                      obs);
+              //                  currentContext.info(obs + " is now the current observer");
+              //                } else {
+              currentContext.info("Observation of " + obs + " resolved successfully");
+              //                }
+              //              }
               return obs;
             });
   }

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
@@ -211,6 +213,14 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     long INTERMEDIATE_COMMIT_ID = 0l;
 
+    /**
+     * Transactions are identified by a unique ID so that the context scope can keep track of them
+     * and remote requests can identify the transaction they refer to.
+     *
+     * @return
+     */
+    String getId();
+
     void registerExecutors();
 
     /**
@@ -382,292 +392,277 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   Dataflow getDataflowGraph(ContextScope context);
 
-  //  /**
-  //   * Ingest the contextualized data coming from a resource contextualization into the passed
-  //   * observation target.
-  //   *
-  //   * <p>TODO this ingests a single shard at a time.
-  //   *
-  //   * @param data
-  //   * @param target
-  //   * @param event
-  //   * @param shardingStrategy the sharding strategy adopted for the resource contextualization,
-  // which
-  //   *     may differ from the native strategy in the observation. Null may be passed, which must
-  // be
-  //   *     substituted by the original observations's native strategy.
-  //   * @param scope
-  //   * @return true if ingestion was successful
-  //   * @deprecated this should become unnecessary. Ingestion of child observations should be
-  // called
-  //   *     from within the ContextualExecutors, and scanners are set up to handle transfer to
-  // storage.
-  //   *     The scheduler must be notified in there.
-  //   */
-  //  boolean ingest(
-  //      Data data,
-  //      Observation target,
-  //      Scheduler.Event event,
-  //      Data.ShardingStrategy shardingStrategy,
-  //      ContextScope scope);
-
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether
    * the disposal is permanent depends on the graph database used and its configuration.
    */
   void dispose();
 
-  /**
-   * Assemble the passed parameters into an unresolved Observation, to be inserted into the
-   * knowledge graph and resolved.
-   *
-   * @param scope any valid scope, used to resolve semantics.
-   * @param resolvables
-   * @return a new unresolved observation, or null if the parameters do not resolve to a valid one
-   */
-  static ObservationImpl createObservation(Scope scope, Object... resolvables) {
+  //  @Deprecated // FIXME remove, put one in each service-side ContextScope
+  //  AtomicLong idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
 
-    final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
-
-    String name = null;
-    Geometry geometry = null;
-    Observable observable = null;
-    String defaultValue = null;
-    Metadata metadata = Metadata.create();
-    long id = Observation.UNASSIGNED_ID;
-    Urn identity = null;
-    Observation.ContextualizationData contextualizationData = null;
-
-    Geometry oGeom = null;
-    if (resolvables != null) {
-      for (Object o : resolvables) {
-        if (o instanceof Observable obs) {
-          observable = obs;
-        } else if (o instanceof Geometry geom) {
-          geometry = geom;
-        } else if (o instanceof String string) {
-          if (name == null) {
-            name = string;
-          } else {
-            defaultValue = string;
-          }
-        } else if (o instanceof Urn urn) {
-          identity = urn;
-        } else if (o instanceof Data data) {
-          observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
-          geometry = data.geometry();
-          name = data.name();
-          metadata.putAll(data.metadata());
-        } else if (o instanceof KimSymbolDefinition symbol) {
-
-          // must be an "observation" class
-          if (("observation".equals(symbol.getDefineClass())
-                  || "observer".equals(symbol.getDefineClass()))
-              && symbol.getValue() instanceof Map<?, ?> definition) {
-
-            if ("observer".equals(symbol.getDefineClass())) {
-              // tell the clients that this has been defined as an observer
-              metadata.put(Metadata.IM_OBSERVER_TAG, true);
-            }
-
-            identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
-
-            name = symbol.getName();
-            if (definition.containsKey("semantics")) {
-              observable =
-                  scope
-                      .getService(Reasoner.class)
-                      .resolveObservable(definition.get("semantics").toString());
-              if (observable == null) {
-                scope.error(
-                    "Invalid semantics in observation definition: " + definition.get("semantics"));
-                return null;
-              }
-            }
-            if (definition.containsKey("space") || definition.containsKey("time")) {
-              geometry = defineGeometry(definition);
-            }
-
-            if (definition.containsKey("geometry")
-                && definition.get("geometry") instanceof Map<?, ?>) {
-              oGeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
-            }
-
-            if (definition.containsKey("contextualization")
-                && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
-              // TODO must be either collective or quality. Geometry is supplied externally and it's
-              //  illegal here.
-              if (geometry != null) {
-                scope.error(
-                    "Geometry cannot be supplied when contextualization data are given. Observation: "
-                        + symbol.getUrn());
-                return null;
-              }
-              contextualizationData = defineContextualization(contextualization, scope);
-            }
-
-            if (geometry == null && oGeom != null) {
-              geometry = oGeom;
-            }
-
-            for (var key : definition.keySet()) {
-              if (!knownKeys.contains(key.toString())) {
-                metadata.put(key.toString(), definition.get(key));
-              }
-            }
-          }
-        } else if (o instanceof KimModel model) {
-          // send the model URN and extract the observable. The modelUrn should become a
-          // constraint within the requesting scope upstream.
-          observable =
-              scope
-                  .getService(Reasoner.class)
-                  .resolveObservable(model.getObservables().getFirst().getUrn());
-        } else if (o instanceof Map<?, ?> map) {
-          // metadata
-          metadata.putAll((Map<? extends String, ?>) map);
-        } else if (o instanceof KimConcept concept) {
-          observable = scope.getService(Reasoner.class).resolveObservable(concept.getUrn());
-        } else if (o instanceof KimObservable obs) {
-          observable = scope.getService(Reasoner.class).resolveObservable(obs.getUrn());
-        } else if (o instanceof Long oid) {
-          id = oid;
-        }
-      }
-    }
-
-    /*
-    least requisite is having an observable. A quality observation doesn't need to specify
-    a geometry.
-     */
-    if (observable != null) {
-      ObservationImpl ret = new ObservationImpl();
-      ret.setGeometry(geometry);
-      ret.setMetadata(metadata);
-      ret.setObservable(observable);
-      ret.setValue(defaultValue);
-      ret.setName(name);
-      ret.setId(id);
-      ret.setType(observable.getArtifactType());
-      ret.setContextualizationData(contextualizationData);
-
-      if (identity != null) {
-        // mandatory for substantials, and must be namespace:name
-        if (identity.length() != 2) {
-          scope.error("Identity must be in the form namespace:id");
-          return null;
-        }
-        if (!observable.getSemantics().isCollective()
-            && SemanticType.isSubstantial(observable.getSemantics().getType())) {
-          ret.setUrn(identity.getUrn());
-        }
-      } else if (!observable.getSemantics().isCollective()
-          && SemanticType.isSubstantial(observable.getSemantics().getType())) {
-        scope.error(
-            "Observations of individual substantials must specify a unique identity, passed as a Urn object <namespace>:<identifier>");
-        return null;
-      }
-
-      return ret;
-    }
-
-    return null;
-  }
-
-  static Observation.ContextualizationData defineContextualization(
-      Map<?, ?> contextualization, Scope scope) {
-    var ret = new ObservationImpl.ContextualizationDataImpl();
-
-    ret.setAdapterId(contextualization.get("adapter").toString());
-    ret.setServiceId(scope.getService(RuntimeService.class).serviceId());
-    ret.setServiceUrl(scope.getService(RuntimeService.class).getUrl());
-
-    if ((contextualization.containsKey("persist")
-            && contextualization.get("persist") instanceof Boolean persist
-            && persist)
-        || (contextualization.get("resource") instanceof Map<?, ?>)) {
-      ret.setPersistent(true);
-    }
-
-    for (var key : contextualization.keySet()) {
-      if (!"adapter".equals(key.toString()) && !"persist".equals(key.toString())) {
-        ret.getParameters().put(key.toString(), contextualization.get(key));
-      }
-    }
-
-    return ret;
-  }
-
-  static Geometry defineGeometry(Map<?, ?> definition) {
-    var geometryBuilder = Geometry.builder();
-    if (definition.containsKey("space")) {
-      var spaceBuilder = geometryBuilder.space();
-      if (definition.get("space") instanceof Map<?, ?> spaceDefinition) {
-        if (spaceDefinition.containsKey("shape")) {
-          spaceBuilder.shape(spaceDefinition.get("shape").toString());
-        }
-        if (spaceDefinition.containsKey("grid")) {
-          spaceBuilder.resolution(spaceDefinition.get("grid").toString());
-        }
-        if (spaceDefinition.containsKey("projection")) {
-          spaceBuilder.projection(spaceDefinition.get("projection").toString());
-        } else if (spaceDefinition.containsKey("crs")) {
-          spaceBuilder.projection(spaceDefinition.get("crs").toString());
-        } else if (spaceDefinition.containsKey("shape")
-            && spaceDefinition.get("shape").toString().contains(" ")) {
-          var split = spaceDefinition.get("shape").toString().split(" ");
-          spaceBuilder.projection(split[0]);
-        } else {
-          // TODO last resort; should warn or use configured value for default projection
-          spaceBuilder.projection("EPSG:4326");
-        }
-        // TODO add bounding box etc
-      }
-      geometryBuilder = spaceBuilder.build();
-    }
-    if (definition.containsKey("time")) {
-      var timeBuilder = geometryBuilder.time();
-      if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
-        if (timeDefinition.containsKey("start") && timeDefinition.containsKey("end")) {
-          var start = timeDefinition.get("start");
-          var end = timeDefinition.get("end");
-          if (start instanceof Number startNumber && end instanceof Number endNumber) {
-
-            if (startNumber.longValue() >= endNumber.longValue()) {
-              throw new KlabIllegalArgumentException("Start time cannot be after end time");
-            }
-
-            if (startNumber.longValue() > 0 && startNumber.longValue() < 3000) {
-              // assume year
-              startNumber = TimeInstant.create(startNumber.intValue()).getMilliseconds();
-            }
-            if (endNumber.longValue() > 0 && endNumber.longValue() < 3000) {
-              // assume year
-              endNumber = TimeInstant.create(endNumber.intValue()).getMilliseconds();
-            }
-
-            timeBuilder.start(startNumber.longValue()).end(endNumber.longValue());
-          }
-        } else if (timeDefinition.containsKey("year")) {
-          var year = timeDefinition.get("year");
-          if (year instanceof Number number) {
-            timeBuilder.year(number.intValue());
-          } else if (year instanceof Identifier identifier
-              && "default".equals(identifier.getValue())) {
-            timeBuilder.year(TimeInstant.create().getYear());
-          }
-        }
-
-        if (timeDefinition.containsKey("step")) {
-          var step =
-              timeDefinition.get("step") instanceof Quantity quantity
-                  ? quantity
-                  : Quantity.create(timeDefinition.get("step").toString());
-          timeBuilder.step(step);
-        }
-      }
-      geometryBuilder = timeBuilder.build();
-    }
-    return geometryBuilder.build();
-  }
+  //  /**
+  //   * Assemble the passed parameters into an unresolved Observation, to be inserted into the
+  //   * knowledge graph and resolved.
+  //   *
+  //   * <p>The observation will have a negative ID (meaning "unresolved") unless a long parameter
+  // is
+  //   * passed with <code>resolvables</code> to serve as the ID. The ID is never repeated across a
+  // VM.
+  //   *
+  //   * @param scope any valid scope, used to resolve semantics.
+  //   * @param resolvables
+  //   * @return a new unresolved observation, or null if the parameters do not resolve to a valid
+  // one
+  //   * @deprecated use the improved ContextScope API
+  //   */
+  //  static ObservationImpl createObservation(Scope scope, Object... resolvables) {
+  //
+  //    final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
+  //
+  //    String name = null;
+  //    Geometry geometry = null;
+  //    Observable observable = null;
+  //    String defaultValue = null;
+  //    Metadata metadata = Metadata.create();
+  //    long id = Observation.UNASSIGNED_ID;
+  //    Urn identity = null;
+  //    Observation.ContextualizationData contextualizationData = null;
+  //
+  //    Geometry oGeom = null;
+  //    if (resolvables != null) {
+  //      for (Object o : resolvables) {
+  //        if (o instanceof Observable obs) {
+  //          observable = obs;
+  //        } else if (o instanceof Geometry geom) {
+  //          geometry = geom;
+  //        } else if (o instanceof String string) {
+  //          if (name == null) {
+  //            name = string;
+  //          } else {
+  //            defaultValue = string;
+  //          }
+  //        } else if (o instanceof Urn urn) {
+  //          identity = urn;
+  //        } else if (o instanceof Data data) {
+  //          observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
+  //          geometry = data.geometry();
+  //          name = data.name();
+  //          metadata.putAll(data.metadata());
+  //        } else if (o instanceof KimSymbolDefinition symbol) {
+  //
+  //          // must be an "observation" class
+  //          if (("observation".equals(symbol.getDefineClass())
+  //                  || "observer".equals(symbol.getDefineClass()))
+  //              && symbol.getValue() instanceof Map<?, ?> definition) {
+  //
+  //            if ("observer".equals(symbol.getDefineClass())) {
+  //              // tell the clients that this has been defined as an observer
+  //              metadata.put(Metadata.IM_OBSERVER_TAG, true);
+  //            }
+  //
+  //            identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
+  //
+  //            name = symbol.getName();
+  //            if (definition.containsKey("semantics")) {
+  //              observable =
+  //                  scope
+  //                      .getService(Reasoner.class)
+  //                      .resolveObservable(definition.get("semantics").toString());
+  //              if (observable == null) {
+  //                scope.error(
+  //                    "Invalid semantics in observation definition: " +
+  // definition.get("semantics"));
+  //                return null;
+  //              }
+  //            }
+  //            if (definition.containsKey("space") || definition.containsKey("time")) {
+  //              geometry = defineGeometry(definition);
+  //            }
+  //
+  //            if (definition.containsKey("geometry")
+  //                && definition.get("geometry") instanceof Map<?, ?>) {
+  //              oGeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
+  //            }
+  //
+  //            if (definition.containsKey("contextualization")
+  //                && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
+  //              // TODO must be either collective or quality. Geometry is supplied externally and
+  // it's
+  //              //  illegal here.
+  //              if (geometry != null) {
+  //                scope.error(
+  //                    "Geometry cannot be supplied when contextualization data are given.
+  // Observation: "
+  //                        + symbol.getUrn());
+  //                return null;
+  //              }
+  //              contextualizationData = defineContextualization(contextualization, scope);
+  //            }
+  //
+  //            if (geometry == null && oGeom != null) {
+  //              geometry = oGeom;
+  //            }
+  //
+  //            for (var key : definition.keySet()) {
+  //              if (!knownKeys.contains(key.toString())) {
+  //                metadata.put(key.toString(), definition.get(key));
+  //              }
+  //            }
+  //          }
+  //        } else if (o instanceof KimModel model) {
+  //          // send the model URN and extract the observable. The modelUrn should become a
+  //          // constraint within the requesting scope upstream.
+  //          observable =
+  //              scope
+  //                  .getService(Reasoner.class)
+  //                  .resolveObservable(model.getObservables().getFirst().getUrn());
+  //        } else if (o instanceof Map<?, ?> map) {
+  //          // metadata
+  //          metadata.putAll((Map<? extends String, ?>) map);
+  //        } else if (o instanceof KimConcept concept) {
+  //          observable = scope.getService(Reasoner.class).resolveObservable(concept.getUrn());
+  //        } else if (o instanceof KimObservable obs) {
+  //          observable = scope.getService(Reasoner.class).resolveObservable(obs.getUrn());
+  //        } else if (o instanceof Long oid) {
+  //          id = oid;
+  //        }
+  //      }
+  //    }
+  //
+  //    /*
+  //    least requisite is having an observable. A quality observation doesn't need to specify
+  //    a geometry.
+  //     */
+  //    if (observable != null) {
+  //      ObservationImpl ret = new ObservationImpl();
+  //      ret.setGeometry(geometry);
+  //      ret.setMetadata(metadata);
+  //      ret.setObservable(observable);
+  //      ret.setValue(defaultValue);
+  //      ret.setName(name);
+  //      ret.setId(id == Observation.UNASSIGNED_ID ? idGenerator.decrementAndGet() : id);
+  //      ret.setType(observable.getArtifactType());
+  //      ret.setContextualizationData(contextualizationData);
+  //
+  //      if (identity != null) {
+  //        // mandatory for substantials, and must be namespace:name
+  //        if (identity.length() != 2) {
+  //          scope.error("Identity must be in the form namespace:id");
+  //          return null;
+  //        }
+  //        if (!observable.getSemantics().isCollective()
+  //            && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+  //          ret.setUrn(identity.getUrn());
+  //        }
+  //      } else if (!observable.getSemantics().isCollective()
+  //          && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+  //        scope.error(
+  //            "Observations of individual substantials must specify a unique identity, passed as a
+  // Urn object <namespace>:<identifier>");
+  //        return null;
+  //      }
+  //
+  //      return ret;
+  //    }
+  //
+  //    return null;
+  //  }
+  //
+  //  static Observation.ContextualizationData defineContextualization(
+  //      Map<?, ?> contextualization, Scope scope) {
+  //    var ret = new ObservationImpl.ContextualizationDataImpl();
+  //
+  //    ret.setAdapterId(contextualization.get("adapter").toString());
+  //    ret.setServiceId(scope.getService(RuntimeService.class).serviceId());
+  //    ret.setServiceUrl(scope.getService(RuntimeService.class).getUrl());
+  //
+  //    if ((contextualization.containsKey("persist")
+  //            && contextualization.get("persist") instanceof Boolean persist
+  //            && persist)
+  //        || (contextualization.get("resource") instanceof Map<?, ?>)) {
+  //      ret.setPersistent(true);
+  //    }
+  //
+  //    for (var key : contextualization.keySet()) {
+  //      if (!"adapter".equals(key.toString()) && !"persist".equals(key.toString())) {
+  //        ret.getParameters().put(key.toString(), contextualization.get(key));
+  //      }
+  //    }
+  //
+  //    return ret;
+  //  }
+  //
+  //  static Geometry defineGeometry(Map<?, ?> definition) {
+  //    var geometryBuilder = Geometry.builder();
+  //    if (definition.containsKey("space")) {
+  //      var spaceBuilder = geometryBuilder.space();
+  //      if (definition.get("space") instanceof Map<?, ?> spaceDefinition) {
+  //        if (spaceDefinition.containsKey("shape")) {
+  //          spaceBuilder.shape(spaceDefinition.get("shape").toString());
+  //        }
+  //        if (spaceDefinition.containsKey("grid")) {
+  //          spaceBuilder.resolution(spaceDefinition.get("grid").toString());
+  //        }
+  //        if (spaceDefinition.containsKey("projection")) {
+  //          spaceBuilder.projection(spaceDefinition.get("projection").toString());
+  //        } else if (spaceDefinition.containsKey("crs")) {
+  //          spaceBuilder.projection(spaceDefinition.get("crs").toString());
+  //        } else if (spaceDefinition.containsKey("shape")
+  //            && spaceDefinition.get("shape").toString().contains(" ")) {
+  //          var split = spaceDefinition.get("shape").toString().split(" ");
+  //          spaceBuilder.projection(split[0]);
+  //        } else {
+  //          // TODO last resort; should warn or use configured value for default projection
+  //          spaceBuilder.projection("EPSG:4326");
+  //        }
+  //        // TODO add bounding box etc
+  //      }
+  //      geometryBuilder = spaceBuilder.build();
+  //    }
+  //    if (definition.containsKey("time")) {
+  //      var timeBuilder = geometryBuilder.time();
+  //      if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
+  //        if (timeDefinition.containsKey("start") && timeDefinition.containsKey("end")) {
+  //          var start = timeDefinition.get("start");
+  //          var end = timeDefinition.get("end");
+  //          if (start instanceof Number startNumber && end instanceof Number endNumber) {
+  //
+  //            if (startNumber.longValue() >= endNumber.longValue()) {
+  //              throw new KlabIllegalArgumentException("Start time cannot be after end time");
+  //            }
+  //
+  //            if (startNumber.longValue() > 0 && startNumber.longValue() < 3000) {
+  //              // assume year
+  //              startNumber = TimeInstant.create(startNumber.intValue()).getMilliseconds();
+  //            }
+  //            if (endNumber.longValue() > 0 && endNumber.longValue() < 3000) {
+  //              // assume year
+  //              endNumber = TimeInstant.create(endNumber.intValue()).getMilliseconds();
+  //            }
+  //
+  //            timeBuilder.start(startNumber.longValue()).end(endNumber.longValue());
+  //          }
+  //        } else if (timeDefinition.containsKey("year")) {
+  //          var year = timeDefinition.get("year");
+  //          if (year instanceof Number number) {
+  //            timeBuilder.year(number.intValue());
+  //          } else if (year instanceof Identifier identifier
+  //              && "default".equals(identifier.getValue())) {
+  //            timeBuilder.year(TimeInstant.create().getYear());
+  //          }
+  //        }
+  //
+  //        if (timeDefinition.containsKey("step")) {
+  //          var step =
+  //              timeDefinition.get("step") instanceof Quantity quantity
+  //                  ? quantity
+  //                  : Quantity.create(timeDefinition.get("step").toString());
+  //          timeBuilder.step(step);
+  //        }
+  //      }
+  //      geometryBuilder = timeBuilder.build();
+  //    }
+  //    return geometryBuilder.build();
+  //  }
 }

@@ -243,7 +243,14 @@ public class SchedulerImpl implements Scheduler {
                     } catch (Exception e) {
                       return false;
                     }
-                  })) {}
+                  })) {
+            observation
+                .getNotifications()
+                .add(
+                    Notification.error(
+                        "Some concurrent tasks failed during contextualization of " + observation));
+            return false;
+          }
         } catch (Throwable t) {
           observation.getNotifications().add(Notification.error(t.getMessage(), t));
           scope.error(t);
@@ -310,7 +317,7 @@ public class SchedulerImpl implements Scheduler {
       Time geometryTime,
       DigitalTwin.Transaction transaction) {
     if (observation instanceof ObservationImpl observation1) {
-      var timestamps = new ArrayList<Long>(observation.getEventTimestamps());
+      var timestamps = new ArrayList<>(observation.getEventTimestamps());
       if (event.getType() == Event.Type.INITIALIZATION && observation1.isSubstantialQuality()) {
         timestamps.add(0L);
         if (geometryTime != null && geometryTime.getStart() != null) {

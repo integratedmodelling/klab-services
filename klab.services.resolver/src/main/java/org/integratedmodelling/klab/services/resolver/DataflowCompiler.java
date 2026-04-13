@@ -254,38 +254,43 @@ public class DataflowCompiler {
           .getComputation()
           .add(adaptContextualizer(contextualizer, overriddenParameters));
     }
-    var shardingStrategy = new Data.ShardingStrategy();
-    Utils.Annotations.getAnnotations(model, true)
-        .forEach(
-            annotation -> {
-              switch (annotation.getName()) {
-                case "type" ->
-                    shardingStrategy.setDataType(
-                        Storage.Type.valueOf(
-                            annotation
-                                .get(Annotation.VALUE_PARAMETER_KEY)
-                                .toString()
-                                .toUpperCase()));
-                case "split" ->
-                    shardingStrategy.setSuggestedSplits(
-                        Integer.parseInt(
-                            annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "maxSize" ->
-                    shardingStrategy.setMaxBufferSize(
-                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "minSplitSize" ->
-                    shardingStrategy.setMinSplitSize(
-                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                case "fillCurve" ->
-                    shardingStrategy.setCurve(
-                        Data.FillCurve.valueOf(
-                            annotation
-                                .get(Annotation.VALUE_PARAMETER_KEY)
-                                .toString()
-                                .toUpperCase()));
-              }
-            });
-    ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
+
+    if (observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
+      var shardingStrategy = new Data.ShardingStrategy();
+      Utils.Annotations.getAnnotations(model, true)
+          .forEach(
+              annotation -> {
+                switch (annotation.getName()) {
+                  case "type" ->
+                      shardingStrategy.setDataType(
+                          Storage.Type.valueOf(
+                              annotation
+                                  .get(Annotation.VALUE_PARAMETER_KEY)
+                                  .toString()
+                                  .toUpperCase()));
+                  case "split" ->
+                      shardingStrategy.setSuggestedSplits(
+                          Integer.parseInt(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "maxSize" ->
+                      shardingStrategy.setMaxBufferSize(
+                          Long.parseLong(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "minSplitSize" ->
+                      shardingStrategy.setMinSplitSize(
+                          Long.parseLong(
+                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                  case "fillCurve" ->
+                      shardingStrategy.setCurve(
+                          Data.FillCurve.valueOf(
+                              annotation
+                                  .get(Annotation.VALUE_PARAMETER_KEY)
+                                  .toString()
+                                  .toUpperCase()));
+                }
+              });
+      ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
+    }
   }
 
   private Actuator compileReference(Observation observation, Coverage coverage, String localName) {

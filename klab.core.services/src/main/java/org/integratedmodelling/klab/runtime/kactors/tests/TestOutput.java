@@ -82,59 +82,59 @@ public abstract class TestOutput extends TestCaseBase {
   void action_t1(TestScope testScope /* , ... any parameters */) {
 
     /* initialize closeables used within an action, in a try-with-resources block */
-    try (var inspector = new Inspector(testScope, scope)) {
-      inspector.record(
-          Map.of(
-              "a", resolveIdentifier("dio", testScope), "b", resolveIdentifier("can", testScope)));
+//    try (var inspector = new Inspector(testScope, scope)) {
+//      inspector.record(
+//          Map.of(
+//              "a", resolveIdentifier("dio", testScope), "b", resolveIdentifier("can", testScope)));
 
       /*
        * The compiled pattern for any asynchronous action. Always return the result of handle() and pass it to anything that
        * follows, handling any match actions in thenApply.
-       */
-      CompletableFuture.supplyAsync(contextActorInstance::newContext)
-          .handle(
-              (s, t) ->
-                  testScope.handle(
-                      t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
-          .thenApply(
-              dt -> {
-                CompletableFuture.supplyAsync(() -> dt.submit(_observation1))
-                    .handle(
-                        (result, t) ->
-                            testScope.handle(
-                                t,
-                                this,
-                                null /* TODO compile the lexical scope in */,
-                                Observation.class,
-                                result))
-                    .thenApply(
-                        obs1_ -> {
-
-                          // the remaining piece. ACHTUNG must always check for an empty result of
-                          // handle()!
-                          if (obs1_.isEmpty()) {
-                            return obs1_;
-                          }
-
-                          var observation =
-                              DigitalTwin.createObservation(dt, _observable1, obs1_.getGeometry());
-                          var childScope = dt.within(observation);
-                          CompletableFuture.supplyAsync(() -> childScope.submit(observation))
-                              .handle(
-                                  (result, t) ->
-                                      testScope.handle(
-                                          t,
-                                          this,
-                                          null /* TODO compile the lexical scope in */,
-                                          Observation.class,
-                                          result));
-                          return observation;
-                        });
-                return dt;
-              });
-
-    } catch (IOException e) {
-      testScope.handle(e, this, null /* TODO */, Void.class);
-    }
+//       */
+//      CompletableFuture.supplyAsync(contextActorInstance::newContext)
+//          .handle(
+//              (s, t) ->
+//                  testScope.handle(
+//                      t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
+//          .thenApply(
+//              dt -> {
+//                CompletableFuture.supplyAsync(() -> dt.submit(_observation1))
+//                    .handle(
+//                        (result, t) ->
+//                            testScope.handle(
+//                                t,
+//                                this,
+//                                null /* TODO compile the lexical scope in */,
+//                                Observation.class,
+//                                result))
+//                    .thenApply(
+//                        obs1_ -> {
+//
+//                          // the remaining piece. ACHTUNG must always check for an empty result of
+//                          // handle()!
+//                          if (obs1_.isEmpty()) {
+//                            return obs1_;
+//                          }
+//
+//                          var observation =
+//                              DigitalTwin.createObservation(dt, _observable1, obs1_.getGeometry());
+//                          var childScope = dt.within(observation);
+//                          CompletableFuture.supplyAsync(() -> childScope.submit(observation))
+//                              .handle(
+//                                  (result, t) ->
+//                                      testScope.handle(
+//                                          t,
+//                                          this,
+//                                          null /* TODO compile the lexical scope in */,
+//                                          Observation.class,
+//                                          result));
+//                          return observation;
+//                        });
+//                return dt;
+//              });
+//
+//    } catch (IOException e) {
+//      testScope.handle(e, this, null /* TODO */, Void.class);
+//    }
   }
 }

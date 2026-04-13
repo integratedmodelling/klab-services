@@ -61,6 +61,17 @@ public interface StorageManager {
       Geometry geometry, Data.FillCurve fillCurve, Class<T> scannerClass);
 
   /**
+   * This one must be called when a temporary storage is finalized. The temporary storage will be
+   * deleted and replaced with a permanent one with the passed ID. The knowledge graph MUST call
+   * this upon commit and final ID assignment, also setting the observation up for persistence.
+   *
+   * @param temporaryId
+   * @param finalizedId
+   * @return true if the storage was found and finalized, false if it was not found
+   */
+  boolean finalizeStorage(long temporaryId, long finalizedId);
+
+  /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be
    * done in the scope after this is called.
    */

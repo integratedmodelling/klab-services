@@ -46,6 +46,7 @@ import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -556,7 +557,7 @@ public class ResourcesProviderController {
     if (principal instanceof EngineAuthorization authorization) {
 
       var scope = authorization.getScope();
-      if (scope instanceof ServiceUserScope serviceUserScope) {
+      if (scope instanceof ServiceContextScope serviceUserScope) {
 
         try {
           var decoder = DecoderFactory.get().binaryDecoder(requestBody.getInputStream(), null);
@@ -582,22 +583,15 @@ public class ResourcesProviderController {
             input = BaseDataImpl.create(request.getInputData(), List.of());
           }
 
-          var ret =
-              serviceUserScope
-                  .getJobManager()
-                  .submit(
-                      resourcesServer
-                          .klabService()
-                          .contextualize(
-                              resource,
-                              DigitalTwin.createObservation(scope, observable, geometry),
-                              geometry,
-                              event,
-                              input,
-                              scope),
-                      "Resolution of " + observable);
+          var observation = serviceUserScope.observation(observable).geometry(geometry).register();
 
-          return ret;
+          return serviceUserScope
+              .getJobManager()
+              .submit(
+                  resourcesServer
+                      .klabService()
+                      .contextualize(resource, observation, geometry, event, input, scope),
+                  "Resolution of " + observable);
 
         } catch (Throwable t) {
           throw new KlabIOException(t);

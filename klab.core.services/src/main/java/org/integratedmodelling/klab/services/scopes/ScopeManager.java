@@ -56,18 +56,6 @@ public class ScopeManager {
 
     this.service = service;
 
-    //    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
-    //      /*
-    //       * boot the actor system right away, so that we can call login() before boot().
-    //       */
-    //      this.actorSystem =
-    //          new
-    // ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-    //              .initReActorSystem();
-    //
-    //      Logging.INSTANCE.info("Actor system booted");
-    //    }
-
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
 
@@ -194,7 +182,9 @@ public class ScopeManager {
    * @return
    */
   public ContextScope contextualizeScope(
-      ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
+      ServiceContextScope rootScope,
+      ContextScope.ScopeData contextualization,
+      Map<String, String> requestHeaders) {
 
     ServiceContextScope ret = rootScope;
 
@@ -209,7 +199,7 @@ public class ScopeManager {
                   + "found in context "
                   + ret.getName());
         }
-        ret = (ServiceContextScope) ret.within(observation);
+        ret = ret.within(observation);
       }
     }
 
@@ -226,6 +216,57 @@ public class ScopeManager {
       ret = ret.withObserver(observer);
     }
 
+    if (ret instanceof ServiceContextScope serviceContextScope) {
+
+      // the scope
+      if (requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER) != null) {
+        if (service instanceof RuntimeService runtimeService) {
+
+          var transaction =
+              ret.getTransaction(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+          if (transaction != null) {
+            ret = ret.withTransaction(transaction);
+          }
+
+        } else {
+          ret = new ServiceContextScope(serviceContextScope);
+          ret.setRemoteTransactionId(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+        }
+      }
+
+      if (service instanceof RuntimeService runtimeService
+          && requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER) != null) {
+        // lookup observations either in the current transaction or knowledge graph
+        var ctx =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
+        if (ctx != null) {
+          ret = ret.within(ctx);
+        } else {
+          Logging.INSTANCE.error(
+              "Null observations for relationship header"
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+        }
+      }
+
+      if (requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER) != null
+          && requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER) != null) {
+        // lookup observations either in the current transaction or knowledge graph
+        var src =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)));
+        var tgt =
+            ret.getObservation(
+                Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
+        if (src != null || tgt != null) {
+          ret = (ServiceContextScope) ret.between(src, tgt);
+        } else {
+          Logging.INSTANCE.error(
+              "Null observations for relationship header"
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+        }
+      }
+    }
     return ret;
   }
 

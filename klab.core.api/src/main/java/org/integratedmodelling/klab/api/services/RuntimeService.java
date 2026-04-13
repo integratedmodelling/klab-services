@@ -128,15 +128,15 @@ public interface RuntimeService extends KlabService {
    * dependent is normally not given a URN upon submission; it will contain one after it's resolved.
    *
    * <p>The submit operation is transactional, i.e., a failed submission will leave the knowledge
-   * graph unaltered. Note that observations of individual substantials, i.e. non-collective
+   * graph unaltered. Note that observations of individual substantials, i.e., non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
    * resolver, i.e., the ID/URN will be valid and the knowledge graph will contain the observation.
    * All other observations will complete exceptionally if no dataflow can be built for them, and
    * the knowledge graph will not contain the observation submitted after completion.
    *
    * <p>During submission, all activities generated will be sent to the scope and can be intercepted
-   * for monitoring. Upon successful completion, all activities, plans and observations will also be
-   * committed to the knowledge graph.
+   * for monitoring. Upon successful completion, all activities, plans, and observations will also
+   * be committed to the knowledge graph.
    *
    * @param observation the observation to submit. If a resolved observation (or one that resolves
    *     to one) is submitted, the result will be a completed future containing it.
@@ -148,6 +148,26 @@ public interface RuntimeService extends KlabService {
    *     possible metadata.
    */
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
+
+  /**
+   * Return an unresolved observation after checking the validity w.r.t. the scope and assigning a
+   * negative ID that is unique within the scope. If the observation already exists at a concrete
+   * knowledge graph insertion point as specified by the scope, return the corresponding resolved
+   * observation with its positive ID. The observation will be empty if the scope is invalid or if
+   * the observation is not compatible with it.
+   *
+   * <p>The observation must mandatorily have id {@link Observation#UNASSIGNED_ID}. If the scope has
+   * resolved contextual observations, the position will be checked against the resolved ones. If
+   * the observation is a substantial, the identity will be checked against the corresponding cohort
+   * in the knowledge graph.
+   *
+   * @param observation
+   * @param scope
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+   *     observation is resolved or already registered.
+   * @return
+   */
+  Observation register(Observation observation, ContextScope scope);
 
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.

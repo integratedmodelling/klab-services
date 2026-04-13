@@ -612,7 +612,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public ObservationStrategy computeIdentificationStrategies(
+  public IdentificationStrategy computeIdentificationStrategies(
       Observable observable, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservable(observable);
@@ -630,7 +630,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
         .post(
             ServicesAPI.REASONER.COMPUTE_IDENTIFICATION_STRATEGY,
             resolutionRequest,
-            ObservationStrategy.class);
+            IdentificationStrategy.class);
   }
 
   @Override
