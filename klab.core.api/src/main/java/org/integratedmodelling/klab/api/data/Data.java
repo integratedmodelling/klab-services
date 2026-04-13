@@ -662,6 +662,10 @@ public interface Data {
 
   /**
    * A data builder encodes data content, either in raw binary form or by configuring an adapter.
+   *
+   * TODO needs provisions to handle classifications and characterizations from an adapter. The
+   *  builders provided to adapter methods must be configured to throw exceptions if the wrong
+   *  methods for the description type are called.
    */
   interface Builder {
 
