@@ -1162,6 +1162,10 @@ public class RuntimeService extends BaseService
         // check if we need to resolve change
       }
 
+      /*
+      TODO update statistics. We can use the transaction to check if this was the top-level contextualization.
+       */
+
     } else {
       // the KG is self-cleaning
       // the storage may not be transactional so any observation storage must be cleaned up

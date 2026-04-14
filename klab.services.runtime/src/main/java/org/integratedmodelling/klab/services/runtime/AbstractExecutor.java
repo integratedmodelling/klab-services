@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -49,7 +50,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   @Override
-  public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
+  public boolean execute(
+      Scheduler.Event event,
+      ServiceContextScope contextScope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());

@@ -71,46 +71,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private DigitalTwin digitalTwin;
   private Data.ShardingStrategy shardingStrategy;
   private String remoteTransactionId;
-  private ExecutionScope executionScope;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
   protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
-
-  /**
-   * One of these is created before an observation is contextualized and is available to all
-   * executors to report their results. Upon completion of the contextualization, the result is
-   * passed to the runtime to trigger any further resolutions (for collective observables) or to
-   * clean up after failure.
-   */
-  public class ExecutionScope implements RuntimeService.ContextualizationScope {
-
-    private final Observation target;
-    private final Scheduler.Event event;
-
-    public ExecutionScope(
-        Activity currentActivity, Observation observation, Scheduler.Event event) {
-      this.target = observation;
-      this.event = event;
-    }
-
-    @Override
-    public Observation getTarget() {
-      return target;
-    }
-
-    @Override
-    public Scheduler.Event getEvent() {
-      return event;
-    }
-
-    @Override
-    public List<Observation> getOutcomes() {
-      return List.of();
-    }
-  }
 
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
@@ -142,7 +108,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.idGenerator = parent.idGenerator;
     this.transactions = parent.transactions;
     this.remoteTransactionId = parent.remoteTransactionId;
-    this.executionScope = parent.executionScope;
     copyMessagingSetup(parent);
   }
 
@@ -518,10 +483,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
-    // FIXME this must go into the executor, also the finalization. The executor has all the data needed, Do not
-    //  stick the execution scope in the ContextScope.
-    ret.executionScope = new ExecutionScope(currentActivity, null, null);
-
     return ret;
   }
 
@@ -542,12 +503,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return -1;
     }
 
-    /*
-    Send the scope to the runtime for further action before the transaction is committed
-     */
-    getService(RuntimeService.class)
-        .submitContextualizationResult(executionScope, this, Activity.Outcome.SUCCESS);
-
     var ret = this.currentTransaction.commit();
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     return ret;
@@ -556,12 +511,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public void fail(Throwable t) {
 
     this.currentTransaction.fail(t);
-
-    /*
-    Send the scope to the runtime for further action before the transaction is committed
-     */
-    getService(RuntimeService.class)
-        .submitContextualizationResult(executionScope, this, Activity.Outcome.FAILURE);
 
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
@@ -585,12 +534,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
       }
     }
-
-    /*
-    Send the scope to the runtime for further action before the transaction is committed
-     */
-    getService(RuntimeService.class)
-        .submitContextualizationResult(executionScope, this, Activity.Outcome.FAILURE);
 
     this.currentTransaction.fail(throwable);
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
@@ -735,15 +678,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public DigitalTwin getDigitalTwin() {
     return digitalTwin;
-  }
-
-  /**
-   * To be used by executors to report their progress and results
-   *
-   * @return
-   */
-  public ExecutionScope getExecutionScope() {
-    return executionScope;
   }
 
   public void setDigitalTwin(DigitalTwin digitalTwin) {

@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -56,6 +54,40 @@ public class CompiledDataflow {
   private Actuator rootActuator;
   private final Map<String, CallDescriptors> callInfo = new HashMap<>();
 
+  /**
+   * One of these is created before an observation is contextualized and is available to all
+   * executors to report their results. Upon completion of the contextualization, the result is
+   * passed to the runtime to trigger any further resolutions (for collective observables) or to
+   * clean up after failure.
+   */
+  public class ContextualizationScopeImpl
+      implements org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope {
+
+    private final Observation target;
+    private final Scheduler.Event event;
+
+    public ContextualizationScopeImpl(
+        Activity currentActivity, Observation observation, Scheduler.Event event) {
+      this.target = observation;
+      this.event = event;
+    }
+
+    @Override
+    public Observation getTarget() {
+      return target;
+    }
+
+    @Override
+    public Scheduler.Event getEvent() {
+      return event;
+    }
+
+    @Override
+    public List<Observation> getOutcomes() {
+      return List.of();
+    }
+  }
+
   public void createStorage() {
 
     for (var operation : operations.values()) {
@@ -91,7 +123,10 @@ public class CompiledDataflow {
 
     ///  Main executor method
     /// @return true if successful. A `false` return value will stop contextualization.
-    boolean execute(Scheduler.Event event, ServiceContextScope contextScope);
+    boolean execute(
+        Scheduler.Event event,
+        ServiceContextScope contextScope,
+        RuntimeService.ContextualizationScope contextualizationScope);
 
     ///  If [#execute] has returned false, the cause should be here.
     Throwable getCause();
@@ -755,11 +790,14 @@ public class CompiledDataflow {
               contextScope.getActivity(),
               "Contextualization of " + observation.getObservable());
 
-      var contextualizationScope = contextScope.executing(contextualization, observation);
+      var executionScope = contextScope.executing(contextualization, observation);
+      var contextualizationScope =
+          new ContextualizationScopeImpl(contextualization, observation, event);
+
       Throwable failure = null;
       boolean ret = true;
       for (var executor : executors) {
-        if (!executor.execute(event, contextualizationScope)) {
+        if (!executor.execute(event, executionScope, contextualizationScope)) {
           ret = false;
           failure = executor.getCause();
           break;
@@ -767,9 +805,17 @@ public class CompiledDataflow {
       }
 
       if (ret) {
-        contextualizationScope.commit();
+        executionScope
+            .getService(RuntimeService.class)
+            .submitContextualizationResult(
+                contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
+        executionScope.commit();
       } else {
-        contextualizationScope.fail(failure);
+        executionScope.fail(failure);
+        executionScope
+            .getService(RuntimeService.class)
+            .submitContextualizationResult(
+                contextualizationScope, executionScope, Activity.Outcome.FAILURE);
       }
 
       return ret;
