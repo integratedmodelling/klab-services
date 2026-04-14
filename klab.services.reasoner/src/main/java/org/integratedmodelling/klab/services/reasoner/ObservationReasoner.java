@@ -165,67 +165,67 @@ public class ObservationReasoner {
             }
           }
           case INSTANTIATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.INSTANTIATION) {
+            if (semantics.getDescriptionType() != Contextualization.INSTANTIATION) {
               return false;
             }
           }
           case DETECTION -> {
-            if (semantics.getDescriptionType() != DescriptionType.DETECTION) {
+            if (semantics.getDescriptionType() != Contextualization.DETECTION) {
               return false;
             }
           }
           case SIMULATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.SIMULATION) {
+            if (semantics.getDescriptionType() != Contextualization.SIMULATION) {
               return false;
             }
           }
           case MEASURE -> {
-            if (semantics.getDescriptionType() != DescriptionType.MEASURE) {
+            if (semantics.getDescriptionType() != Contextualization.MEASURE) {
               return false;
             }
           }
           case QUANTIFICATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.QUANTIFICATION) {
+            if (semantics.getDescriptionType() != Contextualization.QUANTIFICATION) {
               return false;
             }
           }
           case VALUATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.VALUATION) {
+            if (semantics.getDescriptionType() != Contextualization.VALUATION) {
               return false;
             }
           }
           case CATEGORIZATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.CATEGORIZATION) {
+            if (semantics.getDescriptionType() != Contextualization.CATEGORIZATION) {
               return false;
             }
           }
           case VERIFICATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.VERIFICATION) {
+            if (semantics.getDescriptionType() != Contextualization.VERIFICATION) {
               return false;
             }
           }
           case CLASSIFICATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.CLASSIFICATION) {
+            if (semantics.getDescriptionType() != Contextualization.CLASSIFICATION) {
               return false;
             }
           }
           case CHARACTERIZATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.CHARACTERIZATION) {
+            if (semantics.getDescriptionType() != Contextualization.CHARACTERIZATION) {
               return false;
             }
           }
           case TRANSFORMATION -> {
-            if (semantics.getDescriptionType() != DescriptionType.TRANSFORMATION) {
+            if (semantics.getDescriptionType() != Contextualization.TRANSFORMATION) {
               return false;
             }
           }
           case ACKNOWLEDGEMENT -> {
-            if (semantics.getDescriptionType() != DescriptionType.ACKNOWLEDGEMENT) {
+            if (semantics.getDescriptionType() != Contextualization.ACKNOWLEDGEMENT) {
               return false;
             }
           }
           case CONNECTION -> {
-            if (semantics.getDescriptionType() != DescriptionType.CONNECTION) {
+            if (semantics.getDescriptionType() != Contextualization.CONNECTION) {
               return false;
             }
           }

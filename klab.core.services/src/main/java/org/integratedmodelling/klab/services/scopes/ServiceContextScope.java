@@ -9,9 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
@@ -72,12 +70,34 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private DigitalTwin digitalTwin;
   private Data.ShardingStrategy shardingStrategy;
   private String remoteTransactionId;
+  private ExecutionScope executionScope;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
   protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
+
+  /**
+   * One of these is created before an observation is contextualized and is available to all
+   * executors to report their results. Upon completion of the contextualization, the result is
+   * passed to the runtime to trigger any further resolutions (for collective observables) or to
+   * clean up after failure.
+   */
+  public class ExecutionScope implements RuntimeService.ContextualizationScope {
+
+    public ExecutionScope(Activity currentActivity, Object[] runtimeAssets) {}
+
+    @Override
+    public Observation getTarget() {
+      return null;
+    }
+
+    @Override
+    public List<Observation> getOutcomes() {
+      return List.of();
+    }
+  }
 
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
@@ -109,6 +129,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.idGenerator = parent.idGenerator;
     this.transactions = parent.transactions;
     this.remoteTransactionId = parent.remoteTransactionId;
+    this.executionScope = parent.executionScope;
     copyMessagingSetup(parent);
   }
 
@@ -484,7 +505,81 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
+    // TODO configure as needed
+    ret.executionScope = new ExecutionScope(currentActivity, runtimeAssets);
+
     return ret;
+  }
+
+  public long commit() {
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.SUCCESS);
+      activity.setName(activity.getType().name().substring(0, 3) + " OK");
+      if (getActivity().getType() == Activity.Type.RESOLUTION
+          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
+        // add the resolved graph as metadata to the activity instead
+        getActivity()
+            .getMetadata()
+            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
+      }
+    }
+
+    if (this.currentTransaction == null) {
+      return -1;
+    }
+
+    /*
+    Send the scope to the runtime for further action before the transaction is committed
+     */
+    getService(RuntimeService.class)
+        .submitContextualizationResult(executionScope, this, Activity.Outcome.SUCCESS);
+
+    var ret = this.currentTransaction.commit();
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+    return ret;
+  }
+
+  public void fail(Throwable t) {
+
+    this.currentTransaction.fail(t);
+
+    /*
+    Send the scope to the runtime for further action before the transaction is committed
+     */
+    getService(RuntimeService.class)
+        .submitContextualizationResult(executionScope, this, Activity.Outcome.FAILURE);
+
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+  }
+
+  public void fail(Object... details) {
+    Throwable throwable = null;
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
+      for (var detail : details) {
+        if (detail instanceof Notification notification
+            && (notification.getLevel() == Notification.Level.Error
+                || notification.getLevel() == Notification.Level.Error)) {
+          activity.setDescription(notification.getMessage());
+        } else if (detail instanceof Throwable t) {
+          throwable = t;
+        }
+      }
+    }
+
+    /*
+    Send the scope to the runtime for further action before the transaction is committed
+     */
+    getService(RuntimeService.class)
+        .submitContextualizationResult(executionScope, this, Activity.Outcome.FAILURE);
+
+    this.currentTransaction.fail(throwable);
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 
   /**
@@ -626,6 +721,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public DigitalTwin getDigitalTwin() {
     return digitalTwin;
+  }
+
+  /**
+   * To be used by executors to report their progress and results
+   *
+   * @return
+   */
+  public ExecutionScope getExecutionScope() {
+    return executionScope;
   }
 
   public void setDigitalTwin(DigitalTwin digitalTwin) {
@@ -798,28 +902,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public long commit() {
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.SUCCESS);
-      activity.setName(activity.getType().name().substring(0, 3) + " OK");
-      if (getActivity().getType() == Activity.Type.RESOLUTION
-          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
-        // add the resolved graph as metadata to the activity instead
-        getActivity()
-            .getMetadata()
-            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
-      }
-    }
-
-    if (this.currentTransaction == null) {
-      return -1;
-    }
-
-    var ret = this.currentTransaction.commit();
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
-    return ret;
-  }
-
   public GraphModel.KnowledgeGraph getResolvedGraph() {
     return this.currentTransaction.getGraph();
   }
@@ -830,34 +912,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   public void contextualize(Observation observation) {
     this.digitalTwin.getScheduler().submit(observation, this);
-  }
-
-  public void fail(Throwable t) {
-    this.currentTransaction.fail(t);
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
-      activity.setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
-    }
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
-  }
-
-  public void fail(Object... details) {
-    Throwable throwable = null;
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.FAILURE);
-      activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
-      for (var detail : details) {
-        if (detail instanceof Notification notification
-            && (notification.getLevel() == Notification.Level.Error
-                || notification.getLevel() == Notification.Level.Error)) {
-          activity.setDescription(notification.getMessage());
-        } else if (detail instanceof Throwable t) {
-          throwable = t;
-        }
-      }
-    }
-    this.currentTransaction.fail(throwable);
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 
   /** Reinitialize a context scope after a timeout if so configured. */

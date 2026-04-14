@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -77,7 +75,7 @@ public class ModelImpl implements Model {
   private List<Observable> dependencies = new ArrayList<>();
   private Geometry coverage;
   private List<Contextualizable> computation = new ArrayList<>();
-  private DescriptionType descriptionType;
+  private Contextualization contextualization;
   private Concept observerType;
   private ResolutionInfo resolutionInfo;
 
@@ -159,16 +157,16 @@ public class ModelImpl implements Model {
   }
 
   @Override
-  public DescriptionType getDescriptionType() {
-    return this.descriptionType;
+  public Contextualization getDescriptionType() {
+    return this.contextualization;
   }
 
   public void setComputation(List<Contextualizable> computation) {
     this.computation = computation;
   }
 
-  public void setDescriptionType(DescriptionType descriptionType) {
-    this.descriptionType = descriptionType;
+  public void setDescriptionType(Contextualization contextualization) {
+    this.contextualization = contextualization;
   }
 
   @Override

@@ -73,7 +73,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
     private List<Annotation> annotations = new ArrayList<>();
     private ResolutionDirective resolutionDirective;
 
-    private DescriptionType descriptionType;
+    private Contextualization contextualization;
     private Unit unit;
     private Currency currency;
     private NumericRange range;
@@ -134,9 +134,9 @@ public class ObservableBuildStrategy implements Observable.Builder {
       this.valueOperation = unit;
     }
 
-    public Operation(OperationType operationType, DescriptionType descriptionType) {
+    public Operation(OperationType operationType, Contextualization contextualization) {
       this.type = operationType;
-      this.descriptionType = descriptionType;
+      this.contextualization = contextualization;
     }
 
     public Operation(OperationType operationType, boolean generic) {
@@ -163,12 +163,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
       this.annotations.add(annotation);
     }
 
-    public DescriptionType getDescriptionType() {
-      return descriptionType;
+    public Contextualization getDescriptionType() {
+      return contextualization;
     }
 
-    public void setDescriptionType(DescriptionType descriptionType) {
-      this.descriptionType = descriptionType;
+    public void setDescriptionType(Contextualization contextualization) {
+      this.contextualization = contextualization;
     }
 
     public OperationType getType() {

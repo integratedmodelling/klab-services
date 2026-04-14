@@ -342,7 +342,7 @@ public abstract class ObservableKbox extends H2Kbox {
     for (Concept candidate :
         getCandidates(
             main,
-            observable.getDescriptionType().isInstantiation(),
+            observable.getContextualization().isInstantiation(),
             observable.getSpecializedComponents())) {
 
       /*

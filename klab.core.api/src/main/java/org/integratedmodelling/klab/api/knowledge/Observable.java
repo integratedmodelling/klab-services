@@ -399,15 +399,15 @@ public interface Observable extends Semantics, Resolvable {
    *
    * @return the necessary observation type
    */
-  DescriptionType getDescriptionType();
+  Contextualization getContextualization();
 
   /**
    * Check if the description type equals or is subsumed by the passed one.
    *
-   * @param descriptionType
+   * @param contextualization
    * @return true if subsumed
    */
-  boolean is(DescriptionType descriptionType);
+  boolean is(Contextualization contextualization);
 
   /**
    * Return the type of the artifact correspondent to an observation of this observable.

@@ -70,6 +70,7 @@ public abstract class AbstractResourceContextualizer {
 
       // FIXME this is fundamental logic and must be brought upstream (something like handleAdapterResponse() in
       //  the DT). In the handler, each collective description must trigger the correspondent individual resolution.
+      //  Should be accomplished through an "execution scope" provided by the runtime at dataflow run.
       if (observable.is(SemanticType.COUNTABLE)) {
         // scope contextualized to the collective observation
         var observationScope = scope.within(observation);

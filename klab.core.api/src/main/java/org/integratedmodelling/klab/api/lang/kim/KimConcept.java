@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
@@ -168,7 +168,7 @@ public interface KimConcept extends KlabStatement {
    *
    * @return
    */
-  DescriptionType getDescriptionType();
+  Contextualization getDescriptionType();
 
   /**
    * Get the 'co-occurrent' (during) event type if any.

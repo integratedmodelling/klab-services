@@ -1142,6 +1142,15 @@ public class RuntimeService extends BaseService
     return ret;
   }
 
+  @Override
+  public void submitContextualizationResult(ContextualizationScope scope, ContextScope contextScope,
+                                            Activity.Outcome outcome) {
+
+    // HERE if successful, submit any new or modified observation for resolution of the appropriate
+    // singular observable. Remove the ad-hoc logic in the resource contextualizer.
+    System.out.println("submitContextualizationResult");
+  }
+
   /**
    * Create a single resolvable URN from the set of URNs received, which can be later sent to the
    * resource resolver unless the URN is specially handled. If the pre-inspection produces a
@@ -1317,7 +1326,7 @@ public class RuntimeService extends BaseService
 
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
-        switch (observation.getObservable().getDescriptionType()) {
+        switch (observation.getObservable().getContextualization()) {
           case QUANTIFICATION, MEASURE, VALUATION -> Storage.Type.DOUBLE;
           case CATEGORIZATION -> Storage.Type.KEYED;
           case VERIFICATION -> Storage.Type.BOOLEAN;

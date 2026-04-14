@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -109,6 +110,29 @@ public interface RuntimeService extends KlabService {
   }
 
   /**
+   * A contextualization scope is built per each observation being contextualized. It is passed to
+   * dataflow executors to collect an new observations built, run statistics and provenance data,
+   * then passed to the runtime service for processing upon success or failure..
+   */
+  interface ContextualizationScope {
+
+    /**
+     * The observation that was contextualized.
+     *
+     * @return
+     */
+    Observation getTarget();
+
+    /**
+     * Any observations that were created or modified during the contextualization, based on the
+     * contextualization type of the resolved observation.
+     *
+     * @return
+     */
+    List<Observation> getOutcomes();
+  }
+
+  /**
    * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in
    * the given scope and start its resolution. The return value is a future for the resolved
    * observation, whose contextualization may cause other observations to be made. If the resolution
@@ -179,6 +203,19 @@ public interface RuntimeService extends KlabService {
    */
   ResourceSet resolveContextualizables(
       List<Contextualizable> contextualizables, ContextScope scope);
+
+  /**
+   * Called after each observation has been contextualized with a summary of the results. If the
+   * contextualization is of a collective observable, this method is in charge of submitting the
+   * corresponding individual observations for resolution.
+   *
+   * @param scope
+   * @param contextScope
+   * @param target the observation that was contextualized
+   * @param outcome
+   */
+  void submitContextualizationResult(
+      ContextualizationScope scope, ContextScope contextScope, Activity.Outcome outcome);
 
   /**
    * All services publish capabilities and have a call to obtain them. Must list all the available
