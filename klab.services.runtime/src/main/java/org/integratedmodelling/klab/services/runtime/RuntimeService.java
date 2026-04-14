@@ -1143,12 +1143,31 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public void submitContextualizationResult(ContextualizationScope scope, ContextScope contextScope,
-                                            Activity.Outcome outcome) {
+  public void submitContextualizationResult(
+      ContextualizationScope scope, ContextScope contextScope, Activity.Outcome outcome) {
 
     // HERE if successful, submit any new or modified observation for resolution of the appropriate
     // singular observable. Remove the ad-hoc logic in the resource contextualizer.
     System.out.println("submitContextualizationResult");
+
+    if (outcome == Activity.Outcome.SUCCESS) {
+      if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.CLASSIFICATION) {
+      } else if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.INSTANTIATION) {
+      } else if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.CONNECTION) {
+      } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
+          && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
+        // check if we need to resolve change
+      }
+
+    } else {
+      // the KG is self-cleaning
+      // the storage may not be transactional so any observation storage must be cleaned up
+      // TODO the filesystem location of the storage could be linked to a unique ID for the ctxscope
+      // report for debugging/posterity if so configured
+    }
   }
 
   /**

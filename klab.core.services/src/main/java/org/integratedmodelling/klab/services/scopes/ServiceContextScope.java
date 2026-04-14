@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -86,11 +87,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public class ExecutionScope implements RuntimeService.ContextualizationScope {
 
-    public ExecutionScope(Activity currentActivity, Object[] runtimeAssets) {}
+    private final Observation target;
+    private final Scheduler.Event event;
+
+    public ExecutionScope(
+        Activity currentActivity, Observation observation, Scheduler.Event event) {
+      this.target = observation;
+      this.event = event;
+    }
 
     @Override
     public Observation getTarget() {
-      return null;
+      return target;
+    }
+
+    @Override
+    public Scheduler.Event getEvent() {
+      return event;
     }
 
     @Override
@@ -505,8 +518,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
-    // TODO configure as needed
-    ret.executionScope = new ExecutionScope(currentActivity, runtimeAssets);
+    // FIXME this must go into the executor, also the finalization. The executor has all the data needed, Do not
+    //  stick the execution scope in the ContextScope.
+    ret.executionScope = new ExecutionScope(currentActivity, null, null);
 
     return ret;
   }

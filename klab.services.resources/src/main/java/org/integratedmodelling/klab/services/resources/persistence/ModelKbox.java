@@ -417,7 +417,7 @@ public class ModelKbox extends ObservableKbox {
     }
 
     if (observable.is(SemanticType.COUNTABLE)) {
-      if (observable.getContextualization().isInstantiation()) {
+      if (observable.getContextualization().isCollective()) {
         ret = "(" + ret + ") AND model.isreification";
       } else {
         ret = "(" + ret + ") AND (NOT model.isreification)";

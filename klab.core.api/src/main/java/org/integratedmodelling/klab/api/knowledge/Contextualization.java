@@ -98,7 +98,7 @@ public enum Contextualization {
    *
    * @return
    */
-  public boolean isInstantiation() {
+  public boolean isCollective() {
     return instantiation;
   }
 
