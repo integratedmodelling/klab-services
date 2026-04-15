@@ -220,7 +220,6 @@ public interface RuntimeService extends KlabService {
    *
    * @param scope
    * @param contextScope
-   * @param target the observation that was contextualized
    * @param outcome
    */
   void submitContextualizationResult(

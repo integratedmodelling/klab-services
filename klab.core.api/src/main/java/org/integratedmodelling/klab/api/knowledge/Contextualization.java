@@ -103,8 +103,8 @@ public enum Contextualization {
   }
 
   /**
-   * The type of declaration corresponding to this description. The k.DL actuator
-   * creates the observation corresponding to the description.
+   * The type of declaration corresponding to this description. The k.DL actuator creates the
+   * observation corresponding to the description.
    *
    * @return
    */
@@ -166,7 +166,6 @@ public enum Contextualization {
    *     observations or their traits); otherwise it refers to "explanation" of an existing
    *     observation or characteristic. It's only relevant for countables and traits.
    * @return the description type
-   * @deprecated use the other
    */
   private static Contextualization forSemantics(
       Collection<SemanticType> type, boolean distributed) {
@@ -192,7 +191,7 @@ public enum Contextualization {
       return VOID;
     }
     throw new KlabUnimplementedException(
-        "DescriptionType::forSemantics - unexpected semantic typeset " + type);
+        "Contextualization::forSemantics - unexpected semantic typeset " + type);
     //        return COMPILATION;
   }
 }

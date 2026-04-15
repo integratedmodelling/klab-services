@@ -1155,6 +1155,7 @@ public class RuntimeService extends BaseService
       if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.CLASSIFICATION) {
         // the execution scope must contain all attributions
+        throw new KlabUnimplementedException("Contextualization not implemented");
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.INSTANTIATION) {
 
@@ -1166,10 +1167,11 @@ public class RuntimeService extends BaseService
                     contextScope
                         .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
                         .submit(child, contextScope)
-                        .thenApply(obs -> {
-                          // TODO any sub-states for the new object!
-                          return obs;
-                        })
+                        .thenApply(
+                            obs -> {
+                              // TODO any sub-states for the new object!
+                              return obs;
+                            })
                         .exceptionally(
                             (obs -> {
                               scope
@@ -1188,9 +1190,11 @@ public class RuntimeService extends BaseService
         // Take them
         //  from the execution scope, then resolve them here in the between() scope of the
         // collective.
+        throw new KlabUnimplementedException("Contextualization not implemented");
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
         // check if we need to resolve change
+        throw new KlabUnimplementedException("Contextualization not implemented");
       } // TODO check if value ops should be handled here. Same for transformation instead of
       // surgically
       //  altering the dataflow?

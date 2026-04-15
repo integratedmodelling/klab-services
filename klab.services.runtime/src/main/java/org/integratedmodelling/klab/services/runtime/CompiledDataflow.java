@@ -771,11 +771,11 @@ public class CompiledDataflow {
       }
 
       if (ret) {
+        executionScope.commit();
         executionScope
             .getService(RuntimeService.class)
             .submitContextualizationResult(
                 contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
-        executionScope.commit();
       } else {
         executionScope.fail(failure);
         executionScope
