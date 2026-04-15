@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.data;
 
-import org.integratedmodelling.common.logging.Logging;
+import java.util.*;
+import java.util.concurrent.Callable;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -15,17 +13,10 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public abstract class AbstractResourceContextualizer {
 
@@ -46,7 +37,11 @@ public abstract class AbstractResourceContextualizer {
     this.observable = observation.getObservable();
   }
 
-  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
+  public boolean contextualize(
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     if (observation.getContextualizationData()
         instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
@@ -68,57 +63,19 @@ public abstract class AbstractResourceContextualizer {
         return false;
       }
 
-      // FIXME this is fundamental logic and must be brought upstream (something like handleAdapterResponse() in
-      //  the DT). In the handler, each collective description must trigger the correspondent individual resolution.
-      //  Should be accomplished through an "execution scope" provided by the runtime at dataflow run.
+      // FIXME this is fundamental logic and must be brought upstream (something like
+      // handleAdapterResponse() in
+      //  the DT). In the handler, each collective description must trigger the correspondent
+      // individual resolution.
+      //  Should be accomplished through an "execution scope" provided by the runtime at dataflow
+      // run.
       if (observable.is(SemanticType.COUNTABLE)) {
         // scope contextualized to the collective observation
         var observationScope = scope.within(observation);
-        List<Callable<Observation>> tasks = new ArrayList<>();
         if (observation instanceof ObservationImpl observationImpl) {
           observationImpl.setChildrenCount(builder.getObjects().size());
         }
-        for (var instance : builder.getObjects()) {
-          var child = instance.getObservation();
-          if (child != null) {
-            // ingest the observation according to the native shards
-            // TODO this must be brought upstream
-            tasks.add(
-                Executors.callable(
-                    () -> {
-                      var result =
-                          observationScope
-                              .getService(RuntimeService.class)
-                              .submit(child, observationScope)
-                              .thenAccept(
-                                  (obs -> {
-                                    // TODO if states are there, should use a `klab.inline` adapter
-                                    //  that just matches a buffer to the geometry, and
-                                    //  the inline method for the observation resolution.
-                                    /*                                                                    // resolve any child observations, states or instances
-                                        if (instance.hasStates() || instance.size() > 0) {
-                                            ingest(
-                                                    instance,
-                                                    child,
-                                                    event,
-                                                    // FIXME not sure - child observations should have their own
-                                                    // strategy, so null?
-                                                    null,
-                                                    observationScope);
-                                        }
-                                    */ }));
-                    },
-                    child));
-          }
-        }
-        if (!tasks.isEmpty()) {
-          try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
-          } catch (InterruptedException e) {
-            scope.error(e);
-            return false;
-          }
-        }
+        contextualizationScope.getOutcomes().addAll(builder.getObjects().stream().map(Data.Builder::getObservation).toList());
       }
 
       return true;

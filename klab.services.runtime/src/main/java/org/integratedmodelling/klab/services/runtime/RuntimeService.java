@@ -1146,9 +1146,10 @@ public class RuntimeService extends BaseService
   public void submitContextualizationResult(
       ContextualizationScope scope, ContextScope contextScope, Activity.Outcome outcome) {
 
-    // HERE if successful, submit any new or modified observation for resolution of the appropriate
-    // singular observable. Remove the ad-hoc logic in the resource contextualizer.
-    System.out.println("submitContextualizationResult");
+    /*
+    Any submission tasks to be spawned for sub-contextualizations
+     */
+    List<Callable<Observation>> tasks = new ArrayList<>();
 
     if (outcome == Activity.Outcome.SUCCESS) {
       if (scope.getTarget().getObservable().getContextualization()
@@ -1156,21 +1157,60 @@ public class RuntimeService extends BaseService
         // the execution scope must contain all attributions
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.INSTANTIATION) {
-        // TODO the observations have been created but are not yet in the KG or in the transaction. Take them
-        //  from the execution scope, then resolve them here in the within() scope of the collective.
+
+        for (var child : scope.getOutcomes()) {
+          // enqueue tasks to resolve any new observation
+          tasks.add(
+              Executors.callable(
+                  () -> {
+                    contextScope
+                        .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+                        .submit(child, contextScope)
+                        .thenApply(obs -> {
+                          // TODO any sub-states for the new object!
+                          return obs;
+                        })
+                        .exceptionally(
+                            (obs -> {
+                              scope
+                                  .getTarget()
+                                  .getNotifications()
+                                  .add(Notification.error(obs.getMessage(), obs));
+                              return child;
+                            }));
+                  },
+                  child));
+        }
+
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.CONNECTION) {
-        // TODO the observations have been created but are not yet in the KG or in the transaction. Take them
-        //  from the execution scope, then resolve them here in the between() scope of the collective.
+        // TODO the observations have been created but are not yet in the KG or in the transaction.
+        // Take them
+        //  from the execution scope, then resolve them here in the between() scope of the
+        // collective.
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
         // check if we need to resolve change
-      } // TODO check if value ops should be handled here. Same for transformation instead of surgically
-        //  altering the dataflow?
+      } // TODO check if value ops should be handled here. Same for transformation instead of
+      // surgically
+      //  altering the dataflow?
 
       /*
       TODO update statistics. We can use the transaction to check if this was the top-level contextualization.
        */
+
+      if (!tasks.isEmpty()) {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+          if (executor.invokeAll(tasks).stream().anyMatch(Future::isCancelled)) {
+            scope
+                .getTarget()
+                .getNotifications()
+                .add(Notification.error("One or more contextualizations were cancelled"));
+          }
+        } catch (InterruptedException e) {
+          scope.getTarget().getNotifications().add(Notification.error(e.getMessage(), e));
+        }
+      }
 
     } else {
       // the KG is self-cleaning

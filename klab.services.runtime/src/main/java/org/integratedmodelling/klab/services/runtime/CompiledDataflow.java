@@ -54,40 +54,6 @@ public class CompiledDataflow {
   private Actuator rootActuator;
   private final Map<String, CallDescriptors> callInfo = new HashMap<>();
 
-  /**
-   * One of these is created before an observation is contextualized and is available to all
-   * executors to report their results. Upon completion of the contextualization, the result is
-   * passed to the runtime to trigger any further resolutions (for collective observables) or to
-   * clean up after failure.
-   */
-  public class ContextualizationScopeImpl
-      implements org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope {
-
-    private final Observation target;
-    private final Scheduler.Event event;
-
-    public ContextualizationScopeImpl(
-        Activity currentActivity, Observation observation, Scheduler.Event event) {
-      this.target = observation;
-      this.event = event;
-    }
-
-    @Override
-    public Observation getTarget() {
-      return target;
-    }
-
-    @Override
-    public Scheduler.Event getEvent() {
-      return event;
-    }
-
-    @Override
-    public List<Observation> getOutcomes() {
-      return List.of();
-    }
-  }
-
   public void createStorage() {
 
     for (var operation : operations.values()) {

@@ -127,7 +127,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         tasks.add(
             () -> {
               try {
-                var ok = run(event, scannerMap, contextScope);
+                var ok = run(event, scannerMap, contextScope, contextualizationScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
                 } else {
@@ -149,7 +149,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       tasks.add(
           () -> {
             try {
-              return run(event, null, contextScope);
+              return run(event, null, contextScope, contextualizationScope);
             } catch (Throwable t) {
               threadNotifications.add(
                   Notification.error("Error running dataflow task: " + t.getMessage(), t));
@@ -200,7 +200,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
    * @return
    */
   protected abstract boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope);
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope);
 
   @Override
   public Throwable getCause() {
