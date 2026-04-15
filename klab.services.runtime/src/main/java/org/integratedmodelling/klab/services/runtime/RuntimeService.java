@@ -1153,14 +1153,20 @@ public class RuntimeService extends BaseService
     if (outcome == Activity.Outcome.SUCCESS) {
       if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.CLASSIFICATION) {
+        // the execution scope must contain all attributions
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.INSTANTIATION) {
+        // TODO the observations have been created but are not yet in the KG or in the transaction. Take them
+        //  from the execution scope, then resolve them here in the within() scope of the collective.
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.CONNECTION) {
+        // TODO the observations have been created but are not yet in the KG or in the transaction. Take them
+        //  from the execution scope, then resolve them here in the between() scope of the collective.
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
         // check if we need to resolve change
-      }
+      } // TODO check if value ops should be handled here. Same for transformation instead of surgically
+        //  altering the dataflow?
 
       /*
       TODO update statistics. We can use the transaction to check if this was the top-level contextualization.
