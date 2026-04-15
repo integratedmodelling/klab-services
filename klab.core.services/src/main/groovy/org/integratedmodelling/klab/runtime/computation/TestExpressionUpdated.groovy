@@ -1,36 +1,28 @@
-package org.integratedmodelling.klab.runtime.computation
-
 import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.scope.ContextScope
-import org.integratedmodelling.klab.api.services.runtime.Notification
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope
+import org.integratedmodelling.klab.runtime.computation.ExpressionBase
 
-import java.util.function.LongConsumer
+/**
+ * Scalar buffer-based processing with "local" parallelism. Default for the local engines and OK for distributed
+ * computation without involving clustered engines with Spark or other infrastructure.
+ */
+class ScalarComputation_826mikwj8 extends ExpressionBase {
 
-// translates
-//  set to [elevation - slope/slope.max]
-class TestExpressionUpdated extends ExpressionBase {
 
-    Observation __elevation;
-    Observation __slope;
-    Observation __self;
+    Observation __elevation
 
-    /**
-     * Knows that elevation, slope are qualities and exist. This is for a naïve parallelization honoring
-     * any @split and/or @fillcurve annotation and is meant for scalars only. Split strategy MUST be
-     * coordinated across all observations.
-     *
-     * @param self
-     * @param elevation
-     * @param scope
-     */
-    TestExpressionUpdated(ServiceContextScope scope, Observation self, Observation elevation, Observation slope) {
+    Observation __slope
+
+
+    ScalarComputation_826mikwj8(ContextScope scope, Observation self, Observation elevation, Observation slope) {
         super(scope, self)
-        this.__self = self
+
         this.__elevation = elevation
+
         this.__slope = slope
+
     }
 
     @Override
@@ -38,30 +30,27 @@ class TestExpressionUpdated extends ExpressionBase {
 
         try {
 
-            // make any wrappers (xxxObs), including those for extents (as functions taking the buffer offset if
-            // needed
             def elevationObs = new ObservationWrapper(__elevation, event)
-
-            // Add any "static" objects
+            def selfBuffer = (Storage.DoubleScanner) scanners.get("self")
             def elevationBuffer = (Storage.DoubleScanner) scanners.get("elevation")
             def slopeBuffer = (Storage.DoubleScanner) scanners.get("slope")
-            def selfBuffer = (Storage.DoubleScanner) scanners.get("self")
 
-            selfBuffer.forEachRemaining((LongConsumer) { n ->
-                // extract any point values
+            var n = selfBuffer.size()
+            for (long i = 0; i < n; i++) {
                 def elevation = elevationBuffer.get()
                 def slope = slopeBuffer.get()
-                selfBuffer.add((
-                        /* START COMPILED CODE */
-                        (elevation - elevationObs.max) / slope)
-                        /* END COMPILED CODE */)
-            })
-
+                selfBuffer.add(
+                        /* START COMPILED SCALAR CODE */
+                        (elevationObs.max - elevation) / slope
+                /* END COMPILED SCALAR CODE */
+                )
+            }
         } catch (Throwable t) {
-            __self.getNotifications().add(Notification.error(t.getMessage(), t));
+            __self.getNotifications().add(Notification.error(t.getMessage(), t))
             return false;
         }
 
         return true;
     }
 }
+

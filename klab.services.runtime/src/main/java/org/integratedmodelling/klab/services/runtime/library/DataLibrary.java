@@ -31,16 +31,15 @@ public class DataLibrary {
             optional = true)
       })
   public static void normalize(
-      @KlabFunction.Input Storage.DoubleScanner filler,
+      @KlabFunction.Input Storage.DoubleScanner input,
       @KlabFunction.Output Storage.DoubleScanner output,
       ServiceCall call) {
 
-    var histogram = filler.shard().getHistogram();
-    filler.forEachRemaining(
-        (LongConsumer)
-            n ->
-                output.add(
-                    (filler.get() - histogram.getMin())
-                        / (histogram.getMax() - histogram.getMin())));
+    var histogram = input.shard().getHistogram();
+    var scale = histogram.getMax() - histogram.getMin();
+    var n = input.size();
+    for (int i = 0; i < n; i++) {
+      output.add((input.get() - histogram.getMin()) / scale);
+    }
   }
 }

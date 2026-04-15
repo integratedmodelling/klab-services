@@ -65,7 +65,8 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 
    <%-- main iteration. All scanners must be in sync --%>
 
-    selfBuffer. forEachRemaining ( ( LongConsumer ) { n ->
+    var n = selfBuffer.size()
+    for (long i = 0; i < n; i++) {
     <%-- here is the actual preprocessed expression content --%>
     <%--extract all needed scalar dependencies as non-boxing scalars from shards --%>
     <%--e.g. double elevation = elevationScanner.get() --%>
@@ -74,15 +75,16 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
         ${localVar}
     @endfor
 
-   selfBuffer .add (
+   selfBuffer.add (
     /* START COMPILED SCALAR CODE */
     @for(var codeBlock : codeInfo.getMainCodeBlocks())
        ${codeBlock}
     @endfor
     /* END COMPILED SCALAR CODE */
     )
-    }) } catch ( Throwable t ) {
-    __self.getNotifications ( ).add ( Notification.error ( t .getMessage ( ), t ) )
+      }
+    } catch ( Throwable t ) {
+      __self.getNotifications ( ).add ( Notification.error ( t .getMessage ( ), t ) )
     return false;
     }
 
