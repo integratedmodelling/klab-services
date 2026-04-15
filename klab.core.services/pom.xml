@@ -143,18 +143,22 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			<dependency>
-				<groupId>org.geotools</groupId>
-				<artifactId>gt-platform-dependencies</artifactId>
-				<version>${geotools.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
+            <dependency>
+                <groupId>org.geotools</groupId>
+                <artifactId>gt-platform-dependencies</artifactId>
+                <version>${geotools.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.locationtech.jts</groupId>
+                <artifactId>jts-core</artifactId>
+                <version>1.20.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite</artifactId>
@@ -170,6 +174,12 @@
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-spatial</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.locationtech.jts</groupId>
+                    <artifactId>jts-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -230,6 +240,12 @@
             <groupId>org.orbisgis</groupId>
             <artifactId>h2gis</artifactId>
             <version>${h2gis.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.locationtech.jts</groupId>
+                    <artifactId>jts-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -450,6 +466,12 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.locationtech.jts</groupId>
+                    <artifactId>jts-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -458,6 +480,12 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geotiff</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.locationtech.jts</groupId>
+                    <artifactId>jts-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
