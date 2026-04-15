@@ -1729,7 +1729,7 @@ public class ComponentRegistry {
                 urn,
                 urnParameters,
                 null,
-                builder == null ? null : builder.scanner(Storage.Scanner.class),
+                /*builder == null ? */null /*: builder.scanner(Storage.Scanner.class)*/,
                 null,
                 null,
                 null,

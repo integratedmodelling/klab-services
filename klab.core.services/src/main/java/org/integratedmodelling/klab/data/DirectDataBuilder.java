@@ -16,7 +16,7 @@ import java.util.*;
 /** The builder to use when the digital twin is available locally. */
 public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
 
-  private final Map<String, Storage.Scanner> scanners = new HashMap<>();
+//  private final Map<String, Storage.Scanner> scanners = new HashMap<>();
   private final ContextScope scope;
   private final String name;
   private final Data inputData;
@@ -44,7 +44,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
     this.inputData = other.inputData;
     this.observation = other.observation;
     this.identity = other.identity;
-    this.scanners.putAll(other.scanners);
+//    this.scanners.putAll(other.scanners);
   }
 
   @Override
@@ -64,10 +64,10 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
     return this;
   }
 
-  @Override
-  public Data.Builder adapter(String adapterId) {
-    return this;
-  }
+//  @Override
+//  public Data.Builder adapter(String adapterId) {
+//    return this;
+//  }
 
   @Override
   public Data.Builder metadata(String key, Object value) {
@@ -93,15 +93,15 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
     return builder;
   }
 
-  @Override
-  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
-    return adapt(scanners.get(Dataflow.SELF_ID), scannerClass);
-  }
-
-  @Override
-  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
-    return adapt(scanners.get(identifier), scannerClass);
-  }
+//  @Override
+//  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
+//    return adapt(scanners.get(Dataflow.SELF_ID), scannerClass);
+//  }
+//
+//  @Override
+//  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
+//    return adapt(scanners.get(identifier), scannerClass);
+//  }
 
   @Override
   public Observation getObservation() {
@@ -113,7 +113,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
     return this.notifications;
   }
 
-  public void setScanner(String self, Storage.Scanner scanner) {
-    scanners.put(self, scanner);
-  }
+//  public void setScanner(String self, Storage.Scanner scanner) {
+//    scanners.put(self, scanner);
+//  }
 }

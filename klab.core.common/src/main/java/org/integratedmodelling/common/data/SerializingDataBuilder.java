@@ -26,8 +26,8 @@ public class SerializingDataBuilder implements Data.Builder {
   private final Geometry geometry;
   private Data.FillCurve fillCurve;
   private Map<Object, Integer> objectKey;
-  private int objectCounter = 1;
-  private String adapter;
+//  private int objectCounter = 1;
+//  private String adapter;
   private Data input;
   private List<Notification> notifications = new ArrayList<>();
   private Urn identity;
@@ -70,11 +70,11 @@ public class SerializingDataBuilder implements Data.Builder {
     return List.of();
   }
 
-  @Override
-  public Data.Builder adapter(String adapterId) {
-    this.adapter = adapterId;
-    return this;
-  }
+//  @Override
+//  public Data.Builder adapter(String adapterId) {
+//    this.adapter = adapterId;
+//    return this;
+//  }
 
   public Data.Builder identity(String namespace, String id) {
     this.identity = Urn.of(namespace + ":" + id);
@@ -95,18 +95,6 @@ public class SerializingDataBuilder implements Data.Builder {
   @Override
   public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
     return new SerializingDataBuilder(name, input, geometry, identity, this.builder);
-  }
-
-  @Override
-  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
-    // TODO create a mock-scanner with a mock-shard wrapping the proper buffer
-    return null;
-  }
-
-  @Override
-  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
-    // TODO create a mock-scanner with a mock-shard wrapping the proper buffer
-    return null;
   }
 
   @Override
