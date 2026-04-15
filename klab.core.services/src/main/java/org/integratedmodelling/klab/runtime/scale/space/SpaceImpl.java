@@ -130,6 +130,9 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
       } else if (shape != null
           && dimension.getShape().size() > 1
           && dimension.getShape().stream().reduce(1L, (a, b) -> a * b) > 1) {
+        if (envelope == null) {
+          envelope = shape.getEnvelope();
+        }
         // predefined, assume it's been created correctly from a previous envelope. This is the way
         // grids are communicated through the runtime.
         grid =

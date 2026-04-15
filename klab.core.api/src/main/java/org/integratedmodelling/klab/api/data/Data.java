@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
@@ -660,12 +659,19 @@ public interface Data {
   }
 
   /**
-   * A data builder is injected as a parameter into a contextualizer or adapter encoder. It enables
-   * building observations using methods that reflect {@link Contextualization}. A builder is not
-   * normally used to build quality observations or processes, which are created before the
-   * contextualizers are called: for those, the normal procedure is to inject a {@link
-   * org.integratedmodelling.klab.api.data.Storage.Scanner} with specified sharding strategy and
-   * filling curve.
+   * A data builder is injected as a parameter into a contextualizer or adapter encoder when the
+   * method is not aware of semantics. It enables building observations by name and artifact type.
+   * When the observables are known (e.g. by injection), it is enough to inject the {@link
+   * org.integratedmodelling.klab.api.scope.ContextScope} and use the observation builder methods on
+   * it.
+   *
+   * <p>A builder is not normally used to build quality observations or processes, which are created
+   * before the contextualizers are called: for those, the normal procedure is to inject the desired
+   * {@link org.integratedmodelling.klab.api.data.Storage.Scanner} subclass, tagged as input or
+   * output.
+   *
+   * <p>TODO the builder is on its way to deprecation, as the Observables can be also injected so
+   *  that building can be done using the scope without intermediary objects.
    */
   interface Builder {
 
@@ -684,18 +690,6 @@ public interface Data {
      * @deprecated put behind the API
      */
     List<Builder> getObjects();
-
-    //    /**
-    //     * Pass the ID of an adapter that will interpret the contents. If not passed, raw binary
-    // content
-    //     * is assumed. If passed, the data object built may contain only references to the
-    // configuration
-    //     * of the identified adapter.
-    //     *
-    //     * @param adapterId
-    //     * @return
-    //     */
-    //    Builder adapter(String adapterId);
 
     /**
      * Add the passed non-semantic metadata. Can be used for properties when no data content is
@@ -742,43 +736,6 @@ public interface Data {
      * @return a new builder for the object
      */
     Builder object(String name, Observable observable, Geometry geometry, Urn identity);
-
-    //    /**
-    //     * Create a scanner of the specified type using the filling curve and geometry declared
-    // for the
-    //     * adapter or method. The scanner will be matched to the geometry being contextualized and
-    // will
-    //     * refer to the main output.
-    //     *
-    //     * @param scannerClass the class of scanner to create
-    //     * @param <T> the type of scanner desired
-    //     * @return a single scanner of the specified type using the specified space filling curve
-    //     * @throws KlabIllegalStateException if the artifact type is incompatible with the
-    // requested
-    //     *     scanner class
-    //     */
-    //    <T extends Storage.Scanner> T scanner(Class<T> scannerClass);
-    //
-    //    /**
-    //     * Return a scanner of the specified type for an additional output or for an input, using
-    // the
-    //     * filling curve and geometry declared for the adapter or method. The identifier will be
-    // matched
-    //     * to the inputs and additional outputs declared for the contextualizer being used, and an
-    //     * exception will be thrown if the correspondent observation is not understood. If the
-    // scanner
-    //     * refers to an input observation, any set operations called on it will throw an
-    // exception.
-    //     *
-    //     * <p>Scanners can be retrieved by an instance returned by state() if anything besides the
-    //     * values must be set in the observation.
-    //     *
-    //     * @param identifier
-    //     * @param scannerClass
-    //     * @param <T>
-    //     * @return
-    //     */
-    //    <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass);
 
     /**
      * Retrieve the observation being contextualized (not resolved at this point).
