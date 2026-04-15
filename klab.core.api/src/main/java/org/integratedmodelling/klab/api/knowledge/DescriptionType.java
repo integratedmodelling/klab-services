@@ -1,31 +1,39 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.util.Collection;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-
-import java.util.Collection;
 
 /**
  * A classification of the primary observation activity (odo:Description) that can produce an
  * observation of this observable. Encodes the same classification in ODO-IM. The descriptions
  * capture the higher-level "countable" taxonomy through boolean inspection methods.
  *
+ * <p>Collective observations (those with "instantiation == true") always trigger the corresponding
+ * singular observation. So INSTANTIATION triggers ACKNOWLEDGEMENT and CLASSIFICATION triggers
+ * CHARACTERIZATION. This behavior must be hard-coded in the implementation and not achieved through
+ * observation strategies..
+ *
  * @author ferdinando.villa
  */
 public enum DescriptionType {
+
+  /**
+   * The observation activity that produces nothing. Classifies the description type of any
+   * non-functional, abstract or inconsistent observable.
+   */
   VOID(false, "void", Artifact.Type.VOID, "nothing"),
   /**
-   * The observation activity that produces a countable object. Acknowledgement is a special case of
-   * instantiation, limited to a subject and performed on a fiat basis (in k.IM through an <code>
-   * observe</code> statement). The instantiation of relationships ({@link #CONNECTION}) is handled
-   * separately because of the non-independence from its targets.
+   * The observation activity that produces a countable substantial. Example: <code>
+   * each earth:Terrestrial earth:Region</code>. Triggers the corresponding ACKNOWLEDGEMENT.
    */
   INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiator"),
   /**
-   * The observation activity that produces a configuration (aka EMERGENCE) - the instantiation of a
-   * configuration.
+   * The observation activity that explains a detected configuration (aka EMERGENCE).
+   *
+   * <p>Example: <code>infrastructure:RoadNetwork</code>
    */
-  DETECTION(true, "configuration", Artifact.Type.CONFIGURATION, "detector"),
+  DETECTION(false, "configuration", Artifact.Type.CONFIGURATION, "detector"),
   /** The observation activity that produces a dynamic account of a process */
   SIMULATION(false, "process", Artifact.Type.PROCESS, "simulator"),
   /** The observation activity that produces a measurable quality with units */
@@ -46,7 +54,8 @@ public enum DescriptionType {
    * role to each of them (if it is a quality, it will produce a transforming state for successive
    * subsetting of another observation). Equivalent to INSTANTIATION of a concrete t/a given the
    * abstract form and an inherent observable. This is specified as <code>
-   * ABSTRACT_TRAIT of SUBSTAMTIAL</code>.
+   * ABSTRACT_TRAIT of each SUBSTANTIAL</code>. Triggers CHARACTERIZATION after each successful
+   * resolution.
    */
   CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classifier"),
   /**
@@ -62,17 +71,11 @@ public enum DescriptionType {
    */
   TRANSFORMATION(false, "resolve", Artifact.Type.NUMBER, "transformer"),
 
-  /**
-   * Acknowledgement is the "void" of observation activity: an object exists and we take notice of
-   * its existence. It does not <em>produce</em> an observation but simply explains it through a
-   * description. The resolution of an instantiated object is an acknowledgement and descriptions
-   * can be written of it (appearing as void actuators in the dataflow, internal to the
-   * instantiator's actuator). Acknowledgements can also be explicitly programmed in k.IM through
-   * the <code>observe</code> statement.
-   */
+  /** Acknowledgement is the resolution of a substantial. Triggered by INSTANTIATION. */
   ACKNOWLEDGEMENT(false, "void", Artifact.Type.VOID, "explainer"),
   /**
    * Instantiation of relationships, requiring the "connected" countables to be observed as well.
+   * Triggers ACKNOWLEDGEMENT for each observed relationship.
    */
   CONNECTION(true, "object", Artifact.Type.RELATIONSHIP, "connector");
 

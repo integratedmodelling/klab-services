@@ -154,16 +154,16 @@ public interface KimObservationStrategy extends KlabStatement {
      */
     List<ServiceCall> getFunctions();
 
-    /**
-     * Deferred strategies will be resolved again in the context returned by a previous successful
-     * resolution.
-     *
-     * <p>Multiple deferred strategies should be tried in order of presentation until full coverage
-     * is achieved.
-     *
-     * @return
-     */
-    List<KimObservationStrategy> getDeferredStrategies();
+//    /**
+//     * Deferred strategies will be resolved again in the context returned by a previous successful
+//     * resolution.
+//     *
+//     * <p>Multiple deferred strategies should be tried in order of presentation until full coverage
+//     * is achieved.
+//     *
+//     * @return
+//     */
+//    List<KimObservationStrategy> getDeferredStrategies();
 
     /**
      * If this is not null, the operation is an OBSERVE type specified through a <code>

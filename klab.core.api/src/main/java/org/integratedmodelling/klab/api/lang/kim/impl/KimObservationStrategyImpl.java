@@ -280,7 +280,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private String transformationTarget;
     private String localId;
     private List<ServiceCall> functions = new ArrayList<>();
-    private List<KimObservationStrategy> deferredStrategies = new ArrayList<>();
+//    private List<KimObservationStrategy> deferredStrategies = new ArrayList<>();
 
     @Override
     public Type getType() {
@@ -297,11 +297,11 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
       return this.functions;
     }
 
-    @Override
-    public List<KimObservationStrategy> getDeferredStrategies() {
-      return this.deferredStrategies;
-    }
-
+//    @Override
+//    public List<KimObservationStrategy> getDeferredStrategies() {
+//      return this.deferredStrategies;
+//    }
+//
     public void setType(Type type) {
       this.type = type;
     }
@@ -314,9 +314,9 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
       this.functions = functions;
     }
 
-    public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
-      this.deferredStrategies = deferredStrategies;
-    }
+//    public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
+//      this.deferredStrategies = deferredStrategies;
+//    }
 
     @Override
     public String getTransformationTarget() {

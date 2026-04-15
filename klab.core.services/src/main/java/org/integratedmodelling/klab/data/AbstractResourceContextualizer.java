@@ -68,7 +68,8 @@ public abstract class AbstractResourceContextualizer {
         return false;
       }
 
-      // ingest and resolve any new objects
+      // FIXME this is fundamental logic and must be brought upstream (something like handleAdapterResponse() in
+      //  the DT). In the handler, each collective description must trigger the correspondent individual resolution.
       if (observable.is(SemanticType.COUNTABLE)) {
         // scope contextualized to the collective observation
         var observationScope = scope.within(observation);
@@ -80,6 +81,7 @@ public abstract class AbstractResourceContextualizer {
           var child = instance.getObservation();
           if (child != null) {
             // ingest the observation according to the native shards
+            // TODO this must be brought upstream
             tasks.add(
                 Executors.callable(
                     () -> {
@@ -118,10 +120,6 @@ public abstract class AbstractResourceContextualizer {
         }
       }
 
-      //        // FIXME this must be outside, after 1+ contextualizations have been done per shard
-      //        return scope
-      //                .getDigitalTwin()
-      //                .ingest(data, observation, event, /* FIXME DIO CAN */ null, scope);
       return true;
 
     } catch (Exception e) {

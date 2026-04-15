@@ -244,8 +244,8 @@ public class ScopeManager {
           ret = ret.within(ctx);
         } else {
           Logging.INSTANCE.error(
-              "Null observations for relationship header"
-                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+              "Null observations for context header"
+                  + requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER));
         }
       }
 
@@ -263,7 +263,9 @@ public class ScopeManager {
         } else {
           Logging.INSTANCE.error(
               "Null observations for relationship header"
-                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER));
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
+                  + ", "
+                  + requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER));
         }
       }
     }

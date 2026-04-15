@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 
 /**
  * This annotation is used on a class or a method to declare a k.LAB service accessible through a
@@ -209,7 +210,22 @@ public @interface KlabFunction {
 
   Argument[] parameters() default {};
 
-  Artifact.Type type();
+  /**
+   * Provides the observation type for this function. Represents the type of description to be
+   * associated with the observation activity. One of type or observation should be specified;
+   * sometimes both can provide more detail. Parameter inference depends on what is declared here.
+   *
+   * @return the type of observation represented as a {@code DescriptionType}.
+   */
+  DescriptionType observation() default DescriptionType.VOID;
+
+  /**
+   * Type of artifact produced by this function. If not specified, #observation() should be.
+   * Specifying only this enables application to multiple observables.
+   *
+   * @return the type of artifact produced by this function.
+   */
+  Artifact.Type type() default Artifact.Type.VOID;
 
   String unit() default "";
 

@@ -336,11 +336,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ret;
   }
 
-  //  @Override
-  //  public List<ContextScope> getOpenContexts() {
-  //    return new ArrayList<>(contexts.values());
-  //  }
-
   @Override
   public ContextScope createDefaultContext() {
 
