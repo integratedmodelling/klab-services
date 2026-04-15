@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
@@ -48,7 +48,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private boolean pattern;
   private Set<String> patternVariables = new HashSet<>();
   private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
-  private DescriptionType descriptionType;
+  private Contextualization contextualization;
 
   public Set<SemanticType> getArgumentType() {
     return argumentType;
@@ -93,7 +93,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.pattern = other.pattern;
     this.patternVariables.addAll(other.patternVariables);
     this.valueOperators.addAll(other.valueOperators);
-    this.descriptionType = other.descriptionType;
+    this.contextualization = other.contextualization;
   }
 
   @Override
@@ -217,12 +217,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   }
 
   @Override
-  public DescriptionType getDescriptionType() {
-    return descriptionType;
+  public Contextualization getDescriptionType() {
+    return contextualization;
   }
 
-  public void setDescriptionType(DescriptionType descriptionType) {
-    this.descriptionType = descriptionType;
+  public void setDescriptionType(Contextualization contextualization) {
+    this.contextualization = contextualization;
   }
 
   public void setName(String name) {
@@ -670,7 +670,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     this.urn = ret.toString();
-    this.descriptionType = DescriptionType.forSemantics(this);
+    this.contextualization = Contextualization.forSemantics(this);
 
     return this.urn;
   }

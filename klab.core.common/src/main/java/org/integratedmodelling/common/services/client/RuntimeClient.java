@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -256,6 +257,13 @@ public class RuntimeClient extends BaseServiceClient
     return client
         .withScope(scope)
         .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
+  }
+
+  @Override
+  public void submitContextualizationResult(
+      ContextualizationScope scope, ContextScope contextScope, Activity.Outcome outcome) {
+    throw new KlabIllegalStateException(
+        "Submission of contextualization results should never be called on a client");
   }
 
   @Override

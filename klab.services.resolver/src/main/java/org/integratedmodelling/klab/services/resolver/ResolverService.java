@@ -468,7 +468,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     ret.append(
         ofs
-            + actuator.getObservation().getObservable().getDescriptionType().getKdlType()
+            + actuator.getObservation().getObservable().getContextualization().getLanguageForm()
             + " "
             + actuator.getObservation().getObservable().getReferenceName()
             + " (\n");

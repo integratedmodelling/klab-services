@@ -1,10 +1,8 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -13,9 +11,6 @@ import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdap
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.data.LocalResourceContextualizer;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-
-import java.util.Map;
 
 public class LocalAdapterExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -41,7 +36,10 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     var res = resource;
     if (adapter.hasContextualizer()) {
@@ -66,7 +64,10 @@ public class LocalAdapterExecutor extends AbstractExecutor
     try {
       // TODO this cannot be the simple executor, needs the scanner to be passed after
       return contextualizer.contextualize(
-          scanners == null ? null : scanners.get(Dataflow.SELF_ID), event, scope);
+          scanners == null ? null : scanners.get(Dataflow.SELF_ID),
+          event,
+          scope,
+          contextualizationScope);
     } catch (Throwable e) {
       observation.getNotifications().add(Notification.error(e));
       return false;

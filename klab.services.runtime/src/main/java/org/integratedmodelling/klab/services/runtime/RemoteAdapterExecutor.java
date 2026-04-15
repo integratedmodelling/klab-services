@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -15,9 +13,6 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.data.RemoteResourceContextualizer;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-
-import java.util.Map;
 
 public class RemoteAdapterExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -60,10 +55,13 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     if (resource == null) {
-      cause = new KlabResourceAccessException("Resource not found " + resource.getUrn());
+      cause = new KlabResourceAccessException("Resource not found in remote resource adapter");
       return false;
     }
     if (service == null || adapterInfo == null) {
@@ -97,7 +95,8 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       contextualizer =
           new RemoteResourceContextualizer(service.get(), res, observation, dependencies);
     }
-    return contextualizer.contextualize(scanners.get(Dataflow.SELF_ID), event, scope);
+    return contextualizer.contextualize(
+        scanners.get(Dataflow.SELF_ID), event, scope, contextualizationScope);
   }
 
   @Override

@@ -52,7 +52,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope, null);
 
     if (scanner != null) {
-      builder.setScanner(Dataflow.SELF_ID, scanner);
+//      builder.setScanner(Dataflow.SELF_ID, scanner);
       for (var entry : dependencies.keySet()) {
         Observation observation =
             dependencies.get(entry); // TODO get the obs with the keyed observable
@@ -60,7 +60,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
           var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
           var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
           var oscan = shards.get(scanner.shard().getShardIndex());
-          builder.setScanner(entry, oscan);
+//          builder.setScanner(entry, oscan);
         }
       }
     }

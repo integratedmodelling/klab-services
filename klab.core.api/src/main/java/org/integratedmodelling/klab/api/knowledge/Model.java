@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -123,11 +122,11 @@ public interface Model extends Knowledge, Resolvable {
 
   /**
    * The kind of description this model represents. Instantiators return {@link
-   * DescriptionType#INSTANTIATION}.
+   * Contextualization#INSTANTIATION}.
    *
    * @return the description type of this model
    */
-  DescriptionType getDescriptionType();
+  Contextualization getDescriptionType();
 
   /**
    * All the observables contextualized by the model, including the "root" one that defines the

@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.data;
 
-import org.integratedmodelling.common.knowledge.GeometryRepository;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -16,10 +16,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder {
 
   private final Data data;
@@ -27,7 +23,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
   private final ContextScope scope;
   private final String adapterId;
   private final Scheduler.Event event;
-  private final Storage.Scanner scanner;
+  //  private final Storage.Scanner scanner;
   private final List<Notification> notifications = new ArrayList<>();
   private final Urn identity;
 
@@ -43,7 +39,7 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     this.scope = scope;
     this.adapterId = adapterId;
     this.event = event;
-    this.scanner = scanner;
+    //    this.scanner = scanner;
     this.identity = data.identity();
   }
 
@@ -78,10 +74,10 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     return ret;
   }
 
-  @Override
-  public Data.Builder adapter(String adapterId) {
-    return this;
-  }
+  //  @Override
+  //  public Data.Builder adapter(String adapterId) {
+  //    return this;
+  //  }
 
   @Override
   public Data.Builder identity(String namespace, String id) {
@@ -105,17 +101,17 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     throw new KlabIllegalStateException("Operation not admitted on a wrapping data builder.");
   }
 
-  @Override
-  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
-    // NO DIOCAN
-    return adapt(scanner, scannerClass);
-  }
-
-  @Override
-  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
-    // NO HOSTIA
-    return null;
-  }
+  //  @Override
+  //  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
+  //    // NO DIOCAN
+  //    return adapt(scanner, scannerClass);
+  //  }
+  //
+  //  @Override
+  //  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
+  //    // NO HOSTIA
+  //    return null;
+  //  }
 
   @Override
   public Observation getObservation() {

@@ -132,6 +132,7 @@ public class GridImpl implements Grid {
     this.squareCells = Utils.Numbers.equal(this.xCellSize, this.yCellSize);
     this.size = this.xCells * this.yCells;
     this.projection = ProjectionImpl.promote(envelope.getProjection());
+    this.envelope = EnvelopeImpl.promote(envelope);
   }
 
   /** Constructor for a fully specified, anchored grid */
@@ -204,6 +205,7 @@ public class GridImpl implements Grid {
         this.yCells = (long) cellsY;
         this.xCellSize = squareRes;
         this.yCellSize = squareRes;
+
       } else {
 
         minX = clamp(envelope.getMinX(), -180, 180);

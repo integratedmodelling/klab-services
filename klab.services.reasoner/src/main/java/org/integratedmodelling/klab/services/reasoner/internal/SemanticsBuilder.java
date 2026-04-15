@@ -554,7 +554,7 @@ public class SemanticsBuilder implements Observable.Builder {
         addValueOperator(valueOperator, ret);
       }
 
-      ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
+      ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
 
       reasoner.owl().finalizeConcept(ret);
     }
@@ -572,7 +572,7 @@ public class SemanticsBuilder implements Observable.Builder {
     //  _, ' ' -> __, '()' -> ___ and any value op with a base64 hash of the value
 
     ret.setUrn(kimConcept.getUrn());
-    ret.setDescriptionType(DescriptionType.forSemantics(kimConcept));
+    ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
 
     return ret;
   }

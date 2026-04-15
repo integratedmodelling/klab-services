@@ -1,13 +1,14 @@
 package org.integratedmodelling.klab.api.scope;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -15,13 +16,6 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * The <code>ContextScope</code> is the handle to a {@link DigitalTwin}. Creating a ContextScope
@@ -207,47 +201,6 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   ContextScope connect(ContextScope remoteContext);
-
-  //  /**
-  //   * Submit an observation for inclusion into the knowledge graph at the point implied by the
-  //   * current scope, starting its resolution and/or validation and returning a future for the
-  //   * resolved observation or for an {@link Observation#isEmpty() empty} one in case of failure.
-  // This
-  //   * method is the key operation to operate on a digital twin in k.LAB.
-  //   *
-  //   * <p>The scope is notified of any events related to the resolution. Messages will be sent for
-  //   * each activity undertaken, including resolution and initialization of any secondary
-  //   * observations. Any connected scope will receive all messages related to the same digital
-  // twin.
-  //   *
-  //   * <p>If the observation contains {@link
-  //   * org.integratedmodelling.klab.api.knowledge.observation.Observation.ContextualizationData},
-  //   * these are used to resolve it from existing services or artifacts instead of using the
-  // {@link
-  //   * org.integratedmodelling.klab.api.services.Resolver} linked to the scope. The object must
-  //   * contain a valid adapter ID and all the necessary parameters for it to be used to
-  // contextualize
-  //   * the observation. If validation and ingestion at the appropriate position in the knowledge
-  // graph
-  //   * succeeds, the resolved observation, now part of the knowledge graph, is returned.
-  //   *
-  //   * <p>If resolution has been performed normally, the contextualization data in the resolved
-  //   * observation will be present. The resolved observation has a valid ID (strictly >0) and URN
-  //   * where the unresolved one always has UNASSIGNED_ID and UNASSIGNED_URN (null). Besides these
-  //   * signals, the result observation should always be checked for {@link Observation#isEmpty()}
-  //   * which means resolution has failed and the observation could not be accepted without
-  // resolution.
-  //   *
-  //   * @param observation an unresolved observation to be resolved by the runtime and added to the
-  //   *     knowledge graph.
-  //   * @return a {@link Future} producing the resolved observation when resolution is finished and
-  // the
-  //   *     observation is part of the knowledge graph. If resolution has failed, the observation
-  // in
-  //   *     the future will be {@link Observation#isEmpty() empty}.
-  //   * @deprecated use observation...submit() instead.
-  //   */
-  //  CompletableFuture<Observation> submit(Observation observation);
 
   /**
    * Define an observation for inclusion into the knowledge graph at the point implied by the

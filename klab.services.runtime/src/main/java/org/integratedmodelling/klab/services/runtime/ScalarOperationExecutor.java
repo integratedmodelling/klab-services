@@ -1,18 +1,12 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-
-import java.util.Map;
 
 public class ScalarOperationExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -31,7 +25,11 @@ public class ScalarOperationExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
+    // TODO check if we need the ctxScope
     return scalarMapper.execute(scanners, event, scope);
   }
 

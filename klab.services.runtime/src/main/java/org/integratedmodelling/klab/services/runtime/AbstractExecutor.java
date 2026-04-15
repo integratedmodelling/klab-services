@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -49,7 +50,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   @Override
-  public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
+  public boolean execute(
+      Scheduler.Event event,
+      ServiceContextScope contextScope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
@@ -123,7 +127,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         tasks.add(
             () -> {
               try {
-                var ok = run(event, scannerMap, contextScope);
+                var ok = run(event, scannerMap, contextScope, contextualizationScope);
                 if (ok) {
                   storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
                 } else {
@@ -145,7 +149,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       tasks.add(
           () -> {
             try {
-              return run(event, null, contextScope);
+              return run(event, null, contextScope, contextualizationScope);
             } catch (Throwable t) {
               threadNotifications.add(
                   Notification.error("Error running dataflow task: " + t.getMessage(), t));
@@ -196,7 +200,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
    * @return
    */
   protected abstract boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope);
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope);
 
   @Override
   public Throwable getCause() {

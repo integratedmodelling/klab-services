@@ -9,9 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
@@ -20,6 +18,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -487,6 +486,59 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  public long commit() {
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.SUCCESS);
+      activity.setName(activity.getType().name().substring(0, 3) + " OK");
+      if (getActivity().getType() == Activity.Type.RESOLUTION
+          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
+        // add the resolved graph as metadata to the activity instead
+        getActivity()
+            .getMetadata()
+            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
+      }
+    }
+
+    if (this.currentTransaction == null) {
+      return -1;
+    }
+
+    var ret = this.currentTransaction.commit();
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+    return ret;
+  }
+
+  public void fail(Throwable t) {
+
+    this.currentTransaction.fail(t);
+
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+  }
+
+  public void fail(Object... details) {
+    Throwable throwable = null;
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.FAILURE);
+      activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
+      for (var detail : details) {
+        if (detail instanceof Notification notification
+            && (notification.getLevel() == Notification.Level.Error
+                || notification.getLevel() == Notification.Level.Error)) {
+          activity.setDescription(notification.getMessage());
+        } else if (detail instanceof Throwable t) {
+          throwable = t;
+        }
+      }
+    }
+
+    this.currentTransaction.fail(throwable);
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+  }
+
   /**
    * @param observation
    * @return
@@ -798,28 +850,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public long commit() {
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.SUCCESS);
-      activity.setName(activity.getType().name().substring(0, 3) + " OK");
-      if (getActivity().getType() == Activity.Type.RESOLUTION
-          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
-        // add the resolved graph as metadata to the activity instead
-        getActivity()
-            .getMetadata()
-            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
-      }
-    }
-
-    if (this.currentTransaction == null) {
-      return -1;
-    }
-
-    var ret = this.currentTransaction.commit();
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
-    return ret;
-  }
-
   public GraphModel.KnowledgeGraph getResolvedGraph() {
     return this.currentTransaction.getGraph();
   }
@@ -830,34 +860,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   public void contextualize(Observation observation) {
     this.digitalTwin.getScheduler().submit(observation, this);
-  }
-
-  public void fail(Throwable t) {
-    this.currentTransaction.fail(t);
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
-      activity.setName(activity.getType().name().substring(0, 3) + " EXCEPTION");
-    }
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
-  }
-
-  public void fail(Object... details) {
-    Throwable throwable = null;
-    if (getActivity() instanceof ActivityImpl activity) {
-      activity.setOutcome(Activity.Outcome.FAILURE);
-      activity.setName(activity.getType().name().substring(0, 3) + " FAIL");
-      for (var detail : details) {
-        if (detail instanceof Notification notification
-            && (notification.getLevel() == Notification.Level.Error
-                || notification.getLevel() == Notification.Level.Error)) {
-          activity.setDescription(notification.getMessage());
-        } else if (detail instanceof Throwable t) {
-          throwable = t;
-        }
-      }
-    }
-    this.currentTransaction.fail(throwable);
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 
   /** Reinitialize a context scope after a timeout if so configured. */
