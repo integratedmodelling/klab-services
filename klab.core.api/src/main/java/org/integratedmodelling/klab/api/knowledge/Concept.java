@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -20,7 +19,7 @@ public interface Concept extends Semantics {
    * The 'collective' character ('each' ...) belongs to the observable and not to the concept, but
    * for consistent parsing we must add it to the Concept and propagate it to the observable. When
    * the Concept is used alone, the collective character should be ignored as it is an attribute of
-   * the observation (determining the {@link DescriptionType#INSTANTIATION}) and does not affect the
+   * the observation (determining the {@link Contextualization#INSTANTIATION}) and does not affect the
    * semantics.
    *
    * @return
@@ -65,7 +64,7 @@ public interface Concept extends Semantics {
    *
    * @return
    */
-  DescriptionType getDescriptionType();
+  Contextualization getDescriptionType();
 
   /**
    * Return a unique non-semantic observable for collective subject observations

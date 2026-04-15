@@ -161,7 +161,7 @@ public class CLIReasonerView {
       out.println(
           AUTO.string(
               "Observation strategies for @|bold "
-                  + observable.getDescriptionType().name().toLowerCase()
+                  + observable.getContextualization().name().toLowerCase()
                   + "|@ of @|green "
                   + observable.getUrn()
                   + "|@:"));

@@ -5,6 +5,8 @@ package org.integratedmodelling.klab.api.lang.kim;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
@@ -170,8 +172,8 @@ public interface KimObservationStrategy extends KlabStatement {
      * transform ID through OBSERVABLE</id></code>. The method returns the ID of the corresponding
      * <code>resolve</code> observation operation, and the observable must resolve to a filtering
      * description type ({@link
-     * org.integratedmodelling.klab.api.knowledge.DescriptionType#CLASSIFICATION}, {@link
-     * org.integratedmodelling.klab.api.knowledge.DescriptionType#CHARACTERIZATION} or
+     * Contextualization#CLASSIFICATION}, {@link
+     * Contextualization#CHARACTERIZATION} or
      * org.integratedmodelling.klab.api.knowledge.DescriptionType#TRANSFORMATION}).
      *
      * @return

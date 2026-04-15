@@ -186,10 +186,7 @@ public interface DigitalTwin extends RuntimeAsset {
    * <p>Executors run a sequence of compiled contextualizers (see Dataflow) to implement the
    * DescriptionType. If the latter is collective, each observation produced or transformed must be
    * resolved individually afterwards.
-   *
-   * <p>TODO this can report the observation (with its DescriptionType implemented by the executor)
-   * and should track the results.
-   *
+   **
    * <p>The runtime tracks the outputs of an executor. When each executor has finished computing, it
    * must report its outputs re: the observation to the runtime, so that secondary resolutions can
    * be enqueued for any collective observation made.

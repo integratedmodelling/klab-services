@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
@@ -335,7 +335,7 @@ public class ModelKbox extends ObservableKbox {
         .serviceScope()
         .info(
             "model query for "
-                + observable.getDescriptionType().name().toLowerCase()
+                + observable.getContextualization().name().toLowerCase()
                 + " of "
                 + observable
                 + " found "
@@ -417,7 +417,7 @@ public class ModelKbox extends ObservableKbox {
     }
 
     if (observable.is(SemanticType.COUNTABLE)) {
-      if (observable.getDescriptionType().isInstantiation()) {
+      if (observable.getContextualization().isCollective()) {
         ret = "(" + ret + ") AND model.isreification";
       } else {
         ret = "(" + ret + ") AND (NOT model.isreification)";
@@ -767,7 +767,7 @@ public class ModelKbox extends ObservableKbox {
         ModelReference m = ret.get(0).copy();
         m.setObservable(type.getUrn());
         m.setObservableConcept(type);
-        m.setObservationType(observable.getDescriptionType().name());
+        m.setObservationType(observable.getContextualization().name());
         m.setDereifyingAttribute(attr.getFormalName());
         m.setMediation(Mediation.DEREIFY_QUALITY);
         m.setPrimaryObservable(!isInstantiator);
@@ -891,9 +891,9 @@ public class ModelKbox extends ObservableKbox {
 
         m.setObservable(obs.getUrn());
         m.setObservationType(
-            obs.getDescriptionType() == null
-                ? DescriptionType.VOID.name()
-                : obs.getDescriptionType().name());
+                obs.getContextualization() == null
+                ? Contextualization.VOID.name()
+                : obs.getContextualization().name());
         m.setObservableConcept(obs.getSemantics());
         m.setScope(model.getScope());
         m.setInScenario(namespace.isScenario());

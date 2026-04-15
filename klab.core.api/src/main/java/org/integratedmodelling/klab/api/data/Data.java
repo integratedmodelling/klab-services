@@ -8,7 +8,7 @@ import java.util.PrimitiveIterator;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -858,7 +858,7 @@ public interface Data {
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
-   * DescriptionType} is {@link DescriptionType#CATEGORIZATION}. In this case the data object will
+   * Contextualization} is {@link Contextualization#CATEGORIZATION}. In this case the data object will
    * implement {@link PrimitiveIterator.OfInt} and can be iterated to extract the categories.
    *
    * @return a map of integer keys to category string values

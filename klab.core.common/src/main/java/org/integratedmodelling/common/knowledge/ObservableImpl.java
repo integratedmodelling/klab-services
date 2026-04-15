@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.knowledge;
 
+import java.util.*;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -8,16 +9,11 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.springframework.util.StringUtils;
-
-import java.util.*;
 
 public class ObservableImpl implements Observable {
 
@@ -25,7 +21,7 @@ public class ObservableImpl implements Observable {
 
   private Concept semantics;
   private Concept observerSemantics;
-  private DescriptionType descriptionType;
+  private Contextualization contextualization;
   private Artifact.Type artifactType;
   private boolean isAbstract;
   private String urn;
@@ -37,10 +33,8 @@ public class ObservableImpl implements Observable {
   private Collection<ResolutionDirective> resolutionDirectives =
       EnumSet.noneOf(ResolutionDirective.class);
   private Object defaultValue;
-//  private Object value;
   private String statedName;
   private List<Annotation> annotations = new ArrayList<>();
-//  private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
   private String referenceName;
   private String name;
   private String namespace;
@@ -68,37 +62,26 @@ public class ObservableImpl implements Observable {
 
   public ObservableImpl() {}
 
-//  public ObservableImpl(Concept concept) {
-//    setSemantics(concept);
-//  }
-
   private ObservableImpl(ObservableImpl other) {
     this.semantics = other.semantics;
     this.observerSemantics = other.observerSemantics;
-    this.descriptionType = other.descriptionType;
+    this.contextualization = other.contextualization;
     this.artifactType = other.artifactType;
     this.isAbstract = other.isAbstract;
     this.urn = other.urn;
     this.unit = other.unit;
     this.currency = other.currency;
     this.range = other.range;
-    //        this.resolvedPredicates = other.resolvedPredicates;
-    //        this.contextualRoles = other.contextualRoles;
-    //        this.resolution = other.resolution;
     this.genericComponents.addAll(other.genericComponents);
     this.optional = other.optional;
     this.generic = other.generic;
     this.resolutionDirectives = other.resolutionDirectives;
     this.defaultValue = other.defaultValue;
-//    this.value = other.value;
     this.statedName = other.statedName;
     this.annotations.addAll(other.annotations);
-//    this.valueOperators = other.valueOperators;
     this.referenceName = other.referenceName;
     this.name = other.name;
     this.namespace = other.namespace;
-    //        this.distributedInherency = other.distributedInherency;
-    //        this.dereifiedAttribute = other.dereifiedAttribute;
     this.metadata.putAll(other.metadata);
   }
 
@@ -173,38 +156,28 @@ public class ObservableImpl implements Observable {
     return currency;
   }
 
-//  @Override
-//  public List<Pair<ValueOperator, Object>> getValueOperators() {
-//    return valueOperators;
-//  }
-
   @Override
   public List<Annotation> getAnnotations() {
     return annotations;
   }
 
-  // @Override
-  // public Collection<Concept> abstractPredicates() {
-  // return abstractPredicates;
-  // }
-
   @Override
-  public DescriptionType getDescriptionType() {
-    return this.descriptionType;
+  public Contextualization getContextualization() {
+    return this.contextualization;
   }
 
   //    @Override
-  public Observable as(DescriptionType descriptionType) {
+  public Observable as(Contextualization contextualization) {
     var ret = new ObservableImpl(this);
     // TODO check for compatibility!
-    ret.setDescriptionType(descriptionType);
+    ret.setDescriptionType(contextualization);
     return ret;
   }
 
   @Override
-  public boolean is(DescriptionType descriptionType) {
+  public boolean is(Contextualization contextualization) {
     // TODO this can be smarter and check for instantiation or resolution in its different forms
-    return this.descriptionType == descriptionType;
+    return this.contextualization == contextualization;
   }
 
   @Override
@@ -258,8 +231,8 @@ public class ObservableImpl implements Observable {
     this.observerSemantics = observer;
   }
 
-  public void setDescriptionType(DescriptionType descriptionType) {
-    this.descriptionType = descriptionType;
+  public void setDescriptionType(Contextualization contextualization) {
+    this.contextualization = contextualization;
   }
 
   public void setArtifactType(Artifact.Type artifactType) {
@@ -287,20 +260,20 @@ public class ObservableImpl implements Observable {
 
     StringBuilder ret = new StringBuilder(getSemantics().displayName());
 
-//    for (Pair<ValueOperator, Object> operator : getValueOperators()) {
-//
-//      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
-//
-//      if (operator.getSecond() instanceof KimConcept kimConcept) {
-//        // FIXME use displayName for the associated concept! needs the service
-//        ret.append(kimConcept.getName());
-//      } else if (operator.getSecond() instanceof KimObservable kimObservable) {
-//        // FIXME use displayName for the associated observable! needs the service
-//        ret.append(kimObservable.getCodeName());
-//      } else {
-//        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
-//      }
-//    }
+    //    for (Pair<ValueOperator, Object> operator : getValueOperators()) {
+    //
+    //      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
+    //
+    //      if (operator.getSecond() instanceof KimConcept kimConcept) {
+    //        // FIXME use displayName for the associated concept! needs the service
+    //        ret.append(kimConcept.getName());
+    //      } else if (operator.getSecond() instanceof KimObservable kimObservable) {
+    //        // FIXME use displayName for the associated observable! needs the service
+    //        ret.append(kimObservable.getCodeName());
+    //      } else {
+    //        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
+    //      }
+    //    }
     return ret.toString();
   }
 
@@ -377,7 +350,7 @@ public class ObservableImpl implements Observable {
       ret.referenceName = concept.getNamespace() + "_" + concept.getName();
     }
     ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-    ret.descriptionType = concept.getDescriptionType();
+    ret.contextualization = concept.getDescriptionType();
     return ret;
   }
 
@@ -397,7 +370,7 @@ public class ObservableImpl implements Observable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(descriptionType, observerSemantics, urn);
+    return Objects.hash(contextualization, observerSemantics, urn);
   }
 
   @Override
@@ -406,7 +379,7 @@ public class ObservableImpl implements Observable {
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
     ObservableImpl other = (ObservableImpl) obj;
-    return descriptionType == other.descriptionType
+    return contextualization == other.contextualization
         && Objects.equals(observerSemantics, other.observerSemantics)
         && Objects.equals(urn, other.urn);
   }

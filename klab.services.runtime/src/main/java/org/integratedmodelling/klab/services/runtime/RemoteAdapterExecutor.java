@@ -60,7 +60,10 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(
-      Scheduler.Event event, Map<String, Storage.Scanner> scanners, ContextScope scope) {
+      Scheduler.Event event,
+      Map<String, Storage.Scanner> scanners,
+      ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope) {
 
     if (resource == null) {
       cause = new KlabResourceAccessException("Resource not found " + resource.getUrn());
@@ -97,7 +100,8 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       contextualizer =
           new RemoteResourceContextualizer(service.get(), res, observation, dependencies);
     }
-    return contextualizer.contextualize(scanners.get(Dataflow.SELF_ID), event, scope);
+    return contextualizer.contextualize(
+        scanners.get(Dataflow.SELF_ID), event, scope, contextualizationScope);
   }
 
   @Override

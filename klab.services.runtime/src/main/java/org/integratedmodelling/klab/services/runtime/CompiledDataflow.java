@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -91,7 +89,10 @@ public class CompiledDataflow {
 
     ///  Main executor method
     /// @return true if successful. A `false` return value will stop contextualization.
-    boolean execute(Scheduler.Event event, ServiceContextScope contextScope);
+    boolean execute(
+        Scheduler.Event event,
+        ServiceContextScope contextScope,
+        RuntimeService.ContextualizationScope contextualizationScope);
 
     ///  If [#execute] has returned false, the cause should be here.
     Throwable getCause();
@@ -755,11 +756,14 @@ public class CompiledDataflow {
               contextScope.getActivity(),
               "Contextualization of " + observation.getObservable());
 
-      var contextualizationScope = contextScope.executing(contextualization, observation);
+      var executionScope = contextScope.executing(contextualization, observation);
+      var contextualizationScope =
+          new ContextualizationScopeImpl(/*contextualization, */ observation, event);
+
       Throwable failure = null;
       boolean ret = true;
       for (var executor : executors) {
-        if (!executor.execute(event, contextualizationScope)) {
+        if (!executor.execute(event, executionScope, contextualizationScope)) {
           ret = false;
           failure = executor.getCause();
           break;
@@ -767,9 +771,17 @@ public class CompiledDataflow {
       }
 
       if (ret) {
-        contextualizationScope.commit();
+        executionScope.commit();
+        executionScope
+            .getService(RuntimeService.class)
+            .submitContextualizationResult(
+                contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
       } else {
-        contextualizationScope.fail(failure);
+        executionScope.fail(failure);
+        executionScope
+            .getService(RuntimeService.class)
+            .submitContextualizationResult(
+                contextualizationScope, executionScope, Activity.Outcome.FAILURE);
       }
 
       return ret;

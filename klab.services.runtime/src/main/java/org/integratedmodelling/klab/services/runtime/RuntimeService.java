@@ -1142,6 +1142,87 @@ public class RuntimeService extends BaseService
     return ret;
   }
 
+  @Override
+  public void submitContextualizationResult(
+      ContextualizationScope scope, ContextScope contextScope, Activity.Outcome outcome) {
+
+    /*
+    Any submission tasks to be spawned for sub-contextualizations
+     */
+    List<Callable<Observation>> tasks = new ArrayList<>();
+
+    if (outcome == Activity.Outcome.SUCCESS) {
+      if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.CLASSIFICATION) {
+        // the execution scope must contain all attributions
+        throw new KlabUnimplementedException("Contextualization not implemented");
+      } else if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.INSTANTIATION) {
+
+        for (var child : scope.getOutcomes()) {
+          // enqueue tasks to resolve any new observation
+          tasks.add(
+              Executors.callable(
+                  () -> {
+                    contextScope
+                        .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+                        .submit(child, contextScope)
+                        .thenApply(
+                            obs -> {
+                              // TODO any sub-states for the new object!
+                              return obs;
+                            })
+                        .exceptionally(
+                            (obs -> {
+                              scope
+                                  .getTarget()
+                                  .getNotifications()
+                                  .add(Notification.error(obs.getMessage(), obs));
+                              return child;
+                            }));
+                  },
+                  child));
+        }
+
+      } else if (scope.getTarget().getObservable().getContextualization()
+          == Contextualization.CONNECTION) {
+        // TODO the observations have been created but are not yet in the KG or in the transaction.
+        // Take them
+        //  from the execution scope, then resolve them here in the between() scope of the
+        // collective.
+        throw new KlabUnimplementedException("Contextualization not implemented");
+      } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
+          && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
+        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the executors
+      } // TODO check if value ops should be handled here. Same for transformation instead of
+      // surgically
+      //  altering the dataflow?
+
+      /*
+      TODO update statistics. We can use the transaction to check if this was the top-level contextualization.
+       */
+
+      if (!tasks.isEmpty()) {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+          if (executor.invokeAll(tasks).stream().anyMatch(Future::isCancelled)) {
+            scope
+                .getTarget()
+                .getNotifications()
+                .add(Notification.error("One or more contextualizations were cancelled"));
+          }
+        } catch (InterruptedException e) {
+          scope.getTarget().getNotifications().add(Notification.error(e.getMessage(), e));
+        }
+      }
+
+    } else {
+      // the KG is self-cleaning
+      // the storage may not be transactional so any observation storage must be cleaned up
+      // TODO the filesystem location of the storage could be linked to a unique ID for the ctxscope
+      // report for debugging/posterity if so configured
+    }
+  }
+
   /**
    * Create a single resolvable URN from the set of URNs received, which can be later sent to the
    * resource resolver unless the URN is specially handled. If the pre-inspection produces a
@@ -1317,7 +1398,7 @@ public class RuntimeService extends BaseService
 
     var ret = Data.ShardingStrategy.neutral();
     ret.setDataType(
-        switch (observation.getObservable().getDescriptionType()) {
+        switch (observation.getObservable().getContextualization()) {
           case QUANTIFICATION, MEASURE, VALUATION -> Storage.Type.DOUBLE;
           case CATEGORIZATION -> Storage.Type.KEYED;
           case VERIFICATION -> Storage.Type.BOOLEAN;
