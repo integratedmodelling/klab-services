@@ -1193,8 +1193,7 @@ public class RuntimeService extends BaseService
         throw new KlabUnimplementedException("Contextualization not implemented");
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
-        // check if we need to resolve change
-        throw new KlabUnimplementedException("Contextualization not implemented");
+        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the executors
       } // TODO check if value ops should be handled here. Same for transformation instead of
       // surgically
       //  altering the dataflow?

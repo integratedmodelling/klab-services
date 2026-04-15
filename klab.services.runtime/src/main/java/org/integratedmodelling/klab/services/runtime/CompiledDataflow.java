@@ -758,7 +758,7 @@ public class CompiledDataflow {
 
       var executionScope = contextScope.executing(contextualization, observation);
       var contextualizationScope =
-          new ContextualizationScopeImpl(contextualization, observation, event);
+          new ContextualizationScopeImpl(/*contextualization, */ observation, event);
 
       Throwable failure = null;
       boolean ret = true;

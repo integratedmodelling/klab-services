@@ -14,7 +14,7 @@ import java.util.List;
  * failure.
  *
  * <p>TODO to be completed with classification, transformation, monitoring and notification logic
- *     for statistics, provenance etc
+ * for statistics, provenance etc
  */
 public class ContextualizationScopeImpl
     implements org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope {
@@ -23,8 +23,7 @@ public class ContextualizationScopeImpl
   private final Scheduler.Event event;
   private final List<Observation> outcomes = new ArrayList<>();
 
-  public ContextualizationScopeImpl(
-      Activity currentActivity, Observation observation, Scheduler.Event event) {
+  public ContextualizationScopeImpl(Observation observation, Scheduler.Event event) {
     this.target = observation;
     this.event = event;
   }
