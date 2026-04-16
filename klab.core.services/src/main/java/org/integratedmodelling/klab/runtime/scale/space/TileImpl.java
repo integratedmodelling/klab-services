@@ -54,7 +54,7 @@ public class TileImpl extends ShapeImpl implements Tile {
     this.grid = adjust ? grid.locate(this.getEnvelope()) : grid;
     this.size = this.grid.size();
     setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
-    this.envelope = this.getEnvelope();
+    this.envelope = (EnvelopeImpl) grid.getEnvelope();
   }
 
   @Override
