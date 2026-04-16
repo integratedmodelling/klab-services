@@ -653,6 +653,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         geometry,
         event,
         builder,
+        null, // FIXME we need an output scanner to pair for qualities
         observation,
         observation.getObservable(),
         urn,
