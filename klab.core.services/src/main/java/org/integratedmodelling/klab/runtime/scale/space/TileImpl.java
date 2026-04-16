@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import java.io.Serial;
+import java.util.Arrays;
+import java.util.List;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -8,11 +12,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.WKBWriter;
-
-import java.io.Serial;
-import java.util.Arrays;
-import java.util.List;
 
 public class TileImpl extends ShapeImpl implements Tile {
 
@@ -35,6 +34,9 @@ public class TileImpl extends ShapeImpl implements Tile {
     this.grid = grid.locate(getEnvelope());
     this.size = this.grid.size();
     setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
+    if (this.getEnvelope() == null) {
+      Logging.INSTANCE.error("PORCA MERDA ENVELOPE IS NULL DIOCAN", new Throwable());
+    }
   }
 
   /**
@@ -52,6 +54,7 @@ public class TileImpl extends ShapeImpl implements Tile {
     this.grid = adjust ? grid.locate(this.getEnvelope()) : grid;
     this.size = this.grid.size();
     setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
+    this.envelope = this.getEnvelope();
   }
 
   @Override

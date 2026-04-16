@@ -1,10 +1,15 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import java.io.IOException;
+import java.io.Serial;
+import java.io.StringWriter;
+import java.util.*;
 import org.geotools.geojson.GeoJSON;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.geometry.jts.WKBReader;
 import org.geotools.referencing.CRS;
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -21,7 +26,6 @@ import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -33,11 +37,6 @@ import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
-
-import java.io.IOException;
-import java.io.Serial;
-import java.io.StringWriter;
-import java.util.*;
 
 public class ShapeImpl extends SpaceImpl implements Shape {
 
@@ -71,7 +70,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         }
       };
 
-  private EnvelopeImpl envelope;
+  protected EnvelopeImpl envelope;
   private Shape.Type geometryType = null;
   private ProjectionImpl projection;
 
