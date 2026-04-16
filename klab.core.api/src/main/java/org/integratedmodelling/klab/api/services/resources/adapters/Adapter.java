@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.api.services.resources.adapters;
 
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -13,8 +15,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
-
-import java.util.List;
 
 /**
  * The descriptor for a resource adapter, built from the annotation in a class annotated with {@link
@@ -241,6 +241,7 @@ public interface Adapter {
       Geometry geometry,
       Scheduler.Event event,
       Data.Builder builder,
+      Storage.Scanner scanner,
       Observation observation,
       Observable observable,
       Urn urn,
