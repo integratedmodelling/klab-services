@@ -115,6 +115,11 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
         return projectName;
     }
 
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
+
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }

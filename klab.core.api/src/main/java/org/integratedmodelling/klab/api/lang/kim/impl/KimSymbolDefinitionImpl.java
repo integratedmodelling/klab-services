@@ -68,4 +68,9 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
     public void setDefaulted(boolean defaulted) {
         this.defaulted = defaulted;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
 }

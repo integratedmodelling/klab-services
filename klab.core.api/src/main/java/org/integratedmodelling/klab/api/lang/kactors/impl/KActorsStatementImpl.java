@@ -122,10 +122,20 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public List<Call> getChainedCalls() {
       return this.chainedCalls;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case ASSERTION:
   public static class AssertImpl extends KActorsStatementImpl implements KActorsStatement.Assert {
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
 
     public static class AssertionImpl extends KActorsStatementImpl implements Assertion {
 
@@ -171,6 +181,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
       public void setValue(KActorsValue value) {
         this.value = value;
+      }
+
+      @Override
+      public <T> T format(CodeAppender<T> appender) {
+        return null;
       }
     }
 
@@ -265,6 +280,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setScope(Assignment.Scope scope) {
       this.scope = scope;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case BREAK_STATEMENT:
@@ -281,6 +301,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setType(Type type) {
       this.type = type;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
     }
   }
 
@@ -330,6 +355,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setGroupActions(List<Pair<KActorsValue, KActorsStatement>> groupActions) {
       this.groupActions = groupActions;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case DO_STATEMENT:
@@ -367,6 +397,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setBody(KActorsStatement body) {
       this.body = body;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case FAIL_STATEMENT:
@@ -394,6 +429,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setMessage(String message) {
       this.message = message;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case FIRE_VALUE:
@@ -420,6 +460,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setValue(KActorsValue value) {
       this.value = value;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
     }
   }
 
@@ -468,6 +513,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setBody(KActorsStatement body) {
       this.body = body;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
     }
   }
 
@@ -527,6 +577,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setElseBody(KActorsStatement elseBody) {
       this.elseBody = elseBody;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case INSTANTIATION:
@@ -585,6 +640,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setActorBaseName(String actorBaseName) {
       this.actorBaseName = actorBaseName;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case SEQUENCE:
@@ -613,6 +673,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     public void setStatements(List<KActorsStatement> statements) {
       this.statements = statements;
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   // case TEXT_BLOCK:
@@ -640,6 +705,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setText(String text) {
       this.text = text;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
     }
   }
 
@@ -677,6 +747,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setBody(KActorsStatement body) {
       this.body = body;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
     }
   }
 }

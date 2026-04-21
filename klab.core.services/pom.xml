@@ -322,26 +322,6 @@
             <version>0.13.0</version>
         </dependency>
 
-        <!--
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-        -->
-        <!--
-                <dependency>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                    <version>2.20.0</version>
-                </dependency>
-        -->
-
         <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -351,17 +331,6 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-
-                <!--
-                                <exclusion>
-                                    <groupId>ch.qos.logback</groupId>
-                                    <artifactId>logback-classic</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.apache.logging.log4j</groupId>
-                                    <artifactId>log4j-to-slf4j</artifactId>
-                                </exclusion>
-                -->
             </exclusions>
             <version>${spring-boot.version}</version>
         </dependency>
@@ -374,16 +343,6 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-                <!--
-                                <exclusion>
-                                    <groupId>ch.qos.logback</groupId>
-                                    <artifactId>logback-classic</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.apache.logging.log4j</groupId>
-                                    <artifactId>log4j-to-slf4j</artifactId>
-                                </exclusion>
-                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -395,16 +354,6 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-                <!--
-                                <exclusion>
-                                    <groupId>ch.qos.logback</groupId>
-                                    <artifactId>logback-classic</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.apache.logging.log4j</groupId>
-                                    <artifactId>log4j-to-slf4j</artifactId>
-                                </exclusion>
-                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -418,12 +367,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </dependency>
-        -->
         <!-- GEOTOOLS mess starts -->
         <!-- <dependency> <groupId>org.geotools</groupId> <artifactId>gt-metadata</artifactId>
             <version>${geotools.version}</version> </dependency> -->
@@ -545,63 +488,11 @@
             <version>10.1.39</version>
             <scope>compile</scope>
         </dependency>
-        <!--        <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.reasoner.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.resources.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.resolver.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.integratedmodelling</groupId>
-                    <artifactId>klab.services.runtime.client</artifactId>
-                    <version>0.11.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>-->
-
         <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections</artifactId>
             <version>11.1.0</version>
         </dependency>
-
-        <!-- Embedded QPid to enable simple/local DT messaging when requested and there is no broker configured.
-             Note that the below is qpid-broker-core and *not* qpid-broker. -->
-<!--
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-broker-core</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-        &lt;!&ndash; AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. &ndash;&gt;
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-        &lt;!&ndash; If a different store type is required it needs to be included here &ndash;&gt;
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-broker-plugins-memory-store</artifactId>
-            <version>9.2.0</version>
-        </dependency>
--->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>

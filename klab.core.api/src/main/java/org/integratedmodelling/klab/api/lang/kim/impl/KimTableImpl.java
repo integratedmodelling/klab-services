@@ -97,4 +97,9 @@ public class KimTableImpl extends KimStatementImpl implements KimTable {
     public void visit(Visitor visitor) {
 
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
 }

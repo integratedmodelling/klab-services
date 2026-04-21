@@ -167,6 +167,11 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
   }
 
   @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return null;
+  }
+
+  @Override
   public String getNamespace() {
     return namespace;
   }

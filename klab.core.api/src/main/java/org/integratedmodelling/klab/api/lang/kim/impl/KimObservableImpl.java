@@ -304,4 +304,8 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
         this.patternVariables = patternVariables;
     }
 
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
 }

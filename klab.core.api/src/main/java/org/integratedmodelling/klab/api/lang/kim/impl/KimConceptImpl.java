@@ -4,7 +4,6 @@ import java.io.Serial;
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
@@ -299,15 +298,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   /**
    * Remove a component concept (must be a trait: use semantic roles for clauses and operators).
+   *
    * @param concept
    * @return
    */
   public boolean remove(KimConcept concept) {
-      if (this.traits.remove(concept)) {
-        resetDefinition();
-        return true;
-      }
-      return false;
+    if (this.traits.remove(concept)) {
+      resetDefinition();
+      return true;
+    }
+    return false;
   }
 
   public void setOperands(List<KimConcept> operands) {
@@ -563,6 +563,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    *
    * <p>TODO must also compute the code name and reference name, which shouldn't come from the
    * semantics.
+   *
+   * <p>TODO generalize to a tokenizer where the append() can be delegated to a separate method that
+   * also knows the type and role of each token, so that it can be connected to highlighting
    */
   public String finalizeDefinition() {
 
@@ -880,5 +883,113 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       case LINKING -> relationshipSource;
       case TO -> relationshipTarget;
     };
+  }
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+
+    // TODO remove all field assignments and side effects
+    // TODO add roles
+    // TODO test with both
+
+    var collective = !isCollective() && observable != null && observable.isCollective();
+    if (collective) {
+      appender.append("each", LexicalRole.KEYWORD);
+    }
+
+    StringBuilder ret = new StringBuilder(isCollective() ? "each" : "");
+
+    if (semanticModifier != null) {
+      ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+      if (comparisonConcept != null) {
+        ret.append(" ")
+            .append(semanticModifier.declaration[1])
+            .append(" ")
+            .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
+      }
+      ret = new StringBuilder();
+    }
+
+    if (negated) {
+      ret.append(ret.isEmpty() ? "" : " ").append("not");
+    }
+
+    traits.sort(
+        (o1, o2) ->
+            ((KimConceptImpl) o1)
+                .finalizeDefinition()
+                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
+
+    for (KimConcept trait : traits) {
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(((KimConceptImpl) trait).computeUrnAndParenthesize());
+    }
+
+    roles.sort(
+        (o1, o2) ->
+            ((KimConceptImpl) o1)
+                .finalizeDefinition()
+                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
+    for (KimConcept role : roles) {
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(((KimConceptImpl) role).computeUrnAndParenthesize());
+    }
+
+    if (semanticModifier == null) {
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+    } else {
+      ret.append((ret.isEmpty()) ? "" : " ").append(main);
+    }
+
+    if (inherent != null) {
+      ret.append(" of ").append(((KimConceptImpl) inherent).computeUrnAndParenthesize());
+    }
+
+    if (causant != null) {
+      ret.append(" caused by ").append(((KimConceptImpl) causant).computeUrnAndParenthesize());
+    }
+
+    if (caused != null) {
+      ret.append(" causing ").append(((KimConceptImpl) caused).computeUrnAndParenthesize());
+    }
+
+    if (compresent != null) {
+      ret.append(" with ").append(((KimConceptImpl) compresent).computeUrnAndParenthesize());
+    }
+
+    if (cooccurrent != null) {
+      ret.append(" during ").append(((KimConceptImpl) cooccurrent).computeUrnAndParenthesize());
+    }
+
+    if (adjacent != null) {
+      ret.append(" adjacent to ").append(((KimConceptImpl) adjacent).computeUrnAndParenthesize());
+    }
+
+    if (goal != null) {
+      ret.append(" for ").append(((KimConceptImpl) goal).computeUrnAndParenthesize());
+    }
+
+    if (relationshipSource != null) {
+      ret.append(" linking ")
+          .append(((KimConceptImpl) relationshipSource).computeUrnAndParenthesize());
+      if (relationshipTarget != null) {
+        ret.append(" to ")
+            .append(((KimConceptImpl) relationshipTarget).computeUrnAndParenthesize());
+      }
+    }
+
+    // TODO value operators
+
+    for (KimConcept operand : operands) {
+      ret.append(" ")
+          .append(expressionType == Expression.INTERSECTION ? "and" : "or")
+          .append(" ")
+          .append(((KimConceptImpl) operand).computeUrnAndParenthesize());
+    }
+
+    return appender.output();
   }
 }
