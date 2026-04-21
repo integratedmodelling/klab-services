@@ -941,7 +941,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       ret.append((ret.isEmpty()) ? "" : " ")
           .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
     } else {
-      ret.append((ret.isEmpty()) ? "" : " ").append(main);
+//      ret.append((ret.isEmpty()) ? "" : " ").append(main);
     }
 
     if (inherent != null) {
