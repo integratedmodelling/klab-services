@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.configuration;
 import java.io.File;
 import java.util.Map;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Settings for all products (engine, modeler, services, user etc.) that can be changed at runtime
@@ -38,6 +39,11 @@ public enum Setting {
           System.getProperty("user.home")
               + File.separator
               + Configuration.KLAB_RELATIVE_WORK_PATH)),
+  MONOSPACE_FONT(
+      Page.APPEARANCE,
+      "The font to use for the monospaced text in the modeler",
+      String.class,
+      Utils.OS.get() == Utils.OS.WIN ? "Consolas" : "Monospaced"),
   RUN_DIRECTORY(
       Page.GENERAL,
       "The directory where PIDs and other runtime files are stored",
