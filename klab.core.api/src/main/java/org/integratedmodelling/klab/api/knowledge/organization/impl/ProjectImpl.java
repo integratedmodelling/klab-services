@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.api.knowledge.organization.impl;
 
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -15,12 +20,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 
 public class ProjectImpl implements Project {
 
@@ -39,6 +38,7 @@ public class ProjectImpl implements Project {
     private List<Pair<String, Version>> prerequisiteComponents = new ArrayList<>();
     private String worldview;
     private String definedWorldview;
+    private Metadata metadata = Metadata.create();
 
     @Override
     public String getDescription() {
@@ -63,6 +63,15 @@ public class ProjectImpl implements Project {
     @Override
     public Version getVersion() {
       return this.version;
+    }
+
+    @Override
+    public Metadata getMetadata() {
+      return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+      this.metadata = metadata;
     }
 
     @Override
