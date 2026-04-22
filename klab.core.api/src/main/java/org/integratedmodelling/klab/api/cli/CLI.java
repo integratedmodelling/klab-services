@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.cli;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -158,10 +160,12 @@ public abstract class CLI {
     return ret;
   }
 
+  // TODO add subcommands, options, arguments
   private void documentCommand(Command command, FormattedString output, int level, int cmdLength) {
     var spacer = " ".repeat(level);
     output.add(
         spacer + Utils.Strings.fillUpLeftAligned(command.getName(), " ", cmdLength),
+        new Color(153, 0, 0), // dark red
         FormattedString.Style.BOLD);
     output.add(command.getLongDescription(), FormattedString.Style.ITALIC);
     output.addLine();
