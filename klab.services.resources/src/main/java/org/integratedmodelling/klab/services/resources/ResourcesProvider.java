@@ -1006,6 +1006,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   .map(s -> (KimModel) s)
                   .findFirst()
                   .orElse(null);
+    } else if (Worldview.class.isAssignableFrom(assetClass)) {
+      var ret = retrieveWorldview();
+      if (ret.getUrn().equals(urn)) {
+        return (T) ret;
+      }
     }
     // TODO continue
     throw new KlabIllegalStateException(
