@@ -89,12 +89,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private final ResourcesKBox resourcesKbox;
   private final ResourceManager resourceManager;
 
-  /**
-   * We keep a hash of all the resource URNs we serve for quick reference and search
-   *
-   * @deprecated use {@link ResourcesKBox}
-   */
-  private Set<String> localResources = new HashSet<>();
+  //  /**
+  //   * We keep a hash of all the resource URNs we serve for quick reference and search
+  //   *
+  //   * @deprecated use {@link ResourcesKBox}
+  //   */
+  //  private Set<String> localResources = new HashSet<>();
 
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
@@ -313,7 +313,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           //                                    ResourceReference.class));
         }
         if (resource != null) {
-          localResources.add(resource.getUrn());
           ResourceInfo status = resourcesKbox.getStatus(resource.getUrn(), null);
           if (status == null) {
             status = new ResourceInfo();
@@ -980,8 +979,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     } else if (KimConcept.class.isAssignableFrom(assetClass)) {
       return (T) resolveConceptInternal(urn);
     } /*else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveAdapterInfo(urn);
-    }*/ else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+        return (T) retrieveAdapterInfo(urn);
+      }*/ else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
       return (T) retrieveBehavior(urn, scope);
     } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
       return (T) retrieveBehavior(urn, scope);
@@ -1646,7 +1645,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public Collection<String> listResourceUrns(Scope scope) {
-    return localResources;
+    return resourcesKbox.listResourcesUrns();
   }
 
   @Override

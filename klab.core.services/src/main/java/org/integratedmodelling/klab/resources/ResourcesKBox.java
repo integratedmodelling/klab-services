@@ -122,6 +122,10 @@ public class ResourcesKBox {
     return ret;
   }
 
+  public List<String> listResourcesUrns() {
+    return resources.find().toList().stream().map(ResourceImpl::getUrn).toList();
+  }
+
   /**
    * Store the passed resource with its version. Return true if this was an update of a previously
    * stored resource or this is new.
