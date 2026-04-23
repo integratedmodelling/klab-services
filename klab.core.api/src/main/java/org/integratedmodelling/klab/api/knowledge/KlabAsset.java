@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.io.Serializable;
+import java.util.Collection;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -13,9 +15,6 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-
-import java.io.Serializable;
-import java.util.Collection;
 
 /**
  * All k.LAB assets have a URN, a version, metadata and possibly annotations. They are
@@ -62,6 +61,12 @@ public interface KlabAsset extends Serializable {
         case PROJECT -> Project.class;
         case WORLDVIEW -> Worldview.class;
         case WORKSPACE -> Workspace.class;
+        case OBSERVABLE -> KimObservable.class;
+        case CONCEPT -> KimConcept.class;
+        case CONCEPT_STATEMENT -> KimConceptStatement.class;
+        case OBSERVATION_STRATEGY -> KimObservationStrategy.class;
+        case MODEL -> KimModel.class;
+        case DEFINITION -> KimSymbolDefinition.class;
         default ->
             throw new KlabIllegalStateException(
                 "Cannot convert  " + this + " into serializable asset class");

@@ -71,10 +71,10 @@ public abstract class CLI {
     var cl = parse(commandLine);
     if (cl == null) {
       return resultHandler.apply(
-          new KlabCommandLineError("Command line parsing failed for: " + commandLine));
+          new KlabCommandLineError("Command line parsing failed for: " + commandLine, commandLine));
     }
     if (cl.isError()) {
-      return resultHandler.apply(new KlabCommandLineError(cl.getErrorMessage()));
+      return resultHandler.apply(new KlabCommandLineError(cl.getErrorMessage(), commandLine));
     } else if (cl.getCommand() != null && cl.getCommand().getHandler() != null) {
       try {
         return resultHandler.apply(cl.getCommand().getHandler().apply(cl));
