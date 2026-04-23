@@ -431,7 +431,8 @@ public class StorageImpl implements Storage {
 
     protected final ShardImpl shard;
     protected final long size;
-    protected final BufferArray data;
+    protected final BufferArray
+        data; // FIXME this must be specialized or boxing will occur. Must use doubleValue etc.
     protected final com.dynatrace.dynahist.Histogram histogram;
     protected long index = 0L;
 

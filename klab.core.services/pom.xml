@@ -508,6 +508,12 @@
             <artifactId>pf4j</artifactId>
             <version>3.13.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.8.2</version>
+            <scope>compile</scope>
+        </dependency>
         <!--
                 <dependency>
                     <groupId>org.pf4j</groupId>

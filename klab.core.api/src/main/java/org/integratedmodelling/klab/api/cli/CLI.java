@@ -165,7 +165,7 @@ public abstract class CLI {
     var spacer = " ".repeat(level);
     output.add(
         spacer + Utils.Strings.fillUpLeftAligned(command.getName(), " ", cmdLength),
-        new Color(153, 0, 0), // dark red
+        new Color(153, 0, 0), // dark red. Use Theme.KEYWORD when theme is internalized
         FormattedString.Style.BOLD);
     output.add(command.getLongDescription(), FormattedString.Style.ITALIC);
     output.addLine();
