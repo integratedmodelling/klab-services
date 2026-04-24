@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.api.lang.kim.style;
 
+import org.integratedmodelling.klab.api.cli.FormattedString;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 public class KimStyle {
 
@@ -104,7 +106,7 @@ public class KimStyle {
     this.color = color;
   }
 
-  /** Basic code appender that just concatenates the tokens. */
+  /** Basic code appender that just concatenates the tokens ignoring everything else. */
   public static class PlainCodeAppender implements KlabStatement.CodeAppender<String> {
 
     private StringBuilder sb = new StringBuilder();
@@ -122,6 +124,42 @@ public class KimStyle {
     @Override
     public String output() {
       return sb.toString();
+    }
+  }
+
+  /**
+   * Code appender that styles k.IM and other languages in the k.LAB ecosystem with highlighting and
+   * optionally reformats it with normalized indentation. Use with KlabStatement.format().
+   */
+  public static class KimStylingAppender implements KlabStatement.CodeAppender<FormattedString> {
+
+    /**
+     * Needs a scope to access the resources service for concept information
+     *
+     * @param scope
+     */
+    public KimStylingAppender(Scope scope) {}
+
+    @Override
+    public void append(String token, KlabStatement.LexicalRole role) {}
+
+    /**
+     * Produce the final output as a formatted string with highlighting usable by a renderer.
+     *
+     * @return
+     */
+    @Override
+    public FormattedString output() {
+      return null;
+    }
+
+    /**
+     * Produce the final output as a formatted string with highlighting and normalized indentation.
+     *
+     * @return
+     */
+    public FormattedString outputFormatted() {
+      return null;
     }
   }
 }

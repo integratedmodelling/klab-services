@@ -885,21 +885,30 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     };
   }
 
-  @Override
-  public <T> T format(CodeAppender<T> appender) {
+  private <T> T formatParenthesized(CodeAppender<T> appender, boolean addParentheses) {
 
     // needed for side effects
-    finalizeDefinition();
+    var pdef = computeUrnAndParenthesize();
+    var needsParentheses = pdef.startsWith("(") && pdef.endsWith(")");
 
-    // TODO remove all field assignments and side effects
-    // TODO add roles
-    // TODO test with both
+    if (needsParentheses && addParentheses) {
+      appender.append("(", LexicalRole.OPEN_PARENTHESIS);
+    }
+
+    if (expressionType != null) {
+      ((KimConceptImpl) operands.getFirst()).formatParenthesized(appender, true);
+      for (int i = 1; i < operands.size(); i++) {
+        appender.append(
+            expressionType == Expression.INTERSECTION ? "and" : "or", LexicalRole.KEYWORD);
+        ((KimConceptImpl) operands.get(i)).formatParenthesized(appender, true);
+      }
+      return appender.output();
+    }
 
     var collective = !isCollective() && observable != null && observable.isCollective();
     if (collective) {
       appender.append("each", LexicalRole.KEYWORD);
     }
-
     if (negated) {
       appender.append("not", LexicalRole.KEYWORD);
     }
@@ -915,85 +924,77 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         appender.append(semanticModifier.declaration[1], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
         comparisonConcept.format(appender);
       }
+    } else {
+      if (name != null) {
+        appender.append(name, LexicalRole.CONCEPT);
+      } else if (observable != null) {
+        observable.format(appender);
+      }
     }
 
-    traits.sort(
-        (o1, o2) ->
-            ((KimConceptImpl) o1)
-                .finalizeDefinition()
-                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
+    for (KimConcept trait : traits) {
+      ((KimConceptImpl) trait).formatParenthesized(appender, true);
+    }
 
-    //    for (KimConcept trait : traits) {
-    //      ret.append((ret.isEmpty()) ? "" : " ")
-    //          .append(((KimConceptImpl) trait).computeUrnAndParenthesize());
-    //    }
-    //
-    //    roles.sort(
-    //        (o1, o2) ->
-    //            ((KimConceptImpl) o1)
-    //                .finalizeDefinition()
-    //                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
-    //    for (KimConcept role : roles) {
-    //      ret.append((ret.isEmpty()) ? "" : " ")
-    //          .append(((KimConceptImpl) role).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (semanticModifier == null) {
-    //      ret.append((ret.isEmpty()) ? "" : " ")
-    //          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
-    //    } else {
-    //      //      ret.append((ret.isEmpty()) ? "" : " ").append(main);
-    //    }
-    //
-    //    if (inherent != null) {
-    //      ret.append(" of ").append(((KimConceptImpl) inherent).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (causant != null) {
-    //      ret.append(" caused by ").append(((KimConceptImpl)
-    // causant).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (caused != null) {
-    //      ret.append(" causing ").append(((KimConceptImpl) caused).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (compresent != null) {
-    //      ret.append(" with ").append(((KimConceptImpl) compresent).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (cooccurrent != null) {
-    //      ret.append(" during ").append(((KimConceptImpl)
-    // cooccurrent).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (adjacent != null) {
-    //      ret.append(" adjacent to ").append(((KimConceptImpl)
-    // adjacent).computeUrnAndParenthesize());
-    //    }
-    //
-    //    if (goal != null) {
-    //      ret.append(" for ").append(((KimConceptImpl) goal).computeUrnAndParenthesize());
-    //    }
+    for (KimConcept role : roles) {
+      ((KimConceptImpl) role).formatParenthesized(appender, true);
+    }
 
-    //    if (relationshipSource != null) {
-    //      ret.append(" linking ")
-    //          .append(((KimConceptImpl) relationshipSource).computeUrnAndParenthesize());
-    //      if (relationshipTarget != null) {
-    //        ret.append(" to ")
-    //            .append(((KimConceptImpl) relationshipTarget).computeUrnAndParenthesize());
-    //      }
-    //    }
+    if (inherent != null) {
+      appender.append("of", LexicalRole.KEYWORD);
+      ((KimConceptImpl) inherent).formatParenthesized(appender, true);
+    }
+
+    if (causant != null) {
+      appender.append("caused by", LexicalRole.KEYWORD);
+      ((KimConceptImpl) causant).formatParenthesized(appender, true);
+    }
+
+    if (caused != null) {
+      appender.append("causing", LexicalRole.KEYWORD);
+      ((KimConceptImpl) caused).formatParenthesized(appender, true);
+    }
+
+    if (compresent != null) {
+      appender.append("with", LexicalRole.KEYWORD);
+      ((KimConceptImpl) compresent).formatParenthesized(appender, true);
+    }
+
+    if (cooccurrent != null) {
+      appender.append("during", LexicalRole.KEYWORD);
+      ((KimConceptImpl) cooccurrent).formatParenthesized(appender, true);
+    }
+
+    if (adjacent != null) {
+      appender.append("adjacent to", LexicalRole.KEYWORD);
+      ((KimConceptImpl) adjacent).formatParenthesized(appender, true);
+    }
+
+    if (goal != null) {
+      appender.append("for", LexicalRole.KEYWORD);
+      ((KimConceptImpl) goal).formatParenthesized(appender, true);
+    }
+
+    if (relationshipSource != null) {
+      appender.append("linking", LexicalRole.KEYWORD);
+      ((KimConceptImpl) relationshipSource).formatParenthesized(appender, true);
+      if (relationshipTarget != null) {
+        appender.append("to", LexicalRole.KEYWORD);
+        ((KimConceptImpl) relationshipTarget).formatParenthesized(appender, true);
+      }
+    }
 
     // TODO value operators
 
-    //    for (KimConcept operand : operands) {
-    //      ret.append(" ")
-    //          .append(expressionType == Expression.INTERSECTION ? "and" : "or")
-    //          .append(" ")
-    //          .append(((KimConceptImpl) operand).computeUrnAndParenthesize());
-    //    }
+    if (needsParentheses && addParentheses) {
+      appender.append(")", LexicalRole.CLOSED_PARENTHESIS);
+    }
 
     return appender.output();
+  }
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return formatParenthesized(appender, false);
   }
 }
