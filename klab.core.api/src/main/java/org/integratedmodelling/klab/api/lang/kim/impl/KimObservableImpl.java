@@ -306,6 +306,8 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 
     @Override
     public <T> T format(CodeAppender<T> appender) {
-        return null;
+        this.semantics.format(appender);
+        // TODO unit, currency, range, given name, optional
+        return appender.output();
     }
 }

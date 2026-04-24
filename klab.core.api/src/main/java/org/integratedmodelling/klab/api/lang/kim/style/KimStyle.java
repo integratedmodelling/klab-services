@@ -6,6 +6,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 
+import java.awt.*;
+
 public class KimStyle {
 
   public static KimStyle getStyle(Concept concept) {
@@ -68,12 +70,17 @@ public class KimStyle {
     UNKNOWN(new int[] {128, 128, 128}),
     INACTIVE(new int[] {160, 160, 160}),
     VERSION(new int[] {0, 153, 153}),
+    KEYWORD(new int[] {178, 34, 34}),
     VALUE_OPERATOR(new int[] {0, 0, 0}),
     UNARY_OPERATOR(new int[] {0, 0, 0}),
     BINARY_OPERATOR(new int[] {0, 0, 0}),
     SEMANTIC_MODIFIER(new int[] {0, 0, 0});
 
     public int[] rgb;
+
+    public java.awt.Color getColor() {
+      return new java.awt.Color(rgb[0], rgb[1], rgb[2]);
+    }
 
     Color(int[] rgb) {
       this.rgb = rgb;
@@ -140,8 +147,32 @@ public class KimStyle {
      */
     public KimStylingAppender(Scope scope) {}
 
+    private FormattedString output = new FormattedString();
+
     @Override
-    public void append(String token, KlabStatement.LexicalRole role) {}
+    public void append(String token, KlabStatement.LexicalRole role) {
+      switch (role) {
+        case KEYWORD, OPERATOR -> {
+          output.add(token, Color.KEYWORD.getColor(), FormattedString.Style.BOLD);
+        }
+        case CONCEPT -> {
+          
+        }
+        case UNIT -> {}
+        case CURRENCY -> {}
+        case STRING -> {}
+        case NUMBER -> {}
+        case PREFIX_SEMANTIC_OPERATOR -> {}
+        case INFIX_SEMANTIC_OPERATOR -> {}
+        case EXPRESSION_CODE -> {}
+        case OPEN_PARENTHESIS -> {}
+        case CLOSED_PARENTHESIS -> {}
+        case OPEN_BRACE -> {}
+        case CLOSED_BRACE -> {}
+        case SEPARATOR -> {}
+        case COMMENT -> {}
+      }
+    }
 
     /**
      * Produce the final output as a formatted string with highlighting usable by a renderer.
@@ -150,7 +181,7 @@ public class KimStyle {
      */
     @Override
     public FormattedString output() {
-      return null;
+      return output;
     }
 
     /**

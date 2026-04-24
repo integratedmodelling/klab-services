@@ -142,6 +142,14 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+
+    // ensure caches are used
+    if (KimConcept.class.isAssignableFrom(assetClass)) {
+      return (T) resolveConceptInternal(urn);
+    } else if (KimObservable.class.isAssignableFrom(assetClass)) {
+      return (T) resolveObservableInternal(urn);
+    }
+
     return client
         .withScope(scope)
         .get(

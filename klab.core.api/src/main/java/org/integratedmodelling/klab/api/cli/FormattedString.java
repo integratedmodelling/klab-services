@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.cli;
 
-import com.jayway.jsonpath.internal.filter.ValueNodes;
-
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,33 +13,9 @@ import java.util.List;
  */
 public class FormattedString {
 
-  public record Fragment(String text, java.awt.Color color, Style style) {}
+  public record Fragment(String text, Color color, Style style) {}
 
-  List<Fragment> fragmentList = new ArrayList<>();
-
-  public enum Color {
-    RED,
-    GREEN,
-    YELLOW,
-    BLUE,
-    MAGENTA,
-    CYAN,
-    WHITE,
-    BLACK;
-
-    java.awt.Color getColor() {
-      return switch (this) {
-        case RED -> java.awt.Color.RED;
-        case GREEN -> java.awt.Color.GREEN;
-        case YELLOW -> java.awt.Color.YELLOW;
-        case BLUE -> java.awt.Color.BLUE;
-        case MAGENTA -> java.awt.Color.MAGENTA;
-        case CYAN -> java.awt.Color.CYAN;
-        case WHITE -> java.awt.Color.WHITE;
-        case BLACK -> java.awt.Color.BLACK;
-      };
-    }
-  }
+  private List<Fragment> fragmentList = new ArrayList<>();
 
   public enum Style {
     BOLD,
@@ -61,27 +35,19 @@ public class FormattedString {
     }
   }
 
-  void add(String text, Color color, Style style) {
-    fragmentList.add(new Fragment(text, color.getColor(), style));
-  }
-
-  void add(String text, Color color) {
-    fragmentList.add(new Fragment(text, color.getColor(), null));
-  }
-
-  void add(String text, java.awt.Color color, Style style) {
+  public void add(String text, Color color, Style style) {
     fragmentList.add(new Fragment(text, color, style));
   }
 
-  void add(String text, java.awt.Color color) {
+  public void add(String text, Color color) {
     fragmentList.add(new Fragment(text, color, null));
   }
 
-  void add(String text, Style style) {
+  public void add(String text, Style style) {
     fragmentList.add(new Fragment(text, null, style));
   }
 
-  void add(String text) {
+  public void add(String text) {
     fragmentList.add(new Fragment(text, null, null));
   }
 
@@ -93,31 +59,23 @@ public class FormattedString {
 
   // TODO add links, lists and headers
 
-  void addLine(String text, Color color, Style style) {
+  public void addLine(String text, Color color, Style style) {
     add(text + "\n", color, style);
   }
 
-  void addLine(String text, Color color) {
+  public void addLine(String text, Color color) {
     add(text + "\n", color);
   }
 
-  void addLine(String text, java.awt.Color color, Style style) {
-    add(text + "\n", color, style);
-  }
-
-  void addLine(String text, java.awt.Color color) {
-    add(text + "\n", color);
-  }
-
-  void addLine(String text, Style style) {
+  public void addLine(String text, Style style) {
     add(text + "\n", style);
   }
 
-  void addLine(String text) {
+  public void addLine(String text) {
     add(text + "\n");
   }
 
-  void addLine() {
+  public void addLine() {
     add("\n");
   }
 
