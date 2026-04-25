@@ -916,7 +916,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     if (semanticModifier != null) {
       appender.append(semanticModifier.declaration[0], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
       if (name != null) {
-        appender.append(name, LexicalRole.CONCEPT);
+        appender.append(name, LexicalRole.CONCEPT, this);
       } else {
         observable.format(appender);
       }
@@ -926,7 +926,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     } else {
       if (name != null) {
-        appender.append(name, LexicalRole.CONCEPT);
+        appender.append(name, LexicalRole.CONCEPT, this);
       } else if (observable != null) {
         observable.format(appender);
       }

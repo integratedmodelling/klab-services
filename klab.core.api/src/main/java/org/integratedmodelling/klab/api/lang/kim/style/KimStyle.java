@@ -3,43 +3,53 @@ package org.integratedmodelling.klab.api.lang.kim.style;
 import org.integratedmodelling.klab.api.cli.FormattedString;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.awt.*;
+import java.util.Set;
 
 public class KimStyle {
 
   public static KimStyle getStyle(Concept concept) {
+    return getStyle(concept.getType(), concept.isAbstract());
+  }
+
+  public static KimStyle getStyle(KimConcept concept) {
+    return getStyle(concept.getType(), concept.is(SemanticType.ABSTRACT));
+  }
+
+  public static KimStyle getStyle(Set<SemanticType> concept, boolean isAbstract) {
 
     Color color = Color.UNKNOWN;
     FontStyle fontStyle = FontStyle.NORMAL;
 
-    if (concept.is(SemanticType.DOMAIN)) {
+    if (concept.contains(SemanticType.DOMAIN)) {
       color = Color.DOMAIN;
-    } else if (concept.is(SemanticType.QUALITY)) {
+    } else if (concept.contains(SemanticType.QUALITY)) {
       color = Color.QUALITY;
-    } else if (concept.is(SemanticType.SUBJECT)) {
+    } else if (concept.contains(SemanticType.SUBJECT)) {
       color = Color.SUBJECT;
-    } else if (concept.is(SemanticType.AGENT)) {
+    } else if (concept.contains(SemanticType.AGENT)) {
       color = Color.SUBJECT;
-    } else if (concept.is(SemanticType.RELATIONSHIP)) {
+    } else if (concept.contains(SemanticType.RELATIONSHIP)) {
       color = Color.RELATIONSHIP;
-    } else if (concept.is(SemanticType.EXTENT)) {
+    } else if (concept.contains(SemanticType.EXTENT)) {
       color = Color.EXTENT;
-    } else if (concept.is(SemanticType.EVENT)) {
+    } else if (concept.contains(SemanticType.EVENT)) {
       color = Color.EVENT;
-    } else if (concept.is(SemanticType.PROCESS)) {
+    } else if (concept.contains(SemanticType.PROCESS)) {
       color = Color.PROCESS;
-    } else if (concept.is(SemanticType.NOTHING)) {
+    } else if (concept.contains(SemanticType.NOTHING)) {
       color = Color.ERROR;
-    } else if (concept.is(SemanticType.TRAIT)) {
+    } else if (concept.contains(SemanticType.TRAIT)) {
       color = Color.TRAIT;
-    } else if (concept.is(SemanticType.ROLE)) {
+    } else if (concept.contains(SemanticType.ROLE)) {
       color = Color.ROLE;
     }
 
-    if (concept.isAbstract()) {
+    if (isAbstract) {
       fontStyle = FontStyle.ITALIC;
     }
 
@@ -70,7 +80,7 @@ public class KimStyle {
     UNKNOWN(new int[] {128, 128, 128}),
     INACTIVE(new int[] {160, 160, 160}),
     VERSION(new int[] {0, 153, 153}),
-    KEYWORD(new int[] {178, 34, 34}),
+    KEYWORD(new int[] {85, 6, 22}),
     VALUE_OPERATOR(new int[] {0, 0, 0}),
     UNARY_OPERATOR(new int[] {0, 0, 0}),
     BINARY_OPERATOR(new int[] {0, 0, 0}),
@@ -120,7 +130,7 @@ public class KimStyle {
     private KlabStatement.LexicalRole lastRole = null;
 
     @Override
-    public void append(String token, KlabStatement.LexicalRole role) {
+    public void append(String token, KlabStatement.LexicalRole role, Object... parameters) {
       if (lastRole != null && lastRole != KlabStatement.LexicalRole.OPEN_PARENTHESIS) {
         sb.append(" ");
       }
@@ -147,31 +157,60 @@ public class KimStyle {
      */
     public KimStylingAppender(Scope scope) {}
 
-    private FormattedString output = new FormattedString();
+    private final FormattedString output = new FormattedString();
+    private KlabStatement.LexicalRole lastRole = null;
 
     @Override
-    public void append(String token, KlabStatement.LexicalRole role) {
+    public void append(String token, KlabStatement.LexicalRole role, Object... parameters) {
+
+      if (lastRole != null && lastRole != KlabStatement.LexicalRole.OPEN_PARENTHESIS) {
+        output.add(" ");
+      }
       switch (role) {
         case KEYWORD, OPERATOR -> {
           output.add(token, Color.KEYWORD.getColor(), FormattedString.Style.BOLD);
         }
         case CONCEPT -> {
-          
+          KimStyle style = null;
+          if (parameters != null) {
+            for (Object p : parameters) {
+              if (p instanceof Concept) {
+                style = KimStyle.getStyle((Concept) p);
+              } else if (p instanceof KimConcept concept) {
+                style = KimStyle.getStyle(concept);
+              }
+            }
+          }
+          if (style == null) {
+            output.add(token, FormattedString.Style.BOLD);
+          } else {
+            output.add(
+                token,
+                style.getColor().getColor(),
+                switch (style.fontStyle) {
+                  case ITALIC -> FormattedString.Style.ITALIC;
+                  case NORMAL -> null;
+                  case BOLD -> FormattedString.Style.BOLD;
+                  case BOLD_ITALIC -> FormattedString.Style.UNDERLINE;
+                });
+          }
         }
-        case UNIT -> {}
-        case CURRENCY -> {}
-        case STRING -> {}
-        case NUMBER -> {}
-        case PREFIX_SEMANTIC_OPERATOR -> {}
-        case INFIX_SEMANTIC_OPERATOR -> {}
-        case EXPRESSION_CODE -> {}
-        case OPEN_PARENTHESIS -> {}
-        case CLOSED_PARENTHESIS -> {}
-        case OPEN_BRACE -> {}
-        case CLOSED_BRACE -> {}
-        case SEPARATOR -> {}
-        case COMMENT -> {}
+        default -> output.add(token);
+          //        case UNIT -> {}
+          //        case CURRENCY -> {}
+          //        case STRING -> {}
+          //        case NUMBER -> {}
+          //        case PREFIX_SEMANTIC_OPERATOR -> {}
+          //        case INFIX_SEMANTIC_OPERATOR -> {}
+          //        case EXPRESSION_CODE -> {}
+          //        case OPEN_PARENTHESIS -> {}
+          //        case CLOSED_PARENTHESIS -> {}
+          //        case OPEN_BRACE -> {}
+          //        case CLOSED_BRACE -> {}
+          //        case SEPARATOR -> {}
+          //        case COMMENT -> {}
       }
+      lastRole = role;
     }
 
     /**

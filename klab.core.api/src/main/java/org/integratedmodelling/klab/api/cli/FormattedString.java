@@ -15,7 +15,7 @@ public class FormattedString {
 
   public record Fragment(String text, Color color, Style style) {}
 
-  private List<Fragment> fragmentList = new ArrayList<>();
+  private final List<Fragment> fragmentList = new ArrayList<>();
 
   public enum Style {
     BOLD,

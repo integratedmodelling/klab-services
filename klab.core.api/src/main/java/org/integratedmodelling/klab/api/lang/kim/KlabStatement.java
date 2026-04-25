@@ -45,8 +45,10 @@ public interface KlabStatement extends Statement, KlabAsset {
      *
      * @param token
      * @param role
+     * @param parameters optional parameters - usually related to what the token represents so that
+     *     the formatter can be more precise.
      */
-    void append(String token, LexicalRole role);
+    void append(String token, LexicalRole role, Object... parameters);
 
     /**
      * Produce the final output as the return object.

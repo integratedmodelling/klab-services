@@ -278,6 +278,11 @@ public enum Setting {
       "Remove all data for local services but not their configuration",
       Map.class,
       Map.of()),
+  LAUNCH_DATABASE_INSPECTOR(
+      Page.DEBUGGING,
+      "Launch the online Neo4j inspector. Connect to neo4j://0.0.0.0:7687 for local.",
+      Map.class,
+      Map.of()),
   LAUNCH_DEBUG_GUI(
       Page.DEBUGGING,
       "Launch a DevToolsFX debugging tool for the GUI when in graphical mode",
