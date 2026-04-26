@@ -651,13 +651,33 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
+      if (scope.getContextObservation() != null) {
+        submissionScope
+            .getCurrentTransaction()
+            .link(submission, scope.getContextObservation(), GraphModel.Relationship.HAS_CONTEXT);
+      }
+
+      if (scope.getObserver() != null) {
+        submissionScope
+            .getCurrentTransaction()
+            .link(submission, scope.getObserver(), GraphModel.Relationship.HAS_OBSERVER);
+      }
+
       // keep the k.LAB ownership for the resolution only if we're the root action.
+      // FIXME the observer should take care of this but for now the k.LAB actor isn't considered
       var resolutionScope =
           submissionScope
               .executing(
                   resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null)
               //  Add any cohort and identification strategy needed for KG maintenance.
               .contextualizeFor(observation);
+
+      /*
+       * Save the resolution constraints in the metadata for debugging and provenance.
+       */
+      resolution
+          .getMetadata()
+          .put("constraints", Utils.Json.asString(resolutionScope.getResolutionConstraints()));
 
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
@@ -675,13 +695,17 @@ public class RuntimeService extends BaseService
           .thenApply(
               dataflow -> {
                 observation.getNotifications().addAll(dataflow.getNotifications());
+                // TODO remove eventually, or make it debug-level
+                var encoded =
+                    org.integratedmodelling.common.utils.Utils.Dataflows.encode(
+                        dataflow, resolutionScope);
+                resolution.getMetadata().put("dataflow", encoded);
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
                       }
-
                       return observation;
                     }
                   }

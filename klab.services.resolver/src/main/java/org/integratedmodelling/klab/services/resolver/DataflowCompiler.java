@@ -88,10 +88,6 @@ public class DataflowCompiler {
                   null));
     }
 
-    // TODO remove eventually, or make it debug-level
-    var encoded = Utils.Dataflows.encode(ret, scope);
-    Logging.INSTANCE.info("Dataflow for " + observation + ":\n\n" + encoded);
-
     return ret;
   }
 

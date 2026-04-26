@@ -100,8 +100,10 @@ public interface GraphModel {
     AFFECTS,
     CONTEXTUALIZED_BY,
     CONTEXTUALIZED,
+    HAS_CONTEXT, // for submission activities
     EMERGED_FROM,
-    HAS_OBSERVER,
+    HAS_OBSERVER, // for submission activities FIXME currently is used on observations
+    HAS_RELATIONSHIP_SOURCE,
     HAS_RELATIONSHIP_TARGET,
     HAS_PLAN,
     BY_AGENT,
