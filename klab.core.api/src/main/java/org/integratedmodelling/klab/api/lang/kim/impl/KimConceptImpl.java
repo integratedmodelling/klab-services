@@ -913,6 +913,14 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       appender.append("not", LexicalRole.KEYWORD);
     }
 
+    for (KimConcept trait : traits) {
+      ((KimConceptImpl) trait).formatParenthesized(appender, true);
+    }
+
+    for (KimConcept role : roles) {
+      ((KimConceptImpl) role).formatParenthesized(appender, true);
+    }
+
     if (semanticModifier != null) {
       appender.append(semanticModifier.declaration[0], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
       if (name != null) {
@@ -930,14 +938,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       } else if (observable != null) {
         observable.format(appender);
       }
-    }
-
-    for (KimConcept trait : traits) {
-      ((KimConceptImpl) trait).formatParenthesized(appender, true);
-    }
-
-    for (KimConcept role : roles) {
-      ((KimConceptImpl) role).formatParenthesized(appender, true);
     }
 
     if (inherent != null) {

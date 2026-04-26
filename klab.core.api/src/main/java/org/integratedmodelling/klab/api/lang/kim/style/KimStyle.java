@@ -167,7 +167,7 @@ public class KimStyle {
         output.add(" ");
       }
       switch (role) {
-        case KEYWORD, OPERATOR -> {
+        case KEYWORD, OPERATOR, PREFIX_SEMANTIC_OPERATOR, INFIX_SEMANTIC_OPERATOR -> {
           output.add(token, Color.KEYWORD.getColor(), FormattedString.Style.BOLD);
         }
         case CONCEPT -> {

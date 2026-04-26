@@ -110,9 +110,10 @@ public interface GraphModel {
     HAS_DATAFLOW,
     HAS_PROVENANCE,
     HAS_ACTIVITY,
-    HAS_DATA,   // Quality observations to their storage items
-    HAS_CHILD,  // Most assets that build the primary path in the KG
+    HAS_DATA, // Quality observations to their storage items
+    HAS_CHILD, // Most assets that build the primary path in the KG
     HAS_MEMBER, // Cohort to Observation
+    CONTRIBUTED_TO, // provenance relationship linking collective observations to cohorts
     TRIGGERED,
     RESOLVED;
 
@@ -122,7 +123,7 @@ public interface GraphModel {
     }
 
     public static final Set<Relationship> PASSIVE_RELATIONSHIPS =
-        EnumSet.of(CONTEXTUALIZED_BY, EMERGED_FROM, AFFECTS);
+        EnumSet.of(CONTEXTUALIZED_BY, EMERGED_FROM, AFFECTS, CONTRIBUTED_TO);
 
     public Direction direction() {
       return PASSIVE_RELATIONSHIPS.contains(this) ? Direction.INCOMING : Direction.OUTGOING;

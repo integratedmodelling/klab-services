@@ -24,7 +24,10 @@ public interface KlabStatement extends Statement, KlabAsset {
     CLOSED_PARENTHESIS,
     OPEN_BRACE,
     CLOSED_BRACE,
-    /** Separators have semantic value: comma, semicolon, etc. */
+    /**
+     * Separators have semantic value: comma, semicolon, etc. Whitespace is not a separator and
+     * should never be added.
+     */
     SEPARATOR,
     COMMENT,
   }

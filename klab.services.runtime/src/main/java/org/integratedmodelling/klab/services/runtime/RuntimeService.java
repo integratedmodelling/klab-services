@@ -625,7 +625,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var cohort = getCohortFor(observation, submissionScope, true);
+      var cohort = getCohortFor(observation.getObservable(), submissionScope, true);
 
       submissionScope
           .getCurrentTransaction()
@@ -790,7 +790,7 @@ public class RuntimeService extends BaseService
 
       if (mayExistInCohort) {
         // query for the object's identity within the cohort. If existing, extract and return it
-        var cohort = getCohortFor(observation, scope, false);
+        var cohort = getCohortFor(observation.getObservable(), scope, false);
         if (cohort != null) { // should never happen
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
@@ -836,16 +836,24 @@ public class RuntimeService extends BaseService
         "RuntimeService::register() called with unexpected scope implementation");
   }
 
-  private Cohort getCohortFor(
-      Observation observation, ContextScope scope, boolean addCohortIfMissing) {
+  /**
+   * Find the cohort for the passed observation and optionally create it if missing. Must be called
+   * with a current transaction unless the cohort is guaranteed to exist.
+   *
+   * @param observable
+   * @param scope
+   * @param addCohortIfMissing
+   * @return the (existing or newly created) cohort
+   */
+  public Cohort getCohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing) {
 
     var needsCohort =
-        observation.getObservable().is(SemanticType.COUNTABLE)
-            && !observation.getObservable().asConcept().isCollective();
+        observable.is(SemanticType.COUNTABLE) && !observable.asConcept().isCollective();
+
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
-      var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
+      var cohortObservable = reasoner.baseSubstantialType(observable, scope);
 
       // local uncommitted
       if (scope.getCurrentTransaction() != null) {
@@ -1193,7 +1201,8 @@ public class RuntimeService extends BaseService
         throw new KlabUnimplementedException("Contextualization not implemented");
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
-        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the executors
+        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the
+        // executors
       } // TODO check if value ops should be handled here. Same for transformation instead of
       // surgically
       //  altering the dataflow?
