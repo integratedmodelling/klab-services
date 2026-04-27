@@ -282,4 +282,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
   @Override
   public void visit(Visitor visitor) {}
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return null;
+  }
 }

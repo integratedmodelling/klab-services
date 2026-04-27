@@ -100,4 +100,9 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
     public void visit(Visitor visitor) {
 
     }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
 }

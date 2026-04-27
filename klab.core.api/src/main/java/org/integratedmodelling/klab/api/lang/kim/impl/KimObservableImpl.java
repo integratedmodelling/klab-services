@@ -304,4 +304,10 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
         this.patternVariables = patternVariables;
     }
 
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        this.semantics.format(appender);
+        // TODO unit, currency, range, given name, optional
+        return appender.output();
+    }
 }

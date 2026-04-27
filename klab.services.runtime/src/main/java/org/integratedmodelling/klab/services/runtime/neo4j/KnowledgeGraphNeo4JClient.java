@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -30,16 +31,16 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   boolean online = false;
 
   public KnowledgeGraphNeo4JClient(String url) {
-    if (url == null)
-      throw new KlabIllegalArgumentException("Database url is mandatory");
+    if (url == null) throw new KlabIllegalArgumentException("Database url is mandatory");
     this.driver = GraphDatabase.driver(url, AuthTokens.none());
     try {
       // TODO launch a timed something to verify connectivity periodically
       this.driver.verifyConnectivity();
       online = true;
-      System.out.println("Connected to Neo4J at "+url);
+      Logging.INSTANCE.info("Connected to Neo4J at " + url);
       configureDatabase();
     } catch (Exception e) {
+      Logging.INSTANCE.error("Failed to connect to Neo4J at " + url, e);
       online = false;
     }
   }

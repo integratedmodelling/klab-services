@@ -4,7 +4,6 @@ import java.io.Serial;
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
@@ -299,15 +298,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   /**
    * Remove a component concept (must be a trait: use semantic roles for clauses and operators).
+   *
    * @param concept
    * @return
    */
   public boolean remove(KimConcept concept) {
-      if (this.traits.remove(concept)) {
-        resetDefinition();
-        return true;
-      }
-      return false;
+    if (this.traits.remove(concept)) {
+      resetDefinition();
+      return true;
+    }
+    return false;
   }
 
   public void setOperands(List<KimConcept> operands) {
@@ -563,6 +563,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    *
    * <p>TODO must also compute the code name and reference name, which shouldn't come from the
    * semantics.
+   *
+   * <p>TODO generalize to a tokenizer where the append() can be delegated to a separate method that
+   * also knows the type and role of each token, so that it can be connected to highlighting
    */
   public String finalizeDefinition() {
 
@@ -880,5 +883,118 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       case LINKING -> relationshipSource;
       case TO -> relationshipTarget;
     };
+  }
+
+  private <T> T formatParenthesized(CodeAppender<T> appender, boolean addParentheses) {
+
+    // needed for side effects
+    var pdef = computeUrnAndParenthesize();
+    var needsParentheses = pdef.startsWith("(") && pdef.endsWith(")");
+
+    if (needsParentheses && addParentheses) {
+      appender.append("(", LexicalRole.OPEN_PARENTHESIS);
+    }
+
+    if (expressionType != null) {
+      ((KimConceptImpl) operands.getFirst()).formatParenthesized(appender, true);
+      for (int i = 1; i < operands.size(); i++) {
+        appender.append(
+            expressionType == Expression.INTERSECTION ? "and" : "or", LexicalRole.KEYWORD);
+        ((KimConceptImpl) operands.get(i)).formatParenthesized(appender, true);
+      }
+      return appender.output();
+    }
+
+    var collective = !isCollective() && observable != null && observable.isCollective();
+    if (collective) {
+      appender.append("each", LexicalRole.KEYWORD);
+    }
+    if (negated) {
+      appender.append("not", LexicalRole.KEYWORD);
+    }
+
+    for (KimConcept trait : traits) {
+      ((KimConceptImpl) trait).formatParenthesized(appender, true);
+    }
+
+    for (KimConcept role : roles) {
+      ((KimConceptImpl) role).formatParenthesized(appender, true);
+    }
+
+    if (semanticModifier != null) {
+      appender.append(semanticModifier.declaration[0], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
+      if (name != null) {
+        appender.append(name, LexicalRole.CONCEPT, this);
+      } else {
+        observable.format(appender);
+      }
+      if (comparisonConcept != null) {
+        appender.append(semanticModifier.declaration[1], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
+        comparisonConcept.format(appender);
+      }
+    } else {
+      if (name != null) {
+        appender.append(name, LexicalRole.CONCEPT, this);
+      } else if (observable != null) {
+        observable.format(appender);
+      }
+    }
+
+    if (inherent != null) {
+      appender.append("of", LexicalRole.KEYWORD);
+      ((KimConceptImpl) inherent).formatParenthesized(appender, true);
+    }
+
+    if (causant != null) {
+      appender.append("caused by", LexicalRole.KEYWORD);
+      ((KimConceptImpl) causant).formatParenthesized(appender, true);
+    }
+
+    if (caused != null) {
+      appender.append("causing", LexicalRole.KEYWORD);
+      ((KimConceptImpl) caused).formatParenthesized(appender, true);
+    }
+
+    if (compresent != null) {
+      appender.append("with", LexicalRole.KEYWORD);
+      ((KimConceptImpl) compresent).formatParenthesized(appender, true);
+    }
+
+    if (cooccurrent != null) {
+      appender.append("during", LexicalRole.KEYWORD);
+      ((KimConceptImpl) cooccurrent).formatParenthesized(appender, true);
+    }
+
+    if (adjacent != null) {
+      appender.append("adjacent to", LexicalRole.KEYWORD);
+      ((KimConceptImpl) adjacent).formatParenthesized(appender, true);
+    }
+
+    if (goal != null) {
+      appender.append("for", LexicalRole.KEYWORD);
+      ((KimConceptImpl) goal).formatParenthesized(appender, true);
+    }
+
+    if (relationshipSource != null) {
+      appender.append("linking", LexicalRole.KEYWORD);
+      ((KimConceptImpl) relationshipSource).formatParenthesized(appender, true);
+      if (relationshipTarget != null) {
+        appender.append("to", LexicalRole.KEYWORD);
+        ((KimConceptImpl) relationshipTarget).formatParenthesized(appender, true);
+      }
+    }
+
+    // TODO value operators
+
+    if (needsParentheses && addParentheses) {
+      appender.append(")", LexicalRole.CLOSED_PARENTHESIS);
+    }
+
+    return appender.output();
+  }
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return formatParenthesized(appender, false);
   }
 }

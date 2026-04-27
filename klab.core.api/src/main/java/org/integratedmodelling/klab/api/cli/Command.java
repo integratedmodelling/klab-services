@@ -144,12 +144,12 @@ public class Command {
      * Add a sub-command. When done, call parent() to return to building the parent command.
      *
      * @param commandName
-     * @param commandDescription
      * @param commandShortDescription
+     * @param commandDescription
      * @return
      */
     public Builder subCommand(
-        String commandName, String commandDescription, String commandShortDescription) {
+        String commandName, String commandShortDescription, String commandDescription) {
       // No CLI in this one
       var ret = Command.builder(commandName, commandDescription, commandShortDescription);
       ret.parent = this;

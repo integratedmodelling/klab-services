@@ -455,10 +455,14 @@ public class CompiledDataflow {
                     transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
                   }
                   case COLLECTIVE_SUBSTANTIAL -> {
-                    // dependency to observe a quality = link to scope, add AFFECTS
-                    transaction.link(
-                        knowledgeGraph.scope(), dependent, GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                    var cohort =
+                        runtimeService.getCohortFor(
+                            dependent.getObservable().getSemantics().singular(), scope, true);
+                    if (cohort != null) {
+                      transaction.link(dependent, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
+                    } else {
+                      throw new KlabInternalErrorException("cannot find cohort for " + dependent);
+                    }
                   }
                   default ->
                       throw new KlabInternalErrorException(
@@ -474,10 +478,15 @@ public class CompiledDataflow {
 
                 switch (dependentRole) {
                   case COLLECTIVE_SUBSTANTIAL -> {
-                    // link to the scope but add the AFFECTS relationship to the root substantial
-                    transaction.link(
-                        knowledgeGraph.scope(), dependent, GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                    // link to the cohort as a contributor
+                    var cohort =
+                        runtimeService.getCohortFor(
+                            dependent.getObservable().getSemantics().singular(), scope, true);
+                    if (cohort != null) {
+                      transaction.link(dependent, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
+                    } else {
+                      throw new KlabInternalErrorException("cannot find cohort for " + dependent);
+                    }
                   }
                   case INDIVIDUAL_SUBSTANTIAL, RELATIONAL -> {
                     if (dependentRole == Observation.Role.RELATIONAL) {

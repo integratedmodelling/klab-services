@@ -16,12 +16,11 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.data.SerializingDataBuilder;
-import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -44,14 +43,15 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
@@ -60,12 +60,11 @@ import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescri
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
-import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
@@ -90,12 +89,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private final ResourcesKBox resourcesKbox;
   private final ResourceManager resourceManager;
 
-  /**
-   * We keep a hash of all the resource URNs we serve for quick reference and search
-   *
-   * @deprecated use {@link ResourcesKBox}
-   */
-  private Set<String> localResources = new HashSet<>();
+  //  /**
+  //   * We keep a hash of all the resource URNs we serve for quick reference and search
+  //   *
+  //   * @deprecated use {@link ResourcesKBox}
+  //   */
+  //  private Set<String> localResources = new HashSet<>();
 
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
@@ -314,7 +313,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           //                                    ResourceReference.class));
         }
         if (resource != null) {
-          localResources.add(resource.getUrn());
           ResourceInfo status = resourcesKbox.getStatus(resource.getUrn(), null);
           if (status == null) {
             status = new ResourceInfo();
@@ -976,6 +974,43 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return (T) retrieveWorkspace(urn, scope);
     } else if (Resource.class.isAssignableFrom(assetClass)) {
       return (T) retrieveResource(List.of(urn), scope);
+    } else if (KimObservable.class.isAssignableFrom(assetClass)) {
+      return (T) resolveObservableInternal(urn);
+    } else if (KimConcept.class.isAssignableFrom(assetClass)) {
+      return (T) resolveConceptInternal(urn);
+    } /*else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
+        return (T) retrieveAdapterInfo(urn);
+      }*/ else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveBehavior(urn, scope);
+    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveBehavior(urn, scope);
+    } else if (KimModel.class.isAssignableFrom(assetClass)) {
+      var namespace = retrieveNamespace(Utils.Paths.getLeading(urn, '.'), scope);
+      return namespace == null
+          ? null
+          : (T)
+              namespace.getStatements().stream()
+                  .filter(s -> s instanceof KimModel && s.getUrn().equals(urn))
+                  .map(s -> (KimModel) s)
+                  .findFirst()
+                  .orElse(null);
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveNamespace(urn, scope);
+    } else if (KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
+      var namespace = retrieveNamespace(Utils.Paths.getLeading(urn, '.'), scope);
+      return namespace == null
+          ? null
+          : (T)
+              namespace.getStatements().stream()
+                  .filter(s -> s instanceof KimSymbolDefinition && s.getUrn().equals(urn))
+                  .map(s -> (KimModel) s)
+                  .findFirst()
+                  .orElse(null);
+    } else if (Worldview.class.isAssignableFrom(assetClass)) {
+      var ret = retrieveWorldview();
+      if (ret.getUrn().equals(urn)) {
+        return (T) ret;
+      }
     }
     // TODO continue
     throw new KlabIllegalStateException(
@@ -1615,7 +1650,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public Collection<String> listResourceUrns(Scope scope) {
-    return localResources;
+    return resourcesKbox.listResourcesUrns();
   }
 
   @Override

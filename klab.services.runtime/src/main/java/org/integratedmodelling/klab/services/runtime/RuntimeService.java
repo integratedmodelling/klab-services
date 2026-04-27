@@ -625,7 +625,7 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var cohort = getCohortFor(observation, submissionScope, true);
+      var cohort = getCohortFor(observation.getObservable(), submissionScope, true);
 
       submissionScope
           .getCurrentTransaction()
@@ -651,13 +651,33 @@ public class RuntimeService extends BaseService
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
 
+      if (scope.getContextObservation() != null) {
+        submissionScope
+            .getCurrentTransaction()
+            .link(submission, scope.getContextObservation(), GraphModel.Relationship.HAS_CONTEXT);
+      }
+
+      if (scope.getObserver() != null) {
+        submissionScope
+            .getCurrentTransaction()
+            .link(submission, scope.getObserver(), GraphModel.Relationship.HAS_OBSERVER);
+      }
+
       // keep the k.LAB ownership for the resolution only if we're the root action.
+      // FIXME the observer should take care of this but for now the k.LAB actor isn't considered
       var resolutionScope =
           submissionScope
               .executing(
                   resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null)
               //  Add any cohort and identification strategy needed for KG maintenance.
               .contextualizeFor(observation);
+
+      /*
+       * Save the resolution constraints in the metadata for debugging and provenance.
+       */
+      resolution
+          .getMetadata()
+          .put("constraints", Utils.Json.asString(resolutionScope.getResolutionConstraints()));
 
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
@@ -675,13 +695,17 @@ public class RuntimeService extends BaseService
           .thenApply(
               dataflow -> {
                 observation.getNotifications().addAll(dataflow.getNotifications());
+                // TODO remove eventually, or make it debug-level
+                var encoded =
+                    org.integratedmodelling.common.utils.Utils.Dataflows.encode(
+                        dataflow, resolutionScope);
+                resolution.getMetadata().put("dataflow", encoded);
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
                       }
-
                       return observation;
                     }
                   }
@@ -790,7 +814,7 @@ public class RuntimeService extends BaseService
 
       if (mayExistInCohort) {
         // query for the object's identity within the cohort. If existing, extract and return it
-        var cohort = getCohortFor(observation, scope, false);
+        var cohort = getCohortFor(observation.getObservable(), scope, false);
         if (cohort != null) { // should never happen
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
@@ -836,16 +860,24 @@ public class RuntimeService extends BaseService
         "RuntimeService::register() called with unexpected scope implementation");
   }
 
-  private Cohort getCohortFor(
-      Observation observation, ContextScope scope, boolean addCohortIfMissing) {
+  /**
+   * Find the cohort for the passed observation and optionally create it if missing. Must be called
+   * with a current transaction unless the cohort is guaranteed to exist.
+   *
+   * @param observable
+   * @param scope
+   * @param addCohortIfMissing
+   * @return the (existing or newly created) cohort
+   */
+  public Cohort getCohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing) {
 
     var needsCohort =
-        observation.getObservable().is(SemanticType.COUNTABLE)
-            && !observation.getObservable().asConcept().isCollective();
+        observable.is(SemanticType.COUNTABLE) && !observable.asConcept().isCollective();
+
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
-      var cohortObservable = reasoner.baseSubstantialType(observation.getObservable(), scope);
+      var cohortObservable = reasoner.baseSubstantialType(observable, scope);
 
       // local uncommitted
       if (scope.getCurrentTransaction() != null) {
@@ -1193,7 +1225,8 @@ public class RuntimeService extends BaseService
         throw new KlabUnimplementedException("Contextualization not implemented");
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
-        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the executors
+        // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the
+        // executors
       } // TODO check if value ops should be handled here. Same for transformation instead of
       // surgically
       //  altering the dataflow?

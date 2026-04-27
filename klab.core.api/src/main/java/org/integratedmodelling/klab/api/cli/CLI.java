@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.cli;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -69,10 +71,10 @@ public abstract class CLI {
     var cl = parse(commandLine);
     if (cl == null) {
       return resultHandler.apply(
-          new KlabCommandLineError("Command line parsing failed for: " + commandLine));
+          new KlabCommandLineError("Command line parsing failed for: " + commandLine, commandLine));
     }
     if (cl.isError()) {
-      return resultHandler.apply(new KlabCommandLineError(cl.getErrorMessage()));
+      return resultHandler.apply(new KlabCommandLineError(cl.getErrorMessage(), commandLine));
     } else if (cl.getCommand() != null && cl.getCommand().getHandler() != null) {
       try {
         return resultHandler.apply(cl.getCommand().getHandler().apply(cl));
@@ -158,10 +160,12 @@ public abstract class CLI {
     return ret;
   }
 
+  // TODO add subcommands, options, arguments
   private void documentCommand(Command command, FormattedString output, int level, int cmdLength) {
     var spacer = " ".repeat(level);
     output.add(
         spacer + Utils.Strings.fillUpLeftAligned(command.getName(), " ", cmdLength),
+        new Color(153, 0, 0), // dark red. Use Theme.KEYWORD when theme is internalized
         FormattedString.Style.BOLD);
     output.add(command.getLongDescription(), FormattedString.Style.ITALIC);
     output.addLine();

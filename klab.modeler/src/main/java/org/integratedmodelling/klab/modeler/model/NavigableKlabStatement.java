@@ -4,12 +4,8 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
@@ -96,5 +92,10 @@ public abstract class NavigableKlabStatement<T extends KlabStatement> extends Na
           .toList();
     }
     return Collections.emptyList();
+  }
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return delegate.format(appender);
   }
 }

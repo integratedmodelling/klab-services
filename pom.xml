@@ -109,7 +109,7 @@
         <mweVersion>2.13.0</mweVersion>
         <googleJibVersion>3.3.1</googleJibVersion>
         <jib.jvmFlags>-XshowSettings:vm</jib.jvmFlags>
-        <avro.version>1.12.0</avro.version>
+        <avro.version>1.12.1</avro.version>
 
         <!-- the five below go together. Never change one without checking the
             others. -->

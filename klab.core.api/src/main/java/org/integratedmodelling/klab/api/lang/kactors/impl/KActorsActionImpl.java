@@ -54,4 +54,9 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
 
   @Override
   public void visit(Visitor visitor) {}
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return null;
+  }
 }

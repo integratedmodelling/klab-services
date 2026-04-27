@@ -16,7 +16,6 @@ package org.integratedmodelling.klab.api.exceptions;
 // TODO: Auto-generated Javadoc
 
 import java.io.Serial;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
  * The Class KlabValidationException.
@@ -28,11 +27,25 @@ public class KlabCommandLineError extends KlabException {
 
   @Serial private static final long serialVersionUID = 461213337593957416L;
 
-  public KlabCommandLineError() {}
+  private final String commandLine;
+
+  public KlabCommandLineError() {
+    this.commandLine = null;
+  }
 
   /** Instantiates a new klab validation exception. */
-  public KlabCommandLineError(String error) {
+  public KlabCommandLineError(String error, String commandLine) {
     super(error);
+    this.commandLine = commandLine;
+  }
+
+  /**
+   * The command line that generated the error
+   *
+   * @return
+   */
+  public String getCommandLine() {
+    return commandLine;
   }
 
   /**
@@ -40,7 +53,8 @@ public class KlabCommandLineError extends KlabException {
    *
    * @param e the e
    */
-  public KlabCommandLineError(Throwable e) {
+  public KlabCommandLineError(Throwable e, String commandLine) {
     super(e);
+    this.commandLine = commandLine;
   }
 }

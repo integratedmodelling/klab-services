@@ -303,4 +303,8 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
 
     }
 
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+        return null;
+    }
 }

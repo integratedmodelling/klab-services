@@ -219,6 +219,7 @@
             <artifactId>tyrus-standalone-client</artifactId>
             <version>2.2.0</version>
         </dependency>
+<!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-graphql</artifactId>
@@ -237,6 +238,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+-->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jdk8</artifactId>
@@ -269,6 +271,10 @@
             <artifactId>commons-exec</artifactId>
             <version>1.4.0</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
         </dependency>
     </dependencies>
 

@@ -255,4 +255,9 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
   @Override
   public void visit(Visitor visitor) {}
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return null;
+  }
 }
