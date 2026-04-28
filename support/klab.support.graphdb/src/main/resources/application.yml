@@ -1,6 +1,6 @@
 server:
   address: 127.0.0.1
-  port: 8080
+  port: 8382
 
 logging:
   file:
@@ -29,5 +29,4 @@ app:
     config:
       server.directories.logs: ${user.home}/.klab/services/graphdb/logs
       dbms.logs.query.enabled: VERBOSE
-      dbms.http_enabled_modules: BROWSER,REST
       dbms.security.procedures.unrestricted: '*'

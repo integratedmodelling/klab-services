@@ -124,7 +124,7 @@ public interface ProjectStorage {
    */
   boolean isFilesystemBased();
 
-  public static Pair<ResourceType, String> getDocumentData(String relativeFilePath) {
+  static Pair<ResourceType, String> getDocumentData(String relativeFilePath) {
     return getDocumentData(relativeFilePath, "/");
   }
 
@@ -137,8 +137,7 @@ public interface ProjectStorage {
    * @return the pair including the type and URN for the document, or null. The document may or may
    *     not exist.
    */
-  public static Pair<ResourceType, String> getDocumentData(
-      String relativeFilePath, String separator) {
+  static Pair<ResourceType, String> getDocumentData(String relativeFilePath, String separator) {
 
     ResourceType type = null;
     String urn = null;
@@ -165,15 +164,19 @@ public interface ProjectStorage {
       } else if (relativeFilePath.startsWith("strategies" + separator) && "obs".equals(extension)) {
         type = ResourceType.STRATEGY;
         urn = path.substring("strategies".length() + 1);
-      } else {
-        //                just return null
-        //                throw new KlabUnimplementedException("PUUUUUU " + relativeFilePath + " sep
-        // " + separator);
       }
     }
-    return (type == null || urn == null) ? null : Pair.of(type, urn);
+    return type == null ? null : Pair.of(type, urn);
   }
 
+  /**
+   * Relative file path for resource without assumptions about existence. Uses canonical separator
+   * ('/') suitable for Git commands.
+   *
+   * @param urn
+   * @param type
+   * @return
+   */
   static String getRelativeFilePath(String urn, ResourceType type) {
     return getRelativeFilePath(urn, type, "/");
   }
@@ -185,7 +188,7 @@ public interface ProjectStorage {
    *
    * @return
    */
-  public static String getRelativeFilePath(String urn, ResourceType type, String separator) {
+  static String getRelativeFilePath(String urn, ResourceType type, String separator) {
     return switch (type) {
       case SCRIPT -> "scripts" + separator + urn + "." + type.getFileExtension();
       case TESTCASE -> "tests" + separator + urn + "." + type.getFileExtension();
