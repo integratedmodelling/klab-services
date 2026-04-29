@@ -200,8 +200,6 @@ public class KimStyle {
           //        case CURRENCY -> {}
           //        case STRING -> {}
           //        case NUMBER -> {}
-          //        case PREFIX_SEMANTIC_OPERATOR -> {}
-          //        case INFIX_SEMANTIC_OPERATOR -> {}
           //        case EXPRESSION_CODE -> {}
           //        case OPEN_PARENTHESIS -> {}
           //        case CLOSED_PARENTHESIS -> {}

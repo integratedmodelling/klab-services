@@ -16,13 +16,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
-import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
-import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
 import org.integratedmodelling.common.knowledge.WorldviewImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -44,6 +41,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -3084,7 +3083,7 @@ public class WorkspaceManager {
     }
 
     try {
-      var document = fileProjectStorage.create(documentUrn, documentType);
+      var document = fileProjectStorage.create(documentUrn, documentType, lockingScope);
       if (document != null) {
         return handleFileChange(
             projectName, List.of(Triple.of(documentType, CRUDOperation.CREATE, document)));

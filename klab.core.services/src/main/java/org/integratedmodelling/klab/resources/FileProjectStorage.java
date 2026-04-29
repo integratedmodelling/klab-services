@@ -1,5 +1,14 @@
 package org.integratedmodelling.klab.resources;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
@@ -12,19 +21,11 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.utilities.Utils;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 public class FileProjectStorage implements ProjectStorage {
 
@@ -444,7 +445,7 @@ public class FileProjectStorage implements ProjectStorage {
   }
 
   @Override
-  public URL create(String resourceId, ResourceType resourceType) {
+  public URL create(String resourceId, ResourceType resourceType, Scope scope) {
 
     if (!rootFolder.exists()) {
       rootFolder.mkdirs();
@@ -466,18 +467,19 @@ public class FileProjectStorage implements ProjectStorage {
         try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
           try (var git = Git.wrap(repository)) {
             var command = git.add().addFilepattern(relativePath);
-            var result = command.call();
-            if (result.lock()) {
-              if (!result.commit()) {
-                Logging.INSTANCE.error("Failed to commit new document " + file);
-              }
-              result.unlock();
-            } else {
-              Logging.INSTANCE.error("Failed to lock new document " + file);
+            command.call();
+            // TODO call setAuthor()/setCommitter(), requires scope
+            var commit = git.commit().setMessage(resourceType.name() + " added: " + relativePath);
+            if (scope instanceof UserScope userScope) {
+              commit.setAuthor(
+                  userScope.getUser().getUsername(), userScope.getUser().getEmailAddress());
             }
+            commit.call();
+            Logging.INSTANCE.error("Failed to lock new document " + file);
           }
         } catch (Throwable t) {
-          Logging.INSTANCE.error(t);
+          Logging.INSTANCE.error(
+              "File add failed: " + resourceType.name().toLowerCase() + " " + relativePath, t);
         }
       }
 
