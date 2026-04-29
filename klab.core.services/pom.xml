@@ -174,12 +174,6 @@
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-spatial</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -220,12 +214,6 @@
             <groupId>org.orbisgis</groupId>
             <artifactId>h2gis</artifactId>
             <version>${h2gis.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -362,12 +350,6 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -376,12 +358,6 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geotiff</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
