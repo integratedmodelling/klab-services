@@ -51,6 +51,12 @@ public class KlabCommandLine extends CLI {
             "Compute the semantic distance between two concepts (add a third for context if needed)")
         .handler(ReasonCommands::distance)
         .parent()
+        .subCommand(
+                "base",
+                "Base observable",
+                "Compute the base observable of a concept")
+        .handler(ReasonCommands::base)
+        .parent()
         .build();
   }
 
