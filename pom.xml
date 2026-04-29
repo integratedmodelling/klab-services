@@ -38,25 +38,25 @@
             <email>ferdinando.villa@bc3research.org</email>
             <organization>Basque Centre for Climate Change (BC3); IKERBASQUE, Basque foundation for science
             </organization>
-            <organizationUrl>http://www.bc3research.org</organizationUrl>
+            <organizationUrl>https://www.bc3research.org</organizationUrl>
         </developer>
         <developer>
             <name>Enrico Girotto</name>
-            <email>enrico.girotto@gmail.com</email>
+            <email>enrico.girotto@bc3research.org</email>
             <organization>Basque Centre for Climate Change (BC3)</organization>
-            <organizationUrl>http://www.bc3research.org</organizationUrl>
+            <organizationUrl>https://www.bc3research.org</organizationUrl>
         </developer>
         <developer>
             <name>Iñigo Cobián</name>
             <email>inigo.cobian@bc3research.org</email>
             <organization>Basque Centre for Climate Change (BC3)</organization>
-            <organizationUrl>http://www.bc3research.org</organizationUrl>
+            <organizationUrl>https://www.bc3research.org</organizationUrl>
         </developer>
         <developer>
             <name>Kristina Sánchez</name>
             <email>kristina.sanchez@bc3research.org</email>
             <organization>Basque Centre for Climate Change (BC3)</organization>
-            <organizationUrl>http://www.bc3research.org</organizationUrl>
+            <organizationUrl>https://www.bc3research.org</organizationUrl>
         </developer>
         <developer>
             <name>Andrea Antonello</name>
@@ -97,9 +97,9 @@
         <java.version>21</java.version>
         <!-- Careful here: geotools must be right for hortonmachine to work; JTS
             should be the same one that geotools and HM needs. -->
-        <geotools.version>28.0</geotools.version>
-        <!--        <hortonmachine.version>0.10.11</hortonmachine.version>-->
-        <jts.version>1.18.1</jts.version>
+        <geotools.version>34.0</geotools.version>
+		<groovy.version>4.0.25</groovy.version>
+        <jts.version>1.20.0</jts.version>
         <h2gis.version>1.5.0</h2gis.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -116,13 +116,11 @@
         <spring.version>6.2.5</spring.version>
         <spring-security.version>6.4.4</spring-security.version>
         <junit-version>5.6.3</junit-version>
-        <jackson-version>2.18.2</jackson-version>
+        <jackson-version>2.19.0</jackson-version>
         <spring-data-neo4j.version>7.4.3</spring-data-neo4j.version>
-
 
         <javax.mail-api.version>1.5.2</javax.mail-api.version>
         <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
-
     </properties>
 
     <build>
@@ -169,6 +167,16 @@
                     <artifactId>jib-maven-plugin</artifactId>
                     <version>${googleJibVersion}</version>
                 </plugin>
+    			<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.5.0</version>
+					<configuration>
+						<rules>
+							<dependencyConvergence />
+						</rules>
+					</configuration>
+				</plugin>
             </plugins>
         </pluginManagement>
         <plugins>

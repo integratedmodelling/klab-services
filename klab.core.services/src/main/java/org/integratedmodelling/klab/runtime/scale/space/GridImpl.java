@@ -1,8 +1,14 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import java.awt.geom.Point2D;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.referencing.GeodeticCalculator;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
@@ -13,13 +19,6 @@ import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.locationtech.jts.geom.Point;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import java.awt.geom.Point2D;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class GridImpl implements Grid {
 

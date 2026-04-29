@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -7,7 +8,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelo
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.locationtech.jts.geom.Geometry;
-import org.opengis.referencing.operation.TransformException;
 
 public class EnvelopeImpl implements Envelope {
 
@@ -179,14 +179,6 @@ public class EnvelopeImpl implements Envelope {
       org.locationtech.jts.geom.Envelope envelope, ProjectionImpl projection) {
     EnvelopeImpl ret = new EnvelopeImpl();
     ret.envelope = new ReferencedEnvelope(envelope, projection.getCoordinateReferenceSystem());
-    ret.projection = projection;
-    return ret;
-  }
-
-  public static EnvelopeImpl create(
-      org.opengis.geometry.Envelope envelope, ProjectionImpl projection) {
-    EnvelopeImpl ret = new EnvelopeImpl();
-    ret.envelope = new ReferencedEnvelope(envelope);
     ret.projection = projection;
     return ret;
   }

@@ -49,4 +49,5 @@ public class RuntimeConfiguration extends ServiceConfiguration {
   public void setNumericStorageType(Storage.Type numericStorageType) {
     this.numericStorageType = numericStorageType;
   }
+
 }
