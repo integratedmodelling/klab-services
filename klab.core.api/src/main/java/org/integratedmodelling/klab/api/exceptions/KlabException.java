@@ -16,6 +16,7 @@
 package org.integratedmodelling.klab.api.exceptions;
 
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.StringWriter;
 
 /**
@@ -26,8 +27,8 @@ import java.io.StringWriter;
  */
 public abstract class KlabException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 5999457326224959271L;
-//    private Artifact scope;
 
     /**
      * Instantiates a new klab exception.

@@ -16,6 +16,9 @@
 package org.integratedmodelling.klab.api.exceptions;
 
 // TODO: Auto-generated Javadoc
+
+import java.io.Serial;
+
 /**
  * The Class KlabInternalErrorException.
  *
@@ -24,6 +27,7 @@ package org.integratedmodelling.klab.api.exceptions;
  */
 public class KlabCompilationError extends KlabException {
 
+    @Serial
     private static final long serialVersionUID = 461213337593957416L;
 
     /**

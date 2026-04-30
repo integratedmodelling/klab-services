@@ -16,6 +16,9 @@ R * This file is part of k.LAB.
 package org.integratedmodelling.klab.api.exceptions;
 
 // TODO: Auto-generated Javadoc
+
+import java.io.Serial;
+
 /**
  * An unchecked exception reserved for situations that should never happen in a
  * production environment. To be used in k.LAB code instead of Java's
@@ -26,7 +29,8 @@ package org.integratedmodelling.klab.api.exceptions;
  */
 public class KlabAuthorizationException extends KlabException {
 
-	private static final long serialVersionUID = 461213337593957416L;
+	@Serial
+    private static final long serialVersionUID = 461213337593957416L;
 
 	/**
 	 * Instantiates a new klab illegal status exception.
