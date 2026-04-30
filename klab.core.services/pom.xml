@@ -150,11 +150,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.locationtech.jts</groupId>
-                <artifactId>jts-core</artifactId>
-                <version>1.20.0</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -174,12 +169,6 @@
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite-spatial</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -206,26 +195,6 @@
             <artifactId>commons-math3</artifactId>
             <version>3.6.1</version>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>io.hawt</groupId>
-                    <artifactId>hawtio-springboot</artifactId>
-                    <version>4.2.0</version>
-                </dependency>
-
-                &lt;!&ndash; Mandatory for enabling Camel management via JMX / Hawtio &ndash;&gt;
-                <dependency>
-                    <groupId>org.apache.camel.springboot</groupId>
-                    <artifactId>camel-management-starter</artifactId>
-                    <version>4.9.0</version>
-                </dependency>
-                &lt;!&ndash; (Optional) Required for Hawtio Camel route diagram tab &ndash;&gt;
-                <dependency>
-                    <groupId>org.apache.camel.springboot</groupId>
-                    <artifactId>camel-spring-boot-xml-starter</artifactId>
-                    <version>4.9.0</version>
-                </dependency>
-        -->
 
         <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
         <dependency>
@@ -240,12 +209,6 @@
             <groupId>org.orbisgis</groupId>
             <artifactId>h2gis</artifactId>
             <version>${h2gis.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -259,32 +222,6 @@
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
         </dependency>
-
-        <!--        &lt;!&ndash; MapDB for various persistent caches. Simple, used it a lot, never-->
-        <!--            a problem. &ndash;&gt;-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.mapdb</groupId>-->
-        <!--            <artifactId>mapdb</artifactId>-->
-        <!--            <version>3.1.0</version>-->
-        <!--            <exclusions>-->
-        <!--                <exclusion>-->
-        <!--                    <groupId>com.google.guava</groupId>-->
-        <!--                    <artifactId>guava</artifactId>-->
-        <!--                </exclusion>-->
-        <!--                <exclusion>-->
-        <!--                    <groupId>org.eclipse.collections</groupId>-->
-        <!--                    <artifactId>eclipse-collections</artifactId>-->
-        <!--                </exclusion>-->
-        <!--                <exclusion>-->
-        <!--                    <groupId>org.eclipse.collections</groupId>-->
-        <!--                    <artifactId>eclipse-collections-forkjoin</artifactId>-->
-        <!--                </exclusion>-->
-        <!--                <exclusion>-->
-        <!--                    <groupId>org.eclipse.collections</groupId>-->
-        <!--                    <artifactId>eclipse-collections-api</artifactId>-->
-        <!--                </exclusion>-->
-        <!--            </exclusions>-->
-        <!--        </dependency>-->
 
         <!-- Lucene for indexing -->
         <!-- older version to avoid conflicts with Neo4k -->
@@ -389,9 +326,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- GEOTOOLS mess starts -->
-        <!-- <dependency> <groupId>org.geotools</groupId> <artifactId>gt-metadata</artifactId>
-            <version>${geotools.version}</version> </dependency> -->
+
+        <!-- GEOTOOLS -->
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-referencing</artifactId>
@@ -409,12 +345,6 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geojson</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -423,12 +353,6 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geotiff</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.locationtech.jts</groupId>
-                    <artifactId>jts-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -535,24 +459,5 @@
             <version>3.8.2</version>
             <scope>compile</scope>
         </dependency>
-        <!--
-                <dependency>
-                    <groupId>org.pf4j</groupId>
-                    <artifactId>pf4j-update</artifactId>
-                    <version>2.4.0-SNAPSHOT</version>
-                    <scope>compile</scope>
-                </dependency>
-        -->
-        <!--        <dependency>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib-jdk8</artifactId>
-                    <version>${kotlin.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-test</artifactId>
-                    <version>${kotlin.version}</version>
-                    <scope>test</scope>
-                </dependency>-->
     </dependencies>
 </project>
