@@ -3,6 +3,8 @@
  */
 package org.integratedmodelling.klab.api.exceptions;
 
+import java.io.Serial;
+
 /**
  * The KlabResourceAccessException
  * 
@@ -14,7 +16,8 @@ public class KlabResourceAccessException extends KlabException {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -1836731508724767114L;
+	@Serial
+    private static final long serialVersionUID = -1836731508724767114L;
 
 	/**
 	 * 

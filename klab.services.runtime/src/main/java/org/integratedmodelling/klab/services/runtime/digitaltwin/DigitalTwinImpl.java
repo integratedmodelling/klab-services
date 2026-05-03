@@ -195,6 +195,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private TransactionImpl(TransactionImpl parent, Activity activity, Object... data) {
 
       this.graph = parent.graph;
+      this.target = parent.target;
       this.activity = activity;
       this.scope = parent.scope; // TODO careful with executing() being called outside
       this.parent = parent;
@@ -259,7 +260,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private RuntimeAsset checkPresentAsset(RuntimeAsset asset) {
       if (!(asset instanceof Observation) || asset.getId() == Observation.UNASSIGNED_ID) {
         return asset; // should never happen, but just in case, never deduplicate UNASSIGNED_ID —
-                      // IDs are not yet
+        // IDs are not yet
         // stable
       }
       return graph.vertexSet().stream()
@@ -435,6 +436,8 @@ public class DigitalTwinImpl implements DigitalTwin {
             break;
           }
         }
+      } else if (target != null) {
+        ((ActivityImpl) activity).setObservationUrn(this.target.getUrn());
       }
 
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);

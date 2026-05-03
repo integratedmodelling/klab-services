@@ -4,6 +4,7 @@ import java.util.Collection;
 import org.integratedmodelling.common.data.Tree;
 import org.integratedmodelling.klab.api.cli.CommandLine;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
 public class ReasonCommands {
@@ -53,6 +54,21 @@ public class ReasonCommands {
       return null;
     }
     return commandLine.getScope().getService(Reasoner.class).resolving(concept);
+  }
+
+  public static Concept base(CommandLine commandLine) {
+    var concept = commandLine.getAs(Concept.class);
+    if (concept == null) {
+      commandLine.setError(true);
+      commandLine.setErrorMessage("Concept '" + commandLine.getCommandLine() + "' not found");
+      return null;
+    }
+    return concept.is(SemanticType.COUNTABLE)
+        ? commandLine
+            .getScope()
+            .getService(Reasoner.class)
+            .baseSubstantialType(concept, commandLine.getScope())
+        : commandLine.getScope().getService(Reasoner.class).baseObservable(concept);
   }
 
   public static int distance(CommandLine commandLine) {

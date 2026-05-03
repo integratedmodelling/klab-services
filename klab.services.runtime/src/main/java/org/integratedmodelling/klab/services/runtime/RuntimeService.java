@@ -484,6 +484,13 @@ public class RuntimeService extends BaseService
         if (existing != null) {
           return CompletableFuture.completedFuture(existing);
         }
+      } else {
+        /**
+         * TODO we must check the existing cohorts and build the observation that queries the
+         * objects in the requested geometry. Any missing coverage will become the next
+         * observation's geometry. For the existing ones, we must resolve any non-identifying
+         * predicates as well.
+         */
       }
 
       if (observation.getObservable().is(SemanticType.QUALITY)
@@ -614,7 +621,8 @@ public class RuntimeService extends BaseService
               serviceContextScope.getActivity(),
               observation + " submitted");
 
-      var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null);
+      var submissionScope =
+          serviceContextScope.executing(submission, isRoot ? storedAgent : null, observation);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -668,7 +676,9 @@ public class RuntimeService extends BaseService
       var resolutionScope =
           submissionScope
               .executing(
-                  resolution, isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null)
+                  resolution,
+                  isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null,
+                  observation)
               //  Add any cohort and identification strategy needed for KG maintenance.
               .contextualizeFor(observation);
 
