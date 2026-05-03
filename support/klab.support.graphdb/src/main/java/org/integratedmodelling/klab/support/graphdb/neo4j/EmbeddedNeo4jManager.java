@@ -15,6 +15,7 @@ import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 @Component
 public class EmbeddedNeo4jManager {
@@ -56,6 +57,8 @@ public class EmbeddedNeo4jManager {
                 GraphDatabaseSettings.plugin_dir, properties.getPluginsDirectory().toAbsolutePath())
             .withConfig(GraphDatabaseSettings.auth_enabled, false)
             .withConfig(BoltConnector.enabled, true)
+            // add spatial procedures access
+            .withConfig(GraphDatabaseSettings.procedure_unrestricted, List.of("spatial.*"))
             .withConfig(
                 BoltConnector.listen_address,
                 new SocketAddress(properties.getHost(), properties.getBoltPort()))
