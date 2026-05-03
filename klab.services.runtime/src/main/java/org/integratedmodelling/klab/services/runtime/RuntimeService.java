@@ -484,6 +484,13 @@ public class RuntimeService extends BaseService
         if (existing != null) {
           return CompletableFuture.completedFuture(existing);
         }
+      } else {
+        /**
+         * TODO we must check the existing cohorts and build the observation that queries the
+         * objects in the requested geometry. Any missing coverage will become the next
+         * observation's geometry. For the existing ones, we must resolve any non-identifying
+         * predicates as well.
+         */
       }
 
       if (observation.getObservable().is(SemanticType.QUALITY)
