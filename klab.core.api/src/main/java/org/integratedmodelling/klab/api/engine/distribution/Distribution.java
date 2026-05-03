@@ -610,6 +610,7 @@ public interface Distribution {
   String PRODUCT_TYPE_PROPERTY = "klab.product.type";
   String PRODUCT_PLATFORM_PROPERTY = "klab.product.platform";
   String PRODUCT_JAVA_OPTIONS_PROPERTY = "klab.product.options.java";
+  String PRODUCT_ADDITIONAL_DIRECTORIES_PROPERTY = "klab.product.additional-directories";
 
   String DEVELOP_RELEASE = "develop";
   String LATEST_RELEASE = "latest";

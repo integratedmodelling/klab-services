@@ -134,6 +134,7 @@
                     <outputDirectory>target/build</outputDirectory>
                     <productName>klab.support.graphdb</productName>
                     <productClass>DATABASE_SERVER</productClass>
+                    <additionalDirectories>plugins</additionalDirectories>
                     <productMain>org.integratedmodelling.klab.support.graphdb.KlabNeo4jStarter</productMain>
                     <productDescription>Local Neo4j database server to support the local runtime</productDescription>
                     <componentClass/>
