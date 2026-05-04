@@ -302,7 +302,7 @@
             <dependency>
                 <groupId>org.neo4j</groupId>
                 <artifactId>neo4j-cypher-dsl-parser</artifactId>
-                <version>2024.1.0</version>
+                <version>2025.2.7</version>
             </dependency>
             <dependency>
                 <groupId>org.jgrapht</groupId>
