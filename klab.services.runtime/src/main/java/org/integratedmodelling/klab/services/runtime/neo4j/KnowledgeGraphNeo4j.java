@@ -100,6 +100,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]->(c) detach delete n, c";
     String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
     String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
+    String CREATE_WITH_SHAPE =
+        "CREATE (n:{type}) SET n = $properties WITH n CALL spatial.addNode('shape_{scopeId}',n) YIELD node RETURN node";
     String UPDATE_PROPERTIES = "MATCH (n:{type} {id: $id}) SET n += $properties RETURN n";
     String UPDATE_PROPERTIES_GENERIC = "MATCH (n {id: $id}) SET n += $properties RETURN n";
     String[] INITIALIZATION_QUERIES =
@@ -131,8 +133,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         };
     String[] SPATIAL_LAYERS_QUERIES =
         new String[] {
-          "CALL spatial.addLayer('shape_$contextId', 'WKB', 'shape')",
-          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude', 'longitude')"
+          "CALL spatial.addLayer('shape_$contextId', 'WKB', 'shape')" // ,
+          //          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude', 'longitude')"
         };
   }
 
@@ -173,6 +175,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       } catch (Exception e) {
         closed = true;
+        // FIXME this doesn't put the error/stack trace in the activity
         Logging.INSTANCE.error(e);
       }
     }
@@ -858,20 +861,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       var scale = GeometryRepository.INSTANCE.scale(((Observation) asset).getGeometry());
       var shape = scale.getSpace().getGeometricShape().transform(Projection.getLatLon());
       if (shape instanceof ShapeImpl shape1) {
-        props.put("shape", shape1.asWKB());
-        props.put("latitude", shape1.getCenter(true)[1]);
-        props.put("longitude", shape1.getCenter(true)[0]);
+        props.put("shape", ShapeImpl.wkbWriter.write(shape1.getJTSGeometry()));
+        var xy = shape1.getCenter(true);
+        props.put("latitude", xy[1]);
+        props.put("longitude", xy[0]);
       } else {
         storeSpatialData = false;
       }
     }
 
-    var result =
-        query(
-            transaction,
-            Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
-            Map.of("properties", props),
-            scope);
+    var query =
+        storeSpatialData
+            ? Queries.CREATE_WITH_SHAPE.replace("{type}", type).replace("{scopeId}", scope.getId())
+            : Queries.CREATE_WITH_PROPERTIES.replace("{type}", type);
+
+    var result = query(transaction, query, Map.of("properties", props), scope);
     if (result != null && result.hasNext()) {
       var record = result.next();
       var neo4jNode = record.get(0).asNode();
@@ -887,18 +891,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
-        if (storeSpatialData) {
-          query(
-              transaction,
-              String.format("CALL spatial.addNode('shape_%s', $node)", scope.getId()),
-              Map.of("node", neo4jNode),
-              scope);
-          query(
-              transaction,
-              String.format("CALL spatial.addNode('centroid_%s', $node')", scope.getId()),
-              Map.of("node", neo4jNode),
-              scope);
-        }
+        //        if (storeSpatialData) {
+        //          query(
+        //              transaction,
+        //              String.format("CALL spatial.addNode('shape_%s', $node)", scope.getId()),
+        //              Map.of("node", neo4jNode),
+        //              scope);
+        //          query(
+        //              transaction,
+        //              String.format("CALL spatial.addNode('centroid_%s', $node')", scope.getId()),
+        //              Map.of("node", neo4jNode),
+        //              scope);
+        //        }
       }
     }
 
