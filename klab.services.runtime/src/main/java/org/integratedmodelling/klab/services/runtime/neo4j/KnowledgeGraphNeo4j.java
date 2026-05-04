@@ -10,7 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
@@ -39,6 +38,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
@@ -54,8 +54,8 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.common.data.impl.ShardImpl;
+import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
@@ -104,8 +104,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String UPDATE_PROPERTIES_GENERIC = "MATCH (n {id: $id}) SET n += $properties RETURN n";
     String[] INITIALIZATION_QUERIES =
         new String[] {
-          //          "MERGE (user:Agent {name: $username, type: 'USER'})",
-          //          "MERGE (klab:Agent {name: 'k.LAB', type: 'AI'})",
           "MATCH (klab:Agent {name: 'k.LAB'}), (user:Agent {name: $username}) CREATE // main context "
               + "node\n"
               + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: "
@@ -130,6 +128,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(creation)-[:BY_AGENT]->(user),\n"
               + "\t(ctx)<-[:CREATED]-(creation),\n"
               + "(prov)-[:HAS_CHILD]->(creation)"
+        };
+    String[] SPATIAL_LAYERS_QUERIES =
+        new String[] {
+          "CALL spatial.addLayer('shape_$contextId', 'WKB', 'shape')",
+          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude', 'longitude')"
         };
   }
 
@@ -389,6 +392,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "activityId",
                 activityId),
             scope);
+      }
+
+      // create spatial layers
+      for (var query : Queries.SPATIAL_LAYERS_QUERIES) {
+        query(query.replace("$contextId", scopeId), Map.of(), scope);
       }
     }
   }
@@ -774,6 +782,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (asset instanceof Observation || asset instanceof Activity) {
 
       // URN for substantials will be not null and set to the pre-resolution identity
+      // TODO substantial observations must carry their bounding box and centroid
       var urn =
           asset instanceof Observation observation
               ? (observation.getUrn() == null
@@ -838,6 +847,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       props.put("urn", urn);
     }
+
+    boolean storeSpatialData =
+        asset instanceof Observation observation
+            && observation.getObservable().is(SemanticType.COUNTABLE)
+            && observation.getGeometry().getDimensions().stream()
+                .anyMatch(d -> d.getType() == Geometry.Dimension.Type.SPACE);
+
+    if (storeSpatialData) {
+      var scale = GeometryRepository.INSTANCE.scale(((Observation) asset).getGeometry());
+      var shape = scale.getSpace().getGeometricShape().transform(Projection.getLatLon());
+      if (shape instanceof ShapeImpl shape1) {
+        props.put("shape", shape1.asWKB());
+        props.put("latitude", shape1.getCenter(true)[1]);
+        props.put("longitude", shape1.getCenter(true)[0]);
+      } else {
+        storeSpatialData = false;
+      }
+    }
+
     var result =
         query(
             transaction,
@@ -845,6 +873,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("properties", props),
             scope);
     if (result != null && result.hasNext()) {
+      var record = result.next();
+      var neo4jNode = record.get(0).asNode();
       setId(asset, ret, scope);
       var geometry =
           switch (asset) {
@@ -857,6 +887,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
+        if (storeSpatialData) {
+          query(
+              transaction,
+              String.format("CALL spatial.addNode('shape_%s', $node)", scope.getId()),
+              Map.of("node", neo4jNode),
+              scope);
+          query(
+              transaction,
+              String.format("CALL spatial.addNode('centroid_%s', $node')", scope.getId()),
+              Map.of("node", neo4jNode),
+              scope);
+        }
       }
     }
 
