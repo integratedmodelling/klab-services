@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.utilities;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -17,8 +16,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.zip.ZipEntry;
-
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -36,10 +33,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-import org.ehcache.spi.service.ServiceConfiguration;
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
-import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -52,16 +46,12 @@ import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
-import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
@@ -424,6 +414,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
   }
 
   public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
+
+    public static String serializeHistogram(com.dynatrace.dynahist.Histogram histogram) {
+      // TODO use serialization library and produce a Base64-encoded string
+      return null;
+    }
+
+    public static com.dynatrace.dynahist.Histogram deserializeHistogram(String histogram) {
+      // TODO use serialization library from Base64-encoded string
+      return null;
+    }
 
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
 
