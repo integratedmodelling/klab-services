@@ -30,6 +30,16 @@ public enum Setting {
       "Set the service polling interval for remote services in seconds",
       Integer.class,
       20),
+  DO_NOT_CREATE_A_DEFAULT_OBSERVER(
+      Page.GENERAL,
+      "Do not create a default observer for a connected digital twin",
+      Boolean.class,
+      false),
+  FORCE_INDIVIDUAL_OBSERVER(
+      Page.GENERAL,
+      "Create an individual observer for the connected digital twin even when the user is federated",
+      Boolean.class,
+      false),
   NOTIFICATIONS_CACHED(Page.APPEARANCE, "Number of notifications to keep", Integer.class, 100),
   WORK_DIRECTORY(
       Page.GENERAL,
