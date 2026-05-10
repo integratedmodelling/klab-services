@@ -8,7 +8,10 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -22,6 +25,8 @@ public abstract class AbstractDelegatingScope implements Scope {
   Parameters<String> data;
   Status status = Status.EMPTY;
   Scope parentScope;
+  private boolean empty;
+  private List<Notification> notifications = new ArrayList<>();
 
   public AbstractDelegatingScope(Channel delegateChannel) {
     this.delegateChannel = delegateChannel;
@@ -131,6 +136,20 @@ public abstract class AbstractDelegatingScope implements Scope {
       return scope.getParentScope(type, scopeClass);
     }
     return null;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return empty;
+  }
+
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
   }
 
   @Override

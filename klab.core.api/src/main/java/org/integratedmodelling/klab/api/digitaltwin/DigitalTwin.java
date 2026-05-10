@@ -127,6 +127,15 @@ public interface DigitalTwin extends RuntimeAsset {
     String getName();
 
     /**
+     * The <em>unresolved</em> default observer. This will be validated as an agent, submitted and
+     * resolved, returning to the DT through the normal messaging system. If null, the scope will
+     * not have an observer, which for now is supported but may be removed.
+     *
+     * @return
+     */
+    Observation getObserver();
+
+    /**
      * Passing an ID is only allowed if the user is federated, so that the digital twin identity can
      * be assigned in a coordinated way among federated users. Any pre-existing DT with ID <code>
      * <federation_id>/<requested-id></code> will be usable by all members of the federation; the DT
@@ -185,8 +194,8 @@ public interface DigitalTwin extends RuntimeAsset {
    *
    * <p>Executors run a sequence of compiled contextualizers (see Dataflow) to implement the
    * DescriptionType. If the latter is collective, each observation produced or transformed must be
-   * resolved individually afterwards.
-   **
+   * resolved individually afterwards. *
+   *
    * <p>The runtime tracks the outputs of an executor. When each executor has finished computing, it
    * must report its outputs re: the observation to the runtime, so that secondary resolutions can
    * be enqueued for any collective observation made.

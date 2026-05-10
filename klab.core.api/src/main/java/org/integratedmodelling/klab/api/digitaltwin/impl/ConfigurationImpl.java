@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -30,6 +31,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private boolean createWhenAbsent;
   private String serviceId;
   private String description;
+  private Observation observer;
   private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
   private String owner;
 
@@ -287,6 +289,15 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     if (descriptor.getServiceUrl() != null) {
       this.serviceUrl = descriptor.getServiceUrl();
     }
+  }
+
+  @Override
+  public Observation getObserver() {
+    return observer;
+  }
+
+  public void setObserver(Observation observer) {
+    this.observer = observer;
   }
 
   @Override

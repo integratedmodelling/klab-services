@@ -53,6 +53,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   private boolean messagingChecked = false;
   private JobManager jobManager;
+  private boolean empty;
+  private List<Notification> notifications = new ArrayList<>();
 
   protected Map<KlabService.Type, List<KlabService>> serviceMap = new HashMap<>();
 
@@ -110,7 +112,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // if they are of the passed class. Used on scope copies for monitoring and messaging.These are
   // never
   // copied downstream
-  // FIXME messy and probably obsolete, remove after checking the notification logic where this is used
+  // FIXME messy and probably obsolete, remove after checking the notification logic where this is
+  // used
   private List<Object> payloadCollector = null;
   private Class<?> collectedPayloadClass = null;
 
@@ -142,7 +145,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   protected ServiceUserScope(ServiceUserScope parent) {
     super(parent.user, parent.isSender(), parent.isReceiver());
-//    copyMessagingSetup(parent);
+    //    copyMessagingSetup(parent);
     this.service = parent.service;
     this.setHostServiceId(parent.getHostServiceId());
     this.user = parent.user;
@@ -391,5 +394,19 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     if (!list.stream().anyMatch(s -> s.serviceId().equals(klabService.serviceId()))) {
       list.add(klabService);
     }
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return empty;
+  }
+
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
   }
 }

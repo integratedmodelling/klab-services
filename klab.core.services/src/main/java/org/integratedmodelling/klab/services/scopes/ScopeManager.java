@@ -73,19 +73,6 @@ public class ScopeManager {
     ServiceUserScope ret = scopes.get(user.getUsername());
     if (ret == null) {
       ret = new ServiceUserScope(user, service);
-      File userBehavior =
-          new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
-      if (userBehavior.isFile() && userBehavior.canRead()) {
-        //        try {
-        //          ret.send(
-        //              Message.MessageClass.ActorCommunication,
-        //              Message.MessageType.RunBehavior,
-        //              userBehavior.toURI().toURL());
-        //        } catch (MalformedURLException e) {
-        //          ret.error(e, "while reading user.kactors behavior");
-        //        }
-      }
-
       scopes.put(user.getUsername(), ret);
     }
 
@@ -334,6 +321,7 @@ public class ScopeManager {
         var sessionId = scopeId.split("\\.")[0];
         var sessionScope = getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId);
         if (sessionScope == null) {
+          // TODO handle isEmpty() and notifications upstream
           return null;
         }
 

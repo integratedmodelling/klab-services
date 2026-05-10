@@ -51,13 +51,16 @@ public interface SessionScope extends UserScope {
   List<ContextScope> getActiveContexts();
 
   /**
-   * Create a context scope in this session. The scope is empty, initially focused on the geometry
-   * that the session was focused on at the time of the call (also empty by default). Because of
-   * this, only direct observables may be observed in it initially.
+   * Create a context scope in this session. If the configuration includes a scope ID, the scope is
+   * created only if it does not pre-exist, otherwise the named scope is returned. The requesting
+   * scope must obviously have access to the scope or the request fails.
    *
-   * <p>If the configuration includes a scope ID, the scope is created only if it does not
-   * pre-exist, otherwise the named scope is returned. Only federated users in the default
-   * federation session can access this option.
+   * <p>Upon creation, the context is empty except for the observer, which will be created and
+   * resolved according to the configuration in the worldview.
+   *
+   * <p>FIXME we should have an empty() scope with notifications instead of a null return for
+   * failures of any kind (authentication or otherwise). That's the pattern for observations and
+   * resource data.
    *
    * @param configuration the configuration options for the digital twin. Only federated users can
    *     submit a pre-chosen ID or a URL with one.

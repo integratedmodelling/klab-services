@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * Implementations must fill in the getService() strategy. This is a scope that contains an agent
@@ -49,6 +50,8 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
       new ConcurrentHashMap<>();
   private String hostServiceId;
+  private boolean empty;
+  private List<Notification> notifications = new ArrayList<>();
 
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -191,5 +194,19 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   @Override
   public void setHostServiceId(String hostServiceId) {
     this.hostServiceId = hostServiceId;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return empty;
+  }
+
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
   }
 }
