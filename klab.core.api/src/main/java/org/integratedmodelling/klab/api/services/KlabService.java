@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -395,18 +396,21 @@ public interface KlabService extends Service {
    * accessible to the resulting scope. If the service is not a runtime, the request must come from
    * another service and the scope should be instrumented as necessary for its purposes.
    *
-   * <p>FIXME this must return a {@link
-   * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration} so that we know the ID
-   * along with any observer geometry and other configuration when the scope already exists.
+   * <p>The return value is the {@link
+   * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration} that describes the
+   * scope. Much of its content will be the same as submitted, but along with the ID (or an empty()
+   * configuration in case of failure) we can also access the current observer geometry, any
+   * notifications and advisories, and other configuration of scopes that already existed.
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
    * @param sessionScope used to set up federated behavior
    * @param userScope used to establish the agent making changes (same as sessionScope's unless
    *     federated)
-   * @return the ID of the new context scope created at server side, or null in case of failure.
+   * @return the known configuration for the digital twin, including (if successful) the ID of the
+   *     new context scope created at server side, or an empty configuration in case of failure.
    */
-  String declareContextScope(
+  DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope);
 
   /**

@@ -34,6 +34,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private Observation observer;
   private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
   private String owner;
+  private boolean empty;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -51,7 +52,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       boolean createWhenAbsent,
       String serviceId,
       String description,
-      String owner) {
+      String owner,
+      boolean empty) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -65,6 +67,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.serviceId = serviceId;
     this.description = description;
     this.owner = owner;
+    this.empty = empty;
   }
 
   @Override
@@ -104,6 +107,15 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   @Override
   public String getId() {
     return id;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return empty;
+  }
+
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
   }
 
   @Override

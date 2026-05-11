@@ -175,7 +175,7 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
-  public String declareContextScope(
+  public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
@@ -195,11 +195,12 @@ public abstract class BaseServiceClient implements KlabService {
         // give the server some time to set up the context and inform the other services
         //        Thread.sleep(1000);
       }
-      return scopeId;
+      return scopeId; // TODO return Configuration.builder(contextScope.getConfiguration()).id(scopeId).build();
     } catch (Throwable t) {
+      return DigitalTwin.Configuration.empty();
       Logging.INSTANCE.error(this.serviceName() + " failed to declare context scope", t);
     }
-    return null;
+    return DigitalTwin.Configuration.empty();
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {

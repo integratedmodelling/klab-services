@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -9,13 +13,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.modeler.views.controllers.AuthenticationViewController;
-
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ConfigurationBuilder {
   private ResourcePrivileges accessRights;
@@ -31,6 +28,7 @@ public class ConfigurationBuilder {
   private String serviceId;
   private String description;
   private String owner;
+  private boolean empty;
 
   public ConfigurationBuilder() {}
 
@@ -118,6 +116,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder empty() {
+    this.empty = true;
+    return this;
+  }
+
   public ConfigurationBuilder createWhenAbsent(boolean b) {
     this.createWhenAbsent = b;
     return this;
@@ -173,6 +176,6 @@ public class ConfigurationBuilder {
         this.createWhenAbsent,
         this.serviceId,
         this.description,
-        this.owner);
+        this.owner, this.empty);
   }
 }

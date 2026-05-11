@@ -3,36 +3,17 @@ package org.integratedmodelling.klab.api.digitaltwin;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
-import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -116,7 +97,7 @@ public interface DigitalTwin extends RuntimeAsset {
     ResourcePrivileges getAccessRights();
 
     /**
-     * These may be present when the configuration is the return value of a connect call.
+     * These describe any error, warning or info conditions relative to the digital twin.
      *
      * @return
      */
@@ -146,6 +127,15 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getId();
 
+    /**
+     * This is used to flag a failure in the creation of a digital twin or the connection. If true,
+     * the ID may be null and should not be used even if not. Notifications should contain at least
+     * one error if this returns true.
+     *
+     * @return
+     */
+    boolean isEmpty();
+
     @Deprecated
     boolean isCreateWhenAbsent();
 
@@ -171,6 +161,16 @@ public interface DigitalTwin extends RuntimeAsset {
 
     static Configuration create(URL url, UserScope scope) {
       return new ConfigurationBuilder(url, scope).build();
+    }
+
+    static Configuration empty(Notification... notifications) {
+      var ret = new ConfigurationBuilder().empty();
+      if (notifications != null) {
+        for (var n : notifications) {
+          ret.withNotification(n);
+        }
+      }
+      return ret.build();
     }
 
     static ConfigurationBuilder builder() {
