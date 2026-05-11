@@ -542,7 +542,7 @@ public class RuntimeServerController {
    * @return the ID of the new context scope
    */
   @PostMapping(ServicesAPI.CREATE_CONTEXT)
-  public String createContext(
+  public DigitalTwin.Configuration createContext(
       @RequestBody ScopeRequest request,
       @RequestParam(name = "id", required = false) String contextId,
       Principal principal,
@@ -600,7 +600,7 @@ public class RuntimeServerController {
           var id = runtimeService.klabService().declareContextScope(ret, sessionScope, userScope);
           if (federation != null) {
 
-            var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
+            var implementedQueues = ret.setupMessaging(federation, id.getId(), queuesHeader);
 
             Logging.INSTANCE.info(
                 "Queues set up for session " + id + ": " + implementedQueues + " on context scope");
@@ -609,7 +609,7 @@ public class RuntimeServerController {
                 ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
           }
 
-          if (!ret.initializeAgents(id)) {
+          if (!ret.initializeAgents(id.getId())) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");
           }
 

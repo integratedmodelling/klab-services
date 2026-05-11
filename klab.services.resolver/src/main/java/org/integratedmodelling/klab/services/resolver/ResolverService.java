@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -443,7 +444,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public String declareContextScope(
+  public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
     // instrument the scope for resolving observations and keeping resolution results across calls.
     var resolutionGraph = ResolutionGraph.create(contextScope);
@@ -453,7 +454,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     // load up the resource scenario cache if persistent
     if (contextScope.getConfiguration().getPersistence().survivesShutdown) {
-      var urnMatch = Resource.resourceRegexFor(this, ret);
+      var urnMatch = Resource.resourceRegexFor(this, ret.getId());
       this.resourcesKbox
           .getResourcesByUrnMatch(urnMatch)
           .forEach(resolutionGraph::addLocalResource);
