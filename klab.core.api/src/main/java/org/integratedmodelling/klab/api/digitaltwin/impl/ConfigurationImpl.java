@@ -53,7 +53,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       String serviceId,
       String description,
       String owner,
-      boolean empty) {
+      boolean empty,
+      Observation observer) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -68,6 +69,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.description = description;
     this.owner = owner;
     this.empty = empty;
+    this.observer = observer;
   }
 
   @Override

@@ -9,7 +9,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -195,12 +194,11 @@ public abstract class BaseServiceClient implements KlabService {
         // give the server some time to set up the context and inform the other services
         //        Thread.sleep(1000);
       }
-      return scopeId; // TODO return Configuration.builder(contextScope.getConfiguration()).id(scopeId).build();
+      return DigitalTwin.Configuration.builder(contextScope.getConfiguration()).id(scopeId).build();
     } catch (Throwable t) {
-      return DigitalTwin.Configuration.empty();
-      Logging.INSTANCE.error(this.serviceName() + " failed to declare context scope", t);
+      return DigitalTwin.Configuration.empty(
+          Notification.error(this.serviceName() + " failed to declare context scope", t));
     }
-    return DigitalTwin.Configuration.empty();
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {

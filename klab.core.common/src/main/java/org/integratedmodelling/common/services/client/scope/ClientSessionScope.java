@@ -48,7 +48,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
     return super.getService(serviceClass);
   }
 
-    /**
+  /**
    * Use to pre-define the ID when necessary.
    *
    * @param id
@@ -102,7 +102,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
     var id = runtime.declareContextScope(ret, this, userScope);
 
     if (id != null) {
-      ret.setId(id);
+      ret.setId(id.getId());
       ClientScopeManager.INSTANCE.register(ret);
     }
 
