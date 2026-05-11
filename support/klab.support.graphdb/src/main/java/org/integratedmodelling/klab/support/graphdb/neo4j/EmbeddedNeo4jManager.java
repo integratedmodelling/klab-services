@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.support.graphdb.neo4j;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import org.integratedmodelling.klab.support.graphdb.config.Neo4jServerProperties;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -9,13 +14,6 @@ import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
 
 @Component
 public class EmbeddedNeo4jManager {
@@ -84,6 +82,16 @@ public class EmbeddedNeo4jManager {
   }
 
   public void shutdown() {
+    var logger = LoggerFactory.getLogger(EmbeddedNeo4jManager.class);
+    try {
+      var db =
+          neo4j.databaseManagementService().database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
+      db.executeTransactionally("CALL db.checkpoint()");
+      logger.info("Database checkpoint completed before shutdown");
+    } catch (Exception e) {
+      logger.warn("Failed to checkpoint database before shutdown: {}", e.getMessage());
+    }
     neo4j.close();
   }
+
 }

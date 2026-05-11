@@ -397,9 +397,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             scope);
       }
 
-      // create spatial layers
+      // create spatial layers only if they don't already exist
       for (var query : Queries.SPATIAL_LAYERS_QUERIES) {
-        query(query.replace("$contextId", scopeId), Map.of(), scope);
+        String layerName = "shape_" + scopeId;
+        var layerCheck =
+            query(
+                "CALL spatial.layers() YIELD name WHERE name = $layerName RETURN count(name) > 0 AS exists",
+                Map.of("layerName", layerName),
+                scope);
+        boolean layerExists =
+            layerCheck != null
+                && !layerCheck.records().isEmpty()
+                && layerCheck.records().getFirst().get("exists").asBoolean(false);
+        if (!layerExists) {
+          query(query.replace("$contextId", scopeId), Map.of(), scope);
+        }
       }
     }
   }
@@ -425,11 +437,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public void deleteContext() {
+    query("CALL spatial.removeLayer('shape_" + rootContextId + "')", Map.of(), userScope);
     query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), userScope);
   }
 
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
+    query("CALL spatial.removeLayer('shape_" + rootContextId + "')", Map.of(), userScope);
     query(
         Queries.REMOVE_CONTEXT,
         Map.of("contextId", contextScope.getConfiguration().getId()),

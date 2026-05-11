@@ -395,6 +395,10 @@ public interface KlabService extends Service {
    * accessible to the resulting scope. If the service is not a runtime, the request must come from
    * another service and the scope should be instrumented as necessary for its purposes.
    *
+   * <p>FIXME this must return a {@link
+   * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration} so that we know the ID
+   * along with any observer geometry and other configuration when the scope already exists.
+   *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
    * @param sessionScope used to set up federated behavior

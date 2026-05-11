@@ -2,6 +2,10 @@ package org.integratedmodelling.common.services.client.scope;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -18,6 +22,7 @@ public enum ClientScopeManager {
   INSTANCE;
 
   private Map<String, ClientSessionScope> scopes = new ConcurrentHashMap<>();
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   /**
    * Get an existing scope, interrogating the runtime if we don't have it cached.
@@ -104,6 +109,15 @@ public enum ClientScopeManager {
     scopes.put(ret.getId(), ret);
     if (ret instanceof ClientContextScope contextScope) {
       contextScope.createDigitalTwin(ret.getId());
+
+      var engine = contextScope.getEngine();
+      if (!engine.getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class)) {
+        /*
+         * Create the default observer and schedule its resolution for a bit later, so that we ensure that
+         * it is received after the client has registered the scope.
+         */
+        scheduler.schedule(contextScope::resolveDefaultObserver, 1, TimeUnit.SECONDS);
+      }
     }
   }
 
@@ -113,5 +127,14 @@ public enum ClientScopeManager {
 
   public void close() {
     scopes.values().forEach(ClientSessionScope::close);
+    scheduler.shutdown();
+    try {
+      if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+        scheduler.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      scheduler.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 }

@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -465,5 +466,13 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public String getTransactionId() {
     return transactionId;
+  }
+
+  public void resolveDefaultObserver() {
+
+
+
+    if (getFederation() != null && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {
+    }
   }
 }
