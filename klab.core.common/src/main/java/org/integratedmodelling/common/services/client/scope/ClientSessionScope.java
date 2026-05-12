@@ -98,9 +98,8 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
     var id = runtime.declareContextScope(ret, this, userScope);
-
     ret.setFromConfiguration(id);
-    if (id != null && !id.isEmpty()) {
+    if (!id.isEmpty()) {
       ClientScopeManager.INSTANCE.register(ret);
     }
 

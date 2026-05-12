@@ -912,18 +912,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
-        //        if (storeSpatialData) {
-        //          query(
-        //              transaction,
-        //              String.format("CALL spatial.addNode('shape_%s', $node)", scope.getId()),
-        //              Map.of("node", neo4jNode),
-        //              scope);
-        //          query(
-        //              transaction,
-        //              String.format("CALL spatial.addNode('centroid_%s', $node')", scope.getId()),
-        //              Map.of("node", neo4jNode),
-        //              scope);
-        //        }
       }
     }
 
