@@ -470,13 +470,17 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   public void resolveDefaultObserver() {
 
     if (getFederation() != null
-        && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {}
+        && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {
+      // TODO
+    }
+    // TODO
   }
 
   public void setFromConfiguration(DigitalTwin.Configuration configuration) {
-    setId(configuration.getId());
     if (configuration.isEmpty()) {
       setEmpty(true);
+    } else {
+      setId(configuration.getId());
     }
     this.configuration.getNotifications().addAll(configuration.getNotifications());
   }
