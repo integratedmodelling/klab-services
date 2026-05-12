@@ -191,12 +191,14 @@ public abstract class BaseServiceClient implements KlabService {
           client
               .withScope(sessionScope)
               .post(ServicesAPI.CREATE_CONTEXT, request, DigitalTwin.Configuration.class);
-      if (!configuration.isEmpty()) {
+      if (configuration != null && !configuration.isEmpty()) {
         setupMessaging(contextScope, sessionScope, configuration.getId());
-        // give the server some time to set up the context and inform the other services
-        //        Thread.sleep(1000);
       }
-      return configuration;
+      return configuration == null
+          ? DigitalTwin.Configuration.empty(
+              Notification.error("No valid return value from server at context creation"))
+          : configuration;
+
     } catch (Throwable t) {
       return DigitalTwin.Configuration.empty(
           Notification.error(this.serviceName() + " failed to declare context scope", t));

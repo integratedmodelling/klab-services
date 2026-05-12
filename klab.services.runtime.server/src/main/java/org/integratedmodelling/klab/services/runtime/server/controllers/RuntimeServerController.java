@@ -603,7 +603,7 @@ public class RuntimeServerController {
             var implementedQueues = ret.setupMessaging(federation, id.getId(), queuesHeader);
 
             Logging.INSTANCE.info(
-                "Queues set up for session " + id + ": " + implementedQueues + " on context scope");
+                "Queues set up for context " + id.getId() + ": " + implementedQueues);
 
             response.setHeader(
                 ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));

@@ -133,6 +133,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     super.setId(id);
     if (this.configuration instanceof ConfigurationImpl configurationImpl) {
       configurationImpl.setId(id);
+      configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + id));
     }
   }
 
