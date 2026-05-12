@@ -7,7 +7,6 @@ import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalT
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -470,9 +468,15 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   public void resolveDefaultObserver() {
 
+    if (getFederation() != null
+        && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {}
+  }
 
-
-    if (getFederation() != null && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {
+  public void setFromConfiguration(DigitalTwin.Configuration configuration) {
+    setId(configuration.getId());
+    if (configuration.isEmpty()) {
+      setEmpty(true);
     }
+    this.configuration.getNotifications().addAll(configuration.getNotifications());
   }
 }

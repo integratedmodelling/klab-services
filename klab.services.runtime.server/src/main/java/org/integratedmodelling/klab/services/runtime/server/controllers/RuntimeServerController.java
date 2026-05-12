@@ -610,16 +610,16 @@ public class RuntimeServerController {
           }
 
           if (!ret.initializeAgents(id.getId())) {
-            Logging.INSTANCE.warn("agent initialization failed in context creation");
+            id.getNotifications()
+                .add(Notification.warning("agent initialization failed in context creation"));
           }
-
           return id;
         }
-      } else {
-        Logging.INSTANCE.error("Context instantiation failed: no valid session scope for request");
       }
     }
-    return null;
+
+    return DigitalTwin.Configuration.empty(
+        Notification.error("Context instantiation failed: no valid session scope for request"));
   }
 
   @GetMapping(ServicesAPI.RELEASE_SESSION)
