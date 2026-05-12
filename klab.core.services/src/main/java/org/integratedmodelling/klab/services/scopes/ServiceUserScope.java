@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -232,6 +233,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public UserIdentity getUser() {
     return this.user;
+  }
+
+  @Override
+  public Worldview getWorldview() {
+    throw new KlabIllegalStateException(
+        "No worldview should be retrieved by scopes at service side");
   }
 
   protected void setUser(UserIdentity user) {

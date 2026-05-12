@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
 import java.net.URL;
@@ -29,6 +30,16 @@ public interface UserScope extends ReactiveScope {
    * @return
    */
   UserIdentity getUser();
+
+  /**
+   * The user scope is committed to a specific worldview. Calling this will retrieve the worldview
+   * syntactic description from the set of connected services, considering the user groups and
+   * permissions. The worldview contains all ontologies and is a large object. Also it may change at
+   * any time.
+   *
+   * @return
+   */
+  Worldview getWorldview();
 
   /**
    * Connect to a remote digital twin identified by the passed URL. Connecting user must be

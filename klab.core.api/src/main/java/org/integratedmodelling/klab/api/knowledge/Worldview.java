@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.List;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 
 /**
  * A worldview is a container that can be produced by any resources service that advertises a
@@ -75,6 +78,15 @@ public interface Worldview extends KlabAsset {
    * @return
    */
   Collection<KimObservationStrategyDocument> getObservationStrategies();
+
+  /**
+   * Check for any updated content using the services available in the user scope. All changed
+   * documents are returned.
+   *
+   * @param userScope
+   * @return
+   */
+  List<KlabDocument<?>> update(Scope userScope);
 
   /**
    * An empty worldview results from errors or inconsistencies and, like other k.LAB containers, may

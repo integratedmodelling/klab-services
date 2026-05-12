@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -135,6 +136,12 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   @Override
   public UserIdentity getUser() {
     return this.user instanceof UserIdentity user ? user : null;
+  }
+
+  @Override
+  public Worldview getWorldview() {
+    // TODO!
+    return null;
   }
 
   @Override
