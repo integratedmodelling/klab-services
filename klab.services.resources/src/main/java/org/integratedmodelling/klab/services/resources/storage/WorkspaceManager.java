@@ -2719,6 +2719,22 @@ public class WorkspaceManager {
         if (pd.manifest.getDefinedWorldview() == null) {
           continue;
         }
+
+        if (pd.manifest.getMetadata().containsKey(Worldview.USER_OBSERVER_SEMANTICS)) {
+          _worldview
+              .getMetadata()
+              .put(
+                  Worldview.USER_OBSERVER_SEMANTICS,
+                  pd.manifest.getMetadata().get(Worldview.USER_OBSERVER_SEMANTICS));
+        }
+        if (pd.manifest.getMetadata().containsKey(Worldview.FEDERATION_OBSERVER_SEMANTICS)) {
+          _worldview
+              .getMetadata()
+              .put(
+                  Worldview.FEDERATION_OBSERVER_SEMANTICS,
+                  pd.manifest.getMetadata().get(Worldview.FEDERATION_OBSERVER_SEMANTICS));
+        }
+
         if (pd.externalProject != null) {
           for (var strategy : pd.externalProject.getObservationStrategies()) {
             _worldview.getObservationStrategies().add(strategy);

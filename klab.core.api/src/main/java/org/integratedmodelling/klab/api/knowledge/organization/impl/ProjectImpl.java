@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.organization.impl;
 
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -25,8 +22,6 @@ public class ProjectImpl implements Project {
 
   @Serial private static final long serialVersionUID = 7618524077068234748L;
 
-  //    private Repository repositoryMetadata = new RepositoryImpl();
-
   public static class ManifestImpl implements Manifest {
 
     @Serial private static final long serialVersionUID = -6549113149802016133L;
@@ -38,7 +33,7 @@ public class ProjectImpl implements Project {
     private List<Pair<String, Version>> prerequisiteComponents = new ArrayList<>();
     private String worldview;
     private String definedWorldview;
-    private Metadata metadata = Metadata.create();
+    private Map<String, String> metadata = new HashMap<>();
 
     @Override
     public String getDescription() {
@@ -66,11 +61,11 @@ public class ProjectImpl implements Project {
     }
 
     @Override
-    public Metadata getMetadata() {
+    public Map<String, String> getMetadata() {
       return metadata;
     }
 
-    public void setMetadata(Metadata metadata) {
+    public void setMetadata(Map<String, String> metadata) {
       this.metadata = metadata;
     }
 
@@ -260,14 +255,6 @@ public class ProjectImpl implements Project {
   public void setRepositoryState(RepositoryState repositoryState) {
     this.repositoryState = repositoryState;
   }
-
-  //    public Repository getRepository() {
-  //        return repositoryMetadata;
-  //    }
-  //
-  //    public void setRepositoryMetadata(Repository repositoryMetadata) {
-  //        this.repositoryMetadata = repositoryMetadata;
-  //    }
 
   // TODO lots
   public KlabDocument<?> findDocument(String documentPath) {

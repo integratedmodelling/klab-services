@@ -3,9 +3,9 @@ package org.integratedmodelling.klab.api.knowledge.organization;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
@@ -48,7 +48,7 @@ public interface Project extends KlabAsset {
 
     Version getVersion();
 
-    Metadata getMetadata();
+    Map<String, String> getMetadata();
 
     Collection<MetadataConvention> getMetadataConventions();
 

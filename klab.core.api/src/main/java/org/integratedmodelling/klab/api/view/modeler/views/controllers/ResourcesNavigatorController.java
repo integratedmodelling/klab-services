@@ -50,45 +50,5 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
   boolean negotiateLocking(Workspace workspace);
 
   void releaseLock(Workspace currentWorkspace);
-//
-//  /**
-//   * "SELECT" class events are double-clicks - bring the target to the forefront.
-//   *
-//   * @param asset never null
-//   */
-//  @UIEventHandler(UIEvent.AssetSelected)
-//  void selectAsset(NavigableAsset asset);
 
-//  /**
-//   * "FOCUS" class events are just single click and may or may not produce UI changes but do
-//   * identify an element as the current focal one for its class. A focal element remains focal in
-//   * the view until changed. Focus on null means remove any current focus.
-//   *
-//   * <p>The focal object should be dispatched to any listeners so they can adapt.
-//   *
-//   * @param asset Can be a {@link Workspace}, a {@link
-//   *     org.integratedmodelling.klab.api.knowledge.Worldview}, a concrete subclass of {@link
-//   *     org.integratedmodelling.klab.api.lang.kim.KlabDocument} or one of the {@link
-//   *     org.integratedmodelling.klab.api.knowledge.KlabAsset}s included in a document.
-//   */
-//  @UIEventHandler(UIEvent.AssetFocused)
-//  void focusAsset(NavigableAsset asset);
-//
-//  @UIEventHandler(UIEvent.AssetDeleteRequest)
-//  void removeAsset(NavigableAsset asset);
-//
-//  @UIEventHandler(UIEvent.LogicalValidation)
-//  void resourcesValidated(ResourceSet notifications);
-//
-//  /**
-//   * The user has changed its current editing position within a document. The navigator should
-//   * ensure that the document is selected and adjust its UI to show the element under the caret.
-//   *
-//   * <p>FIXME change the Integer argument to int when the argument matcher becomes smarter.
-//   *
-//   * @param document
-//   * @param position
-//   */
-//  @UIEventHandler(UIEvent.DocumentPositionChanged)
-//  void handleDocumentPositionChange(NavigableDocument document, Integer position);
 }
