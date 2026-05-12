@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -638,7 +639,7 @@ public abstract class BaseService implements KlabService {
    * @return
    */
   @Override
-  public String declareContextScope(
+  public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
@@ -658,7 +659,7 @@ public abstract class BaseService implements KlabService {
       }
 
       getScopeManager().registerScope(serviceContextScope);
-      return serviceContextScope.getId();
+      return serviceContextScope.getConfiguration();
     }
 
     throw new KlabIllegalArgumentException("unexpected scope class");

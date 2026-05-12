@@ -131,11 +131,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(ctx)<-[:CREATED]-(creation),\n"
               + "(prov)-[:HAS_CHILD]->(creation)"
         };
-    String[] SPATIAL_LAYERS_QUERIES =
-        new String[] {
-          "CALL spatial.addLayer('shape_$contextId', 'WKB', 'shape')" // ,
-          //          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude', 'longitude')"
-        };
+    //    String[] SPATIAL_LAYERS_QUERIES =
+    //        new String[] {
+    // ,
+    //          //          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude',
+    // 'longitude')"
+    //        };
   }
 
   class TransactionImpl implements Transaction {
@@ -344,21 +345,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
-  protected void initializeContext(
-      String scopeId,
-      String name,
-      UserScope scope,
-      ResourcePrivileges rights,
-      String description,
-      Persistence persistence) {
+  protected void initializeContext(DigitalTwin.Configuration configuration, UserScope scope) {
 
-    this.rootContextId = scopeId;
+    this.rootContextId = configuration.getId();
     this.userScope = scope;
     this.serviceId = scope.getHostServiceId();
     this.klab = getOrCreateAgent("k.LAB", "AI");
     this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
-    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scopeId), scope);
+    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", configuration.getId()), scope);
 
     if (result.records().isEmpty()) {
 
@@ -366,6 +361,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       var activityId = nextKey();
 
       var federation = Klab.INSTANCE.getFederationData(scope.getUser());
+      var rights = configuration.getAccessRights();
       if (rights == null) {
         rights = ResourcePrivileges.create(scope);
       }
@@ -375,9 +371,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             query,
             Map.of(
                 "contextId",
-                scopeId,
+                configuration.getId(),
                 "name",
-                name,
+                configuration.getName(),
                 "rights",
                 rights.toString(),
                 "timestamp",
@@ -385,33 +381,36 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "federation",
                 (federation == null ? "" : federation.getId()),
                 "description",
-                (description == null ? "No description given" : description),
+                (configuration.getDescription() == null
+                    ? "No description given"
+                    : configuration.getDescription()),
                 "lastUpdate",
                 System.currentTimeMillis(),
                 "username",
                 scope.getUser().getUsername(),
                 "expirationType",
-                persistence.name(),
+                configuration.getPersistence().name(),
                 "activityId",
                 activityId),
             scope);
       }
 
       // create spatial layers only if they don't already exist
-      for (var query : Queries.SPATIAL_LAYERS_QUERIES) {
-        String layerName = "shape_" + scopeId;
-        var layerCheck =
-            query(
-                "CALL spatial.layers() YIELD name WHERE name = $layerName RETURN count(name) > 0 AS exists",
-                Map.of("layerName", layerName),
-                scope);
-        boolean layerExists =
-            layerCheck != null
-                && !layerCheck.records().isEmpty()
-                && layerCheck.records().getFirst().get("exists").asBoolean(false);
-        if (!layerExists) {
-          query(query.replace("$contextId", scopeId), Map.of(), scope);
-        }
+      String layerName = "shape_" + Utils.Paths.getLast(configuration.getId(), '.');
+      var layerCheck =
+          query(
+              "CALL spatial.layers() YIELD name WHERE name = $layerName RETURN count(name) > 0 AS exists",
+              Map.of("layerName", layerName),
+              scope);
+      boolean layerExists =
+          layerCheck != null
+              && !layerCheck.records().isEmpty()
+              && layerCheck.records().getFirst().get("exists").asBoolean(false);
+      if (!layerExists) {
+        query(
+            "CALL spatial.addLayer('$layerName', 'WKB', 'shape')".replace("$layerName", layerName),
+            Map.of(),
+            scope);
       }
     }
   }
@@ -437,13 +436,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public void deleteContext() {
-    query("CALL spatial.removeLayer('shape_" + rootContextId + "')", Map.of(), userScope);
+    query(
+        "CALL spatial.removeLayer('shape_" + Utils.Paths.getLast(rootContextId, '.') + "')",
+        Map.of(),
+        userScope);
     query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), userScope);
   }
 
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
-    query("CALL spatial.removeLayer('shape_" + rootContextId + "')", Map.of(), userScope);
+    query(
+        "CALL spatial.removeLayer('shape_" + Utils.Paths.getLast(rootContextId, '.') + "')",
+        Map.of(),
+        userScope);
     query(
         Queries.REMOVE_CONTEXT,
         Map.of("contextId", contextScope.getConfiguration().getId()),
@@ -886,7 +891,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var query =
         storeSpatialData
-            ? Queries.CREATE_WITH_SHAPE.replace("{type}", type).replace("{scopeId}", scope.getId())
+            ? Queries.CREATE_WITH_SHAPE
+                .replace("{type}", type)
+                .replace("{scopeId}", Utils.Paths.getLast(rootContextId, '.'))
             : Queries.CREATE_WITH_PROPERTIES.replace("{type}", type);
 
     var result = query(transaction, query, Map.of("properties", props), scope);
@@ -905,18 +912,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
-        //        if (storeSpatialData) {
-        //          query(
-        //              transaction,
-        //              String.format("CALL spatial.addNode('shape_%s', $node)", scope.getId()),
-        //              Map.of("node", neo4jNode),
-        //              scope);
-        //          query(
-        //              transaction,
-        //              String.format("CALL spatial.addNode('centroid_%s', $node')", scope.getId()),
-        //              Map.of("node", neo4jNode),
-        //              scope);
-        //        }
       }
     }
 

@@ -82,13 +82,8 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
 
     var ret = new KnowledgeGraphNeo4JClient(this, digitalTwinConfig.getId(), userScope.getUser());
 
-    ret.initializeContext(
-        digitalTwinConfig.getId(),
-        digitalTwinConfig.getName(),
-        userScope,
-        digitalTwinConfig.getAccessRights(),
-        digitalTwinConfig.getDescription(),
-        digitalTwinConfig.getPersistence());
+    // TODO pass the
+    ret.initializeContext(digitalTwinConfig, userScope);
 
     return ret;
   }

@@ -1,21 +1,19 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.modeler.views.controllers.AuthenticationViewController;
-
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ConfigurationBuilder {
   private ResourcePrivileges accessRights;
@@ -26,11 +24,13 @@ public class ConfigurationBuilder {
   private TimeUnit timeoutUnit;
   private URL url;
   private URL serverUrl;
-  private List<Notification> notifications = new ArrayList<>();
+  private final List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
   private String serviceId;
   private String description;
   private String owner;
+  private Observation observer;
+  private boolean empty;
 
   public ConfigurationBuilder() {}
 
@@ -46,6 +46,8 @@ public class ConfigurationBuilder {
     this.notifications.addAll(configuration.getNotifications());
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
     this.serviceId = configuration.getServiceId();
+    this.observer = configuration.getObserver();
+    this.empty = configuration.isEmpty();
   }
 
   /**
@@ -118,6 +120,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder empty() {
+    this.empty = true;
+    return this;
+  }
+
   public ConfigurationBuilder createWhenAbsent(boolean b) {
     this.createWhenAbsent = b;
     return this;
@@ -159,6 +166,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder observer(Observation observer) {
+    this.observer = observer;
+    return this;
+  }
+
   public DigitalTwin.Configuration build() {
     return new ConfigurationImpl(
         accessRights,
@@ -173,6 +185,8 @@ public class ConfigurationBuilder {
         this.createWhenAbsent,
         this.serviceId,
         this.description,
-        this.owner);
+        this.owner,
+        this.empty,
+        this.observer);
   }
 }

@@ -371,7 +371,7 @@ public class RuntimeService extends BaseService
    * @return
    */
   @Override
-  public String declareContextScope(
+  public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     if (!serviceId().equals(contextScope.getHostServiceId())) {
@@ -401,7 +401,7 @@ public class RuntimeService extends BaseService
           new DigitalTwinImpl(
               this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
 
-      return serviceContextScope.getId();
+      return serviceContextScope.getConfiguration();
     }
     throw new KlabIllegalArgumentException("unexpected scope class");
   }

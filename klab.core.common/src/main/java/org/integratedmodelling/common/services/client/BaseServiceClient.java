@@ -9,7 +9,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -175,7 +174,7 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
-  public String declareContextScope(
+  public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
@@ -188,18 +187,22 @@ public abstract class BaseServiceClient implements KlabService {
                 .toList());
 
     try {
-      var scopeId =
-          client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
-      if (scopeId != null) {
-        setupMessaging(contextScope, sessionScope, scopeId);
-        // give the server some time to set up the context and inform the other services
-        //        Thread.sleep(1000);
+      var configuration =
+          client
+              .withScope(sessionScope)
+              .post(ServicesAPI.CREATE_CONTEXT, request, DigitalTwin.Configuration.class);
+      if (configuration != null && !configuration.isEmpty()) {
+        setupMessaging(contextScope, sessionScope, configuration.getId());
       }
-      return scopeId;
+      return configuration == null
+          ? DigitalTwin.Configuration.empty(
+              Notification.error("No valid return value from server at context creation"))
+          : configuration;
+
     } catch (Throwable t) {
-      Logging.INSTANCE.error(this.serviceName() + " failed to declare context scope", t);
+      return DigitalTwin.Configuration.empty(
+          Notification.error(this.serviceName() + " failed to declare context scope", t));
     }
-    return null;
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {

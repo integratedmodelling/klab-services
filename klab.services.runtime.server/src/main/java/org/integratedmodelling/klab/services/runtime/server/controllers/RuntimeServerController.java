@@ -542,7 +542,7 @@ public class RuntimeServerController {
    * @return the ID of the new context scope
    */
   @PostMapping(ServicesAPI.CREATE_CONTEXT)
-  public String createContext(
+  public DigitalTwin.Configuration createContext(
       @RequestBody ScopeRequest request,
       @RequestParam(name = "id", required = false) String contextId,
       Principal principal,
@@ -600,26 +600,26 @@ public class RuntimeServerController {
           var id = runtimeService.klabService().declareContextScope(ret, sessionScope, userScope);
           if (federation != null) {
 
-            var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
+            var implementedQueues = ret.setupMessaging(federation, id.getId(), queuesHeader);
 
             Logging.INSTANCE.info(
-                "Queues set up for session " + id + ": " + implementedQueues + " on context scope");
+                "Queues set up for context " + id.getId() + ": " + implementedQueues);
 
             response.setHeader(
                 ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
           }
 
-          if (!ret.initializeAgents(id)) {
-            Logging.INSTANCE.warn("agent initialization failed in context creation");
+          if (!ret.initializeAgents(id.getId())) {
+            id.getNotifications()
+                .add(Notification.warning("agent initialization failed in context creation"));
           }
-
           return id;
         }
-      } else {
-        Logging.INSTANCE.error("Context instantiation failed: no valid session scope for request");
       }
     }
-    return null;
+
+    return DigitalTwin.Configuration.empty(
+        Notification.error("Context instantiation failed: no valid session scope for request"));
   }
 
   @GetMapping(ServicesAPI.RELEASE_SESSION)

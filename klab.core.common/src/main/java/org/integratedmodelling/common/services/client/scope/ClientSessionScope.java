@@ -1,5 +1,8 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -9,11 +12,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Predicate;
 
 /** Client-side session scope */
 public class ClientSessionScope extends ClientUserScope implements SessionScope {
@@ -48,7 +46,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
     return super.getService(serviceClass);
   }
 
-    /**
+  /**
    * Use to pre-define the ID when necessary.
    *
    * @param id
@@ -100,9 +98,8 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
     var id = runtime.declareContextScope(ret, this, userScope);
-
-    if (id != null) {
-      ret.setId(id);
+    ret.setFromConfiguration(id);
+    if (!id.isEmpty()) {
       ClientScopeManager.INSTANCE.register(ret);
     }
 
