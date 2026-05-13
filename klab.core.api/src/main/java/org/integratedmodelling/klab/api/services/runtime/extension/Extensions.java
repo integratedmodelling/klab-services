@@ -75,7 +75,8 @@ public interface Extensions {
       Map<String, List<FunctionDescriptor>> verbs,
       Map<String, List<FunctionDescriptor>> exporters,
       Map<String, List<FunctionDescriptor>> importers,
-      String sourceServiceId // ID of source service for updates
+      String sourceServiceId, // ID of source service for updates,
+      long timestamp // time of creation/last update
   ) {
 
     @Override

@@ -15,8 +15,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
 public class ResourceManager {
 
@@ -182,6 +182,7 @@ public class ResourceManager {
               resource.getLocalProjectName(),
               resource.getVersion(),
               KlabAsset.KnowledgeClass.RESOURCE,
+              System.currentTimeMillis(),
               false);
 
       ret.getResources().add(resourceSetResource);

@@ -123,7 +123,8 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            service.serviceId());
+            service.serviceId(),
+            System.currentTimeMillis());
   }
 
   //  /**
@@ -371,6 +372,7 @@ public class ComponentRegistry {
               null,
               Version.create(plugin.getDescriptor().getVersion()),
               KlabAsset.KnowledgeClass.COMPONENT,
+              resourcePath.lastModified(),
               false);
 
       Plugin component = plugin.getPlugin();
@@ -521,7 +523,8 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            service.serviceId());
+            service.serviceId(),
+            System.currentTimeMillis());
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {

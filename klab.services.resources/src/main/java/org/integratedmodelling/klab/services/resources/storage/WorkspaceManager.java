@@ -910,6 +910,7 @@ public class WorkspaceManager {
       Map<String, String> ontologyProjects = new HashMap<>();
       Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
       Map<String, URL> urlCache = new HashMap<>();
+      Map<String, Long> lastUpdates = new HashMap<>();
       for (var pd : projectDescriptors.values()) {
         var isWorldview = pd.manifest.getDefinedWorldview() != null;
         if (pd.externalProject != null) {
@@ -919,6 +920,12 @@ public class WorkspaceManager {
           }
         } else {
           for (var ontologyUrl : pd.storage.listResources(ProjectStorage.ResourceType.ONTOLOGY)) {
+
+            var timestamp =
+                ontologyUrl.getFile().isEmpty()
+                    ? System.currentTimeMillis()
+                    : new File(ontologyUrl.getFile()).lastModified();
+
             try (var input = ontologyUrl.openStream()) {
               var errors = new ArrayList<Notification>();
               var parsed = ontologyParser.parse(input, errors);
@@ -930,6 +937,7 @@ public class WorkspaceManager {
                 //                                return Collections.emptyList();
               }
               urlCache.put(parsed.getNamespace().getName(), ontologyUrl);
+              lastUpdates.put(parsed.getNamespace().getName(), timestamp);
               ontologyProjects.put(parsed.getNamespace().getName(), pd.name);
               cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
             } catch (IOException e) {
@@ -1032,7 +1040,10 @@ public class WorkspaceManager {
               };
           ontology =
               LanguageAdapter.INSTANCE.adaptOntology(
-                  syntax, ontologyProjects.get(syntax.getName()), notifications);
+                  syntax,
+                  ontologyProjects.get(syntax.getName()),
+                  notifications,
+                  lastUpdates.get(syntax.getName()));
           documentURLs.put(ontology.getUrn(), urlCache.get(ontology.getUrn()));
         }
 
@@ -1072,6 +1083,7 @@ public class WorkspaceManager {
       Map<String, String> kimProjects = new HashMap<>();
       Map<String, Pair<Model, KimNamespace>> cache = new HashMap<>();
       Map<String, URL> urlCache = new HashMap<>();
+      Map<String, Long> lastUpdates = new HashMap<>();
       for (var pd : projectDescriptors.values()) {
         if (pd.externalProject == null) {
           for (var namespaceUrl :
@@ -1086,9 +1098,16 @@ public class WorkspaceManager {
                     Klab.ErrorContext.NAMESPACE);
                 //                                return Collections.emptyList();
               }
+
+              var timestamp =
+                  namespaceUrl.getFile().isEmpty()
+                      ? System.currentTimeMillis()
+                      : new File(namespaceUrl.getFile()).lastModified();
+
               urlCache.put(parsed.getNamespace().getName(), namespaceUrl);
               kimProjects.put(parsed.getNamespace().getName(), pd.name);
               cache.put(parsed.getNamespace().getName(), Pair.of(parsed, null));
+              lastUpdates.put(parsed.getNamespace().getName(), timestamp);
             } catch (IOException e) {
               // log error and return failure
               scope.error(
@@ -1189,7 +1208,10 @@ public class WorkspaceManager {
               };
           namespace =
               LanguageAdapter.INSTANCE.adaptNamespace(
-                  syntax, kimProjects.get(syntax.getUrn()), notifications);
+                  syntax,
+                  kimProjects.get(syntax.getUrn()),
+                  notifications,
+                  lastUpdates.get(syntax.getUrn()));
           documentURLs.put(namespace.getUrn(), urlCache.get(namespace.getUrn()));
         }
 
@@ -1231,6 +1253,11 @@ public class WorkspaceManager {
                   ProjectStorage.ResourceType.BEHAVIOR_COMPONENT,
                   ProjectStorage.ResourceType.TESTCASE,
                   ProjectStorage.ResourceType.BEHAVIOR)) {
+
+            var timestamp =
+                behaviorUrl.getFile().isEmpty()
+                    ? System.currentTimeMillis()
+                    : new File(behaviorUrl.getFile()).lastModified();
 
             try (var input = behaviorUrl.openStream()) {
 
@@ -1287,7 +1314,7 @@ public class WorkspaceManager {
                 if (!errors.get()) {
                   var document =
                       LanguageAdapter.INSTANCE.adaptBehavior(
-                          syntax, pd.name, projectName, notifications);
+                          syntax, pd.name, projectName, notifications, timestamp);
                   _behaviorOrder.add(document);
                   _behaviorMap.put(document.getUrn(), document);
                 }
@@ -1330,6 +1357,11 @@ public class WorkspaceManager {
                 //                                return Collections.emptyList();
               } else {
 
+                var timestamp =
+                    strategyUrl.getFile().isEmpty()
+                        ? System.currentTimeMillis()
+                        : new File(strategyUrl.getFile()).lastModified();
+
                 List<Notification> notifications = new ArrayList<>();
                 var syntax =
                     new ObservationStrategiesSyntaxImpl(parsed, this.languageValidationScope) {
@@ -1370,7 +1402,8 @@ public class WorkspaceManager {
 
                 if (!errors.get()) {
                   var document =
-                      LanguageAdapter.INSTANCE.adaptStrategies(syntax, pd.name, notifications);
+                      LanguageAdapter.INSTANCE.adaptStrategies(
+                          syntax, pd.name, notifications, timestamp);
                   _observationStrategyDocuments.add(document);
                   _observationStrategyDocumentMap.put(document.getUrn(), document);
                 }
@@ -2143,7 +2176,13 @@ public class WorkspaceManager {
                       org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
             }
           };
-      return LanguageAdapter.INSTANCE.adaptOntology(syntax, project, notifications);
+
+      var timestamp =
+          url.getFile().isEmpty()
+              ? System.currentTimeMillis()
+              : new File(url.getFile()).lastModified();
+
+      return LanguageAdapter.INSTANCE.adaptOntology(syntax, project, notifications, timestamp);
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -2182,7 +2221,11 @@ public class WorkspaceManager {
                       org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
             }
           };
-      return LanguageAdapter.INSTANCE.adaptNamespace(syntax, project, notifications);
+      var timestamp =
+          url.getFile().isEmpty()
+              ? System.currentTimeMillis()
+              : new File(url.getFile()).lastModified();
+      return LanguageAdapter.INSTANCE.adaptNamespace(syntax, project, notifications, timestamp);
     } catch (IOException e) {
       scope.error(e);
     }
@@ -2256,7 +2299,11 @@ public class WorkspaceManager {
                       org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
             }
           };
-      return LanguageAdapter.INSTANCE.adaptStrategies(syntax, project, notifications);
+      var timestamp =
+          url.getFile().isEmpty()
+              ? System.currentTimeMillis()
+              : new File(url.getFile()).lastModified();
+      return LanguageAdapter.INSTANCE.adaptStrategies(syntax, project, notifications, timestamp);
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -2746,9 +2793,15 @@ public class WorkspaceManager {
               _worldview.setEmpty(true);
               return _worldview;
             }
+            var timestamp =
+                strategyUrl.getFile().isEmpty()
+                    ? System.currentTimeMillis()
+                    : new File(strategyUrl.getFile()).lastModified();
             _worldview
                 .getObservationStrategies()
-                .add(LanguageAdapter.INSTANCE.adaptStrategies(parsed, pd.name, List.of()));
+                .add(
+                    LanguageAdapter.INSTANCE.adaptStrategies(
+                        parsed, pd.name, List.of(), timestamp));
           }
         }
       }
@@ -2945,6 +2998,9 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.NAMESPACE,
+                          document.getFile().isEmpty()
+                              ? 0
+                              : new File(document.getFile()).lastModified(),
                           false));
               result
                   .getNotifications()
@@ -2979,6 +3035,7 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.ONTOLOGY,
+                          previous.getLastUpdateTimestamp(),
                           false));
               ret.add(worldviewChange);
               result
@@ -2991,6 +3048,7 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.ONTOLOGY,
+                          _ontologyMap.get(documentUrn).getLastUpdateTimestamp(),
                           false));
               result
                   .getNotifications()
@@ -3018,6 +3076,7 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.BEHAVIOR,
+                          previous.getLastUpdateTimestamp(),
                           false));
               result
                   .getNotifications()
@@ -3045,6 +3104,7 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY,
+                          previous.getLastUpdateTimestamp(),
                           false));
               result
                   .getNotifications()

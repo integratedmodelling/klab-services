@@ -317,13 +317,15 @@ public enum LanguageAdapter {
   }
 
   public KimNamespace adaptNamespace(
-      NamespaceSyntax namespace, String projectName, Collection<Notification> notifications) {
+      NamespaceSyntax namespace, String projectName, Collection<Notification> notifications, long timestamp) {
 
     var ret = new KimNamespaceImpl();
     ret.setUrn(namespace.getUrn());
     ret.setScenario(namespace.isScenario());
     ret.setSourceCode(namespace.getSourceCode());
     ret.setProjectName(projectName);
+    ret.getNotifications().addAll(notifications);
+    ret.setLastUpdateTimestamp(timestamp);
     ret.setScope(
         namespace.getScope() == null
             ? KlabStatement.Scope.PUBLIC
@@ -867,13 +869,14 @@ public enum LanguageAdapter {
   public KimObservationStrategyDocument adaptStrategies(
       ObservationStrategiesSyntax definition,
       String projectName,
-      Collection<Notification> notifications) {
+      Collection<Notification> notifications, long timestamp) {
 
     KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
     ret.setUrn(definition.getUrn());
     ret.getNotifications().addAll(notifications);
     ret.setSourceCode(definition.getSourceCode());
     ret.setProjectName(projectName);
+    ret.setLastUpdateTimestamp(timestamp);
 
     // we don't add source code here as each strategy has its own
     for (var strategy : definition.getStrategies()) {
@@ -1055,7 +1058,7 @@ public enum LanguageAdapter {
   }
 
   public KimOntology adaptOntology(
-      OntologySyntax ontology, String projectName, Collection<Notification> notifications) {
+      OntologySyntax ontology, String projectName, Collection<Notification> notifications, long timestamp) {
 
     KimOntologyImpl ret = new KimOntologyImpl();
 
@@ -1065,6 +1068,7 @@ public enum LanguageAdapter {
     ret.getMetadata().put(Metadata.DC_COMMENT, ontology.getDescription());
     ret.setVersion(Version.create(ontology.getVersion()));
     ret.setProjectName(projectName);
+    ret.setLastUpdateTimestamp(timestamp);
 
     if (ontology.getDomain() == OntologySyntax.rootDomain) {
       ret.setDomain(KimOntology.rootDomain);
@@ -1149,9 +1153,10 @@ public enum LanguageAdapter {
       BehaviorSyntaxImpl syntax,
       String name,
       String projectName,
-      List<Notification> notifications) {
+      List<Notification> notifications, long timestamp) {
     var ret = new KActorsBehaviorImpl();
     ret.setUrn(name);
+    ret.setLastUpdateTimestamp(timestamp);
 
     for (var action : syntax.getActions()) {
       ret.getStatements().add(adaptAction(action, name, projectName, notifications));

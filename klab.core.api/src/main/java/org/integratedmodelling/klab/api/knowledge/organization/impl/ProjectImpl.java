@@ -25,6 +25,7 @@ public class ProjectImpl implements Project {
   public static class ManifestImpl implements Manifest {
 
     @Serial private static final long serialVersionUID = -6549113149802016133L;
+
     private String description;
     private ResourcePrivileges privileges = ResourcePrivileges.PUBLIC;
     private Version version = Version.EMPTY_VERSION;
@@ -34,6 +35,7 @@ public class ProjectImpl implements Project {
     private String worldview;
     private String definedWorldview;
     private Map<String, String> metadata = new HashMap<>();
+    private long creationTimestamp = System.currentTimeMillis();
 
     @Override
     public String getDescription() {
@@ -114,6 +116,15 @@ public class ProjectImpl implements Project {
 
     public void setDefinedWorldview(String definedWorldview) {
       this.definedWorldview = definedWorldview;
+    }
+
+    @Override
+    public long getCreationTimestamp() {
+      return creationTimestamp;
+    }
+
+    public void setCreationTimestamp(long creationTimestamp) {
+      this.creationTimestamp = creationTimestamp;
     }
   }
 

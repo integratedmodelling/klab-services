@@ -1,14 +1,13 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
+import java.util.List;
+import java.util.Set;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Describes an adapter from a client's perspective. Included in component descriptor which is part
@@ -35,6 +34,7 @@ public class AdapterDescriptor {
   private Data.FillCurve fillCurve;
   private long minSplitSize;
   private long maxSize;
+  private long timestamp;
 
   // do not remove - for the deserializer
   public AdapterDescriptor() {}
@@ -136,6 +136,22 @@ public class AdapterDescriptor {
 
   public boolean isSanitizing() {
     return sanitizing;
+  }
+
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  public void setMaxSize(long maxSize) {
+    this.maxSize = maxSize;
+  }
+
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
   }
 
   public void setSanitizing(boolean sanitizing) {

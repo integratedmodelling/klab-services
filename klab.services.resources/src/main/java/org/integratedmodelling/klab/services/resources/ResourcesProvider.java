@@ -437,6 +437,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 null,
                 adapter.getComponentVersion(),
                 KnowledgeClass.COMPONENT,
+                adapter.getAdapterInfo().getTimestamp(),
                 false));
     return ret;
   }
@@ -463,6 +464,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                     null,
                     component.version(),
                     KnowledgeClass.COMPONENT,
+                    component.timestamp(),
                     false));
       }
     }
@@ -493,6 +495,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                     null,
                     component.version(),
                     KnowledgeClass.COMPONENT,
+                    component.timestamp(),
                     false));
       }
     }
@@ -571,6 +574,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   null,
                   adapter.getComponentVersion(),
                   KnowledgeClass.COMPONENT,
+                  adapter.getAdapterInfo().getTimestamp(),
                   true));
     }
 
@@ -583,6 +587,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   null,
                   adapter.getVersion(),
                   KnowledgeClass.RESOURCE,
+                  adapter.getAdapterInfo().getTimestamp(),
                   false));
 
       return ret;
@@ -599,6 +604,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 null,
                 resource.getVersion(),
                 KnowledgeClass.RESOURCE,
+                adapter.getAdapterInfo().getTimestamp(),
                 false));
 
     return ret;
@@ -1065,6 +1071,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       namespace.getProjectName(),
                       namespace.getVersion(),
                       KnowledgeClass.NAMESPACE,
+                      namespace.getLastUpdateTimestamp(),
                       false);
             }
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
@@ -1079,6 +1086,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       ontology.getProjectName(),
                       ontology.getVersion(),
                       KnowledgeClass.ONTOLOGY,
+                      ontology.getLastUpdateTimestamp(),
                       false);
             }
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
@@ -1093,6 +1101,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       behavior.getProjectName(),
                       behavior.getVersion(),
                       assetClass,
+                      behavior.getLastUpdateTimestamp(),
                       false);
             }
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
@@ -1105,6 +1114,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           case PROJECT -> null;
           case OBSERVATION_STRATEGY -> null;
           case CONCEPT_STATEMENT -> null;
+          case WORLDVIEW -> resolveWorldview(urn, scope);
           default -> null;
         };
 
@@ -1114,6 +1124,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     return ResourceSet.empty(
         Notification.error("Cannot resolve " + assetClass.name().toLowerCase() + " " + urn));
+  }
+
+  /**
+   * Get all the worldview resources for the named worldview available to the scope. These will be
+   * all the ontology and observation strategy documents participating to the worldview, managed by
+   * this service and allowed for the scope, plus any metadata from the correspondent projects.
+   *
+   * @param scope
+   * @return
+   */
+  private ResourceSet resolveWorldview(String urn, Scope scope) {
+    // TODO implement
+    return ResourceSet.empty(Notification.error("Worldview resolution not implemented"));
   }
 
   @Override
@@ -1343,6 +1366,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             Utils.Collections.shallowCollection(ontologies, strategies, namespaces, behaviors)
                 .toArray(new KlabAsset[0])));
 
+    var timestamp = project.computeTimestamp();
+
     /*
     Add project info as result to everything that has changed
      */
@@ -1356,6 +1381,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                         project.getUrn(),
                         project.getManifest().getVersion(),
                         KnowledgeClass.PROJECT,
+                        timestamp,
                         false)));
 
     return ret;
@@ -1469,9 +1495,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public ResourceSet resolveModels(Observable observable, ContextScope scope) {
 
     if (!semanticSearchAvailable) {
-      Logging.INSTANCE.warn(
-          "Semantic search is not available: client should not make this request");
-      return ResourceSet.empty();
+      return ResourceSet.empty(Notification.warning("Semantic search is not available"));
     }
 
     ResourceSet results = new ResourceSet();
@@ -1486,6 +1510,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   model.getProjectUrn(),
                   model.getVersion(),
                   KnowledgeClass.MODEL,
+                  System.currentTimeMillis(),
                   false));
     }
 
@@ -1715,6 +1740,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       namespace.getProjectName(),
                       namespace.getVersion(),
                       KnowledgeClass.NAMESPACE,
+                      namespace.getLastUpdateTimestamp(),
                       false));
 
         } else {
@@ -1739,6 +1765,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                             namespace.getProjectName(),
                             namespace.getVersion(),
                             KlabAsset.classify(statement),
+                            namespace.getLastUpdateTimestamp(),
                             false));
                 break;
               }
@@ -1752,7 +1779,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           ret.getResults()
               .add(
                   new ResourceSet.Resource(
-                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE, false));
+                      serviceId(),
+                      urn,
+                      null,
+                      null,
+                      KnowledgeClass.OBSERVABLE,
+                      System.currentTimeMillis(),
+                      false));
         }
       }
       case REMOTE_URL -> {

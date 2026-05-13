@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.organization;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Project extends KlabAsset {
@@ -55,6 +57,13 @@ public interface Project extends KlabAsset {
     List<Pair<String, Version>> getPrerequisiteProjects();
 
     List<Pair<String, Version>> getPrerequisiteComponents();
+
+    /**
+     * Time of manifest creation. Won't change with updates or mirroring.
+     *
+     * @return
+     */
+    long getCreationTimestamp();
   }
 
   Manifest getManifest();
@@ -117,4 +126,37 @@ public interface Project extends KlabAsset {
    * @return
    */
   List<Notification> getNotifications();
+
+  /**
+   * All the documents in the project.
+   *
+   * @return
+   */
+  default Collection<KlabDocument<?>> allDocuments() {
+    List<KlabDocument<?>> documents = new ArrayList<>();
+    documents.addAll(getNamespaces());
+    documents.addAll(getOntologies());
+    documents.addAll(getObservationStrategies());
+    documents.addAll(getBehaviors());
+    documents.addAll(getScripts());
+    documents.addAll(getApps());
+    documents.addAll(getTestCases());
+    return documents;
+  }
+
+  /**
+   * Compute a timestamp that reflects the state of the project, including all its components. This
+   * timestamp is used to determine if the project has changed since the last time it was loaded or
+   * used.
+   *
+   * <p>If the project is empty, returns 0L, not the time of creation.
+   *
+   * @return
+   */
+  default long computeTimestamp() {
+    return allDocuments().stream()
+        .map(KlabDocument::getLastUpdateTimestamp)
+        .max(Long::compare)
+        .orElse(getManifest().getCreationTimestamp());
+  }
 }

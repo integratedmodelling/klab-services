@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.api.services.resources;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.net.URL;
+import java.util.*;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -8,11 +12,6 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.net.URL;
-import java.util.*;
 
 /**
  * The output of any resources GET endpoint that provides models, projects, worldview, behaviors or
@@ -67,6 +66,7 @@ public class ResourceSet implements Serializable {
     private String serviceId;
     private String resourceUrn;
     private boolean local;
+    private long timestamp;
     private Version resourceVersion;
     private KnowledgeClass knowledgeClass;
     private CRUDOperation operation = CRUDOperation.UPDATE;
@@ -85,6 +85,7 @@ public class ResourceSet implements Serializable {
         String projectUrn,
         Version resourceVersion,
         KnowledgeClass knowledgeClass,
+        long timestamp,
         boolean optional) {
       super();
       this.serviceId = serviceId;
@@ -93,16 +94,18 @@ public class ResourceSet implements Serializable {
       this.knowledgeClass = knowledgeClass;
       this.projectUrn = projectUrn;
       this.optional = optional;
+      this.timestamp = timestamp;
     }
 
     public Resource(
-            CRUDOperation operation,
-            String serviceId,
-            String resourceUrn,
-            String projectUrn,
-            Version resourceVersion,
-            KnowledgeClass knowledgeClass,
-            boolean optional) {
+        CRUDOperation operation,
+        String serviceId,
+        String resourceUrn,
+        String projectUrn,
+        Version resourceVersion,
+        KnowledgeClass knowledgeClass,
+        long timestamp,
+        boolean optional) {
       super();
       this.serviceId = serviceId;
       this.resourceUrn = resourceUrn;
@@ -111,6 +114,7 @@ public class ResourceSet implements Serializable {
       this.projectUrn = projectUrn;
       this.optional = optional;
       this.operation = operation;
+      this.timestamp = timestamp;
     }
 
     /**
@@ -124,6 +128,19 @@ public class ResourceSet implements Serializable {
 
     public void setServiceId(String serviceId) {
       this.serviceId = serviceId;
+    }
+
+    /**
+     * The time of last change. Use to compare documents when the version is the same.
+     *
+     * @return
+     */
+    public long getTimestamp() {
+      return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
     }
 
     public boolean isLocal() {

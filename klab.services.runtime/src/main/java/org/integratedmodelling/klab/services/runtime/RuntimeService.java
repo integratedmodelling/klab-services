@@ -1094,6 +1094,7 @@ public class RuntimeService extends BaseService
                       null,
                       Version.CURRENT_VERSION,
                       KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION,
+                      System.currentTimeMillis(),
                       false));
         } else {
 

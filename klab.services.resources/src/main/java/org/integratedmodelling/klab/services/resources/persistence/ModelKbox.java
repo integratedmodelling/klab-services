@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
@@ -35,10 +38,6 @@ import org.integratedmodelling.klab.persistence.h2.SQL;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference.Mediation;
 import org.locationtech.jts.geom.Geometry;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 
 public class ModelKbox extends ObservableKbox {
 
@@ -117,7 +116,8 @@ public class ModelKbox extends ObservableKbox {
                       + "observationtype VARCHAR(256), "
                       + "enumeratedspacedomain VARCHAR(256), "
                       + "enumeratedspacelocation VARCHAR(1024), "
-                      + "specializedObservable BOOLEAN "
+                      + "specializedObservable BOOLEAN, "
+                      + "timestamp LONG"
                       + "); "
                       + "CREATE INDEX model_oid_index ON model(oid); "
                   // + "CREATE SPATIAL INDEX model_space ON model(space);"
@@ -215,6 +215,8 @@ public class ModelKbox extends ObservableKbox {
                       + cn(model.getEnumeratedSpaceLocation())
                       + "', "
                       + (model.isSpecializedObservable() ? "TRUE" : "FALSE")
+                      + ", "
+                      + model.getTimestamp()
                       + ");";
 
               if (model.getMetadata() != null && model.getMetadata().size() > 0) {
@@ -252,7 +254,8 @@ public class ModelKbox extends ObservableKbox {
           }
         }
       } catch (Throwable t) {
-        Logging.INSTANCE.error("Unexpected error querying models: verify geometry and observables");
+        Logging.INSTANCE.error(
+            "Unexpected error querying models: verify geometry and observables", t);
         return List.of();
       }
     }
@@ -566,6 +569,7 @@ public class ModelKbox extends ObservableKbox {
               ret.setMinTimeScaleFactor(srs.getInt(25));
               ret.setMaxTimeScaleFactor(srs.getInt(26));
               Geometry geometry = srs.getGeometry(27);
+              ret.setTimestamp(srs.getLong(32));
               if (!geometry.isEmpty()) {
                 ret.setShape(Shape.create(geometry.toText(), Projection.getLatLon())); // +
               }
@@ -891,7 +895,7 @@ public class ModelKbox extends ObservableKbox {
 
         m.setObservable(obs.getUrn());
         m.setObservationType(
-                obs.getContextualization() == null
+            obs.getContextualization() == null
                 ? Contextualization.VOID.name()
                 : obs.getContextualization().name());
         m.setObservableConcept(obs.getSemantics());
@@ -914,7 +918,7 @@ public class ModelKbox extends ObservableKbox {
             model.getMetadata().get(Metadata.IM_MIN_TEMPORAL_SCALE, Time.MIN_SCALE_RANK));
         m.setMaxTimeScaleFactor(
             model.getMetadata().get(Metadata.IM_MAX_TEMPORAL_SCALE, Time.MAX_SCALE_RANK));
-
+        m.setTimestamp(namespace.getLastUpdateTimestamp());
         m.setPrimaryObservable(first);
 
         // if (first && obs.isSpecialized()) {
