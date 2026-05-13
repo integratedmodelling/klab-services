@@ -9,13 +9,16 @@ import java.util.function.BiConsumer;
 
 import org.integratedmodelling.common.authentication.scope.AbstractClientScope;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -140,8 +143,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
 
   @Override
   public Worldview getWorldview() {
-    // TODO!
-    return null;
+    return getEngine().getWorldview();
   }
 
   @Override

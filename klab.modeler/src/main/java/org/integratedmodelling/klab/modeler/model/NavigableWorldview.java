@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
@@ -98,5 +99,10 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview>
   @Override
   public String getWorldviewId() {
     return delegate.getWorldviewId();
+  }
+
+  @Override
+  public Collection<Notification> getNotifications() {
+    return delegate.getNotifications();
   }
 }

@@ -708,6 +708,9 @@ public class Utils {
           if (!swap && or.getResourceVersion() != null && r.getResourceVersion() != null) {
             swap = r.getResourceVersion().greater(or.getResourceVersion());
           }
+          if (!swap && or.getResourceVersion() != null && r.getResourceVersion() != null) {
+            swap = r.getTimestamp() > or.getTimestamp();
+          }
         }
         if (swap) {
           // always choose the local one

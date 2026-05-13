@@ -2,11 +2,14 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.Collection;
 import java.util.List;
+
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * A worldview is a container that can be produced by any resources service that advertises a
@@ -63,6 +66,13 @@ public interface Worldview extends KlabAsset {
   String getWorldviewId();
 
   /**
+   * Any notifications from the worldview.
+   *
+   * @return
+   */
+  Collection<Notification> getNotifications();
+
+  /**
    * The ontologies are in the right order for loading and the first in the list is always the root
    * ontology, which will reference any upper ontologies it uses.
    *
@@ -95,4 +105,21 @@ public interface Worldview extends KlabAsset {
    * @return
    */
   boolean isEmpty();
+
+  static Worldview empty(Notification... notifications) {
+    var ret =
+        new WorldviewImpl() {
+          @Override
+          public String getWorldviewId() {
+            return "empty";
+          }
+        };
+    if (notifications != null) {
+      for (var notification : notifications) {
+        ret.getNotifications().add(notification);
+      }
+    }
+    ret.setEmpty(true);
+    return ret;
+  }
 }

@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.knowledge;
+package org.integratedmodelling.klab.api.knowledge.impl;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class WorldviewImpl implements Worldview {
   private boolean empty;
   private String worldviewId = Utils.Names.newName("wv");
   private List<Annotation> annotations = new ArrayList<>();
+  private List<Notification> notifications = new ArrayList<>();
 
   @Override
   public String getUrn() {
@@ -90,5 +92,14 @@ public class WorldviewImpl implements Worldview {
 
   public void setAnnotations(List<Annotation> annotations) {
     this.annotations = annotations;
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
   }
 }

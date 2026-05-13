@@ -26,9 +26,13 @@ import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -50,6 +54,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private boolean onlineStatusNotified = false;
   private Stack softwareStack;
   private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
+  private Worldview worldview;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -321,5 +326,29 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public Settings getSettings() {
     return settings;
+  }
+
+  public Worldview getWorldview() {
+
+    if (worldview == null) {
+
+      // TODO setup automatic updates
+
+      var resources =
+          Utils.Resources.queryResources(
+              this.defaultUser,
+              ResourcesService.class,
+              // FIXME use the worldview ID from the certificate
+              service ->
+                  service.resolve("imod", KlabAsset.KnowledgeClass.WORLDVIEW, this.defaultUser));
+
+      if (resources.isEmpty() || Utils.Notifications.hasErrors(resources.getNotifications())) {
+        return Worldview.empty(resources.getNotifications().toArray(Notification[]::new));
+      }
+
+      this.worldview = new WorldviewImpl();
+    }
+
+    return this.worldview;
   }
 }
