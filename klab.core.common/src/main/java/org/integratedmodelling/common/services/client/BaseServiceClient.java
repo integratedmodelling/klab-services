@@ -69,7 +69,7 @@ public abstract class BaseServiceClient implements KlabService {
 
           @Override
           public <T extends KlabService> Optional<T> findService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
+              Class<T> serviceClass, Predicate<T> selector) {
             return Optional.empty();
           }
 

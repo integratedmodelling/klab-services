@@ -2754,6 +2754,14 @@ public class WorkspaceManager {
     }
   }
 
+  /**
+   * Retrieve the worldview WE have.
+   *
+   * @deprecated the normal retrieve resource set + merge workflow should be used on as many
+   *     services as available before building the final Worldview object. Dependencies will need to
+   *     be negotiated across multiple results when merging.
+   * @return
+   */
   public Worldview getWorldview() {
 
     if (_worldview == null) {

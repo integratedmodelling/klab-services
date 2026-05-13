@@ -160,7 +160,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     @Override
     public <T extends KlabService> Optional<T> findService(
-        Class<T> serviceClass, Predicate<T>... selectors) {
+        Class<T> serviceClass, Predicate<T> selectors) {
       return Optional.of(getService(serviceClass));
     }
 

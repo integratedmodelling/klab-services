@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.scope;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -157,11 +156,11 @@ public interface Scope extends Channel {
    *
    * @param <T>
    * @param serviceClass
-   * @param selectors one or more predicates that the returned service must match. If more than one
+   * @param selector a predicate that the returned service must match. If more than one
    *     service matches, the result is the first service that matches.
    * @return an optional service
    */
-  <T extends KlabService> Optional<T> findService(Class<T> serviceClass, Predicate<T>... selectors);
+  <T extends KlabService> Optional<T> findService(Class<T> serviceClass, Predicate<T> selector);
 
   /**
    * Retrieve all the currently available services corresponding to the passed class, including the

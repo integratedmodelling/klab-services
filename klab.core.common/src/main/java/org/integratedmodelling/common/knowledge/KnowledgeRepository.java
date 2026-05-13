@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.knowledge;
 
+import java.util.*;
+import java.util.function.Function;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedHashMap;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedMap;
 import org.integratedmodelling.common.utils.Utils;
@@ -12,9 +14,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
-import java.util.*;
-import java.util.function.Function;
-
 /**
  * A singleton that ingests {@link ResourceSet}s intelligently and keeps tabs on loaded knowledge,
  * caching documents to minimize network transfer. It can be configured with callbacks to extract
@@ -24,7 +23,6 @@ import java.util.function.Function;
  * changed namespace when changes are notified.
  */
 public enum KnowledgeRepository {
-
   INSTANCE;
 
   /** We keep all syntactic document we encounter here, in a multimap with different versions. */
@@ -60,7 +58,9 @@ public enum KnowledgeRepository {
     if (assets != null) {
       for (var asset : assets) {
         if (asset.getSecond() == null && version == null
-            || (version != null && asset.getSecond() != null && asset.getSecond().compatible(version))) {
+            || (version != null
+                && asset.getSecond() != null
+                && asset.getSecond().compatible(version))) {
           if (assetClass.isAssignableFrom(asset.getFirst().getClass())) {
             return (T) asset.getFirst();
           }
@@ -201,9 +201,13 @@ public enum KnowledgeRepository {
     }
 
     // if we get here, we need to resolve the document
-    // TODO use all services
-    // TODO honor version in request
-    var resources = scope.getService(ResourcesService.class);
+    // TODO logic is sketchy. Service should exist - but the doc is checked
+    //  afterwards, so OK for now.
+    var resources =
+        scope
+            .findService(ResourcesService.class, s -> s.serviceId().equals(resource.getServiceId()))
+            .orElse(scope.getService(ResourcesService.class));
+
     KlabDocument<?> doc =
         switch (resource.getKnowledgeClass()) {
           case NAMESPACE -> resources.retrieveNamespace(resource.getResourceUrn(), scope);
@@ -232,5 +236,4 @@ public enum KnowledgeRepository {
 
     return false;
   }
-
 }
