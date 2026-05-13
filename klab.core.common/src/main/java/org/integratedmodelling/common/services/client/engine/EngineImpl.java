@@ -332,7 +332,8 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     if (worldview == null) {
 
-      // TODO setup automatic updates
+      // TODO setup automatic updates after the first request
+      // TODO the reasoner must do the same, starting at service operational
 
       var resources =
           Utils.Resources.queryResources(

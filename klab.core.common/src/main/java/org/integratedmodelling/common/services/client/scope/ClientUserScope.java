@@ -57,8 +57,6 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   private boolean empty;
   private List<Notification> notifications = new ArrayList<>();
 
-  private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
   public ClientUserScope(UserIdentity user, EngineImpl engine) {
     super(user, false, true, engine);
     this.user = user;
