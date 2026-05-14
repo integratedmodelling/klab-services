@@ -317,6 +317,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
 
+        // TODO switch to using the full service list and use the updated worldview retrieval logic.
+        // TODO set up a worldview update check at a configurable interval in timedTasks
+
         Worldview worldview = null;
         int maxAttempts = 5;
 

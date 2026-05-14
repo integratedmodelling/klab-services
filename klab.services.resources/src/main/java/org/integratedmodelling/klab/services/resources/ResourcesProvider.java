@@ -1135,7 +1135,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
    * @return
    */
   private ResourceSet resolveWorldview(String urn, Scope scope) {
-    // TODO implement
+    if (workspaceManager.isWorldviewProvider()) {
+      return workspaceManager.resolveWorldview(urn, scope);
+    }
     return ResourceSet.empty(Notification.error("Worldview resolution not implemented"));
   }
 

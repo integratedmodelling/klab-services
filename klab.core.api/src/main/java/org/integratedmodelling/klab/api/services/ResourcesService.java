@@ -494,11 +494,14 @@ public interface ResourcesService extends KlabService {
    * metadata. The projects' versions must be internally consistent and the worldview's version will
    * be the merge of the composing projects' versions.
    *
+   * <p>FIXME this should be removed in favor of returning the ResourceSet that contains this
+   * service's contribution to the worldview.
+   *
    * <p>TODO given this paradigm it's possible to serve multiple worldviews, which may require this
    * function to take an ID as parameter.
    *
    * @return the served worldview, possibly empty
-   * @deprecated use streamlined API
+   * @deprecated use streamlined API and construct the full worldview at client side
    */
   Worldview retrieveWorldview();
 

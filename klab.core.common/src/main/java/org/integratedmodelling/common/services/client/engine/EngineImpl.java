@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.engine;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,6 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -39,6 +39,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 /** */
 public class EngineImpl implements Engine, PropertyHolder {
 
+  private static final long WORLDVIEW_UPDATE_INTERVAL_MINUTES = 5;
   private final AtomicBoolean online = new AtomicBoolean(false);
   private final AtomicBoolean booted = new AtomicBoolean(false);
   private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -55,6 +56,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Stack softwareStack;
   private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
   private Worldview worldview;
+  private long lastWorldviewUpdate;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -332,9 +334,6 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     if (worldview == null) {
 
-      // TODO setup automatic updates after the first request
-      // TODO the reasoner must do the same, starting at service operational
-
       var resources =
           Utils.Resources.queryResources(
               this.defaultUser,
@@ -347,7 +346,13 @@ public class EngineImpl implements Engine, PropertyHolder {
         return Worldview.empty(resources.getNotifications().toArray(Notification[]::new));
       }
 
-      this.worldview = new WorldviewImpl();
+      this.worldview = Utils.Resources.collectWorldview(resources, this.defaultUser);
+      this.lastWorldviewUpdate = System.currentTimeMillis();
+
+    } else if (Duration.ofMillis(System.currentTimeMillis() - lastWorldviewUpdate).toMinutes()
+        > WORLDVIEW_UPDATE_INTERVAL_MINUTES) {
+      this.worldview.update(this.defaultUser);
+      this.lastWorldviewUpdate = System.currentTimeMillis();
     }
 
     return this.worldview;

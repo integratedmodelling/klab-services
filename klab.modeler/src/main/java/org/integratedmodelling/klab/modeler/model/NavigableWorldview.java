@@ -4,13 +4,12 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -33,7 +32,7 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview>
   }
 
   @Override
-  public List<KlabDocument<?>> update(Scope userScope) {
+  public List<KlabDocument<?>> update(UserScope userScope) {
     return delegate.update(userScope);
   }
 

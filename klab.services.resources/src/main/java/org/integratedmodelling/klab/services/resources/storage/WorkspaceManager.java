@@ -20,7 +20,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
-import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.Klab;
@@ -37,6 +36,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -495,6 +495,52 @@ public class WorkspaceManager {
       }
     }
     return ret;
+  }
+
+  public ResourceSet resolveWorldview(String urn, Scope scope) {
+
+    if (_worldview.getUrn().equals(urn)) {
+
+      ResourceSet ret = new ResourceSet();
+      _ontologyOrder.forEach(
+          ontology -> {
+            var resource = new ResourceSet.Resource();
+            resource.setResourceUrn(ontology.getUrn());
+            resource.setResourceVersion(ontology.getVersion());
+            resource.setServiceId(service.serviceId());
+            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+            resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+            resource.setTimestamp(ontology.getLastUpdateTimestamp());
+            ret.getOntologies().add(resource);
+          });
+      _observationStrategyDocuments.forEach(
+          strategy -> {
+            var resource = new ResourceSet.Resource();
+            resource.setResourceUrn(strategy.getUrn());
+            resource.setResourceVersion(strategy.getVersion());
+            resource.setServiceId(service.serviceId());
+            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+            resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+            resource.setTimestamp(strategy.getLastUpdateTimestamp());
+            ret.getObservationStrategies().add(resource);
+          });
+
+      var result = new ResourceSet.Resource();
+      result.setResourceUrn(urn);
+      result.setResourceVersion(Version.CURRENT_VERSION);
+      result.setServiceId(service.serviceId());
+      result.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
+      result.getMetadata().putAll(_worldview.getMetadata());
+      result.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+      result.setTimestamp(System.currentTimeMillis());
+      
+      ret.getResults().add(result);
+
+      return ret;
+    }
+    return new ResourceSet()
+        .withNotification(
+            Notification.info("This service does not provide the " + urn + " worldview"));
   }
 
   class StrategyParser extends Parser<Strategies> {

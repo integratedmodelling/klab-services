@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
@@ -244,6 +245,11 @@ public class ResourceSet implements Serializable {
           + this.serviceId
           + ")";
     }
+  }
+
+  public ResourceSet withNotification(NotificationImpl info) {
+    this.notifications.add(info);
+    return this;
   }
 
   public List<Resource> getNamespaces() {

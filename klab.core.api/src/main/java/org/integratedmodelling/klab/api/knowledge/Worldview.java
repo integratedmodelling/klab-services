@@ -2,12 +2,10 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.Collection;
 import java.util.List;
-
 import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -96,7 +94,7 @@ public interface Worldview extends KlabAsset {
    * @param userScope
    * @return
    */
-  List<KlabDocument<?>> update(Scope userScope);
+  List<KlabDocument<?>> update(UserScope userScope);
 
   /**
    * An empty worldview results from errors or inconsistencies and, like other k.LAB containers, may

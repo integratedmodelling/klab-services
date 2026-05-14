@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -966,6 +967,91 @@ public class Utils {
       for (var key : parameters.keySet()) {
         if (!knownPrototypes.contains(key)) {
           ret.add(Notification.warning("Unknown parameter " + key));
+        }
+      }
+
+      return ret;
+    }
+
+    /**
+     * Ingest a ResourceSet merging all the worldview contributions from services and create a new
+     * Worldview instance retrieving all the relevant documents from the correspondent services.
+     *
+     * <p>TODO ensure that the order of the documents matches the dependencies if the services are >
+     * 1 (not needed otherwise).
+     *
+     * <p>TODO remove ontologies that are not understood by the reasoner in the scope.
+     *
+     * @param resourceSet
+     * @param scope
+     * @return a new worldview instance, possibly empty and possibly containing notifications.
+     */
+    public static Worldview collectWorldview(ResourceSet resourceSet, UserScope scope) {
+
+      var result =
+          resourceSet.getResults().stream()
+              .filter(r -> r.getKnowledgeClass() == KlabAsset.KnowledgeClass.WORLDVIEW)
+              .findFirst();
+
+      if (result.isEmpty()) {
+        return Worldview.empty(Notification.error("No worldview found in resource set"));
+      }
+
+      var ret = new WorldviewImpl();
+      ret.setUrn(result.get().getResourceUrn());
+      ret.getMetadata().putAll(result.get().getMetadata());
+
+      for (var ontology : resourceSet.getOntologies()) {
+        var service =
+            scope.findService(
+                ResourcesService.class, s -> s.serviceId().equals(ontology.getServiceId()));
+        if (service.isEmpty()) {
+          ret.getNotifications()
+              .add(
+                  Notification.error(
+                      "Ontology "
+                          + ontology.getResourceUrn()
+                          + " not found in advertising service"));
+        }
+        var document = service.get().retrieve(ontology.getResourceUrn(), KimOntology.class, scope);
+        if (document != null) {
+          ret.getOntologies().add(document);
+        } else {
+          ret.getNotifications()
+              .add(
+                  Notification.error(
+                      "Ontology "
+                          + ontology.getResourceUrn()
+                          + " not found in advertising service"));
+        }
+      }
+
+      for (var strategy : resourceSet.getObservationStrategies()) {
+        var service =
+            scope.findService(
+                ResourcesService.class, s -> s.serviceId().equals(strategy.getServiceId()));
+        if (service.isEmpty()) {
+          ret.getNotifications()
+              .add(
+                  Notification.error(
+                      "Observation strategy "
+                          + strategy.getResourceUrn()
+                          + " not found in advertising service"));
+        }
+        var document =
+            service
+                .get()
+                .retrieve(strategy.getResourceUrn(), KimObservationStrategyDocument.class, scope);
+
+        if (document != null) {
+          ret.getObservationStrategies().add(document);
+        } else {
+          ret.getNotifications()
+              .add(
+                  Notification.error(
+                      "Observation strategy "
+                          + strategy.getResourceUrn()
+                          + " not found in advertising service"));
         }
       }
 
