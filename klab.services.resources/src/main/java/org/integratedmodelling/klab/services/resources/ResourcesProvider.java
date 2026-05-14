@@ -1002,6 +1002,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   .orElse(null);
     } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
       return (T) retrieveNamespace(urn, scope);
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveOntology(urn, scope);
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      return (T) retrieveObservationStrategyDocument(urn, scope);
     } else if (KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
       var namespace = retrieveNamespace(Utils.Paths.getLeading(urn, '.'), scope);
       return namespace == null
