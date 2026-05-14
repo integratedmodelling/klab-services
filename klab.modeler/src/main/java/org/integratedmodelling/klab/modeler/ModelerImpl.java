@@ -175,7 +175,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
-    //    boolean isObserver = false;
 
     /** Assets are observed by URN unless they're models or observation definitions */
     if (asset instanceof NavigableKlabStatement<?> navigableAsset) {

@@ -330,6 +330,12 @@ public class EngineImpl implements Engine, PropertyHolder {
     return settings;
   }
 
+  public boolean resetWorldview() {
+    var ret = this.worldview != null;
+    this.worldview = null;
+    return ret;
+  }
+
   public Worldview getWorldview() {
 
     if (worldview == null) {
