@@ -18,6 +18,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.xtext.GrammarUtil;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.common.logging.Logging;
@@ -69,7 +70,10 @@ import org.integratedmodelling.languages.observable.ConceptExpression;
 import org.integratedmodelling.languages.observable.ObservableSemantics;
 import org.integratedmodelling.languages.observable.ObservableSequence;
 import org.integratedmodelling.languages.observation.Strategies;
+import org.integratedmodelling.languages.services.KimGrammarAccess;
 import org.integratedmodelling.languages.services.ObservableGrammarAccess;
+import org.integratedmodelling.languages.services.ObservationGrammarAccess;
+import org.integratedmodelling.languages.services.WorldviewGrammarAccess;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.integratedmodelling.languages.worldview.Ontology;
 import org.jgrapht.Graph;
@@ -533,7 +537,7 @@ public class WorkspaceManager {
       result.getMetadata().putAll(_worldview.getMetadata());
       result.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
       result.setTimestamp(System.currentTimeMillis());
-      
+
       ret.getResults().add(result);
 
       return ret;
@@ -544,6 +548,12 @@ public class WorkspaceManager {
   }
 
   class StrategyParser extends Parser<Strategies> {
+
+    @Inject ObservationGrammarAccess grammarAccess;
+
+    public Collection<String> getKeywords() {
+      return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
 
     @Override
     protected Injector createInjector() {
@@ -617,11 +627,15 @@ public class WorkspaceManager {
 
   class BehaviorParser extends Parser<Behavior> {
 
-    @Inject ObservableGrammarAccess grammarAccess;
-
     @Override
     protected Injector createInjector() {
       return new KActorsStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+
+    @Inject ObservableGrammarAccess grammarAccess;
+
+    public Collection<String> getKeywords() {
+      return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
     }
 
     /**
@@ -765,25 +779,37 @@ public class WorkspaceManager {
     }
   }
 
+  static class OntologyParser extends Parser<Ontology> {
+    @Inject WorldviewGrammarAccess grammarAccess;
+
+    public Collection<String> getKeywords() {
+      return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
+
+    @Override
+    protected Injector createInjector() {
+      return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+  }
+
+  static class KimParser extends Parser<Model> {
+    @Inject KimGrammarAccess grammarAccess;
+
+    public Collection<String> getKeywords() {
+      return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
+
+    @Override
+    protected Injector createInjector() {
+      return new KimStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+  }
+
   private ObservableParser observableParser = new ObservableParser();
   private StrategyParser strategyParser = new StrategyParser();
   private BehaviorParser behaviorParser = new BehaviorParser();
-
-  private Parser<Ontology> ontologyParser =
-      new Parser<>() {
-        @Override
-        protected Injector createInjector() {
-          return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
-        }
-      };
-
-  private Parser<Model> namespaceParser =
-      new Parser<>() {
-        @Override
-        protected Injector createInjector() {
-          return new KimStandaloneSetup().createInjectorAndDoEMFRegistration();
-        }
-      };
+  private OntologyParser ontologyParser = new OntologyParser();
+  private final KimParser namespaceParser = new KimParser();
 
   private class ProjectDescriptor {
     String name;
