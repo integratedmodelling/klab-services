@@ -44,6 +44,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
@@ -88,13 +89,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private final WorkspaceManager workspaceManager;
   private final ResourcesKBox resourcesKbox;
   private final ResourceManager resourceManager;
-
-  //  /**
-  //   * We keep a hash of all the resource URNs we serve for quick reference and search
-  //   *
-  //   * @deprecated use {@link ResourcesKBox}
-  //   */
-  //  private Set<String> localResources = new HashSet<>();
 
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
@@ -1165,7 +1159,22 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    return null;
+
+    if (infoClass.isAssignableFrom(KlabAsset.class)
+        && KnowledgeClass.classify((Class<? extends KlabAsset>) infoClass) == assetClass) {
+      return (T) retrieve(urn, (Class<? extends KlabAsset>) infoClass, scope);
+    } else if (assetClass == KnowledgeClass.INFORMATION) {
+      if (infoClass.isAssignableFrom(LanguageDescriptor.class)) {
+        return (T) workspaceManager.getLanguageDescriptor();
+      } else if (infoClass.isAssignableFrom(AdapterDescriptor.class)) {
+        // TODO
+        var adapter = getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
+        if (adapter != null) {
+          return (T) retrieveAdapterInfo(urn, scope);
+        }
+      } // TODO more info objects
+    }
+    throw new KlabIllegalArgumentException("Cannot retrieve info for " + assetClass + " " + urn);
   }
 
   @Override

@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.sql.ClientInfoStatus;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
@@ -103,6 +106,28 @@ public interface Worldview extends KlabAsset {
    * @return
    */
   boolean isEmpty();
+
+  /**
+   * Return a flattened list of all concept statements in the worldview.
+   *
+   * @return
+   */
+  default List<KimConceptStatement> allConceptStatements() {
+    var ret = new ArrayList<KimConceptStatement>();
+    for (var ontology : getOntologies()) {
+      for (var statement : ontology.getStatements()) {
+        recordStatement(statement, ret);
+      }
+    }
+    return ret;
+  }
+
+  default void recordStatement(KimConceptStatement statement, ArrayList<KimConceptStatement> ret) {
+    ret.add(statement);
+    for (var child : statement.getChildren()) {
+      recordStatement(child, ret);
+    }
+  }
 
   static Worldview empty(Notification... notifications) {
     var ret =

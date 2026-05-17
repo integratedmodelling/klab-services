@@ -19,7 +19,32 @@ public enum KlabLanguage {
       case K_ACTORS -> "kactor";
       default ->
           throw new KlabIllegalStateException(
-              "Language not supported for document extensions: " + this + "");
+              "Language not supported for document extensions: " + this);
+    };
+  }
+
+  public static KlabLanguage forId(String id) {
+    for (KlabLanguage language : values()) {
+      if (language.languageId().equals(id)) {
+        return language;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Language name used in the editor to identify the highlighting configuration.
+   *
+   * @return
+   */
+  public String languageName() {
+    return switch (this) {
+      case KIM -> "kim";
+      case WORLDVIEW -> "worldview";
+      case OBSERVATION -> "observation";
+      case OBSERVABLE -> "observable";
+      case K_ACTORS -> "kactor";
+      default -> throw new KlabIllegalStateException("Language not supported by a parser: " + this);
     };
   }
 
@@ -30,8 +55,7 @@ public enum KlabLanguage {
       case OBSERVATION -> "org.integratedmodelling.languages.Observation";
       case OBSERVABLE -> "org.integratedmodelling.languages.Observable";
       case K_ACTORS -> "org.integratedmodelling.languages.KActors";
-      default ->
-          throw new KlabIllegalStateException("Language not supported by a parser: " + this + "");
+      default -> throw new KlabIllegalStateException("Language not supported by a parser: " + this);
     };
   }
 }

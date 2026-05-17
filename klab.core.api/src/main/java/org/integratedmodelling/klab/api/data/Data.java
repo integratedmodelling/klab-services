@@ -229,7 +229,11 @@ public interface Data {
    */
   enum FillCurve {
 
-    /** Unfortunately needed because of Java not accepting null in defaults for annotations */
+    /**
+     * Unfortunately needed because of Java not accepting null in defaults for annotations.
+     *
+     * <p>TODO Check if SCALAR makes sense here
+     */
     UNSPECIFIED(0),
 
     /** Expects a single dimension changing, such as along a line. */
@@ -671,7 +675,7 @@ public interface Data {
    * output.
    *
    * <p>TODO the builder is on its way to deprecation, as the Observables can be also injected so
-   *  that building can be done using the scope without intermediary objects.
+   * that building can be done using the scope without intermediary objects.
    */
   interface Builder {
 

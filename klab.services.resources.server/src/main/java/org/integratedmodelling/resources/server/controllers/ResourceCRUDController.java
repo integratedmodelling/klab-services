@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
@@ -157,6 +158,42 @@ public class ResourceCRUDController {
       return resourcesServer.klabService().resolve(urn, assetClass, userScope);
     }
     return ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request"));
+  }
+
+  @GetMapping(ServicesAPI.RESOURCES.INFO)
+  public <T> T info(
+      @Parameter(
+              description =
+                  "URN of the asset to resolve. If knowledgeClass==INFORMATION, must also contain class name after a @ sign")
+          @PathVariable(name = "urn")
+          String urn,
+      @Parameter(description = "Knowledge class of the asset")
+          @PathVariable(name = "knowledgeClass")
+          KlabAsset.KnowledgeClass assetClass,
+      Principal principal) {
+    /*
+    if asset class is INFORMATION, the URN must contain the desired class name
+     */
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope = authorization.getScope();
+      if (scope instanceof UserScope userScope) {
+        if (assetClass == KlabAsset.KnowledgeClass.INFORMATION) {
+          var ss = urn.split("@");
+          urn = ss.length > 1 ? ss[0] : null;
+          var className = ss.length > 1 ? ss[1] : ss[0];
+          try {
+            Class<T> clazz = (Class<T>) Class.forName(className);
+            return resourcesServer.klabService().info(urn, assetClass, clazz, userScope);
+          } catch (ClassNotFoundException e) {
+            throw new KlabIllegalArgumentException("Class " + className + " not found");
+          }
+        }
+        return resourcesServer
+            .klabService()
+            .info(urn, assetClass, (Class<T>) assetClass.getAssetClass(), userScope);
+      }
+    }
+    return null;
   }
 
   @Operation(

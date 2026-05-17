@@ -44,6 +44,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
+import org.integratedmodelling.klab.api.lang.KlabLanguage;
+import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -84,7 +86,8 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 
 /**
  * Singleton that separates out all the logics in managing workspaces up to and not including the
- * loading of the actual knowledge into k.LAB beans.
+ * loading of the actual knowledge into k.LAB beans. It is the only object that can parse the k.LAB
+ * languages and knows about them.
  */
 public class WorkspaceManager {
 
@@ -556,8 +559,24 @@ public class WorkspaceManager {
     }
 
     @Override
+    public Version getVersion() {
+      var version = grammarAccess.getClass().getPackage().getImplementationVersion();
+      return version == null ? Version.CURRENT_VERSION : Version.create(version);
+    }
+
+    @Override
     protected Injector createInjector() {
       return new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+
+    @Override
+    public String getLanguageId() {
+      return GrammarUtil.getLanguageId(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageSimpleName() {
+      return GrammarUtil.getSimpleName(grammarAccess.getGrammar());
     }
 
     /**
@@ -634,8 +653,25 @@ public class WorkspaceManager {
 
     @Inject ObservableGrammarAccess grammarAccess;
 
+    @Override
+    public Version getVersion() {
+      var version = grammarAccess.getClass().getPackage().getImplementationVersion();
+      return version == null ? Version.CURRENT_VERSION : Version.create(version);
+    }
+
+    @Override
     public Collection<String> getKeywords() {
       return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageId() {
+      return GrammarUtil.getLanguageId(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageSimpleName() {
+      return GrammarUtil.getSimpleName(grammarAccess.getGrammar());
     }
 
     /**
@@ -689,6 +725,27 @@ public class WorkspaceManager {
     @Override
     protected Injector createInjector() {
       return new ObservableStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+
+    @Override
+    public Version getVersion() {
+      var version = grammarAccess.getClass().getPackage().getImplementationVersion();
+      return version == null ? Version.CURRENT_VERSION : Version.create(version);
+    }
+
+    @Override
+    public Collection<String> getKeywords() {
+      return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageId() {
+      return GrammarUtil.getLanguageId(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageSimpleName() {
+      return GrammarUtil.getSimpleName(grammarAccess.getGrammar());
     }
 
     /**
@@ -787,6 +844,22 @@ public class WorkspaceManager {
     }
 
     @Override
+    public Version getVersion() {
+      var version = grammarAccess.getClass().getPackage().getImplementationVersion();
+      return version == null ? Version.CURRENT_VERSION : Version.create(version);
+    }
+
+    @Override
+    public String getLanguageId() {
+      return GrammarUtil.getLanguageId(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageSimpleName() {
+      return GrammarUtil.getSimpleName(grammarAccess.getGrammar());
+    }
+
+    @Override
     protected Injector createInjector() {
       return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
     }
@@ -797,6 +870,22 @@ public class WorkspaceManager {
 
     public Collection<String> getKeywords() {
       return GrammarUtil.getAllKeywords(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public Version getVersion() {
+      var version = grammarAccess.getClass().getPackage().getImplementationVersion();
+      return version == null ? Version.CURRENT_VERSION : Version.create(version);
+    }
+
+    @Override
+    public String getLanguageId() {
+      return GrammarUtil.getLanguageId(grammarAccess.getGrammar());
+    }
+
+    @Override
+    public String getLanguageSimpleName() {
+      return GrammarUtil.getSimpleName(grammarAccess.getGrammar());
     }
 
     @Override
@@ -2824,6 +2913,14 @@ public class WorkspaceManager {
       }
       return null;
     }
+
+    public abstract Version getVersion();
+
+    public abstract String getLanguageId();
+
+    public abstract String getLanguageSimpleName();
+
+    public abstract Collection<String> getKeywords();
   }
 
   /**
@@ -3248,6 +3345,35 @@ public class WorkspaceManager {
       return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
     }
 
+    return ret;
+  }
+
+  public LanguageDescriptor getLanguageDescriptor() {
+    var ret = new LanguageDescriptor();
+    ret.getLanguages()
+        .put(KlabLanguage.KIM, getLanguageInfo(KlabLanguage.KIM.languageName(), namespaceParser));
+    ret.getLanguages()
+        .put(
+            KlabLanguage.OBSERVATION,
+            getLanguageInfo(KlabLanguage.OBSERVATION.languageName(), strategyParser));
+    ret.getLanguages()
+        .put(
+            KlabLanguage.K_ACTORS,
+            getLanguageInfo(KlabLanguage.K_ACTORS.languageName(), behaviorParser));
+    ret.getLanguages()
+        .put(
+            KlabLanguage.WORLDVIEW,
+            getLanguageInfo(KlabLanguage.WORLDVIEW.languageName(), ontologyParser));
+    return ret;
+  }
+
+  private LanguageDescriptor.LanguageInfo getLanguageInfo(String id, Parser<?> parser) {
+    var ret = new LanguageDescriptor.LanguageInfo();
+    ret.setId(parser.getLanguageId());
+    ret.getKeywords().addAll(parser.getKeywords());
+    ret.setName(parser.getLanguageSimpleName());
+    ret.setName(id);
+    ret.setVersion(parser.getVersion());
     return ret;
   }
 }

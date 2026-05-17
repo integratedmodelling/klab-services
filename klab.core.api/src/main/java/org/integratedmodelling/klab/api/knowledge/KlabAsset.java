@@ -49,7 +49,13 @@ public interface KlabAsset extends Serializable {
     WORKSPACE,
     CONCEPT_STATEMENT,
     SERVICE_IMPLEMENTATION,
-    OBSERVATION;
+    OBSERVATION,
+    /**
+     * This is used to tag a variety of informational assets, such as adapter descriptors, reports,
+     * language info, etc. When this is used, more information is always supplied so that the actual
+     * informational object wanted can be identified and processed correctly.
+     */
+    INFORMATION;
 
     public Class<? extends KlabAsset> getAssetClass() {
       return switch (this) {

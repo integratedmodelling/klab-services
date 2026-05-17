@@ -137,7 +137,13 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    return null;
+    if (assetClass == KnowledgeClass.INFORMATION) {
+      urn = urn == null ? "info" : urn; // doesn't matter
+      urn = urn + "@" + infoClass.getCanonicalName();
+    }
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.INFO, infoClass, "urn", urn, "knowledgeClass", assetClass);
   }
 
   @Override

@@ -36,96 +36,96 @@ import java.util.Map;
 public interface Metadata extends Parameters<String> {
 
   /** The dc name. */
-  public static final String DC_NAME = "dc:name";
+  String DC_NAME = "dc:name";
 
   /** This is not in Dublin Core but is used extensively in legacy content, unfortunately */
-  public static final String DC_LABEL = "dc:label";
+  String DC_LABEL = "dc:label";
 
   /** This is not in Dublin Core but is used extensively in legacy content, unfortunately */
-  public static final String DC_COMMENT = "dc:comment";
+  String DC_COMMENT = "dc:comment";
 
   /** Use the RDFS namespace for labels and comments so that we can directly interact with OWL2. */
-  public static final String RDFS_COMMENT = "rdfs:comment";
+  String RDFS_COMMENT = "rdfs:comment";
 
   /** Use the RDFS namespace for labels and comments so that we can directly interact with OWL2. */
-  public static final String RDFS_LABEL = "rdfs:label";
+  String RDFS_LABEL = "rdfs:label";
 
   /** The dc definition. */
-  public static final String DC_DEFINITION = "dc:definition";
+  String DC_DEFINITION = "dc:definition";
 
   /** The dc seealso. */
-  public static final String DC_SEEALSO = "dc:name";
+  String DC_SEEALSO = "dc:name";
 
   /**
    * DCMI point http://dublincore.org/documents/dcmi-point/ ISO 3166
    * http://www.din.de/gremien/nas/nabd/iso3166ma/codlstp1/index.html DCMI box
    * http://dublincore.org/documents/dcmi-box/ TGN http://shiva.pub.getty.edu/tgn_browser/
    */
-  public static final String DC_COVERAGE_SPATIAL = "dc:coverage-spatial";
+  String DC_COVERAGE_SPATIAL = "dc:coverage-spatial";
 
   /**
    * DCMI period http://dublincore.org/documents/dcmi-period/ W3C-DTF
    * http://www.w3.org/TR/NOTE-datetime
    */
-  public static final String DC_COVERAGE_TEMPORAL = "dc:coverage-temporal";
+  String DC_COVERAGE_TEMPORAL = "dc:coverage-temporal";
 
   /** free text. */
-  public static final String DC_DESCRIPTION = "dc:description";
+  String DC_DESCRIPTION = "dc:description";
 
   /** free text. */
-  public static final String DC_DESCRIPTION_TABLEOFCONTENTS = "dc:tableofcontents";
+  String DC_DESCRIPTION_TABLEOFCONTENTS = "dc:tableofcontents";
 
   /** free text. */
-  public static final String DC_DESCRIPTION_ABSTRACT = "dc:abstract";
+  String DC_DESCRIPTION_ABSTRACT = "dc:abstract";
 
   /** DCMI type vocabulary http://dublincore.org/documents/dcmi-type-vocabulary/ */
-  public static final String DC_TYPE = "dc:type";
+  String DC_TYPE = "dc:type";
 
   /**
    * The dc relation.
    *
    * @deprecated use subclasses
    */
-  @Deprecated public static final String DC_RELATION = "dc:relation";
+  @Deprecated String DC_RELATION = "dc:relation";
 
   /** URI http://www.ietf.org/rfc/rfc2396.txt */
-  public static final String DC_RELATION_ISVERSIONOF = "dc:isversionof";
+  String DC_RELATION_ISVERSIONOF = "dc:isversionof";
 
   /** URI. */
-  public static final String DC_RELATION_HASVERSION = "dc:hasversion";
+  String DC_RELATION_HASVERSION = "dc:hasversion";
 
   /** URI. */
-  public static final String DC_RELATION_ISREPLACEDBY = "dc:isreplacedby";
+  String DC_RELATION_ISREPLACEDBY = "dc:isreplacedby";
 
   /** URI. */
-  public static final String DC_RELATION_REPLACES = "dc:replaces";
+  String DC_RELATION_REPLACES = "dc:replaces";
 
   /** URI. */
-  public static final String DC_RELATION_ISREQUIREDBY = "dc:isrequiredby";
+  String DC_RELATION_ISREQUIREDBY = "dc:isrequiredby";
 
   /** URI. */
-  public static final String DC_RELATION_REQUIRES = "dc:requires";
+  String DC_RELATION_REQUIRES = "dc:requires";
 
   /** URI. */
-  public static final String DC_RELATION_ISPARTOF = "dc:ispartof";
+  String DC_RELATION_ISPARTOF = "dc:ispartof";
 
   /** URI. */
-  public static final String DC_RELATION_HASPART = "dc:haspart";
+  String DC_RELATION_HASPART = "dc:haspart";
 
   /** URI. */
-  public static final String DC_RELATION_ISREFERENCEDBY = "dc:isreferencedby";
+  String DC_RELATION_ISREFERENCEDBY = "dc:isreferencedby";
 
   /** URI. */
-  public static final String DC_RELATION_REFERENCES = "dc:references";
+  String DC_RELATION_REFERENCES = "dc:references";
 
   /** URI. */
-  public static final String DC_RELATION_ISFORMATOF = "dc:isformatof";
+  String DC_RELATION_ISFORMATOF = "dc:isformatof";
 
   /** URI. */
-  public static final String DC_RELATION_HASFORMAT = "dc:hasformat";
+  String DC_RELATION_HASFORMAT = "dc:hasformat";
 
   /** URI. */
-  public static final String DC_SOURCE = "dc:source";
+  String DC_SOURCE = "dc:source";
 
   /**
    * Vocabularies:
@@ -134,109 +134,109 @@ public interface Metadata extends Parameters<String> {
    * http://www.oclc.org/dewey/index.htm LCC http://lcweb.loc.gov/catdir/cpso/lcco/lcco.html UDC
    * http://www.udcc.org/
    */
-  public static String DC_SUBJECT = "dc:subject";
+  String DC_SUBJECT = "dc:subject";
 
   /** The dc title. */
-  public static String DC_TITLE = "dc:title";
+  String DC_TITLE = "dc:title";
 
   /** The dc title alternative. */
-  public static String DC_TITLE_ALTERNATIVE = "dc:title-alternative";
+  String DC_TITLE_ALTERNATIVE = "dc:title-alternative";
 
   /** The dc contributor. */
-  public static String DC_CONTRIBUTOR = "dc:contributor";
+  String DC_CONTRIBUTOR = "dc:contributor";
 
   /** The dc url. */
   // TODO is this in DC?
-  public static String DC_URL = "dc:url";
+  String DC_URL = "dc:url";
 
   /** The dc originator. */
   // TODO is this in DC?
-  public static String DC_ORIGINATOR = "dc:originator";
+  String DC_ORIGINATOR = "dc:originator";
 
   /** The dc creator. */
-  public static String DC_CREATOR = "dc:creator";
+  String DC_CREATOR = "dc:creator";
 
   /** The dc publisher. */
-  public static String DC_PUBLISHER = "dc:publisher";
+  String DC_PUBLISHER = "dc:publisher";
 
   /** The dc rights. */
-  public static String DC_RIGHTS = "dc:rights";
+  String DC_RIGHTS = "dc:rights";
 
   /**
    * DCMI period http://dublincore.org/documents/dcmi-period/ W3C-DTF
    * http://www.w3.org/TR/NOTE-datetime
    */
-  public static String DC_DATE_CREATED = "dc:date-created";
+  String DC_DATE_CREATED = "dc:date-created";
 
   /** DCMI period W3C-DTF. */
-  public static String DC_DATE_VALID = "dc:date-valid";
+  String DC_DATE_VALID = "dc:date-valid";
 
   /** DCMI period W3C-DTF. */
-  public static String DC_DATE_AVAILABLE = "dc:date-available";
+  String DC_DATE_AVAILABLE = "dc:date-available";
 
   /** DCMI period W3C-DTF. */
-  public static String DC_DATE_ISSUED = "dc:date-issued";
+  String DC_DATE_ISSUED = "dc:date-issued";
 
   /** DCMI period W3C-DTF. */
-  public static String DC_MODIFIED = "dc:modified";
+  String DC_MODIFIED = "dc:modified";
 
   /** The dc format extent. */
-  public static String DC_FORMAT_EXTENT = "dc:format-extent";
+  String DC_FORMAT_EXTENT = "dc:format-extent";
 
   /** http://www.isi.edu/in-notes/iana/assignments/media-types/media-types */
-  public static String DC_FORMAT_MEDIUM = "dc:format-medium";
+  String DC_FORMAT_MEDIUM = "dc:format-medium";
 
   /** The dc identifier. */
-  public static String DC_IDENTIFIER = "dc:identifier";
+  String DC_IDENTIFIER = "dc:identifier";
 
-  public static String IM_KEYWORDS = "im:keywords";
+  String IM_KEYWORDS = "im:keywords";
 
-  public static String IM_KEY = "im:key";
+  String IM_KEY = "im:key";
 
   /**
    * Comes with a resolved observation to indicate that the observation is meant to become the
    * current observer.
    */
-  public static String IM_OBSERVER_TAG = "im:observer-tag";
+  String IM_OBSERVER_TAG = "im:observer-tag";
 
-  public static String IM_THEMATIC_AREA = "im:thematic-area";
+  String IM_THEMATIC_AREA = "im:thematic-area";
 
-  public static String IM_GEOGRAPHIC_AREA = "im:geographic-area";
+  String IM_GEOGRAPHIC_AREA = "im:geographic-area";
 
-  public static String IM_OBSERVATION_COST = "im:observation-cost";
+  String IM_OBSERVATION_COST = "im:observation-cost";
 
-  public static String IM_RESOLUTION_GRAPH = "im:resolution-graph";
+  String IM_RESOLUTION_GRAPH = "im:resolution-graph";
 
-  public static String IM_COMMIT_ID = "im:commit-id";
+  String IM_COMMIT_ID = "im:commit-id";
 
-  public static String IM_COMMIT = "im:commit";
+  String IM_COMMIT = "im:commit";
 
   /** For legacy resources */
-  public static String IM_ORIGINAL_URN = "im:original-urn";
+  String IM_ORIGINAL_URN = "im:original-urn";
 
   /** For resources and dataflows built from existing observations */
-  public static String IM_ORIGINAL_OBSERVABLE = "im:original-observable";
+  String IM_ORIGINAL_OBSERVABLE = "im:original-observable";
 
   /** ISO639-2 http://www.w3.org/TR/NOTE-datetime RFC1766 http://www.ietf.org/rfc/rfc1766.txt */
-  public static final String DC_LANGUAGE = "dc:language";
+  String DC_LANGUAGE = "dc:language";
 
   /** The Constant IM_NAME. */
-  public static final String IM_NAME = "im:name";
+  String IM_NAME = "im:name";
 
   /** Scores resulting from fuzzy search */
-  public static final String IM_SEARCH_SCORE = "im:score";
+  String IM_SEARCH_SCORE = "im:score";
 
   /** The Constant IM_MIN_SPATIAL_SCALE. */
-  public static final String IM_MIN_SPATIAL_SCALE = "im:min-spatial-scale";
+  String IM_MIN_SPATIAL_SCALE = "im:min-spatial-scale";
 
   /** The Constant IM_MAX_SPATIAL_SCALE. */
-  public static final String IM_MAX_SPATIAL_SCALE = "im:max-spatial-scale";
+  String IM_MAX_SPATIAL_SCALE = "im:max-spatial-scale";
 
   /** The Constant IM_MIN_TEMPORAL_SCALE. */
-  public static final String IM_MIN_TEMPORAL_SCALE = "im:min-temporal-scale";
+  String IM_MIN_TEMPORAL_SCALE = "im:min-temporal-scale";
 
   /** The Constant IM_MAX_TEMPORAL_SCALE. */
-  public static final String IM_MAX_TEMPORAL_SCALE = "im:max-temporal-scale";
+  String IM_MAX_TEMPORAL_SCALE = "im:max-temporal-scale";
 
   //  /** unique URN to a feature returned by a service */
   //  public static final String IM_FEATURE_URN = "im:feature-urn";
@@ -245,16 +245,16 @@ public interface Metadata extends Parameters<String> {
    * If present in project metadata and it encodes a file:/ URL, the project is local to the
    * requester.
    */
-  public static final String RESOURCES_STORAGE_URL = "storage.url";
+  String RESOURCES_STORAGE_URL = "storage.url";
 
   /** */
-  public static final String IM_NOTES = "im:notes";
+  String IM_NOTES = "im:notes";
 
   /**
    * Tags concepts that annotate physical states that don't need units because of adopting rescaling
    * traits.
    */
-  public static final String IM_IS_RESCALED = "im:is-rescaled";
+  String IM_IS_RESCALED = "im:is-rescaled";
 
   /**
    * Permissions in k.LAB are either "*" for public and/or a list of comma-separated groups
@@ -262,27 +262,27 @@ public interface Metadata extends Parameters<String> {
    * possibly admin, left to implementations). Prefixing either with a ! denies the permission for
    * the user or group (supposedly to narrow a previous more general one: e.g. *,!BADGUYS).
    */
-  public static final String IM_PERMISSIONS = "im:permissions";
+  String IM_PERMISSIONS = "im:permissions";
 
   // publication data to send along with publish requests
-  public static final String IM_SUGGESTED_RESOURCE_ID = "im:suggested-resource-id";
-  public static final String IM_SUGGESTED_NAMESPACE_ID = "im:suggested-namespace-id";
-  public static final String IM_SUGGESTED_CATALOG_ID = "im:suggested-catalog-id";
+  String IM_SUGGESTED_RESOURCE_ID = "im:suggested-resource-id";
+  String IM_SUGGESTED_NAMESPACE_ID = "im:suggested-namespace-id";
+  String IM_SUGGESTED_CATALOG_ID = "im:suggested-catalog-id";
 
   /**
    * Tags those extensive observables that are actually intensive because the observation is of an
    * inherent countable.
    */
-  public static final String IM_RESCALES_INHERENT = "im:rescales-inherent";
+  String IM_RESCALES_INHERENT = "im:rescales-inherent";
 
   /** KLAB-specific, for visualization and display */
-  public static final String KLAB_LINE_COLOR = "klab:linecolor";
+  String KLAB_LINE_COLOR = "klab:linecolor";
 
   /** The Constant KLAB_FILL_COLOR. */
-  public static final String KLAB_FILL_COLOR = "klab:fillcolor";
+  String KLAB_FILL_COLOR = "klab:fillcolor";
 
   /** The Constant KLAB_OPACITY. */
-  public static final String KLAB_OPACITY = "klab:opacity";
+  String KLAB_OPACITY = "klab:opacity";
 
   //  String KLAB_SERVICE_ID = "klab:service.id";
   //  String KLAB_SERVICE_URL = "klab:service.url";
@@ -312,7 +312,7 @@ public interface Metadata extends Parameters<String> {
    * @param attr
    * @return
    */
-  public Object getCaseInsensitive(String attr);
+  Object getCaseInsensitive(String attr);
 
   /**
    * Validate according to passed convention.
@@ -321,5 +321,5 @@ public interface Metadata extends Parameters<String> {
    * @return a set of notifications, empty if no issue was found. Use {@link
    *     Utils.Notifications#hasErrors(Collection)} to check for errors.
    */
-  public Collection<Notification> validate(MetadataConvention convention);
+  Collection<Notification> validate(MetadataConvention convention);
 }

@@ -436,6 +436,8 @@ public interface ServicesAPI {
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
 
+    String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
+
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
 
