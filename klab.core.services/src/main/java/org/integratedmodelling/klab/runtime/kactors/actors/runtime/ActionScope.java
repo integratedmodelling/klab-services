@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
 
-import java.util.HashMap;
-import java.util.Map;
 import javax.annotation.Nullable;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
@@ -42,12 +39,13 @@ public class ActionScope {
     // TODO ziocan
   }
 
-  // mark end of actor represented
-  public ActorBase.ExitValue done() {
+  // mark end of actor represented. This is called in the actor code to return from an action
+  // (removing any listeners). If this is called at root scope level, the actor is terminated.
+  public ActorBase.ExitValue done(Object returnValue) {
     // TODO
     this.done = true;
     notify();
-    return exitValue = ActorBase.ExitValue.success();
+    return exitValue = ActorBase.ExitValue.success(returnValue);
   }
 
   public ActorBase.ExitValue failure(Object... args) {

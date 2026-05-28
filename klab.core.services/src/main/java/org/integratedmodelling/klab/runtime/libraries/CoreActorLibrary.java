@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
-import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
@@ -9,11 +11,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.ActionScope;
 import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
-
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Library(name = "actors.core")
 public class CoreActorLibrary {
@@ -78,7 +75,7 @@ public class CoreActorLibrary {
                   scope.failure(e);
                 }
                 timer.cancel();
-                return ExitValue.success();
+                return ExitValue.success(true);
               })
           .exceptionally(scope::failure);
     }

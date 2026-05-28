@@ -67,7 +67,8 @@ public abstract class ActorBase extends GroovyObjectSupport {
     private String errorMessage = null;
     private Object returnValue = null;
 
-    public static ExitValue success() {
+    public static ExitValue success(Object returnValue) {
+      // TODO
       return new ExitValue();
     }
 
