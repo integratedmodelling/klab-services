@@ -76,7 +76,7 @@ public class SchedulerImpl implements Scheduler {
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
-    this.timeEmitter = new TimeEmitter(this);
+    this.timeEmitter = new TimeEmitter(/*this*/);
     this.processor = Sinks.many().replay().all();
     initializeScheduler();
   }
@@ -347,13 +347,13 @@ public class SchedulerImpl implements Scheduler {
       this.epochEnd = tEnd;
     }
     /* ensure that all events are there */
-    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
-      // if anything has changed, notify the scope listeners
-      rootScope.send(
-          Message.MessageClass.DigitalTwin,
-          Message.MessageType.ScheduleModified,
-          TimeEmitter.getSchedule());
-    }
+//    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
+//      // if anything has changed, notify the scope listeners
+//      rootScope.send(
+//          Message.MessageClass.DigitalTwin,
+//          Message.MessageType.ScheduleModified,
+//          TimeEmitter.getSchedule());
+//    }
     return Triple.of(tStart, tEnd, time.getResolution());
   }
 
