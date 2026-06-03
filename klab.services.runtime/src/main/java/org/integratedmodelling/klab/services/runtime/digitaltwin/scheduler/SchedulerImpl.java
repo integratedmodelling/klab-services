@@ -145,18 +145,6 @@ public class SchedulerImpl implements Scheduler {
    */
   private void initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
-    //    var transaction =
-    //        scope
-    //            .getDigitalTwin()
-    //            .transaction(
-    //                Activity.of(
-    //                    Activity.Type.INITIALIZATION,
-    //                    observation,
-    //                    scope.getCurrentTransaction().getActivity(),
-    //                    scope,
-    //                    "Initialization of " + observation),
-    //                scope,
-    //                triggeringResolution);
     try {
       if (contextualize(observation, scale, scope, this.initializationEvent)) {
         //        scope.commit();
