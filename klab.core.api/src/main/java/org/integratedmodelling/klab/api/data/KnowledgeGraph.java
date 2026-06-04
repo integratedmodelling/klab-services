@@ -1,5 +1,11 @@
 package org.integratedmodelling.klab.api.data;
 
+import java.io.Closeable;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -12,14 +18,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
-import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-
-import java.io.Closeable;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * A persistent knowledge graph instrumented for k.LAB operation, hosting all the runtime assets
@@ -267,6 +265,16 @@ public interface KnowledgeGraph {
    * @param <T>
    */
   <T extends RuntimeAsset> Query<T> query(Class<T> resultClass, Scope scope);
+
+  /**
+   * Retrieve the geometry correspondent to the asset with the passed ID, if it exists.
+   *
+   * @param asset an observation or cohort. If cohort, the geometry is the merged geometry of all
+   *     observations in the cohort.
+   * @param scope the scope for the query
+   * @return a geometry, or null if the asset has no geometry
+   */
+  Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope);
 
   /**
    * Execute a previously built query. Equivalent to calling run() on the query itself.

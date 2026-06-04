@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -315,6 +316,12 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         return runtimeClient.queryKnowledgeGraph(this, scope);
       }
     };
+  }
+
+  @Override
+  public Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope) {
+    // TODO
+    return null;
   }
 
   @Override

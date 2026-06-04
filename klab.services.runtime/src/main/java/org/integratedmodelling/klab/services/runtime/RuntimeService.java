@@ -448,12 +448,12 @@ public class RuntimeService extends BaseService
   }
 
   /**
-   * Submission is entirely within a transaction, created new at the root submission. Observations
-   * are directly used as keys for everything, so the object must never be substituted by another.
-   * All observations created upon submissions remain without URN or ID until committed. Each
-   * submission creates a submission activity followed by resolution and, if successful,
-   * contextualization of all resolved observations. Instantiators cause other submissions within
-   * the same transaction.
+   * Submission happens entirely within a transaction, created new at the root submission.
+   * Observations are directly used as keys for everything, so the object may be updated but must
+   * never be substituted with another. All observations created upon submissions will have no valid
+   * URN or ID until the root transaction is committed. Each submission creates a submission
+   * activity followed by resolution and, if successful, contextualization of all resolved
+   * observations. Instantiators cause other submissions within the same transaction.
    *
    * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
@@ -500,7 +500,7 @@ public class RuntimeService extends BaseService
                 Notification.error("Cannot observe a quality without a context observation")));
       }
 
-      /** Only situation when we accept an observation w/o geometry */
+      /* Dependents are the only situation when we accept an observation w/o geometry */
       if (observation.getGeometry() == null
           && observation instanceof ObservationImpl observation1) {
         if (observation.getObservable().is(SemanticType.QUALITY)
@@ -509,6 +509,9 @@ public class RuntimeService extends BaseService
         } else if (observation.getObservable().is(SemanticType.COUNTABLE)
             && observation.getObservable().getSemantics().isCollective()
             && scope.getObserver() != null) {
+          // FIXME no - this should run a query over the cohort and if needed, resolve the
+          //  unaddressed coverage. If the observation has id == 0, it is a query and it can
+          //  use the overall covered geometry of the cohort if the geometry is not there.
           observation1.setGeometry(scope.getObserver().getGeometry());
         }
       }
@@ -550,6 +553,7 @@ public class RuntimeService extends BaseService
           var requirements =
               scope
                   .getService(ResourcesService.class)
+                  // FIXME use the generic resource resolution service
                   .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
           if (requirements == null || requirements.isEmpty()) {
             return CompletableFuture.completedFuture(
@@ -611,7 +615,6 @@ public class RuntimeService extends BaseService
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
 
-      // TODO add any scenarios as metadata (or maybe as first-class in activity?)
       var submission =
           Activity.of(
               Activity.Type.SUBMISSION,
@@ -683,7 +686,8 @@ public class RuntimeService extends BaseService
               .contextualizeFor(observation);
 
       /*
-       * Save the resolution constraints in the metadata for debugging and provenance.
+       * Save the resolution constraints in the metadata for debugging and provenance. This includes
+       * scenarios, project and namespace.
        */
       resolution
           .getMetadata()
@@ -705,7 +709,6 @@ public class RuntimeService extends BaseService
           .thenApply(
               dataflow -> {
                 observation.getNotifications().addAll(dataflow.getNotifications());
-                // TODO remove eventually, or make it debug-level
                 var encoded =
                     org.integratedmodelling.common.utils.Utils.Dataflows.encode(
                         dataflow, resolutionScope);

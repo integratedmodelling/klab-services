@@ -131,12 +131,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(ctx)<-[:CREATED]-(creation),\n"
               + "(prov)-[:HAS_CHILD]->(creation)"
         };
-    //    String[] SPATIAL_LAYERS_QUERIES =
-    //        new String[] {
-    // ,
-    //          //          "CALL spatial.addPointLayer('centroid_$contextId', 'latitude',
-    // 'longitude')"
-    //        };
   }
 
   class TransactionImpl implements Transaction {
@@ -672,6 +666,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public Agent klab() {
     return this.klab;
+  }
+
+  @Override
+  public Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope) {
+    if (asset instanceof Observation observation) {
+        if (observation.getGeometry() != null) {
+          return observation.getGeometry();
+        }
+        // TODO
+    } else if (asset instanceof Cohort) {
+      // TODO
+    }
+    return null;
   }
 
   @Override

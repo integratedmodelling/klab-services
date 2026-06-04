@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.integratedmodelling.common.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 class TimeEmitterTest {
@@ -67,8 +69,8 @@ class TimeEmitterTest {
     var id = emitter.register(0L, 3_000L, 1L, TimeUnit.SECONDS);
     emitter.startSimulatedClock();
 
-    var json = emitter.getSchedule().toJson();
-    var restoredSchedule = TimeEmitter.Schedule.fromJson(json);
+    var json = Utils.Json.printAsJson(emitter.getSchedule());
+    var restoredSchedule = Utils.Json.parseObject(json, TimeEmitter.Schedule.class);
     var restored = new CapturingEmitter(restoredSchedule);
 
     assertEquals(1, restored.getSchedule().getRegistrations().size());
