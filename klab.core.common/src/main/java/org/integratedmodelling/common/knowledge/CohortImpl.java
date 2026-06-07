@@ -5,6 +5,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -25,6 +26,7 @@ public class CohortImpl implements Cohort {
   private int childrenCount;
   private long parentId = CONTEXT_ASSET_ID;
   private String urn;
+  private Geometry geometry = Geometry.UNIVERSAL;
 
   @Override
   public Observable getObservable() {
@@ -106,5 +108,14 @@ public class CohortImpl implements Cohort {
   @Override
   public String toString() {
     return "(C) [obs=" + observable.getUrn() + "]";
+  }
+
+  @Override
+  public Geometry getGeometry() {
+    return geometry;
+  }
+
+  public void setGeometry(Geometry geometry) {
+    this.geometry = geometry;
   }
 }

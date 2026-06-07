@@ -425,6 +425,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var agent = new AgentImpl();
     agent.setName(name);
     var id = store(agent, userScope, "type", ai);
+    agent.setId(id);
     return agent;
   }
 
@@ -440,7 +441,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
     query(
-        "CALL spatial.removeLayer('shape_" + Utils.Paths.getLast(rootContextId, '.') + "')",
+        "CALL spatial.removeLayer('shape_"
+            + Utils.Paths.getLast(contextScope.getConfiguration().getId(), '.')
+            + "')",
         Map.of(),
         userScope);
     query(
@@ -671,10 +674,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope) {
     if (asset instanceof Observation observation) {
-        if (observation.getGeometry() != null) {
-          return observation.getGeometry();
-        }
-        // TODO
+      if (observation.getGeometry() != null) {
+        return observation.getGeometry();
+      }
+      // TODO
     } else if (asset instanceof Cohort) {
       // TODO
     }
