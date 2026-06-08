@@ -704,16 +704,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     for (var record : result.records()) {
       ContextInfo info = new ContextInfo();
-      //      info.setId(record.get("contextId").asString());
-      //      info.setName(record.get("contextName").asString());
       info.setCreationTime(record.get("startTime").asLong());
-      //      info.setServiceId(serviceId);
-      //      info.setPersistence(Persistence.valueOf(record.get("expiration").asString()));
       info.setIdleTimeMs(System.currentTimeMillis() - record.get("lastUpdate").asLong());
-      //      info.setUser(record.get("user").asString());
-
-      //      info.setDescription(record.get("description").asString());
-
       info.setConfiguration(
           DigitalTwin.Configuration.builder()
               .url(
@@ -736,26 +728,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   TimeUnit.MINUTES)
               .build()
               .validate(scope));
-
-      //      var configuration = new ConfigurationImpl();
-      //      configuration.setPersistence(info.getPersistence());
-      //      configuration.setServiceId(info.getServiceId());
-      //      configuration.setDescription(info.getDescription());
-      //
-      // configuration.setAccessRights(ResourcePrivileges.create(record.get("rights").asString()));
-      //      configuration.setId(info.getId());
-      //      configuration.setCreationTime(info.getCreationTime());
-      //      configuration.setIdleTimeMs(info.getIdleTimeMs());
-      //      configuration.setServiceUrl(
-      //          Urls.create(scope.getService(RuntimeService.class).getUrl() + "/dt/" +
-      // info.getId()));
-      //      configuration.setName(info.getName());
-      //      configuration.setTimeout(
-      //          scope
-      //              .getService(RuntimeService.class)
-      //              .settings()
-      //              .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class));
-      //      configuration.setTimeoutUnit(TimeUnit.MINUTES);
 
       // TODO something is probably missing
 

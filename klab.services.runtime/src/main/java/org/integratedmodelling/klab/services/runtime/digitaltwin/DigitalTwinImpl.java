@@ -19,8 +19,10 @@ import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -112,6 +114,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
+    private Map<Concept, Scale> cohortGeometries = new HashMap<>();
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -150,6 +153,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.activity = activity;
       this.scope = scope;
       this.contextualizers = new ConcurrentHashMap<>();
+      this.cohortGeometries = new HashMap<>();
       boolean activityLinked = false;
 
       synchronized (graph) {
@@ -199,6 +203,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.activity = activity;
       this.scope = parent.scope; // TODO careful with executing() being called outside
       this.parent = parent;
+      this.cohortGeometries = parent.cohortGeometries;
       this.contextualizers = parent.contextualizers;
 
       synchronized (graph) {

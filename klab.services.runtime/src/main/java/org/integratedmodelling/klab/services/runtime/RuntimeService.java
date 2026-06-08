@@ -656,6 +656,12 @@ public class RuntimeService extends BaseService
         submissionScope
             .getCurrentTransaction()
             .link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+        /* include the observation's geometry in the cohort's and check a flag if there were changes. If we're
+        adding instances from an instantiator, we add the full collective. Otherwise each geometry will be added at
+         */
+        if (observation.getObservable().getSemantics().isCollective()) {
+          updateCohortGeometry(cohort, observation, submissionScope);
+        }
       }
 
       submissionScope
@@ -765,6 +771,24 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  /**
+   * @param cohort
+   * @param observation
+   * @param submissionScope
+   */
+  private void updateCohortGeometry(
+      Cohort cohort, Observation observation, ServiceContextScope submissionScope) {
+    var total = cohort.getGeometry();
+    var incoming = observation.getGeometry();
+    if (total.isUniversal()) {
+      total = incoming;
+    } else {
+      total = GeometryRepository.INSTANCE.outerUnion(total, incoming);
+    }
+    var transaction = submissionScope.getCurrentTransaction();
+    // TODO set the geometry for the cohort's observable
   }
 
   /**

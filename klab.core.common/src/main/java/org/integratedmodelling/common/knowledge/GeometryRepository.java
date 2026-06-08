@@ -2,21 +2,14 @@ package org.integratedmodelling.common.knowledge;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * A manager that enables storing and caching geometries and the respective scales, with retrieval
@@ -149,5 +142,13 @@ public enum GeometryRepository {
 
   public void put(Geometry geometry, Scale scale) {
     cache.put(geometry.key(), Pair.of(geometry, scale));
+  }
+
+  public Geometry outerUnion(Geometry total, Geometry incoming) {
+    // TODO - keep the union small, using a convex hull or simplifying afterwards. Also should use
+    //  options to check if the user/federation wants full precision.
+    var tScale = scale(total);
+    var iScale = scale(incoming);
+    return tScale.merge(iScale, LogicalConnector.UNION).as(Geometry.class);
   }
 }
