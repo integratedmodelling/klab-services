@@ -70,10 +70,16 @@ public class RepositoryState {
     FETCH_COMMIT_AND_PUSH,
     /** Fetch remote changes and merge them if no conflicts arise */
     FETCH_AND_MERGE,
+    /** Commit current local changes without contacting the remote repository */
+    SAVE_CHANGES,
+    /** Push committed local changes to the remote repository */
+    PUBLISH_CHANGES,
     /** Switch to another branch (possibly new) after locally committing any pending changes */
     COMMIT_AND_SWITCH,
     /** Hard reset head deleting all uncommitted changes */
     HARD_RESET,
+    /** Friendlier alias for HARD_RESET */
+    DISCARD_LOCAL_CHANGES,
 
     MERGE_CHANGES_FROM;
 
@@ -82,8 +88,11 @@ public class RepositoryState {
         case FETCH_COMMIT_AND_PUSH ->
             "Fetch remote changes, merge if no conflicts, commit and push";
         case FETCH_AND_MERGE -> "Fetch remote changes, merge if no conflicts";
+        case SAVE_CHANGES -> "Save current local changes";
+        case PUBLISH_CHANGES -> "Publish committed changes";
         case COMMIT_AND_SWITCH -> "Commit changes and switch to another branch";
         case HARD_RESET -> "Hard reset, deleting all uncommitted changes";
+        case DISCARD_LOCAL_CHANGES -> "Discard local uncommitted changes";
         case MERGE_CHANGES_FROM -> "Merge changes from another branch";
       };
     }

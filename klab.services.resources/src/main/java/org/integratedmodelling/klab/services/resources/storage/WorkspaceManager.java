@@ -291,6 +291,22 @@ public class WorkspaceManager {
 
     if (pd != null && pd.storage instanceof FileProjectStorage fileProjectStorage) {
 
+      if (operation == null) {
+        return List.of(
+            ResourceSet.empty(
+                Notification.error("No repository operation was specified", UIView.Interactivity.DISPLAY)));
+      }
+
+      if ((operation == RepositoryState.Operation.COMMIT_AND_SWITCH
+              || operation == RepositoryState.Operation.MERGE_CHANGES_FROM)
+          && (arguments == null || arguments.length == 0 || arguments[0] == null || arguments[0].isBlank())) {
+        return List.of(
+            ResourceSet.empty(
+                Notification.error(
+                    "Repository operation " + operation + " requires a branch name",
+                    UIView.Interactivity.DISPLAY)));
+      }
+
       var mods =
           switch (operation) {
             case FETCH_COMMIT_AND_PUSH ->
@@ -302,9 +318,18 @@ public class WorkspaceManager {
                     scope);
             case FETCH_AND_MERGE ->
                 Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
+            case SAVE_CHANGES ->
+                Utils.Git.commitChanges(
+                    fileProjectStorage.getRootFolder(),
+                    arguments == null || arguments.length == 0
+                        ? "Committed by k.LAB resources service"
+                        : arguments[0],
+                    scope);
+            case PUBLISH_CHANGES -> Utils.Git.pushChanges(fileProjectStorage.getRootFolder(), scope);
             case COMMIT_AND_SWITCH ->
-                Utils.Git.commitAndSwitch(fileProjectStorage.getRootFolder(), arguments[0]);
+                Utils.Git.commitAndSwitch(fileProjectStorage.getRootFolder(), arguments[0], scope);
             case HARD_RESET -> Utils.Git.hardReset(fileProjectStorage.getRootFolder());
+            case DISCARD_LOCAL_CHANGES -> Utils.Git.hardReset(fileProjectStorage.getRootFolder());
             case MERGE_CHANGES_FROM ->
                 Utils.Git.mergeChangesFrom(fileProjectStorage.getRootFolder(), arguments[0]);
           };
@@ -317,34 +342,16 @@ public class WorkspaceManager {
         if (!Utils.Notifications.hasErrors(mods.getNotifications())) {
 
           for (var path : mods.getRemovedPaths()) {
-            var ddata = ProjectStorage.getDocumentData(path, "/");
-            if (ddata != null) {
-              changes.add(
-                  Triple.of(
-                      ddata.getFirst(),
-                      CRUDOperation.DELETE,
-                      fileProjectStorage.getDocumentUrl(path, "/")));
-            }
+            addRepositoryPathChange(
+                fileProjectStorage, changes, notifications, path, CRUDOperation.DELETE);
           }
           for (var path : mods.getAddedPaths()) {
-            var ddata = ProjectStorage.getDocumentData(path, "/");
-            if (ddata != null) {
-              changes.add(
-                  Triple.of(
-                      ddata.getFirst(),
-                      CRUDOperation.CREATE,
-                      fileProjectStorage.getDocumentUrl(path, "/")));
-            }
+            addRepositoryPathChange(
+                fileProjectStorage, changes, notifications, path, CRUDOperation.CREATE);
           }
           for (var path : mods.getModifiedPaths()) {
-            var ddata = ProjectStorage.getDocumentData(path, "/");
-            if (ddata != null) {
-              changes.add(
-                  Triple.of(
-                      ddata.getFirst(),
-                      CRUDOperation.UPDATE,
-                      fileProjectStorage.getDocumentUrl(path, "/")));
-            }
+            addRepositoryPathChange(
+                fileProjectStorage, changes, notifications, path, CRUDOperation.UPDATE);
           }
         }
       }
@@ -388,6 +395,31 @@ public class WorkspaceManager {
             Notification.create(
                 "Project" + projectName + " not found or not " + "accessible",
                 Notification.Level.Error)));
+  }
+
+  private void addRepositoryPathChange(
+      FileProjectStorage fileProjectStorage,
+      List<Triple<ProjectStorage.ResourceType, CRUDOperation, URL>> changes,
+      List<Notification> notifications,
+      String path,
+      CRUDOperation operation) {
+    try {
+      var documentData = ProjectStorage.getDocumentData(path, "/");
+      if (documentData != null) {
+        changes.add(
+            Triple.of(
+                documentData.getFirst(), operation, fileProjectStorage.getDocumentUrl(path, "/")));
+      } else {
+        notifications.add(Notification.info("Repository changed unmanaged path " + path));
+      }
+    } catch (Throwable t) {
+      notifications.add(
+          Notification.warning(
+              "Repository path "
+                  + path
+                  + " could not be mapped to a managed document: "
+                  + t.getMessage()));
+    }
   }
 
   /**
@@ -1835,7 +1867,8 @@ public class WorkspaceManager {
     for (var change : changes) {
 
       if (change.getSecond() == CRUDOperation.DELETE) {
-        throw new KlabIllegalStateException("should not use handleFileChange for deletes");
+        handleRepositoryDelete(project, change, result, worldviewChange);
+        mustRecomputeOrder = true;
       } else if (change.getSecond() == CRUDOperation.CREATE) {
 
         // just a new asset, nothing should be affected, let this through
@@ -2165,6 +2198,142 @@ public class WorkspaceManager {
   private void replaceAndIndex(KimObservationStrategyDocument strategies) {
     // TODO index concept declarations for queries
     _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
+  }
+
+  private void handleRepositoryDelete(
+      String project,
+      Triple<ProjectStorage.ResourceType, CRUDOperation, URL> change,
+      Map<String, ResourceSet> result,
+      ResourceSet worldviewChange) {
+
+    var projectDescriptor = projectDescriptors.get(project);
+    String documentUrn = null;
+    if (projectDescriptor != null
+        && projectDescriptor.storage instanceof FileProjectStorage fileProjectStorage
+        && change.getThird() != null) {
+      documentUrn = fileProjectStorage.getDocumentUrn(change.getFirst(), change.getThird());
+    }
+
+    ResourceSet resourceSet =
+        resourceSetForWorkspace(
+            projectDescriptor == null ? getWorkspaceForProject(project) : projectDescriptor.workspace,
+            result);
+
+    if (documentUrn == null) {
+      resourceSet
+          .getNotifications()
+          .add(Notification.warning("Deleted repository path could not be mapped to a document"));
+      return;
+    }
+    final String deletedUrn = documentUrn;
+
+    KlabDocument<?> previous =
+        switch (change.getFirst()) {
+          case ONTOLOGY -> _ontologyMap.remove(deletedUrn);
+          case MODEL_NAMESPACE -> _namespaceMap.remove(deletedUrn);
+          case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> _behaviorMap.remove(deletedUrn);
+          case STRATEGY -> _observationStrategyDocumentMap.remove(deletedUrn);
+          default -> null;
+        };
+
+    _ontologyOrder =
+        _ontologyOrder.stream().filter(o -> !o.getUrn().equals(deletedUrn)).collect(toList());
+    _namespaceOrder =
+        _namespaceOrder.stream().filter(o -> !o.getUrn().equals(deletedUrn)).collect(toList());
+    _behaviorOrder =
+        _behaviorOrder.stream().filter(o -> !o.getUrn().equals(deletedUrn)).collect(toList());
+    _observationStrategyDocuments =
+        _observationStrategyDocuments.stream()
+            .filter(o -> !o.getUrn().equals(deletedUrn))
+            .collect(toList());
+    documentURLs.remove(deletedUrn);
+
+    if (change.getFirst() == ProjectStorage.ResourceType.ONTOLOGY) {
+      boolean worldviewOntology =
+          _worldviewOntologies.stream().anyMatch(o -> o.getUrn().equals(deletedUrn));
+      _worldviewOntologies =
+          _worldviewOntologies.stream()
+              .filter(o -> !o.getUrn().equals(deletedUrn))
+              .collect(toList());
+      if (_worldview != null) {
+        _worldview.setOntologies(_worldviewOntologies);
+      }
+      if (worldviewOntology) {
+        addDeletedResource(
+            worldviewChange,
+            deletedUrn,
+            project,
+            previous,
+            KlabAsset.KnowledgeClass.ONTOLOGY);
+      }
+    } else if (change.getFirst() == ProjectStorage.ResourceType.STRATEGY && _worldview != null) {
+      _worldview.setObservationStrategies(_observationStrategyDocuments);
+    }
+
+    if (previous == null) {
+      resourceSet
+          .getNotifications()
+          .add(Notification.warning("Deleted document " + deletedUrn + " was not loaded"));
+    }
+
+    addDeletedResource(
+        resourceSet, deletedUrn, project, previous, knowledgeClassForResourceType(change.getFirst()));
+  }
+
+  private ResourceSet resourceSetForWorkspace(String workspace, Map<String, ResourceSet> result) {
+    if (workspace == null) {
+      workspace = Workspace.EXTERNAL_WORKSPACE_URN;
+    }
+    ResourceSet resourceSet = result.get(workspace);
+    if (resourceSet == null) {
+      resourceSet = new ResourceSet();
+      resourceSet.setWorkspace(workspace);
+      resourceSet.getServices().put(service.serviceId(), service.getUrl());
+      result.put(workspace, resourceSet);
+    }
+    return resourceSet;
+  }
+
+  private void addDeletedResource(
+      ResourceSet resourceSet,
+      String documentUrn,
+      String project,
+      KlabDocument<?> previous,
+      KlabAsset.KnowledgeClass knowledgeClass) {
+
+    var resource =
+        new ResourceSet.Resource(
+            CRUDOperation.DELETE,
+            service.serviceId(),
+            documentUrn,
+            project,
+            previous == null ? Version.EMPTY_VERSION : previous.getVersion(),
+            knowledgeClass,
+            previous == null ? System.currentTimeMillis() : previous.getLastUpdateTimestamp(),
+            false);
+    resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+
+    switch (knowledgeClass) {
+      case NAMESPACE -> resourceSet.getNamespaces().add(resource);
+      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> resourceSet.getBehaviors().add(resource);
+      case ONTOLOGY -> resourceSet.getOntologies().add(resource);
+      case OBSERVATION_STRATEGY_DOCUMENT -> resourceSet.getObservationStrategies().add(resource);
+      default -> resourceSet.getResources().add(resource);
+    }
+  }
+
+  private KlabAsset.KnowledgeClass knowledgeClassForResourceType(
+      ProjectStorage.ResourceType resourceType) {
+    return switch (resourceType) {
+      case ONTOLOGY -> KlabAsset.KnowledgeClass.ONTOLOGY;
+      case MODEL_NAMESPACE -> KlabAsset.KnowledgeClass.NAMESPACE;
+      case BEHAVIOR -> KlabAsset.KnowledgeClass.BEHAVIOR;
+      case SCRIPT -> KlabAsset.KnowledgeClass.SCRIPT;
+      case TESTCASE -> KlabAsset.KnowledgeClass.TESTCASE;
+      case APPLICATION -> KlabAsset.KnowledgeClass.APPLICATION;
+      case STRATEGY -> KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
+      default -> KlabAsset.KnowledgeClass.RESOURCE;
+    };
   }
 
   /**
@@ -3225,7 +3394,7 @@ public class WorkspaceManager {
                           projectName,
                           previous.getVersion(),
                           KlabAsset.KnowledgeClass.ONTOLOGY,
-                          _ontologyMap.get(documentUrn).getLastUpdateTimestamp(),
+                          previous.getLastUpdateTimestamp(),
                           false));
               result
                   .getNotifications()
@@ -3280,7 +3449,7 @@ public class WorkspaceManager {
                           documentUrn,
                           projectName,
                           previous.getVersion(),
-                          KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY,
+                          KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT,
                           previous.getLastUpdateTimestamp(),
                           false));
               result

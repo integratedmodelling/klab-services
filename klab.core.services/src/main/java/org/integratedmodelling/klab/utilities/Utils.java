@@ -25,14 +25,20 @@ import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
@@ -1448,6 +1454,28 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       public void setRepositoryName(String repositoryName) {
         this.repositoryName = repositoryName;
       }
+
+      public boolean isEmpty() {
+        return addedPaths.isEmpty() && removedPaths.isEmpty() && modifiedPaths.isEmpty();
+      }
+
+      private void addAddedPath(String path) {
+        addUnique(addedPaths, path);
+      }
+
+      private void addRemovedPath(String path) {
+        addUnique(removedPaths, path);
+      }
+
+      private void addModifiedPath(String path) {
+        addUnique(modifiedPaths, path);
+      }
+
+      private void addUnique(List<String> paths, String path) {
+        if (path != null && !path.isBlank() && !paths.contains(path)) {
+          paths.add(path);
+        }
+      }
     }
 
     /**
@@ -1466,51 +1494,102 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
-      try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
-
+      try (var repo = openRepository(localRepository)) {
         try (var git = new org.eclipse.jgit.api.Git(repo)) {
 
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
           ObjectId oldHead = repo.resolve("HEAD^{tree}");
+          var currentBranch = repo.getBranch();
+          var statusBeforeFetch = git.status().call();
+          boolean hadLocalChanges = hasLocalChanges(statusBeforeFetch);
 
-          PullCommand pullCmd = git.pull();
-          pullCmd.setCredentialsProvider(getCredentialsProvider(git, scope));
-          PullResult result = pullCmd.call();
-          if (result != null && result.isSuccessful()) {
-            var messages = result.getFetchResult().getMessages();
-            if (messages != null && !messages.isEmpty()) {
-              ret.getNotifications().add(Notification.create(messages, Notification.Level.Info));
-            }
-            if (result.getMergeResult().getConflicts() != null
-                && !result.getMergeResult().getConflicts().isEmpty()) {
-              ret.getNotifications()
-                  .add(
-                      Notification.error(
-                          "Conflicts during merge of "
-                              + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                          UIView.Interactivity.DISPLAY));
-            } else {
+          fetchOrigin(git, scope, ret);
+          if (Notifications.hasErrors(ret.getNotifications())) {
+            return ret;
+          }
 
-              // commit locally
-              try {
+          mergeFetchedChanges(
+              localRepository, repo, git, currentBranch, oldHead, hadLocalChanges, ret);
+          if (Notifications.hasErrors(ret.getNotifications())) {
+            return ret;
+          }
 
-                var commit = git.commit().setMessage(commitMessage);
-                commit.setAll(true);
-                commit.setCredentialsProvider(getCredentialsProvider(git, scope));
-                var commitResult = commit.call();
-                PushCommand pushCommand = git.push();
-                pushCommand.setRemote("origin");
-                pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
-                pushCommand.call();
-              } catch (GitAPIException ex) {
-                ret.getNotifications().add(Notification.error(ex, UIView.Interactivity.DISPLAY));
-              }
+          boolean committed = false;
+          if (hadLocalChanges) {
+            committed = commitLocalChanges(git, commitMessage, scope, ret);
+            if (Notifications.hasErrors(ret.getNotifications())) {
+              return ret;
             }
           }
-          compileDiff(repo, git, oldHead, ret);
+
+          pushIfNeeded(repo, git, scope, committed, ret);
+          if (ret.isEmpty() && ret.getNotifications().isEmpty()) {
+            ret.getNotifications()
+                .add(Notification.info("Repository is already synchronized with origin"));
+          }
         }
       } catch (Exception e) {
         ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
       }
+      return ret;
+    }
+
+    public static Modifications commitChanges(File localRepository, String commitMessage, Scope scope) {
+
+      Modifications ret = new Modifications();
+      ret.setRepositoryName(Files.getFileBaseName(localRepository));
+
+      try (var repo = openRepository(localRepository)) {
+        try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
+          if (!commitLocalChanges(git, commitMessage, scope, ret)) {
+            ret.getNotifications().add(Notification.info("No local repository changes to save"));
+          }
+        }
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
+      }
+
+      return ret;
+    }
+
+    public static Modifications pushChanges(File localRepository, Scope scope) {
+
+      Modifications ret = new Modifications();
+      ret.setRepositoryName(Files.getFileBaseName(localRepository));
+
+      try (var repo = openRepository(localRepository)) {
+        try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
+          Status status = git.status().call();
+          if (hasLocalChanges(status)) {
+            ret.getNotifications()
+                .add(
+                    Notification.error(
+                        "Local uncommitted changes are present ("
+                            + String.join(", ", statusPaths(status))
+                            + "). Save or discard them before publishing committed changes.",
+                        UIView.Interactivity.DISPLAY));
+            return ret;
+          }
+
+          pushIfNeeded(repo, git, scope, true, ret);
+        }
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
+      }
+
       return ret;
     }
 
@@ -1586,6 +1665,367 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return ret;
     }
 
+    private static Repository openRepository(File localRepository) throws IOException {
+      FileRepositoryBuilder builder = new FileRepositoryBuilder().findGitDir(localRepository);
+      if (builder.getGitDir() == null) {
+        throw new IOException("No Git repository found in " + localRepository.getAbsolutePath());
+      }
+      builder.setWorkTree(localRepository);
+      return builder.build();
+    }
+
+    private static boolean ensureSafeRepository(
+        Repository repository, org.eclipse.jgit.api.Git git, Modifications ret)
+        throws GitAPIException {
+
+      var repositoryState = repository.getRepositoryState();
+      if (!repositoryState.canCheckout() || !repositoryState.canCommit()) {
+        ret.getNotifications()
+            .add(
+                Notification.error(
+                    "Repository "
+                        + repository.getIdentifier()
+                        + " is in state "
+                        + repositoryState
+                        + ": "
+                        + repositoryState.getDescription()
+                        + ". Please resolve this with Git before using the simplified operations.",
+                    UIView.Interactivity.DISPLAY));
+        return false;
+      }
+
+      Status status = git.status().call();
+      if (!status.getConflicting().isEmpty()) {
+        ret.getNotifications()
+            .add(
+                Notification.error(
+                    "Repository contains conflicts in "
+                        + String.join(", ", status.getConflicting())
+                        + ". Please resolve them with Git before using the simplified operations.",
+                    UIView.Interactivity.DISPLAY));
+        return false;
+      }
+
+      return true;
+    }
+
+    private static boolean hasLocalChanges(Status status) {
+      return !(status.getAdded().isEmpty()
+          && status.getChanged().isEmpty()
+          && status.getRemoved().isEmpty()
+          && status.getMissing().isEmpty()
+          && status.getModified().isEmpty()
+          && status.getUntracked().isEmpty()
+          && status.getUntrackedFolders().isEmpty());
+    }
+
+    private static boolean hasCommittableChanges(Status status) {
+      return !(status.getAdded().isEmpty()
+          && status.getChanged().isEmpty()
+          && status.getRemoved().isEmpty());
+    }
+
+    private static Set<String> statusPaths(Status status) {
+      Set<String> ret = new TreeSet<>();
+      ret.addAll(status.getAdded());
+      ret.addAll(status.getChanged());
+      ret.addAll(status.getRemoved());
+      ret.addAll(status.getMissing());
+      ret.addAll(status.getModified());
+      ret.addAll(status.getUntracked());
+      ret.addAll(status.getUntrackedFolders());
+      return ret;
+    }
+
+    private static FetchResult fetchOrigin(
+        org.eclipse.jgit.api.Git git, Scope scope, Modifications ret) throws GitAPIException {
+
+      FetchCommand fetchCommand =
+          git.fetch()
+              .setRemote("origin")
+              .setRemoveDeletedRefs(true)
+              .setCredentialsProvider(getCredentialsProvider(git, scope));
+      FetchResult result = fetchCommand.call();
+      if (result != null && result.getMessages() != null && !result.getMessages().isBlank()) {
+        ret.getNotifications().add(Notification.info(result.getMessages()));
+      }
+      return result;
+    }
+
+    private static String remoteTrackingBranch(Repository repository, String branch)
+        throws IOException {
+      BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(repository, branch);
+      if (trackingStatus != null && trackingStatus.getRemoteTrackingBranch() != null) {
+        return trackingStatus.getRemoteTrackingBranch();
+      }
+      String originBranch = "refs/remotes/origin/" + normalizeBranchName(branch);
+      return repository.resolve(originBranch) == null ? null : originBranch;
+    }
+
+    private static void mergeFetchedChanges(
+        File localRepository,
+        Repository repository,
+        org.eclipse.jgit.api.Git git,
+        String currentBranch,
+        ObjectId oldTree,
+        boolean hasLocalChanges,
+        Modifications ret)
+        throws GitAPIException, IOException {
+
+      BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(repository, currentBranch);
+      String remoteBranch = remoteTrackingBranch(repository, currentBranch);
+      if (remoteBranch == null) {
+        ret.getNotifications()
+            .add(
+                Notification.warning(
+                    "Current branch "
+                        + currentBranch
+                        + " has no origin branch configured; no remote changes were merged."));
+        return;
+      }
+
+      if (trackingStatus != null && trackingStatus.getBehindCount() == 0) {
+        return;
+      }
+
+      ObjectId remoteHead = repository.resolve(remoteBranch);
+      ObjectId oldCommit = repository.resolve("HEAD");
+      if (remoteHead == null || remoteHead.equals(oldCommit)) {
+        return;
+      }
+
+      if (hasLocalChanges) {
+        ret.getNotifications()
+            .add(
+                Notification.error(
+                    "The published repository has changes, but this repository also has local "
+                        + "uncommitted changes ("
+                        + String.join(", ", statusPaths(git.status().call()))
+                        + "). Save, publish, or discard local changes before getting the latest "
+                        + "version.",
+                    UIView.Interactivity.DISPLAY));
+        return;
+      }
+
+      MergeResult mergeResult = git.merge().include(remoteHead).call();
+      if (!mergeResult.getMergeStatus().isSuccessful()) {
+        resetHard(git, oldCommit);
+        ret.getNotifications()
+            .add(Notification.error(formatMergeFailure(localRepository, mergeResult)));
+        return;
+      }
+
+      compileDiff(repository, git, oldTree, ret);
+      if (!ret.isEmpty()) {
+        ret.getNotifications()
+            .add(
+                Notification.info(
+                    "Merged changes from "
+                        + remoteBranch
+                        + ": "
+                        + String.join(", ", allChangedPaths(ret))));
+      }
+    }
+
+    private static boolean commitLocalChanges(
+        org.eclipse.jgit.api.Git git, String commitMessage, Scope scope, Modifications ret)
+        throws GitAPIException {
+
+      Status statusBeforeStage = git.status().call();
+      if (!hasLocalChanges(statusBeforeStage)) {
+        return false;
+      }
+
+      stageAll(git);
+      Status stagedStatus = git.status().call();
+      if (!hasCommittableChanges(stagedStatus)) {
+        ret.getNotifications()
+            .add(Notification.info("No repository changes needed to be committed"));
+        return false;
+      }
+
+      var commit =
+          git.commit()
+              .setMessage(
+                  commitMessage == null || commitMessage.isBlank()
+                      ? "Committed by k.LAB resources service"
+                      : commitMessage);
+      if (scope instanceof UserScope userScope && userScope.getUser() != null) {
+        commit.setAuthor(
+            userScope.getUser().getUsername(), userScope.getUser().getEmailAddress());
+      }
+      commit.call();
+      ret.getNotifications()
+          .add(
+              Notification.info(
+                  "Committed local repository changes: "
+                      + String.join(", ", statusPaths(statusBeforeStage))));
+      return true;
+    }
+
+    private static void stageAll(org.eclipse.jgit.api.Git git) throws GitAPIException {
+      git.add().addFilepattern(".").call();
+      git.add().setUpdate(true).addFilepattern(".").call();
+    }
+
+    private static void pushIfNeeded(
+        Repository repository,
+        org.eclipse.jgit.api.Git git,
+        Scope scope,
+        boolean forceAttempt,
+        Modifications ret)
+        throws GitAPIException, IOException {
+
+      String branch = repository.getBranch();
+      BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(repository, branch);
+      if (!forceAttempt && (trackingStatus == null || trackingStatus.getAheadCount() == 0)) {
+        return;
+      }
+
+      PushCommand pushCommand = git.push().setRemote("origin");
+      pushCommand.add("refs/heads/" + normalizeBranchName(branch));
+      pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
+      Iterable<PushResult> pushResults = pushCommand.call();
+      boolean reported = false;
+      for (PushResult pushResult : pushResults) {
+        for (RemoteRefUpdate update : pushResult.getRemoteUpdates()) {
+          reported = true;
+          RemoteRefUpdate.Status status = update.getStatus();
+          if (status == RemoteRefUpdate.Status.OK || status == RemoteRefUpdate.Status.UP_TO_DATE) {
+            ret.getNotifications()
+                .add(
+                    Notification.info(
+                        "Pushed " + branch + " to origin: " + update.getRemoteName()));
+          } else {
+            String message =
+                update.getMessage() == null || update.getMessage().isBlank()
+                    ? status.name()
+                    : update.getMessage();
+            ret.getNotifications()
+                .add(
+                    Notification.error(
+                        "Push to origin failed for "
+                            + update.getRemoteName()
+                            + ": "
+                            + message,
+                        UIView.Interactivity.DISPLAY));
+          }
+        }
+      }
+      if (!reported) {
+        ret.getNotifications()
+            .add(Notification.warning("Push to origin returned no remote update details"));
+      }
+    }
+
+    private static Set<String> allChangedPaths(Modifications modifications) {
+      Set<String> ret = new TreeSet<>();
+      ret.addAll(modifications.getAddedPaths());
+      ret.addAll(modifications.getModifiedPaths());
+      ret.addAll(modifications.getRemovedPaths());
+      return ret;
+    }
+
+    private static void resetHard(org.eclipse.jgit.api.Git git, ObjectId commit)
+        throws GitAPIException {
+      if (commit != null) {
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef(commit.getName()).call();
+      }
+    }
+
+    private static String formatMergeFailure(File localRepository, MergeResult mergeResult) {
+      Set<String> paths = new TreeSet<>();
+      if (mergeResult.getConflicts() != null) {
+        paths.addAll(mergeResult.getConflicts().keySet());
+      }
+      if (mergeResult.getCheckoutConflicts() != null) {
+        paths.addAll(mergeResult.getCheckoutConflicts());
+      }
+      if (mergeResult.getFailingPaths() != null) {
+        paths.addAll(mergeResult.getFailingPaths().keySet());
+      }
+      String pathMessage = paths.isEmpty() ? "" : " Conflicting paths: " + String.join(", ", paths);
+      return "Merge could not be completed in repository "
+          + localRepository.getAbsolutePath()
+          + " ("
+          + mergeResult.getMergeStatus()
+          + "). The repository was restored to its previous state."
+          + pathMessage;
+    }
+
+    private static String normalizeBranchName(String branch) {
+      String ret = branch == null ? "" : branch.trim();
+      if (ret.startsWith("refs/heads/")) {
+        ret = ret.substring("refs/heads/".length());
+      } else if (ret.startsWith("refs/remotes/origin/")) {
+        ret = ret.substring("refs/remotes/origin/".length());
+      } else if (ret.startsWith("origin/")) {
+        ret = ret.substring("origin/".length());
+      }
+      return ret;
+    }
+
+    private static ObjectId resolveBranch(Repository repository, String branch) throws IOException {
+      String normalized = normalizeBranchName(branch);
+      ObjectId ret = repository.resolve(normalized);
+      if (ret == null) {
+        ret = repository.resolve("refs/heads/" + normalized);
+      }
+      if (ret == null) {
+        ret = repository.resolve("refs/remotes/origin/" + normalized);
+      }
+      return ret;
+    }
+
+    private static void checkoutBranch(
+        Repository repository, org.eclipse.jgit.api.Git git, String branch)
+        throws GitAPIException, IOException {
+
+      String normalized = normalizeBranchName(branch);
+      if (repository.findRef("refs/heads/" + normalized) != null
+          || repository.findRef(normalized) != null) {
+        git.checkout().setName(normalized).call();
+        return;
+      }
+
+      if (repository.findRef("refs/remotes/origin/" + normalized) != null) {
+        git.checkout()
+            .setCreateBranch(true)
+            .setName(normalized)
+            .setStartPoint("origin/" + normalized)
+            .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+            .call();
+        return;
+      }
+
+      git.checkout().setCreateBranch(true).setName(normalized).call();
+      var config = repository.getConfig();
+      config.setString("branch", normalized, "remote", "origin");
+      config.setString("branch", normalized, "merge", "refs/heads/" + normalized);
+      config.save();
+    }
+
+    private static void compileResetModifications(Status status, Modifications ret) {
+      for (String path : status.getModified()) {
+        ret.addModifiedPath(path);
+      }
+      for (String path : status.getChanged()) {
+        ret.addModifiedPath(path);
+      }
+      for (String path : status.getMissing()) {
+        ret.addAddedPath(path);
+      }
+      for (String path : status.getRemoved()) {
+        ret.addAddedPath(path);
+      }
+      for (String path : status.getAdded()) {
+        ret.addRemovedPath(path);
+      }
+      for (String path : status.getUntracked()) {
+        ret.addRemovedPath(path);
+      }
+    }
+
     /**
      * Perform a safe pull operations from origin, using any installed credentials.
      *
@@ -1600,44 +2040,34 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
-      try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+      try (var repo = openRepository(localRepository)) {
         try (var git = new org.eclipse.jgit.api.Git(repo)) {
 
-          ObjectId oldHead = repo.resolve("HEAD^{tree}");
-
-          PullCommand pullCmd = git.pull();
-          pullCmd.setCredentialsProvider(getCredentialsProvider(git, scope));
-          PullResult result = pullCmd.call();
-          if (result != null && result.isSuccessful()) {
-            var messages = result.getFetchResult().getMessages();
-            if (messages != null && !messages.isEmpty()) {
-              ret.getNotifications().add(Notification.create(messages, Notification.Level.Info));
-            }
-            if (result.getMergeResult().getConflicts() != null
-                && !result.getMergeResult().getConflicts().isEmpty()) {
-              ret.getNotifications()
-                  .add(
-                      Notification.error(
-                          "Conflicts during merge of "
-                              + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                          UIView.Interactivity.DISPLAY));
-            } else {
-              compileDiff(repo, git, oldHead, ret);
-            }
-          } else {
-            ret.getNotifications()
-                .add(
-                    Notification.error(
-                        "Pull from default remote of "
-                            + "repository "
-                            + repo.getIdentifier()
-                            + " unsuccessful",
-                        UIView.Interactivity.DISPLAY));
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
           }
 
-          /*
-          report changes
-           */
+          ObjectId oldHead = repo.resolve("HEAD^{tree}");
+          var currentBranch = repo.getBranch();
+          var statusBeforeFetch = git.status().call();
+
+          fetchOrigin(git, scope, ret);
+          if (Notifications.hasErrors(ret.getNotifications())) {
+            return ret;
+          }
+
+          mergeFetchedChanges(
+              localRepository,
+              repo,
+              git,
+              currentBranch,
+              oldHead,
+              hasLocalChanges(statusBeforeFetch),
+              ret);
+          if (ret.isEmpty() && ret.getNotifications().isEmpty()) {
+            ret.getNotifications()
+                .add(Notification.info("Repository is already up to date with origin"));
+          }
         }
       } catch (CheckoutConflictException c) {
 
@@ -1671,24 +2101,27 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       try {
         var head = repository.resolve("HEAD^{tree}");
-        ObjectReader reader = repository.newObjectReader();
-        CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-        oldTreeIter.reset(reader, oldHead);
-        CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-        newTreeIter.reset(reader, head);
-        for (var diff : git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call()) {
-          switch (diff.getChangeType()) {
-            case ADD -> {
-              ret.getAddedPaths().add(diff.getNewPath());
-            }
-            case MODIFY -> {
-              ret.getModifiedPaths().add(diff.getOldPath());
-            }
-            case DELETE -> {
-              ret.getRemovedPaths().add(diff.getOldPath());
-            }
-            case COPY -> {
-              ret.getAddedPaths().add(diff.getNewPath());
+        try (ObjectReader reader = repository.newObjectReader()) {
+          AbstractTreeIterator oldTreeIter = treeIterator(reader, oldHead);
+          AbstractTreeIterator newTreeIter = treeIterator(reader, head);
+          for (var diff : git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call()) {
+            switch (diff.getChangeType()) {
+              case ADD -> {
+                ret.addAddedPath(diff.getNewPath());
+              }
+              case MODIFY -> {
+                ret.addModifiedPath(diff.getNewPath());
+              }
+              case DELETE -> {
+                ret.addRemovedPath(diff.getOldPath());
+              }
+              case COPY -> {
+                ret.addAddedPath(diff.getNewPath());
+              }
+              case RENAME -> {
+                ret.addRemovedPath(diff.getOldPath());
+                ret.addAddedPath(diff.getNewPath());
+              }
             }
           }
         }
@@ -1697,9 +2130,85 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
     }
 
+    private static AbstractTreeIterator treeIterator(ObjectReader reader, ObjectId treeId)
+        throws IOException {
+      if (treeId == null || ObjectId.zeroId().equals(treeId)) {
+        return new EmptyTreeIterator();
+      }
+      CanonicalTreeParser treeIter = new CanonicalTreeParser();
+      treeIter.reset(reader, treeId);
+      return treeIter;
+    }
+
     public static Modifications mergeChangesFrom(File localRepository, String branch) {
-      // TODO ziobue
-      return null;
+      Modifications ret = new Modifications();
+
+      ret.setRepositoryName(Files.getFileBaseName(localRepository));
+      branch = normalizeBranchName(branch);
+      if (branch.isBlank()) {
+        ret.getNotifications()
+            .add(Notification.error("A branch name is required to merge changes"));
+        return ret;
+      }
+
+      try (var repo = openRepository(localRepository)) {
+        try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
+          Status status = git.status().call();
+          if (hasLocalChanges(status)) {
+            ret.getNotifications()
+                .add(
+                    Notification.error(
+                        "Local uncommitted changes are present ("
+                            + String.join(", ", statusPaths(status))
+                            + "). Save, publish, or discard them before merging another branch.",
+                        UIView.Interactivity.DISPLAY));
+            return ret;
+          }
+
+          ObjectId oldTree = repo.resolve("HEAD^{tree}");
+          ObjectId oldCommit = repo.resolve("HEAD");
+          ObjectId branchHead = resolveBranch(repo, branch);
+          if (branchHead == null) {
+            ret.getNotifications()
+                .add(
+                    Notification.error(
+                        "Branch " + branch + " was not found locally or in origin",
+                        UIView.Interactivity.DISPLAY));
+            return ret;
+          }
+
+          MergeResult mergeResult = git.merge().include(branchHead).call();
+          if (!mergeResult.getMergeStatus().isSuccessful()) {
+            resetHard(git, oldCommit);
+            ret.getNotifications()
+                .add(Notification.error(formatMergeFailure(localRepository, mergeResult)));
+            return ret;
+          }
+
+          compileDiff(repo, git, oldTree, ret);
+          if (ret.isEmpty()) {
+            ret.getNotifications()
+                .add(Notification.info("Branch " + branch + " was already merged"));
+          } else {
+            ret.getNotifications()
+                .add(
+                    Notification.info(
+                        "Merged changes from "
+                            + branch
+                            + ": "
+                            + String.join(", ", allChangedPaths(ret))));
+          }
+        }
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
+      }
+
+      return ret;
     }
 
     /**
@@ -1713,21 +2222,51 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      *     element to check.
      */
     public static Modifications commitAndSwitch(File localRepository, String branch) {
+      return commitAndSwitch(localRepository, branch, null);
+    }
+
+    public static Modifications commitAndSwitch(File localRepository, String branch, Scope scope) {
 
       Modifications ret = new Modifications();
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
+      branch = normalizeBranchName(branch);
+      if (branch.isBlank()) {
+        ret.getNotifications()
+            .add(Notification.error("A branch name is required to switch branches"));
+        return ret;
+      }
 
-      try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+      try (var repo = openRepository(localRepository)) {
         try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
+          Status status = git.status().call();
+          if (hasLocalChanges(status)) {
+            commitLocalChanges(
+                git,
+                "Committed by k.LAB resources service before switching to " + branch,
+                scope,
+                ret);
+            if (Notifications.hasErrors(ret.getNotifications())) {
+              return ret;
+            }
+          }
+
           ObjectId oldHead = repo.resolve("HEAD^{tree}");
 
-          // TODO
+          checkoutBranch(repo, git, branch);
 
           compileDiff(repo, git, oldHead, ret);
+          ret.getNotifications().add(Notification.info("Switched repository to branch " + branch));
         }
-      } catch (IOException e) {
-        ret.getNotifications().add(Notification.create(e));
+      } catch (CheckoutConflictException e) {
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
       }
 
       return ret;
@@ -1747,11 +2286,44 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
-      try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+      try (var repo = openRepository(localRepository)) {
         try (var git = new org.eclipse.jgit.api.Git(repo)) {
-          ObjectId oldHead = repo.resolve("HEAD^{tree}");
-          var result = git.reset().setMode(ResetCommand.ResetType.HARD).call();
-          compileDiff(repo, git, oldHead, ret);
+
+          if (!ensureSafeRepository(repo, git, ret)) {
+            return ret;
+          }
+
+          Status status = git.status().call();
+          if (!hasLocalChanges(status)) {
+            ret.getNotifications().add(Notification.info("No local repository changes to discard"));
+            return ret;
+          }
+
+          compileResetModifications(status, ret);
+          git.reset().setMode(ResetCommand.ResetType.HARD).call();
+
+          Set<String> cleanedPaths =
+              git.clean()
+                  .setDryRun(true)
+                  .setForce(true)
+                  .setCleanDirectories(true)
+                  .setIgnore(true)
+                  .call();
+          for (String path : cleanedPaths) {
+            ret.addRemovedPath(path);
+          }
+          if (!cleanedPaths.isEmpty()) {
+            git.clean()
+                .setForce(true)
+                .setCleanDirectories(true)
+                .setIgnore(true)
+                .call();
+          }
+          ret.getNotifications()
+              .add(
+                  Notification.info(
+                      "Discarded local repository changes: "
+                          + String.join(", ", allChangedPaths(ret))));
         }
       } catch (Exception e) {
         ret.getNotifications().add(Notification.create(e));

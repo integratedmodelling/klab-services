@@ -233,17 +233,17 @@ public class FileProjectStorage implements ProjectStorage {
 
   public String getDocumentUrn(ResourceType type, URL url) {
 
-    File file = new File(url.getFile());
-    if (file.exists()) {
+    try {
+      File file = Path.of(url.toURI()).toFile();
       /*
       relative path
        */
       var relativePath = rootFolder.toPath().relativize(file.toPath());
       var data = ProjectStorage.getDocumentData(relativePath.toString(), File.separator);
       return data != null && data.getFirst() == type ? data.getSecond() : null;
+    } catch (Exception e) {
+      throw new KlabIOException(e);
     }
-
-    return null;
   }
 
   /**
@@ -261,7 +261,7 @@ public class FileProjectStorage implements ProjectStorage {
                 + (path.startsWith(separator) ? path.substring(separator.length()) : path)
                     .replace(separator, File.separator));
     try {
-      return file.exists() ? file.toURI().toURL() : null;
+      return file.toURI().toURL();
     } catch (MalformedURLException e) {
     }
     return null;
