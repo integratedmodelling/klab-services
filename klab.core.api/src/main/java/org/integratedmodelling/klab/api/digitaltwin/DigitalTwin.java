@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -249,6 +250,18 @@ public interface DigitalTwin extends RuntimeAsset {
     Activity getActivity();
 
     /**
+     * Check that the passed cohort's geometry includes the observed extents in the observed
+     * geometry for a collective observation. If the geometry does not include the observed extents,
+     * change it so that it does, register the cohort for updating at commit time, and return true.
+     * Otherwise, return false.
+     *
+     * @param cohort
+     * @param observedGeometry
+     * @return
+     */
+    void checkCohortGeometry(Cohort cohort, Geometry observedGeometry);
+
+    /**
      * Record a new runtime asset in the graph. If the asset's ID is not {@link
      * Observation#UNASSIGNED_ID}, the asset is already present in the KG; otherwise it will be
      * added at commit() and the object in the graph will be modified to include its ID.
@@ -303,6 +316,13 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets);
+
+    /**
+     * The parent transaction, or null if this is the root transaction.
+     *
+     * @return
+     */
+    Transaction getParent();
 
     /**
      * Signal compilation failure. Return a transaction that will throw the same exception at

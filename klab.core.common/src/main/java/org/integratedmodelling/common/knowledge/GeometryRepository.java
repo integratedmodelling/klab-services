@@ -144,11 +144,11 @@ public enum GeometryRepository {
     cache.put(geometry.key(), Pair.of(geometry, scale));
   }
 
-  public Geometry outerUnion(Geometry total, Geometry incoming) {
+  public Scale outerUnion(Geometry total, Geometry incoming) {
     // TODO - keep the union small, using a convex hull or simplifying afterwards. Also should use
     //  options to check if the user/federation wants full precision.
     var tScale = scale(total);
     var iScale = scale(incoming);
-    return tScale.merge(iScale, LogicalConnector.UNION).as(Geometry.class);
+    return tScale.merge(iScale, LogicalConnector.UNION).as(Scale.class);
   }
 }

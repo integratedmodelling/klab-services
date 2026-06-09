@@ -1,11 +1,9 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.provenance.Activity;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
  * One of these is created before an observation is contextualized and is available to all executors

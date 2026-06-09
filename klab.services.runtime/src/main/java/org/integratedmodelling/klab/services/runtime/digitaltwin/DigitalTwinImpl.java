@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.common.knowledge.CohortImpl;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -147,6 +148,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       return id;
     }
 
+    @Override
+    public Transaction getParent() {
+      return parent;
+    }
+
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
 
       this.graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
@@ -252,6 +258,21 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public Activity getActivity() {
       return this.activity;
+    }
+
+    @Override
+    public void checkCohortGeometry(Cohort cohort, Geometry observedGeometry) {
+      Scale newGeometry = null;
+      if (cohort.getGeometry().isUniversal()) {
+        newGeometry = GeometryRepository.INSTANCE.scale(observedGeometry);
+      } else {
+        var oldGeometry = GeometryRepository.INSTANCE.scale(cohort.getGeometry());
+        newGeometry =
+            GeometryRepository.INSTANCE.outerUnion(
+                GeometryRepository.INSTANCE.scale(observedGeometry), oldGeometry);
+      }
+
+      this.cohortGeometries.put(cohort.getObservable().getSemantics(), newGeometry);
     }
 
     /**

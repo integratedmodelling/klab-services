@@ -649,19 +649,22 @@ public class RuntimeService extends BaseService
                   ? GraphModel.Relationship.HAS_MEMBER
                   : GraphModel.Relationship.HAS_CHILD);
 
+      if (cohort != null && observation.getObservable().getSemantics().isCollective()) {
+        /* include the observation's geometry in the cohort's, flagging any changes. We don't do this
+        with individually created instances as those are not "observed"  in the proper sense and their
+        inclusion will be delegated to the identification strategy.
+         */
+        submissionScope
+            .getCurrentTransaction()
+            .checkCohortGeometry(cohort, observation.getGeometry());
+      }
+
       if (cohort != null
           && scope.getContextObservation() != null
           && observation.getObservable().is(SemanticType.COUNTABLE)) {
-        // ALSO link the observation to the cohort, which wasn't done in the previous statement
         submissionScope
             .getCurrentTransaction()
             .link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
-        /* include the observation's geometry in the cohort's and check a flag if there were changes. If we're
-        adding instances from an instantiator, we add the full collective. Otherwise each geometry will be added at
-         */
-        if (observation.getObservable().getSemantics().isCollective()) {
-          updateCohortGeometry(cohort, observation, submissionScope);
-        }
       }
 
       submissionScope
@@ -774,21 +777,27 @@ public class RuntimeService extends BaseService
   }
 
   /**
+   * Check if the passed cohort is the same as an upstream collective contextualization. If so, we
+   * have set the cohort as metadata, so we just have to check the observable.
+   *
+   * @param currentTransaction
    * @param cohort
-   * @param observation
-   * @param submissionScope
+   * @return
    */
-  private void updateCohortGeometry(
-      Cohort cohort, Observation observation, ServiceContextScope submissionScope) {
-    var total = cohort.getGeometry();
-    var incoming = observation.getGeometry();
-    if (total.isUniversal()) {
-      total = incoming;
-    } else {
-      total = GeometryRepository.INSTANCE.outerUnion(total, incoming);
+  private boolean isContextualizingCollective(
+      DigitalTwin.Transaction currentTransaction, Cohort cohort) {
+    var parent = currentTransaction.getParent();
+    if (parent != null) {
+      if (parent.getActivity().getType() == Activity.Type.CONTEXTUALIZATION) {
+        // cohort is in the metadata only if the observable was a collective.
+        //        var collectiveCohort =
+        //            parent.getActivity().getMetadata().get(COLLECTIVE_COHORT_ID, Cohort.class);
+        //        if (collectiveCohort != null) {
+        //          return collectiveCohort.getObservable().equals(cohort.getObservable());
+        //        }
+      }
     }
-    var transaction = submissionScope.getCurrentTransaction();
-    // TODO set the geometry for the cohort's observable
+    return false;
   }
 
   /**
