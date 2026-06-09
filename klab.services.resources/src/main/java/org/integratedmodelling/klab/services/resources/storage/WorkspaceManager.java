@@ -309,14 +309,14 @@ public class WorkspaceManager {
 
       var mods =
           switch (operation) {
-            case FETCH_COMMIT_AND_PUSH ->
+            case SYNC_AND_PUBLISH ->
                 Utils.Git.fetchCommitAndPush(
                     fileProjectStorage.getRootFolder(),
                     arguments == null || arguments.length == 0
                         ? "Committed by k.LAB resources " + "service"
                         : arguments[0],
                     scope);
-            case FETCH_AND_MERGE ->
+            case GET_LATEST ->
                 Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
             case SAVE_CHANGES ->
                 Utils.Git.commitChanges(
@@ -328,7 +328,6 @@ public class WorkspaceManager {
             case PUBLISH_CHANGES -> Utils.Git.pushChanges(fileProjectStorage.getRootFolder(), scope);
             case COMMIT_AND_SWITCH ->
                 Utils.Git.commitAndSwitch(fileProjectStorage.getRootFolder(), arguments[0], scope);
-            case HARD_RESET -> Utils.Git.hardReset(fileProjectStorage.getRootFolder());
             case DISCARD_LOCAL_CHANGES -> Utils.Git.hardReset(fileProjectStorage.getRootFolder());
             case MERGE_CHANGES_FROM ->
                 Utils.Git.mergeChangesFrom(fileProjectStorage.getRootFolder(), arguments[0]);
