@@ -47,7 +47,7 @@ public interface ProjectStorage {
         case "kwv" -> ONTOLOGY;
         case "kim" -> MODEL_NAMESPACE;
         case "obs" -> STRATEGY;
-        case "kactor" -> BEHAVIOR;
+        case "kactor", "kactors" -> BEHAVIOR;
         default -> null;
       };
     }
@@ -57,7 +57,7 @@ public interface ProjectStorage {
         case ONTOLOGY -> "kwv";
         case MODEL_NAMESPACE -> "kim";
         case STRATEGY -> "obs";
-        case BEHAVIOR, TESTCASE, SCRIPT -> "kactor";
+        case BEHAVIOR, TESTCASE, SCRIPT, APPLICATION -> "kactors";
         default ->
             throw new KlabUnimplementedException("file extension for document of class " + this);
       };
@@ -142,23 +142,32 @@ public interface ProjectStorage {
     ResourceType type = null;
     String urn = null;
 
+    if (relativeFilePath == null || !relativeFilePath.contains(".")) {
+      return null;
+    }
+
     var extension = relativeFilePath.substring(relativeFilePath.lastIndexOf(".") + 1);
     var path = relativeFilePath.substring(0, relativeFilePath.lastIndexOf("."));
+    boolean behaviorExtension = "kactor".equals(extension) || "kactors".equals(extension);
 
     if ("json".equals(extension)) {
       // TODO manifest, docs, resource.
       if (relativeFilePath.startsWith("resources" + separator)) {
-        throw new KlabUnimplementedException("KAAAAAAAAKKKKKKKKKKKKKKKKKKK");
+        return null;
       }
     } else {
       if (relativeFilePath.startsWith("src" + separator)) {
         type = ResourceType.forExtension(extension);
         urn = path.substring("src".length() + 1).replace(separator, ".");
-      } else if (relativeFilePath.startsWith("scripts" + separator)) {
-        throw new KlabUnimplementedException("POOOOOO");
-      } else if (relativeFilePath.startsWith("tests" + separator)) {
-        throw new KlabUnimplementedException("PAAAAAAA");
-      } else if (relativeFilePath.startsWith("apps" + separator) && "apps".equals(extension)) {
+      } else if (relativeFilePath.startsWith("scripts" + separator) && behaviorExtension) {
+        type = ResourceType.SCRIPT;
+        urn = path.substring("scripts".length() + 1);
+      } else if ((relativeFilePath.startsWith("tests" + separator)
+              || relativeFilePath.startsWith("testcases" + separator))
+          && behaviorExtension) {
+        type = ResourceType.TESTCASE;
+        urn = path.substring(relativeFilePath.indexOf(separator) + separator.length());
+      } else if (relativeFilePath.startsWith("apps" + separator) && behaviorExtension) {
         type = ResourceType.APPLICATION;
         urn = path.substring("apps".length() + 1);
       } else if (relativeFilePath.startsWith("strategies" + separator) && "obs".equals(extension)) {
@@ -191,7 +200,7 @@ public interface ProjectStorage {
   static String getRelativeFilePath(String urn, ResourceType type, String separator) {
     return switch (type) {
       case SCRIPT -> "scripts" + separator + urn + "." + type.getFileExtension();
-      case TESTCASE -> "tests" + separator + urn + "." + type.getFileExtension();
+      case TESTCASE -> "testcases" + separator + urn + "." + type.getFileExtension();
       case APPLICATION -> "apps" + separator + urn + "." + type.getFileExtension();
       case ONTOLOGY, MODEL_NAMESPACE, BEHAVIOR ->
           "src" + separator + urn.replace('.', separator.charAt(0)) + "." + type.getFileExtension();
