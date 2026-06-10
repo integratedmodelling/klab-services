@@ -47,7 +47,7 @@ public enum ServiceClientCatalog {
     private final boolean local;
     private ScheduledFuture<?> schedule;
 
-    private Set<BaseServiceClient> registeredClients = new HashSet<>();
+    private Set<BaseServiceClient> registeredClients = ConcurrentHashMap.newKeySet();
 
     public Utils.Http.Client getClient() {
       return client;
@@ -112,19 +112,26 @@ public enum ServiceClientCatalog {
     }
 
     void timedTasks() {
+      refreshStatus(true);
+    }
+
+    public KlabService.ServiceStatus refreshStatus() {
+      return refreshStatus(false);
+    }
+
+    synchronized KlabService.ServiceStatus refreshStatus(boolean notifyListeners) {
 
       //        if (settings != null && "off".equals(settings.get(Setting.POLLING, String.class))) {
       //            return;
       //        }
 
-      if (!client.isAlive()) {
-        this.status.set(KlabService.ServiceStatus.offline(type, serverId));
-        return;
-      }
-
       var statusBeforeChecking = status.get();
       try {
-        readStatus();
+        if (!client.isAlive()) {
+          this.status.set(KlabService.ServiceStatus.offline(type, serverId));
+        } else {
+          readStatus();
+        }
       } finally {
 
         boolean statusHasChanged =
@@ -140,13 +147,17 @@ public enum ServiceClientCatalog {
             serviceClients.put(serverId, this);
           }
 
-          for (var client : registeredClients) {
-            for (var listener : client.statusListeners) {
-              listener.accept(status.get(), statusHasChanged);
+          if (notifyListeners) {
+            for (var client : registeredClients) {
+              for (var listener : client.statusListeners) {
+                listener.accept(status.get(), statusHasChanged);
+              }
             }
           }
         }
       }
+
+      return status.get();
     }
 
     void readStatus() {
@@ -160,7 +171,9 @@ public enum ServiceClientCatalog {
     }
 
     private void close() {
-      this.schedule.cancel(true);
+      if (this.schedule != null) {
+        this.schedule.cancel(true);
+      }
       serviceClients.remove(serverId);
     }
 

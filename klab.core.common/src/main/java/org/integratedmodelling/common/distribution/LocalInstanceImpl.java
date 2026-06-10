@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -31,6 +32,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected final Stack.Tag tag;
 
   protected AtomicReference<Status> status = new AtomicReference<>(Status.UNKNOWN);
+  protected AtomicBoolean stopRequested = new AtomicBoolean(false);
   protected DefaultExecutor executor;
   protected ExecuteWatchdog watchdog;
   protected ExecuteStreamHandler streamHandler;
@@ -126,8 +128,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
                   .thenAccept(
                       p -> {
                         if (this.pid != null && this.pid.equals(p.pid())) {
-                          this.status.set(Status.STOPPED);
-                          cleanupState();
+                          markStopped();
                         }
                       });
             });
@@ -161,6 +162,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   @Override
   public boolean forceRestart(Option... options) {
     stop();
+    waitForStop();
     return start(options);
   }
 
@@ -170,11 +172,15 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     if (status.get() == Status.RUNNING) {
       return true;
     }
+    if (status.get() == Status.WAITING) {
+      return false;
+    }
 
     CommandLine commandLine = getCommandLine(product, settings);
     if (commandLine == null) {
       return false;
     }
+    stopRequested.set(false);
 
     EnumSet<Option> startOptions = EnumSet.noneOf(Option.class);
     if (options != null) {
@@ -220,15 +226,17 @@ public abstract class LocalInstanceImpl implements LocalInstance {
           @Override
           public void onProcessComplete(int exitValue) {
             super.onProcessComplete(exitValue);
-            status.set(Status.STOPPED);
-            cleanupState();
+            markStopped();
           }
 
           @Override
           public void onProcessFailed(ExecuteException e) {
             super.onProcessFailed(e);
-            status.set(Status.ERROR);
-            cleanupState();
+            if (stopRequested.get()) {
+              markStopped();
+            } else {
+              markError();
+            }
           }
         };
 
@@ -267,6 +275,11 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   @Override
   public synchronized boolean stop() {
     if (watchdog != null) {
+      stopRequested.set(true);
+      status.set(Status.WAITING);
+      if (pid != null) {
+        monitorAlreadyRunningProcess(pid);
+      }
       watchdog.destroyProcess();
       watchdog = null;
       executor = null;
@@ -276,15 +289,54 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       return true;
     }
     if (pid != null) {
-      ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
-      cleanupState();
-      status.set(Status.STOPPED);
+      var stoppedPid = pid;
+      var processHandle = ProcessHandle.of(stoppedPid);
+      if (processHandle.isPresent() && processHandle.get().isAlive()) {
+        stopRequested.set(true);
+        status.set(Status.WAITING);
+        monitorAlreadyRunningProcess(stoppedPid);
+        if (!processHandle.get().destroy()) {
+          processHandle.get().destroyForcibly();
+        }
+      } else {
+        markStopped();
+      }
       process = null;
       inputStream = null;
       outputStream = null;
       return true;
     }
     return false;
+  }
+
+  private void waitForStop() {
+    long deadline = System.currentTimeMillis() + 10000;
+    while (status.get() == Status.WAITING && System.currentTimeMillis() < deadline) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+    }
+  }
+
+  private synchronized void markStopped() {
+    stopRequested.set(false);
+    status.set(Status.STOPPED);
+    cleanupState();
+    watchdog = null;
+    executor = null;
+    process = null;
+  }
+
+  private synchronized void markError() {
+    stopRequested.set(false);
+    status.set(Status.ERROR);
+    cleanupState();
+    watchdog = null;
+    executor = null;
+    process = null;
   }
 
   @Override

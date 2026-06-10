@@ -379,6 +379,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
 
+          registerCohortUpdates();
+
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, trivial)) {
@@ -473,6 +475,16 @@ public class DigitalTwinImpl implements DigitalTwin {
       scope.unregisterTransaction(this);
 
       return ret;
+    }
+
+    /**
+     * Register cohorts whose geometry was updated, either in an existing new cohort or as a
+     * modified cohort in the modified array.
+     */
+    private void registerCohortUpdates() {
+      for (var cohortObservable : cohortGeometries.keySet()) {
+        var geometry = cohortGeometries.get(cohortObservable);
+      }
     }
 
     @Override

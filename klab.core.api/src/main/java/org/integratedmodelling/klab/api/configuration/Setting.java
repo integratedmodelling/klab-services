@@ -298,6 +298,11 @@ public enum Setting {
       "Launch a DevToolsFX debugging tool for the GUI when in graphical mode",
       Map.class,
       Map.of()),
+  LIST_LOCAL_COMMIT_OPERATIONS(
+      Page.DEBUGGING,
+      "List local commit/push operations in project team actions",
+      Boolean.class,
+      Boolean.FALSE),
   CLEAR_WORKSPACE(
       Page.RESOURCES,
       "Execute to remove all workspaces from the service. This is a destructive operation.",

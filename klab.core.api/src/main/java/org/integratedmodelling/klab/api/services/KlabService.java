@@ -231,6 +231,7 @@ public interface KlabService extends Service {
           || this.isBusy() != statusBeforeChecking.isBusy()
           || this.isConnected() != statusBeforeChecking.isConnected()
           || this.isOperational() != statusBeforeChecking.isOperational()
+          || this.isShutdown() != statusBeforeChecking.isShutdown()
           || !this.getAdvisories().equals(statusBeforeChecking.getAdvisories());
     }
 
