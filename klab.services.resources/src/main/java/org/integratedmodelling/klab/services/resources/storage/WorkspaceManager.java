@@ -372,19 +372,7 @@ public class WorkspaceManager {
         ret.add(result);
       }
 
-      for (var rset : ret) {
-        // FIXME not sure this is needed, or even safe to send
-        var projectResource = new ResourceSet.Resource();
-        projectResource.setResourceVersion(pd.manifest.getVersion());
-        projectResource.setProjectUrn(pd.name);
-        projectResource.setResourceUrn(pd.name);
-        projectResource.setRepositoryState(repositoryState);
-        projectResource.setServiceId(service.serviceId());
-        projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
-        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
-
-        rset.getProjects().add(projectResource);
-      }
+      addRepositoryState(ret, pd, repositoryState);
 
       return ret;
     }
@@ -394,6 +382,74 @@ public class WorkspaceManager {
             Notification.create(
                 "Project" + projectName + " not found or not " + "accessible",
                 Notification.Level.Error)));
+  }
+
+  private ResourceSet.Resource repositoryProjectResource(
+      ProjectDescriptor projectDescriptor, RepositoryState repositoryState) {
+    var projectResource = new ResourceSet.Resource();
+    projectResource.setResourceVersion(projectDescriptor.manifest.getVersion());
+    projectResource.setProjectUrn(projectDescriptor.name);
+    projectResource.setResourceUrn(projectDescriptor.name);
+    projectResource.setRepositoryState(repositoryState);
+    projectResource.setServiceId(service.serviceId());
+    projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+    projectResource.setOperation(CRUDOperation.UPDATE_METADATA);
+    projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+    return projectResource;
+  }
+
+  private void addRepositoryState(
+      List<ResourceSet> resourceSets,
+      ProjectDescriptor projectDescriptor,
+      RepositoryState repositoryState) {
+
+    if (projectDescriptor == null || repositoryState == null) {
+      return;
+    }
+
+    var projectWorkspace =
+        projectDescriptor.workspace == null
+            ? getWorkspaceForProject(projectDescriptor.name)
+            : projectDescriptor.workspace;
+    if (projectWorkspace == null) {
+      projectWorkspace = Workspace.EXTERNAL_WORKSPACE_URN;
+    }
+
+    boolean projectStateAdded = false;
+    for (var resourceSet : resourceSets) {
+      if (resourceSet.getWorkspace() == null) {
+        resourceSet.setWorkspace(projectWorkspace);
+      }
+      resourceSet.getServices().put(service.serviceId(), service.getUrl());
+      if (projectWorkspace.equals(resourceSet.getWorkspace())) {
+        resourceSet.setEmpty(false);
+        addOrReplaceRepositoryProjectResource(
+            resourceSet, repositoryProjectResource(projectDescriptor, repositoryState));
+        projectStateAdded = true;
+      }
+    }
+    if (!projectStateAdded) {
+      var projectState = new ResourceSet();
+      projectState.setWorkspace(projectWorkspace);
+      projectState.setEmpty(false);
+      projectState.getServices().put(service.serviceId(), service.getUrl());
+      projectState.getProjects().add(repositoryProjectResource(projectDescriptor, repositoryState));
+      resourceSets.add(projectState);
+    }
+  }
+
+  private void addOrReplaceRepositoryProjectResource(
+      ResourceSet resourceSet, ResourceSet.Resource projectResource) {
+
+    resourceSet
+        .getProjects()
+        .removeIf(
+            resource ->
+                Objects.equals(resource.getResourceUrn(), projectResource.getResourceUrn())
+                    && resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT
+                    && resource.getRepositoryState() != null
+                    && resource.getOperation() == CRUDOperation.UPDATE_METADATA);
+    resourceSet.getProjects().add(projectResource);
   }
 
   private void addRepositoryPathChange(
@@ -2165,6 +2221,10 @@ public class WorkspaceManager {
       ret.add(worldviewChange);
     }
     ret.addAll(result.values());
+    if (projectDescriptor != null
+        && projectDescriptor.storage instanceof FileProjectStorage fileProjectStorage) {
+      addRepositoryState(ret, projectDescriptor, fileProjectStorage.getRepositoryState());
+    }
 
     /*
     Report a ResourceSet per workspace affected. The listening end(s) will have to request the
@@ -3209,7 +3269,6 @@ public class WorkspaceManager {
 
     String lockingAuthorization = lockingScope.getIdentity().getId();
     List<ResourceSet> ret = new ArrayList<>();
-    RepositoryState repositoryState = null;
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
@@ -3259,24 +3318,7 @@ public class WorkspaceManager {
       ret =
           handleFileChange(
               projectName, List.of(Triple.of(documentType, CRUDOperation.UPDATE, url)));
-
-      repositoryState = fileProjectStorage.getRepositoryState();
     }
-
-    //    if (repositoryState != null) {
-    //      for (var result : ret) {
-    //        // FIXME we may not need this
-    //        var projectResource = new ResourceSet.Resource();
-    //        projectResource.setResourceVersion(pd.manifest.getVersion());
-    //        projectResource.setProjectUrn(pd.name);
-    //        projectResource.setResourceUrn(pd.name);
-    //        projectResource.setServiceId(service.serviceId());
-    //        projectResource.setRepositoryState(repositoryState);
-    //        projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
-    //        projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
-    //        result.getProjects().add(projectResource);
-    //      }
-    //    }
 
     return ret;
   }
@@ -3474,6 +3516,10 @@ public class WorkspaceManager {
       }
     } catch (Exception e) {
       return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
+    }
+
+    if (!ret.isEmpty()) {
+      addRepositoryState(ret, pd, fileProjectStorage.getRepositoryState());
     }
 
     return ret;

@@ -26,6 +26,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 
   private boolean locked;
   private File rootDirectory;
+  private RepositoryState repositoryState;
 
   public NavigableProject(Project asset, NavigableKlabAsset<?> parent) {
     super(asset, parent);
@@ -139,7 +140,11 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 
   @Override
   public RepositoryState getRepositoryState() {
-    return delegate.getRepositoryState();
+    return repositoryState == null ? delegate.getRepositoryState() : repositoryState;
+  }
+
+  public void setRepositoryState(RepositoryState repositoryState) {
+    this.repositoryState = repositoryState;
   }
 
   public RepositoryState.Status computeStatus(KlabDocument<?> document) {

@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 // import org.eclipse.ui.model.IWorkbenchAdapter;
 // import org.eclipse.ui.model.IWorkbenchAdapter2;
 // import org.eclipse.ui.model.IWorkbenchAdapter3;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -278,9 +279,11 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             changes.getOntologies(),
             changes.getNamespaces(),
             changes.getObservationStrategies(),
-            changes.getBehaviors(),
-            changes.getProjects())) {
+            changes.getBehaviors())) {
       applyChange(change, scope, ret);
+    }
+    for (var change : changes.getProjects()) {
+      applyProjectChange(change, scope, ret);
     }
     computeStatistics(changes);
     return ret;
@@ -301,6 +304,78 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
           throw new KlabUnimplementedException(
               "resolving unsupported type " + type + " of " + "navigable assets");
     };
+  }
+
+  private boolean applyProjectChange(
+      ResourceSet.Resource change, Scope scope, Set<NavigableAsset> changedAssets) {
+
+    if (change.getResourceUrn() == null) {
+      return false;
+    }
+    var operation = change.getOperation() == null ? CRUDOperation.UPDATE : change.getOperation();
+    var project =
+        findAsset(change.getResourceUrn(), NavigableProject.class, KlabAsset.KnowledgeClass.PROJECT);
+
+    switch (operation) {
+      case CREATE -> {
+        if (project == null) {
+          var service =
+              scope
+                  .findService(
+                      ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()))
+                  .orElse(null);
+          if (service == null) {
+            scope.warn("Cannot add project " + change.getResourceUrn() + ": service unavailable");
+            return false;
+          }
+          var added =
+              addChild(resolveAsset(KnowledgeClass.PROJECT, change.getResourceUrn(), service, scope));
+          if (added instanceof NavigableProject navigableProject
+              && change.getRepositoryState() != null) {
+            navigableProject.setRepositoryState(change.getRepositoryState());
+          }
+          if (added != null) {
+            changedAssets.add(added);
+            added
+                .localMetadata()
+                .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.ADDED);
+          }
+          return added != null;
+        }
+        if (change.getRepositoryState() != null) {
+          project.setRepositoryState(change.getRepositoryState());
+        }
+        changedAssets.add(project);
+        return true;
+      }
+      case DELETE -> {
+        if (project != null) {
+          var parent = project.parent;
+          if (parent instanceof NavigableKlabAsset<?> parentAsset) {
+            parentAsset.children =
+                parentAsset.children.stream()
+                    .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
+                    .toList();
+            changedAssets.add(parentAsset);
+          }
+          project
+              .localMetadata()
+              .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
+          return true;
+        }
+      }
+      case UPDATE, UPDATE_METADATA -> {
+        if (project != null) {
+          if (change.getRepositoryState() != null) {
+            project.setRepositoryState(change.getRepositoryState());
+          }
+          changedAssets.add(project);
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   private boolean applyChange(
@@ -428,6 +503,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
           if (resource.getResourceUrn().equals(navigableProject.getUrn())) {
             state = resource.getRepositoryState();
             overrideState = state != null;
+            if (overrideState) {
+              navigableProject.setRepositoryState(state);
+            }
             break;
           }
         }
