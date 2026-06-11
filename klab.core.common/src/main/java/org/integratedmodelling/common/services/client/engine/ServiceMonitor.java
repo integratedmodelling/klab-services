@@ -597,6 +597,44 @@ public class ServiceMonitor {
     return startAuxiliaryService(softwareStack, distributionTag, serviceType, user, true);
   }
 
+  public boolean ensureRuntimeAuxiliaryServices(
+      Stack softwareStack, Stack.Tag distributionTag, UserScope user) {
+    if (!isLocalServiceInstanceRunning(KlabService.Type.RUNTIME)
+        && !isLocalServiceReachable(KlabService.Type.RUNTIME)) {
+      return false;
+    }
+
+    var changed =
+        ensureAuxiliaryService(
+            softwareStack, distributionTag, KlabService.Type.DATABASE, null);
+    if (shouldStartLocalBroker(user)) {
+      changed =
+          ensureAuxiliaryService(
+                  softwareStack, distributionTag, KlabService.Type.AMQP_BROKER, null)
+              || changed;
+    }
+    if (changed) {
+      recomputeEngineStatus();
+    }
+    return true;
+  }
+
+  private boolean ensureAuxiliaryService(
+      Stack softwareStack, Stack.Tag distributionTag, KlabService.Type serviceType, UserScope user) {
+    if (isAuxiliaryServiceStarted(serviceType)) {
+      return false;
+    }
+    return startAuxiliaryService(softwareStack, distributionTag, serviceType, user, false)
+        && isAuxiliaryServiceStarted(serviceType);
+  }
+
+  private boolean isAuxiliaryServiceStarted(KlabService.Type serviceType) {
+    var service = serviceInstances.get(serviceType);
+    return service != null
+        && (service.getStatus() == LocalInstance.Status.RUNNING
+            || service.getStatus() == LocalInstance.Status.WAITING);
+  }
+
   private boolean startAuxiliaryService(
       Stack softwareStack,
       Stack.Tag distributionTag,
