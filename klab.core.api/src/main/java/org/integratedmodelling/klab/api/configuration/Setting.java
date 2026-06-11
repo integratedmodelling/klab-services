@@ -29,7 +29,7 @@ public enum Setting {
       Page.SERVICES,
       "Set the service polling interval for remote services in seconds",
       Integer.class,
-      20),
+      10),
   DO_NOT_CREATE_A_DEFAULT_OBSERVER(
       Page.GENERAL,
       "Do not create a default observer for a connected digital twin",

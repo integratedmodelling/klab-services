@@ -94,6 +94,9 @@ public class EngineImpl implements Engine, PropertyHolder {
     stopped.set(true);
     booted.set(false);
 
+    if (serviceMonitor != null) {
+      serviceMonitor.stopApplicationAuxiliaryServices();
+    }
     ClientScopeManager.INSTANCE.close();
 
     return true;
@@ -103,7 +106,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   public int stopLocalServices() {
     var ret = serviceMonitor.stopLocalServices();
     if (settings.get(Setting.EXIT_WHEN_STOPPING_SERVICES, Boolean.class)) {
-      serviceMonitor.stopAuxServices();
+      serviceMonitor.stopApplicationAuxiliaryServices();
       Executors.newScheduledThreadPool(1).schedule(() -> System.exit(0), 2, TimeUnit.SECONDS);
     }
     return ret;
@@ -127,15 +130,26 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public boolean startAuxiliaryServices(KlabService.Type... types) {
+    if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
+      return false;
+    }
     if (types != null) {
       for (KlabService.Type type : types) {
         if (type == KlabService.Type.LANGUAGE_SERVER) {
-          return serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser);
+          if (!serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser)) {
+            return false;
+          }
+        } else if (type == KlabService.Type.DATABASE || type == KlabService.Type.AMQP_BROKER) {
+          if (!serviceMonitor.startAuxiliaryService(
+              softwareStack, distributionTag, type, defaultUser)) {
+            return false;
+          }
         } else {
           throw new UnsupportedOperationException(
               "Auxiliary service type not yet supported: " + type);
         }
       }
+      return true;
     }
     return false;
   }

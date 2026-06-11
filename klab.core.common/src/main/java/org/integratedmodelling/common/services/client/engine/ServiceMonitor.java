@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
@@ -50,6 +51,7 @@ public class ServiceMonitor {
   private boolean handleAMQPService = false;
   private boolean handleLanguageServer = false;
   private volatile boolean stoppingLocalServices = false;
+  private volatile Thread languageServerShutdownHook;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
@@ -537,8 +539,7 @@ public class ServiceMonitor {
               for (var service : new ArrayList<>(serviceInstances.values())) {
 
                 if (!Distribution.Product.Type.PRIMARY_SERVICES.contains(
-                        service.getProduct().getType())
-                    && !settings.get(Setting.STOP_AUXILIARY_SERVICES, Boolean.class)) {
+                    service.getProduct().getType())) {
                   continue;
                 }
 
@@ -565,6 +566,9 @@ public class ServiceMonitor {
    * @return
    */
   public boolean startLSPServer(Stack softwareStack, Stack.Tag distributionTag, UserScope user) {
+    if (softwareStack == null || distributionTag == null) {
+      return false;
+    }
 
     var languageServer =
         softwareStack.instance(Distribution.Product.Type.LANGUAGE_SERVER, distributionTag);
@@ -575,10 +579,99 @@ public class ServiceMonitor {
       }
       this.serviceInstances.put(KlabService.Type.LANGUAGE_SERVER, languageServer);
 
-      return languageServer.start(
-          LocalInstance.Option.PROVIDE_INPUT_STREAM, LocalInstance.Option.PROVIDE_OUTPUT_STREAM);
+      var ret =
+          languageServer.start(
+              LocalInstance.Option.PROVIDE_INPUT_STREAM,
+              LocalInstance.Option.PROVIDE_OUTPUT_STREAM);
+      if (ret) {
+        installLanguageServerShutdownHook();
+        recomputeEngineStatus();
+      }
+      return ret;
     }
     return false;
+  }
+
+  public boolean startAuxiliaryService(
+      Stack softwareStack, Stack.Tag distributionTag, KlabService.Type serviceType, UserScope user) {
+    return startAuxiliaryService(softwareStack, distributionTag, serviceType, user, true);
+  }
+
+  private boolean startAuxiliaryService(
+      Stack softwareStack,
+      Stack.Tag distributionTag,
+      KlabService.Type serviceType,
+      UserScope user,
+      boolean publishStatus) {
+    if (softwareStack == null || distributionTag == null) {
+      return false;
+    }
+
+    var productType = auxiliaryProductType(serviceType);
+    if (productType == null) {
+      return false;
+    }
+
+    var product = softwareStack.instance(productType, distributionTag);
+    if (product == null) {
+      return false;
+    }
+
+    this.serviceInstances.put(serviceType, product);
+    if (product.getStatus() == LocalInstance.Status.RUNNING) {
+      if (publishStatus) {
+        recomputeEngineStatus();
+      }
+      return true;
+    }
+
+    var ret = product.start();
+    if (ret && user != null) {
+      user.info("Service " + serviceType + " is starting");
+    }
+    if (publishStatus) {
+      recomputeEngineStatus();
+    }
+    return ret;
+  }
+
+  private Distribution.Product.Type auxiliaryProductType(KlabService.Type serviceType) {
+    return switch (serviceType) {
+      case DATABASE -> Distribution.Product.Type.DATABASE_SERVER;
+      case AMQP_BROKER -> Distribution.Product.Type.AMQP_BROKER;
+      default -> null;
+    };
+  }
+
+  private void installLanguageServerShutdownHook() {
+    if (languageServerShutdownHook == null) {
+      synchronized (this) {
+        if (languageServerShutdownHook == null) {
+          languageServerShutdownHook =
+              new Thread(this::stopLanguageServer, "klab-language-server-shutdown");
+          Runtime.getRuntime().addShutdownHook(languageServerShutdownHook);
+        }
+      }
+    }
+  }
+
+  public void stopLanguageServer() {
+    var service = serviceInstances.get(KlabService.Type.LANGUAGE_SERVER);
+    if (service != null && service.getStatus() != LocalInstance.Status.STOPPED) {
+      try {
+        service.stop();
+      } catch (Throwable throwable) {
+        Logging.INSTANCE.error(throwable);
+      }
+      recomputeEngineStatus();
+    }
+  }
+
+  public void stopApplicationAuxiliaryServices() {
+    stopLanguageServer();
+    if (settings.get(Setting.STOP_AUXILIARY_SERVICES, Boolean.class)) {
+      stopRuntimeAuxiliaryServices();
+    }
   }
 
   public Map<KlabService.Type, KlabService> startLocalServices(
@@ -586,18 +679,22 @@ public class ServiceMonitor {
 
     var ret = new HashMap<KlabService.Type, KlabService>();
 
-    if (softwareStack.verify(distributionTag)) {
+    if (softwareStack != null && distributionTag != null && softwareStack.verify(distributionTag)) {
 
       stoppingLocalServices = false;
       publishTransitionStatus(false);
+      startAuxiliaryService(
+          softwareStack, distributionTag, KlabService.Type.DATABASE, user, false);
+      if (shouldStartLocalBroker(user)) {
+        startAuxiliaryService(
+            softwareStack, distributionTag, KlabService.Type.AMQP_BROKER, user, false);
+      }
       for (var serviceType :
           new KlabService.Type[] {
             KlabService.Type.RESOURCES,
             KlabService.Type.REASONER,
             KlabService.Type.RUNTIME,
-            KlabService.Type.RESOLVER,
-            KlabService.Type.DATABASE
-            // TODO add database and, when needed, language server and AMQP server
+            KlabService.Type.RESOLVER
           }) {
 
         var product =
@@ -635,12 +732,34 @@ public class ServiceMonitor {
     return ret;
   }
 
+  private boolean shouldStartLocalBroker(UserScope user) {
+    var federation = user == null ? null : Klab.INSTANCE.getFederationData(user.getUser());
+    return settings.get(Setting.USE_LOCAL_MESSAGE_BROKER, Boolean.class)
+        && (federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId()));
+  }
+
   public void stopAuxServices() {
+    stopApplicationAuxiliaryServices();
+  }
+
+  public void stopRuntimeAuxiliaryServices() {
+    var stopped = false;
     for (var service : serviceInstances.values()) {
       if (Distribution.Product.Type.PRIMARY_SERVICES.contains(service.getProduct().getType())) {
         continue;
       }
-      service.stop();
+      if (service.getProduct().getType() == Distribution.Product.Type.LANGUAGE_SERVER) {
+        continue;
+      }
+      try {
+        service.stop();
+        stopped = true;
+      } catch (Throwable throwable) {
+        Logging.INSTANCE.error(throwable);
+      }
+    }
+    if (stopped) {
+      recomputeEngineStatus();
     }
   }
 }

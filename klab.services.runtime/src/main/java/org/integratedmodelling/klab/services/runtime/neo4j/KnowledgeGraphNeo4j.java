@@ -526,7 +526,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setId(node.get("id").asLong());
         instance.setChildrenCount(node.get("childrenCount").asInt());
         instance.setParentId(node.get("parentId").asLong());
-        instance.setGeometry(GeometryRepository.INSTANCE.get(node.get("geometry").asString(), Geometry.class));
+        if (node.get("geometry") != null) {
+          // TODO remove - this is a backward-compatibility check when the code is still tentative
+          instance.setGeometry(GeometryRepository.INSTANCE.get(node.get("geometry").asString(), Geometry.class));
+        }
 
         ret.add((T) instance);
 
