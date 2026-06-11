@@ -877,9 +877,12 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       File possiblyExistingPopertiesFile,
       String buildPropertyToMergeWith,
       String thisBuildId) {
+    var properties = new Properties();
+    properties.putAll(propertiesToSave);
     if (possiblyExistingPopertiesFile.exists()) {
       var existingProperties = new Properties();
       if (Utils.Properties.load(possiblyExistingPopertiesFile, existingProperties)) {
+        existingProperties.forEach(properties::putIfAbsent);
         var existingBuildIds = existingProperties.getProperty(buildPropertyToMergeWith);
         if (existingBuildIds != null) {
           var existingBuildIdsList =
@@ -887,14 +890,13 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                   Arrays.stream(existingBuildIds.split(",")).filter(s -> !s.isBlank()).toList());
           if (!existingBuildIdsList.contains(thisBuildId)) {
             existingBuildIdsList.addFirst(thisBuildId);
-            propertiesToSave.setProperty(
-                buildPropertyToMergeWith, String.join(",", existingBuildIdsList));
           }
+          properties.setProperty(buildPropertyToMergeWith, String.join(",", existingBuildIdsList));
         }
       }
     } else {
-      propertiesToSave.setProperty(buildPropertyToMergeWith, thisBuildId);
+      properties.setProperty(buildPropertyToMergeWith, thisBuildId);
     }
-    Utils.Properties.save(possiblyExistingPopertiesFile, propertiesToSave);
+    Utils.Properties.save(possiblyExistingPopertiesFile, properties);
   }
 }

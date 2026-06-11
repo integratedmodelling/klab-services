@@ -53,6 +53,10 @@ public class StackImpl implements Stack {
                   distribution.getVersion(),
                   Utils.URLs.newURL(dFile),
                   Utils.URLs.newURL(new File(dFile, distribution.getVersion().toString())));
+          var updatedTags = updated.getTags();
+          if (updatedTags.isEmpty()) {
+            continue;
+          }
           List<Tag> tagsToRemove = new ArrayList<>();
 
           // this pain is needed for now - comparison succeeds but tag isn't swapped
@@ -62,7 +66,7 @@ public class StackImpl implements Stack {
             }
           }
           tagsToRemove.forEach(tags::remove);
-          for (var tag : updated.getTags()) {
+          for (var tag : updatedTags) {
             tags.put(tag, updated);
           }
         }
