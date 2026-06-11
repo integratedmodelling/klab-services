@@ -4,8 +4,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -15,16 +13,13 @@ import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
 import org.integratedmodelling.languages.api.ObservableSyntax;
 import org.integratedmodelling.languages.api.SemanticSyntax;
 import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
-import org.integratedmodelling.languages.validation.ObservableValidator;
 import org.integratedmodelling.languages.validation.ReasoningValidationScope;
 
 /** Worldview-aware semantic validation scope */
 public class WorldviewValidationScope extends BasicObservableValidationScope
     implements ReasoningValidationScope {
 
-  public WorldviewValidationScope() {
-    ObservableValidator.setValidationScope(this);
-  }
+  public WorldviewValidationScope() {}
 
   public WorldviewValidationScope(Worldview worldview) {
     this();
