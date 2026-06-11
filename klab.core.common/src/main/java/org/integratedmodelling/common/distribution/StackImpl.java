@@ -13,16 +13,18 @@ import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StackImpl implements Stack {
 
-  private static final Map<Tag, DistributionImpl> TAGS = new TreeMap<>();
-
   private final String name;
   private final Settings settings;
+  private final Map<Tag, DistributionImpl> tags = new TreeMap<>();
 
   /**
    * Pass settings to determine whether the stack accepts development distributions, where the
@@ -33,7 +35,7 @@ public class StackImpl implements Stack {
   public StackImpl(String name, Settings settings) {
     this.name = name;
     this.settings = settings;
-    TAGS.putAll(DistributionImpl.distributions(name, settings));
+    this.tags.putAll(DistributionImpl.distributions(name, settings));
     // still needs to use a scan to establish update status for the locals distributions
   }
 
@@ -54,14 +56,14 @@ public class StackImpl implements Stack {
           List<Tag> tagsToRemove = new ArrayList<>();
 
           // this pain is needed for now - comparison succeeds but tag isn't swapped
-          for (var tag : TAGS.keySet()) {
-            if (TAGS.get(tag) == distribution) {
+          for (var tag : tags.keySet()) {
+            if (tags.get(tag) == distribution) {
               tagsToRemove.add(tag);
             }
           }
-          tagsToRemove.forEach(TAGS::remove);
+          tagsToRemove.forEach(tags::remove);
           for (var tag : updated.getTags()) {
-            TAGS.put(tag, updated);
+            tags.put(tag, updated);
           }
         }
       }
@@ -70,13 +72,16 @@ public class StackImpl implements Stack {
 
   @Override
   public List<Tag> tags() {
-    return TAGS.keySet().stream().toList().reversed();
+    return tags.keySet().stream().toList().reversed();
   }
 
   @Override
   public Distribution.Product product(Distribution.Product.Type productType, Tag chosenRelease) {
     var tag = disambiguateTag(chosenRelease);
-    var distribution = TAGS.get(tag);
+    if (tag == null) {
+      return null;
+    }
+    var distribution = tags.get(tag);
     if (distribution != null) {
       return distribution.findProduct(productType, tag);
     }
@@ -86,7 +91,10 @@ public class StackImpl implements Stack {
   @Override
   public Distribution.Build build(Tag chosenRelease) {
     var tag = disambiguateTag(chosenRelease);
-    var distribution = TAGS.get(tag);
+    if (tag == null) {
+      return null;
+    }
+    var distribution = tags.get(tag);
     if (distribution != null) {
       return distribution.findBuild(tag);
     }
@@ -96,7 +104,10 @@ public class StackImpl implements Stack {
   @Override
   public Status status(Tag tag) {
     tag = disambiguateTag(tag);
-    var distribution = TAGS.get(tag);
+    if (tag == null) {
+      return Status.ABSENT;
+    }
+    var distribution = tags.get(tag);
     if (distribution == null) {
       return Status.ABSENT;
     }
@@ -145,7 +156,7 @@ public class StackImpl implements Stack {
           @Override
           public void notifyProductSynchronized(Distribution.Product product) {}
         })) {
-      return ret.get();
+      return ret.get() == null ? Status.ABSENT : ret.get();
     }
     return Status.ABSENT;
   }
@@ -153,12 +164,16 @@ public class StackImpl implements Stack {
   @Override
   public boolean synchronize(Tag tag, Distribution.Synchronization sync) {
 
+    tag = disambiguateTag(tag);
+    if (tag == null) {
+      return false;
+    }
+
     if (tag.version() == Version.HEAD) {
       return true;
     }
 
-    tag = disambiguateTag(tag);
-    var distribution = TAGS.get(tag);
+    var distribution = tags.get(tag);
     if (distribution != null
         && distribution.synchronize(
             settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), tag, sync)) {
@@ -171,6 +186,9 @@ public class StackImpl implements Stack {
   @Override
   public LocalInstance instance(Distribution.Product.Type productType, Tag chosenRelease) {
     var tag = disambiguateTag(chosenRelease);
+    if (tag == null) {
+      return null;
+    }
     var product = product(productType, tag);
     if (product != null && product.getLocalPath() != null) {
       return switch (product.getPlatform()) {
@@ -186,7 +204,7 @@ public class StackImpl implements Stack {
   public boolean verify(Tag distributionTag) {
     var tag = disambiguateTag(distributionTag);
     if (tag != null) {
-      var distribution = TAGS.get(tag);
+      var distribution = tags.get(tag);
       if (distribution != null) {
         return distribution.verify(tag);
       }
@@ -202,8 +220,11 @@ public class StackImpl implements Stack {
    * @return
    */
   private Tag disambiguateTag(Tag tag) {
+    if (tag == null) {
+      return null;
+    }
     if (tag == Tag.LATEST_STABLE) {
-      return tags().stream().filter(t -> t.release().equals("master")).findFirst().orElse(null);
+      return tags().stream().filter(t -> "master".equals(t.release())).findFirst().orElse(null);
     } else if (tag == Tag.LATEST_DEVELOP) {
       return tags().stream().findFirst().orElse(null);
     }
@@ -214,87 +235,367 @@ public class StackImpl implements Stack {
 
     Klab.INSTANCE.setConfiguration(new CommonConfiguration());
 
-    var klab = Stack.of("klab", SettingsImpl.forEngine());
+    var settings = SettingsImpl.forEngine();
+    var klab = Stack.of("klab", settings);
     var tag = new AtomicReference<>(klab.tags().isEmpty() ? null : klab.tags().getFirst());
 
-    System.out.println("Using tag " + tag.get());
+    System.out.println("k.LAB distribution test console");
+    System.out.println(
+        "Distribution directory: " + settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class));
+    System.out.println("Current tag: " + tag.get());
 
     Utils.CLI
         .create()
         .with(
+            "help",
+            ar -> printDistributionCliHelp())
+        .with(
             "status",
             ar -> {
-              var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
-              klab.synchronize(distributionTag, DistributionImpl.loggingSynchronizer);
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag == null) {
+                return;
+              }
+              printStatus(klab.status(distributionTag));
+            })
+        .with(
+            "plan",
+            ar -> {
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag != null) {
+                klab.synchronize(distributionTag, DistributionImpl.loggingSynchronizer);
+              }
             })
         .with(
             "tags",
             ar -> {
-              int n = 1;
-              for (var t : klab.tags()) {
-                System.out.println((n++) + ". " + t + " " + (t == tag.get() ? "(current)" : ""));
-              }
+              printTags(klab, tag.get());
             })
         .with(
-            "instance",
+            "current",
             ar -> {
-              var instance =
-                  klab.instance(Distribution.Product.Type.valueOf(ar[0].toUpperCase()), tag.get());
-              if (instance == null) {
-                System.out.println("Product not found: " + ar[0]);
-                return;
-              }
-              System.out.println(
-                  "Product found: "
-                      + instance.getProduct().getName()
-                      + ": status = "
-                      + instance.getStatus());
-            })
-        .with(
-            "start",
-            ar -> {
-              var instance =
-                  klab.instance(Distribution.Product.Type.valueOf(ar[0].toUpperCase()), tag.get());
-              if (instance == null) {
-                System.out.println("Product not found: " + ar[0]);
-                return;
-              }
-              System.out.println(
-                  "Starting "
-                      + instance.getProduct().getName()
-                      + ": status = "
-                      + instance.getStatus());
-              instance.start();
-            })
-        .with(
-            "stop",
-            ar -> {
-              var instance =
-                  klab.instance(Distribution.Product.Type.valueOf(ar[0].toUpperCase()), tag.get());
-              if (instance == null) {
-                System.out.println("Product not found: " + ar[0]);
-                return;
-              }
-              System.out.println(
-                  "Stopping "
-                      + instance.getProduct().getName()
-                      + ": status = "
-                      + instance.getStatus());
-              instance.stop();
+              System.out.println("Current tag: " + tag.get());
             })
         .with(
             "tag",
             ar -> {
-              int n = Integer.parseInt(ar[0]);
-              tag.set(klab.tags().get(n - 1));
-              System.out.println("Set current tag to " + tag.get());
+              var resolved = resolveTag(klab, tag.get(), ar);
+              if (resolved != null) {
+                tag.set(resolved);
+                System.out.println("Set current tag to " + tag.get());
+              }
+            })
+        .with(
+            "build",
+            ar -> {
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag == null) {
+                return;
+              }
+              printBuild(klab.build(distributionTag));
+            })
+        .with(
+            "products",
+            ar -> {
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag == null) {
+                return;
+              }
+              var build = klab.build(distributionTag);
+              if (build != null) {
+                build.getProducts().forEach(StackImpl::printProduct);
+              }
             })
         .with(
             "sync",
             ar -> {
-              var distributionTag = klab.tags().get(Integer.parseInt(ar[0]) - 1);
-              klab.synchronize(distributionTag, DistributionImpl.actingSynchronizer);
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag != null) {
+                System.out.println(
+                    "Synchronized: "
+                        + klab.synchronize(
+                            distributionTag,
+                            ar.length > 1 && "quiet".equalsIgnoreCase(ar[1])
+                                ? quietSynchronizer()
+                                : DistributionImpl.actingSynchronizer));
+              }
+            })
+        .with(
+            "verify",
+            ar -> {
+              var distributionTag = resolveTag(klab, tag.get(), ar);
+              if (distributionTag != null) {
+                System.out.println("Verified: " + klab.verify(distributionTag));
+              }
+            })
+        .with(
+            "product",
+            ar -> {
+              if (ar.length == 0) {
+                System.out.println("Usage: product <type> [tag]");
+                return;
+              }
+              var productType = resolveProductType(ar[0]);
+              var distributionTag =
+                  ar.length > 1
+                      ? resolveTag(klab, tag.get(), Arrays.copyOfRange(ar, 1, ar.length))
+                      : tag.get();
+              var product = productType == null ? null : klab.product(productType, distributionTag);
+              if (product == null) {
+                System.out.println("Product not found: " + ar[0]);
+                return;
+              }
+              printProduct(product);
+            })
+        .with(
+            "instance",
+            ar -> {
+              var instance = resolveInstance(klab, tag.get(), ar);
+              if (instance != null) {
+                System.out.println(
+                    "Instance "
+                        + instance.getProduct().getName()
+                        + ": status = "
+                        + instance.getStatus());
+              }
+            })
+        .with(
+            "start",
+            ar -> {
+              var instance = resolveInstance(klab, tag.get(), ar);
+              if (instance != null) {
+                System.out.println(
+                    "Starting "
+                        + instance.getProduct().getName()
+                        + ": status = "
+                        + instance.getStatus());
+                instance.start();
+              }
+            })
+        .with(
+            "stop",
+            ar -> {
+              var instance = resolveInstance(klab, tag.get(), ar);
+              if (instance != null) {
+                System.out.println(
+                    "Stopping "
+                        + instance.getProduct().getName()
+                        + ": status = "
+                        + instance.getStatus());
+                instance.stop();
+              }
             })
         .run();
+  }
+
+  private static void printDistributionCliHelp() {
+    System.out.println("Commands:");
+    System.out.println("  tags                         list known tags");
+    System.out.println("  tag <n|current|develop|stable> select current tag");
+    System.out.println("  current                      show selected tag");
+    System.out.println("  status [tag]                 compute dry-run status");
+    System.out.println("  plan [tag]                   print download plan using logging synchronizer");
+    System.out.println("  sync [tag] [quiet]           synchronize selected or indexed tag");
+    System.out.println("  verify [tag]                 verify local files by size/hash");
+    System.out.println("  build [tag]                  show build products");
+    System.out.println("  products [tag]               list product details");
+    System.out.println("  product <type> [tag]         show one product");
+    System.out.println("  instance <type>              show local instance status");
+    System.out.println("  start <type> / stop <type>   start or stop a local instance");
+    System.out.println("  exit                         leave the console");
+  }
+
+  private static void printTags(Stack stack, Tag current) {
+    int n = 1;
+    for (var t : stack.tags()) {
+      System.out.println((n++) + ". " + t + " " + (t.equals(current) ? "(current)" : ""));
+    }
+    if (n == 1) {
+      System.out.println("No distribution tags found.");
+    }
+  }
+
+  private static Tag resolveTag(Stack stack, Tag current, String[] args) {
+    if (args.length == 0 || args[0] == null || args[0].isBlank() || "current".equals(args[0])) {
+      if (current == null) {
+        System.out.println("No current tag is selected.");
+      }
+      return current;
+    }
+    if ("develop".equalsIgnoreCase(args[0])) {
+      var latest = stack.tags().stream().findFirst().orElse(null);
+      if (latest == null) {
+        System.out.println("No develop/latest tag is available.");
+      }
+      return latest;
+    }
+    if ("stable".equalsIgnoreCase(args[0])) {
+      var stable =
+          stack.tags().stream().filter(t -> "master".equals(t.release())).findFirst().orElse(null);
+      if (stable == null) {
+        System.out.println("No stable/master tag is available.");
+      }
+      return stable;
+    }
+    try {
+      var index = Integer.parseInt(args[0]);
+      if (index < 1 || index > stack.tags().size()) {
+        System.out.println("Tag index out of range: " + index);
+        return null;
+      }
+      return stack.tags().get(index - 1);
+    } catch (NumberFormatException e) {
+      System.out.println("Tag must be an index, current, develop or stable: " + args[0]);
+      return null;
+    }
+  }
+
+  private static void printStatus(Stack.Status status) {
+    System.out.println(
+        "Total content: "
+            + org.apache.commons.io.FileUtils.byteCountToDisplaySize(status.totalContentSize()));
+    System.out.println(
+        "Download: "
+            + org.apache.commons.io.FileUtils.byteCountToDisplaySize(status.downloadSize())
+            + " in "
+            + status.downloadList().size()
+            + " files out of "
+            + status.fullContentList().size()
+            + " unique files.");
+    if (!status.downloadList().isEmpty() && status.downloadList().size() <= 20) {
+      status.downloadList()
+          .forEach((file, target) -> System.out.println("  " + file.name() + " -> " + target.destinationFile()));
+    }
+  }
+
+  private static void printBuild(Distribution.Build build) {
+    if (build == null) {
+      System.out.println("Build not found.");
+      return;
+    }
+    System.out.println("Build " + build.getName() + " with " + build.getProducts().size() + " products:");
+    build.getProducts().forEach(StackImpl::printProduct);
+  }
+
+  private static void printProduct(Distribution.Product product) {
+    System.out.println(
+        product.getName()
+            + " type="
+            + product.getType()
+            + " platform="
+            + product.getPlatform()
+            + " files="
+            + product.getFiles().size()
+            + " local="
+            + product.getLocalPath());
+  }
+
+  private static Distribution.Product.Type resolveProductType(String value) {
+    for (var type : Distribution.Product.Type.values()) {
+      if (type.name().equalsIgnoreCase(value)
+          || type.getId().equalsIgnoreCase(value)
+          || type.getName().equalsIgnoreCase(value)) {
+        return type;
+      }
+    }
+    System.out.println("Unknown product type: " + value);
+    System.out.println(
+        "Known types: "
+            + Arrays.stream(Distribution.Product.Type.values())
+                .map(t -> t.name() + "/" + t.getId())
+                .collect(java.util.stream.Collectors.joining(", ")));
+    return null;
+  }
+
+  private static LocalInstance resolveInstance(Stack stack, Tag current, String[] args) {
+    if (args.length == 0) {
+      System.out.println("Usage: instance|start|stop <product-type>");
+      return null;
+    }
+    var type = resolveProductType(args[0]);
+    if (type == null) {
+      return null;
+    }
+    var instance = stack.instance(type, current);
+    if (instance == null) {
+      System.out.println("No local instance for " + args[0] + " in tag " + current);
+    }
+    return instance;
+  }
+
+  private static Distribution.Synchronization quietSynchronizer() {
+    return new Distribution.Synchronization() {
+      @Override
+      public boolean isSynchronizing() {
+        return true;
+      }
+
+      @Override
+      public boolean notifyDownload(
+          long totalSize,
+          long downloadSize,
+          Map<Distribution.FileData, Distribution.FileTarget> fullList,
+          Map<Distribution.FileData, Distribution.FileTarget> downloadList) {
+        System.out.println(
+            "Synchronizing "
+                + downloadList.size()
+                + " downloads ("
+                + org.apache.commons.io.FileUtils.byteCountToDisplaySize(downloadSize)
+                + ") over "
+                + fullList.size()
+                + " unique files.");
+        return true;
+      }
+
+      @Override
+      public boolean download(URL url, File file, Distribution.FileData fileData) {
+        try {
+          var parent = file.getParentFile();
+          if (parent != null) {
+            parent.mkdirs();
+          }
+          org.apache.commons.io.FileUtils.copyURLToFile(url, file);
+          return true;
+        } catch (IOException e) {
+          System.out.println("Download failed: " + e.getMessage());
+          return false;
+        }
+      }
+
+      @Override
+      public boolean link(File file, File destination) {
+        var parent = destination.getParentFile();
+        if (parent != null) {
+          parent.mkdirs();
+        }
+        return Utils.Files.symlink(file, destination);
+      }
+
+      @Override
+      public void delete(File file) {
+        org.apache.commons.io.FileUtils.deleteQuietly(file);
+      }
+
+      @Override
+      public boolean copy(File source, File destination) {
+        try {
+          var parent = destination.getParentFile();
+          if (parent != null) {
+            parent.mkdirs();
+          }
+          Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+          return true;
+        } catch (IOException e) {
+          System.out.println("Copy failed: " + e.getMessage());
+          return false;
+        }
+      }
+
+      @Override
+      public void notifyProductSynchronizing(Distribution.Product product) {}
+
+      @Override
+      public void notifyProductSynchronized(Distribution.Product product) {}
+    };
   }
 }

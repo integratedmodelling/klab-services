@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +37,13 @@ public interface Distribution {
    */
   record FileData(String hash, String name, long size) {
     public static FileData of(String string) {
+      if (string == null || string.isBlank()) {
+        throw new IllegalArgumentException("empty filelist entry");
+      }
       var parts = string.split("\\s+");
+      if (parts.length < 3) {
+        throw new IllegalArgumentException("malformed filelist entry: " + string);
+      }
       return new FileData(
           parts[0],
           parts[1].startsWith("./") ? parts[1].substring(2) : parts[1],
@@ -52,7 +59,12 @@ public interface Distribution {
     protected Build(String name, URL url) {
       super(url);
       this.name = name;
-      for (var key : this.properties.getProperty(BUILD_PRODUCTS_PROPERTY).split(",")) {
+      var productsProperty = this.properties.getProperty(BUILD_PRODUCTS_PROPERTY);
+      if (productsProperty == null || productsProperty.isBlank()) {
+        setEmpty(true);
+        return;
+      }
+      for (var key : commaSeparated(productsProperty)) {
         var productUrl = url.toString().substring(0, url.toString().lastIndexOf("/")) + "/" + key;
         var product =
             new Product(key, Utils.URLs.newURL(productUrl + "/" + PRODUCT_PROPERTIES_FILE));
@@ -422,8 +434,21 @@ public interface Distribution {
 
       super(url);
       this.name = name;
-      this.type = Type.valueOf(getProperty(PRODUCT_TYPE_PROPERTY));
-      this.platform = Platform.valueOf(getProperty(PRODUCT_PLATFORM_PROPERTY));
+      var typeProperty = getProperty(PRODUCT_TYPE_PROPERTY);
+      var platformProperty = getProperty(PRODUCT_PLATFORM_PROPERTY);
+      if (typeProperty == null || platformProperty == null) {
+        setEmpty(true);
+        this.url = Utils.URLs.newURL(url.toString().substring(0, url.toString().lastIndexOf("/")));
+        return;
+      }
+      try {
+        this.type = Type.valueOf(typeProperty);
+        this.platform = Platform.valueOf(platformProperty);
+      } catch (IllegalArgumentException e) {
+        setEmpty(true);
+        this.url = Utils.URLs.newURL(url.toString().substring(0, url.toString().lastIndexOf("/")));
+        return;
+      }
       this.executable = getProperty(PRODUCT_MAINCLASS_PROPERTY);
       this.url = Utils.URLs.newURL(url.toString().substring(0, url.toString().lastIndexOf("/")));
       if (this.url.getProtocol().equals("file")) {
@@ -436,9 +461,13 @@ public interface Distribution {
         String line;
         while ((line = reader.readLine()) != null) {
           if (line.trim().isEmpty()) continue;
-          files.add(FileData.of(line));
+          try {
+            files.add(FileData.of(line));
+          } catch (IllegalArgumentException e) {
+            setEmpty(true);
+          }
         }
-      } catch (IOException e) {
+      } catch (IOException | RuntimeException e) {
         setEmpty(true);
       }
     }
@@ -503,13 +532,12 @@ public interface Distribution {
     public Release(URL url) {
       super(url);
       this.name = this.properties.getProperty(RELEASE_NAME_PROPERTY);
-      for (var key : this.properties.getProperty(RELEASE_BUILDS_PROPERTY).split(",")) {
-
-        if (key.isEmpty()) {
-          // DIOCAN why?
-          continue;
-        }
-
+      var buildsProperty = this.properties.getProperty(RELEASE_BUILDS_PROPERTY);
+      if (buildsProperty == null || buildsProperty.isBlank()) {
+        setEmpty(true);
+        return;
+      }
+      for (var key : commaSeparated(buildsProperty)) {
         var buildUrl =
             url.toString().substring(0, url.toString().indexOf(RELEASE_PROPERTIES_FILE))
                 + key
@@ -529,6 +557,13 @@ public interface Distribution {
     public List<Build> getBuilds() {
       return builds;
     }
+  }
+
+  private static List<String> commaSeparated(String value) {
+    if (value == null || value.isBlank()) {
+      return List.of();
+    }
+    return Arrays.stream(value.split(",")).map(String::trim).filter(s -> !s.isBlank()).toList();
   }
 
   /** Synchronization handler for all sync operations and monitoring. */

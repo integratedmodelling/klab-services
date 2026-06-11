@@ -3,6 +3,8 @@ package org.integratedmodelling.common.distribution;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,7 +52,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
     /* This overrides existing distribution tags with their local counterpart, which is what we want */
     for (var localDistribution : localDistributions) {
-      var orphan = !ret.containsKey(localDistribution);
+      var orphan = localDistribution.getTags().stream().noneMatch(ret::containsKey);
       localDistribution
           .getTags()
           .forEach(
@@ -94,7 +96,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       var distributionProperties = new File(distributionFolder, DISTRIBUTION_PROPERTIES_FILE);
       if (distributionProperties.isFile()) {
         var properties = Utils.Properties.create(distributionProperties);
-        for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
+        for (var version : commaSeparated(properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY))) {
           if (Version.CURRENT_VERSION.compatible(Version.create(version))) {
             return new DistributionImpl(
                 distributionName,
@@ -119,13 +121,20 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     var properties =
         Utils.Properties.create(Utils.URLs.newURL(distributionUrl + "/distribution.properties"));
     if (!properties.isEmpty()) {
-      for (var version : properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY).split(",")) {
-        ret.add(
-            new DistributionImpl(
-                distributionName,
-                Version.create(version),
-                distributionUrl,
-                Utils.URLs.newURL(url + "/" + distributionName + "/" + version)));
+      for (var version : commaSeparated(properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY))) {
+        try {
+          var distribution =
+              new DistributionImpl(
+                  distributionName,
+                  Version.create(version),
+                  distributionUrl,
+                  Utils.URLs.newURL(url + "/" + distributionName + "/" + version));
+          if (!distribution.isEmpty()) {
+            ret.add(distribution);
+          }
+        } catch (RuntimeException e) {
+          // Ignore malformed version entries; other versions in the distribution may still be valid.
+        }
       }
     }
 
@@ -136,6 +145,33 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   private Version version;
   private List<Release> releases = new ArrayList<>();
 
+  private enum StorageAction {
+    NONE,
+    DOWNLOAD,
+    COPY
+  }
+
+  private enum ProductAction {
+    NONE,
+    LINK
+  }
+
+  private record StoredFile(
+      FileData file, URL sourceUrl, File destination, StorageAction action, File reusableSource) {}
+
+  private record ProductFile(
+      Product product,
+      FileData file,
+      File destination,
+      StoredFile storedFile,
+      boolean common,
+      ProductAction action) {}
+
+  private record SynchronizationPlan(
+      Map<FileData, FileTarget> fullList,
+      Map<FileData, FileTarget> downloadList,
+      Map<Product, List<ProductFile>> productFiles) {}
+
   public DistributionImpl(
       String distributionName, Version version, URL distributionUrl, URL versionUrl) {
     super(Utils.URLs.newURL(distributionUrl + "/" + DISTRIBUTION_PROPERTIES_FILE));
@@ -143,10 +179,23 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     var versionProperties =
         Utils.Properties.create(Utils.URLs.newURL(versionUrl + "/version.properties"));
     this.version = version;
-    for (var release : versionProperties.getProperty(VERSION_RELEASES_PROPERTY).split(",")) {
-      this.releases.add(
+    if (versionProperties.isEmpty()) {
+      setEmpty(true);
+      return;
+    }
+    var releaseNames = commaSeparated(versionProperties.getProperty(VERSION_RELEASES_PROPERTY));
+    if (releaseNames.isEmpty()) {
+      setEmpty(true);
+      return;
+    }
+    for (var release : releaseNames) {
+      var releaseData =
           new Distribution.Release(
-              Utils.URLs.newURL(versionUrl + "/" + release + "/" + RELEASE_PROPERTIES_FILE)));
+              Utils.URLs.newURL(versionUrl + "/" + release + "/" + RELEASE_PROPERTIES_FILE));
+      if (releaseData.isEmpty()) {
+        setEmpty(true);
+      }
+      this.releases.add(releaseData);
     }
   }
 
@@ -164,20 +213,16 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     return counter;
   }
 
+  private static List<String> commaSeparated(String value) {
+    if (value == null || value.isBlank()) {
+      return List.of();
+    }
+    return Arrays.stream(value.split(",")).map(String::trim).filter(s -> !s.isBlank()).toList();
+  }
+
   public boolean needsSync(
       FileData file, FileTarget target, Map<FileData, FileTarget> previouslyAvailable) {
-    if (previouslyAvailable.containsKey(file)) {
-      return false;
-    }
-    var exists = target.destinationFile().exists();
-    // FIXME should check only jars like this; others should be hash-checked always
-    if (exists && file.name().contains("SNAPSHOT")) {
-      if (target.destinationFile().length() != file.size()) {
-        return true;
-      }
-      // TODO COMPARE HASH IF JAR WITH SAME SIZE OR NON-JAR
-    }
-    return !exists;
+    return !fileMatches(target.destinationFile(), file) && !previouslyAvailable.containsKey(file);
   }
 
   /**
@@ -195,107 +240,33 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   public boolean synchronize(
       File rootDirectory, Stack.Tag beingSynced, Distribution.Synchronization monitor) {
 
-    var counter = getFileCounts();
-    var commonFiles =
-        counter.entrySet().stream()
-            .filter(e -> e.getValue() > 1)
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toSet());
+    var plan = createSynchronizationPlan(rootDirectory, beingSynced);
 
-    Set<Distribution.FileData> commonFilesChecked = new HashSet<>();
-    Map<Distribution.FileData, Distribution.FileTarget> targets = new HashMap<>();
-    Map<Distribution.FileData, Distribution.FileTarget> common = new HashMap<>();
-    Map<Distribution.FileData, Distribution.FileTarget> previouslyAvailable =
-        listExistingFilesNotInCommon(beingSynced, rootDirectory);
-
-    // TODO fill in previouslyAvailable with the latest build of the same
-    // distribution/version/release if
-    // any exist in this distribution.
-
-    for (var release : releases) {
-      for (var build : release.getBuilds()) {
-        for (var product : build.getProducts()) {
-          for (var file : product.getFiles()) {
-            var target =
-                new Distribution.FileTarget(
-                    Utils.URLs.newURL(product.getUrl() + "/" + file.name()),
-                    new File(
-                        rootDirectory
-                            + File.separator
-                            + this.name
-                            + File.separator
-                            + this.version
-                            + File.separator
-                            + release.getName()
-                            + File.separator
-                            + build.getName()
-                            + File.separator
-                            + product.getName()
-                            + File.separator
-                            + file.name()));
-            targets.put(file, target);
-            if (commonFiles.contains(file) && !common.containsKey(file)) {
-              common.put(
-                  file,
-                  new Distribution.FileTarget(
-                      Utils.URLs.newURL(product.getUrl() + "/" + file.name()),
-                      new File(
-                          rootDirectory
-                              + File.separator
-                              + this.name
-                              + File.separator
-                              + "common"
-                              + File.separator
-                              + file.name())));
-            }
-          }
-        }
-      }
-    }
-
-    // tally the files and build the final full list
-    Map<Distribution.FileData, Distribution.FileTarget> fullList = new HashMap<>();
-    Map<Distribution.FileData, Distribution.FileTarget> downloadList = new HashMap<>();
-    for (var product : targets.keySet()) {
-      var choice = common.containsKey(product) ? common.get(product) : targets.get(product);
-      fullList.put(product, choice);
-      if (needsSync(product, choice, previouslyAvailable)) {
-        downloadList.put(product, choice);
-      }
-    }
-
-    var totalSize = fullList.keySet().stream().mapToLong(Distribution.FileData::size).sum();
-    var downloadSize = downloadList.keySet().stream().mapToLong(Distribution.FileData::size).sum();
-    if (!monitor.notifyDownload(totalSize, downloadSize, fullList, downloadList)) {
+    var totalSize = plan.fullList().keySet().stream().mapToLong(Distribution.FileData::size).sum();
+    var downloadSize =
+        plan.downloadList().keySet().stream().mapToLong(Distribution.FileData::size).sum();
+    if (!monitor.notifyDownload(totalSize, downloadSize, plan.fullList(), plan.downloadList())) {
       return true;
     }
 
-    // we have the whole set, operational loop. This tracks the downloads notified to the monitor
-    var downloaded = new HashSet<Distribution.FileData>();
-
-    if (monitor.isSynchronizing()) {
-      // create distribution directory
-      var distributionDirectory = new File(rootDirectory + File.separator + this.name);
-      if (!distributionDirectory.exists()) {
-        distributionDirectory.mkdirs();
-      }
-
-      synchronizeProperties(
-          this.getProperties(),
-          new File(distributionDirectory, Distribution.DISTRIBUTION_PROPERTIES_FILE),
-          DISTRIBUTION_VERSIONS_PROPERTY,
-          this.version.toString());
-
-      // create common directory
-      var commonDirectory =
-          new File(rootDirectory + File.separator + this.name + File.separator + "common");
-      commonDirectory.mkdirs();
+    if (!monitor.isSynchronizing()) {
+      return true;
     }
+
+    var distributionDirectory = new File(rootDirectory, this.name);
+    distributionDirectory.mkdirs();
+    synchronizeProperties(
+        this.getProperties(),
+        new File(distributionDirectory, Distribution.DISTRIBUTION_PROPERTIES_FILE),
+        DISTRIBUTION_VERSIONS_PROPERTY,
+        this.version.toString());
+
+    var commonDirectory = new File(distributionDirectory, "common");
+    commonDirectory.mkdirs();
 
     // create version directory if not there, then release, then build and products. They may
     // all be there
-    var versionDirectory =
-        new File(rootDirectory + File.separator + this.name + File.separator + this.version);
+    var versionDirectory = new File(distributionDirectory, this.version.toString());
     versionDirectory.mkdirs();
 
     var versionProperties =
@@ -305,8 +276,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
             Distribution.VERSION_RELEASES_PROPERTY,
             "");
 
-    versionProperties.save(new File(versionDirectory, Distribution.VERSION_PROPERTIES_FILE));
-
+    var synchronizedStorage = new HashSet<Distribution.FileData>();
     for (var release : releases) {
 
       // sync any contents of version.properties to contain the current release
@@ -339,11 +309,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         var buildDirectory =
             new File(releaseDirectory.getAbsolutePath() + File.separator + build.getName());
         buildDirectory.mkdirs();
-        build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
 
         for (var product : build.getProducts()) {
-
-          // FIXME missing release.properties in release
 
           var productDirectory =
               new File(buildDirectory.getAbsolutePath() + File.separator + product.getName());
@@ -351,95 +318,260 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
           monitor.notifyProductSynchronizing(product);
 
-          Set<File> accepted = new HashSet<>();
-          for (var file : product.getFiles()) {
-            // TODO must download and/or link, then delete spurious
-            if (downloadList.containsKey(file)) {
-
-              var destination =
-                  new File(productDirectory.getAbsolutePath() + File.separator + file.name());
-
-              if (previouslyAvailable.containsKey(file)) {
-                // use the copy function so we can delete the previous build without consequences
-                if (!monitor.copy(previouslyAvailable.get(file).destinationFile(), destination)) {
-                  return false;
-                }
-
-              } else {
-
-                if (!downloaded.contains(file)) {
-                  if (!monitor.download(
-                      downloadList.get(file).sourceUrl(),
-                      downloadList.get(file).destinationFile(),
-                      file)) {
-                    return false;
-                  }
-                  downloaded.add(file);
-                }
-
-                if (common.containsKey(file)) {
-                  if (!monitor.link(downloadList.get(file).destinationFile(), destination)) {
-                    return false;
-                  }
-                }
+          for (var productFile : plan.productFiles().getOrDefault(product, List.of())) {
+            if (synchronizedStorage.add(productFile.file())) {
+              if (!synchronizeStoredFile(productFile.storedFile(), monitor)) {
+                return false;
               }
-              accepted.add(destination);
+            }
+            if (!synchronizeProductFile(productFile, monitor)) {
+              return false;
             }
           }
 
-          /* Last sync step: remove any files that don't belong and link any common
-          files whose link was lost. */
-          if (productDirectory.isDirectory()) {
-            var existingFileNames =
-                Arrays.stream(productDirectory.listFiles())
-                    .map(File::getName)
-                    .collect(Collectors.toSet());
-            var requiredFileNames =
-                product.getFiles().stream()
-                    .map(Distribution.FileData::name)
-                    .collect(Collectors.toSet());
-            existingFileNames.removeAll(requiredFileNames);
-            for (var fileName : existingFileNames) {
-              if (fileName.endsWith(".properties")) {
-                continue;
-              }
-              var file = new File(productDirectory.getAbsolutePath() + File.separator + fileName);
-              monitor.delete(file);
-            }
-            for (var file : product.getFiles()) {
-              var expected =
-                  new File(productDirectory.getAbsolutePath() + File.separator + file.name());
-              if (!expected.exists()) {
-                if (common.containsKey(file)) {
-                  if (!monitor.link(common.get(file).destinationFile(), expected)) {
-                    return false;
-                  }
-                } else {
-                  // shouldn't happen
-                  System.out.println("DIO BULLO È SUCCESSO");
-                  return false;
-                }
-              }
-            }
-          }
-
+          deleteSpuriousFiles(productDirectory, product, monitor);
           // recreate the filelist so that a newer build can reuse the files
           Utils.Files.writeStringsToFile(
               product.getFiles().stream()
                   .map(e -> e.hash() + " " + e.name() + " " + e.size())
                   .collect(Collectors.toList()),
-              new File(productDirectory, "filelist.txt"));
+              new File(productDirectory, BUILD_DIGEST_FILE));
 
           product.save(new File(productDirectory, PRODUCT_PROPERTIES_FILE));
 
           monitor.notifyProductSynchronized(product);
-
-          build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
         }
+        build.save(new File(buildDirectory, BUILD_PROPERTIES_FILE));
       }
     }
 
     return true;
+  }
+
+  private SynchronizationPlan createSynchronizationPlan(File rootDirectory, Stack.Tag beingSynced) {
+
+    var commonFiles =
+        getFileCounts().entrySet().stream()
+            .filter(e -> e.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet());
+
+    var previouslyAvailable = listExistingFilesNotInCommon(beingSynced, rootDirectory);
+    Map<Distribution.FileData, Distribution.FileTarget> fullList = new LinkedHashMap<>();
+    Map<Distribution.FileData, Distribution.FileTarget> downloadList = new LinkedHashMap<>();
+    Map<Distribution.FileData, StoredFile> storedFiles = new LinkedHashMap<>();
+    Map<Product, List<ProductFile>> productFiles = new LinkedHashMap<>();
+
+    for (var release : releases) {
+      for (var build : release.getBuilds()) {
+        for (var product : build.getProducts()) {
+          var productDirectory = productDirectory(rootDirectory, release, build, product);
+          var productFileList = new ArrayList<ProductFile>();
+          productFiles.put(product, productFileList);
+          for (var file : product.getFiles()) {
+            var sourceUrl = Utils.URLs.newURL(product.getUrl() + "/" + file.name());
+            var productDestination = new File(productDirectory, file.name());
+            var common = commonFiles.contains(file);
+            var storageDestination =
+                common ? commonStorageFile(rootDirectory, file) : productDestination;
+            var storedFile = storedFiles.get(file);
+            if (storedFile == null) {
+              var reusableSource =
+                  reusableSource(file, storageDestination, productDestination, previouslyAvailable);
+              var action =
+                  fileMatches(storageDestination, file)
+                      ? StorageAction.NONE
+                      : reusableSource == null ? StorageAction.DOWNLOAD : StorageAction.COPY;
+              storedFile =
+                  new StoredFile(file, sourceUrl, storageDestination, action, reusableSource);
+              storedFiles.put(file, storedFile);
+              fullList.put(file, new FileTarget(sourceUrl, storageDestination));
+              if (action == StorageAction.DOWNLOAD) {
+                downloadList.put(file, new FileTarget(sourceUrl, storageDestination));
+              }
+            }
+            productFileList.add(
+                new ProductFile(
+                    product,
+                    file,
+                    productDestination,
+                    storedFile,
+                    common,
+                    common && !productFileLinksStorage(productDestination, storageDestination, file)
+                        ? ProductAction.LINK
+                        : ProductAction.NONE));
+          }
+        }
+      }
+    }
+
+    return new SynchronizationPlan(fullList, downloadList, productFiles);
+  }
+
+  private boolean synchronizeStoredFile(StoredFile storedFile, Synchronization monitor) {
+    if (storedFile.action() == StorageAction.NONE) {
+      return true;
+    }
+    ensureParentDirectory(storedFile.destination());
+    if (storedFile.destination().exists()) {
+      monitor.delete(storedFile.destination());
+    }
+    var ok =
+        switch (storedFile.action()) {
+          case COPY -> monitor.copy(storedFile.reusableSource(), storedFile.destination());
+          case DOWNLOAD ->
+              monitor.download(storedFile.sourceUrl(), storedFile.destination(), storedFile.file());
+          case NONE -> true;
+        };
+    return ok && fileMatches(storedFile.destination(), storedFile.file());
+  }
+
+  private boolean synchronizeProductFile(ProductFile productFile, Synchronization monitor) {
+    if (productFile.action() == ProductAction.NONE) {
+      return true;
+    }
+    ensureParentDirectory(productFile.destination());
+    if (productFile.destination().exists()) {
+      if (sameFile(productFile.destination(), productFile.storedFile().destination())) {
+        return true;
+      }
+      monitor.delete(productFile.destination());
+    }
+    if (!monitor.link(productFile.storedFile().destination(), productFile.destination())) {
+      return false;
+    }
+    return fileMatches(productFile.destination(), productFile.file())
+        && sameFile(productFile.destination(), productFile.storedFile().destination());
+  }
+
+  private void deleteSpuriousFiles(
+      File productDirectory, Product product, Distribution.Synchronization monitor) {
+    if (!productDirectory.isDirectory()) {
+      return;
+    }
+    var existingFiles = productDirectory.listFiles();
+    if (existingFiles == null) {
+      return;
+    }
+    var requiredFileNames =
+        product.getFiles().stream().map(Distribution.FileData::name).collect(Collectors.toSet());
+    for (var file : existingFiles) {
+      if (requiredFileNames.contains(file.getName()) || isProductMetadataFile(file)) {
+        continue;
+      }
+      monitor.delete(file);
+    }
+  }
+
+  private boolean isProductMetadataFile(File file) {
+    return file.getName().endsWith(".properties") || BUILD_DIGEST_FILE.equals(file.getName());
+  }
+
+  private File reusableSource(
+      FileData file,
+      File storageDestination,
+      File productDestination,
+      Map<FileData, FileTarget> previouslyAvailable) {
+    if (!samePath(storageDestination, productDestination) && fileMatches(productDestination, file)) {
+      return productDestination;
+    }
+    var previous = previouslyAvailable.get(file);
+    if (previous != null && fileMatches(previous.destinationFile(), file)) {
+      return previous.destinationFile();
+    }
+    var legacyCommon = legacyCommonStorageFile(storageDestination, file);
+    if (!samePath(storageDestination, legacyCommon) && fileMatches(legacyCommon, file)) {
+      return legacyCommon;
+    }
+    return null;
+  }
+
+  private File productDirectory(
+      File rootDirectory, Distribution.Release release, Distribution.Build build, Product product) {
+    return new File(
+        new File(
+            new File(new File(rootDirectory, this.name), this.version.toString()),
+            release.getName()),
+        build.getName() + File.separator + product.getName());
+  }
+
+  private File commonStorageFile(File rootDirectory, FileData file) {
+    return new File(
+        new File(new File(rootDirectory, this.name), "common"),
+        file.hash() + File.separator + file.name());
+  }
+
+  private File legacyCommonStorageFile(File storageDestination, FileData file) {
+    var hashDirectory = storageDestination.getParentFile();
+    if (hashDirectory == null) {
+      return storageDestination;
+    }
+    var commonDirectory = hashDirectory.getParentFile();
+    return commonDirectory == null ? storageDestination : new File(commonDirectory, file.name());
+  }
+
+  private boolean productFileLinksStorage(
+      File productDestination, File storageDestination, FileData file) {
+    return fileMatches(productDestination, file) && sameFile(productDestination, storageDestination);
+  }
+
+  private boolean fileMatches(File file, FileData fileData) {
+    if (file == null || !file.isFile() || file.length() != fileData.size()) {
+      return false;
+    }
+    var expectedHash = fileData.hash();
+    if (expectedHash == null || expectedHash.isBlank()) {
+      return true;
+    }
+    var actualHash = md5(file);
+    return actualHash != null && expectedHash.equalsIgnoreCase(actualHash);
+  }
+
+  private String md5(File file) {
+    try (var input = new BufferedInputStream(new FileInputStream(file))) {
+      var digest = MessageDigest.getInstance("MD5");
+      var buffer = new byte[8192];
+      int read;
+      while ((read = input.read(buffer)) >= 0) {
+        digest.update(buffer, 0, read);
+      }
+      var ret = new StringBuilder();
+      for (var b : digest.digest()) {
+        ret.append(String.format("%02x", b));
+      }
+      return ret.toString();
+    } catch (IOException | NoSuchAlgorithmException e) {
+      return null;
+    }
+  }
+
+  private boolean sameFile(File first, File second) {
+    if (first == null || second == null || !first.exists() || !second.exists()) {
+      return false;
+    }
+    try {
+      return Files.isSameFile(first.toPath(), second.toPath());
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  private boolean samePath(File first, File second) {
+    if (first == null || second == null) {
+      return false;
+    }
+    return first
+        .toPath()
+        .toAbsolutePath()
+        .normalize()
+        .equals(second.toPath().toAbsolutePath().normalize());
+  }
+
+  private void ensureParentDirectory(File file) {
+    var parent = file == null ? null : file.getParentFile();
+    if (parent != null) {
+      parent.mkdirs();
+    }
   }
 
   /**
@@ -454,16 +586,13 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       Stack.Tag beingSynced, File syncDirectory) {
 
     var ret = new HashMap<FileData, FileTarget>();
-    var commonDirectory =
-        new File(syncDirectory + File.separator + this.name + File.separator + "common");
-
     Map<Stack.Tag, DistributionImpl> localTags = new HashMap<>();
     distributions(this.name, Utils.URLs.newURL(syncDirectory))
         .forEach(d -> d.getTags().forEach(t -> localTags.put(t, d)));
 
     for (var tag : localTags.keySet()) {
 
-      if (tag == beingSynced || !tag.availableLocally()) {
+      if (tag.equals(beingSynced) || !tag.availableLocally()) {
         continue;
       }
 
@@ -473,8 +602,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           if (ret.containsKey(file)) {
             continue;
           }
-          var fileInCommon = new File(commonDirectory, file.name());
-          if (fileInCommon.exists()) {
+          var fileInCommon = commonStorageFile(syncDirectory, file);
+          var legacyFileInCommon = legacyCommonStorageFile(fileInCommon, file);
+          if (fileMatches(fileInCommon, file) || fileMatches(legacyFileInCommon, file)) {
             continue;
           }
           var existing = new File(product.getLocalPath(), file.name());
@@ -541,6 +671,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       for (var product : build.getProducts()) {
         if (product.getLocalPath() == null || !product.getLocalPath().exists()) {
           return false;
+        }
+        for (var file : product.getFiles()) {
+          if (!fileMatches(new File(product.getLocalPath(), file.name()), file)) {
+            return false;
+          }
         }
       }
       return true;
@@ -648,6 +783,10 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         public boolean download(URL url, File file, FileData fileData) {
           System.out.println("Downloading " + url + " -> " + file);
           try {
+            var parent = file.getParentFile();
+            if (parent != null) {
+              parent.mkdirs();
+            }
             FileUtils.copyURLToFile(url, file);
           } catch (IOException e) {
             return false;
@@ -658,6 +797,10 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         @Override
         public boolean link(File file, File destination) {
           System.out.println("Linking " + file + " -> " + destination);
+          var parent = destination.getParentFile();
+          if (parent != null) {
+            parent.mkdirs();
+          }
           return Utils.Files.symlink(file, destination);
         }
 
@@ -670,7 +813,14 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         @Override
         public boolean copy(File source, File destination) {
           try {
-            Files.copy(source.toPath(), destination.toPath());
+            var parent = destination.getParentFile();
+            if (parent != null) {
+              parent.mkdirs();
+            }
+            Files.copy(
+                source.toPath(),
+                destination.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             return true;
           } catch (IOException e) {
             return false;
