@@ -30,6 +30,7 @@ public enum ServiceClientCatalog {
   private final long localPollCycleSeconds = (Integer) Setting.POLLING_INTERVAL_LOCAL.defaultValue;
   private final long onlinePollCycleSeconds =
       (Integer) Setting.POLLING_INTERVAL_REMOTE.defaultValue;
+  private static final int REMOTE_FAILURES_BEFORE_OFFLINE = 3;
   private final ScheduledExecutorService pollingTasks = Executors.newScheduledThreadPool(10);
 
   /**
@@ -45,9 +46,10 @@ public enum ServiceClientCatalog {
     private final KlabService.Type type;
     private final AtomicReference<KlabService.ServiceStatus> status;
     private final boolean local;
+    private int consecutiveFailedPolls = 0;
     private ScheduledFuture<?> schedule;
 
-    private Set<BaseServiceClient> registeredClients = new HashSet<>();
+    private Set<BaseServiceClient> registeredClients = ConcurrentHashMap.newKeySet();
 
     public Utils.Http.Client getClient() {
       return client;
@@ -112,19 +114,27 @@ public enum ServiceClientCatalog {
     }
 
     void timedTasks() {
+      refreshStatus(true);
+    }
+
+    public KlabService.ServiceStatus refreshStatus() {
+      return refreshStatus(false);
+    }
+
+    synchronized KlabService.ServiceStatus refreshStatus(boolean notifyListeners) {
 
       //        if (settings != null && "off".equals(settings.get(Setting.POLLING, String.class))) {
       //            return;
       //        }
 
-      if (!client.isAlive()) {
-        this.status.set(KlabService.ServiceStatus.offline(type, serverId));
-        return;
-      }
-
       var statusBeforeChecking = status.get();
       try {
-        readStatus();
+        var refreshed = readStatus();
+        if (refreshed) {
+          consecutiveFailedPolls = 0;
+        } else if (local || ++consecutiveFailedPolls >= REMOTE_FAILURES_BEFORE_OFFLINE) {
+          this.status.set(KlabService.ServiceStatus.offline(type, serverId));
+        }
       } finally {
 
         boolean statusHasChanged =
@@ -140,27 +150,34 @@ public enum ServiceClientCatalog {
             serviceClients.put(serverId, this);
           }
 
-          for (var client : registeredClients) {
-            for (var listener : client.statusListeners) {
-              listener.accept(status.get(), statusHasChanged);
+          if (notifyListeners) {
+            for (var client : registeredClients) {
+              for (var listener : client.statusListeners) {
+                listener.accept(status.get(), statusHasChanged);
+              }
             }
           }
         }
       }
+
+      return status.get();
     }
 
-    void readStatus() {
+    boolean readStatus() {
       var status =
           client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
       if (status != null) {
         this.status.set(status);
+        return true;
       } else {
-        this.status.set(KlabService.ServiceStatus.offline(type, serverId));
+        return false;
       }
     }
 
     private void close() {
-      this.schedule.cancel(true);
+      if (this.schedule != null) {
+        this.schedule.cancel(true);
+      }
       serviceClients.remove(serverId);
     }
 

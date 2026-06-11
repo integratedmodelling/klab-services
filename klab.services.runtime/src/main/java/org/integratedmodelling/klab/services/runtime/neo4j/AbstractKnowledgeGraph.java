@@ -129,6 +129,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("childrenCount", cohort.getChildrenCount());
           ret.put("urn", cohort.getObservable().getUrn() + "_cohort");
           ret.put("id", cohort.getId());
+          ret.put("geometry", cohort.getGeometry().encode());
           // TODO
         }
         case ActuatorImpl actuator -> {

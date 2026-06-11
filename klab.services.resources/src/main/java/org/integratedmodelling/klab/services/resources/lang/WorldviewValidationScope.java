@@ -1,24 +1,28 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
+import org.integratedmodelling.languages.api.ObservableSyntax;
 import org.integratedmodelling.languages.api.SemanticSyntax;
 import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
-
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import org.integratedmodelling.languages.validation.ReasoningValidationScope;
 
 /** Worldview-aware semantic validation scope */
-public class WorldviewValidationScope extends BasicObservableValidationScope {
+public class WorldviewValidationScope extends BasicObservableValidationScope
+    implements ReasoningValidationScope {
 
   public WorldviewValidationScope() {}
 
   public WorldviewValidationScope(Worldview worldview) {
+    this();
     for (var ontology : worldview.getOntologies()) {
       for (var statement : ontology.getStatements()) {
         loadConcepts(statement, ontology.getUrn());
@@ -155,5 +159,15 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
       case ORDERING -> SemanticSyntax.Type.ORDERING;
       default -> SemanticSyntax.Type.NOTHING;
     };
+  }
+
+  @Override
+  public SemanticSyntax.Type validate(SemanticSyntax concept, List<ValidationMessage> messages) {
+    return concept.getType();
+  }
+
+  @Override
+  public List<ValidationMessage> validateObservable(ObservableSyntax observable) {
+    return List.of();
   }
 }

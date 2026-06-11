@@ -9,6 +9,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
@@ -53,6 +54,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
   private boolean onlineStatusNotified = false;
+  private final AtomicBoolean runtimeAuxiliaryCheckRunning = new AtomicBoolean(false);
   private Stack softwareStack;
   private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
   private Worldview worldview;
@@ -94,6 +96,9 @@ public class EngineImpl implements Engine, PropertyHolder {
     stopped.set(true);
     booted.set(false);
 
+    if (serviceMonitor != null) {
+      serviceMonitor.stopApplicationAuxiliaryServices();
+    }
     ClientScopeManager.INSTANCE.close();
 
     return true;
@@ -103,7 +108,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   public int stopLocalServices() {
     var ret = serviceMonitor.stopLocalServices();
     if (settings.get(Setting.EXIT_WHEN_STOPPING_SERVICES, Boolean.class)) {
-      serviceMonitor.stopAuxServices();
+      serviceMonitor.stopApplicationAuxiliaryServices();
       Executors.newScheduledThreadPool(1).schedule(() -> System.exit(0), 2, TimeUnit.SECONDS);
     }
     return ret;
@@ -127,15 +132,26 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public boolean startAuxiliaryServices(KlabService.Type... types) {
+    if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
+      return false;
+    }
     if (types != null) {
       for (KlabService.Type type : types) {
         if (type == KlabService.Type.LANGUAGE_SERVER) {
-          return serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser);
+          if (!serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser)) {
+            return false;
+          }
+        } else if (type == KlabService.Type.DATABASE || type == KlabService.Type.AMQP_BROKER) {
+          if (!serviceMonitor.startAuxiliaryService(
+              softwareStack, distributionTag, type, defaultUser)) {
+            return false;
+          }
         } else {
           throw new UnsupportedOperationException(
               "Auxiliary service type not yet supported: " + type);
         }
       }
+      return true;
     }
     return false;
   }
@@ -205,6 +221,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.distributionTag = Stack.Tag.LATEST_DEVELOP;
     }
 
+    ensureRuntimeAuxiliariesForLocalRuntime(null);
+
     // TODO explore how to best save and restore the chosen tag - we have just established a default
 
     // TODO now check what is available and default to any admissible defaults if present
@@ -213,6 +231,8 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   private void notifyLocalEngine(Engine.Status status) {
+
+    ensureRuntimeAuxiliariesForLocalRuntime(status);
 
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);
@@ -225,6 +245,33 @@ public class EngineImpl implements Engine, PropertyHolder {
       //  them too.
       notifyScopeToServices(defaultUser);
       onlineStatusNotified = true;
+    }
+  }
+
+  private void ensureRuntimeAuxiliariesForLocalRuntime(Engine.Status status) {
+    if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
+      return;
+    }
+    if (status != null) {
+      var runtimeProvision = status.getServicesProvision().get(KlabService.Type.RUNTIME);
+      if (runtimeProvision == null || !runtimeProvision.isLocal()) {
+        return;
+      }
+    }
+    if (runtimeAuxiliaryCheckRunning.compareAndSet(false, true)) {
+      Thread.ofVirtual()
+          .name("klab-runtime-auxiliary-ensure")
+          .start(
+              () -> {
+                try {
+                  serviceMonitor.ensureRuntimeAuxiliaryServices(
+                      softwareStack, distributionTag, defaultUser);
+                } catch (Throwable throwable) {
+                  Logging.INSTANCE.error(throwable);
+                } finally {
+                  runtimeAuxiliaryCheckRunning.set(false);
+                }
+              });
     }
   }
 

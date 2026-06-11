@@ -140,9 +140,25 @@ public abstract class BaseServiceClient implements KlabService {
     int refCount = monitor.release(this);
     if (refCount == 0 && monitor.isLocal()) {
       // FIXME needs the admin user scope
+      return requestShutdown();
+    }
+    return false;
+  }
+
+  /**
+   * Ask the service process to shut down without unregistering this client from status monitoring.
+   */
+  public boolean requestShutdown() {
+    if (monitor.isLocal()) {
+      // FIXME needs the admin user scope
       return client.withScope(serviceScope).put(ServicesAPI.ADMIN.SHUTDOWN, null, Boolean.class);
     }
     return false;
+  }
+
+  /** Poll status immediately and return the monitor's current status without unregistering. */
+  public ServiceStatus refreshStatus() {
+    return monitor.refreshStatus();
   }
 
   @Override
