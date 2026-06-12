@@ -57,6 +57,8 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.common.data.impl.ShardImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 
@@ -91,6 +93,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private void maintenanceThread() {}
 
+  private String getShapeLayerName() {
+    return getShapeLayerName(rootContextId);
+  }
+
+  private String getShapeLayerName(String contextId) {
+    return "shape_" + Utils.Paths.getLast(contextId, '.');
+  }
+
   /**
    * Predefined Cypher queries. FIXME some should be substituted by programmatic queries, leaving
    * only graph initialization
@@ -101,7 +111,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
     String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
     String CREATE_WITH_SHAPE =
-        "CREATE (n:{type}) SET n = $properties WITH n CALL spatial.addNode('shape_{scopeId}',n) YIELD node RETURN node";
+        "CREATE (n:{type}) SET n = $properties WITH n CALL spatial.addNode($layerName, n) YIELD node RETURN node";
     String UPDATE_PROPERTIES = "MATCH (n:{type} {id: $id}) SET n += $properties RETURN n";
     String UPDATE_PROPERTIES_GENERIC = "MATCH (n {id: $id}) SET n += $properties RETURN n";
     String[] INITIALIZATION_QUERIES =
@@ -136,18 +146,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   class TransactionImpl implements Transaction {
 
     private final org.neo4j.driver.Transaction transaction;
+    private final org.neo4j.driver.Session session;
     private final Set<RuntimeAsset> stored = new HashSet<>();
     private final Map<Long, RuntimeAsset> idCache = new HashMap<>();
     private final List<Pair<Long, Long>> links = new ArrayList<>();
     private boolean closed;
+    private boolean sessionClosed;
     private final ContextScope contextScope;
 
     TransactionImpl(ContextScope contextScope) {
       this.contextScope = contextScope;
+      this.session = driver.session(); // new session should make this thread safe
       this.transaction =
-          driver
-              .session() // new session should make this thread safe
-              .beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build());
+          this.session.beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build());
     }
 
     @Override
@@ -200,55 +211,66 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       try {
         KnowledgeGraphNeo4j.this.link(
             transaction, source, destination, relationship, userScope, additionalProperties);
-        if (relationship == GraphModel.Relationship.HAS_CHILD) {
+        if (relationship == GraphModel.Relationship.HAS_CHILD
+            || relationship == GraphModel.Relationship.HAS_MEMBER) {
           links.add(Pair.of(source.getId(), destination.getId()));
         }
       } catch (Exception e) {
         closed = true;
+        Logging.INSTANCE.error(e);
       }
     }
 
     @Override
     public void fail(Exception e) {
       this.closed = true;
-      if (transaction.isOpen()) {
-        transaction.rollback();
-        stored.clear();
-      }
+      rollbackOpenTransaction();
+      clearTransactionState();
+      closeSession();
     }
 
     @Override
     public void close() throws IOException {
 
       if (this.closed) {
+        rollbackOpenTransaction();
+        clearTransactionState();
+        closeSession();
         return;
       }
       this.closed = true;
 
-      // create parent IDs
-      for (var link : links) {
-        var asset = idCache.get(link.getSecond());
-        if (asset != null) {
-          var props = Map.of("parentId", link.getFirst());
-          // update parent ID in the asset that gets out of the transaction
-          setParentId(asset, link.getFirst());
-          query(
-              transaction,
-              Queries.UPDATE_PROPERTIES_GENERIC,
-              Map.of("id", asset.getId(), "properties", props),
-              userScope);
+      try {
+        // create parent IDs
+        for (var link : links) {
+          var asset = idCache.get(link.getSecond());
+          if (asset != null) {
+            var props = Map.of("parentId", link.getFirst());
+            // update parent ID in the asset that gets out of the transaction
+            setParentId(asset, link.getFirst());
+            query(
+                transaction,
+                Queries.UPDATE_PROPERTIES_GENERIC,
+                Map.of("id", asset.getId(), "properties", props),
+                userScope);
+          }
         }
+
+        // update time of last successful operation
+        var props = Map.of("lastUpdate", System.currentTimeMillis());
+        query(
+            transaction,
+            Queries.UPDATE_PROPERTIES.replace("{type}", "Context"),
+            Map.of("id", rootContextId, "properties", props),
+            userScope);
+
+        commitTransaction();
+      } catch (RuntimeException e) {
+        rollbackOpenTransaction();
+        throw e;
+      } finally {
+        closeSession();
       }
-
-      // update time of last successful operation
-      var props = Map.of("lastUpdate", System.currentTimeMillis());
-      query(
-          transaction,
-          Queries.UPDATE_PROPERTIES.replace("{type}", "Context"),
-          Map.of("id", rootContextId, "properties", props),
-          userScope);
-
-      commitTransaction();
     }
 
     private void setParentId(RuntimeAsset asset, Long first) {
@@ -256,41 +278,41 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         case ObservationImpl observation -> observation.setParentId(first);
         case PlanImpl plan -> plan.setParentId(first);
         case ActuatorImpl actuator -> actuator.setParentId(first);
+        case CohortImpl cohort -> cohort.setParentId(first);
         default -> {}
       }
     }
 
     public void commitTransaction() {
 
-      int maxRetries = 3;
-      int retryCount = 0;
-
       if (!transaction.isOpen()) {
         Logging.INSTANCE.warn("Transaction is not open, skipping commit. Shouldn't happen");
         return;
       }
-      while (retryCount < maxRetries) {
-        try {
-          transaction.commit();
-          stored.forEach(asset -> assetCache.put(asset.getId(), asset));
-          stored.clear();
-          links.clear();
-          idCache.clear();
-          return; // Success
-        } catch (Throwable e) {
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            throw e; // Re-throw after max retries
-          }
+      try {
+        transaction.commit();
+        stored.forEach(asset -> assetCache.put(asset.getId(), asset));
+      } finally {
+        clearTransactionState();
+      }
+    }
 
-          // Wait before retry with exponential backoff
-          try {
-            Thread.sleep(100 * (1 << retryCount));
-          } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Transaction interrupted", ie);
-          }
-        }
+    private void rollbackOpenTransaction() {
+      if (!sessionClosed && transaction.isOpen()) {
+        transaction.rollback();
+      }
+    }
+
+    private void clearTransactionState() {
+      stored.clear();
+      links.clear();
+      idCache.clear();
+    }
+
+    private void closeSession() {
+      if (!sessionClosed) {
+        session.close();
+        sessionClosed = true;
       }
     }
   }
@@ -390,7 +412,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
 
       // create spatial layers only if they don't already exist
-      String layerName = "shape_" + Utils.Paths.getLast(configuration.getId(), '.');
+      String layerName = getShapeLayerName(configuration.getId());
       var layerCheck =
           query(
               "CALL spatial.layers() YIELD name WHERE name = $layerName RETURN count(name) > 0 AS exists",
@@ -402,8 +424,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               && layerCheck.records().getFirst().get("exists").asBoolean(false);
       if (!layerExists) {
         query(
-            "CALL spatial.addLayer('$layerName', 'WKB', 'shape')".replace("$layerName", layerName),
-            Map.of(),
+            "CALL spatial.addLayer($layerName, 'WKB', 'shape')",
+            Map.of("layerName", layerName),
             scope);
       }
     }
@@ -432,8 +454,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public void deleteContext() {
     query(
-        "CALL spatial.removeLayer('shape_" + Utils.Paths.getLast(rootContextId, '.') + "')",
-        Map.of(),
+        "CALL spatial.removeLayer($layerName)",
+        Map.of("layerName", getShapeLayerName(rootContextId)),
         userScope);
     query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), userScope);
   }
@@ -441,10 +463,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
     query(
-        "CALL spatial.removeLayer('shape_"
-            + Utils.Paths.getLast(contextScope.getConfiguration().getId(), '.')
-            + "')",
-        Map.of(),
+        "CALL spatial.removeLayer($layerName)",
+        Map.of("layerName", getShapeLayerName(contextScope.getConfiguration().getId())),
         userScope);
     query(
         Queries.REMOVE_CONTEXT,
@@ -583,7 +603,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("id", node.get("id").asLong()),
                 scope);
 
-        if (gResult == null || !gResult.records().isEmpty()) {
+        if (gResult != null && !gResult.records().isEmpty()) {
           instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
         }
 
@@ -656,7 +676,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("urn", node.get("urn").asString()),
                 scope);
 
-        if (gResult == null || !gResult.records().isEmpty()) {
+        if (gResult != null && !gResult.records().isEmpty()) {
           instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
         }
 
@@ -682,11 +702,122 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (observation.getGeometry() != null) {
         return observation.getGeometry();
       }
-      // TODO
+      var result =
+          query(
+              "MATCH (o:Observation {id: $id})-[:HAS_GEOMETRY]->(g:Geometry) RETURN g",
+              Map.of("id", observation.getId()),
+              scope);
+      if (result != null && !result.records().isEmpty()) {
+        var geometries = adapt(result, Geometry.class, scope);
+        return geometries.isEmpty() ? null : geometries.getFirst();
+      }
     } else if (asset instanceof Cohort) {
-      // TODO
+      return getCohortGeometry(asset.getId(), scope);
     }
     return null;
+  }
+
+  private Geometry getCohortGeometry(long cohortId, ContextScope scope) {
+    var result =
+        query(
+            "MATCH (c:Cohort {id: $id}) RETURN c.geometry AS geometry",
+            Map.of("id", cohortId),
+            scope);
+    if (result == null || result.records().isEmpty()) {
+      return null;
+    }
+    var value = result.records().getFirst().get("geometry");
+    return value.isNull() ? null : GeometryRepository.INSTANCE.get(value.asString(), Geometry.class);
+  }
+
+  /**
+   * Return the convex hull of all indexed shapes for observations linked to the cohort by
+   * HAS_MEMBER.
+   *
+   * <p>The spatial index is used to enumerate shape-bearing observation nodes from the current
+   * context layer, then the graph pattern restricts the result to members of the requested cohort.
+   *
+   * @param cohort the cohort whose member observations are used
+   * @param scope the current context scope
+   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member shape
+   */
+  public org.locationtech.jts.geom.Geometry getCohortMembersConvexHull(
+      Cohort cohort, ContextScope scope) {
+    return cohort == null ? null : getCohortMembersConvexHull(cohort.getId(), scope);
+  }
+
+  /**
+   * Return the convex hull of all indexed shapes for observations linked to the cohort by
+   * HAS_MEMBER.
+   *
+   * @param cohortId the stored cohort node id
+   * @param scope the current context scope
+   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member shape
+   */
+  public org.locationtech.jts.geom.Geometry getCohortMembersConvexHull(
+      long cohortId, ContextScope scope) {
+    if (cohortId == Observation.UNASSIGNED_ID) {
+      return null;
+    }
+
+    var result =
+        query(
+            """
+            CALL spatial.bbox($layerName, $lowerLeft, $upperRight) YIELD node
+            MATCH (:Cohort {id: $cohortId})-[:HAS_MEMBER]->(node:Observation)
+            WHERE node.shape IS NOT NULL
+            RETURN node.shape AS shape
+            """,
+            Map.of(
+                "layerName",
+                getShapeLayerName(),
+                "cohortId",
+                cohortId,
+                "lowerLeft",
+                Map.of("longitude", -180.0, "latitude", -90.0),
+                "upperRight",
+                Map.of("longitude", 180.0, "latitude", 90.0)),
+            scope);
+
+    if (result == null || result.records().isEmpty()) {
+      return null;
+    }
+
+    var reader = new WKBReader();
+    List<org.locationtech.jts.geom.Geometry> shapes = new ArrayList<>();
+    for (var record : result.records()) {
+      var shape = readShape(reader, record.get("shape"), scope);
+      if (shape != null && !shape.isEmpty()) {
+        shapes.add(shape);
+      }
+    }
+
+    if (shapes.isEmpty()) {
+      return null;
+    }
+
+    var geometryFactory = shapes.getFirst().getFactory();
+    var collection =
+        geometryFactory.createGeometryCollection(
+            shapes.toArray(new org.locationtech.jts.geom.Geometry[0]));
+    return collection.convexHull();
+  }
+
+  private org.locationtech.jts.geom.Geometry readShape(
+      WKBReader reader, Value shape, Scope scope) {
+    if (shape == null || shape.isNull()) {
+      return null;
+    }
+    try {
+      return reader.read(shape.asByteArray());
+    } catch (ParseException | IllegalArgumentException e) {
+      if (scope != null) {
+        scope.error("Cannot parse indexed observation shape", e);
+      } else {
+        Logging.INSTANCE.error(e);
+      }
+      return null;
+    }
   }
 
   @Override
@@ -860,6 +991,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     boolean storeSpatialData =
         asset instanceof Observation observation
             && observation.getObservable().is(SemanticType.COUNTABLE)
+            && observation.getGeometry() != null
             && observation.getGeometry().getDimensions().stream()
                 .anyMatch(d -> d.getType() == Geometry.Dimension.Type.SPACE);
 
@@ -880,10 +1012,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         storeSpatialData
             ? Queries.CREATE_WITH_SHAPE
                 .replace("{type}", type)
-                .replace("{scopeId}", Utils.Paths.getLast(rootContextId, '.'))
             : Queries.CREATE_WITH_PROPERTIES.replace("{type}", type);
 
-    var result = query(transaction, query, Map.of("properties", props), scope);
+    var parameters =
+        storeSpatialData
+            ? Map.<String, Object>of("properties", props, "layerName", getShapeLayerName())
+            : Map.<String, Object>of("properties", props);
+    var result = query(transaction, query, parameters, scope);
     if (result != null && result.hasNext()) {
       var record = result.next();
       var neo4jNode = record.get(0).asNode();
@@ -938,7 +1073,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     // This guarantees processed, stable geometry representation with WBT
     var encoded = GeometryRepository.INSTANCE.scale(geometry).encode();
-    var relationship = asset instanceof Actuator ? "HAS_COVERAGE" : "HAS_GEOMETRY";
+    var relationship = "HAS_GEOMETRY";
 
     // Must be called after update() and this may happen more than once, so we must check to avoid
     // multiple relationships.
@@ -999,16 +1134,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             ? query(
                 ("MATCH (n:{assetLabel}), (g:Geometry) WHERE n.id = $assetId AND g.definition = $geometryKey"
                         + " CREATE (n)" // b
-                        + "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r")
-                    .replace("{assetLabel}", getLabel(asset)),
+                        + "-[r:{relationship}]->(g) SET r = $properties RETURN r")
+                    .replace("{assetLabel}", getLabel(asset))
+                    .replace("{relationship}", relationship),
                 Map.of("assetId", getId(asset), "geometryKey", encoded, "properties", properties),
                 userScope)
             : query(
                 transaction,
                 ("MATCH (n:{assetLabel}), (g:Geometry) WHERE n.id = $assetId AND g.definition = $geometryKey"
                         + " CREATE (n)"
-                        + "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r")
-                    .replace("{assetLabel}", getLabel(asset)),
+                        + "-[r:{relationship}]->(g) SET r = $properties RETURN r")
+                    .replace("{assetLabel}", getLabel(asset))
+                    .replace("{relationship}", relationship),
                 Map.of("assetId", getId(asset), "geometryKey", encoded, "properties", properties),
                 userScope);
   }

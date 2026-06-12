@@ -262,17 +262,27 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void checkCohortGeometry(Cohort cohort, Geometry observedGeometry) {
-      Scale newGeometry = null;
-      if (cohort.getGeometry().isUniversal()) {
-        newGeometry = GeometryRepository.INSTANCE.scale(observedGeometry);
-      } else {
-        var oldGeometry = GeometryRepository.INSTANCE.scale(cohort.getGeometry());
-        newGeometry =
-            GeometryRepository.INSTANCE.outerUnion(
-                GeometryRepository.INSTANCE.scale(observedGeometry), oldGeometry);
+      if (cohort == null || observedGeometry == null) {
+        return;
       }
 
-      this.cohortGeometries.put(cohort.getObservable().getSemantics(), newGeometry);
+      var cohortObservable = cohort.getObservable().getSemantics();
+      var currentGeometry = cohortGeometries.get(cohortObservable);
+      Scale newGeometry = null;
+      if (currentGeometry == null && !cohort.getGeometry().isUniversal()) {
+        currentGeometry = GeometryRepository.INSTANCE.scale(cohort.getGeometry());
+      }
+
+      if (currentGeometry == null || currentGeometry.isUniversal()) {
+        newGeometry = GeometryRepository.INSTANCE.scale(observedGeometry);
+      } else {
+        newGeometry =
+            GeometryRepository.INSTANCE.outerUnion(
+                GeometryRepository.INSTANCE.scale(observedGeometry), currentGeometry);
+      }
+
+      this.cohortGeometries.put(cohortObservable, newGeometry);
+      applyCohortGeometry(cohort, newGeometry);
     }
 
     /**
@@ -482,8 +492,25 @@ public class DigitalTwinImpl implements DigitalTwin {
      * modified cohort in the modified array.
      */
     private void registerCohortUpdates() {
-      for (var cohortObservable : cohortGeometries.keySet()) {
-        var geometry = cohortGeometries.get(cohortObservable);
+      synchronized (graph) {
+        for (var cohortObservable : cohortGeometries.keySet()) {
+          var geometry = cohortGeometries.get(cohortObservable);
+          for (var asset : graph.vertexSet()) {
+            if (asset instanceof Cohort cohort
+                && cohort.getObservable().getSemantics().equals(cohortObservable)) {
+              applyCohortGeometry(cohort, geometry);
+            }
+          }
+        }
+      }
+    }
+
+    private void applyCohortGeometry(Cohort cohort, Scale geometry) {
+      if (cohort instanceof CohortImpl cohortImpl && geometry != null) {
+        cohortImpl.setGeometry(GeometryRepository.INSTANCE.geometry(geometry));
+        synchronized (graph) {
+          modified.add(cohortImpl);
+        }
       }
     }
 
