@@ -156,8 +156,12 @@ public enum Authentication {
         request.setEmail(certificate.getProperty(KlabCertificate.KEY_EMAIL));
 
         authentication =
-            client.post(
-                ServicesAPI.HUB.AUTHENTICATE_ENGINE, request, EngineAuthenticationResponse.class);
+            client
+                .withTimeout(2)
+                .post(
+                    ServicesAPI.HUB.AUTHENTICATE_ENGINE,
+                    request,
+                    EngineAuthenticationResponse.class);
 
       } catch (Throwable e) {
         Logging.INSTANCE.error(
