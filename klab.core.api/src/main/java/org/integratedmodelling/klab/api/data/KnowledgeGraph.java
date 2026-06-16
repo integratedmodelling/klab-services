@@ -267,16 +267,6 @@ public interface KnowledgeGraph {
   <T extends RuntimeAsset> Query<T> query(Class<T> resultClass, Scope scope);
 
   /**
-   * Retrieve the geometry correspondent to the asset with the passed ID, if it exists.
-   *
-   * @param asset an observation or cohort. If cohort, the geometry is the merged geometry of all
-   *     observations in the cohort.
-   * @param scope the scope for the query
-   * @return a geometry, or null if the asset has no geometry
-   */
-  Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope);
-
-  /**
    * Execute a previously built query. Equivalent to calling run() on the query itself.
    *
    * @param knowledgeGraphQuery

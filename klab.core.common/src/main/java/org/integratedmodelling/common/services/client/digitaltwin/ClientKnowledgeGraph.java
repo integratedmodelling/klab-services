@@ -319,12 +319,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope) {
-    // TODO
-    return null;
-  }
-
-  @Override
   public <T extends RuntimeAsset> List<T> query(
       Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope) {
     return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope);

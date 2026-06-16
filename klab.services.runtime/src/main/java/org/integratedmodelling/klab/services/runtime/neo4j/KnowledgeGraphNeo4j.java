@@ -38,7 +38,9 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
@@ -158,7 +160,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.contextScope = contextScope;
       this.session = driver.session(); // new session should make this thread safe
       this.transaction =
-          this.session.beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build());
+          this.session.beginTransaction(
+              TransactionConfig.builder().withTimeout(Duration.ZERO).build());
     }
 
     @Override
@@ -696,8 +699,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return this.klab;
   }
 
-  @Override
   public Geometry getAssetGeometry(RuntimeAsset asset, ContextScope scope) {
+
     if (asset instanceof Observation observation) {
       if (observation.getGeometry() != null) {
         return observation.getGeometry();
@@ -709,25 +712,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               scope);
       if (result != null && !result.records().isEmpty()) {
         var geometries = adapt(result, Geometry.class, scope);
-        return geometries.isEmpty() ? null : geometries.getFirst();
+        return geometries.isEmpty() ? Geometry.EMPTY : geometries.getFirst();
       }
-    } else if (asset instanceof Cohort) {
-      return getCohortGeometry(asset.getId(), scope);
+    } else if (asset instanceof Cohort cohort) {
+      var space = getCohortSpatialExtent(asset.getId(), scope);
+      // TODO time! Should be in cohort's start/end
+      return space == null ? Geometry.EMPTY : Scale.create(space).as(Geometry.class);
     }
     return null;
   }
 
-  private Geometry getCohortGeometry(long cohortId, ContextScope scope) {
-    var result =
-        query(
-            "MATCH (c:Cohort {id: $id}) RETURN c.geometry AS geometry",
-            Map.of("id", cohortId),
-            scope);
-    if (result == null || result.records().isEmpty()) {
-      return null;
+  private Space getCohortSpatialExtent(long cohortId, ContextScope scope) {
+    var convexHull = getCohortMembersConvexHull(cohortId, scope);
+    if (convexHull != null) {
+      return ShapeImpl.create(convexHull, Projection.getLatLon());
     }
-    var value = result.records().getFirst().get("geometry");
-    return value.isNull() ? null : GeometryRepository.INSTANCE.get(value.asString(), Geometry.class);
+    return null;
   }
 
   /**
@@ -739,7 +739,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    *
    * @param cohort the cohort whose member observations are used
    * @param scope the current context scope
-   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member shape
+   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member
+   *     shape
    */
   public org.locationtech.jts.geom.Geometry getCohortMembersConvexHull(
       Cohort cohort, ContextScope scope) {
@@ -752,7 +753,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    *
    * @param cohortId the stored cohort node id
    * @param scope the current context scope
-   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member shape
+   * @return a JTS geometry in lat/lon coordinates, or null if the cohort has no indexed member
+   *     shape
    */
   public org.locationtech.jts.geom.Geometry getCohortMembersConvexHull(
       long cohortId, ContextScope scope) {
@@ -803,8 +805,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return collection.convexHull();
   }
 
-  private org.locationtech.jts.geom.Geometry readShape(
-      WKBReader reader, Value shape, Scope scope) {
+  private org.locationtech.jts.geom.Geometry readShape(WKBReader reader, Value shape, Scope scope) {
     if (shape == null || shape.isNull()) {
       return null;
     }
@@ -901,7 +902,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     if (key instanceof Long id) {
       try {
-        return (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
+        var ret = (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
+        if (Cohort.class.isAssignableFrom(assetClass)
+            && ret instanceof CohortImpl cohort
+            && scope instanceof ContextScope contextScope) {
+          // the cohort geometry is recomputed at each query
+          var cohortGeometry = getAssetGeometry(ret, contextScope);
+          if (!cohortGeometry.isEmpty()) {
+            cohort.setGeometry(cohortGeometry);
+          }
+        }
       } catch (Throwable e) {
         // fall back to other strategy
         Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
@@ -1010,8 +1020,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var query =
         storeSpatialData
-            ? Queries.CREATE_WITH_SHAPE
-                .replace("{type}", type)
+            ? Queries.CREATE_WITH_SHAPE.replace("{type}", type)
             : Queries.CREATE_WITH_PROPERTIES.replace("{type}", type);
 
     var parameters =
