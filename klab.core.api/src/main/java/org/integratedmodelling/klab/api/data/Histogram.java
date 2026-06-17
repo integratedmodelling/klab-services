@@ -45,7 +45,7 @@ public interface Histogram extends Serializable {
 
   List<Bin> getBins();
 
-  public static Histogram empty() {
+  static Histogram empty() {
     return new HistogramImpl();
   }
 }
