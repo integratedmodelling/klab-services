@@ -5,10 +5,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -134,14 +136,15 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
     this.gain = gain;
     List<Extent<?>> adopted = new ArrayList<>();
     for (Pair<Extent<?>, Double> cov : newcoverages) {
-      coverages.add(Pair.of(cov.getFirst(), cov.getSecond()));
+      double dimensionalCoverage = clampCoverage(cov.getSecond());
+      coverages.add(Pair.of(cov.getFirst(), dimensionalCoverage));
       this.coverage =
-          Double.isNaN(this.coverage) ? cov.getSecond() : (this.coverage * cov.getSecond());
+          Double.isNaN(this.coverage)
+              ? dimensionalCoverage
+              : (this.coverage * dimensionalCoverage);
       if (adopt) {
         if (cov.getFirst() != null) {
           adopted.add(cov.getFirst());
-        } else if (cov.getFirst() != null && this.extent(cov.getFirst().getType()) != null) {
-          adopted.add(this.extent(cov.getFirst().getType()));
         }
         this.adoptExtents(adopted);
       }
@@ -149,6 +152,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
     if (Double.isNaN(this.coverage)) {
       this.coverage = 0;
     }
+    this.coverage = clampCoverage(this.coverage);
     assert (this.coverage >= 0 && this.coverage <= 1);
   }
 
@@ -188,9 +192,9 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
   @Override
   public double getCoverage(Dimension.Type dimension) {
-    for (Pair<Extent<?>, Double> cov : coverages) {
-      if (cov.getFirst().getType() == dimension) {
-        return cov.getSecond();
+    for (int i = 0; i < coverages.size(); i++) {
+      if (coverageEntryType(this, i) == dimension) {
+        return coverages.get(i).getSecond();
       }
     }
     throw new IllegalArgumentException("this coverage does not contain the dimension " + dimension);
@@ -199,7 +203,13 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
   @Override
   public Coverage merge(Geometry other, LogicalConnector how) {
 
+    if (other == null) {
+      return nullMerge(how);
+    }
     var scale = GeometryRepository.INSTANCE.scale(other);
+    if (scale == null) {
+      return nullMerge(how);
+    }
 
     /*
      * trivial cases first
@@ -220,45 +230,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
           : ((CoverageImpl) other).withGain(1.0);
     }
 
-    // // no need for suffering if either is 0 and we're intersecting
-    // if (how == LogicalConnector.INTERSECTION
-    // && ((other instanceof Coverage && Utils.Numbers.equal(((Coverage) other).getCoverage(),
-    // 0))
-    // || Utils.Numbers.equal(this.getCoverage(), 0))) {
-    // return empty(this.asScale());
-    // }
-
-    Scale coverage = (Scale) other;
-    List<Pair<Extent<?>, Double>> newcoverages = new ArrayList<>();
-
-    // flag gain for extents to recompute it; save previous and put it back after
-    double pgain = this.gain;
-    this.gain = Double.NaN;
-    for (int i = 0; i < coverage.getExtentCount(); i++) {
-
-      Dimension.Type type = coverage.getExtents().get(i).getType();
-
-      Extent<?> ex = this.extent(type);
-      if (ex == null) {
-        newcoverages.add(Pair.of(getCurrentExtent(coverage, type), 1.0));
-      } else {
-        // FIXME must use the MERGED extent - which are not kept. The extents array
-        // contains the full area to cover.
-        newcoverages.add(
-            mergeExtent(
-                coverage.getExtents().get(i).getType(), getCurrentExtent(coverage, type), how));
-      }
-    }
-
-    double gain = this.gain;
-    this.gain = pgain;
-
-    // if nothing happened, reset gain to 0
-    if (Double.isNaN(gain)) {
-      gain = 0;
-    }
-
-    return new CoverageImpl(this, newcoverages, gain, true);
+    return mergeScale(scale, how, true);
   }
 
   // @Override
@@ -276,24 +248,34 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
     }
 
     Scale coverage = (Scale) other;
+    return mergeScale(coverage, how, false);
+  }
+
+  private Coverage mergeScale(Scale coverage, LogicalConnector how, boolean adopt) {
+    if (coverage == null) {
+      return nullMerge(how);
+    }
     List<Pair<Extent<?>, Double>> newcoverages = new ArrayList<>();
 
     // flag gain for extents to recompute it; save previous and put it back after
     double pgain = this.gain;
     this.gain = Double.NaN;
-    for (int i = 0; i < coverage.getExtentCount(); i++) {
+    for (Extent<?> extent : extents) {
 
-      Dimension.Type type = coverage.getExtents().get(i).getType();
+      Dimension.Type type = extent.getType();
+      Pair<Extent<?>, Double> currentCoverage = coverageFor(type);
 
-      Extent<?> ex = this.extent(type);
-      if (ex == null) {
-        newcoverages.add(Pair.of(getCurrentExtent(coverage, type), 1.0));
-      } else {
-        // FIXME must use the MERGED extent - which are not kept. The extents array
-        // contains the full area to cover.
+      if (coverage.extent(type) == null) {
+        newcoverages.add(currentCoverage);
+        continue;
+      }
+
+      Extent<?> currentExtent = getCurrentExtent(coverage, type);
+      if (currentExtent == null) {
         newcoverages.add(
-            mergeExtent(
-                coverage.getExtents().get(i).getType(), getCurrentExtent(coverage, type), how));
+            how == LogicalConnector.INTERSECTION ? Pair.of(null, 0.0) : currentCoverage);
+      } else {
+        newcoverages.add(mergeExtent(type, currentExtent, how));
       }
     }
 
@@ -305,21 +287,29 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
       gain = 0;
     }
 
-    return new CoverageImpl(this, newcoverages, gain, false);
+    return new CoverageImpl(this, newcoverages, gain, adopt);
+  }
+
+  private Coverage nullMerge(LogicalConnector how) {
+    return how == LogicalConnector.INTERSECTION
+        ? ((CoverageImpl) empty(this.asScale())).withGain(isEmpty() ? 0 : -1)
+        : withGain(0);
   }
 
   /*
    * Get the currently merged extent in the passed coverage
    */
   private static Extent<?> getCurrentExtent(Scale coverage, Dimension.Type type) {
-    if (coverage instanceof CoverageImpl) {
-      for (Pair<Extent<?>, Double> cov : ((CoverageImpl) coverage).coverages) {
-        if (cov.getFirst() != null && cov.getFirst().getType() == type) {
-          return cov.getFirst().collapsed();
+    if (coverage instanceof CoverageImpl coverageImpl) {
+      for (int i = 0; i < coverageImpl.coverages.size(); i++) {
+        if (coverageEntryType(coverageImpl, i) == type) {
+          Extent<?> current = coverageImpl.coverages.get(i).getFirst();
+          return current == null ? null : current.collapsed();
         }
       }
     }
-    return coverage.extent(type).collapsed();
+    Extent<?> extent = coverage.extent(type);
+    return extent == null ? null : extent.collapsed();
   }
 
   @Override
@@ -381,65 +371,58 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
       return Pair.of(orig, 1.0);
     }
 
-    Pair<Extent<?>, Double> coverag = null;
-    int i = 0;
-    for (Extent<?> oc : extents) {
-      if (oc.getType() == type) {
-        coverag = coverages.get(i);
-        break;
-      }
-      i++;
-    }
+    Pair<Extent<?>, Double> coverag = coverageFor(type);
 
     Extent<?> current = coverag.getFirst();
     double ccover = coverag.getSecond();
-    double newcover = 0;
-    double gain = 0;
     double previouscoverage = current == null ? 0 : ccover;
 
     if (how == LogicalConnector.UNION) {
 
-      double origcover = orig.getDimensionSize();
+      double origcover = dimensionSize(orig);
 
       // guarantee that we don't union with anything larger. Use outer extent.
-      Extent<?> x = orig.equals(other) ? other : orig.merge(other, LogicalConnector.INTERSECTION);
+      Extent<?> x =
+          orig.equals(other)
+              ? other
+              : mergeExtentUsingRepository(orig, other, LogicalConnector.INTERSECTION);
+      if (x == null || x.isEmpty()) {
+        return Pair.of(current, ccover);
+      }
 
-      Extent<?> union = null;
+      Extent<?> mergedExtent = x;
+      double newcover;
       if (current == null) {
-        newcover = x.getDimensionSize();
+        newcover = dimensionSize(x);
       } else {
-        union = x.equals(current) ? x : x.merge(current, LogicalConnector.UNION);
-        newcover = union.getDimensionSize();
+        mergedExtent =
+            x.equals(current) ? x : mergeExtentUsingRepository(x, current, LogicalConnector.UNION);
+        if (mergedExtent == null) {
+          return Pair.of(current, ccover);
+        }
+        newcover = dimensionSize(mergedExtent);
       }
 
-      // happens with non-dimensional extents
-      if (!x.isEmpty() && newcover == 0 && origcover == 0) {
-        newcover = origcover = 1;
-      }
-
-      boolean proceed = ((newcover / origcover) - ccover) > minModelCoverage;
+      double proportionalCoverage = coverageRatio(newcover, origcover);
+      boolean proceed = (proportionalCoverage - ccover) > minModelCoverage;
       if (proceed) {
-        gain = (newcover / origcover) - previouscoverage;
+        double gain = proportionalCoverage - previouscoverage;
         this.gain = Double.isNaN(this.gain) ? gain : this.gain * gain;
-        return Pair.of(newcover == 0 ? null : (current == null ? x : union), newcover / origcover);
+        return Pair.of(proportionalCoverage == 0 ? null : mergedExtent, proportionalCoverage);
       }
 
     } else if (how == LogicalConnector.INTERSECTION) {
 
       // if intersecting nothing with X, leave it at nothing
       if (current != null) {
-        double origcover = orig.getDimensionSize();
-        Extent<?> x = current.merge(other, LogicalConnector.INTERSECTION);
-        newcover = x.getDimensionSize();
+        double origcover = dimensionSize(orig);
+        Extent<?> x = mergeExtentUsingRepository(current, other, LogicalConnector.INTERSECTION);
+        double proportionalCoverage =
+            x == null || x.isEmpty() ? 0 : coverageRatio(dimensionSize(x), origcover);
 
-        // happens with non-dimensional extents
-        if (!x.isEmpty() && newcover == 0 && origcover == 0) {
-          newcover = origcover = 1;
-        }
-
-        gain = (newcover / origcover) - previouscoverage;
+        double gain = proportionalCoverage - previouscoverage;
         this.gain = Double.isNaN(this.gain) ? gain : this.gain * gain;
-        return Pair.of(newcover == 0 ? null : x, newcover / origcover);
+        return Pair.of(proportionalCoverage == 0 ? null : x, proportionalCoverage);
       }
 
     } else {
@@ -449,6 +432,87 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
     // return the original, let gain untouched
     return Pair.of(coverag.getFirst(), coverag.getSecond());
+  }
+
+  private Pair<Extent<?>, Double> coverageFor(Dimension.Type type) {
+    for (int i = 0; i < coverages.size(); i++) {
+      if (coverageEntryType(this, i) == type) {
+        return coverages.get(i);
+      }
+    }
+    return Pair.of(null, 0.0);
+  }
+
+  private static Dimension.Type coverageEntryType(CoverageImpl coverage, int index) {
+    Extent<?> current = coverage.coverages.get(index).getFirst();
+    if (current != null) {
+      return current.getType();
+    }
+    return index < coverage.extents.length && coverage.extents[index] != null
+        ? coverage.extents[index].getType()
+        : null;
+  }
+
+  private static Extent<?> mergeExtentUsingRepository(
+      Extent<?> left, Extent<?> right, LogicalConnector how) {
+    try {
+      Scale merged =
+          GeometryRepository.INSTANCE.getMerged(
+              new ScaleImpl(List.of(left)), new ScaleImpl(List.of(right)), how, Scale.class);
+      return merged == null ? null : getCurrentExtent(merged, left.getType());
+    } catch (RuntimeException e) {
+      Logging.INSTANCE.warn(
+          "coverage "
+              + how.name().toLowerCase(Locale.ROOT)
+              + " failed through geometry cache; retrying direct extent merge: "
+              + e.getMessage());
+    }
+    try {
+      return left.merge(right, how);
+    } catch (RuntimeException e) {
+      Logging.INSTANCE.warn(
+          "coverage "
+              + how.name().toLowerCase(Locale.ROOT)
+              + " failed during direct extent merge; leaving coverage conservative: "
+              + e.getMessage());
+      return null;
+    }
+  }
+
+  private static double dimensionSize(Extent<?> extent) {
+    if (extent == null || extent.isEmpty()) {
+      return 0;
+    }
+    try {
+      double size = extent.getDimensionSize();
+      return Double.isNaN(size) || size < 0 ? 0 : size;
+    } catch (RuntimeException e) {
+      Logging.INSTANCE.warn("coverage dimension size failed: " + e.getMessage());
+      return 0;
+    }
+  }
+
+  private static double coverageRatio(double covered, double total) {
+    if (covered <= 0 || Double.isNaN(covered)) {
+      return 0;
+    }
+    if (total <= 0 || Double.isNaN(total)) {
+      return 1;
+    }
+    if (Double.isInfinite(total)) {
+      return Double.isInfinite(covered) ? 1 : 0;
+    }
+    if (Double.isInfinite(covered)) {
+      return 1;
+    }
+    return clampCoverage(covered / total);
+  }
+
+  private static double clampCoverage(double coverage) {
+    if (Double.isNaN(coverage)) {
+      return 0;
+    }
+    return Math.max(0, Math.min(1, coverage));
   }
 
   @Override

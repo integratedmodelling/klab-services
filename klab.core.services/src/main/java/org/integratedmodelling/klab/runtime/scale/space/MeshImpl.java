@@ -50,10 +50,10 @@ public class MeshImpl extends ShapeImpl implements Mesh {
   public String encode() {
     return "s1("
         + features.size()
-        + "){proj="
-        + getProjection().getCode()
-        + ","
+        + "){"
         + getEnvelope().encode()
+        + ",proj="
+        + getProjection().getCode()
         + "}";
   }
 }

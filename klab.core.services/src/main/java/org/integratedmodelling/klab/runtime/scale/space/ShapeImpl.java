@@ -829,7 +829,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
    * @return the WKB code
    */
   public String getWKB() {
-    return WKBWriter.toHex(wkbWriter.write(geometry));
+    return WKBWriter.toHex(wkbWriter.write(canonicalGeometryForEncoding()));
   }
 
   /**
@@ -838,12 +838,27 @@ public class ShapeImpl extends SpaceImpl implements Shape {
    * @return the WKB code
    */
   public String asWKB() {
-    return projection.getCode() + " " + WKBWriter.toHex(wkbWriter.write(geometry));
+    return asWKB(canonicalGeometryForEncoding());
   }
 
   @Override
   public String encode() {
-    return "s2(1,1){shape=" + promote(this).asWKB() + ",proj=" + projection.getCode() + "}";
+    Geometry canonicalGeometry = canonicalGeometryForEncoding();
+    return "s2(1,1){"
+        + EnvelopeImpl.create(canonicalGeometry.getEnvelopeInternal(), projection).encode()
+        + ",proj="
+        + projection.getCode()
+        + ",shape="
+        + asWKB(canonicalGeometry)
+        + "}";
+  }
+
+  private Geometry canonicalGeometryForEncoding() {
+    return makeValid(geometry).norm();
+  }
+
+  private String asWKB(Geometry canonicalGeometry) {
+    return projection.getCode() + " " + WKBWriter.toHex(wkbWriter.write(canonicalGeometry));
   }
 
   @Override

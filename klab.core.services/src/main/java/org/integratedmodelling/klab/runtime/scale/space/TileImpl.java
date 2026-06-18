@@ -107,10 +107,10 @@ public class TileImpl extends ShapeImpl implements Tile {
         + grid.getYCells()
         + "){"
         + getEnvelope().encode()
-        + ",shape="
-        + promote(this).asWKB()
         + ",proj="
         + this.getProjection().getCode()
+        + ",shape="
+        + promote(this).asWKB()
         + "}";
   }
 }

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.scale;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -48,5 +49,22 @@ class GeometryRepositoryTest {
     assertEquals(10L, intersection.getTime().getEnd().getMilliseconds());
     assertEquals(0L, cachedFirst.getTime().getStart().getMilliseconds());
     assertEquals(10L, cachedFirst.getTime().getEnd().getMilliseconds());
+  }
+
+  @Test
+  void spatialEncodingAddsBoundingBoxAndCanonicalizesShape() {
+    Geometry clockwise =
+        Geometry.create(
+            "s2(1,1){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 1&comma;1 1&comma;1 0&comma;0 0))}");
+    Geometry counterClockwise =
+        Geometry.create(
+            "s2(1,1){shape=EPSG:4326 POLYGON ((0 0&comma;1 0&comma;1 1&comma;0 1&comma;0 0)),proj=EPSG:4326}");
+
+    Geometry canonicalClockwise = GeometryRepository.INSTANCE.sanitize(clockwise);
+    Geometry canonicalCounterClockwise = GeometryRepository.INSTANCE.sanitize(counterClockwise);
+
+    assertTrue(canonicalClockwise.encode().contains("bbox=[0.0 1.0 0.0 1.0]"));
+    assertEquals(canonicalClockwise.encode(), canonicalCounterClockwise.encode());
+    assertEquals(canonicalClockwise.key(), canonicalCounterClockwise.key());
   }
 }

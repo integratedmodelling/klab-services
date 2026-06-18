@@ -178,7 +178,6 @@ public class ScaleImpl implements Scale {
 
   public ScaleImpl(Geometry geometry, Scope scope) {
 
-    this.key = geometry.key();
     this.universal = geometry.isUniversal();
 
     if (!(this.universal = geometry.isUniversal())) {

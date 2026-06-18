@@ -23,6 +23,7 @@ public class GeometryImpl implements Geometry {
 
   public void setEmpty(boolean b) {
     this.empty = b;
+    invalidateKey();
   }
 
 
@@ -242,15 +243,10 @@ public class GeometryImpl implements Geometry {
       return "1";
     }
 
-    // put time first
+    // Keep the encoding order stable. It also matches the scale scanning order after numerosity,
+    // which is currently not implemented operationally.
     List<Dimension> dims = new ArrayList<>(dimensions);
-    dims.sort(
-        new Comparator<Dimension>() {
-          @Override
-          public int compare(Dimension o1, Dimension o2) {
-            return o1.getType() == Dimension.Type.TIME ? -1 : 0;
-          }
-        });
+    dims.sort(Comparator.comparingInt(dimension -> encodingOrder(dimension.getType())));
 
     StringBuilder ret = new StringBuilder(granularity == Granularity.MULTIPLE ? "#" : "");
     for (Dimension dim : dims) {
@@ -266,6 +262,14 @@ public class GeometryImpl implements Geometry {
       }
     }
     return false;
+  }
+
+  private static int encodingOrder(Dimension.Type type) {
+    return switch (type) {
+      case TIME -> 0;
+      case SPACE -> 1;
+      case NUMEROSITY -> 2;
+    };
   }
 
   public static String encodeVal(Object val) {
@@ -314,14 +318,17 @@ public class GeometryImpl implements Geometry {
 
   public void setDimensions(List<DimensionImpl> dimensions) {
     this.dimensions = dimensions;
+    invalidateKey();
   }
 
   public void setGranularity(Granularity granularity) {
     this.granularity = granularity;
+    invalidateKey();
   }
 
   public void setScalar(boolean scalar) {
     this.scalar = scalar;
+    invalidateKey();
   }
 
   public static class DimensionImpl implements Dimension {
@@ -550,6 +557,7 @@ public class GeometryImpl implements Geometry {
 
   public void setUniversal(boolean universal) {
     this.universal = universal;
+    invalidateKey();
   }
 
   public String getKey() {
@@ -562,6 +570,7 @@ public class GeometryImpl implements Geometry {
 
   public void setGeneric(boolean generic) {
     this.generic = generic;
+    invalidateKey();
   }
 
   @Override
@@ -622,6 +631,7 @@ public class GeometryImpl implements Geometry {
         .put(
             PARAMETER_SPACE_BOUNDINGBOX,
             GeometryImpl.encodeVal(new double[] {minX, maxX, minY, maxY}));
+    invalidateKey();
     return this;
   }
 
@@ -636,6 +646,7 @@ public class GeometryImpl implements Geometry {
     } else if (space != null) {
       space.getParameters().put(PARAMETER_SPACE_SHAPE, shapeSpecs);
     }
+    invalidateKey();
     return this;
   }
 
@@ -652,6 +663,7 @@ public class GeometryImpl implements Geometry {
     } else if (space != null) {
       space.getParameters().put(PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
     }
+    invalidateKey();
     return this;
   }
 
@@ -659,6 +671,7 @@ public class GeometryImpl implements Geometry {
     Dimension space = dimension(Dimension.Type.SPACE);
     if (space != null) {
       space.getParameters().put(key, value);
+      invalidateKey();
     }
     return this;
   }
@@ -711,6 +724,7 @@ public class GeometryImpl implements Geometry {
       space = addLogicalSpace(this);
     }
     ((DimensionImpl) space).shape = shape;
+    invalidateKey();
     return this;
   }
 
@@ -726,6 +740,7 @@ public class GeometryImpl implements Geometry {
     } else if (time != null) {
       time.getParameters().put(PARAMETER_TIME_GRIDRESOLUTION, timeResolution);
     }
+    invalidateKey();
     return this;
   }
 
@@ -739,6 +754,7 @@ public class GeometryImpl implements Geometry {
       time = addLogicalTime(this);
     }
     ((DimensionImpl) time).shape = List.of(n);
+    invalidateKey();
     return this;
   }
 
@@ -748,6 +764,10 @@ public class GeometryImpl implements Geometry {
       key = Utils.Strings.hash(encode());
     }
     return key;
+  }
+
+  private void invalidateKey() {
+    this.key = null;
   }
 
   /**
@@ -760,6 +780,7 @@ public class GeometryImpl implements Geometry {
       space = addLogicalSpace(this);
     }
     space.getParameters().put(PARAMETER_SPACE_PROJECTION, projection);
+    invalidateKey();
     return this;
   }
 
@@ -775,6 +796,7 @@ public class GeometryImpl implements Geometry {
           "cannot set temporal parameters on a geometry without time");
     }
     time.getParameters().put(PARAMETER_TIME_PERIOD, List.of(start, end));
+    invalidateKey();
     return this;
   }
 
@@ -1304,6 +1326,7 @@ public class GeometryImpl implements Geometry {
       space = addLogicalSpace(this);
     }
     space.getParameters().put(PARAMETER_SPACE_GRIDRESOLUTION, value.toString());
+    invalidateKey();
     return this;
   }
 
@@ -1313,6 +1336,7 @@ public class GeometryImpl implements Geometry {
       time = addLogicalTime(this);
     }
     time.getParameters().put(PARAMETER_TIME_END, value);
+    invalidateKey();
     return this;
   }
 
@@ -1322,6 +1346,7 @@ public class GeometryImpl implements Geometry {
       time = addLogicalTime(this);
     }
     time.getParameters().put(PARAMETER_TIME_REPRESENTATION, value);
+    invalidateKey();
     return this;
   }
 
@@ -1331,6 +1356,7 @@ public class GeometryImpl implements Geometry {
       time = addLogicalTime(this);
     }
     time.getParameters().put(PARAMETER_TIME_START, value);
+    invalidateKey();
     return this;
   }
 
@@ -1350,6 +1376,7 @@ public class GeometryImpl implements Geometry {
     }
     time.getParameters().put(PARAMETER_TIME_REPRESENTATION, Time.Type.GRID);
     time.getParameters().put(PARAMETER_TIME_TRANSITIONS, List.of(transitionPoints));
+    invalidateKey();
     return this;
   }
 
