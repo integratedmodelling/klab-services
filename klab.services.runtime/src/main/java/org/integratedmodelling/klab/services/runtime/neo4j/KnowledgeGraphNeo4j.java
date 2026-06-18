@@ -912,6 +912,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             cohort.setGeometry(cohortGeometry);
           }
         }
+        return ret;
       } catch (Throwable e) {
         // fall back to other strategy
         Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);

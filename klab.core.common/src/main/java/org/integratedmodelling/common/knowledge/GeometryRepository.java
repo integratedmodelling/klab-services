@@ -99,10 +99,10 @@ public enum GeometryRepository {
   public <T extends Geometry> T get(String encoded, Class<T> geometryClass) {
 
     if ("X".equals(encoded)) {
-      return (T) (geometryClass.isAssignableFrom(Scale.class) ? Scale.empty() : Geometry.EMPTY);
+      return (T) (Scale.class.isAssignableFrom(geometryClass) ? Scale.empty() : Geometry.EMPTY);
     } else if ("*".equals(encoded)) {
       var scalar = Geometry.create("*");
-      return (T) (geometryClass.isAssignableFrom(Scale.class) ? Scale.create(scalar) : scalar);
+      return (T) (Scale.class.isAssignableFrom(geometryClass) ? Scale.create(scalar) : scalar);
     }
 
     var identifier = Utils.Strings.hash(encoded);
