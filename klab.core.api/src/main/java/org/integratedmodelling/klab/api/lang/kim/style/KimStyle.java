@@ -1,14 +1,13 @@
 package org.integratedmodelling.klab.api.lang.kim.style;
 
+import java.awt.*;
+import java.util.Set;
 import org.integratedmodelling.klab.api.cli.FormattedString;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
-
-import java.awt.*;
-import java.util.Set;
 
 public class KimStyle {
 

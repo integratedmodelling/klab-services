@@ -254,6 +254,8 @@ public class ScaleImpl implements Scale {
       return (T) new DimensionScanner1DImpl(this);
     } else */ if (Geometry.class.equals(cls)) {
       return (T) Geometry.create(encode());
+    } else if (cls.isAssignableFrom(this.getClass())) {
+      return (T) this;
     } else if (Coverage.class.equals(cls)) {
       return (T) new CoverageImpl(this, 1.0);
     }

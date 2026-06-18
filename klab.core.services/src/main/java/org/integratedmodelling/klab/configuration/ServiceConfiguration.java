@@ -198,12 +198,6 @@ public enum ServiceConfiguration {
             return new ModelBuilderImpl(outputResourceUrn);
           }
 
-          //          @Override
-          //          public Data.Builder getDataBuilder(
-          //              String name, Observable observable, Geometry geometry) {
-          //            return new DataBuilderImpl(name, observable, geometry);
-          //          }
-
           @Override
           public Quantity parseQuantity(String quantityDescription) {
             return QuantityImpl.parse(quantityDescription);
@@ -291,69 +285,6 @@ public enum ServiceConfiguration {
             return ret;
           }
 
-          //          @Override
-          //          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
-          //              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve
-          // spaceFillingCurve) {
-          //            return switch (spaceFillingCurve) {
-          //              case D1_LINEAR ->
-          //                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>()
-          // {
-          //
-          //                    final long[] l = new long[1];
-          //
-          //                    @Override
-          //                    public Data.LongToLongArrayFunction getFirst() {
-          //                      return n -> {
-          //                        l[0] = n;
-          //                        return l;
-          //                      };
-          //                    }
-          //
-          //                    @Override
-          //                    public Data.LongArrayToLongFunction getSecond() {
-          //                      return n -> n[0];
-          //                    }
-          //                  };
-          //              case D2_XY -> {
-          //                final var shape =
-          // geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
-          //                final var x = shape.get(0);
-          //                final var y = shape.get(1);
-          //
-          //                yield new Pair<Data.LongToLongArrayFunction,
-          // Data.LongArrayToLongFunction>() {
-          //
-          //                  final long[] l = new long[2];
-          //
-          //                  @Override
-          //                  public Data.LongToLongArrayFunction getFirst() {
-          //                    return n -> {
-          //                      l[0] = n / x;
-          //                      l[1] = n % x;
-          //                      return l;
-          //                    };
-          //                  }
-          //
-          //                  @Override
-          //                  public Data.LongArrayToLongFunction getSecond() {
-          //                    return n -> n[1] * x + n[0];
-          //                  }
-          //                };
-          //              }
-          //              //                case D2_YX -> null;
-          //              //                case D2_XInvY -> null;
-          //              //                case D3_XYZ -> null;
-          //              //                case D3_ZYX -> null;
-          //              //                case D2_HILBERT -> null;
-          //              //                case D3_HILBERT -> null;
-          //              default ->
-          //                  throw new KlabUnimplementedException(
-          //                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve +
-          // ")");
-          //            };
-          //          }
-
           @Override
           public Envelope getSpatialEnvelope(
               double minX, double minY, double maxX, double maxY, Projection projection) {
@@ -362,42 +293,13 @@ public enum ServiceConfiguration {
         });
   }
 
-  /** The package containing all REST resource beans. */
-  public static final String REST_RESOURCES_PACKAGE_ID = "org.integratedmodelling.klab.rest";
-
-  public static final int DEFAULT_ENGINE_PORT = 8283;
-  public static final int DEFAULT_HUB_PORT = 8284;
-  public static final int DEFAULT_NODE_PORT = 8287;
-  public static final int DEFAULT_LEVER_PORT = 8761;
-  public static final int DEFAULT_SEMANTIC_SERVER_PORT = 8301;
   public static final String DEFAULT_PRODUCTS_BRANCH = "master";
-
-  public static final String KLAB_LOG_FILE = "klab.log.file";
   public static final String KLAB_OFFLINE = "klab.offline";
   public static final String KLAB_EXPORT_PATH = "klab.export.path";
   public static final String KLAB_DEBUG_RESOLUTION_RANKS = "klab.debugging.resolution.ranks";
-  public static final String KLAB_DEBUG_RESOLUTION_GRAPH = "klab.debugging.resolution.graph";
-  public static final String KLAB_DEBUG_RESOLUTION_DFLOW = "klab.debugging.resolution.dflow";
   public static final String KLAB_USE_IN_MEMORY_DATABASE = "klab.database.inmemory";
   public static final String KLAB_PARALLELIZE_CONTEXTUALIZATION = "klab.computation.parallel";
   public static final String KLAB_USE_IN_MEMORY_STORAGE = "klab.storage.inmemory";
-  public static final String CERTFILE_PROPERTY = "klab.certificate";
-  public static final String KLAB_CONNECTION_TIMEOUT = "klab.connection.timeout";
-  public static final String KLAB_PROJECT_BLACKLIST_PROPERTY = "klab.project.blacklist";
-  public static final String KLAB_STATS_SERVER_URL_PROPERTY = "stats.server.url";
-  public static final String KLAB_LENIENT_GRID_INTERSECTION = "klab.grid.intersection.lenient";
-  public static final String LOCAL_STATS_ACTIVE_PROPERTY = "org.integratedmodelling.stats.active";
-  public static final String LOCAL_STATS_PRIVATE_PROPERTY = "org.integratedmodelling.stats.private";
-
-  /**
-   * If false, coverage of merged spatial layers is interpreted strictly, i.e. if a covered portion
-   * with higher priority has nodata and a filler with lower priority has data, the nodata from the
-   * covered portions substitute the filler's data.
-   */
-  public static final String KLAB_FILL_COVERED_NODATA = "klab.space.fillcoverednodata";
-
-  /** Minutes after which a session times out. Default 60. */
-  public static final String KLAB_SESSION_TIMEOUT_MINUTES = "klab.session.timeout";
 
   /**
    * Absolute path of work directory. Overrides the default which is
@@ -417,44 +319,6 @@ public enum ServiceConfiguration {
    * specified.
    */
   public static final String KLAB_WORK_DIRECTORY = "klab.work.directory";
-
-  public static final String KLAB_ENGINE_CERTIFICATE = "klab.engine.certificate";
-
-  /** The Constant KLAB_ENGINE_USE_DEVELOPER_NETWORK. */
-  public static final String KLAB_ENGINE_USE_DEVELOPER_NETWORK = "klab.engine.useDeveloperNetwork";
-
-  /**
-   * Class to choose to create storage - used only to disambiguate if > 1 storage providers are
-   * available.
-   */
-  public static final String STORAGE_PROVIDER_COMPONENT = "klab.storage.provider.class";
-
-  /**
-   * Class to choose to create dataflow runtimes - used only to disambiguate if > 1 runtime
-   * providers are available.
-   */
-  public static final String RUNTIME_PROVIDER_COMPONENT = "klab.runtime.provider.class";
-
-  /** If defined, the engine will print times for each actuator run */
-  public static final String KLAB_SHOWTIMES_PROPERTY = "klab.showtimes";
-
-  /**
-   * If defined and set to <code>true</code>, then the region context will be extended assure square
-   * grid cells.
-   */
-  public static final String KLAB_GRID_CONSTRAINT = "klab.grid.forceSquarecells";
-
-  /**
-   * If defined and set to <code>true</code>, then intermediate data processed by the models are to
-   * be dumped to disk.
-   */
-  public static final String KLAB_MODEL_DUMP_INTERMEDIATE = "klab.model.dumpIntermediateData";
-
-  /**
-   * URL of local node (must match certfile) when running in develop config. Pass to hub as -D to
-   * override the default (which won't work on Win), normally with a 127.0.0.1-based URL.
-   */
-  public static final String KLAB_DEV_NODE_URL = "klab.dev.node.url";
 
   /** Branch to use for groups observables */
   public static final String KLAB_PRODUCTS_BRANCH = "klab.products.branch";

@@ -2,6 +2,8 @@ package org.integratedmodelling.common.knowledge;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -20,11 +22,18 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public enum GeometryRepository {
   INSTANCE;
 
-  private Cache<String, Pair<Geometry, Scale>> cache =
+  private final Cache<String, Pair<Geometry, Scale>> cache =
       CacheBuilder.newBuilder()
           .concurrencyLevel(20) // TODO configure
           .maximumWeight(800000L) // TODO configure - this is just the spec length
-          .weigher((key, value) -> ((Pair<Geometry, Scale>) value).getFirst().encode().length())
+          .weigher((String key, Pair<Geometry, Scale> value) -> value.getFirst().encode().length())
+          .build();
+
+  private final Cache<String, Pair<Geometry, Scale>> mergeCache =
+      CacheBuilder.newBuilder()
+          .concurrencyLevel(20) // TODO configure
+          .maximumWeight(800000L) // TODO configure - this is just the spec length
+          .weigher((String key, Pair<Geometry, Scale> value) -> value.getFirst().encode().length())
           .build();
 
   /**
@@ -56,13 +65,8 @@ public enum GeometryRepository {
     if (geometry instanceof Scale scale) {
       return scale;
     }
-    var cached = cache.getIfPresent(geometry.key());
-    if (cached == null) {
-      var scale = Scale.create(geometry);
-      cache.put(geometry.key(), Pair.of(geometry, scale));
-      return scale;
-    }
-    return cached.getSecond();
+    return getCached(cache, geometry.key(), () -> Pair.of(geometry, Scale.create(geometry)))
+        .getSecond();
   }
 
   public Scale scale(Geometry geometry, Scope scope) {
@@ -72,13 +76,8 @@ public enum GeometryRepository {
     if (geometry instanceof Scale scale) {
       return scale;
     }
-    var cached = cache.getIfPresent(geometry.key());
-    if (cached == null) {
-      var scale = Scale.create(geometry, scope);
-      cache.put(geometry.key(), Pair.of(geometry, scale));
-      return scale;
-    }
-    return cached.getSecond();
+    return getCached(cache, geometry.key(), () -> Pair.of(geometry, Scale.create(geometry, scope)))
+        .getSecond();
   }
 
   public Geometry geometry(Geometry geometry) {
@@ -86,13 +85,14 @@ public enum GeometryRepository {
       return null;
     }
     if (geometry instanceof Scale scale) {
-      var cached = cache.getIfPresent(geometry.key());
-      if (cached == null) {
-        var ret = scale.as(Geometry.class);
-        cache.put(geometry.key(), Pair.of(ret, scale));
-        return ret;
-      }
-      return cached.getFirst();
+      return getCached(
+              cache,
+              geometry.key(),
+              () -> {
+                var ret = scale.as(Geometry.class);
+                return Pair.of(ret, scale);
+              })
+          .getFirst();
     }
     return geometry;
   }
@@ -100,42 +100,49 @@ public enum GeometryRepository {
   /** Get and cache the */
   public <T extends Geometry> T get(String encoded, Class<T> geometryClass) {
     var identifier = Utils.Strings.hash(encoded);
-    var cached = cache.getIfPresent(identifier);
-    if (cached == null) {
-      var geometry = Geometry.create(encoded, identifier);
-      cached = Pair.of(geometry, Scale.create(geometry));
-      cache.put(identifier, cached);
-    }
+    var cached =
+        getCached(
+            cache,
+            identifier,
+            () -> {
+              var geometry = Geometry.create(encoded, identifier);
+              return Pair.of(geometry, Scale.create(geometry));
+            });
     return (T)
         (Scale.class.isAssignableFrom(geometryClass) ? cached.getSecond() : cached.getFirst());
   }
 
   public <T extends Geometry> T getUnion(
       Geometry geometry, Geometry geometry1, Class<T> geometryClass) {
-    var key = geometry.key() + "|" + geometry1.key();
-    var cached = cache.getIfPresent(key);
-    if (cached == null) {
-      var scale1 = Scale.create(geometry);
-      var scale2 = Scale.create(geometry1);
-      var ret = scale1.merge(scale2, LogicalConnector.UNION);
-      cached = Pair.of(ret.as(Geometry.class), (Scale) ret);
-      cache.put(key, cached);
-    }
-    return (T)
-        (Scale.class.isAssignableFrom(geometryClass) ? cached.getSecond() : cached.getFirst());
+    return getMerged(geometry, geometry1, LogicalConnector.UNION, geometryClass);
   }
 
   public <T extends Geometry> T getIntersection(
       Geometry geometry, Geometry geometry1, Class<T> geometryClass) {
-    var key = geometry.key() + "&" + geometry1.key();
-    var cached = cache.getIfPresent(key);
-    if (cached == null) {
-      var scale1 = Scale.create(geometry);
-      var scale2 = Scale.create(geometry1);
-      var ret = scale1.merge(scale2, LogicalConnector.INTERSECTION);
-      cached = Pair.of(ret.as(Geometry.class), (Scale) ret);
-      cache.put(key, cached);
+    return getMerged(geometry, geometry1, LogicalConnector.INTERSECTION, geometryClass);
+  }
+
+  public <T extends Geometry> T getMerged(
+      Geometry geometry, Geometry geometry1, LogicalConnector how, Class<T> geometryClass) {
+
+    if (geometry == null || geometry1 == null) {
+      return null;
     }
+
+    var key = mergeKey(geometry, geometry1, how);
+    var cached =
+        getCached(
+            mergeCache,
+            key,
+            () -> {
+              var scale1 = scale(geometry);
+              var scale2 = scale(geometry1);
+              var merged = scale1.merge(scale2, how);
+              var mergedScale =
+                  merged instanceof Scale mergedAsScale ? mergedAsScale : scale(merged);
+              var mergedGeometry = geometry(mergedScale);
+              return Pair.of(mergedGeometry, mergedScale);
+            });
     return (T)
         (Scale.class.isAssignableFrom(geometryClass) ? cached.getSecond() : cached.getFirst());
   }
@@ -147,8 +154,21 @@ public enum GeometryRepository {
   public Scale outerUnion(Geometry total, Geometry incoming) {
     // TODO - keep the union small, using a convex hull or simplifying afterwards. Also should use
     //  options to check if the user/federation wants full precision.
-    var tScale = scale(total);
-    var iScale = scale(incoming);
-    return tScale.merge(iScale, LogicalConnector.UNION).as(Scale.class);
+    return getUnion(total, incoming, Scale.class);
+  }
+
+  private String mergeKey(Geometry geometry, Geometry geometry1, LogicalConnector how) {
+    return "merge:" + how.name() + ':' + geometry.key() + ':' + geometry1.key();
+  }
+
+  private Pair<Geometry, Scale> getCached(
+      Cache<String, Pair<Geometry, Scale>> target,
+      String key,
+      Supplier<Pair<Geometry, Scale>> supplier) {
+    try {
+      return target.get(key, supplier::get);
+    } catch (ExecutionException e) {
+      throw new IllegalStateException("error creating geometry cache entry for " + key, e);
+    }
   }
 }

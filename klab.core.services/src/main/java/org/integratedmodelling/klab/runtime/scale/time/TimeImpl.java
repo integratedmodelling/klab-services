@@ -256,24 +256,33 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     if (other instanceof Time otherTime) {
 
-      long thisStart = this.getStart() == null ? 0L : this.getStart().getMilliseconds();
-      long thisEnd = this.getEnd() == null ? Long.MAX_VALUE : this.getEnd().getMilliseconds();
-      long otherStart = otherTime.getStart() == null ? 0L : otherTime.getStart().getMilliseconds();
-      long otherEnd =
-          otherTime.getEnd() == null ? Long.MAX_VALUE : otherTime.getEnd().getMilliseconds();
+      long thisStart = startMillis(this);
+      long thisEnd = endMillis(this);
+      long otherStart = startMillis(otherTime);
+      long otherEnd = endMillis(otherTime);
+      long mergedStart = thisStart;
+      long mergedEnd = thisEnd;
 
       if (how == LogicalConnector.UNION) {
-        start = TimeInstant.create(Long.min(thisStart, otherStart));
-        end = TimeInstant.create(Long.max(thisEnd, otherEnd));
+        mergedStart = Long.min(thisStart, otherStart);
+        mergedEnd = Long.max(thisEnd, otherEnd);
       } else if (how == LogicalConnector.INTERSECTION) {
-        start = TimeInstant.create(Long.max(thisStart, otherStart));
-        end = TimeInstant.create(Long.min(thisEnd, otherEnd));
+        mergedStart = Long.max(thisStart, otherStart);
+        mergedEnd = Long.min(thisEnd, otherEnd);
       }
 
       // TODO this removes the extension and the type, and may change the resolution
-      return (Extent<T>) create(start.getMilliseconds(), end.getMilliseconds());
+      return (Extent<T>) create(mergedStart, mergedEnd);
     }
     return null;
+  }
+
+  private static long startMillis(Time time) {
+    return time.getStart() == null ? 0L : time.getStart().getMilliseconds();
+  }
+
+  private static long endMillis(Time time) {
+    return time.getEnd() == null ? Long.MAX_VALUE : time.getEnd().getMilliseconds();
   }
 
   @Override
@@ -350,20 +359,21 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
   @Override
   public boolean contains(Time o) {
-    // TODO Auto-generated method stub
-    return false;
+    return o != null && startMillis(this) <= startMillis(o) && endMillis(this) >= endMillis(o);
   }
 
   @Override
   public boolean overlaps(Time o) {
-    // TODO Auto-generated method stub
-    return false;
+    return intersects(o)
+        && !contains(o)
+        && !(o != null
+            && startMillis(o) <= startMillis(this)
+            && endMillis(o) >= endMillis(this));
   }
 
   @Override
   public boolean intersects(Time o) {
-    // TODO Auto-generated method stub
-    return false;
+    return o != null && startMillis(this) < endMillis(o) && startMillis(o) < endMillis(this);
   }
 
   @Override
@@ -442,8 +452,9 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
   @Override
   public boolean intersects(Dimension dimension) {
-    // TODO Auto-generated method stub
-    return false;
+    return dimension != null
+        && dimension.getType() == Dimension.Type.TIME
+        && intersects(create(dimension));
   }
 
   @Override

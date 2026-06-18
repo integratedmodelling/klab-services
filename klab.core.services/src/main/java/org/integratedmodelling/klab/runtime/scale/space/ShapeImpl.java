@@ -31,16 +31,31 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.locationtech.jts.algorithm.ConvexHull;
 import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.util.GeometryFixer;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.io.WKTReader;
+import org.locationtech.jts.operation.overlayng.OverlayNG;
+import org.locationtech.jts.operation.overlayng.OverlayNGRobust;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 
 public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Serial private static final long serialVersionUID = 5154895981013940462L;
+
+  private enum OverlayOperation {
+    INTERSECTION(OverlayNG.INTERSECTION),
+    UNION(OverlayNG.UNION),
+    DIFFERENCE(OverlayNG.DIFFERENCE);
+
+    private final int code;
+
+    OverlayOperation(int code) {
+      this.code = code;
+    }
+  }
 
   protected Geometry geometry;
   private transient Geometry standardizedGeometry;
@@ -296,8 +311,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
   @Override
   public ShapeImpl transform(Projection otherProjection) throws KlabValidationException {
 
-    if (this.projection.equals(otherProjection)) {
+    if (Objects.equals(this.projection, otherProjection)) {
       return this;
+    }
+    if (this.projection == null || otherProjection == null) {
+      throw new KlabValidationException("cannot transform a shape with unspecified projection");
     }
     Geometry g = null;
 
@@ -322,36 +340,55 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public Shape intersection(Shape other) {
-    if ((projection != null || other.getProjection() != null)
-        && !projection.equals(other.getProjection())) {
-      try {
-        other = other.transform(projection);
-      } catch (KlabValidationException e) {
-        return empty();
-      }
+    if (hasNoGeometry() || shapeIsActuallyEmpty(other)) {
+      return empty();
     }
-    return create(fix(geometry).intersection(fix(((ShapeImpl) other).geometry)), projection);
+    ShapeImpl otherShape = shapeInThisProjection(other);
+    if (otherShape == null || otherShape.hasNoGeometry()) {
+      return empty();
+    }
+    Geometry thisGeometry = fix(geometry);
+    Geometry otherGeometry = fix(otherShape.geometry);
+    boolean trustPredicates = geometry.isValid() && otherShape.geometry.isValid();
+    if (trustPredicates && !preparedIntersects(otherGeometry)) {
+      return empty();
+    }
+    if (trustPredicates && preparedContains(otherGeometry)) {
+      return create(otherGeometry, projection);
+    }
+    if (trustPredicates && otherShape.preparedContains(thisGeometry)) {
+      return create(thisGeometry, projection);
+    }
+    return create(overlay(thisGeometry, otherGeometry, OverlayOperation.INTERSECTION), projection);
   }
 
   public Shape fixInvalid() {
-    /*
-     * TODO use next-level JTS functions now available when we can upgrade
-     */
-    Geometry geom = this.geometry.buffer(0);
+    Geometry geom = fix(this.geometry);
     return create(geom, projection);
   }
 
   @Override
   public Shape union(Shape other) {
-    if ((projection != null || other.getProjection() != null)
-        && !projection.equals(other.getProjection())) {
-      try {
-        other = other.transform(projection);
-      } catch (KlabValidationException e) {
-        return empty();
-      }
+    if (shapeIsActuallyEmpty(other)) {
+      return this;
     }
-    return create(fix(geometry).union(fix(((ShapeImpl) other).geometry)), projection);
+    if (hasNoGeometry()) {
+      return other;
+    }
+    ShapeImpl otherShape = shapeInThisProjection(other);
+    if (otherShape == null || otherShape.hasNoGeometry()) {
+      return this;
+    }
+    Geometry thisGeometry = fix(geometry);
+    Geometry otherGeometry = fix(otherShape.geometry);
+    boolean trustPredicates = geometry.isValid() && otherShape.geometry.isValid();
+    if (trustPredicates && preparedContains(otherGeometry)) {
+      return create(thisGeometry, projection);
+    }
+    if (trustPredicates && otherShape.preparedContains(thisGeometry)) {
+      return create(otherGeometry, projection);
+    }
+    return create(overlay(thisGeometry, otherGeometry, OverlayOperation.UNION), projection);
   }
 
   public boolean containsCoordinates(double x, double y) {
@@ -374,6 +411,175 @@ public class ShapeImpl extends SpaceImpl implements Shape {
   public PreparedGeometry getPreparedGeometry() {
     checkPreparedShape();
     return preparedShape;
+  }
+
+  private ShapeImpl shapeInThisProjection(Shape other) {
+    try {
+      return promote(
+          Objects.equals(projection, other.getProjection()) ? other : other.transform(projection));
+    } catch (KlabValidationException e) {
+      return null;
+    }
+  }
+
+  private boolean preparedContains(Geometry otherGeometry) {
+    try {
+      checkPreparedShape();
+      return preparedShape == null
+          ? geometry.contains(otherGeometry)
+          : preparedShape.contains(otherGeometry);
+    } catch (RuntimeException e) {
+      try {
+        return makeValid(geometry).contains(makeValid(otherGeometry));
+      } catch (RuntimeException ignored) {
+        return false;
+      }
+    }
+  }
+
+  private boolean preparedIntersects(Geometry otherGeometry) {
+    try {
+      checkPreparedShape();
+      return preparedShape == null
+          ? geometry.intersects(otherGeometry)
+          : preparedShape.intersects(otherGeometry);
+    } catch (RuntimeException e) {
+      Geometry validThis = makeValid(geometry);
+      Geometry validOther = makeValid(otherGeometry);
+      try {
+        return validThis.intersects(validOther);
+      } catch (RuntimeException ignored) {
+        return validThis.getEnvelopeInternal().intersects(validOther.getEnvelopeInternal());
+      }
+    }
+  }
+
+  private Geometry overlay(Geometry left, Geometry right, OverlayOperation operation) {
+    RuntimeException failure = null;
+    try {
+      return makeValid(directOverlay(left, right, operation));
+    } catch (RuntimeException e) {
+      failure = e;
+    }
+    try {
+      return makeValid(OverlayNGRobust.overlay(left, right, operation.code));
+    } catch (RuntimeException e) {
+      failure = e;
+    }
+
+    Geometry validLeft = makeValid(left);
+    Geometry validRight = makeValid(right);
+    try {
+      return makeValid(directOverlay(validLeft, validRight, operation));
+    } catch (RuntimeException e) {
+      failure = e;
+    }
+    try {
+      return makeValid(OverlayNGRobust.overlay(validLeft, validRight, operation.code));
+    } catch (RuntimeException e) {
+      failure = e;
+    }
+
+    Logging.INSTANCE.warn(
+        "JTS "
+            + operation.name().toLowerCase(Locale.ROOT)
+            + " failed after geometry repair; using conservative fallback"
+            + (failure == null ? "" : ": " + failure.getMessage()));
+    return makeValid(fallbackOverlay(validLeft, validRight, operation));
+  }
+
+  private Geometry directOverlay(Geometry left, Geometry right, OverlayOperation operation) {
+    return switch (operation) {
+      case INTERSECTION -> left.intersection(right);
+      case UNION -> left.union(right);
+      case DIFFERENCE -> left.difference(right);
+    };
+  }
+
+  private Geometry fallbackOverlay(Geometry left, Geometry right, OverlayOperation operation) {
+    return switch (operation) {
+      case INTERSECTION -> emptyGeometry(left.getFactory());
+      case UNION -> fallbackUnion(left, right);
+      case DIFFERENCE -> left;
+    };
+  }
+
+  private Geometry fallbackUnion(Geometry left, Geometry right) {
+    GeometryFactory factory = left == null ? SpaceImpl.gFactory : left.getFactory();
+    try {
+      return factory.createGeometryCollection(new Geometry[] {left, right}).convexHull();
+    } catch (RuntimeException e) {
+      try {
+        org.locationtech.jts.geom.Envelope envelope =
+            new org.locationtech.jts.geom.Envelope(left.getEnvelopeInternal());
+        envelope.expandToInclude(right.getEnvelopeInternal());
+        return factory.toGeometry(envelope);
+      } catch (RuntimeException ignored) {
+        return emptyGeometry(factory);
+      }
+    }
+  }
+
+  private Geometry makeValid(Geometry jtsGeometry) {
+    if (jtsGeometry == null) {
+      return emptyGeometry(SpaceImpl.gFactory);
+    }
+    if (jtsGeometry.isValid()) {
+      return jtsGeometry;
+    }
+    Geometry fixed = null;
+    try {
+      fixed = GeometryFixer.fix(jtsGeometry, true);
+      if (fixed != null && fixed.isValid()) {
+        return fixed;
+      }
+    } catch (RuntimeException ignored) {
+      // Try the historical buffer(0) repair path below.
+    }
+    Geometry buffered = bufferRaw(jtsGeometry, 0);
+    if (buffered != null && buffered.isValid()) {
+      return buffered;
+    }
+    return emptyGeometry(jtsGeometry.getFactory());
+  }
+
+  private Geometry buffer(Geometry jtsGeometry, double distance) {
+    Geometry buffered = bufferRaw(jtsGeometry, distance);
+    if (buffered != null) {
+      return makeValid(buffered);
+    }
+    Geometry fixed = makeValid(jtsGeometry);
+    buffered = bufferRaw(fixed, distance);
+    if (buffered != null) {
+      return makeValid(buffered);
+    }
+    Logging.INSTANCE.warn(
+        "JTS buffer failed after geometry repair; returning "
+            + (distance < 0 ? "empty geometry" : "repaired input geometry"));
+    return distance < 0 ? emptyGeometry(jtsGeometry.getFactory()) : fixed;
+  }
+
+  private Geometry bufferRaw(Geometry jtsGeometry, double distance) {
+    try {
+      return jtsGeometry == null ? null : jtsGeometry.buffer(distance);
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  private boolean hasNoGeometry() {
+    return geometry == null || geometry.isEmpty();
+  }
+
+  private boolean shapeIsActuallyEmpty(Shape shape) {
+    if (shape == null) {
+      return true;
+    }
+    return shape instanceof ShapeImpl shapeImpl ? shapeImpl.hasNoGeometry() : shape.isEmpty();
+  }
+
+  private Geometry emptyGeometry(GeometryFactory factory) {
+    return (factory == null ? SpaceImpl.gFactory : factory).createGeometryCollection();
   }
 
   // public double getCoverage(Tile cell, boolean simpleIntersection) {
@@ -429,8 +635,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     if (this.isEmpty() || this.projection.equals(Projection.getLatLon())) {
       return this.geometry;
     }
-    ShapeImpl shape = this.transform(Projection.getLatLon());
-    this.standardizedGeometry = shape.geometry;
+    if (this.standardizedGeometry == null) {
+      ShapeImpl shape = this.transform(Projection.getLatLon());
+      this.standardizedGeometry = shape.geometry;
+    }
     return this.standardizedGeometry;
   }
 
@@ -774,27 +982,44 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public Shape buffer(double distance) {
-    Geometry geom = this.geometry.buffer(distance);
+    Geometry geom = buffer(this.geometry, distance);
     return create(geom, projection);
   }
 
   @Override
   public Shape difference(Shape shape) {
-    Geometry geom = fix(this.geometry).difference(fix(((ShapeImpl) shape).getJTSGeometry()));
-    return create(geom, projection);
+    if (hasNoGeometry() || shapeIsActuallyEmpty(shape)) {
+      return this;
+    }
+    ShapeImpl otherShape = shapeInThisProjection(shape);
+    if (otherShape == null || otherShape.hasNoGeometry()) {
+      return this;
+    }
+    Geometry thisGeometry = fix(this.geometry);
+    Geometry otherGeometry = fix(otherShape.geometry);
+    boolean trustPredicates = geometry.isValid() && otherShape.geometry.isValid();
+    if (trustPredicates && !preparedIntersects(otherGeometry)) {
+      return this;
+    }
+    if (trustPredicates && otherShape.preparedContains(thisGeometry)) {
+      return empty();
+    }
+    return create(overlay(thisGeometry, otherGeometry, OverlayOperation.DIFFERENCE), projection);
   }
 
   private Geometry fix(Geometry jtsGeometry) {
-    // if geometry is a point or line, buffer return an empty polygon, so we must
-    // check it
-    // a double check for a well formed polygon is needed
+    if (jtsGeometry == null) {
+      return emptyGeometry(SpaceImpl.gFactory);
+    }
+    Geometry ret = jtsGeometry;
+    // Keep the historical normalization for non-areal geometries before overlay operations.
     if ((jtsGeometry instanceof GeometryCollection
             && !(jtsGeometry instanceof MultiLineString || jtsGeometry instanceof MultiPoint))
         || jtsGeometry instanceof LineString
         || jtsGeometry instanceof Point) {
-      return jtsGeometry.buffer(0);
+      ret = buffer(jtsGeometry, 0);
     }
-    return jtsGeometry;
+    return makeValid(ret);
   }
 
   /**
@@ -829,8 +1054,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
    */
   public static Shape join(Shape a, Shape b, Shape.Type type, boolean includeSources) {
 
-    Geometry aj = ((ShapeImpl) a).getStandardizedGeometry();
-    Geometry bj = ((ShapeImpl) b).getStandardizedGeometry();
+    ShapeImpl helper = promote(a);
+    Geometry aj = helper.getStandardizedGeometry();
+    Geometry bj = promote(b).getStandardizedGeometry();
     Geometry merged = null;
 
     switch (type) {
@@ -848,7 +1074,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         cloud.addAll(Arrays.asList(aj.getBoundary().getCoordinates()));
         cloud.addAll(Arrays.asList(bj.getBoundary().getCoordinates()));
         ConvexHull hull = new ConvexHull(cloud.toArray(new Coordinate[0]), aj.getFactory());
-        merged = hull.getConvexHull().buffer(0);
+        merged = helper.buffer(hull.getConvexHull(), 0);
         break;
       default:
         throw new IllegalArgumentException(
@@ -856,8 +1082,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     if (merged != null && !includeSources) {
-      merged = merged.difference(aj);
-      merged = merged.difference(bj);
+      merged = helper.overlay(merged, aj, OverlayOperation.DIFFERENCE);
+      merged = helper.overlay(merged, bj, OverlayOperation.DIFFERENCE);
     }
 
     return merged == null ? null : create(merged, a.getProjection());
@@ -917,20 +1143,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
       return (Extent<T>) copy();
     }
     if (how == LogicalConnector.UNION) {
-      return (Extent<T>)
-          create(
-              geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()),
-              this.projection);
+      return (Extent<T>) union(shape);
     } else if (how == LogicalConnector.INTERSECTION) {
-      return (Extent<T>)
-          create(
-              geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
-              this.projection);
+      return (Extent<T>) intersection(shape);
     } else if (how == LogicalConnector.EXCLUSION) {
-      return (Extent<T>)
-          create(
-              geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
-              this.projection);
+      return (Extent<T>) difference(shape);
     }
     throw new IllegalArgumentException("cannot merge a shape with " + other);
   }
@@ -1023,7 +1240,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public boolean contains(double[] coordinate) {
-    return this.geometry.intersects(makePoint(coordinate[0], coordinate[1]));
+    return preparedIntersects(makePoint(coordinate[0], coordinate[1]));
   }
 
   // @Override
@@ -1109,20 +1326,31 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public boolean contains(Space o) {
-    return geometry.contains(
-        promote(o.getGeometricShape().transform(this.projection)).getJTSGeometry());
+    if (hasNoGeometry() || o == null || o.getGeometricShape() == null) {
+      return false;
+    }
+    ShapeImpl otherShape = shapeInThisProjection(o.getGeometricShape());
+    return otherShape != null && preparedContains(otherShape.geometry);
   }
 
   @Override
   public boolean overlaps(Space o) {
-    return geometry.overlaps(
-        promote(o.getGeometricShape().transform(this.projection)).getJTSGeometry());
+    if (hasNoGeometry() || o == null || o.getGeometricShape() == null) {
+      return false;
+    }
+    ShapeImpl otherShape = shapeInThisProjection(o.getGeometricShape());
+    return otherShape != null
+        && preparedIntersects(otherShape.geometry)
+        && geometry.overlaps(otherShape.geometry);
   }
 
   @Override
   public boolean intersects(Space o) {
-    return geometry.intersects(
-        promote(o.getGeometricShape().transform(this.projection)).getJTSGeometry());
+    if (hasNoGeometry() || o == null || o.getGeometricShape() == null) {
+      return false;
+    }
+    ShapeImpl otherShape = shapeInThisProjection(o.getGeometricShape());
+    return otherShape != null && preparedIntersects(otherShape.geometry);
   }
 
   @Override
