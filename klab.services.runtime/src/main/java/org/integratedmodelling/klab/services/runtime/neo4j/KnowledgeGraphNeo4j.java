@@ -902,8 +902,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     if (key instanceof Long id) {
       try {
-        var ret = (T) assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
-        if (Cohort.class.isAssignableFrom(assetClass)
+        var ret = assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));
+        if (Cohort.class.isAssignableFrom(ret.getClass())
             && ret instanceof CohortImpl cohort
             && scope instanceof ContextScope contextScope) {
           // the cohort geometry is recomputed at each query
@@ -912,7 +912,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             cohort.setGeometry(cohortGeometry);
           }
         }
-        return ret;
+        return (T) ret;
       } catch (Throwable e) {
         // fall back to other strategy
         Logging.INSTANCE.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
