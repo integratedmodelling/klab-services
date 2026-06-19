@@ -475,12 +475,12 @@ public class StorageImpl implements Storage {
 
     @Override
     public double get() {
-      return data.get(index++);
+      return data.doubleValue(index++);
     }
 
     @Override
     public double peek() {
-      return data.get(index);
+      return data.doubleValue(index);
     }
 
     @Override
