@@ -110,70 +110,6 @@ public class TimeEmitter implements AutoCloseable {
     public List<Registration> getRegistrations() {
       return registrations;
     }
-
-//    /** Serialize this schedule as compact JSON using only JDK functionality. */
-//    public String toJson() {
-//      var json = new StringBuilder(96 + registrations.size() * 96);
-//      json.append("{\"version\":1");
-//      json.append(",\"nextRegistrationId\":").append(nextRegistrationId);
-//      json.append(",\"lastEpochTime\":").append(lastEpochTime);
-//      json.append(",\"currentEpochTime\":").append(currentEpochTime);
-//      json.append(",\"registrations\":[");
-//      for (int i = 0; i < registrations.size(); i++) {
-//        var registration = registrations.get(i);
-//        if (i > 0) {
-//          json.append(',');
-//        }
-//        json.append('{');
-//        json.append("\"id\":").append(registration.id());
-//        json.append(",\"tStart\":").append(registration.tStart());
-//        json.append(",\"tEnd\":").append(registration.tEnd());
-//        json.append(",\"duration\":").append(registration.duration());
-//        json.append(",\"resolution\":");
-//        appendJsonString(json, registration.resolution().name());
-//        json.append('}');
-//      }
-//      json.append("]}");
-//      return json.toString();
-//    }
-
-//    /** Reconstruct a schedule from the JSON emitted by {@link #toJson()}. */
-//    public static Schedule fromJson(String json) {
-//      Objects.requireNonNull(json, "json");
-//      var root = Json.parseObject(json);
-//      var version = longField(root, "version", 1L);
-//      if (version != 1L) {
-//        throw new IllegalArgumentException("Unsupported TimeEmitter schedule version: " + version);
-//      }
-//
-//      var registrations = new ArrayList<Registration>();
-//      var registrationObjects = root.get("registrations");
-//      if (registrationObjects instanceof List<?> list) {
-//        for (var item : list) {
-//          if (!(item instanceof Map<?, ?> rawMap)) {
-//            throw new IllegalArgumentException("Invalid registration in schedule JSON");
-//          }
-//          @SuppressWarnings("unchecked")
-//          var registration = (Map<String, Object>) rawMap;
-//          registrations.add(
-//              new Registration(
-//                  longField(registration, "id"),
-//                  longField(registration, "tStart"),
-//                  longField(registration, "tEnd"),
-//                  longField(registration, "duration"),
-//                  TimeUnit.valueOf(stringField(registration, "resolution"))));
-//        }
-//      }
-//
-//      return new Schedule(
-//          longField(
-//              root,
-//              "nextRegistrationId",
-//              registrations.stream().mapToLong(Registration::id).max().orElse(0L) + 1L),
-//          longField(root, "lastEpochTime", -1L),
-//          longField(root, "currentEpochTime", NO_CURRENT_TIME),
-//          registrations);
-//    }
   }
 
   /**
@@ -771,166 +707,166 @@ public class TimeEmitter implements AutoCloseable {
 
   private record Emission(long tStart, long tEnd, long[] registrationIds) {}
 
-//  private static final class Json {
-//
-//    private final String text;
-//    private int offset;
-//
-//    private Json(String text) {
-//      this.text = text;
-//    }
-//
-//    static Map<String, Object> parseObject(String text) {
-//      var parser = new Json(text);
-//      var value = parser.parseValue();
-//      parser.skipWhitespace();
-//      if (parser.offset != parser.text.length()) {
-//        throw new IllegalArgumentException("Unexpected trailing data in JSON");
-//      }
-//      if (value instanceof Map<?, ?> rawMap) {
-//        @SuppressWarnings("unchecked")
-//        var map = (Map<String, Object>) rawMap;
-//        return map;
-//      }
-//      throw new IllegalArgumentException("Schedule JSON must be an object");
-//    }
-//
-//    private Object parseValue() {
-//      skipWhitespace();
-//      if (offset >= text.length()) {
-//        throw new IllegalArgumentException("Unexpected end of JSON");
-//      }
-//      return switch (text.charAt(offset)) {
-//        case '{' -> parseMap();
-//        case '[' -> parseList();
-//        case '"' -> parseString();
-//        case 't' -> parseLiteral("true", Boolean.TRUE);
-//        case 'f' -> parseLiteral("false", Boolean.FALSE);
-//        case 'n' -> parseLiteral("null", null);
-//        default -> parseNumber();
-//      };
-//    }
-//
-//    private Map<String, Object> parseMap() {
-//      expect('{');
-//      var ret = new LinkedHashMap<String, Object>();
-//      skipWhitespace();
-//      if (peek('}')) {
-//        offset++;
-//        return ret;
-//      }
-//      while (true) {
-//        var key = parseString();
-//        skipWhitespace();
-//        expect(':');
-//        ret.put(key, parseValue());
-//        skipWhitespace();
-//        if (peek('}')) {
-//          offset++;
-//          return ret;
-//        }
-//        expect(',');
-//      }
-//    }
-//
-//    private List<Object> parseList() {
-//      expect('[');
-//      var ret = new ArrayList<>();
-//      skipWhitespace();
-//      if (peek(']')) {
-//        offset++;
-//        return ret;
-//      }
-//      while (true) {
-//        ret.add(parseValue());
-//        skipWhitespace();
-//        if (peek(']')) {
-//          offset++;
-//          return ret;
-//        }
-//        expect(',');
-//      }
-//    }
-//
-//    private String parseString() {
-//      expect('"');
-//      var ret = new StringBuilder();
-//      while (offset < text.length()) {
-//        var c = text.charAt(offset++);
-//        if (c == '"') {
-//          return ret.toString();
-//        }
-//        if (c != '\\') {
-//          ret.append(c);
-//          continue;
-//        }
-//        if (offset >= text.length()) {
-//          throw new IllegalArgumentException("Invalid JSON escape");
-//        }
-//        var escaped = text.charAt(offset++);
-//        switch (escaped) {
-//          case '"' -> ret.append('"');
-//          case '\\' -> ret.append('\\');
-//          case '/' -> ret.append('/');
-//          case 'b' -> ret.append('\b');
-//          case 'f' -> ret.append('\f');
-//          case 'n' -> ret.append('\n');
-//          case 'r' -> ret.append('\r');
-//          case 't' -> ret.append('\t');
-//          case 'u' -> ret.append(parseUnicodeEscape());
-//          default -> throw new IllegalArgumentException("Invalid JSON escape: " + escaped);
-//        }
-//      }
-//      throw new IllegalArgumentException("Unterminated JSON string");
-//    }
-//
-//    private char parseUnicodeEscape() {
-//      if (offset + 4 > text.length()) {
-//        throw new IllegalArgumentException("Invalid JSON unicode escape");
-//      }
-//      var hex = text.substring(offset, offset + 4);
-//      offset += 4;
-//      return (char) Integer.parseInt(hex, 16);
-//    }
-//
-//    private Object parseLiteral(String literal, Object value) {
-//      if (!text.startsWith(literal, offset)) {
-//        throw new IllegalArgumentException("Invalid JSON literal at offset " + offset);
-//      }
-//      offset += literal.length();
-//      return value;
-//    }
-//
-//    private Long parseNumber() {
-//      var start = offset;
-//      if (peek('-')) {
-//        offset++;
-//      }
-//      while (offset < text.length() && Character.isDigit(text.charAt(offset))) {
-//        offset++;
-//      }
-//      if (start == offset || (text.charAt(start) == '-' && start + 1 == offset)) {
-//        throw new IllegalArgumentException("Invalid JSON number at offset " + start);
-//      }
-//      return Long.parseLong(text.substring(start, offset));
-//    }
-//
-//    private void skipWhitespace() {
-//      while (offset < text.length() && Character.isWhitespace(text.charAt(offset))) {
-//        offset++;
-//      }
-//    }
-//
-//    private boolean peek(char c) {
-//      return offset < text.length() && text.charAt(offset) == c;
-//    }
-//
-//    private void expect(char c) {
-//      skipWhitespace();
-//      if (!peek(c)) {
-//        throw new IllegalArgumentException("Expected '" + c + "' at offset " + offset);
-//      }
-//      offset++;
-//    }
-//  }
+  //  private static final class Json {
+  //
+  //    private final String text;
+  //    private int offset;
+  //
+  //    private Json(String text) {
+  //      this.text = text;
+  //    }
+  //
+  //    static Map<String, Object> parseObject(String text) {
+  //      var parser = new Json(text);
+  //      var value = parser.parseValue();
+  //      parser.skipWhitespace();
+  //      if (parser.offset != parser.text.length()) {
+  //        throw new IllegalArgumentException("Unexpected trailing data in JSON");
+  //      }
+  //      if (value instanceof Map<?, ?> rawMap) {
+  //        @SuppressWarnings("unchecked")
+  //        var map = (Map<String, Object>) rawMap;
+  //        return map;
+  //      }
+  //      throw new IllegalArgumentException("Schedule JSON must be an object");
+  //    }
+  //
+  //    private Object parseValue() {
+  //      skipWhitespace();
+  //      if (offset >= text.length()) {
+  //        throw new IllegalArgumentException("Unexpected end of JSON");
+  //      }
+  //      return switch (text.charAt(offset)) {
+  //        case '{' -> parseMap();
+  //        case '[' -> parseList();
+  //        case '"' -> parseString();
+  //        case 't' -> parseLiteral("true", Boolean.TRUE);
+  //        case 'f' -> parseLiteral("false", Boolean.FALSE);
+  //        case 'n' -> parseLiteral("null", null);
+  //        default -> parseNumber();
+  //      };
+  //    }
+  //
+  //    private Map<String, Object> parseMap() {
+  //      expect('{');
+  //      var ret = new LinkedHashMap<String, Object>();
+  //      skipWhitespace();
+  //      if (peek('}')) {
+  //        offset++;
+  //        return ret;
+  //      }
+  //      while (true) {
+  //        var key = parseString();
+  //        skipWhitespace();
+  //        expect(':');
+  //        ret.put(key, parseValue());
+  //        skipWhitespace();
+  //        if (peek('}')) {
+  //          offset++;
+  //          return ret;
+  //        }
+  //        expect(',');
+  //      }
+  //    }
+  //
+  //    private List<Object> parseList() {
+  //      expect('[');
+  //      var ret = new ArrayList<>();
+  //      skipWhitespace();
+  //      if (peek(']')) {
+  //        offset++;
+  //        return ret;
+  //      }
+  //      while (true) {
+  //        ret.add(parseValue());
+  //        skipWhitespace();
+  //        if (peek(']')) {
+  //          offset++;
+  //          return ret;
+  //        }
+  //        expect(',');
+  //      }
+  //    }
+  //
+  //    private String parseString() {
+  //      expect('"');
+  //      var ret = new StringBuilder();
+  //      while (offset < text.length()) {
+  //        var c = text.charAt(offset++);
+  //        if (c == '"') {
+  //          return ret.toString();
+  //        }
+  //        if (c != '\\') {
+  //          ret.append(c);
+  //          continue;
+  //        }
+  //        if (offset >= text.length()) {
+  //          throw new IllegalArgumentException("Invalid JSON escape");
+  //        }
+  //        var escaped = text.charAt(offset++);
+  //        switch (escaped) {
+  //          case '"' -> ret.append('"');
+  //          case '\\' -> ret.append('\\');
+  //          case '/' -> ret.append('/');
+  //          case 'b' -> ret.append('\b');
+  //          case 'f' -> ret.append('\f');
+  //          case 'n' -> ret.append('\n');
+  //          case 'r' -> ret.append('\r');
+  //          case 't' -> ret.append('\t');
+  //          case 'u' -> ret.append(parseUnicodeEscape());
+  //          default -> throw new IllegalArgumentException("Invalid JSON escape: " + escaped);
+  //        }
+  //      }
+  //      throw new IllegalArgumentException("Unterminated JSON string");
+  //    }
+  //
+  //    private char parseUnicodeEscape() {
+  //      if (offset + 4 > text.length()) {
+  //        throw new IllegalArgumentException("Invalid JSON unicode escape");
+  //      }
+  //      var hex = text.substring(offset, offset + 4);
+  //      offset += 4;
+  //      return (char) Integer.parseInt(hex, 16);
+  //    }
+  //
+  //    private Object parseLiteral(String literal, Object value) {
+  //      if (!text.startsWith(literal, offset)) {
+  //        throw new IllegalArgumentException("Invalid JSON literal at offset " + offset);
+  //      }
+  //      offset += literal.length();
+  //      return value;
+  //    }
+  //
+  //    private Long parseNumber() {
+  //      var start = offset;
+  //      if (peek('-')) {
+  //        offset++;
+  //      }
+  //      while (offset < text.length() && Character.isDigit(text.charAt(offset))) {
+  //        offset++;
+  //      }
+  //      if (start == offset || (text.charAt(start) == '-' && start + 1 == offset)) {
+  //        throw new IllegalArgumentException("Invalid JSON number at offset " + start);
+  //      }
+  //      return Long.parseLong(text.substring(start, offset));
+  //    }
+  //
+  //    private void skipWhitespace() {
+  //      while (offset < text.length() && Character.isWhitespace(text.charAt(offset))) {
+  //        offset++;
+  //      }
+  //    }
+  //
+  //    private boolean peek(char c) {
+  //      return offset < text.length() && text.charAt(offset) == c;
+  //    }
+  //
+  //    private void expect(char c) {
+  //      skipWhitespace();
+  //      if (!peek(c)) {
+  //        throw new IllegalArgumentException("Expected '" + c + "' at offset " + offset);
+  //      }
+  //      offset++;
+  //    }
+  //  }
 }

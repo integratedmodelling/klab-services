@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
@@ -26,10 +25,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -60,7 +56,7 @@ public class ResolverService extends BaseService implements Resolver {
 
   //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
-  public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RESOLVER, options);
     readConfiguration(options);
     setComponentRegistry();
@@ -167,7 +163,9 @@ public class ResolverService extends BaseService implements Resolver {
               observation.getObservable().is(SemanticType.SUBJECT)
                   && !observation.getObservable().getSemantics().isCollective();
 
-          return isSubstantial ? Dataflow.trivial() : Dataflow.empty();
+          return isSubstantial
+              ? Dataflow.trivial(ret.getNotifications())
+              : Dataflow.empty(ret.getNotifications());
         });
   }
 

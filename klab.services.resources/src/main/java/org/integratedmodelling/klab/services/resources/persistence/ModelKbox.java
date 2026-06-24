@@ -742,7 +742,7 @@ public class ModelKbox extends ObservableKbox {
     }
 
     Observable mainObservable =
-        scope
+        monitor
             .getService(Reasoner.class)
             .resolveObservable(model.getObservables().getFirst().getUrn());
 
@@ -753,7 +753,7 @@ public class ModelKbox extends ObservableKbox {
       for (KimObservable attr :
           model.getObservables().stream().filter(o -> o.getFormalName() != null).toList()) {
 
-        Observable observable = scope.getService(Reasoner.class).resolveObservable(attr.getUrn());
+        Observable observable = monitor.getService(Reasoner.class).resolveObservable(attr.getUrn());
 
         /*
          * attribute type must have inherent type added if it's an instantiated quality
@@ -762,9 +762,9 @@ public class ModelKbox extends ObservableKbox {
          */
         Concept type = observable.getSemantics();
         if (isInstantiator) {
-          Concept context = scope.getService(Reasoner.class).inherent(type);
+          Concept context = monitor.getService(Reasoner.class).inherent(type);
           if (context == null
-              || !scope.getService(Reasoner.class).is(context, mainObservable.getSemantics())) {
+              || !monitor.getService(Reasoner.class).is(context, mainObservable.getSemantics())) {
             type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
           }
         }
@@ -860,7 +860,7 @@ public class ModelKbox extends ObservableKbox {
     Observable main = null;
     for (KimObservable kobs : model.getObservables()) {
 
-      Observable oobs = scope.getService(Reasoner.class).resolveObservable(kobs.getUrn());
+      Observable oobs = monitor.getService(Reasoner.class).resolveObservable(kobs.getUrn());
 
       if (first) {
         main = oobs;
@@ -960,15 +960,15 @@ public class ModelKbox extends ObservableKbox {
 
     List<Observable> ret = new ArrayList<>();
     if (!first) {
-      /**
+      /*
        * Subsequent observables inherit any explicit specialization in the main observable of a
        * model
        */
-      Concept specialized = scope.getService(Reasoner.class).directInherent(main.getSemantics());
-      Concept oobsContext = scope.getService(Reasoner.class).inherent(oobs);
+      Concept specialized = monitor.getService(Reasoner.class).directInherent(main.getSemantics());
+      Concept oobsContext = monitor.getService(Reasoner.class).inherent(oobs);
       if (specialized != null
           && (oobsContext == null
-              || !scope.getService(Reasoner.class).is(oobsContext, specialized))) {
+              || !monitor.getService(Reasoner.class).is(oobsContext, specialized))) {
         oobs = oobs.builder(monitor).of(specialized).buildObservable();
       }
     }

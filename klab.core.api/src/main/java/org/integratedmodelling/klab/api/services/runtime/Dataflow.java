@@ -170,6 +170,68 @@ public interface Dataflow extends Serializable, RuntimeAsset {
     };
   }
 
+  static Dataflow empty(List<Notification> notifications) {
+    return new Dataflow() {
+
+      @Override
+      public long getId() {
+        return 0;
+      }
+
+      @Override
+      public long getParentId() {
+        return -1000;
+      }
+
+      @Override
+      public long getTransientId() {
+        return 0;
+      }
+
+      @Override
+      public int getChildrenCount() {
+        return 0;
+      }
+
+      @Override
+      public long getParentTransientId() {
+        return -1000;
+      }
+
+      @Serial private static final long serialVersionUID = -1115441423700817816L;
+
+      @Override
+      public String getName() {
+        return "empty_dataflow";
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return true;
+      }
+
+      @Override
+      public ResourceSet getRequirements() {
+        return ResourceSet.empty();
+      }
+
+      @Override
+      public Coverage getCoverage() {
+        return Coverage.empty();
+      }
+
+      @Override
+      public List<Actuator> getComputation() {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public List<Notification> getNotifications() {
+        return notifications;
+      }
+    };
+  }
+
   /**
    * A trivial dataflow with no computations but whose {@link #isEmpty()} returns false. Used as the
    * resolution outcome of unresolved substantials that can exist unexplained, i.e. whose mere
@@ -181,6 +243,68 @@ public interface Dataflow extends Serializable, RuntimeAsset {
     return new Dataflow() {
 
       List<Notification> notifications = new ArrayList<>();
+
+      @Override
+      public long getId() {
+        return 0;
+      }
+
+      @Override
+      public long getParentId() {
+        return -1000;
+      }
+
+      @Override
+      public long getTransientId() {
+        return 0;
+      }
+
+      @Override
+      public int getChildrenCount() {
+        return 0;
+      }
+
+      @Override
+      public long getParentTransientId() {
+        return -1000;
+      }
+
+      @Serial private static final long serialVersionUID = -1115441423700817816L;
+
+      @Override
+      public String getName() {
+        return "trivial_dataflow";
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return false;
+      }
+
+      @Override
+      public ResourceSet getRequirements() {
+        return ResourceSet.empty();
+      }
+
+      @Override
+      public Coverage getCoverage() {
+        return Coverage.empty();
+      }
+
+      @Override
+      public List<Actuator> getComputation() {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public List<Notification> getNotifications() {
+        return notifications;
+      }
+    };
+  }
+
+  static Dataflow trivial(List<Notification> notifications) {
+    return new Dataflow() {
 
       @Override
       public long getId() {

@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -77,8 +76,9 @@ public abstract class BaseService implements KlabService {
   private String serviceSecret;
   private URL url;
   protected AtomicBoolean available = new AtomicBoolean(false);
+  protected AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
   private final List<Notification> serviceNotifications = new ArrayList<>();
-  protected AbstractServiceDelegatingScope scope;
+  protected ServiceScope scope;
   protected String serviceName = "Unassigned";
   protected final ServiceStartupOptions startupOptions;
   private ScopeManager _scopeManager;
@@ -89,6 +89,7 @@ public abstract class BaseService implements KlabService {
   private long bootTime = System.currentTimeMillis();
   private AtomicInteger cachedLoadPercentage = new AtomicInteger(-1);
   private static final com.sun.management.OperatingSystemMXBean OS_MX_BEAN;
+  private ServiceScope.Locality locality;
 
   static {
     var mxBean = ManagementFactory.getOperatingSystemMXBean();
@@ -104,9 +105,7 @@ public abstract class BaseService implements KlabService {
   private ScheduledExecutorService schedule = Executors.newScheduledThreadPool(1);
 
   protected BaseService(
-      AbstractServiceDelegatingScope scope,
-      KlabService.Type serviceType,
-      ServiceStartupOptions options) {
+      ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
 
     settings = SettingsImpl.forService(serviceType);
 
@@ -190,10 +189,6 @@ public abstract class BaseService implements KlabService {
       throw new KlabIOException(e);
     }
   }
-
-  //  public EmbeddedBroker getEmbeddedBroker() {
-  //    return embeddedBroker;
-  //  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -309,7 +304,7 @@ public abstract class BaseService implements KlabService {
   }
 
   @Override
-  public AbstractServiceDelegatingScope serviceScope() {
+  public ServiceScope serviceScope() {
     return scope;
   }
 
@@ -664,4 +659,26 @@ public abstract class BaseService implements KlabService {
 
     throw new KlabIllegalArgumentException("unexpected scope class");
   }
+
+  public void setMaintenanceMode(boolean maintenanceMode) {
+    this.available.set(!maintenanceMode);
+  }
+
+  public void setAtomicOperationMode(boolean atomicOperationMode) {
+    this.atomicOperationMode.set(atomicOperationMode);
+  }
+
+  public ServiceScope.Locality getLocality() {
+    return locality;
+  }
+
+  public void setLocality(ServiceScope.Locality locality) {
+    this.locality = locality;
+  }
+
+  /**
+   * Called by the service instance to run additional timed tasks. Override as needed. TODO may be a
+   * boolean
+   */
+  public void runAdditionalTimedTasks() {}
 }

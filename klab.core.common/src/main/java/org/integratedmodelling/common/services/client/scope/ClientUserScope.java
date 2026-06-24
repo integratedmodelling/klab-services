@@ -3,22 +3,16 @@ package org.integratedmodelling.common.services.client.scope;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
-
 import org.integratedmodelling.common.authentication.scope.AbstractClientScope;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -43,19 +37,19 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 public class ClientUserScope extends AbstractClientScope implements UserScope {
 
-  private Federation federation;
   // the data hash is the SAME OBJECT throughout the child
   protected Parameters<String> data;
-  private UserIdentity user;
   protected Scope parentScope;
+  protected Type type;
+  private Federation federation;
+  private final UserIdentity user;
   private Status status = Status.STARTED;
   private String id;
-  protected Type type;
-  private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
+  private final Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
       new ConcurrentHashMap<>();
   private String hostServiceId;
   private boolean empty;
-  private List<Notification> notifications = new ArrayList<>();
+  private final List<Notification> notifications = new ArrayList<>();
 
   public ClientUserScope(UserIdentity user, EngineImpl engine) {
     super(user, false, true, engine);
@@ -77,13 +71,13 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
     return id;
   }
 
+  public void setId(String id) {
+    this.id = id;
+  }
+
   @Override
   public String getDispatchId() {
     return federation == null ? user.getUsername() : federation.getId();
-  }
-
-  public void setId(String id) {
-    this.id = id;
   }
 
   public String toString() {
@@ -165,13 +159,13 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   }
 
   @Override
-  public void setStatus(Status status) {
-    this.status = status;
+  public Status getStatus() {
+    return this.status;
   }
 
   @Override
-  public Status getStatus() {
-    return this.status;
+  public void setStatus(Status status) {
+    this.status = status;
   }
 
   @Override

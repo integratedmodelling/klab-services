@@ -107,7 +107,7 @@ public class RuntimeService extends BaseService
         }
       };
 
-  public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
     readConfiguration(options);
     setComponentRegistry();

@@ -1440,7 +1440,7 @@ public class ComponentRegistry {
    */
   public void initializeComponents(File pluginRoot) {
     this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
-    //    this.componentManager = new KlabPluginManager(pluginRoot.toPath());
+    // FIXME Ignore the cache directory within the plugin root
     this.componentManager.loadPlugins();
     this.pluginPath = pluginRoot;
     // TODO configuration

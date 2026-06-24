@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime.server;
 import java.util.List;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -47,8 +48,8 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
      * optional only for the runtime to work standalone (but there are issues if these aren't
      * there).
      */
-    return List.of(
-        KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER);
+    return List.of(/*
+        KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER*/ );
   }
 
   @Override
@@ -58,7 +59,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
 
   @Override
   protected RuntimeService createPrimaryService(
-      AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
+      ServiceScope serviceScope, ServiceStartupOptions options) {
     var ret = new RuntimeService(serviceScope, options);
     healthContributorRegistry.registerContributor(
         "diskspace",

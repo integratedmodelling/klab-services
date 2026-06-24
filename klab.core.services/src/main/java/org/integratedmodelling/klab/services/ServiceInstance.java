@@ -1,12 +1,10 @@
 package org.integratedmodelling.klab.services;
 
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
@@ -19,6 +17,7 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
@@ -31,10 +30,11 @@ import org.integratedmodelling.klab.services.base.BaseService;
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
  * {@link ServiceScope} to run under. If the service runs locally under a user scope, the default
- * service scope is produced using a k.LAB user certificate, so it's a promoted user scope that can
- * only run a local service (along with other services that may come from the network). If the user
- * certificate isn't available, the service will operate in anonymous mode and only clients for
- * local services can fulfill its service dependencies.
+ * service scope is produced using a k.LAB user certificate, so it acts like a stripped-down engine
+ * and the service scope is a promoted user scope that can only run the service locally (along with
+ * other services that may come from the network). If the user certificate isn't available, the
+ * service will operate in anonymous mode and only clients for local services can fulfill its
+ * service dependencies.
  *
  * <p>Service initialization only happens after all necessary services are available. The instance
  * automatically waits for them to come online if they're configured in any way. Implementations may
@@ -45,12 +45,14 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * from a custom scope; in its default implementation will create clients for either configured or
  * embedded services whose URLs can be discovered. If services are missing, the wrapped service will
  * not be available. The lookup of a service distribution to start a needed service is turned off in
- * service instances, as that should be only done by clients in a local configuration.
+ * service instances, as that should be only done by clients in a local configuration. The
+ * configuration with embedded services is untested.
  *
  * <p>Once a {@link ServiceInstance} has successfully booted, the wrapped {@link KlabService} can be
  * used through its API and is available through {@link #klabService()}. The {@link ServiceInstance}
- * does not provide network controllers, which can be provided through the outer wrapper {@link
- * ServiceNetworkedInstance} after defining the controllers using Spring.
+ * does not provide REST controllers, which can be provided through the outer Spring wrapper {@link
+ * ServiceNetworkedInstance} after defining the controllers implementing the service's {@link
+ * org.integratedmodelling.klab.api.ServicesAPI} endpoints.
  *
  * <p>TODO move all startup/shutdown notifications to the wrapper
  *
@@ -63,10 +65,11 @@ public abstract class ServiceInstance<T extends BaseService> {
 
   private ServiceStartupOptions startupOptions;
   private T service;
-  private AbstractServiceDelegatingScope serviceScope;
+  private ServiceScope serviceScope;
   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private Map<KlabService.Type, Set<KlabService>> services = new HashMap<>();
-
+  /* the network-accessible services from the certificate, only used in remote configurations. The local services
+  use a ServiceMonitor instance like the one the engine uses. */
+  private final Map<KlabService.Type, Set<KlabService>> onlineServices = new HashMap<>();
   private long bootTime;
   private Pair<Identity, List<ServiceReference>> identity;
 
@@ -103,7 +106,7 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected abstract T createPrimaryService(
-      AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options);
+      ServiceScope serviceScope, ServiceStartupOptions options);
 
   /**
    * Wait for available (online) status until the passed timeout. If the service hasn't been
@@ -118,6 +121,9 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   public boolean waitOnline(int timeoutSeconds) {
+    if (serviceScope == null) {
+      return false;
+    }
     long start = System.currentTimeMillis();
     while (System.currentTimeMillis() < start + (timeoutSeconds * 1000)) {
       if (serviceScope.isAvailable()) {
@@ -145,12 +151,13 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     @Override
     public <T extends KlabService> T getService(Class<T> serviceClass) {
-      if (serviceClass.isAssignableFrom(klabService().getClass())) {
-        return serviceClass.cast(klabService());
+      var primaryService = klabService();
+      if (primaryService != null && serviceClass.isAssignableFrom(primaryService.getClass())) {
+        return serviceClass.cast(primaryService);
       }
 
       var available =
-          services.getOrDefault(KlabService.Type.classify(serviceClass), Set.of()).stream()
+          onlineServices.getOrDefault(KlabService.Type.classify(serviceClass), Set.of()).stream()
               .filter(s -> s.status().isAvailable())
               .findFirst()
               .orElse(null);
@@ -161,12 +168,16 @@ public abstract class ServiceInstance<T extends BaseService> {
     @Override
     public <T extends KlabService> Optional<T> findService(
         Class<T> serviceClass, Predicate<T> selectors) {
-      return Optional.of(getService(serviceClass));
+      var service = getService(serviceClass);
+      return service != null && (selectors == null || selectors.test(service))
+          ? Optional.of(service)
+          : Optional.empty();
     }
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-      return List.of(getService(serviceClass));
+      var service = getService(serviceClass);
+      return service == null ? List.of() : List.of(service);
     }
   }
 
@@ -190,44 +201,49 @@ public abstract class ServiceInstance<T extends BaseService> {
    *
    * @return
    */
-  protected AbstractServiceDelegatingScope createServiceScope() {
+  protected ServiceScope createServiceScope() {
 
     this.identity = authenticateService();
-    AtomicReference<String> token = new AtomicReference<>();
-    URL hubUrl = null;
     PartnerIdentity partnerIdentity = null;
     if (identity.getFirst() instanceof PartnerIdentity) {
       partnerIdentity = (PartnerIdentity) identity.getFirst();
     }
-
-    var ret =
-        new InstanceServiceScope(
-            new ChannelImpl(identity.getFirst()) {
-              @Override
-              public String getDispatchId() {
-                return service.serviceId();
-              }
-            });
 
     // local services (user-level certificate) only see other local services
     boolean iAmLocal =
         !this.identity.getFirst().is(Identity.Type.SERVICE) && partnerIdentity == null;
 
     if (iAmLocal) {
-      setupLocalServices(ret);
-    } else {
-      setupRemoteServices(
+      return setupLocalServices(
           this.identity.getSecond().stream()
               .filter(sr -> KlabService.Type.operationCritical().contains(sr.getIdentityType()))
               .toList(),
-          partnerIdentity);
+          startupOptions);
     }
 
-    return ret;
+    return setupRemoteServices(
+        this.identity.getSecond().stream()
+            .filter(sr -> KlabService.Type.operationCritical().contains(sr.getIdentityType()))
+            .toList(),
+        partnerIdentity,
+        startupOptions);
   }
 
-  private void setupRemoteServices(List<ServiceReference> list, PartnerIdentity partnerIdentity) {
+  private String serviceDispatchId() {
+    return service == null ? serviceType().name() : service.serviceId();
+  }
 
+  private AbstractServiceDelegatingScope setupRemoteServices(
+      List<ServiceReference> list, PartnerIdentity partnerIdentity, ServiceStartupOptions options) {
+
+    var ret =
+        new InstanceServiceScope(
+            new ChannelImpl(identity.getFirst()) {
+              @Override
+              public String getDispatchId() {
+                return serviceDispatchId();
+              }
+            });
     for (var s : list) {
 
       if (getEssentialServices().contains(s.getIdentityType())
@@ -247,7 +263,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 new ChannelImpl(serviceIdentity) {
                   @Override
                   public String getDispatchId() {
-                    return service.serviceId();
+                    return serviceDispatchId();
                   }
                 });
 
@@ -258,37 +274,37 @@ public abstract class ServiceInstance<T extends BaseService> {
                 scope,
                 s.getIdentityType().classify());
 
-        this.services.computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>()).add(client);
+        this.onlineServices
+            .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+            .add(client);
       }
     }
+
+    this.service = createPrimaryService(ret, options);
+    this.service.setIdentity(identity.getFirst());
+
+    return ret;
   }
 
-  private void setupLocalServices(Scope scope) {
+  private ServiceScope setupLocalServices(
+      List<ServiceReference> serviceList, ServiceStartupOptions options) {
 
-    for (var serviceType :
-        Utils.Collections.union(getEssentialServices(), getOperationalServices())) {
-
-      var client =
-          ServiceClientCatalog.INSTANCE.getService(
-              serviceType.localServiceUrl(),
-              SettingsImpl.forService(serviceType),
-              scope,
-              serviceType.classify());
-
-      this.services.computeIfAbsent(serviceType, k -> new LinkedHashSet<>()).add(client);
-    }
+    var scope =
+        new UserServiceScope((UserIdentity) identity.getFirst(), serviceType(), serviceList);
+    service = createPrimaryService(scope, options);
+    service.setIdentity(identity.getFirst());
+    scope.setService(service);
+    return scope;
   }
 
   public boolean start(ServiceStartupOptions options) {
 
     setEnvironment(options);
     this.serviceScope = createServiceScope();
-    this.service = createPrimaryService(serviceScope, options);
-    this.service.setIdentity(identity.getFirst());
     bootTime = System.currentTimeMillis();
     serviceScope.setStatus(Scope.Status.STARTED);
     serviceScope.setMaintenanceMode(true);
-    scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 5, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 5, TimeUnit.SECONDS);
     return true;
   }
 
@@ -312,24 +328,24 @@ public abstract class ServiceInstance<T extends BaseService> {
       boolean okEssentials = true;
       boolean okOperationals = true;
 
-      for (var serviceType :
-          Utils.Collections.union(getOperationalServices(), getEssentialServices())) {
-
-        var available = services.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
-
-        boolean anyAvailable =
-            !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
-
-        if (getEssentialServices().contains(serviceType) && !anyAvailable) {
-          okEssentials = false;
+      if (!getEssentialServices().isEmpty()) {
+        for (var serviceType : getEssentialServices()) {
+          var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+          boolean anyAvailable =
+              !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
+          if (getEssentialServices().contains(serviceType) && !anyAvailable) {
+            okEssentials = false;
+          }
         }
-        if (getOperationalServices().contains(serviceType) && !anyAvailable) {
-          okOperationals = false;
-        }
-
-        // Small optimization: if both are already false, we can stop early
-        if (!okEssentials && !okOperationals) {
-          break;
+      }
+      if (!getOperationalServices().isEmpty()) {
+        for (var serviceType : getOperationalServices()) {
+          var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+          boolean anyAvailable =
+              !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
+          if (getOperationalServices().contains(serviceType) && !anyAvailable) {
+            okOperationals = false;
+          }
         }
       }
 
@@ -348,13 +364,13 @@ public abstract class ServiceInstance<T extends BaseService> {
       if (okEssentials && !initialized.get()) {
         setBusy(true);
         var success = klabService().initializeService();
+        Logging.INSTANCE.info("Service " + serviceType() + " initialized: " + success);
         klabService().setInitialized(success);
         initialized.set(success);
         setBusy(false);
       }
 
       if (initialized.get() && okEssentials && okOperationals && !operationalized.get()) {
-
         setBusy(true);
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
@@ -363,6 +379,12 @@ public abstract class ServiceInstance<T extends BaseService> {
     } catch (Throwable t) {
       Logging.INSTANCE.error("Exception during scheduled tasks: " + Utils.Exceptions.stackTrace(t));
     }
+
+    klabService().runAdditionalTimedTasks();
+  }
+
+  protected void setOperationalized(boolean operationalized) {
+    this.operationalized.set(operationalized);
   }
 
   public void stop() {

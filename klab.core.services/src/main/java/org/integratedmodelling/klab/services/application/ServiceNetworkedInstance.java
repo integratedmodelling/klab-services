@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 import javax.annotation.PreDestroy;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
@@ -103,7 +102,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
   @Override
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
-    /**
+    /*
      * TODO lookup service certificate in configuration path; if found, use that to build the
      * identity. Otherwise proceed as per default. If service is certified, record the privileges
      * and adjust the service scope.
@@ -130,7 +129,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   }
 
   @Override
-  protected AbstractServiceDelegatingScope createServiceScope() {
+  protected ServiceScope createServiceScope() {
     var ret = super.createServiceScope();
     // TODO if we're certified, adjust the scope's locality and service discovery capabilities
     ret.setLocality(ServiceScope.Locality.LOCALHOST);
@@ -159,7 +158,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
    * @return
    */
   public static boolean start(
-      Class<? extends ServiceNetworkedInstance> cls, ServiceStartupOptions options) {
+      Class<? extends ServiceNetworkedInstance<?>> cls, ServiceStartupOptions options) {
 
     File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
     File logFile =
@@ -221,7 +220,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       String url;
       try {
         URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
-        if (Utils.URLs.isLocalHost(serviceHostUrl) && !serviceHostUrl.toString().contains(":")) {
+        if (Utils.URLs.isLocalHost(serviceHostUrl)) {
           url = options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath();
         } else {
           url = serviceHostUrl.toString();

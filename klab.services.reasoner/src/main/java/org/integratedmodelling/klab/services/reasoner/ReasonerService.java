@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
@@ -38,6 +37,7 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -245,9 +245,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Autowired
-  public ReasonerService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.REASONER, options);
-    this.scope = scope;
     this.owl = new OWL(scope);
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
@@ -296,31 +295,53 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-    //    /*
-    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
-    // there
-    //     * is no configured broker.
-    //     */
-    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-    //      Logging.INSTANCE.info("Setting up embedded broker in local service");
-    //      this.embeddedBroker = new EmbeddedBroker();
-    //      Logging.INSTANCE.info(
-    //          "Embedded broker is "
-    //              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) :
-    // "offline"));
-    //    }
-
     /*
     This is called when resources are available, so this is the time to load the worldview.
      */
+
+    return true;
+  }
+
+  @Override
+  public void runAdditionalTimedTasks() {
+    try {
+      checkWorldview();
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(t);
+    }
+  }
+
+  /**
+   * TODO this must become more dynamic and integrate existing worldview contributors. Priority must
+   * be given to local sourcing (already built into ResourceSet but local may come in later).
+   *
+   * @return
+   */
+  boolean checkWorldview() {
+
+    if (this.worldview != null) {
+      return true;
+    }
+
+    var ret = false;
     for (var resources : serviceScope().getServices(ResourcesService.class)) {
+
+      /*
+       * FIXME this makes the local reasoner only initialize from a local resources service, which
+       *  is correct if the modeler is able to operate on the worldview, but it should be
+       *  configurable or linked to groups.
+       */
+      if (Utils.URLs.isLocalHost(this.getUrl()) && !Utils.URLs.isLocalHost(resources.getUrl())) {
+        continue;
+      }
+
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
 
-        // TODO switch to using the full service list and use the updated worldview retrieval logic.
-        // TODO set up a worldview update check at a configurable interval in timedTasks
+        // FIXME switch to using the full service list and use the updated worldview retrieval
+        // logic.
+        // FIXME set up a worldview update check at a configurable interval in timedTasks
 
-        Worldview worldview = null;
         int maxAttempts = 5;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -338,10 +359,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
         var notifications = loadKnowledge(worldview, serviceScope());
         if (!Utils.Resources.hasErrors(notifications)) {
-          //                    setOperational(false);
-          //                    serviceScope().warn("Worldview loading failed: reasoner is
-          //                    disabled");
-          //                } else {
           setOperational(true);
           ret = true;
           serviceScope().info("Worldview loaded into local reasoner");
@@ -363,8 +380,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public boolean operationalizeService() {
     // we have done what we needed, just return the outcome. Basically we're not operational unless
-    // we
-    // have a valid worldview.
+    // we have a valid worldview.
     return isOperational();
   }
 
@@ -443,7 +459,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       KimConcept parsed = scope.getService(ResourcesService.class).declareConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
-        //        concepts.put(definition, ret);
       }
     }
     return ret == null ? owl.nothing(definition) : ret;
@@ -1483,6 +1498,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     List<Notification> ret = new ArrayList<>();
 
+    // this remains the only service whose initialization depends on others, so we set it up
+    // manually when the specific conditions for initialization are met
+    if (observationReasoner == null) {
+      if (!initializeService()) {
+        Logging.INSTANCE.error(
+            "failed to initialize the observation reasoner and related services");
+        return ResourceSet.empty(Notification.error("Failed to initialize reasoner"));
+      }
+      setInitialized(true);
+    }
+
     scope = getScopeManager().collectMessagePayload(scope, Notification.class, ret);
 
     if (worldview == null || worldview.isEmpty()) {
@@ -1506,8 +1532,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     observationReasoner.initializeStrategies();
 
-    // assess consistent status
+    // assess consistent status and if consistent, set operational
     this.consistent.set(Utils.Notifications.hasErrors(ret));
+    setOperational(this.consistent.get());
 
     return Utils.Resources.createFromLexicalNotifications(ret);
   }

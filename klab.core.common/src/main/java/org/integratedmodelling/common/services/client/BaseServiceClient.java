@@ -49,6 +49,7 @@ public abstract class BaseServiceClient implements KlabService {
 
   List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
 
+  @SafeVarargs
   public BaseServiceClient(
       ServiceClientCatalog.ClientMonitor monitor,
       Scope scope,

@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.common.data.Notification;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -32,8 +33,7 @@ public class ResolutionCompiler {
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
-
-  //  private AtomicLong idGenerator = new AtomicLong();
+  private List<Notification> notifications = new ArrayList<>();
 
   public ResolutionCompiler(ResolverService service) {
     this.resolutionCache.addVertex(RuntimeAsset.CONTEXT_ASSET);
@@ -49,6 +49,10 @@ public class ResolutionCompiler {
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
     return resolve(observation, scope, ResolverService.getResolutionGraph(scope));
+  }
+
+  public List<Notification> getNotifications() {
+    return notifications;
   }
 
   private Geometry getObservationGeometry(Observation observation, ContextScope scope) {
@@ -403,6 +407,7 @@ public class ResolutionCompiler {
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models = resources.resolveModels(observable, scope);
+    // FIXME the notifications from the resourceset must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);
     return ret;
