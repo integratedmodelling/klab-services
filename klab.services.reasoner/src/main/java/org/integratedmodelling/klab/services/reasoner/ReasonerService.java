@@ -155,6 +155,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return owl;
   }
 
+  private Concept nothingConcept(String urn) {
+    if (this.owl != null) {
+      return this.owl.nothing(urn);
+    }
+    var ret = new ConceptImpl();
+    ret.setId(ConceptImpl.NOTHING_ID);
+    ret.setUrn("owl:Nothing");
+    ret.setNamespace("owl");
+    ret.getType().add(SemanticType.NOTHING);
+    return ret;
+  }
+
   /**
    * An emergence is the appearance of an observation triggered by another, under the assumptions
    * stated in the worldview. It applies to processes and relationships and its emergent observable
@@ -614,15 +626,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept baseSubstantialType(Semantics concept, Scope scope) {
-    var builder =
-        SemanticsBuilder.create(concept.asConcept(), this, scope)
-            .without(SemanticRole.TRAIT)
-            .without(SemanticRole.modifiers());
-    for (var identity : directIdentities(concept)) {
-      // TODO recognize individual identities and add their lexical root
+    Concept original = concept == null ? null : concept.asConcept();
+    if (original == null) {
+      return nothingConcept("null substantial concept");
     }
 
-    return builder.buildConcept();
+    if (!SemanticType.isSubstantial(original.getType())) {
+      return nothingConcept(original.getUrn());
+    }
+
+    try {
+      var builder =
+          SemanticsBuilder.create(original, this, scope == null ? serviceScope() : scope)
+              .without(SemanticRole.TRAIT)
+              .without(SemanticRole.ROLE)
+              .without(SemanticRole.modifiers());
+      /*
+       * TODO recognize individual identities and add their lexical root. This used to iterate
+       * directIdentities(concept), but the loop had no effect and forced an additional OWL lookup.
+       */
+      Concept ret = builder.buildConcept();
+      return ret == null || ret.is(SemanticType.NOTHING) ? original : ret;
+    } catch (RuntimeException t) {
+      Logging.INSTANCE.warn(
+          "Could not establish base substantial type for " + original.getUrn() + ": " + t);
+      return original;
+    }
   }
 
   @Override

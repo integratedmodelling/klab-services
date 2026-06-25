@@ -114,7 +114,7 @@ public class OWL {
 
   public Concept nothing(String urn, Throwable... exceptions) {
     // TODO return a special nothing with the passed URN and the exceptions in metadata
-    return nothing;
+    return getNothing();
   }
 
   /**
@@ -820,15 +820,18 @@ public class OWL {
     return ret;
   }
 
-  public Concept getNothing() {
+  public synchronized Concept getNothing() {
     if (this.nothing == null) {
       this.nothing = new ConceptImpl();
       this.nothing.getType().add(SemanticType.NOTHING);
-      ((ConceptImpl) this.nothing).setId(0);
-      ((ConceptImpl) this.nothing)
-          .setId(registerOwlClass(manager.getOWLDataFactory().getOWLNothing()));
+      ((ConceptImpl) this.nothing).setId(ConceptImpl.NOTHING_ID);
       ((ConceptImpl) this.nothing).setUrn("owl:Nothing");
       ((ConceptImpl) this.nothing).setNamespace("owl");
+    }
+    if (manager != null && !owlClasses.containsKey(((ConceptImpl) this.nothing).getId())) {
+      ((ConceptImpl) this.nothing)
+          .setId(registerOwlClass(manager.getOWLDataFactory().getOWLNothing()));
+      registerConcept((ConceptImpl) this.nothing);
     }
     return this.nothing;
   }

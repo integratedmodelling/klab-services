@@ -101,7 +101,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
 
     var sessionId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
-            ? user.getUsername()
+            ? user.getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
 
     var existing = ClientScopeManager.INSTANCE.getScope(sessionId, SessionScope.class);

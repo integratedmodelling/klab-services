@@ -17,6 +17,7 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -192,6 +193,47 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
+    if (startupOptions != null) {
+      var authenticationPackage = startupOptions.getAuthenticationPackage();
+      if (authenticationPackage != null && !authenticationPackage.isBlank()) {
+        Logging.INSTANCE.info(
+            "Service "
+                + serviceType()
+                + " received local authentication package; reconstructing user identity without "
+                + "hub authentication");
+        var authentication =
+            Authentication.INSTANCE.decodeAuthenticationResponse(authenticationPackage);
+        if (authentication != null) {
+          var ret = Authentication.INSTANCE.authenticate(authentication);
+          if (ret.getFirst() instanceof UserIdentity user && !user.isAnonymous()) {
+            Logging.INSTANCE.info(
+                "Service "
+                    + serviceType()
+                    + " using local authentication package for user "
+                    + user.getUsername()
+                    + " with "
+                    + ret.getSecond().size()
+                    + " advertised services");
+            return ret;
+          }
+          Logging.INSTANCE.warn(
+              "Local authentication package for service "
+                  + serviceType()
+                  + " reconstructed an anonymous identity; falling back to certificate "
+                  + "authentication");
+        } else {
+          Logging.INSTANCE.warn(
+              "Local authentication package for service "
+                  + serviceType()
+                  + " could not be decoded; falling back to certificate authentication");
+        }
+      } else {
+        Logging.INSTANCE.info(
+            "Service "
+                + serviceType()
+                + " has no local authentication package; authenticating through certificate/hub");
+      }
+    }
     return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
   }
 
@@ -207,6 +249,10 @@ public abstract class ServiceInstance<T extends BaseService> {
     PartnerIdentity partnerIdentity = null;
     if (identity.getFirst() instanceof PartnerIdentity) {
       partnerIdentity = (PartnerIdentity) identity.getFirst();
+    } else if (identity.getFirst() instanceof UserIdentity user) {
+      if (user.isAnonymous()) {
+        Logging.INSTANCE.info("Authentication failed: anonymous service instance started");
+      }
     }
 
     // local services (user-level certificate) only see other local services

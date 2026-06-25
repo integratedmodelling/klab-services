@@ -17,6 +17,9 @@ import org.kohsuke.args4j.ParserProperties;
 
 public class ServiceStartupOptions implements StartupOptions {
 
+  public static final String LOCAL_AUTHENTICATION_RESPONSE_ENV =
+      "KLAB_LOCAL_AUTHENTICATION_RESPONSE";
+
   @Option(
       name = "-dataDir",
       usage = "data directory (default: ~/.klab)",
@@ -97,6 +100,12 @@ public class ServiceStartupOptions implements StartupOptions {
 
   @Option(name = "-startLocalBroker", usage = "Start a local AMQP broker")
   private boolean startLocalBroker;
+
+  @Option(
+      name = "-authPackage",
+      usage = "Base64-encoded local engine authentication package",
+      metaVar = "<BASE64_JSON>")
+  private String authenticationPackage;
 
   /** All defaults */
   private ServiceStartupOptions() {}
@@ -346,6 +355,17 @@ public class ServiceStartupOptions implements StartupOptions {
 
   public String getMaxMultipartRequestSize() {
     return maxMultipartRequestSize;
+  }
+
+  public String getAuthenticationPackage() {
+    if (authenticationPackage == null || authenticationPackage.isBlank()) {
+      authenticationPackage = System.getenv(LOCAL_AUTHENTICATION_RESPONSE_ENV);
+    }
+    return authenticationPackage;
+  }
+
+  public void setAuthenticationPackage(String authenticationPackage) {
+    this.authenticationPackage = authenticationPackage;
   }
 
   public void setMaxMultipartRequestSize(String maxMultipartRequestSize) {

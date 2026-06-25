@@ -593,15 +593,15 @@ public abstract class BaseService implements KlabService {
     file.deleteOnExit();
   }
 
-  public void setServiceName(String username) {
-    this.serviceName = username;
-  }
+  //  public void setServiceName(String username) {
+  //    this.serviceName = username;
+  //  }
 
   public void setIdentity(Identity identity) {
     this.identity = identity;
     this.serviceName =
         switch (identity) {
-          case UserIdentity user -> user.getUsername();
+          case UserIdentity user -> serviceType().name().toLowerCase() + "." + user.getUsername();
           case PartnerIdentity partner -> partner.getId();
           default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
         };

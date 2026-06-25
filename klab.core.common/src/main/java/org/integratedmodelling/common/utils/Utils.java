@@ -2421,11 +2421,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new KlabIllegalArgumentException(e);
           }
         }
-        //        try {
-        return Json.parseObject(body, resultClass);
-        //        } catch (IOException e) {
-        //            throw new KlabIOException(e);
-        //        }
+        try {
+          return Json.parseObject(body, resultClass);
+        } catch (Throwable e) {
+          Logging.INSTANCE.error(
+              "PARSE ERROR OF " + resultClass.getSimpleName() + " FOR " + body, e);
+          throw new KlabIOException(e);
+        }
       }
 
       @Override
@@ -2624,8 +2626,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
       try {
         return (T) defaultMapper.readerFor(cls).readValue(text);
-      } catch (IOException e) {
-        throw new IllegalArgumentException(e);
+      } catch (Throwable e) {
+        Logging.INSTANCE.error(e, "Error parsing JSON as" + cls.getSimpleName() + ": " + text);
+        throw new KlabIllegalArgumentException(e);
       }
     }
 

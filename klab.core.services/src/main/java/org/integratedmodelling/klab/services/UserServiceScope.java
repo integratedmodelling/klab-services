@@ -6,12 +6,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -54,6 +54,21 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
       UserIdentity user, KlabService.Type serviceType, List<ServiceReference> serviceList) {
     super(user, false, false);
     this.user = user;
+    if (this.user.isAnonymous()) {
+      Logging.INSTANCE.warn(
+          "Anonymous UserServiceScope started for service "
+              + serviceType
+              + "; local service dependencies will be limited");
+    } else {
+      Logging.INSTANCE.info(
+          "UserServiceScope started for service "
+              + serviceType
+              + " as user "
+              + this.user.getUsername()
+              + " with "
+              + serviceList.size()
+              + " advertised services");
+    }
     this.data = Parameters.create();
     this.id = user.getId();
     if (user.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
@@ -133,18 +148,10 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
     return ret;
   }
 
-  BaseService getService() {
-    return service;
-  }
-
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass) {
-    return getServices(serviceClass).stream()
-        .findAny()
-        .orElseThrow(
-            () ->
-                new KlabServiceAccessException(
-                    "No suitable service for request of " + serviceClass.getSimpleName()));
+    /* The service scope can return null if no service is found */
+    return getServices(serviceClass).stream().findFirst().orElse(null);
   }
 
   @Override
@@ -154,7 +161,7 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
     var services = getServices(serviceClass);
     var ret = services.stream().filter(selector).toList();
     if (!ret.isEmpty()) {
-      return Optional.of((T) ret.getFirst());
+      return Optional.of(ret.getFirst());
     }
 
     return Optional.empty();

@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -70,6 +69,35 @@ public class ServiceAuthorizationManager {
     this.klabService = klabService;
   }
 
+  private String tokenDescription(String token) {
+    if (token == null) {
+      return "null";
+    }
+    return ServicesAPI.ANONYMOUS_TOKEN.equals(token) ? "anonymous" : "provided";
+  }
+
+  private EnumSet<Role> privilegedLocalRoles() {
+    return EnumSet.of(
+        Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER);
+  }
+
+  private EngineAuthorization authorizationFromLocalOwner(
+      UserIdentity user, String token, Map<String, String> requestHeaders) {
+
+    var authorization =
+        new EngineAuthorization(
+            "local",
+            user.getUsername(),
+            token == null || ServicesAPI.ANONYMOUS_TOKEN.equals(token) ? user.getId() : token,
+            requestHeaders,
+            user.getGroups(),
+            privilegedLocalRoles());
+    authorization.setEmailAddress(user.getEmailAddress());
+    authorization.setAuthenticated(true);
+    authorization.setLocal(true);
+    return authorization;
+  }
+
   /**
    * Validate a SERVICE-level certificate and return the valid partner identity with the token to
    * talk to the hub. The service may also run on User authority or even anonymously if allowed,
@@ -84,6 +112,10 @@ public class ServiceAuthorizationManager {
    */
   public Pair<Identity, List<ServiceReference>> authenticateService(
       KlabCertificate certificate, StartupOptions options) {
+
+    Logging.INSTANCE.info(
+        "Authenticating service from certificate: "
+            + certificate.getProperty(KlabCertificate.KEY_NODENAME));
 
     String serverHub = authenticatingHub;
     if (serverHub == null) {
@@ -245,6 +277,16 @@ public class ServiceAuthorizationManager {
             && serverKey.equals(klabService.get().klabService().getServiceSecret())
             && Utils.URLs.isLocalHost(klabService.get().klabService().getUrl());
 
+//    Logging.INSTANCE.info(
+//        klabService.get().klabService().serviceType()
+//            + " validating token : token is "
+//            + (token == null
+//                ? "null"
+//                : (ServicesAPI.ANONYMOUS_TOKEN.equals(token) ? "anonymous" : "not anonymous"))
+//            + " and service is "
+//            + (serviceAuthenticated ? "authenticated" : "not authenticated")
+//            + " through a certificate");
+
     /*
     we move on to JWT parsing only if the service is authenticated with the hub and the user is not
     anonymous.
@@ -289,9 +331,11 @@ public class ServiceAuthorizationManager {
            * the JWT is intended for. Each principal intended to process the JWT must
            * identify itself with a value in the audience claim. If the principal
            * processing the claim does not identify itself with a value in the aud claim
-           * // when this claim is present, then the JWT must be rejected.
+           * when this claim is present, then the JWT must be rejected.
            */
-          if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {}
+          if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
+            // TODO
+          }
 
           /*
            * Expiration time (exp) - The "exp" (expiration time) claim identifies the
@@ -328,33 +372,64 @@ public class ServiceAuthorizationManager {
       }
     }
 
+    if (privilegedLocalService) {
+      // any user with local authority (including anonymous) gets all privileges and the user data
+      // from the authenticating user
+      var owner = klabService.get().getServiceOwner();
+      if (owner instanceof UserIdentity user) {
+        if (!user.isAnonymous()) {
+          if (ret == null || "anonymous".equals(ret.getUsername())) {
+            Logging.INSTANCE.info(
+                "Authorizing privileged local request as service owner "
+                    + user.getUsername()
+                    + "; incoming token="
+                    + tokenDescription(token)
+                    + "; scopeHeader="
+                    + scopeHeader);
+            ret = authorizationFromLocalOwner(user, token, requestHeaders);
+          }
+        } else {
+          Logging.INSTANCE.warn(
+              "Privileged local request in "
+                  + klabService.get().klabService().serviceName()
+                  + " has an anonymous service owner; incoming token="
+                  + tokenDescription(token)
+                  + "; scopeHeader="
+                  + scopeHeader
+                  + ". The service probably started without a local authentication package.");
+        }
+      }
+    }
+
     if (ret == null) {
       /*
       anonymous user case also intercepts JWT token failure
        */
+      Collection<Role> anonymousRoles =
+          privilegedLocalService ? privilegedLocalRoles() : Collections.emptyList();
       ret =
-          new EngineAuthorization("nohub", "anonymous", null, requestHeaders, List.of(), List.of());
+          new EngineAuthorization(
+              "nohub", "anonymous", null, requestHeaders, List.of(), anonymousRoles);
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
+      Logging.INSTANCE.info(
+          "Falling back to anonymous authorization in "
+              + klabService.get().klabService().serviceName()
+              + "; privilegedLocalService="
+              + privilegedLocalService
+              + "; token="
+              + tokenDescription(token)
+              + "; scopeHeader="
+              + scopeHeader);
     }
 
     if (privilegedLocalService) {
-      // any user with local authority (including anonymous) gets all privileges and the user data
-      // from the authenticating user
       ret.setLocal(true);
-      ret.setRoles(
-          EnumSet.of(
-              Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER));
+      ret.setRoles(privilegedLocalRoles());
       ret.setAuthenticated(true);
-      if (token != null) {
+      if (token != null && !ServicesAPI.ANONYMOUS_TOKEN.equals(token)) {
         // if we don't do this, in local setting (no hub authenticating) we will get the anonymous
         // token
         ret.setTokenString(token);
-      }
-      var owner = klabService.get().getServiceOwner();
-      if (owner instanceof UserIdentity user && "anonymous".equals(ret.getUsername())) {
-        ret.setUsername(user.getUsername());
-        ret.setGroups(user.getGroups());
-        ret.setEmailAddress(user.getEmailAddress());
       }
     }
 
@@ -365,13 +440,48 @@ public class ServiceAuthorizationManager {
       resolvedScope = scope;
     } else {
 
-      var scopeData = ContextScope.parseScopeId(scopeHeader);
+      ContextScope.ScopeData scopeData;
+      try {
+        scopeData = ContextScope.parseScopeId(scopeHeader);
+      } catch (RuntimeException e) {
+        Logging.INSTANCE.error(
+            "Cannot parse propagated scope header "
+                + ServicesAPI.SCOPE_HEADER
+                + "="
+                + scopeHeader
+                + "; runtimeId="
+                + runtimeId
+                + "; user="
+                + ret.getUsername()
+                + ": "
+                + Utils.Exceptions.stackTrace(e));
+        throw e;
+      }
       resolvedScope =
           klabService
               .get()
               .klabService()
               .getScopeManager()
               .getScope(ret, scopeData.type().classify(), scopeData.scopeId(), runtimeId);
+
+      if (resolvedScope == null) {
+        var exactScope =
+            klabService.get().klabService().getScopeManager().getScope(scopeHeader, Scope.class);
+        if (exactScope != null) {
+          Logging.INSTANCE.warn(
+              "Recovered propagated scope "
+                  + scopeHeader
+                  + " by exact lookup after parsed lookup failed; parsed scopeId="
+                  + scopeData.scopeId()
+                  + ", parsedType="
+                  + scopeData.type()
+                  + ", runtimeId="
+                  + runtimeId
+                  + ", user="
+                  + ret.getUsername());
+          resolvedScope = exactScope;
+        }
+      }
 
       if (resolvedScope instanceof ServiceContextScope serviceContextScope) {
 

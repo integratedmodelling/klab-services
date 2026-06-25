@@ -83,8 +83,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     observer = parent.observer;
     configuration = parent.configuration;
     contextObservation = parent.contextObservation;
+    sourceObservation = parent.sourceObservation;
+    targetObservation = parent.targetObservation;
     shardingStrategy = parent.shardingStrategy;
     this.transaction = parent.transaction;
+    this.transactionId = parent.transactionId;
   }
 
   @Override
@@ -303,8 +306,10 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public ContextScope between(Observation source, Observation target) {
-    // TODO
-    return null;
+    var ret = childContext(this);
+    ret.sourceObservation = source;
+    ret.targetObservation = target;
+    return ret;
   }
 
   @Override

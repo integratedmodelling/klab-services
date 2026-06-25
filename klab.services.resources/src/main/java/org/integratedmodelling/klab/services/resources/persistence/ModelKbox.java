@@ -737,7 +737,7 @@ public class ModelKbox extends ObservableKbox {
             && model.getObservables().getFirst().getSemantics().isCollective();
 
     // happens in error
-    if (model.getObservables().isEmpty() || model.getObservables().get(0) == null) {
+    if (model.getObservables().isEmpty() || model.getObservables().getFirst() == null) {
       return ret;
     }
 
