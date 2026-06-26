@@ -1158,7 +1158,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
-      scope.warn("invalid concept definition: " + definition);
+      serviceScope().warn("invalid concept definition: " + definition);
     }
     return null;
   }
@@ -1168,7 +1168,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
-      scope.warn("invalid observable definition: " + definition);
+      serviceScope().warn("invalid observable definition: " + definition);
     }
     return null;
   }
@@ -1180,9 +1180,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       for (var notification : parsed.getNotifications()) {
         if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
           errors = true;
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         }
       }
       return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
@@ -1197,9 +1197,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       for (var notification : parsed.getNotifications()) {
         if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
           errors = true;
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         }
       }
       return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null, null);

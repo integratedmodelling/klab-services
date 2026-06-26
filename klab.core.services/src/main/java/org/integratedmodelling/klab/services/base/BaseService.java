@@ -78,7 +78,7 @@ public abstract class BaseService implements KlabService {
   protected AtomicBoolean available = new AtomicBoolean(false);
   protected AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
   private final List<Notification> serviceNotifications = new ArrayList<>();
-  protected ServiceScope scope;
+  protected ServiceScope serviceScope;
   protected String serviceName = "Unassigned";
   protected final ServiceStartupOptions startupOptions;
   private ScopeManager _scopeManager;
@@ -116,7 +116,7 @@ public abstract class BaseService implements KlabService {
     settingsForSlaveServices.setIfUnset(Setting.LOG_EVENTS, true);
     settingsForSlaveServices.setIfUnset(Setting.LAUNCH_PRODUCT, false);
 
-    this.scope = scope;
+    this.serviceScope = scope;
     this.type = serviceType;
     this.startupOptions = options;
     try {
@@ -305,7 +305,7 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public ServiceScope serviceScope() {
-    return scope;
+    return serviceScope;
   }
 
   /**
@@ -649,7 +649,7 @@ public abstract class BaseService implements KlabService {
         serviceContextScope.setDigitalTwin(
             new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
       } else {
-        scope.warn(
+        serviceScope.warn(
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 

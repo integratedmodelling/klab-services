@@ -831,7 +831,7 @@ public class RuntimeService extends BaseService
         submissionScope
             .getDigitalTwin()
             .getKnowledgeGraph()
-            .query(Observation.class, scope)
+            .query(Observation.class, submissionScope)
             .source(cohort)
             .along(GraphModel.Relationship.HAS_MEMBER)
             .run(submissionScope)) {

@@ -468,7 +468,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
     } else {
-      KimConcept parsed = scope.getService(ResourcesService.class).declareConcept(definition);
+      // FIXME this should use all services and resolve in user scope
+      KimConcept parsed =
+          serviceScope().getService(ResourcesService.class).declareConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
       }
@@ -478,7 +480,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable resolveObservableInternal(String definition) {
     Observable ret = null;
-    KimObservable parsed = scope.getService(ResourcesService.class).declareObservable(definition);
+    // FIXME the service should be passed
+    KimObservable parsed =
+        serviceScope().getService(ResourcesService.class).declareObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
       if (ret != null) {
@@ -699,7 +703,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.add(concept);
 
     var base =
-        SemanticsBuilder.create(concept.asConcept(), this, scope)
+        SemanticsBuilder.create(concept.asConcept(), this, serviceScope())
             .without(SemanticRole.INHERENT)
             .without(SemanticRole.modifiers())
             .buildConcept();
@@ -708,7 +712,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (inherent != null) {
       ret.addAll(
           allParents(inherent).stream()
-              .map(ctx -> SemanticsBuilder.create(base, this, scope).of(ctx).buildConcept())
+              .map(
+                  ctx -> SemanticsBuilder.create(base, this, serviceScope()).of(ctx).buildConcept())
               .toList());
     }
 
@@ -1724,7 +1729,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
        */
       Collection<Concept> collection = allParents(concept);
       collection.add(concept.asConcept());
-      return collection.contains(other);
+      return collection.contains(other.asConcept());
     }
     return false;
   }
@@ -1738,7 +1743,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Concept declareConcept(KimConcept conceptDeclaration) {
     return declare(
-        conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()), scope);
+        conceptDeclaration,
+        this.owl.requireOntology(conceptDeclaration.getNamespace()),
+        serviceScope());
   }
 
   //  @Override
@@ -1746,7 +1753,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return declare(
         observableDeclaration,
         this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
-        scope);
+        serviceScope());
   }
 
   //  @Override
@@ -2636,7 +2643,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             concept.is(SemanticType.INTERSECTION)
                 ? this.owl.getIntersection(
                     concepts, ontology, concept.getOperands().get(0).getType())
-                : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+                : this.owl.getUnion(concepts, ontology, concept.getOperands().getFirst().getType());
 
         ((ConceptImpl) ret).setUrn(concept.getUrn());
         ret.getType()
@@ -2685,7 +2692,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (concept.getNonSemanticType() != null) {
       Concept nsmain =
           this.owl.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
-      ObservableImpl observable = ObservableImpl.promote(nsmain, scope);
+      ObservableImpl observable = ObservableImpl.promote(nsmain, serviceScope());
       //			observable.setModelReference(concept.getModelReference());
       observable.setName(concept.getFormalName());
       observable.setStatedName(concept.getFormalName());
@@ -2860,7 +2867,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case TOKEN:
           expression = semanticExpressions.getIfPresent(response.getSearchId());
           if (expression == null) {
-            expression = SemanticExpression.create(scope);
+            expression = SemanticExpression.create(serviceScope());
             semanticExpressions.put(response.getSearchId(), expression);
           } else {
             response.getErrors().add("Timeout during search");
@@ -2918,7 +2925,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
-    KimConcept peer = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
+    KimConcept peer =
+        serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
     peer.visit(
         new Statement.Visitor() {
           @Override
@@ -2970,7 +2978,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declaration = declaration.replace(key.getUrn(), rep);
     }
 
-    return declareConcept(scope.getService(ResourcesService.class).declareConcept(declaration));
+    return declareConcept(
+        serviceScope().getService(ResourcesService.class).declareConcept(declaration));
   }
 
   @Override

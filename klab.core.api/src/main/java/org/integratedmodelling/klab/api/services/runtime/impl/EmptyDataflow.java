@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class EmptyDataflow implements Dataflow {
 
   private List<Notification> notifications = new ArrayList<>();
-  private Coverage coverage = null;
+  private Coverage coverage = Coverage.empty();
   private String name = "Empty Dataflow";
   private List<Actuator> computation = new ArrayList<>();
   private ResourceSet requirements = ResourceSet.empty();
