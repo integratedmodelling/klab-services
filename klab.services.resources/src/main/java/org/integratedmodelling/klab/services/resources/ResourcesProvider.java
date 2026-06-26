@@ -197,7 +197,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public boolean operationalizeService() {
-    // Do nothing. TODO should probably remove the 2-phase thing at this point.
+    // do a first check for an appropriate reasoner. Does not prevent operationalization.
     checkSemanticServices(serviceScope());
     return true;
   }
@@ -205,7 +205,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public boolean checkSemanticServices(Scope scope) {
     // TODO this should be called repeatedly and should be able to make incremental changes
     if (!this.semanticSearchAvailable.get()) {
-      var reasoner = scope.getService(Reasoner.class);
+      var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
+
+      /** Only local reasoners can index semantic content of a local resources service. */
+      var reasoner =
+          scope.getServices(Reasoner.class).stream()
+              .filter(
+                  r ->
+                      !iAmLocal
+                          || org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
+                              r.getUrl()))
+              .findAny()
+              .orElse(null);
+
       if (reasoner != null && reasoner.status().isOperational()) {
         Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
         if (indexKnowledge(scope)) {

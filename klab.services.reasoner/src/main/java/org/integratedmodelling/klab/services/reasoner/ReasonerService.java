@@ -391,9 +391,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean operationalizeService() {
-    // we have done what we needed, just return the outcome. Basically we're not operational unless
-    // we have a valid worldview.
-    return isOperational();
+    return worldview != null;
   }
 
   @SuppressWarnings("unchecked")

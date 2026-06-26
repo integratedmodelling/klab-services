@@ -17,7 +17,6 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -418,11 +417,14 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       if (initialized.get() && okEssentials && okOperationals && !operationalized.get()) {
         setBusy(true);
-        operationalized.set(true);
-        klabService().setOperational(klabService().operationalizeService());
+        if (klabService().operationalizeService()) {
+          operationalized.set(true);
+          klabService().setOperational(true);
+        }
         setBusy(false);
       }
     } catch (Throwable t) {
+      setBusy(false);
       Logging.INSTANCE.error("Exception during scheduled tasks: " + Utils.Exceptions.stackTrace(t));
     }
 
