@@ -21,6 +21,10 @@
  *******************************************************************************/
 package org.integratedmodelling.klab.services.reasoner.owl;
 
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -34,11 +38,6 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
 import org.semanticweb.owlapi.io.OWLXMLOntologyFormat;
 import org.semanticweb.owlapi.model.*;
-
-import java.io.File;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A proxy for an ontology. Holds a list of concepts and a list of axioms. Can be turned into a list
@@ -106,7 +105,12 @@ public class Ontology {
           && !this.conceptIDs.containsKey(c.getIRI().getFragment())) {
         this.conceptIDs.put(
             c.getIRI().getFragment(),
-            owl.makeConcept(c, c.getIRI().getFragment(), this.getName(), OWL.emptyType));
+            owl.makeConcept(
+                c,
+                c.getIRI().getFragment(),
+                this.getName(),
+                OWL.emptyType,
+                getName() + ":" + c.getIRI().getFragment()));
       }
     }
     for (OWLProperty<?, ?> p : this.ontology.getDataPropertiesInSignature(false)) {
@@ -300,6 +304,21 @@ public class Ontology {
      */
     OWLDataFactory factory = this.ontology.getOWLOntologyManager().getOWLDataFactory();
 
+    var urlAxiom =
+        axioms.stream()
+            .filter(
+                a ->
+                    a.getType().equals(Axiom.ANNOTATION_ASSERTION)
+                        && a.getArgs().length > 2
+                        && a.getArgs()[1].equals(NS.CONCEPT_DEFINITION_PROPERTY))
+            .findAny()
+            .orElse(null);
+
+    var url =
+        urlAxiom == null
+            ? null
+            : (urlAxiom.getArgs()[2] == null ? null : urlAxiom.getArgs()[2].toString());
+
     for (Axiom axiom : axioms) {
 
       // System.out.println(" [" + id + "] => " + axiom);
@@ -308,14 +327,18 @@ public class Ontology {
 
         if (axiom.is(Axiom.CLASS_ASSERTION)) {
 
-          OWLClass newcl =
-              factory.getOWLClass(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
+          String conceptId = axiom.getArgument(0).toString();
+          OWLClass newcl = factory.getOWLClass(IRI.create(this.prefix + "#" + conceptId));
           this.ontology
               .getOWLOntologyManager()
               .addAxiom(this.ontology, factory.getOWLDeclarationAxiom(newcl));
-          this.conceptIDs.put(
-              axiom.getArgument(0).toString(),
-              owl.makeConcept(newcl, axiom.getArgument(0).toString(), id, axiom.getConceptType()));
+          Concept existing = this.conceptIDs.get(conceptId);
+          if (existing instanceof ConceptImpl existingConcept) {
+            existingConcept.getType().addAll(axiom.getConceptType());
+          } else {
+            this.conceptIDs.put(
+                conceptId, owl.makeConcept(newcl, conceptId, id, axiom.getConceptType(), url));
+          }
 
         } else if (axiom.is(Axiom.SUBCLASS_OF)) {
 
@@ -717,7 +740,7 @@ public class Ontology {
                 .getOWLDataFactory()
                 .getOWLClass(IRI.create(this.prefix + "#" + c));
 
-        this.conceptIDs.put(c, owl.makeConcept(ret, c, getName(), OWL.emptyType));
+        this.conceptIDs.put(c, owl.makeConcept(ret, c, getName(), OWL.emptyType, c));
       }
     }
 
@@ -952,12 +975,12 @@ public class Ontology {
    * @return the new ID
    */
   public String createIdForDefinition(String definition) {
-    String id =
-        getName().replaceAll("\\.", "_").toUpperCase()
-            + "_"
-            + String.format("%09d", idCounter.incrementAndGet());
-    this.definitionIds.put(definition, id);
-    return id;
+    return this.definitionIds.computeIfAbsent(
+        definition,
+        key ->
+            getName().replaceAll("\\.", "_").toUpperCase()
+                + "_"
+                + String.format("%09d", idCounter.incrementAndGet()));
   }
 
   // @Override

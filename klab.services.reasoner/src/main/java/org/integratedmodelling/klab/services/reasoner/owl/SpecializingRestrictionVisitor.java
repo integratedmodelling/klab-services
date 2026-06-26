@@ -1,15 +1,18 @@
 package org.integratedmodelling.klab.services.reasoner.owl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
 import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
-import org.semanticweb.owlapi.model.OWLObjectCardinalityRestriction;
 import org.semanticweb.owlapi.model.OWLObjectExactCardinality;
+import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectMaxCardinality;
 import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
@@ -51,42 +54,55 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
     this.owl = owl;
     //        this.concept = concept;
     this.useSuperproperties = useSuperProperties;
-    owl.getOWLClass(concept).accept(this);
+    OWLClass owlClass = owl.getOWLClass(concept);
+    if (owlClass != null) {
+      owlClass.accept(this);
+    }
   }
 
   @Override
   public void visit(OWLClass desc) {
 
-    if (!processedClasses.contains(desc)) {
-
-      processedClasses.add(desc);
-
-      Set<OWLClassExpression> set = desc.getSuperClasses(onts);
-      for (OWLClassExpression s : set) {
-        if (s.equals(desc)) {
-          break;
-        } else {
-          s.accept(this);
-        }
-      }
+    if (processedClasses.add(desc)) {
+      visitClassExpressions(desc.getSuperClasses(onts), desc);
+      visitClassExpressions(desc.getEquivalentClasses(onts), desc);
     }
   }
 
   private void visitRestriction(OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> desc) {
-    if (useSuperproperties) {
-      if (owl.getPropertyFor((OWLProperty<?, ?>) desc.getProperty()).is(property, owl)) {
-        if (addNew(owl.unwrap(desc.getFiller()))) {
-          // keep it for inspection at the end
-          this.restriction = desc;
-        }
+    if (desc.getProperty() instanceof OWLProperty) {
+      Property restricted = owl.getPropertyFor((OWLProperty<?, ?>) desc.getProperty());
+      boolean matches =
+          useSuperproperties ? restricted.is(property, owl) : restricted.equals(property);
+      if (matches && addNew(owl.unwrap(desc.getFiller()))) {
+        // keep it for inspection at the end
+        this.restriction = desc;
       }
-    } else {
-      if (owl.getPropertyFor((OWLProperty<?, ?>) desc.getProperty()).equals(property)) {
-        if (addNew(owl.unwrap(desc.getFiller()))) {
-          // keep the restriction
-          this.restriction = desc;
-        }
+    }
+  }
+
+  @Override
+  public void visit(OWLObjectIntersectionOf desc) {
+    visitClassExpressions(desc.getOperands(), null);
+  }
+
+  private void visitClassExpressions(
+      Collection<OWLClassExpression> expressions, OWLClassExpression self) {
+    List<OWLClassExpression> inherited = new ArrayList<>();
+    for (OWLClassExpression expression : expressions) {
+      if (expression.equals(self)) {
+        continue;
       }
+      // Visit direct anonymous restrictions before inherited named classes. Do not traverse unions:
+      // subclassing a union does not imply subclassing each union branch.
+      if (expression instanceof OWLClass) {
+        inherited.add(expression);
+      } else {
+        expression.accept((OWLClassExpressionVisitor) this);
+      }
+    }
+    for (OWLClassExpression expression : inherited) {
+      expression.accept((OWLClassExpressionVisitor) this);
     }
   }
 
@@ -144,10 +160,6 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
 
   @Override
   public void visit(OWLObjectMinCardinality desc) {
-    visitRestriction(desc);
-  }
-
-  public void visit(OWLObjectCardinalityRestriction desc) {
     visitRestriction(desc);
   }
 

@@ -2,7 +2,6 @@ package org.integratedmodelling.common.knowledge;
 
 import java.io.Serial;
 import java.util.*;
-
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -20,18 +19,18 @@ public class ConceptImpl implements Concept {
    * version). These are fixed across reasoners. Positive concept IDs may be attributed on a
    * reasoner-specific basis.
    */
-  public static final long NOTHING_ID = 0;
+  public static final int NOTHING_ID = -1;
 
-  public static final long NONSEMANTIC_SUBJECT_ID = -1;
-  public static final long NONSEMANTIC_EVENT_ID = -2;
-  public static final long NONSEMANTIC_RELATIONSHIP_ID = -3;
-  public static final long NONSEMANTIC_NUMBER_ID = -4;
-  public static final long NONSEMANTIC_CATEGORY_ID = -5;
-  public static final long NONSEMANTIC_BOOLEAN_ID = -6;
+  public static final int NONSEMANTIC_SUBJECT_ID = -2;
+  public static final int NONSEMANTIC_EVENT_ID = -3;
+  public static final int NONSEMANTIC_RELATIONSHIP_ID = -4;
+  public static final int NONSEMANTIC_NUMBER_ID = -5;
+  public static final int NONSEMANTIC_CATEGORY_ID = -6;
+  public static final int NONSEMANTIC_BOOLEAN_ID = -7;
 
   @Serial private static final long serialVersionUID = -6871573029225503370L;
 
-  private long id;
+  //  private long id;
   private String urn;
   private Metadata metadata = Metadata.create();
   private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
@@ -44,11 +43,12 @@ public class ConceptImpl implements Concept {
   private LogicalConnector qualifier;
   private List<Notification> notifications = new ArrayList<>();
   private Contextualization contextualization;
+  private int nonSemanticId;
 
   public ConceptImpl() {}
 
   public ConceptImpl(ConceptImpl other) {
-    this.id = other.id;
+    //    this.id = other.id;
     this.urn = other.urn;
     this.metadata.putAll(other.metadata);
     this.type.addAll(other.type);
@@ -58,8 +58,25 @@ public class ConceptImpl implements Concept {
     this.isAbstract = other.isAbstract;
     this.collective = other.collective;
     this.annotations.addAll(other.annotations);
+    this.notifications.addAll(other.notifications);
     this.qualifier = other.qualifier;
     this.contextualization = other.contextualization;
+  }
+
+  public Contextualization getContextualization() {
+    return contextualization;
+  }
+
+  public void setContextualization(Contextualization contextualization) {
+    this.contextualization = contextualization;
+  }
+
+  public int getNonSemanticId() {
+    return nonSemanticId;
+  }
+
+  public void setNonSemanticId(int nonSemanticId) {
+    this.nonSemanticId = nonSemanticId;
   }
 
   public void setQualifier(LogicalConnector qualifier) {
@@ -91,13 +108,13 @@ public class ConceptImpl implements Concept {
     return this.qualifier;
   }
 
-  public long getId() {
-    return id;
-  }
-
-  public void setId(long id) {
-    this.id = id;
-  }
+  //  public long getId() {
+  //    return id;
+  //  }
+  //
+  //  public void setId(long id) {
+  //    this.id = id;
+  //  }
 
   public void setUrn(String urn) {
     this.urn = urn;

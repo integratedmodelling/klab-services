@@ -160,7 +160,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return this.owl.nothing(urn);
     }
     var ret = new ConceptImpl();
-    ret.setId(ConceptImpl.NOTHING_ID);
+    ret.setNonSemanticId(ConceptImpl.NOTHING_ID);
     ret.setUrn("owl:Nothing");
     ret.setNamespace("owl");
     ret.getType().add(SemanticType.NOTHING);
@@ -1674,8 +1674,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     // non-semantic concepts can only be the same thing.
-    if (concept instanceof ConceptImpl concept1 && concept1.getId() <= 0) {
-      return other instanceof ConceptImpl concept2 && concept2.getId() == concept1.getId();
+    if (concept instanceof ConceptImpl concept1 && concept1.getNonSemanticId() < 0) {
+      return other instanceof ConceptImpl concept2 && concept2.getUrn().equals(concept1.getUrn());
     }
 
     /*
@@ -2501,6 +2501,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
 
     Concept main = null;
+
+    var existing = owl.getConcept(concept.getUrn());
+    if (existing != null) {
+      return existing;
+    }
 
     if (concept.getObservable() != null) {
       main = declareInternal(concept.getObservable(), ontology, monitor);

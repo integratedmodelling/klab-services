@@ -132,13 +132,14 @@ public class ResolutionCompiler {
     for (ObservationStrategy strategy :
         scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
 
-      var cScope = scope;
-      if (observation.getObservable().is(SemanticType.COUNTABLE)
-          && !observation.getObservable().getSemantics().isCollective()) {
-        cScope = cScope.within(observation);
-      }
+      // FIXME why? - this seems wrong, may be forgetting sth
+      //      var cScope = scope;
+      //      if (observation.getObservable().is(SemanticType.COUNTABLE)
+      //          && !observation.getObservable().getSemantics().isCollective()) {
+      //        cScope = cScope.within(observation);
+      //      }
 
-      var strategyResolution = resolve(strategy, scale, ret, cScope);
+      var strategyResolution = resolve(strategy, scale, ret, /* cScope */ scope);
       var cov = strategyResolution.checkCoverage(strategyResolution);
       if (!cov.isRelevant()) {
         continue;

@@ -221,7 +221,7 @@ public enum ServiceConfiguration {
                         SemanticType.DIRECT_OBSERVABLE,
                         SemanticType.COUNTABLE,
                         SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_SUBJECT_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_SUBJECT_ID);
                 ret.setCollective(true);
               }
               case QUANTIFIABLE -> {
@@ -230,7 +230,7 @@ public enum ServiceConfiguration {
                 ret.setType(
                     EnumSet.of(
                         SemanticType.QUALITY, SemanticType.QUANTIFIABLE, SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_NUMBER_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_NUMBER_ID);
               }
               case CATEGORY -> {
                 ret.setUrn("text");
@@ -238,7 +238,7 @@ public enum ServiceConfiguration {
                 ret.setType(
                     EnumSet.of(
                         SemanticType.QUALITY, SemanticType.CATEGORY, SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_CATEGORY_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_CATEGORY_ID);
               }
               case EVENT -> {
                 ret.setUrn("event");
@@ -249,7 +249,7 @@ public enum ServiceConfiguration {
                         SemanticType.DIRECT_OBSERVABLE,
                         SemanticType.COUNTABLE,
                         SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_EVENT_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_EVENT_ID);
                 ret.setCollective(true);
               }
               case RELATIONSHIP -> {
@@ -261,7 +261,7 @@ public enum ServiceConfiguration {
                         SemanticType.DIRECT_OBSERVABLE,
                         SemanticType.COUNTABLE,
                         SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_RELATIONSHIP_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_RELATIONSHIP_ID);
                 ret.setCollective(true);
               }
               case PRESENCE -> {
@@ -270,13 +270,13 @@ public enum ServiceConfiguration {
                 ret.setType(
                     EnumSet.of(
                         SemanticType.QUALITY, SemanticType.PRESENCE, SemanticType.OBSERVABLE));
-                ret.setId(ConceptImpl.NONSEMANTIC_BOOLEAN_ID);
+                ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_BOOLEAN_ID);
               }
               case NOTHING -> {
                 ret.setUrn("owl:Nothing");
                 ret.setReferenceName("owl:Nothing");
                 ret.setType(EnumSet.of(SemanticType.NOTHING));
-                ret.setId(ConceptImpl.NOTHING_ID);
+                ret.setNonSemanticId(ConceptImpl.NOTHING_ID);
               }
               default ->
                   throw new KlabInternalErrorException(

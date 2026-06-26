@@ -273,10 +273,6 @@ public class ModelKbox extends ObservableKbox {
 
     List<ModelReference> ret = new ArrayList<>();
 
-    if (observable.getUrn().equals("data:Normalized of geography:Elevation")) {
-      System.out.println("DIO TUFO");
-    }
-
     if (!database.hasTable("model")) {
       return ret;
     }
@@ -293,13 +289,13 @@ public class ModelKbox extends ObservableKbox {
             ? null
             : context.getContextObservation().getObservable().getSemantics();
 
-    String typequery = observableQuery(observable, contextObservable);
-    if (typequery == null) {
+    String typeQuery = observableQuery(observable, contextObservable);
+    if (typeQuery == null) {
       return ret;
     }
 
     query += "(" + scopeQuery(context, observable) + ")";
-    query += " AND (" + typequery + ")";
+    query += " AND (" + typeQuery + ")";
     if (scale.getSpace() != null) {
       String sq = spaceQuery(scale.getSpace());
       if (!sq.isEmpty()) {
@@ -307,12 +303,10 @@ public class ModelKbox extends ObservableKbox {
       }
     }
 
-    String tquery = timeQuery(scale.getTime());
-    if (!tquery.isEmpty()) {
-      query += " AND (" + tquery + ");";
+    String tQuery = timeQuery(scale.getTime());
+    if (!tQuery.isEmpty()) {
+      query += " AND (" + tQuery + ");";
     }
-
-    // Logging.INSTANCE.info(query);
 
     final List<Long> oids = database.queryIds(query);
     for (long l : oids) {
@@ -379,12 +373,12 @@ public class ModelKbox extends ObservableKbox {
   private String observableQuery(Observable observable, Concept context) {
 
     Set<Long> ids = this.getCompatibleTypeIds(observable, context);
-    if (ids == null || ids.size() == 0) {
+    if (ids == null || ids.isEmpty()) {
       return null;
     }
     StringBuilder ret = new StringBuilder();
     for (long id : ids) {
-      ret.append((ret.length() == 0) ? "" : ", ").append(id);
+      ret.append(ret.isEmpty() ? "" : ", ").append(id);
     }
     return "typeid IN (" + ret + ")";
   }
