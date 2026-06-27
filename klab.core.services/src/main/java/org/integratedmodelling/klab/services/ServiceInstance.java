@@ -363,7 +363,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     try {
 
       klabService().sampleLoad();
-
+      var iAmLocal = identity instanceof UserIdentity;
       /*
       check all needed services; put self offline if not available or not there, online otherwise; if
       there's a change in online status, report it through the service scope
@@ -375,21 +375,37 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       if (!getEssentialServices().isEmpty()) {
         for (var serviceType : getEssentialServices()) {
-          var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
-          boolean anyAvailable =
-              !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
-          if (getEssentialServices().contains(serviceType) && !anyAvailable) {
-            okEssentials = false;
+          if (iAmLocal) {
+            var anyAvailable =
+                klabService().serviceScope().getService(serviceType.classify()) != null;
+            if (getEssentialServices().contains(serviceType) && !anyAvailable) {
+              okEssentials = false;
+            }
+          } else {
+            var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+            boolean anyAvailable =
+                !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
+            if (getEssentialServices().contains(serviceType) && !anyAvailable) {
+              okEssentials = false;
+            }
           }
         }
       }
       if (!getOperationalServices().isEmpty()) {
         for (var serviceType : getOperationalServices()) {
-          var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
-          boolean anyAvailable =
-              !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
-          if (getOperationalServices().contains(serviceType) && !anyAvailable) {
-            okOperationals = false;
+          if (iAmLocal) {
+            var anyAvailable =
+                    klabService().serviceScope().getService(serviceType.classify()) != null;
+            if (getOperationalServices().contains(serviceType) && !anyAvailable) {
+              okOperationals = false;
+            }
+          } else {
+            var available = onlineServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+            boolean anyAvailable =
+                !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
+            if (getOperationalServices().contains(serviceType) && !anyAvailable) {
+              okOperationals = false;
+            }
           }
         }
       }

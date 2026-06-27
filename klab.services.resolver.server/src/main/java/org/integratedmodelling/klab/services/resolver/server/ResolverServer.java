@@ -30,6 +30,8 @@ public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
 
   @Override
   protected List<KlabService.Type> getEssentialServices() {
+    // all of these are taken from the connected ContextScope so there's no need for them at the
+    // service level.
     return List.of(/*KlabService.Type.REASONER, KlabService.Type.RESOURCES*/ );
   }
 

@@ -88,6 +88,22 @@ public class ServiceStartupOptions implements StartupOptions {
   @Option(name = "-components", usage = "paths to any custom component")
   List<File> components = new ArrayList<>();
 
+  @Option(
+      name = "-updateComponents",
+      usage = "check Maven-sourced SNAPSHOT components for updates once after startup")
+  boolean updateComponents = true;
+
+  @Option(
+      name = "-autoUpdateComponents",
+      usage = "periodically check Maven-sourced SNAPSHOT components for updates")
+  boolean autoUpdateComponents;
+
+  @Option(
+      name = "-componentUpdateIntervalMinutes",
+      usage = "minutes between component update checks when -autoUpdateComponents is enabled",
+      metaVar = "<INT>")
+  long componentUpdateIntervalMinutes = 5;
+
   KlabService.Type serviceType;
 
   private List<String> arguments = new ArrayList<>();
@@ -236,6 +252,21 @@ public class ServiceStartupOptions implements StartupOptions {
   }
 
   @Override
+  public boolean isComponentUpdateOnStartup() {
+    return updateComponents;
+  }
+
+  @Override
+  public boolean isComponentAutoUpdateEnabled() {
+    return autoUpdateComponents;
+  }
+
+  @Override
+  public long getComponentUpdateIntervalMinutes() {
+    return componentUpdateIntervalMinutes;
+  }
+
+  @Override
   public String getCertificateResource() {
     return certificateResource;
   }
@@ -262,6 +293,18 @@ public class ServiceStartupOptions implements StartupOptions {
 
   public void setComponents(List<File> components) {
     this.components = components;
+  }
+
+  public void setUpdateComponents(boolean updateComponents) {
+    this.updateComponents = updateComponents;
+  }
+
+  public void setAutoUpdateComponents(boolean autoUpdateComponents) {
+    this.autoUpdateComponents = autoUpdateComponents;
+  }
+
+  public void setComponentUpdateIntervalMinutes(long componentUpdateIntervalMinutes) {
+    this.componentUpdateIntervalMinutes = componentUpdateIntervalMinutes;
   }
 
   public void setArguments(List<String> arguments) {

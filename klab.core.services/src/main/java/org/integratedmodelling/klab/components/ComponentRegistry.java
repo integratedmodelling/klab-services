@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.jar.JarFile;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -63,7 +64,10 @@ import org.pf4j.*;
 public class ComponentRegistry {
 
   public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
+  private static final String PLUGINS_DIRECTORY = "plugins";
+  private static final String PLUGIN_REQUIRES_ATTRIBUTE = "Plugin-Requires";
   private final BaseService service;
+  private final StartupOptions startupOptions;
   private PluginManager componentManager;
   private File pluginPath = null;
   private MavenComponentCache cache;
@@ -105,6 +109,7 @@ public class ComponentRegistry {
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   public ComponentRegistry(BaseService service, StartupOptions options) {
+    this.startupOptions = options;
     readConfiguration(service, options);
     this.service = service;
     localComponentDescriptor =
@@ -149,24 +154,88 @@ public class ComponentRegistry {
     return this.cache;
   }
 
-  private synchronized void checkForUpdates() {
-    for (var component : components.values()) {
-      if (component.mavenCoordinates() != null
-          && component.fileHash() != null
-          && component.mavenCoordinates().contains("SNAPSHOT")) {
+  private static File getPluginDirectory(File componentRoot) {
+    return new File(componentRoot, PLUGINS_DIRECTORY);
+  }
+
+  private boolean isInPluginDirectory(File resourcePath) {
+    if (resourcePath == null || this.pluginPath == null) {
+      return false;
+    }
+    var parent = resourcePath.toPath().toAbsolutePath().normalize().getParent();
+    return parent != null && parent.equals(this.pluginPath.toPath().toAbsolutePath().normalize());
+  }
+
+  private Extensions.ComponentDescriptor selectBestComponent(
+      Collection<Extensions.ComponentDescriptor> candidates, Version version) {
+    Extensions.ComponentDescriptor ret = null;
+    for (var component : candidates) {
+      if (version == null || component.version().compatible(version)) {
+        if (ret == null || component.version().greater(ret.version())) {
+          ret = component;
+        }
+      }
+    }
+    return ret;
+  }
+
+  /** Explicitly check Maven-sourced SNAPSHOT components and update any changed compatible ones. */
+  public synchronized ResourceSet checkForUpdates() {
+    return checkForUpdates(true);
+  }
+
+  /** Explicitly check Maven-sourced SNAPSHOT components and update any changed compatible ones. */
+  public synchronized ResourceSet updateMavenSnapshotComponents() {
+    return checkForUpdates(true);
+  }
+
+  private synchronized ResourceSet checkForUpdates(boolean reportNoUpdates) {
+    var ret = new ResourceSet();
+    for (var component : new ArrayList<>(components.values())) {
+      if (component.mavenCoordinates() != null && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
           if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
               || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
-            Thread.ofVirtual().start(() -> updateComponent(component, status));
+            merge(ret, updateComponent(component, status));
+          } else if (status == MavenComponentCache.Status.UNKNOWN && reportNoUpdates) {
+            ret.getNotifications()
+                .add(
+                    Notification.warning(
+                        "Unable to establish update status for component "
+                            + component.id()
+                            + " from "
+                            + component.mavenCoordinates()));
           }
+        } else if (reportNoUpdates) {
+          ret.getNotifications()
+              .add(
+                  Notification.warning(
+                      "Ignoring invalid Maven coordinates for component "
+                          + component.id()
+                          + ": "
+                          + component.mavenCoordinates()));
         }
       }
     }
+    if (ret.getResults().isEmpty() && ret.getNotifications().isEmpty()) {
+      ret.setEmpty(true);
+      if (reportNoUpdates) {
+        ret.getNotifications().add(Notification.info("No Maven SNAPSHOT component updates found"));
+      }
+    }
+    return ret;
   }
 
-  private synchronized void updateComponent(
+  private void merge(ResourceSet target, ResourceSet source) {
+    if (source != null) {
+      target.getNotifications().addAll(source.getNotifications());
+      target.getResults().addAll(source.getResults());
+    }
+  }
+
+  private synchronized ResourceSet updateComponent(
       Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
     Logging.INSTANCE.info(
@@ -177,26 +246,50 @@ public class ComponentRegistry {
 
     // TODO must unload first. Whether this will free up the file in Win remains to be seen.
     var mavenCoordinates = component.mavenCoordinates().split(":");
+    if (mavenCoordinates.length != 3) {
+      return ResourceSet.empty(
+          Notification.error("Invalid Maven coordinates for component " + component.id()));
+    }
 
     try {
       var file =
-          status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
-              ? Utils.Maven.findLocalArtifactFile(
-                  mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar")
-              : cache.synchronizeArtifact(
-                  mavenCoordinates[0],
-                  mavenCoordinates[1],
-                  mavenCoordinates[2],
-                  "component",
-                  "kar");
+          cache.synchronizeArtifact(
+              mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar");
       if (file != null && file.exists()) {
+        var fileHash = Utils.Files.hash(file);
+        if (component.fileHash() != null && component.fileHash().equals(fileHash)) {
+          if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+              || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+            return ResourceSet.empty(
+                Notification.warning(
+                    "Update was indicated for component "
+                        + component.id()
+                        + " but the retrieved artifact hash is unchanged"));
+          }
+          return ResourceSet.empty(
+              Notification.info("Component " + component.id() + " is already up to date"));
+        }
+        if (!isCompatibleWithCurrentKlab(file)) {
+          return ResourceSet.empty(
+              Notification.warning(
+                  "Skipping update of component "
+                      + component.id()
+                      + " because it is not compatible with k.LAB "
+                      + Version.CURRENT));
+        }
         // TODO the build number should be incremented if the component is local/snapshot. This will
         //  allow other services to know the update must be loaded.
         unloadComponent(component.id(), component.version());
         // TODO remove the previous file if any, as a change from remote to local may leave two
         //  versions in the plugin dir
-        installComponent(file, component.mavenCoordinates());
-        componentManager.enablePlugin(component.id());
+        var result = installComponent(file, component.mavenCoordinates());
+        if (result != null && result.getFirst() != null) {
+          componentManager.enablePlugin(result.getFirst().id());
+          result
+              .getSecond()
+              .getNotifications()
+              .add(Notification.info("Component " + component.id() + " updated successfully"));
+        }
         Logging.INSTANCE.info(
             "Component "
                 + component.id()
@@ -205,9 +298,35 @@ public class ComponentRegistry {
                     ? "local"
                     : "remote")
                 + " repository");
+        return result == null ? ResourceSet.empty() : result.getSecond();
       }
     } catch (Exception e) {
       Logging.INSTANCE.error("Unable to update outdated component " + component.id(), e);
+      return ResourceSet.empty(
+          Notification.error("Unable to update outdated component " + component.id(), e));
+    }
+    return ResourceSet.empty(
+        Notification.warning(
+            "Updated Maven artifact could not be retrieved for component " + component.id()));
+  }
+
+  private boolean isCompatibleWithCurrentKlab(File pluginFile) {
+    try (var jarFile = new JarFile(pluginFile)) {
+      var manifest = jarFile.getManifest();
+      var requires =
+          manifest == null
+              ? null
+              : manifest.getMainAttributes().getValue(PLUGIN_REQUIRES_ATTRIBUTE);
+      if (requires == null || requires.isBlank() || "*".equals(requires.trim())) {
+        return true;
+      }
+      var versionManager =
+          componentManager == null ? new DefaultVersionManager() : componentManager.getVersionManager();
+      return versionManager.checkVersionConstraint(Version.CURRENT, requires);
+    } catch (Exception e) {
+      Logging.INSTANCE.warn(
+          "Unable to verify k.LAB version compatibility for " + pluginFile.getAbsolutePath(), e);
+      return false;
     }
   }
 
@@ -248,6 +367,92 @@ public class ComponentRegistry {
         components.values().toArray(new Extensions.ComponentDescriptor[] {}), this.catalogFile);
   }
 
+  private boolean removeComponentRegistration(String urn, Version version) {
+    var ret = false;
+    for (var component : new ArrayList<>(components.get(urn))) {
+      if (Objects.equals(component.version(), version)) {
+        ret |= removeComponentRegistration(component);
+      }
+    }
+    return ret;
+  }
+
+  private Extensions.ComponentDescriptor getExactComponent(String urn, Version version) {
+    for (var component : components.get(urn)) {
+      if (Objects.equals(component.version(), version)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
+  private boolean removeComponentRegistration(Extensions.ComponentDescriptor component) {
+    var ret = components.removeMapping(component.id(), component);
+
+    removeDescriptorReferences(adapterFinder, component);
+    removeDescriptorReferences(serviceFinder, component);
+    removeDescriptorReferences(annotationFinder, component);
+    removeDescriptorReferences(verbFinder, component);
+    removeDescriptorReferences(exporterFinder, component);
+    removeDescriptorReferences(importerFinder, component);
+
+    removeFunctionImplementations(component.services());
+    removeFunctionImplementations(component.annotations());
+    removeFunctionImplementations(component.verbs());
+    removeFunctionImplementations(component.exporters());
+    removeFunctionImplementations(component.importers());
+    removeComponentAdapters(component);
+
+    return ret;
+  }
+
+  private void removeDescriptorReferences(
+      MultiValuedMap<String, Extensions.ComponentDescriptor> finder,
+      Extensions.ComponentDescriptor component) {
+    for (var key : new ArrayList<>(finder.keySet())) {
+      finder.removeMapping(key, component);
+    }
+  }
+
+  private void removeFunctionImplementations(
+      Map<String, List<Extensions.FunctionDescriptor>> functions) {
+    for (var descriptors : functions.values()) {
+      for (var descriptor : descriptors) {
+        removeFunctionImplementation(descriptor);
+      }
+    }
+  }
+
+  private void removeFunctionImplementation(Extensions.FunctionDescriptor descriptor) {
+    if (descriptor != null && descriptor.serviceInfo != null) {
+      serviceImplementations.remove(descriptor.serviceInfo.getName());
+    }
+  }
+
+  private void removeComponentAdapters(Extensions.ComponentDescriptor component) {
+    for (var adapterName : new ArrayList<>(adapters.keySet())) {
+      for (var adapter : new ArrayList<>(adapters.get(adapterName))) {
+        if (component.id().equals(adapter.getComponentUrn())
+            && component.version().equals(adapter.getComponentVersion())) {
+          removeAdapterImplementations(adapter);
+          adapters.removeMapping(adapterName, adapter);
+          adapterDescriptorFinder.removeMapping(adapterName, adapter.getAdapterInfo());
+        }
+      }
+    }
+  }
+
+  private void removeAdapterImplementations(Adapter adapter) {
+    removeFunctionImplementation(adapter.getEncoder());
+    removeFunctionImplementation(adapter.getInspector());
+    removeFunctionImplementation(adapter.getContextualizer());
+    removeFunctionImplementation(adapter.getPublisher());
+    removeFunctionImplementation(adapter.getSanitizer());
+    for (var phase : ResourceAdapter.Validator.LifecyclePhase.values()) {
+      removeFunctionImplementation(adapter.getValidator(phase));
+    }
+  }
+
   public List<Extensions.ComponentDescriptor> resolveExportSchemata(
       String mediaType, Geometry geometry) {
     List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
@@ -264,16 +469,7 @@ public class ComponentRegistry {
 
   public List<Extensions.ComponentDescriptor> resolveServiceCall(String name, Version version) {
     List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
-    Extensions.ComponentDescriptor target = null;
-    for (var component : serviceFinder.get(name)) {
-      if (version == null) {
-        if (target == null || component.version().greater(target.version())) {
-          target = component;
-        }
-      } else if (version.compatible(component.version())) {
-        target = component;
-      }
-    }
+    Extensions.ComponentDescriptor target = selectBestComponent(serviceFinder.get(name), version);
     if (target != null) {
       /*
       TODO add all dependencies first
@@ -317,9 +513,16 @@ public class ComponentRegistry {
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installMavenComponent(
       String groupId, String artifactId, String version) {
 
+    if (pluginPath == null) {
+      return Pair.of(
+          null,
+          ResourceSet.empty(Notification.error("Component registry has not been initialized")));
+    }
+
     var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
     File file = cache.synchronizeArtifact(groupId, artifactId, version, "component", "kar"); // TODO
     if (file != null && file.exists()) {
+      pluginPath.mkdirs();
       file = cache.install(groupId, artifactId, version, pluginPath);
       if (file != null && file.exists()) {
         return installComponent(file, mavenCoordinates);
@@ -339,13 +542,19 @@ public class ComponentRegistry {
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath, String mavenCoordinates) {
 
+    if (pluginPath == null) {
+      return Pair.of(
+          null,
+          ResourceSet.empty(Notification.error("Component registry has not been initialized")));
+    }
+    pluginPath.mkdirs();
+
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
-        new File(pluginPath + File.separator + Utils.Files.getFileBaseName(resourcePath) + ".jar");
+        new File(pluginPath, Utils.Files.getFileBaseName(resourcePath) + ".jar");
 
     // check if we're installing from a different location
-    if (resourcePath.getParent() == null
-        || !resourcePath.toPath().getParent().equals(pluginPath.toPath())) {
+    if (!isInPluginDirectory(resourcePath)) {
       try {
         // TODO must unload from componentManager - which may be problematic if anything is using
         // the classes
@@ -414,16 +623,7 @@ public class ComponentRegistry {
    * @return
    */
   public List<Extensions.FunctionDescriptor> getFunctionDescriptor(String urn, Version version) {
-    Extensions.ComponentDescriptor target = null;
-    for (var component : serviceFinder.get(urn)) {
-      if (version == null) {
-        if (target == null || component.version().greater(target.version())) {
-          target = component;
-        }
-      } else if (version.compatible(component.version())) {
-        target = component;
-      }
-    }
+    Extensions.ComponentDescriptor target = selectBestComponent(serviceFinder.get(urn), version);
     if (target == null) {
       return null;
     }
@@ -494,6 +694,12 @@ public class ComponentRegistry {
             : component.getWrapper().getPluginPath().toFile();
     var permissions =
         license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
+
+    var existingDescriptor = getExactComponent(componentName, componentVersion);
+    if (mavenCoordinates == null && existingDescriptor != null) {
+      mavenCoordinates = existingDescriptor.mavenCoordinates();
+    }
+    removeComponentRegistration(componentName, componentVersion);
 
     scanPackage(
         component,
@@ -825,9 +1031,15 @@ public class ComponentRegistry {
   public Adapter getAdapter(String urn, Version version, Scope scope) {
     // TODO handle permissions
 
-    return adapters.containsKey(urn)
-        ? /* TODO handle version */ adapters.get(urn).iterator().next()
-        : null;
+    Adapter ret = null;
+    for (var adapter : adapters.get(urn)) {
+      if (version == null || adapter.getVersion().compatible(version)) {
+        if (ret == null || adapter.getVersion().greater(ret.getVersion())) {
+          ret = adapter;
+        }
+      }
+    }
+    return ret;
   }
 
   /**
@@ -976,27 +1188,19 @@ public class ComponentRegistry {
    * @return
    */
   public Extensions.ComponentDescriptor getComponent(String urn, Version version) {
-
-    Extensions.ComponentDescriptor ret = null;
-    for (var component : components.get(urn)) {
-      if (version == null) {
-        if (ret == null || component.version().greater(ret.version())) {
-          ret = component;
-        }
-      } else if (version.compatible(component.version())) {
-        ret = component;
-      }
-    }
-    return ret;
+    return selectBestComponent(components.get(urn), version);
   }
 
   public synchronized boolean unloadComponent(String urn, Version version) {
     var component = getComponent(urn, version);
     if (component != null) {
-      if (componentManager.getPlugin(component.id()) != null) {
-        componentManager.deletePlugin(component.id());
-        return true;
+      var ret = false;
+      if (componentManager != null && componentManager.getPlugin(component.id()) != null) {
+        ret = componentManager.deletePlugin(component.id());
       }
+      ret |= removeComponentRegistration(component);
+      saveConfiguration();
+      return ret;
     }
     return false;
   }
@@ -1051,7 +1255,7 @@ public class ComponentRegistry {
                 + " is available");
       }
 
-      File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
+      File plugin = new File(pluginPath, result.getResourceUrn() + ".jar");
       try (var input =
               service.exportAsset(
                   result.getResourceUrn(),
@@ -1436,13 +1640,16 @@ public class ComponentRegistry {
    *
    * <p>TODO use the catalog and register components from Maven after update check
    *
-   * @param pluginRoot
+   * @param pluginRoot the component repository root. Loadable archives are stored in its
+   *     {@code plugins} subdirectory.
    */
   public void initializeComponents(File pluginRoot) {
-    this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
-    // FIXME Ignore the cache directory within the plugin root
+    this.pluginPath = getPluginDirectory(pluginRoot);
+    this.pluginPath.mkdirs();
+    migrateExistingRootPlugins(pluginRoot, this.pluginPath);
+    this.componentManager = new DefaultPluginManager(this.pluginPath.toPath());
+    this.componentManager.setSystemVersion(Version.CURRENT);
     this.componentManager.loadPlugins();
-    this.pluginPath = pluginRoot;
     // TODO configuration
     for (var wrapper : this.componentManager.getPlugins()) {
       Plugin plugin = wrapper.getPlugin();
@@ -1459,7 +1666,54 @@ public class ComponentRegistry {
           }
         });
 
-    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
+    if (startupOptions != null && startupOptions.isComponentUpdateOnStartup()) {
+      checkForUpdates();
+    }
+    if (startupOptions != null && startupOptions.isComponentAutoUpdateEnabled()) {
+      var interval = Math.max(1, startupOptions.getComponentUpdateIntervalMinutes());
+      scheduler.scheduleAtFixedRate(
+          () -> runScheduledUpdateCheck(), interval, interval, TimeUnit.MINUTES);
+    }
+  }
+
+  private void runScheduledUpdateCheck() {
+    try {
+      checkForUpdates(false);
+    } catch (Throwable t) {
+      Logging.INSTANCE.error("Scheduled component update check failed", t);
+    }
+  }
+
+  private void migrateExistingRootPlugins(File pluginRoot, File pluginDirectory) {
+    var existingRootPlugins =
+        pluginRoot.listFiles(
+            file ->
+                file.isFile() && "jar".equalsIgnoreCase(Utils.Files.getFileExtension(file)));
+    if (existingRootPlugins == null) {
+      return;
+    }
+    for (var existingPlugin : existingRootPlugins) {
+      var target = new File(pluginDirectory, existingPlugin.getName());
+      if (target.exists()) {
+        Logging.INSTANCE.warn(
+            "Ignoring root-level component plugin "
+                + existingPlugin.getAbsolutePath()
+                + " because "
+                + target.getAbsolutePath()
+                + " already exists");
+        continue;
+      }
+      try {
+        Files.move(existingPlugin.toPath(), target.toPath());
+      } catch (IOException e) {
+        Logging.INSTANCE.warn(
+            "Unable to migrate existing component plugin "
+                + existingPlugin.getAbsolutePath()
+                + " to "
+                + target.getAbsolutePath(),
+            e);
+      }
+    }
   }
 
   public class AdapterImpl implements Adapter {
