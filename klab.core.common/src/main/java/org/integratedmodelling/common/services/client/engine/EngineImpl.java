@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
+import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /** */
@@ -46,6 +47,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private UserScope defaultUser;
   private Pair<Identity, List<ServiceReference>> authData;
+  private EngineAuthenticationResponse authenticationResponse;
   private final List<UserScope> users = new ArrayList<>();
   private final String serviceId = Utils.Names.shortUUID();
   private final Settings settings = SettingsImpl.forEngine();
@@ -319,6 +321,16 @@ public class EngineImpl implements Engine, PropertyHolder {
         certificate == null
             ? Authentication.INSTANCE.authenticate(settings)
             : Authentication.INSTANCE.authenticate(certificate, settings);
+    this.authenticationResponse = Authentication.INSTANCE.getLastEngineAuthenticationResponse();
+    if (this.authenticationResponse == null
+        && authData.getFirst() instanceof UserIdentity user
+        && user.isAuthenticated()
+        && !user.isAnonymous()) {
+      Logging.INSTANCE.warn(
+          "Authenticated engine user "
+              + user.getUsername()
+              + " has no hub authentication response available for local service startup handoff");
+    }
 
     /*
      * If user is federated, we don't start the local broker. Otherwise, we set up a local
@@ -350,6 +362,7 @@ public class EngineImpl implements Engine, PropertyHolder {
             authData.getSecond(),
             this::notifyLocalService,
             this::notifyLocalEngine);
+    this.serviceMonitor.setLocalAuthenticationResponse(this.authenticationResponse);
 
     return this.defaultUser;
   }

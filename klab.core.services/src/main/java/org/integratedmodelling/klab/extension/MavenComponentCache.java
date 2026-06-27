@@ -4,7 +4,6 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.DefaultPluginManager;
@@ -98,10 +97,10 @@ public class MavenComponentCache {
   public File synchronizeArtifact(
       String groupId, String artifactId, String version, String classifier, String suffix) {
 
-    AtomicReference<String> artifactIdRef = new AtomicReference<>();
+    AtomicReference<String> artifactHashRef = new AtomicReference<>();
     AtomicReference<File> fileRef = new AtomicReference<>();
     var status =
-        getAvailability(groupId, artifactId, version, classifier, suffix, artifactIdRef, fileRef);
+        getAvailability(groupId, artifactId, version, classifier, suffix, artifactHashRef, fileRef);
     if (status == Status.UNKNOWN) {
       return null;
     }
@@ -112,12 +111,11 @@ public class MavenComponentCache {
     if (status == Status.UP_TO_DATE && fileRef.get() != null) {
       if (current == null) {
         current = new ArtifactInfo();
-        current.setCoordinates(artifactIdRef.get());
-        current.setMd5hash(artifactIdRef.get());
-        current.setCachedFile(fileRef.get());
-        current.setLastModified(LocalDateTime.now());
-        cacheCatalog.put(signature, current);
-        cacheCatalog.write();
+        updateCatalogEntry(
+            signature,
+            current,
+            coordinates(groupId, artifactId, version, classifier, suffix),
+            fileRef.get());
       }
       return fileRef.get();
     }
@@ -132,10 +130,11 @@ public class MavenComponentCache {
             Utils.Maven.findOrDownloadArtifactFile(
                 groupId, artifactId, version, classifier, suffix, componentCache);
         if (download != null && download.isFile()) {
-          current.setLastModified(LocalDateTime.now());
-          current.setCachedFile(download);
-          cacheCatalog.put(signature, current);
-          cacheCatalog.write();
+          updateCatalogEntry(
+              signature,
+              current,
+              coordinates(groupId, artifactId, version, classifier, suffix),
+              download);
         }
       }
       return current.getCachedFile();
@@ -145,16 +144,40 @@ public class MavenComponentCache {
           Utils.Maven.findOrDownloadArtifactFile(
               groupId, artifactId, version, classifier, suffix, componentCache);
       if (download != null && download.isFile()) {
-        current.setLastModified(LocalDateTime.now());
-        current.setCachedFile(download);
-        if (!version.endsWith("-SNAPSHOT")) {
-          current.setMd5hash(artifactIdRef.get());
-        }
-        cacheCatalog.put(signature, current);
-        cacheCatalog.write();
+        updateCatalogEntry(
+            signature,
+            current,
+            coordinates(groupId, artifactId, version, classifier, suffix),
+            download);
       }
     }
     return current.cachedFile;
+  }
+
+  private String coordinates(
+      String groupId, String artifactId, String version, String classifier, String suffix) {
+    return groupId
+        + ":"
+        + artifactId
+        + ":"
+        + version
+        + ":"
+        + (classifier == null ? "" : classifier)
+        + ":"
+        + suffix;
+  }
+
+  private void updateCatalogEntry(
+      String signature, ArtifactInfo current, String coordinates, File artifact) {
+    current.setCoordinates(coordinates);
+    current.setMd5hash(Utils.Files.hash(artifact));
+    current.setCachedFile(artifact);
+    current.setLastModified(
+        LocalDateTime.ofInstant(
+            java.time.Instant.ofEpochMilli(artifact.lastModified()),
+            java.time.ZoneId.systemDefault()));
+    cacheCatalog.put(signature, current);
+    cacheCatalog.write();
   }
 
   /**
@@ -192,7 +215,7 @@ public class MavenComponentCache {
    * @param version
    * @param classifier
    * @param suffix
-   * @param artifactIdRef set to the MD5 if it must be downloaded
+   * @param artifactHashRef set to the artifact content hash if it is available locally
    * @param fileRef set if the file is available locally without having to be registered in cache
    * @return
    */
@@ -202,7 +225,7 @@ public class MavenComponentCache {
       String version,
       String classifier,
       String suffix,
-      AtomicReference<String> artifactIdRef,
+      AtomicReference<String> artifactHashRef,
       AtomicReference<File> fileRef) {
 
     var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
@@ -212,13 +235,12 @@ public class MavenComponentCache {
     var local = Utils.Maven.findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
     if (local != null) {
 
-      var fileTime =
-          LocalDateTime.ofInstant(
-              java.time.Instant.ofEpochMilli(local.lastModified()),
-              java.time.ZoneId.systemDefault());
-      // in local repo counts as up to date unless our catalog doesn't have it or
+      var localHash = Utils.Files.hash(local);
+      artifactHashRef.set(localHash);
       fileRef.set(local);
-      return current == null || current.lastModified.isBefore(fileTime)
+      return current == null
+              || current.getMd5hash() == null
+              || !current.getMd5hash().equals(localHash)
           ? Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
           : Status.UP_TO_DATE;
 
@@ -226,7 +248,14 @@ public class MavenComponentCache {
       // check out if available on remote repositories
       var latest = Utils.Maven.getLatestSnapshotDate(groupId, artifactId, version);
       if (latest != null) {
-        if (current != null && !current.getLastModified().isBefore(latest.getLastModified())) {
+        if (current != null
+            && current.getCachedFile() != null
+            && current.getCachedFile().exists()
+            && current.getLastModified() != null
+            && latest.getLastModified() != null
+            && !current.getLastModified().isBefore(latest.getLastModified())) {
+          artifactHashRef.set(current.getMd5hash());
+          fileRef.set(current.getCachedFile());
           return Status.UP_TO_DATE;
         } else {
           return Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY;

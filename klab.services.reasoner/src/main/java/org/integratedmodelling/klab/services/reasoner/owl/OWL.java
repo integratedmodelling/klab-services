@@ -24,6 +24,14 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.logging.Logging;
@@ -56,15 +64,6 @@ import org.semanticweb.owlapi.util.AutoIRIMapper;
 import org.semanticweb.owlapi.util.Version;
 import org.springframework.util.StringUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Import concepts and properties from OWL ontologies.
  *
@@ -81,8 +80,8 @@ public class OWL {
   private HashMap<String, String> iri2ns = new HashMap<>();
   private HashMap<String, OWLClass> systemConcepts = new HashMap<>();
   private HashMap<String, ConceptImpl> xsdMappings = new HashMap<>();
-  private BiMap<Long, OWLClass> owlClasses = HashBiMap.create();
-  private BiMap<Long, ConceptImpl> conceptsById = HashBiMap.create();
+  private BiMap<String, OWLClass> owlClasses = HashBiMap.create();
+  private BiMap<String, ConceptImpl> conceptsById = HashBiMap.create();
   private AtomicLong classId = new AtomicLong(1L);
   private Scope scope;
 
@@ -114,7 +113,7 @@ public class OWL {
 
   public Concept nothing(String urn, Throwable... exceptions) {
     // TODO return a special nothing with the passed URN and the exceptions in metadata
-    return nothing;
+    return getNothing();
   }
 
   /**
@@ -128,20 +127,10 @@ public class OWL {
     return namespace.replaceAll("\\.", "_") + "__" + CamelCase.toLowerCase(name, '_');
   }
 
-  private long registerOwlClass(OWLClass cls) {
-
-    if (owlClasses.containsValue(cls)) {
-      // The only situation when duplication is possible is for patterns that put the same concept
-      // in OR or AND, such as
-      // im:Subject or im:Subject - these simplify to im:Subject in the semantic world but are
-      // distinct syntax patterns.
-      // In no other circumstance this should be needed.
-      return owlClasses.inverse().get(cls);
+  private synchronized void registerOwlClass(OWLClass cls, String urn) {
+    if (!owlClasses.containsValue(cls)) {
+      owlClasses.put(urn, cls);
     }
-
-    long ret = classId.getAndIncrement();
-    owlClasses.put(ret, cls);
-    return ret;
   }
 
   /**
@@ -375,7 +364,13 @@ public class OWL {
         if (o == null) {
           OWLClass systemConcept = this.systemConcepts.get(st.toString());
           if (systemConcept != null) {
-            result = makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
+            result =
+                makeConcept(
+                    systemConcept,
+                    st.getName(),
+                    st.getNamespace(),
+                    emptyType,
+                    st.getNamespace() + ":" + st.getName());
           }
         } else {
           result = o.getConcept(st.getName());
@@ -388,8 +383,30 @@ public class OWL {
 
   // careful: not reentrant on purpose. Can't already have the class in the caches or an exception
   // will be thrown. Must release the ontology in advance. Used in Ontology but should be private.
-  Concept makeConcept(
-      OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+  synchronized Concept makeConcept(
+      OWLClass owlClass,
+      String id,
+      String ontologyName,
+      Collection<SemanticType> type,
+      String klabUrl) {
+
+    var existingId = owlClasses.inverse().get(owlClass);
+    if (existingId != null) {
+      ConceptImpl existing = conceptsById.get(existingId);
+      if (existing != null) {
+        if (existing.getName() == null) {
+          existing.setName(id);
+        }
+        if (existing.getNamespace() == null) {
+          existing.setNamespace(ontologyName);
+        }
+        if (existing.getUrn() == null) {
+          existing.setUrn(ontologyName + ":" + id);
+        }
+        existing.getType().addAll(type);
+        return existing;
+      }
+    }
 
     ConceptImpl ret = new ConceptImpl();
 
@@ -402,10 +419,11 @@ public class OWL {
     This will throw an exception if the class is already there. Count on the releaseOntology() having
     been called and having worked before this happens.
      */
-    ret.setId(registerOwlClass(owlClass));
+    ret.setUrn(klabUrl == null ? (ontologyName + ":" + id) : klabUrl);
+    registerOwlClass(owlClass, ret.getUrn());
+    // TODO name and namespace may live as metadata
     ret.setName(id);
     ret.setNamespace(ontologyName);
-    ret.setUrn(ontologyName + ":" + id);
     ret.getType().addAll(type);
     registerConcept(ret);
     return ret;
@@ -469,7 +487,7 @@ public class OWL {
   public Concept getRootConcept() {
     if (this.thing == null) {
       this.thing = new ConceptImpl();
-      ((ConceptImpl) this.thing).setId(registerOwlClass(manager.getOWLDataFactory().getOWLThing()));
+      registerOwlClass(manager.getOWLDataFactory().getOWLThing(), "owl:Thing");
       ((ConceptImpl) this.thing).setUrn("owl:Thing");
       ((ConceptImpl) this.thing).setNamespace("owl");
       registerConcept((ConceptImpl) this.thing);
@@ -477,8 +495,8 @@ public class OWL {
     return this.thing;
   }
 
-  public void registerConcept(ConceptImpl concept) {
-    this.conceptsById.put(concept.getId(), concept);
+  public synchronized void registerConcept(ConceptImpl concept) {
+    this.conceptsById.put(concept.getUrn(), concept);
   }
 
   public String getConceptSpace(IRI iri) {
@@ -777,8 +795,8 @@ public class OWL {
     var onto = ontologies.remove(ontology.getName());
     for (var concept : onto.getConcepts()) {
       if (concept instanceof ConceptImpl conceptImpl) {
-        conceptsById.remove(conceptImpl.getId());
-        owlClasses.remove(conceptImpl.getId());
+        conceptsById.remove(conceptImpl.getUrn());
+        owlClasses.remove(conceptImpl.getUrn());
       }
     }
     iri2ns.remove(((Ontology) ontology).getPrefix());
@@ -820,15 +838,17 @@ public class OWL {
     return ret;
   }
 
-  public Concept getNothing() {
+  public synchronized Concept getNothing() {
     if (this.nothing == null) {
       this.nothing = new ConceptImpl();
       this.nothing.getType().add(SemanticType.NOTHING);
-      ((ConceptImpl) this.nothing).setId(0);
-      ((ConceptImpl) this.nothing)
-          .setId(registerOwlClass(manager.getOWLDataFactory().getOWLNothing()));
+      ((ConceptImpl) this.nothing).setNonSemanticId(ConceptImpl.NOTHING_ID);
       ((ConceptImpl) this.nothing).setUrn("owl:Nothing");
       ((ConceptImpl) this.nothing).setNamespace("owl");
+    }
+    if (manager != null && !owlClasses.containsKey("owl:Nothing")) {
+      registerOwlClass(manager.getOWLDataFactory().getOWLNothing(), "owl:Nothing");
+      registerConcept((ConceptImpl) this.nothing);
     }
     return this.nothing;
   }
@@ -860,6 +880,9 @@ public class OWL {
    */
   public Concept getDirectRestrictedClass(Concept target, Property restricted) {
     OWLClass owl = getOWLClass(target);
+    if (owl == null) {
+      return null;
+    }
     synchronized (owl) {
       for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
         if (s instanceof OWLQuantifiedRestriction) {
@@ -890,6 +913,10 @@ public class OWL {
   public Collection<Concept> getDirectRestrictedClasses(Concept target, Property restricted) {
     Set<Concept> ret = new HashSet<>();
     OWLClass owl = getOWLClass(target);
+    if (owl == null) {
+      Logging.INSTANCE.warn("no OWL class for concept " + target.getUrn());
+      return ret;
+    }
     synchronized (owl) {
       for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
         if (s instanceof OWLQuantifiedRestriction) {
@@ -1183,8 +1210,12 @@ public class OWL {
 
   public Concept getExistingOrCreate(OWLClass owl) {
 
-    if (owlClasses.containsValue(owl)) {
-      return conceptsById.get(owlClasses.inverse().get(owl));
+    var id = owlClasses.inverse().get(owl);
+    if (id != null) {
+      Concept concept = conceptsById.get(id);
+      if (concept != null) {
+        return concept;
+      }
     }
 
     String conceptId = owl.getIRI().getFragment();
@@ -1567,8 +1598,8 @@ public class OWL {
     return id;
   }
 
-  OWLClass getOWLClass(Concept concept) {
-    return owlClasses.get(((ConceptImpl) concept).getId());
+  synchronized OWLClass getOWLClass(Concept concept) {
+    return owlClasses.get(concept.getUrn());
   }
 
   /**
@@ -1590,6 +1621,10 @@ public class OWL {
 
     var ontology = requireOntology(INTERNAL_ONTOLOGY_ID);
     var name = ontology.createIdForDefinition(urn);
+    Concept existing = ontology.getConcept(name);
+    if (existing != null) {
+      return existing;
+    }
     List<Axiom> ax = new ArrayList<>();
     ax.add(Axiom.ClassAssertion(name, ret.getType()));
     ax.add(Axiom.SubClass(ret.getNamespace() + ":" + ret.getName(), name));
@@ -2505,9 +2540,9 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  Concept getConceptFor(OWLClass cls) {
-    Long id = owlClasses.inverse().get(cls);
-    return conceptsById.get(id);
+  synchronized Concept getConceptFor(OWLClass cls) {
+    var id = owlClasses.inverse().get(cls);
+    return id == null ? null : conceptsById.get(id);
   }
 
   synchronized void registerWithReasoner(Ontology o) {

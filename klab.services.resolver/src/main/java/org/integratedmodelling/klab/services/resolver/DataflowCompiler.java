@@ -61,7 +61,9 @@ public class DataflowCompiler {
   public Dataflow compile() {
 
     if (resolutionGraph.isEmpty()) {
-      return Dataflow.empty();
+      var ret = Dataflow.empty();
+      ret.getNotifications().addAll(resolutionGraph.getNotifications());
+      return ret;
     }
 
     // TODO remove eventually, or make it debug-level
@@ -87,6 +89,8 @@ public class DataflowCompiler {
                   null,
                   null));
     }
+
+    ret.getNotifications().addAll(resolutionGraph.getNotifications());
 
     return ret;
   }

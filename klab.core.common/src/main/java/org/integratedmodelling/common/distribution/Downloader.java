@@ -57,7 +57,7 @@ public class Downloader {
   }
 
   /** Start downloading and block until success or failure. */
-  public void download() {
+  public boolean download() {
     ProgressListener progressListener = new ProgressListener();
     try (OutputStream os = new FileOutputStream(file);
         InputStream is = url.openStream()) {
@@ -78,9 +78,11 @@ public class Downloader {
         }
       }
       finish();
+      return true;
     } catch (Exception e) {
       fail(e);
     }
+    return false;
   }
 
   protected void finish() {

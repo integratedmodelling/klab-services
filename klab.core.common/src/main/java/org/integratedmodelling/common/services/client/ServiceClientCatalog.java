@@ -24,7 +24,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotifi
  * transparently managing the lifecycle of the underlying monitors.
  */
 public enum ServiceClientCatalog {
-
   INSTANCE;
 
   private final long localPollCycleSeconds = (Integer) Setting.POLLING_INTERVAL_LOCAL.defaultValue;
@@ -49,7 +48,7 @@ public enum ServiceClientCatalog {
     private int consecutiveFailedPolls = 0;
     private ScheduledFuture<?> schedule;
 
-    private Set<BaseServiceClient> registeredClients = ConcurrentHashMap.newKeySet();
+    private final Set<BaseServiceClient> registeredClients = ConcurrentHashMap.newKeySet();
 
     public Utils.Http.Client getClient() {
       return client;
@@ -89,7 +88,7 @@ public enum ServiceClientCatalog {
       this.type = type;
       this.status = status;
       this.local = Utils.URLs.isLocalHost(url);
-      Thread.ofVirtual().start(() -> connect());
+      Thread.ofVirtual().start(this::connect);
     }
 
     public void registerClient(BaseServiceClient client) {
@@ -122,10 +121,6 @@ public enum ServiceClientCatalog {
     }
 
     synchronized KlabService.ServiceStatus refreshStatus(boolean notifyListeners) {
-
-      //        if (settings != null && "off".equals(settings.get(Setting.POLLING, String.class))) {
-      //            return;
-      //        }
 
       var statusBeforeChecking = status.get();
       try {

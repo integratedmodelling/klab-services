@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.AbstractBaseGraph;
@@ -55,7 +56,7 @@ public class ResolutionGraph {
   private long internalObservationId = -1;
   private Map<Long, Observation> observations;
   private Map<String, ServiceInfo> serviceInfos;
-
+  private List<Notification> notifications = new ArrayList<>();
   //  resources installed by resolving observation that come with contextualization data.
   private List<Resource> localResources = new ArrayList<>();
 
@@ -82,6 +83,10 @@ public class ResolutionGraph {
     return this.graph;
   }
 
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
   public double getResolvedCoverage() {
     return targetCoverage == null ? 0 : targetCoverage.getCoverage();
   }
@@ -97,7 +102,7 @@ public class ResolutionGraph {
     this.localResources = parent.localResources;
     this.serviceInfos = parent.serviceInfos;
 
-    /**
+    /*
      * Models are resolved from full down, intersecting the coverage of the dependencies. Everything
      * else is resolved from zero up, uniting the coverages.
      */

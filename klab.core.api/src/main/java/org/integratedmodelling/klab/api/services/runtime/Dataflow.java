@@ -17,16 +17,13 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
-import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.impl.EmptyDataflow;
 
 /**
  * TODO rewrite the description
@@ -107,67 +104,16 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    * @return
    */
   static Dataflow empty() {
-    return new Dataflow() {
+    var ret = new EmptyDataflow();
+    ret.setEmpty(true);
+    return ret;
+  }
 
-      List<Notification> notifications = new ArrayList<>();
-
-      @Override
-      public long getId() {
-        return 0;
-      }
-
-      @Override
-      public long getParentId() {
-        return -1000;
-      }
-
-      @Override
-      public long getTransientId() {
-        return 0;
-      }
-
-      @Override
-      public int getChildrenCount() {
-        return 0;
-      }
-
-      @Override
-      public long getParentTransientId() {
-        return -1000;
-      }
-
-      @Serial private static final long serialVersionUID = -1115441423700817816L;
-
-      @Override
-      public String getName() {
-        return "empty_dataflow";
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return true;
-      }
-
-      @Override
-      public ResourceSet getRequirements() {
-        return ResourceSet.empty();
-      }
-
-      @Override
-      public Coverage getCoverage() {
-        return Coverage.empty();
-      }
-
-      @Override
-      public List<Actuator> getComputation() {
-        return Collections.emptyList();
-      }
-
-      @Override
-      public List<Notification> getNotifications() {
-        return notifications;
-      }
-    };
+  static Dataflow empty(List<Notification> notifications) {
+    var ret = new EmptyDataflow();
+    ret.setEmpty(true);
+    ret.getNotifications().addAll(notifications);
+    return ret;
   }
 
   /**
@@ -178,66 +124,15 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    * @return
    */
   static Dataflow trivial() {
-    return new Dataflow() {
+    var ret = new EmptyDataflow();
+    ret.setEmpty(false);
+    return ret;
+  }
 
-      List<Notification> notifications = new ArrayList<>();
-
-      @Override
-      public long getId() {
-        return 0;
-      }
-
-      @Override
-      public long getParentId() {
-        return -1000;
-      }
-
-      @Override
-      public long getTransientId() {
-        return 0;
-      }
-
-      @Override
-      public int getChildrenCount() {
-        return 0;
-      }
-
-      @Override
-      public long getParentTransientId() {
-        return -1000;
-      }
-
-      @Serial private static final long serialVersionUID = -1115441423700817816L;
-
-      @Override
-      public String getName() {
-        return "trivial_dataflow";
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return false;
-      }
-
-      @Override
-      public ResourceSet getRequirements() {
-        return ResourceSet.empty();
-      }
-
-      @Override
-      public Coverage getCoverage() {
-        return Coverage.empty();
-      }
-
-      @Override
-      public List<Actuator> getComputation() {
-        return Collections.emptyList();
-      }
-
-      @Override
-      public List<Notification> getNotifications() {
-        return notifications;
-      }
-    };
+  static Dataflow trivial(List<Notification> notifications) {
+    var ret = new EmptyDataflow();
+    ret.setEmpty(false);
+    ret.getNotifications().addAll(notifications);
+    return ret;
   }
 }

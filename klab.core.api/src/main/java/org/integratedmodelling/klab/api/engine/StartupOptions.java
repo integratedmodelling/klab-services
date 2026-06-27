@@ -67,6 +67,34 @@ public interface StartupOptions {
 
   Collection<File> getComponentPaths();
 
+  /**
+   * If true, Maven-sourced SNAPSHOT components should be checked once after the component registry
+   * is initialized.
+   *
+   * @return true if a startup update check is requested
+   */
+  default boolean isComponentUpdateOnStartup() {
+    return true;
+  }
+
+  /**
+   * If true, Maven-sourced SNAPSHOT components should be checked periodically after startup.
+   *
+   * @return true if scheduled component update checks are requested
+   */
+  default boolean isComponentAutoUpdateEnabled() {
+    return false;
+  }
+
+  /**
+   * Interval, in minutes, for scheduled component update checks.
+   *
+   * @return interval in minutes
+   */
+  default long getComponentUpdateIntervalMinutes() {
+    return 5;
+  }
+
   String getCertificateResource();
 
   String getAuthenticatingHub();
@@ -81,8 +109,6 @@ public interface StartupOptions {
    * @return a boolean.
    */
   boolean isCloudConfig();
-
-//  String getServiceName();
 
   /**
    * Return all arguments that weren't parsed as predefined options.

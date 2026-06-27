@@ -41,48 +41,21 @@ public class ComponentIOLibrary {
       return ResourceSet.empty(Notification.error("Non existing .kar file."));
     }
 
-    String groupId = "org.integratedmodelling";
-    String artifactId = "";
-    String version = Version.EMPTY_VERSION.toString();
-
     String manifestPath = "META-INF/MANIFEST.MF";
 
-    try {
-      ZipFile zipFile = new ZipFile(file.getAbsolutePath());
+    try (ZipFile zipFile = new ZipFile(file.getAbsolutePath())) {
       ZipEntry entry = zipFile.getEntry(manifestPath);
 
       if (entry == null) {
         System.err.println("Entry not found: " + manifestPath);
         return ResourceSet.empty(Notification.error("Cannot find definition of .kar file."));
       }
-
-      InputStream inputStream = zipFile.getInputStream(entry);
-      BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-      String line;
-
-      while ((line = reader.readLine()) != null) {
-        if (line.startsWith("Plugin-Id:")) {
-          artifactId = line.substring(line.indexOf(":") + 1).trim();
-          continue;
-        }
-        if (line.startsWith("Plugin-Vendor-Id:")) {
-          groupId = line.substring(line.indexOf(":") + 1).trim();
-          continue;
-        }
-        if (line.startsWith("Plugin-Version:")) {
-          version = line.substring(line.indexOf(":") + 1).trim();
-        }
-      }
-
-      reader.close();
-      zipFile.close();
     } catch (IOException e) {
       System.err.println("Exception while reading kar file: " + e.getMessage());
     }
 
-    var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
     var componentRegistry = service.getComponentRegistry();
-    var result = componentRegistry.installComponent(file, mavenCoordinates);
+    var result = componentRegistry.installComponent(file, null);
     if (result != null) {
       return result.getSecond();
     }

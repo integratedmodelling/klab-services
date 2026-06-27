@@ -3,9 +3,9 @@ package org.integratedmodelling.common.authentication;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -64,6 +64,8 @@ public enum Authentication {
   public static final String FEDERATION_MESSAGING_BROKER = "federation.broker";
 
   private final AtomicReference<Collection<String>> sshHosts = new AtomicReference<>();
+  private final AtomicReference<EngineAuthenticationResponse> lastEngineAuthenticationResponse =
+      new AtomicReference<>();
   private final Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
 
   /** any external credentials taken from the .klab/credentials.json file if any. */
@@ -79,6 +81,44 @@ public enum Authentication {
     this.sshHosts.set(Utils.SSH.readHostFile());
   }
 
+  public EngineAuthenticationResponse getLastEngineAuthenticationResponse() {
+    return lastEngineAuthenticationResponse.get();
+  }
+
+  public String encodeAuthenticationResponse(EngineAuthenticationResponse authentication) {
+    if (authentication == null) {
+      return null;
+    }
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(Utils.Json.asString(authentication).getBytes(StandardCharsets.UTF_8));
+  }
+
+  public EngineAuthenticationResponse decodeAuthenticationResponse(String authenticationPackage) {
+    if (authenticationPackage == null || authenticationPackage.isBlank()) {
+      return null;
+    }
+    try {
+      var json =
+          new String(Base64.getUrlDecoder().decode(authenticationPackage), StandardCharsets.UTF_8);
+      return Utils.Json.newObjectMapper().readValue(json, EngineAuthenticationResponse.class);
+    } catch (Throwable urlSafeFailure) {
+      try {
+        var json =
+            new String(Base64.getDecoder().decode(authenticationPackage), StandardCharsets.UTF_8);
+        return Utils.Json.newObjectMapper().readValue(json, EngineAuthenticationResponse.class);
+      } catch (Throwable failure) {
+        Logging.INSTANCE.error(failure, "Could not decode local authentication package");
+      }
+    }
+    return null;
+  }
+
+  public Pair<Identity, List<ServiceReference>> authenticate(
+      EngineAuthenticationResponse authentication) {
+    return authenticate(authentication, "local authentication package");
+  }
+
   /**
    * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
    *
@@ -91,6 +131,11 @@ public enum Authentication {
         (certFile.isFile() && !settings.get(Setting.LOGIN_ANONYMOUSLY, Boolean.class))
             ? KlabCertificateImpl.createFromFile(certFile)
             : new AnonymousEngineCertificate();
+
+    if (certificate instanceof AnonymousEngineCertificate) {
+      Logging.INSTANCE.info("No valid certificate found: continuing in anonymous offline mode");
+    }
+
     return authenticate(certificate, settings);
   }
 
@@ -105,6 +150,8 @@ public enum Authentication {
   public Pair<Identity, List<ServiceReference>> authenticate(
       KlabCertificate certificate, Settings settings) {
 
+    lastEngineAuthenticationResponse.set(null);
+
     if (certificate instanceof AnonymousEngineCertificate
         || settings.get(Setting.LOGIN_ANONYMOUSLY, Boolean.class)) {
       // no partner, no node, no token, no nothing. REST calls automatically accept
@@ -113,6 +160,12 @@ public enum Authentication {
         Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
       }
       return Pair.of(new AnonymousUser(), Collections.emptyList());
+    }
+
+    if (certificate.getType() != KlabCertificate.Type.ENGINE) {
+      throw new KlabAuthorizationException(
+          "wrong certificate for an engine: cannot create identity of type "
+              + certificate.getType());
     }
 
     if (!certificate.isValid()) {
@@ -176,119 +229,140 @@ public enum Authentication {
     }
 
     if (authentication != null) {
+      return authenticate(authentication, "hub " + authenticationServer);
+    }
 
-      Instant expiry = null;
-      /*
-       * check expiration
-       */
-      try {
-        expiry = Instant.parse(authentication.getUserData().getExpiry() + "Z");
-      } catch (Throwable e) {
-        Logging.INSTANCE.error(
-            "bad date or wrong date format in certificate. Please use latest "
-                + "version of software. Continuing anonymously.");
-        return Pair.of(new AnonymousUser(), Collections.emptyList());
-      }
-      if (expiry == null) {
-        Logging.INSTANCE.error(
-            "certificate has no expiration date. Please obtain a new certificate"
-                + ". Continuing anonymously.");
-        return Pair.of(new AnonymousUser(), Collections.emptyList());
-      } else if (expiry.isBefore(Instant.now())) {
+    Logging.INSTANCE.warn(
+        "No authentication response received for user "
+            + certificate.getProperty(KlabCertificate.KEY_USERNAME)
+            + " from hub "
+            + authenticationServer
+            + ": continuing anonymously");
 
-        Logging.INSTANCE.error(
-            "certificate expired on "
-                + expiry
-                + ". Please obtain a new "
-                + "certificate. Continuing anonymously.");
+    return Pair.of(new AnonymousUser(), Collections.emptyList());
+  }
 
-        UserIdentityImpl ret = new UserIdentityImpl();
-        ret.setAnonymous(true);
-        ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
-        ret.setUsername(authentication.getUserData().getIdentity().getId());
-        ret.setAuthenticated(false);
-        ret.setOnline(false);
+  private Pair<Identity, List<ServiceReference>> authenticate(
+      EngineAuthenticationResponse authentication, String sourceDescription) {
 
-        return Pair.of(ret, Collections.emptyList());
+    lastEngineAuthenticationResponse.set(null);
+
+    if (authentication == null
+        || authentication.getUserData() == null
+        || authentication.getUserData().getIdentity() == null) {
+      Logging.INSTANCE.warn(
+          "Authentication package from "
+              + sourceDescription
+              + " has no user identity: continuing anonymously");
+      return Pair.of(new AnonymousUser(), Collections.emptyList());
+    }
+
+    Instant expiry;
+    try {
+      var expiryText = authentication.getUserData().getExpiry();
+      expiry =
+          expiryText == null
+              ? null
+              : Instant.parse(expiryText.endsWith("Z") ? expiryText : expiryText + "Z");
+    } catch (Throwable e) {
+      Logging.INSTANCE.error(
+          e,
+          "Bad date or wrong date format in authentication package from %s. Continuing anonymously.",
+          sourceDescription);
+      return Pair.of(new AnonymousUser(), Collections.emptyList());
+    }
+    if (expiry == null) {
+      Logging.INSTANCE.error(
+          "Authentication package from "
+              + sourceDescription
+              + " has no expiration date. Continuing anonymously.");
+      return Pair.of(new AnonymousUser(), Collections.emptyList());
+    } else if (expiry.isBefore(Instant.now())) {
+
+      Logging.INSTANCE.error(
+          "Authentication package from "
+              + sourceDescription
+              + " expired on "
+              + expiry
+              + ". Continuing anonymously.");
+
+      UserIdentityImpl ret = new UserIdentityImpl();
+      ret.setAnonymous(true);
+      ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
+      ret.setUsername(authentication.getUserData().getIdentity().getId());
+      ret.setAuthenticated(false);
+      ret.setOnline(false);
+
+      return Pair.of(ret, Collections.emptyList());
+    }
+
+    List<ServiceReference> services = new ArrayList<>();
+    var hubNode = authentication.getHub();
+
+    UserIdentityImpl ret = new UserIdentityImpl();
+    ret.setId(authentication.getUserData().getToken());
+    ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
+    ret.setUsername(authentication.getUserData().getIdentity().getId());
+    ret.setAuthenticated(true);
+    ret.setOnline(true);
+
+    if (authentication.getUserData().getGroups() != null) {
+      for (Object ogroup : authentication.getUserData().getGroups()) {
+        // FIXME these come w/o class info so our deserializer screws up
+        Group group = null;
+        if (ogroup instanceof Map map) {
+          group = Utils.Json.convertMap(map, GroupImpl.class);
+        } else if (ogroup instanceof Group g) {
+          group = g;
+        }
+        if (group != null) {
+          ret.getGroups().add(group);
+        }
       }
     }
 
-    /*
-     * build the identity
-     */
-    if (certificate.getType() == KlabCertificate.Type.ENGINE) {
+    var hubId = hubNode == null ? "unknown hub" : hubNode.getId();
+    var partnerId =
+        hubNode == null || hubNode.getPartner() == null
+            ? "unknown partner"
+            : hubNode.getPartner().getId();
+    Logging.INSTANCE.info(
+        "User "
+            + ret.getUsername()
+            + " authenticated from "
+            + sourceDescription
+            + " through hub "
+            + hubId
+            + " owned by "
+            + partnerId);
 
-      // if we have connected, insert network session identity
-      if (authentication != null) {
+    /* validate federation data */
+    var federationData = Klab.INSTANCE.getFederationData(ret);
+    if (federationData != null) {
+      Logging.INSTANCE.info(
+          "User " + ret.getUsername() + " is part of the " + federationData.getId());
+      ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
+    }
 
-        List<ServiceReference> services = new ArrayList<>();
-        var hubNode = authentication.getHub();
-        HubImpl hub = new HubImpl();
-
-        UserIdentityImpl ret = new UserIdentityImpl();
-        ret.setId(authentication.getUserData().getToken());
-        //        ret.setParentIdentity(hub);
-        ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
-        ret.setUsername(authentication.getUserData().getIdentity().getId());
-        ret.setAuthenticated(true);
-        ret.setOnline(true);
-
-        for (Object ogroup : authentication.getUserData().getGroups()) {
-          // FIXME these come w/o class info so our deserializer screws up
-          Group group = null;
-          if (ogroup instanceof Map map) {
-            group = Utils.Json.convertMap(map, GroupImpl.class);
-          } else if (ogroup instanceof Group g) {
-            group = g;
-          }
-          if (group != null) {
-            ret.getGroups().add(group);
-          }
-        }
-
-        Logging.INSTANCE.info(
-            "User "
-                + ret.getUsername()
-                + " logged in through hub "
-                + hubNode.getId()
-                + " owned by "
-                + hubNode.getPartner().getId());
-
-        /* validate federation data */
-        var federationData = Klab.INSTANCE.getFederationData(ret);
-        if (federationData != null) {
-          Logging.INSTANCE.info(
-              "User " + ret.getUsername() + " is part of the " + federationData.getId());
-          ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
-        }
-
-        Map<KlabService.Type, AtomicInteger> serviceCount = new HashMap<>();
-        Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
-        for (var service : authentication.getServices()) {
-          Logging.INSTANCE.info("   " + service.getId() + " online");
+    Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
+    if (authentication.getServices() != null) {
+      for (var service : authentication.getServices()) {
+        Logging.INSTANCE.info("   " + service.getId() + " online");
+        if (service.getPartner() != null) {
           Logging.INSTANCE.info(
               "      "
                   + service.getPartner().getId()
                   + " ("
                   + service.getPartner().getEmail()
                   + ")");
-          Logging.INSTANCE.info("      " + "type: " + service.getIdentityType());
-          services.add(service);
-          serviceCount
-              .computeIfAbsent(service.getIdentityType(), s -> new AtomicInteger(0))
-              .incrementAndGet();
         }
-
-        return Pair.of(ret, services);
+        Logging.INSTANCE.info("      " + "type: " + service.getIdentityType());
+        services.add(service);
       }
-
-    } else {
-      throw new KlabAuthorizationException(
-          "wrong certificate for an engine: cannot create identity of type "
-              + certificate.getType());
     }
 
-    return Pair.of(new AnonymousUser(), Collections.emptyList());
+    lastEngineAuthenticationResponse.set(authentication);
+    return Pair.of(ret, services);
   }
 
   Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {

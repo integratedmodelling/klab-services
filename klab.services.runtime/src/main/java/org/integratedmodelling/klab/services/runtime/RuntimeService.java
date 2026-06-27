@@ -42,6 +42,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -61,6 +62,7 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JCl
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.concurrent.Parallelism;
 
@@ -107,7 +109,7 @@ public class RuntimeService extends BaseService
         }
       };
 
-  public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
     readConfiguration(options);
     setComponentRegistry();
@@ -829,7 +831,7 @@ public class RuntimeService extends BaseService
         submissionScope
             .getDigitalTwin()
             .getKnowledgeGraph()
-            .query(Observation.class, scope)
+            .query(Observation.class, submissionScope)
             .source(cohort)
             .along(GraphModel.Relationship.HAS_MEMBER)
             .run(submissionScope)) {
@@ -1407,13 +1409,71 @@ public class RuntimeService extends BaseService
       DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO find the scope in the knowledge graph. If existing, recreate the scope and the owning
     //  session.
+    if (configuration == null || configuration.getId() == null) {
+      Logging.INSTANCE.error(
+          "Cannot reconstruct context: missing configuration or context ID for user "
+              + (userScope == null || userScope.getUser() == null
+                  ? "<unknown>"
+                  : userScope.getUser().getUsername()));
+      return null;
+    }
+
+    if (userScope == null) {
+      Logging.INSTANCE.error(
+          "Cannot reconstruct context " + configuration.getId() + ": missing user scope");
+      return null;
+    }
+
+    if (!configuration.getId().contains(".")) {
+      Logging.INSTANCE.error(
+          "Cannot reconstruct context "
+              + configuration.getId()
+              + ": context ID does not contain a session prefix");
+      return null;
+    }
+
     var sessionId = configuration.getId().substring(0, configuration.getId().lastIndexOf("."));
     var session = getScopeManager().getScope(sessionId, SessionScope.class);
     if (session == null) {
-      session = userScope.getUserSession(this);
+      if (userScope instanceof ServiceUserScope serviceUserScope) {
+        var serviceSession = new ServiceSessionScope(serviceUserScope);
+        serviceSession.setStatus(Scope.Status.WAITING);
+        serviceSession.setId(sessionId);
+        serviceSession.setName(sessionId);
+        serviceSession.setHostServiceId(serviceId());
+        for (var service : userScope.getServices(KlabService.class)) {
+          serviceSession.addService(service);
+        }
+        declareSessionScope(serviceSession, userScope, null);
+        session = serviceSession;
+        Logging.INSTANCE.info(
+            "Reconstructed missing parent session "
+                + sessionId
+                + " while reconnecting context "
+                + configuration.getId());
+      } else {
+        Logging.INSTANCE.error(
+            "Cannot reconstruct context "
+                + configuration.getId()
+                + ": user scope is not service-side ("
+                + (userScope == null ? "<null>" : userScope.getClass().getName())
+                + ")");
+        return null;
+      }
+    }
+
+    if (!(session instanceof ServiceSessionScope serviceSessionScope)) {
+      Logging.INSTANCE.error(
+          "Cannot reconstruct context "
+              + configuration.getId()
+              + ": session "
+              + sessionId
+              + " is "
+              + session.getClass().getName());
+      return null;
     }
     var ret =
-        new ServiceContextScope((ServiceSessionScope) session, configuration, userScope.getUser());
+        new ServiceContextScope(serviceSessionScope, configuration, userScope.getUser());
     if (!userScope.getUser().getUsername().equals(ret.getUser().getUsername())) {
       ret = ret.withIdentity(userScope.getIdentity());
     }

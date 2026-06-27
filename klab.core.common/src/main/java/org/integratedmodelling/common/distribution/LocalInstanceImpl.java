@@ -4,7 +4,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.exec.CommandLine;
@@ -41,6 +43,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected OutputStream outputStream;
   protected InputStream inputStream;
   protected Long pid;
+  protected final Map<String, String> environmentOverrides = new ConcurrentHashMap<>();
 
   /**
    * Subclasses must implement this to provide the command line to launch the product.
@@ -143,6 +146,17 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     return product;
   }
 
+  public void setEnvironmentOverride(String key, String value) {
+    if (key == null || key.isBlank()) {
+      return;
+    }
+    if (value == null) {
+      environmentOverrides.remove(key);
+    } else {
+      environmentOverrides.put(key, value);
+    }
+  }
+
   @Override
   public Status getStatus() {
     return status.get();
@@ -241,7 +255,13 @@ public abstract class LocalInstanceImpl implements LocalInstance {
         };
 
     try {
-      executor.execute(commandLine, resultHandler);
+      if (environmentOverrides.isEmpty()) {
+        executor.execute(commandLine, resultHandler);
+      } else {
+        Map<String, String> environment = new HashMap<>(System.getenv());
+        environment.putAll(environmentOverrides);
+        executor.execute(commandLine, environment, resultHandler);
+      }
       this.status.set(Status.RUNNING);
       return true;
     } catch (IOException e) {

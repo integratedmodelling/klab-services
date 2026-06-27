@@ -12,11 +12,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -89,6 +89,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private final WorkspaceManager workspaceManager;
   private final ResourcesKBox resourcesKbox;
   private final ResourceManager resourceManager;
+  private AtomicBoolean semanticSearchAvailable = new AtomicBoolean(false);
 
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
@@ -120,7 +121,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private ModelKbox kbox;
 
   // set to true when the connected reasoner becomes operational
-  private boolean semanticSearchAvailable = false;
+  //  private boolean semanticSearchAvailable = false;
   /*
    * "fair" read/write lock to ensure no reading during updates
    */
@@ -128,7 +129,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private Thread lspThread;
 
   @SuppressWarnings("unchecked")
-  public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public ResourcesProvider(ServiceScope scope, ServiceStartupOptions options) {
 
     super(scope, Type.RESOURCES, options);
     this.resourcesKbox = new ResourcesKBox(scope, options, this);
@@ -190,74 +191,45 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public boolean initializeService() {
-
     Logging.INSTANCE.setSystemIdentifier("Resources service: ");
-    //
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceInitializing,
-    //            capabilities(serviceScope()).toString());
-
-    //        this.workspaceManager.loadWorkspace();
-    /*
-     * TODO launch update service
-     */
-
-    //    /**
-    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
-    // there
-    //     * is no configured broker.
-    //     */
-    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-    //      this.embeddedBroker = new EmbeddedBroker();
-    //    }
-
-    /*
-     * If we want the local resources service to provide LSP functionalities, uncomment this. For now it is
-     * in the Java-based modeler, but if the modeler moves to a web version this can be added.
-     */
-    //    if (Utils.URLs.isLocalHost(this.getUrl())) {
-    //      /*
-    //       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all
-    // languages on the
-    //       *  classpath.
-    //       */
-    //      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
-    //      this.lspThread =
-    //          new Thread(
-    //              () -> {
-    //                try {
-    //                  ServerLauncher.main(new String[0]);
-    //                } catch (Throwable t) {
-    //                  Logging.INSTANCE.error(
-    //                      "Error launching LSP server: language services not available", t);
-    //                }
-    //              });
-    //
-    //      this.lspThread.start();
-    //    }
-
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceAvailable,
-    //            capabilities(serviceScope()));
     return true;
   }
 
   @Override
   public boolean operationalizeService() {
-    var reasoner = serviceScope().getService(Reasoner.class);
-    if (reasoner.status().isOperational()) {
-      Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
-      indexKnowledge();
-      this.semanticSearchAvailable = true;
-    } else {
-      Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
-      this.semanticSearchAvailable = false;
-    }
+    // do a first check for an appropriate reasoner. Does not prevent operationalization.
+    checkSemanticServices(serviceScope());
     return true;
+  }
+
+  public boolean checkSemanticServices(Scope scope) {
+    // TODO this should be called repeatedly and should be able to make incremental changes
+    if (!this.semanticSearchAvailable.get()) {
+      var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
+
+      /** Only local reasoners can index semantic content of a local resources service. */
+      var reasoner =
+          scope.getServices(Reasoner.class).stream()
+              .filter(
+                  r ->
+                      !iAmLocal
+                          || org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
+                              r.getUrl()))
+              .findAny()
+              .orElse(null);
+
+      if (reasoner != null && reasoner.status().isOperational()) {
+        Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
+        if (indexKnowledge(scope)) {
+          this.semanticSearchAvailable.set(true);
+        }
+        return true;
+      } else {
+        Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
+        this.semanticSearchAvailable.set(false);
+      }
+    }
+    return this.semanticSearchAvailable.get();
   }
 
   /**
@@ -327,18 +299,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
   }
 
-  private void indexKnowledge() {
+  private boolean indexKnowledge(Scope scope) {
 
     // TODO index ontologies
-
-    for (var namespace : workspaceManager.getNamespaces()) {
-      kbox.remove(namespace.getUrn(), scope);
-      for (var statement : namespace.getStatements()) {
-        if (statement instanceof KimModel model) {
-          kbox.store(model, scope);
+    try {
+      for (var namespace : workspaceManager.getNamespaces()) {
+        kbox.remove(namespace.getUrn(), scope);
+        for (var statement : namespace.getStatements()) {
+          if (statement instanceof KimModel model) {
+            kbox.store(model, scope);
+          }
         }
       }
+    } catch (Throwable t) {
+      Logging.INSTANCE.error("Error indexing semantic content", t);
+      return false;
     }
+    return true;
   }
 
   @Override
@@ -960,6 +937,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     ret.getPermissions().add(CRUDOperation.CREATE);
     ret.getPermissions().add(CRUDOperation.DELETE);
     ret.getPermissions().add(CRUDOperation.UPDATE);
+    ret.setSemanticSearchCapable(semanticSearchAvailable.get());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
 
@@ -1192,7 +1170,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
-      scope.warn("invalid concept definition: " + definition);
+      serviceScope().warn("invalid concept definition: " + definition);
     }
     return null;
   }
@@ -1202,7 +1180,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
-      scope.warn("invalid observable definition: " + definition);
+      serviceScope().warn("invalid observable definition: " + definition);
     }
     return null;
   }
@@ -1214,9 +1192,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       for (var notification : parsed.getNotifications()) {
         if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
           errors = true;
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         }
       }
       return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
@@ -1231,9 +1209,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       for (var notification : parsed.getNotifications()) {
         if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
           errors = true;
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
-          scope.error(notification.message().message());
+          serviceScope().error(notification.message().message());
         }
       }
       return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null, null);
@@ -1414,56 +1392,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workspaceManager.manageRepository(projectName, operation, arguments);
   }
 
-  //    @Override
-  //    public ResourceSet createResource(Resource resource, UserScope scope) {
-  //        // TODO Auto-generated method stub
-  //        return null;
-  //    }
-  //
-  //    @Override
-  //    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
-  //        return null;
-  //    }
-
-  //    @Override
-  //  @Deprecated // remove when the import mechanism can do this
-  //  public ResourceSet createResource(File resourcePath, UserScope scope) {
-  //
-  //    KnowledgeClass knowledgeClass = null;
-  //    File sourceFile = null;
-  //    String urn = null;
-  //    ResourceSet ret = null;
-  //
-  //    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
-  //      var imported = getComponentRegistry().installComponent(resourcePath, null);
-  //      knowledgeClass = KnowledgeClass.COMPONENT;
-  //      sourceFile = imported.getFirst().sourceArchive();
-  //      urn = imported.getFirst().id();
-  //      ret = imported.getSecond();
-  //    } else {
-  //      // TODO resource, mirror archive
-  //    }
-  //
-  //    if (urn != null) {
-  //      // initial resource permissions
-  //      var status = new ResourceInfo();
-  //      if (scope.getIdentity() instanceof UserIdentity user) {
-  //        status.getRights().getAllowedUsers().add(user.getUsername());
-  //        status.setOwner(user.getUsername());
-  //      }
-  //      status.setFileLocation(sourceFile);
-  //      status.setKnowledgeClass(knowledgeClass);
-  //      status.setReviewStatus(0);
-  //      status.setType(ResourceInfo.Type.AVAILABLE);
-  //      status.setLegacy(false);
-  //      status.setUrn(urn);
-  //      resourcesKbox.putStatus(status);
-  //      //      db.commit();
-  //    }
-  //
-  //    return ret;
-  //  }
-
   @Override
   public ResourceInfo registerResource(
       String urn,
@@ -1509,7 +1437,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public ResourceSet resolveModels(Observable observable, ContextScope scope) {
 
-    if (!semanticSearchAvailable) {
+    if (!checkSemanticServices(scope)) {
       return ResourceSet.empty(Notification.warning("Semantic search is not available"));
     }
 

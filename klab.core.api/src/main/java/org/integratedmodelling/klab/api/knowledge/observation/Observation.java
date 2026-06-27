@@ -92,6 +92,17 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     Builder geometry(Geometry geometry);
 
     /**
+     * If called, the observation built will only resolve through the current content of the
+     * knowledge graph, without causing any new resolution. The resulting observation, if not empty,
+     * will be the view of the knowledge graph for the passed observable and context, adapted to the
+     * requesting geometry. The extents may be different from the requested if source observations
+     * exist but do not cover the requested geometry. Coverage should be reported in metadata.
+     *
+     * @return
+     */
+    Builder query();
+
+    /**
      * Observation of qualities may come with a scalar value, which must be acceptable for the
      * semantics.
      *

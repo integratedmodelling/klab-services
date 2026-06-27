@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
@@ -38,6 +37,7 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -155,6 +155,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return owl;
   }
 
+  private Concept nothingConcept(String urn) {
+    if (this.owl != null) {
+      return this.owl.nothing(urn);
+    }
+    var ret = new ConceptImpl();
+    ret.setNonSemanticId(ConceptImpl.NOTHING_ID);
+    ret.setUrn("owl:Nothing");
+    ret.setNamespace("owl");
+    ret.getType().add(SemanticType.NOTHING);
+    return ret;
+  }
+
   /**
    * An emergence is the appearance of an observation triggered by another, under the assumptions
    * stated in the worldview. It applies to processes and relationships and its emergent observable
@@ -245,9 +257,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Autowired
-  public ReasonerService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+  public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.REASONER, options);
-    this.scope = scope;
     this.owl = new OWL(scope);
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
@@ -296,31 +307,53 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-    //    /*
-    //     * Setup an embedded broker, possibly to be shared with other services, if we're local and
-    // there
-    //     * is no configured broker.
-    //     */
-    //    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
-    //      Logging.INSTANCE.info("Setting up embedded broker in local service");
-    //      this.embeddedBroker = new EmbeddedBroker();
-    //      Logging.INSTANCE.info(
-    //          "Embedded broker is "
-    //              + (embeddedBroker.isOnline() ? ("online at " + embeddedBroker.getURI()) :
-    // "offline"));
-    //    }
-
     /*
     This is called when resources are available, so this is the time to load the worldview.
      */
+
+    return true;
+  }
+
+  @Override
+  public void runAdditionalTimedTasks() {
+    try {
+      checkWorldview();
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(t);
+    }
+  }
+
+  /**
+   * TODO this must become more dynamic and integrate existing worldview contributors. Priority must
+   * be given to local sourcing (already built into ResourceSet but local may come in later).
+   *
+   * @return
+   */
+  boolean checkWorldview() {
+
+    if (this.worldview != null) {
+      return true;
+    }
+
+    var ret = false;
     for (var resources : serviceScope().getServices(ResourcesService.class)) {
+
+      /*
+       * FIXME this makes the local reasoner only initialize from a local resources service, which
+       *  is correct if the modeler is able to operate on the worldview, but it should be
+       *  configurable or linked to groups.
+       */
+      if (Utils.URLs.isLocalHost(this.getUrl()) && !Utils.URLs.isLocalHost(resources.getUrl())) {
+        continue;
+      }
+
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
 
-        // TODO switch to using the full service list and use the updated worldview retrieval logic.
-        // TODO set up a worldview update check at a configurable interval in timedTasks
+        // FIXME switch to using the full service list and use the updated worldview retrieval
+        // logic.
+        // FIXME set up a worldview update check at a configurable interval in timedTasks
 
-        Worldview worldview = null;
         int maxAttempts = 5;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -338,10 +371,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
         var notifications = loadKnowledge(worldview, serviceScope());
         if (!Utils.Resources.hasErrors(notifications)) {
-          //                    setOperational(false);
-          //                    serviceScope().warn("Worldview loading failed: reasoner is
-          //                    disabled");
-          //                } else {
           setOperational(true);
           ret = true;
           serviceScope().info("Worldview loaded into local reasoner");
@@ -362,10 +391,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean operationalizeService() {
-    // we have done what we needed, just return the outcome. Basically we're not operational unless
-    // we
-    // have a valid worldview.
-    return isOperational();
+    return worldview != null;
   }
 
   @SuppressWarnings("unchecked")
@@ -440,10 +466,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
     } else {
-      KimConcept parsed = scope.getService(ResourcesService.class).declareConcept(definition);
+      // FIXME this should use all services and resolve in user scope
+      KimConcept parsed =
+          serviceScope().getService(ResourcesService.class).declareConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
-        //        concepts.put(definition, ret);
       }
     }
     return ret == null ? owl.nothing(definition) : ret;
@@ -451,7 +478,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable resolveObservableInternal(String definition) {
     Observable ret = null;
-    KimObservable parsed = scope.getService(ResourcesService.class).declareObservable(definition);
+    // FIXME the service should be passed
+    KimObservable parsed =
+        serviceScope().getService(ResourcesService.class).declareObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
       if (ret != null) {
@@ -599,15 +628,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept baseSubstantialType(Semantics concept, Scope scope) {
-    var builder =
-        SemanticsBuilder.create(concept.asConcept(), this, scope)
-            .without(SemanticRole.TRAIT)
-            .without(SemanticRole.modifiers());
-    for (var identity : directIdentities(concept)) {
-      // TODO recognize individual identities and add their lexical root
+    Concept original = concept == null ? null : concept.asConcept();
+    if (original == null) {
+      return nothingConcept("null substantial concept");
     }
 
-    return builder.buildConcept();
+    if (!SemanticType.isSubstantial(original.getType())) {
+      return nothingConcept(original.getUrn());
+    }
+
+    try {
+      var builder =
+          SemanticsBuilder.create(original, this, scope == null ? serviceScope() : scope)
+              .without(SemanticRole.TRAIT)
+              .without(SemanticRole.ROLE)
+              .without(SemanticRole.modifiers());
+      /*
+       * TODO recognize individual identities and add their lexical root. This used to iterate
+       * directIdentities(concept), but the loop had no effect and forced an additional OWL lookup.
+       */
+      Concept ret = builder.buildConcept();
+      return ret == null || ret.is(SemanticType.NOTHING) ? original : ret;
+    } catch (RuntimeException t) {
+      Logging.INSTANCE.warn(
+          "Could not establish base substantial type for " + original.getUrn() + ": " + t);
+      return original;
+    }
   }
 
   @Override
@@ -655,7 +701,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.add(concept);
 
     var base =
-        SemanticsBuilder.create(concept.asConcept(), this, scope)
+        SemanticsBuilder.create(concept.asConcept(), this, serviceScope())
             .without(SemanticRole.INHERENT)
             .without(SemanticRole.modifiers())
             .buildConcept();
@@ -664,7 +710,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (inherent != null) {
       ret.addAll(
           allParents(inherent).stream()
-              .map(ctx -> SemanticsBuilder.create(base, this, scope).of(ctx).buildConcept())
+              .map(
+                  ctx -> SemanticsBuilder.create(base, this, serviceScope()).of(ctx).buildConcept())
               .toList());
     }
 
@@ -1483,6 +1530,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     List<Notification> ret = new ArrayList<>();
 
+    // this remains the only service whose initialization depends on others, so we set it up
+    // manually when the specific conditions for initialization are met
+    if (observationReasoner == null) {
+      if (!initializeService()) {
+        Logging.INSTANCE.error(
+            "failed to initialize the observation reasoner and related services");
+        return ResourceSet.empty(Notification.error("Failed to initialize reasoner"));
+      }
+      setInitialized(true);
+    }
+
     scope = getScopeManager().collectMessagePayload(scope, Notification.class, ret);
 
     if (worldview == null || worldview.isEmpty()) {
@@ -1506,8 +1564,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     observationReasoner.initializeStrategies();
 
-    // assess consistent status
+    // assess consistent status and if consistent, set operational
     this.consistent.set(Utils.Notifications.hasErrors(ret));
+    setOperational(this.consistent.get());
 
     return Utils.Resources.createFromLexicalNotifications(ret);
   }
@@ -1618,8 +1677,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     // non-semantic concepts can only be the same thing.
-    if (concept instanceof ConceptImpl concept1 && concept1.getId() <= 0) {
-      return other instanceof ConceptImpl concept2 && concept2.getId() == concept1.getId();
+    if (concept instanceof ConceptImpl concept1 && concept1.getNonSemanticId() < 0) {
+      return other instanceof ConceptImpl concept2 && concept2.getUrn().equals(concept1.getUrn());
     }
 
     /*
@@ -1668,7 +1727,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
        */
       Collection<Concept> collection = allParents(concept);
       collection.add(concept.asConcept());
-      return collection.contains(other);
+      return collection.contains(other.asConcept());
     }
     return false;
   }
@@ -1682,7 +1741,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Concept declareConcept(KimConcept conceptDeclaration) {
     return declare(
-        conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()), scope);
+        conceptDeclaration,
+        this.owl.requireOntology(conceptDeclaration.getNamespace()),
+        serviceScope());
   }
 
   //  @Override
@@ -1690,7 +1751,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return declare(
         observableDeclaration,
         this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
-        scope);
+        serviceScope());
   }
 
   //  @Override
@@ -2446,6 +2507,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Concept main = null;
 
+    var existing = owl.getConcept(concept.getUrn());
+    if (existing != null) {
+      return existing;
+    }
+
     if (concept.getObservable() != null) {
       main = declareInternal(concept.getObservable(), ontology, monitor);
     } else if (concept.getName() != null) {
@@ -2575,7 +2641,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             concept.is(SemanticType.INTERSECTION)
                 ? this.owl.getIntersection(
                     concepts, ontology, concept.getOperands().get(0).getType())
-                : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+                : this.owl.getUnion(concepts, ontology, concept.getOperands().getFirst().getType());
 
         ((ConceptImpl) ret).setUrn(concept.getUrn());
         ret.getType()
@@ -2624,7 +2690,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (concept.getNonSemanticType() != null) {
       Concept nsmain =
           this.owl.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
-      ObservableImpl observable = ObservableImpl.promote(nsmain, scope);
+      ObservableImpl observable = ObservableImpl.promote(nsmain, serviceScope());
       //			observable.setModelReference(concept.getModelReference());
       observable.setName(concept.getFormalName());
       observable.setStatedName(concept.getFormalName());
@@ -2799,7 +2865,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case TOKEN:
           expression = semanticExpressions.getIfPresent(response.getSearchId());
           if (expression == null) {
-            expression = SemanticExpression.create(scope);
+            expression = SemanticExpression.create(serviceScope());
             semanticExpressions.put(response.getSearchId(), expression);
           } else {
             response.getErrors().add("Timeout during search");
@@ -2857,7 +2923,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
-    KimConcept peer = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
+    KimConcept peer =
+        serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
     peer.visit(
         new Statement.Visitor() {
           @Override
@@ -2909,7 +2976,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declaration = declaration.replace(key.getUrn(), rep);
     }
 
-    return declareConcept(scope.getService(ResourcesService.class).declareConcept(declaration));
+    return declareConcept(
+        serviceScope().getService(ResourcesService.class).declareConcept(declaration));
   }
 
   @Override

@@ -17,6 +17,9 @@ import org.kohsuke.args4j.ParserProperties;
 
 public class ServiceStartupOptions implements StartupOptions {
 
+  public static final String LOCAL_AUTHENTICATION_RESPONSE_ENV =
+      "KLAB_LOCAL_AUTHENTICATION_RESPONSE";
+
   @Option(
       name = "-dataDir",
       usage = "data directory (default: ~/.klab)",
@@ -85,6 +88,22 @@ public class ServiceStartupOptions implements StartupOptions {
   @Option(name = "-components", usage = "paths to any custom component")
   List<File> components = new ArrayList<>();
 
+  @Option(
+      name = "-updateComponents",
+      usage = "check Maven-sourced SNAPSHOT components for updates once after startup")
+  boolean updateComponents = true;
+
+  @Option(
+      name = "-autoUpdateComponents",
+      usage = "periodically check Maven-sourced SNAPSHOT components for updates")
+  boolean autoUpdateComponents;
+
+  @Option(
+      name = "-componentUpdateIntervalMinutes",
+      usage = "minutes between component update checks when -autoUpdateComponents is enabled",
+      metaVar = "<INT>")
+  long componentUpdateIntervalMinutes = 5;
+
   KlabService.Type serviceType;
 
   private List<String> arguments = new ArrayList<>();
@@ -97,6 +116,12 @@ public class ServiceStartupOptions implements StartupOptions {
 
   @Option(name = "-startLocalBroker", usage = "Start a local AMQP broker")
   private boolean startLocalBroker;
+
+  @Option(
+      name = "-authPackage",
+      usage = "Base64-encoded local engine authentication package",
+      metaVar = "<BASE64_JSON>")
+  private String authenticationPackage;
 
   /** All defaults */
   private ServiceStartupOptions() {}
@@ -227,6 +252,21 @@ public class ServiceStartupOptions implements StartupOptions {
   }
 
   @Override
+  public boolean isComponentUpdateOnStartup() {
+    return updateComponents;
+  }
+
+  @Override
+  public boolean isComponentAutoUpdateEnabled() {
+    return autoUpdateComponents;
+  }
+
+  @Override
+  public long getComponentUpdateIntervalMinutes() {
+    return componentUpdateIntervalMinutes;
+  }
+
+  @Override
   public String getCertificateResource() {
     return certificateResource;
   }
@@ -253,6 +293,18 @@ public class ServiceStartupOptions implements StartupOptions {
 
   public void setComponents(List<File> components) {
     this.components = components;
+  }
+
+  public void setUpdateComponents(boolean updateComponents) {
+    this.updateComponents = updateComponents;
+  }
+
+  public void setAutoUpdateComponents(boolean autoUpdateComponents) {
+    this.autoUpdateComponents = autoUpdateComponents;
+  }
+
+  public void setComponentUpdateIntervalMinutes(long componentUpdateIntervalMinutes) {
+    this.componentUpdateIntervalMinutes = componentUpdateIntervalMinutes;
   }
 
   public void setArguments(List<String> arguments) {
@@ -346,6 +398,17 @@ public class ServiceStartupOptions implements StartupOptions {
 
   public String getMaxMultipartRequestSize() {
     return maxMultipartRequestSize;
+  }
+
+  public String getAuthenticationPackage() {
+    if (authenticationPackage == null || authenticationPackage.isBlank()) {
+      authenticationPackage = System.getenv(LOCAL_AUTHENTICATION_RESPONSE_ENV);
+    }
+    return authenticationPackage;
+  }
+
+  public void setAuthenticationPackage(String authenticationPackage) {
+    this.authenticationPackage = authenticationPackage;
   }
 
   public void setMaxMultipartRequestSize(String maxMultipartRequestSize) {

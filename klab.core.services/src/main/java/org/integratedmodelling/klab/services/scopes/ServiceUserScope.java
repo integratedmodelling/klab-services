@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -192,7 +193,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var federation = Klab.INSTANCE.getFederationData(user);
     var scopeId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
-            ? user.getUsername()
+            ? user.getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
 
     var scopeManager =
@@ -205,6 +206,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
     final var ret = new ServiceSessionScope(this);
     ret.setStatus(Status.WAITING);
+    ret.setId(scopeId);
+    ret.setHostServiceId(hostService.serviceId());
     ret.setName(
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername()
@@ -379,6 +382,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
+    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
     return true;
   }
 
@@ -387,7 +391,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
         serviceMap.computeIfAbsent(
             KlabService.Type.classify(klabService), type -> new ArrayList<>());
     // service may be there if we authenticated with a user certificate
-    if (!list.stream().anyMatch(s -> s.serviceId().equals(klabService.serviceId()))) {
+    if (list.stream().noneMatch(s -> s.serviceId().equals(klabService.serviceId()))) {
       list.add(klabService);
     }
   }

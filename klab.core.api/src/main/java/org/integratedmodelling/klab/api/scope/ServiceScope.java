@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.scope;
 
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
@@ -56,6 +55,28 @@ public interface ServiceScope extends Scope {
    * @return
    */
   boolean isAvailable();
+
+  /**
+   * Put the service in maintenance mode. This will prevent any service calls from being made.
+   *
+   * @param maintenance
+   */
+  void setMaintenanceMode(boolean maintenance);
+
+  /**
+   * Put the service in atomic operation mode. Service calls will be queued and not served until the
+   * operation is complete.
+   *
+   * @param atomicOperation
+   */
+  void setAtomicOperationMode(boolean atomicOperation);
+
+  /**
+   * Locality reflects which clients can use the service.
+   *
+   * @param locality
+   */
+  void setLocality(Locality locality);
 
   /**
    * Busy is a temporary status that can always happen and it means that service calls may be made

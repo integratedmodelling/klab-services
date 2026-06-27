@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.scopes;
 
 // import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 // import io.reacted.core.reactorsystem.ReActorSystem;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,15 +19,18 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 
@@ -59,13 +61,108 @@ public class ScopeManager {
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
 
+  private String serviceId() {
+    return service == null ? "<no-service>" : service.serviceId();
+  }
+
+  private String scopeId(Scope scope) {
+    if (scope instanceof ServiceSideScope serviceSideScope) {
+      return serviceSideScope.getId();
+    }
+    if (scope instanceof SessionScope sessionScope) {
+      return sessionScope.getId();
+    }
+    return "<no-id>";
+  }
+
+  private String describeScope(Scope scope) {
+    if (scope == null) {
+      return "<null-scope>";
+    }
+
+    var ret =
+        new StringBuilder(scope.getClass().getSimpleName())
+            .append("[type=")
+            .append(scope.getType())
+            .append(", id=")
+            .append(scopeId(scope));
+
+    if (scope instanceof ReactiveScope reactiveScope) {
+      ret.append(", host=").append(reactiveScope.getHostServiceId());
+    }
+    if (scope instanceof UserScope userScope && userScope.getUser() != null) {
+      ret.append(", user=").append(userScope.getUser().getUsername());
+    }
+    if (scope.getParentScope() != null) {
+      ret.append(", parent=").append(scopeId(scope.getParentScope()));
+    }
+    return ret.append("]").toString();
+  }
+
+  private String describeAuthorization(EngineAuthorization authorization) {
+    return authorization == null
+        ? "<no-authorization>"
+        : "user="
+            + authorization.getUsername()
+            + ", authenticated="
+            + authorization.isAuthenticated()
+            + ", local="
+            + authorization.isLocal();
+  }
+
+  private String header(Map<String, String> requestHeaders, String header) {
+    return requestHeaders == null ? null : requestHeaders.get(header);
+  }
+
+  private long parseHeaderLong(
+      Map<String, String> requestHeaders, String header, ServiceContextScope scope) {
+    var value = header(requestHeaders, header);
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      Logging.INSTANCE.error(
+          "Invalid scope propagation header "
+              + header
+              + "="
+              + value
+              + " for "
+              + describeScope(scope)
+              + " in service "
+              + serviceId()
+              + ": "
+              + Utils.Exceptions.stackTrace(e));
+      throw e;
+    }
+  }
+
   private void expiredScopeCheck() {
 
     // send each scope closing to a virtual thread after removing from the scope map
   }
 
   public void registerScope(ServiceUserScope serviceScope) {
-    scopes.put(serviceScope.getId(), serviceScope);
+    if (serviceScope == null || serviceScope.getId() == null) {
+      Logging.INSTANCE.error(
+          "Cannot register null or unidentified scope in service "
+              + serviceId()
+              + ": "
+              + describeScope(serviceScope));
+      throw new KlabIllegalArgumentException("Cannot register a scope without an ID");
+    }
+
+    var previous = scopes.put(serviceScope.getId(), serviceScope);
+    if (previous != null && previous != serviceScope) {
+      Logging.INSTANCE.warn(
+          "Replacing managed scope "
+              + describeScope(previous)
+              + " with "
+              + describeScope(serviceScope)
+              + " in service "
+              + serviceId());
+    } else {
+      Logging.INSTANCE.info(
+          "Registered scope " + describeScope(serviceScope) + " in service " + serviceId());
+    }
   }
 
   public ServiceUserScope login(UserIdentity user) {
@@ -73,7 +170,13 @@ public class ScopeManager {
     ServiceUserScope ret = scopes.get(user.getUsername());
     if (ret == null) {
       ret = new ServiceUserScope(user, service);
+      ret.setId(user.getUsername());
       scopes.put(user.getUsername(), ret);
+      Logging.INSTANCE.info(
+          "Created service user scope for "
+              + user.getUsername()
+              + " in service "
+              + serviceId());
     }
 
     return ret;
@@ -94,11 +197,18 @@ public class ScopeManager {
 
   private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
 
+    Logging.INSTANCE.info(service.serviceName() + " received user identity request for " + engineAuthorization.getUsername());
+
     UserIdentityImpl ret = new UserIdentityImpl();
     ret.setUsername(engineAuthorization.getUsername());
     ret.setEmailAddress(engineAuthorization.getEmailAddress());
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
+    ret.setIdentityType(Identity.Type.ENGINE_USER);
+    ret.setAnonymous(
+        "anonymous".equals(engineAuthorization.getUsername())
+            || ServicesAPI.ANONYMOUS_TOKEN.equals(engineAuthorization.getToken()));
+    ret.setOnline(!ret.isAnonymous());
     URL hub = null;
     if (service.serviceScope().getIdentity() instanceof PartnerIdentity serviceIdentity) {
       Collection<GroupImpl> groups = null;
@@ -213,26 +323,62 @@ public class ScopeManager {
               ret.getTransaction(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
           if (transaction != null) {
             ret = ret.withTransaction(transaction);
+            Logging.INSTANCE.debug(
+                "Attached transaction "
+                    + requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER)
+                    + " to "
+                    + describeScope(ret)
+                    + " in service "
+                    + serviceId());
+          } else {
+            Logging.INSTANCE.warn(
+                "Requested transaction "
+                    + requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER)
+                    + " is not registered in "
+                    + describeScope(ret)
+                    + " for service "
+                    + serviceId());
           }
 
         } else {
           ret = new ServiceContextScope(serviceContextScope);
           ret.setRemoteTransactionId(requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER));
+          Logging.INSTANCE.debug(
+              "Propagated remote transaction "
+                  + requestHeaders.get(ServicesAPI.TRANSACTION_ID_HEADER)
+                  + " to "
+                  + describeScope(ret)
+                  + " in service "
+                  + serviceId());
         }
       }
 
       if (service instanceof RuntimeService runtimeService
           && requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER) != null) {
         // lookup observations either in the current transaction or knowledge graph
-        var ctx =
-            ret.getObservation(
-                Long.parseLong(requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)));
+        var contextObservationId =
+            parseHeaderLong(
+                requestHeaders, ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, serviceContextScope);
+        var ctx = ret.getObservation(contextObservationId);
         if (ctx != null) {
           ret = ret.within(ctx);
+          Logging.INSTANCE.debug(
+              "Contextualized "
+                  + describeScope(ret)
+                  + " within observation "
+                  + contextObservationId
+                  + " in service "
+                  + serviceId());
         } else {
           Logging.INSTANCE.error(
-              "Null observations for context header"
-                  + requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER));
+              "Null observation for context header "
+                  + ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER
+                  + "="
+                  + requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)
+                  + " in "
+                  + describeScope(ret)
+                  + " for service "
+                  + serviceId());
         }
       }
 
@@ -241,28 +387,73 @@ public class ScopeManager {
         // lookup observations either in the current transaction or knowledge graph
         var src =
             ret.getObservation(
-                Long.parseLong(requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)));
+                parseHeaderLong(
+                    requestHeaders, ServicesAPI.SOURCE_OBSERVATION_ID_HEADER, serviceContextScope));
         var tgt =
             ret.getObservation(
-                Long.parseLong(requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)));
+                parseHeaderLong(
+                    requestHeaders, ServicesAPI.TARGET_OBSERVATION_ID_HEADER, serviceContextScope));
         if (src != null && tgt != null) {
           ret = (ServiceContextScope) ret.between(src, tgt);
+          Logging.INSTANCE.debug(
+              "Contextualized "
+                  + describeScope(ret)
+                  + " between observations "
+                  + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
+                  + " and "
+                  + requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)
+                  + " in service "
+                  + serviceId());
         } else {
           Logging.INSTANCE.error(
-              "Null observations for relationship header"
+              "Null observations for relationship headers "
                   + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
                   + ", "
-                  + requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER));
+                  + requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER)
+                  + " in "
+                  + describeScope(ret)
+                  + " for service "
+                  + serviceId());
         }
+      } else if (requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER) != null
+          || requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER) != null) {
+        Logging.INSTANCE.warn(
+            "Incomplete relationship scope headers for "
+                + describeScope(ret)
+                + " in service "
+                + serviceId()
+                + ": source="
+                + requestHeaders.get(ServicesAPI.SOURCE_OBSERVATION_ID_HEADER)
+                + ", target="
+                + requestHeaders.get(ServicesAPI.TARGET_OBSERVATION_ID_HEADER));
       }
     }
     return ret;
   }
 
   public <T extends Scope> T getScope(String scopeId, Class<T> scopeClass) {
+    if (scopeId == null) {
+      Logging.INSTANCE.warn(
+          "Scope lookup requested with null ID for "
+              + scopeClass.getSimpleName()
+              + " in service "
+              + serviceId());
+      return null;
+    }
     var ret = scopes.get(scopeId);
     if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
       return (T) ret;
+    }
+    if (ret != null) {
+      Logging.INSTANCE.warn(
+          "Scope "
+              + scopeId
+              + " found as "
+              + describeScope(ret)
+              + " but requested as "
+              + scopeClass.getSimpleName()
+              + " in service "
+              + serviceId());
     }
     return null;
   }
@@ -275,7 +466,18 @@ public class ScopeManager {
    * @return
    */
   public boolean releaseScope(String scopeId) {
-    return scopes.remove(scopeId) != null;
+    if (scopeId == null) {
+      Logging.INSTANCE.warn("Ignoring null scope release request in service " + serviceId());
+      return false;
+    }
+    var removed = scopes.remove(scopeId);
+    if (removed != null) {
+      Logging.INSTANCE.info(
+          "Released scope " + describeScope(removed) + " from service " + serviceId());
+      return true;
+    }
+    Logging.INSTANCE.warn("Requested release of unknown scope " + scopeId + " in " + serviceId());
+    return false;
   }
 
   /**
@@ -298,7 +500,23 @@ public class ScopeManager {
 
     if (scopeId != null && userScope != null) {
 
-      var scopeData = ContextScope.parseScopeId(scopeId);
+      ContextScope.ScopeData scopeData;
+      try {
+        scopeData = ContextScope.parseScopeId(scopeId);
+      } catch (RuntimeException e) {
+        Logging.INSTANCE.error(
+            "Cannot parse propagated scope ID "
+                + scopeId
+                + " while resolving "
+                + scopeClass.getSimpleName()
+                + " in service "
+                + serviceId()
+                + " for "
+                + describeAuthorization(authorization)
+                + ": "
+                + Utils.Exceptions.stackTrace(e));
+        throw e;
+      }
 
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
@@ -306,15 +524,41 @@ public class ScopeManager {
         if (scopeData.type() == Scope.Type.CONTEXT
             && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
           ret = ((ServiceContextScope) ret).withIdentity(userScope.getIdentity());
+          Logging.INSTANCE.debug(
+              "Using context scope "
+                  + scopeId
+                  + " with request identity "
+                  + userScope.getUser().getUsername()
+                  + " in service "
+                  + serviceId());
         }
 
         return (T) ret;
+      } else if (ret != null) {
+        Logging.INSTANCE.warn(
+            "Managed scope "
+                + describeScope(ret)
+                + " did not match requested class "
+                + scopeClass.getSimpleName()
+                + " for propagated scope "
+                + scopeId
+                + " in service "
+                + serviceId());
       }
 
       // not available but it's an inner scope; see if we can reconstruct the scope
       if (ContextScope.class.isAssignableFrom(scopeClass)) {
 
         if (runtimeId == null) {
+          Logging.INSTANCE.warn(
+              "Cannot reconstruct context scope "
+                  + scopeId
+                  + " without "
+                  + ServicesAPI.SERVICE_ID_HEADER
+                  + " header in service "
+                  + serviceId()
+                  + " for "
+                  + describeAuthorization(authorization));
           return null;
         }
 
@@ -322,6 +566,15 @@ public class ScopeManager {
         var sessionScope = getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId);
         if (sessionScope == null) {
           // TODO handle isEmpty() and notifications upstream
+          Logging.INSTANCE.warn(
+              "Cannot reconstruct context scope "
+                  + scopeId
+                  + ": session "
+                  + sessionId
+                  + " is unavailable in service "
+                  + serviceId()
+                  + " for "
+                  + describeAuthorization(authorization));
           return null;
         }
 
@@ -332,6 +585,13 @@ public class ScopeManager {
                 .orElse(null);
 
         if (originalService != null) {
+          Logging.INSTANCE.debug(
+              "Requesting configuration for reconstructed context "
+                  + scopeId
+                  + " from runtime "
+                  + runtimeId
+                  + " in service "
+                  + serviceId());
           var configuration = originalService.getConfiguration(scopeId, userScope);
           if (configuration != null) {
             ret = new ServiceContextScope(sessionScope, configuration, userScope.getUser());
@@ -346,14 +606,50 @@ public class ScopeManager {
                   ((ServiceContextScope) ret)
                       .withIdentity(scopes.get(authorization.getUsername()).getIdentity());
             }
+            Logging.INSTANCE.info(
+                "Reconstructed context scope "
+                    + describeScope(ret)
+                    + " from runtime "
+                    + runtimeId
+                    + " in service "
+                    + serviceId());
             return (T) ret;
+          } else {
+            Logging.INSTANCE.warn(
+                "Runtime "
+                    + runtimeId
+                    + " returned no configuration for context "
+                    + scopeId
+                    + " in service "
+                    + serviceId());
           }
+        } else {
+          Logging.INSTANCE.warn(
+              "Cannot reconstruct context scope "
+                  + scopeId
+                  + ": runtime "
+                  + runtimeId
+                  + " is not available to "
+                  + describeScope(userScope)
+                  + " in service "
+                  + serviceId());
         }
 
       } else if (SessionScope.class.isAssignableFrom(scopeClass)) {
         return (T) getOrCreateSessionScope(scopeId, authorization, userScope, runtimeId);
       }
     }
+    Logging.INSTANCE.warn(
+        "Scope resolution failed for scopeId="
+            + scopeId
+            + ", requestedClass="
+            + scopeClass.getSimpleName()
+            + ", runtimeId="
+            + runtimeId
+            + " in service "
+            + serviceId()
+            + " for "
+            + describeAuthorization(authorization));
     return null;
   }
 
@@ -371,7 +667,7 @@ public class ScopeManager {
     var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var acceptedSessionId =
         federation == null
-            ? userScope.getUser().getUsername()
+            ? userScope.getUser().getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
     if (sessionId.equals(acceptedSessionId)) {
       ret = new ServiceSessionScope(userScope);
@@ -391,8 +687,24 @@ public class ScopeManager {
         ret.addService(service);
       }
       service.declareSessionScope(ret, userScope, null);
+      Logging.INSTANCE.info(
+          "Created reconstructed session scope "
+              + describeScope(ret)
+              + " for "
+              + describeAuthorization(authorization)
+              + " in service "
+              + serviceId());
       return ret;
     }
+    Logging.INSTANCE.warn(
+        "Rejected propagated session scope "
+            + sessionId
+            + " for "
+            + describeAuthorization(authorization)
+            + " in service "
+            + serviceId()
+            + "; accepted session ID is "
+            + acceptedSessionId);
     return null;
   }
 

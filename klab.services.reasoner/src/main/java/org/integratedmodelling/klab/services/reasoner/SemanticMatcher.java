@@ -105,11 +105,11 @@ public class SemanticMatcher {
       Map<Concept, Concept> resolvedAbstractPredicates,
       Scope scope) {
 
-    int distance = 0;
+    if (from.getUrn().equals(to.getUrn()) && context == null) {
+      return 0;
+    }
 
-    // String resolving = this.getDefinition();
-    // String resolved = concept.getDefinition();
-    // System.out.println("Does " + resolving + " resolve " + resolved + "?");
+    int distance = 0;
 
     int mainDistance =
         coreDistance(from, to, context, compareInherency, resolvedAbstractPredicates, scope);

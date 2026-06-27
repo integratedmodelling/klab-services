@@ -34,6 +34,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private Observation.ContextualizationData contextualizationData;
   private final List<Notification> notifications = new ArrayList<>();
   private String name;
+  private boolean query = false;
 
   private final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
@@ -65,6 +66,11 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       this.name = name;
     }
     metadata.putAll(data.metadata());
+  }
+
+  public ObservationBuilderImpl query() {
+    this.query = true;
+    return this;
   }
 
   /**
@@ -200,6 +206,10 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.setValue(defaultValue);
     ret.setContextualizationData(contextualizationData);
     ret.setName(name);
+
+    if (query) {
+      ret.setId(Observation.QUERY_ID);
+    }
 
     if (identity != null) {
       // mandatory for substantials, and must be namespace:name

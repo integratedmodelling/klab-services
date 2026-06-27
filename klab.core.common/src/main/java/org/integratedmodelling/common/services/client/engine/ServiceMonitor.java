@@ -7,7 +7,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.configuration.CommonConfiguration;
+import org.integratedmodelling.common.distribution.LocalInstanceImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
@@ -27,6 +29,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /**
@@ -52,6 +55,7 @@ public class ServiceMonitor {
   private boolean handleLanguageServer = false;
   private volatile boolean stoppingLocalServices = false;
   private volatile Thread languageServerShutdownHook;
+  private volatile String localAuthenticationPackage;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
@@ -131,6 +135,17 @@ public class ServiceMonitor {
         client.addListener((status, message) -> handleStatus(client, status, message));
         refreshClientStatusAsync(client);
       }
+    }
+  }
+
+  public void setLocalAuthenticationResponse(EngineAuthenticationResponse authenticationResponse) {
+    this.localAuthenticationPackage =
+        Authentication.INSTANCE.encodeAuthenticationResponse(authenticationResponse);
+    if (this.localAuthenticationPackage != null && authenticationResponse.getUserData() != null) {
+      var identity = authenticationResponse.getUserData().getIdentity();
+      Logging.INSTANCE.info(
+          "Prepared local authentication package for service startup"
+              + (identity == null ? "" : " as user " + identity.getId()));
     }
   }
 
@@ -744,16 +759,29 @@ public class ServiceMonitor {
           this.serviceInstances.put(serviceType, product);
 
           if (isLocalServiceReachable(serviceType)) {
+            if (localAuthenticationPackage != null) {
+              Logging.INSTANCE.info(
+                  "Local service "
+                      + serviceType
+                      + " is already reachable; authentication package was not sent");
+            }
             user.info(
                 "Service "
                     + serviceType
                     + " is already reachable: will be attempting connection to locally running "
                     + serviceType);
           } else if (product.getStatus() == LocalInstance.Status.STOPPED) {
+            prepareLocalAuthenticationHandoff(product, serviceType, user);
             if (product.start()) {
               user.info("Service " + serviceType + " is starting");
             }
           } else {
+            if (localAuthenticationPackage != null) {
+              Logging.INSTANCE.info(
+                  "Local service "
+                      + serviceType
+                      + " is already running; authentication package cannot be injected");
+            }
             user.info(
                 "Service "
                     + serviceType
@@ -768,6 +796,40 @@ public class ServiceMonitor {
     }
 
     return ret;
+  }
+
+  private void prepareLocalAuthenticationHandoff(
+      LocalInstance instance, KlabService.Type serviceType, UserScope user) {
+
+    if (localAuthenticationPackage == null || localAuthenticationPackage.isBlank()) {
+      if (instance instanceof LocalInstanceImpl localInstance) {
+        localInstance.setEnvironmentOverride(
+            ServiceStartupOptions.LOCAL_AUTHENTICATION_RESPONSE_ENV, null);
+      }
+      if (user != null
+          && user.getUser() != null
+          && user.getUser().isAuthenticated()
+          && !user.getUser().isAnonymous()) {
+        Logging.INSTANCE.warn(
+            "No local authentication package available when starting "
+                + serviceType
+                + "; service will authenticate independently");
+      }
+      return;
+    }
+
+    if (instance instanceof LocalInstanceImpl localInstance) {
+      localInstance.setEnvironmentOverride(
+          ServiceStartupOptions.LOCAL_AUTHENTICATION_RESPONSE_ENV, localAuthenticationPackage);
+      Logging.INSTANCE.info(
+          "Passing local authentication package to " + serviceType + " through process environment");
+    } else {
+      Logging.INSTANCE.warn(
+          "Cannot pass local authentication package to "
+              + serviceType
+              + ": local instance implementation is "
+              + instance.getClass().getName());
+    }
   }
 
   private boolean shouldStartLocalBroker(UserScope user) {
