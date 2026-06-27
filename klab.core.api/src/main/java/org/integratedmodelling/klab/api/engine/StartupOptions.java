@@ -74,7 +74,7 @@ public interface StartupOptions {
    * @return true if a startup update check is requested
    */
   default boolean isComponentUpdateOnStartup() {
-    return false;
+    return true;
   }
 
   /**
@@ -109,8 +109,6 @@ public interface StartupOptions {
    * @return a boolean.
    */
   boolean isCloudConfig();
-
-//  String getServiceName();
 
   /**
    * Return all arguments that weren't parsed as predefined options.

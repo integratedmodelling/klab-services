@@ -192,7 +192,8 @@ public class ComponentRegistry {
   private synchronized ResourceSet checkForUpdates(boolean reportNoUpdates) {
     var ret = new ResourceSet();
     for (var component : new ArrayList<>(components.values())) {
-      if (component.mavenCoordinates() != null && component.mavenCoordinates().contains("SNAPSHOT")) {
+      if (component.mavenCoordinates() != null
+          && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
@@ -321,7 +322,9 @@ public class ComponentRegistry {
         return true;
       }
       var versionManager =
-          componentManager == null ? new DefaultVersionManager() : componentManager.getVersionManager();
+          componentManager == null
+              ? new DefaultVersionManager()
+              : componentManager.getVersionManager();
       return versionManager.checkVersionConstraint(Version.CURRENT, requires);
     } catch (Exception e) {
       Logging.INSTANCE.warn(
@@ -1640,8 +1643,8 @@ public class ComponentRegistry {
    *
    * <p>TODO use the catalog and register components from Maven after update check
    *
-   * @param pluginRoot the component repository root. Loadable archives are stored in its
-   *     {@code plugins} subdirectory.
+   * @param pluginRoot the component repository root. Loadable archives are stored in its {@code
+   *     plugins} subdirectory.
    */
   public void initializeComponents(File pluginRoot) {
     this.pluginPath = getPluginDirectory(pluginRoot);
@@ -1667,7 +1670,8 @@ public class ComponentRegistry {
         });
 
     if (startupOptions != null && startupOptions.isComponentUpdateOnStartup()) {
-      checkForUpdates();
+      var result = checkForUpdates();
+      Logging.INSTANCE.notifications(result.getNotifications().toArray(new Notification[0]));
     }
     if (startupOptions != null && startupOptions.isComponentAutoUpdateEnabled()) {
       var interval = Math.max(1, startupOptions.getComponentUpdateIntervalMinutes());
@@ -1687,8 +1691,7 @@ public class ComponentRegistry {
   private void migrateExistingRootPlugins(File pluginRoot, File pluginDirectory) {
     var existingRootPlugins =
         pluginRoot.listFiles(
-            file ->
-                file.isFile() && "jar".equalsIgnoreCase(Utils.Files.getFileExtension(file)));
+            file -> file.isFile() && "jar".equalsIgnoreCase(Utils.Files.getFileExtension(file)));
     if (existingRootPlugins == null) {
       return;
     }
