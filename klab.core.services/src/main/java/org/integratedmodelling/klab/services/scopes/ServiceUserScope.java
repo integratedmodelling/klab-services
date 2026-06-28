@@ -2,11 +2,14 @@ package org.integratedmodelling.klab.services.scopes;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -58,7 +61,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean empty;
   private List<Notification> notifications = new ArrayList<>();
 
-  protected Map<KlabService.Type, List<KlabService>> serviceMap = new HashMap<>();
+  protected Map<KlabService.Type, List<KlabService>> serviceMap = new ConcurrentHashMap<>();
 
   @Override
   public final <T extends KlabService> Optional<T> findService(
@@ -93,14 +96,17 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       for (var services : serviceMap.values()) {
         ret.addAll(services.stream().map(s -> (T) s).toList());
       }
+      sortLocalFirst(ret);
       return ret;
     }
-    return (Collection<T>)
-        serviceMap
-            .computeIfAbsent(KlabService.Type.classify(serviceClass), c -> new ArrayList<>())
-            .stream()
-            .filter(s -> s.status().isOperational())
-            .toList();
+    var ret =
+        new ArrayList<>(
+            serviceList(KlabService.Type.classify(serviceClass)).stream()
+                .filter(this::isUsableService)
+                .map(s -> (T) s)
+                .toList());
+    sortLocalFirst(ret);
+    return ret;
   }
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
@@ -151,7 +157,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.local = parent.local;
     this.id = parent.id;
     this.jobManager = parent.jobManager;
-    this.serviceMap.putAll(parent.serviceMap);
+    copyServicesFrom(parent);
   }
 
   public KlabService getService() {
@@ -182,7 +188,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   protected void copyInfo(ServiceUserScope other) {
     this.id = other.id;
     this.messagingChecked = other.messagingChecked;
-    this.serviceMap.putAll(other.serviceMap);
+    copyServicesFrom(other);
     this.roles = other.roles;
     this.status = other.status;
   }
@@ -392,17 +398,48 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   public void addService(KlabService klabService) {
-    var list =
-        serviceMap.computeIfAbsent(
-            KlabService.Type.classify(klabService), type -> new ArrayList<>());
+    var list = serviceList(KlabService.Type.classify(klabService));
     for (int i = 0; i < list.size(); i++) {
       var existing = list.get(i);
-      if (Objects.equals(existing.serviceId(), klabService.serviceId())) {
+      if (sameService(existing, klabService)) {
         list.set(i, klabService);
         return;
       }
     }
     list.add(klabService);
+  }
+
+  private List<KlabService> serviceList(KlabService.Type type) {
+    return serviceMap.computeIfAbsent(type, key -> new CopyOnWriteArrayList<>());
+  }
+
+  private void copyServicesFrom(ServiceUserScope other) {
+    serviceMap.clear();
+    other.serviceMap.forEach(
+        (type, services) -> serviceMap.put(type, new CopyOnWriteArrayList<>(services)));
+  }
+
+  private boolean sameService(KlabService existing, KlabService candidate) {
+    if (existing.serviceId() != null && candidate.serviceId() != null) {
+      return Objects.equals(existing.serviceId(), candidate.serviceId());
+    }
+    return existing.getUrl() != null && Objects.equals(existing.getUrl(), candidate.getUrl());
+  }
+
+  private boolean isUsableService(KlabService service) {
+    var status = service.status();
+    if (status == null) {
+      return false;
+    }
+    return status.isOperational() || (isLocalService(service) && status.isAvailable());
+  }
+
+  private <T extends KlabService> void sortLocalFirst(List<T> services) {
+    services.sort(Comparator.comparing(s -> isLocalService(s) ? 0 : 1));
+  }
+
+  private boolean isLocalService(KlabService service) {
+    return service.getUrl() != null && Utils.URLs.isLocalHost(service.getUrl());
   }
 
   @Override

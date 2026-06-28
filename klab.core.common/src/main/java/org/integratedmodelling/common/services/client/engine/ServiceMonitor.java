@@ -219,10 +219,37 @@ public class ServiceMonitor {
    */
   @SuppressWarnings("unchecked")
   public <T extends KlabService> List<T> getServices(Class<T> serviceClass) {
+    return getServices(serviceClass, false);
+  }
+
+  /**
+   * Return services usable from a locally running service scope. Local services that are initialized
+   * and available are returned even if they have not completed operationalization yet; remote
+   * services still need to be operational.
+   *
+   * @param serviceClass
+   * @return
+   * @param <T>
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends KlabService> List<T> getLocallyUsableServices(Class<T> serviceClass) {
+    return getServices(serviceClass, true);
+  }
+
+  private <T extends KlabService> List<T> getServices(
+      Class<T> serviceClass, boolean includeLocalAvailable) {
     return (List<T>)
-        clients.keySet().stream()
+        clientSnapshot().stream()
             .filter(
-                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isOperational())
+                s -> {
+                  var status = clients.get(s);
+                  return serviceClass.isAssignableFrom(s.getClass())
+                      && status != null
+                      && (status.isOperational()
+                          || (includeLocalAvailable
+                              && Utils.URLs.isLocalHost(s.getUrl())
+                              && status.isAvailable()));
+                })
             .toList();
   }
 
@@ -236,7 +263,7 @@ public class ServiceMonitor {
    */
   public <T extends KlabService> List<T> getAllServices(Class<T> serviceClass) {
     return (List<T>)
-        clients.keySet().stream().filter(s -> serviceClass.isAssignableFrom(s.getClass())).toList();
+        clientSnapshot().stream().filter(s -> serviceClass.isAssignableFrom(s.getClass())).toList();
   }
 
   private synchronized void recomputeEngineStatus() {

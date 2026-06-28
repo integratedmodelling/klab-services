@@ -319,7 +319,7 @@ public class CompiledDataflow {
       var modelDriven = actuator.getShardingStrategy();
       var runtimeDriven =
           scope
-              .getService(RuntimeService.class)
+              .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
               .getDefaultShardingStrategy(actuator.getObservation(), scope);
 
       // add local and model strategies in increasing priority order. At least one strategy is

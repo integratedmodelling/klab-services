@@ -50,7 +50,7 @@ public class KlabScopeController {
       ServiceUserScope userScope, UserScopeNotification request, KlabService ownerService) {
     for (var serviceInfo : request.getServices()) {
       var service =
-          ownerService.serviceId().equals(serviceInfo.getId())
+          Objects.equals(ownerService.serviceId(), serviceInfo.getId())
               ? ownerService
               : ServiceClientCatalog.INSTANCE.getService(serviceInfo, ownerService, userScope);
       userScope.addService(service);

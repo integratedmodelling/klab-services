@@ -1236,7 +1236,8 @@ public class ComponentRegistry {
       // load from service
       var service =
           scope
-              .findService(ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()))
+              .findService(
+                  ResourcesService.class, s -> Objects.equals(s.serviceId(), result.getServiceId()))
               .orElse(null);
 
       if (service == null) {

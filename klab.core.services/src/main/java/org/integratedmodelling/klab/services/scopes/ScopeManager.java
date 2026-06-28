@@ -681,7 +681,7 @@ public class ScopeManager {
       for (var service : userScope.getServices(KlabService.class)) {
         if (service instanceof RuntimeService
             && runtimeId != null
-            && !service.serviceId().equals(runtimeId)) {
+            && !runtimeId.equals(service.serviceId())) {
           continue;
         }
         ret.addService(service);

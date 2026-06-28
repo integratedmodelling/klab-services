@@ -139,7 +139,7 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
       ret.add(serviceClass.cast(service));
     }
     if (serviceMonitor != null) {
-      ret.addAll(serviceMonitor.getServices(serviceClass));
+      ret.addAll(serviceMonitor.getLocallyUsableServices(serviceClass));
     }
 
     /* sort the list to ensure that a local service is always first */
@@ -159,7 +159,10 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
       Class<T> serviceClass, Predicate<T> selector) {
 
     var services = getServices(serviceClass);
-    var ret = services.stream().filter(selector).toList();
+    var ret =
+        services.stream()
+            .filter(serviceClient -> selector == null || selector.test(serviceClient))
+            .toList();
     if (!ret.isEmpty()) {
       return Optional.of(ret.getFirst());
     }

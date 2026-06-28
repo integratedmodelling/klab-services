@@ -205,7 +205,8 @@ public enum KnowledgeRepository {
     //  afterwards, so OK for now.
     var resources =
         scope
-            .findService(ResourcesService.class, s -> s.serviceId().equals(resource.getServiceId()))
+            .findService(
+                ResourcesService.class, s -> Objects.equals(s.serviceId(), resource.getServiceId()))
             .orElse(scope.getService(ResourcesService.class));
 
     KlabDocument<?> doc =
