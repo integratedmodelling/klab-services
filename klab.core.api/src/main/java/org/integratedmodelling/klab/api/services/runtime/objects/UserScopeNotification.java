@@ -1,11 +1,11 @@
 package org.integratedmodelling.klab.api.services.runtime.objects;
 
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.utils.Utils;
-
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Sent by the engine to all services upon service connection to create or refresh a user scope peer
@@ -21,6 +21,7 @@ public class UserScopeNotification {
     private String id;
     private URL url;
     private KlabService.Type type;
+    private KlabService.ServiceStatus status;
 
     public String getId() {
       return id;
@@ -45,6 +46,23 @@ public class UserScopeNotification {
     public void setType(KlabService.Type type) {
       this.type = type;
     }
+
+    public KlabService.ServiceStatus getStatus() {
+      return status;
+    }
+
+    public void setStatus(KlabService.ServiceStatus status) {
+      this.status = status;
+    }
+
+    public ServiceInfo copy() {
+      var ret = new ServiceInfo();
+      ret.setId(id);
+      ret.setUrl(url);
+      ret.setType(type);
+      ret.setStatus(status);
+      return ret;
+    }
   }
 
   private List<ServiceInfo> services = new ArrayList<>();
@@ -66,13 +84,27 @@ public class UserScopeNotification {
     this.emailAddress = emailAddress;
   }
 
-  /** Removes all services that are not running on the local host. */
+  public UserScopeNotification copy() {
+    return copy(service -> true);
+  }
+
+  public UserScopeNotification withoutLocalServices() {
+    return copy(service -> service.getUrl() != null && !Utils.URLs.isLocalHost(service.getUrl()));
+  }
+
+  private UserScopeNotification copy(Predicate<ServiceInfo> filter) {
+    var ret = new UserScopeNotification();
+    ret.setEmailAddress(emailAddress);
+    for (var service : services) {
+      if (filter.test(service)) {
+        ret.getServices().add(service.copy());
+      }
+    }
+    return ret;
+  }
+
+  /** Removes all services running on the local host. */
   public void removeLocalServices() {
-    var newInfo = new ArrayList<ServiceInfo>();
-    services.forEach(
-        s -> {
-          if (!Utils.URLs.isLocalHost(s.getUrl())) newInfo.add(s);
-        });
-    services = newInfo;
+    services = withoutLocalServices().getServices();
   }
 }

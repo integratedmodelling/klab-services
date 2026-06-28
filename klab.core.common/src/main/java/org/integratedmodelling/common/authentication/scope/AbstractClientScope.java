@@ -37,6 +37,7 @@ public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass) {
     return getServices(serviceClass).stream()
+        .filter(s -> s.status().isOperational())
         .findAny()
         .orElseThrow(
             () ->
@@ -49,9 +50,9 @@ public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
       Class<T> serviceClass, Predicate<T> selector) {
 
     var services = getServices(serviceClass);
-    var ret = services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+    var ret = services.stream().filter(selector).filter(s -> s.status().isOperational()).toList();
     if (!ret.isEmpty()) {
-      return Optional.of((T) ret.getFirst());
+      return Optional.of(ret.getFirst());
     }
 
     return Optional.empty();

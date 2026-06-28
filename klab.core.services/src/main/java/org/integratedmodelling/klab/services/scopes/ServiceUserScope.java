@@ -65,7 +65,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       Class<T> serviceClass, Predicate<T> selector) {
 
     var services = getServices(serviceClass);
-    var ret = services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+    var ret =
+        services.stream()
+            .filter(serviceClient -> selector == null || selector.test((T) serviceClient))
+            .toList();
     if (!ret.isEmpty()) {
       return Optional.of((T) ret.getFirst());
     }
@@ -93,7 +96,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       return ret;
     }
     return (Collection<T>)
-        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+        serviceMap
+            .computeIfAbsent(KlabService.Type.classify(serviceClass), c -> new ArrayList<>())
+            .stream()
             .filter(s -> s.status().isOperational())
             .toList();
   }
@@ -390,10 +395,14 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var list =
         serviceMap.computeIfAbsent(
             KlabService.Type.classify(klabService), type -> new ArrayList<>());
-    // service may be there if we authenticated with a user certificate
-    if (list.stream().noneMatch(s -> s.serviceId().equals(klabService.serviceId()))) {
-      list.add(klabService);
+    for (int i = 0; i < list.size(); i++) {
+      var existing = list.get(i);
+      if (Objects.equals(existing.serviceId(), klabService.serviceId())) {
+        list.set(i, klabService);
+        return;
+      }
     }
+    list.add(klabService);
   }
 
   @Override

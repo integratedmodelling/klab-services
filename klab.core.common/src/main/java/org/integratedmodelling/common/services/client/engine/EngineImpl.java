@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.engine;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +33,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
@@ -61,6 +63,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
   private Worldview worldview;
   private long lastWorldviewUpdate;
+  private final Set<String> advertisedScopeTargets = ConcurrentHashMap.newKeySet();
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -168,6 +171,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     // this will force a re-advertising of services when they all come up, as long as the engine
     // becomes operational again only when the 4 local are available
     onlineStatusNotified = false;
+    advertisedScopeTargets.clear();
     return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
   }
 
@@ -279,23 +283,71 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   private void notifyScopeToServices(UserScope userScope) {
 
+    var request = createScopeNotification(userScope);
+
+    for (var service : getUser().getServices(KlabService.class)) {
+      notifyScopeToService(service, request);
+    }
+  }
+
+  private UserScopeNotification createScopeNotification(UserScope userScope) {
     var request = new UserScopeNotification();
 
     // TODO mixed aux info
     request.setEmailAddress(userScope.getUser().getEmailAddress());
 
-    for (var service : userScope.getServices(KlabService.class)) {
+    var services =
+        serviceMonitor == null
+            ? userScope.getServices(KlabService.class)
+            : serviceMonitor.getAllServices(KlabService.class);
+
+    for (var service : services) {
       var serviceInfo = new UserScopeNotification.ServiceInfo();
-      serviceInfo.setId(service.serviceId());
+      var status = service.status();
+      serviceInfo.setId(
+          status == null || status.getServiceId() == null
+              ? service.serviceId()
+              : status.getServiceId());
       serviceInfo.setUrl(service.getUrl());
-      serviceInfo.setType(KlabService.Type.classify(service));
+      serviceInfo.setType(
+          status == null || status.getServiceType() == null
+              ? KlabService.Type.classify(service)
+              : status.getServiceType());
+      if (status instanceof ServiceStatusImpl serviceStatus) {
+        serviceInfo.setStatus(serviceStatus);
+      }
+      if (serviceInfo.getId() == null
+          || serviceInfo.getUrl() == null
+          || serviceInfo.getType() == null) {
+        Logging.INSTANCE.warn(
+            "Skipping incomplete service advertisement for "
+                + service.getClass().getSimpleName()
+                + ": id="
+                + serviceInfo.getId()
+                + ", url="
+                + serviceInfo.getUrl()
+                + ", type="
+                + serviceInfo.getType());
+        continue;
+      }
       request.getServices().add(serviceInfo);
     }
 
-    for (var service : getUser().getServices(KlabService.class)) {
-      if (service instanceof BaseServiceClient serviceClient) {
-        Thread.ofVirtual().start(() -> serviceClient.notifyScope(request));
-      }
+    return request;
+  }
+
+  private void notifyScopeToService(KlabService service, UserScopeNotification request) {
+    if (service instanceof BaseServiceClient serviceClient) {
+      Thread.ofVirtual()
+          .start(
+              () -> {
+                if (serviceClient.notifyScope(request)) {
+                  var serviceId = serviceClient.serviceId();
+                  if (serviceId != null) {
+                    advertisedScopeTargets.add(serviceId);
+                  }
+                }
+              });
     }
   }
 
@@ -303,6 +355,14 @@ public class EngineImpl implements Engine, PropertyHolder {
       KlabService klabService, KlabService.ServiceStatus serviceStatus) {
     if (serviceStatusMonitor != null) {
       serviceStatusMonitor.accept(klabService, serviceStatus);
+    }
+    if (defaultUser != null
+        && onlineStatusNotified
+        && serviceStatus != null
+        && serviceStatus.isOperational()
+        && serviceStatus.getServiceId() != null
+        && advertisedScopeTargets.add(serviceStatus.getServiceId())) {
+      notifyScopeToService(klabService, createScopeNotification(defaultUser));
     }
   }
 

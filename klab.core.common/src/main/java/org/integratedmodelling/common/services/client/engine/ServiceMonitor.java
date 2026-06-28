@@ -227,8 +227,8 @@ public class ServiceMonitor {
   }
 
   /**
-   * Return all the <em>available</em> services for the given type, local services first.
-   * Non-operational services are returned.
+   * Return all the services for the given type, local services first. Includes non-available and
+   * non-operational.
    *
    * @param serviceClass
    * @return
@@ -236,10 +236,7 @@ public class ServiceMonitor {
    */
   public <T extends KlabService> List<T> getAllServices(Class<T> serviceClass) {
     return (List<T>)
-        clients.keySet().stream()
-            .filter(
-                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isAvailable())
-            .toList();
+        clients.keySet().stream().filter(s -> serviceClass.isAssignableFrom(s.getClass())).toList();
   }
 
   private synchronized void recomputeEngineStatus() {

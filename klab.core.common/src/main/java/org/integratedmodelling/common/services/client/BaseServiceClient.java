@@ -388,25 +388,26 @@ public abstract class BaseServiceClient implements KlabService {
    *
    * @param request
    */
-  public void notifyScope(UserScopeNotification request) {
+  public boolean notifyScope(UserScopeNotification request) {
 
     /*
     If we're notifying a remote service, do not add local services to the request.
      */
-    if (!Utils.URLs.isLocalHost(this.getUrl())) {
-      request.removeLocalServices();
+    var notification =
+        Utils.URLs.isLocalHost(this.getUrl()) ? request.copy() : request.withoutLocalServices();
+
+    if (notification.getServices().isEmpty()) {
+      return false;
     }
 
-    if (request.getServices().isEmpty()) {
-      return;
-    }
-
-    if (!client.post(ServicesAPI.NOTIFY_USER_SCOPE, request, Boolean.class)) {
+    if (!client.post(ServicesAPI.NOTIFY_USER_SCOPE, notification, Boolean.class)) {
       Logging.INSTANCE.error(
           "Failed to notify remote service of new user scope: deactivating service client");
       // TODO deactivate (operational should return false)
+      return false;
     } else {
       Logging.INSTANCE.info("Successfully notified " + serviceName() + " of new user scope");
+      return true;
     }
   }
 

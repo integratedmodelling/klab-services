@@ -74,6 +74,26 @@ public enum ServiceClientCatalog {
       return status;
     }
 
+    public void updateFromAdvertisement(UserScopeNotification.ServiceInfo request) {
+      if (serverId == null && request.getId() != null) {
+        serverId = request.getId();
+      }
+      if (request.getStatus() != null
+          && shouldAcceptAdvertisedStatus(request.getStatus(), status.get())) {
+        status.set(request.getStatus());
+      }
+    }
+
+    private boolean shouldAcceptAdvertisedStatus(
+        KlabService.ServiceStatus advertised, KlabService.ServiceStatus current) {
+      if (current == null) {
+        return true;
+      }
+      return advertised.isOperational() && !current.isOperational()
+          || advertised.isAvailable() && !current.isAvailable()
+          || advertised.isConnected() && !current.isConnected();
+    }
+
     public ClientMonitor(
         URL url, // never null
         String serverId, // null if unknown
@@ -185,9 +205,19 @@ public enum ServiceClientCatalog {
 
   public BaseServiceClient getService(
       UserScopeNotification.ServiceInfo request, KlabService ownerService, UserScope userScope) {
+    if (request.getId() == null || request.getUrl() == null || request.getType() == null) {
+      throw new KlabIllegalStateException("Incomplete service advertisement");
+    }
     var monitor =
-        serviceClients.computeIfAbsent(
-            request.getId(), id -> createServiceMonitor(request, ownerService));
+        serviceClients.compute(
+            request.getId(),
+            (id, existing) -> {
+              if (existing == null) {
+                return createServiceMonitor(request, ownerService);
+              }
+              existing.updateFromAdvertisement(request);
+              return existing;
+            });
     return switch (request.getType()) {
       case REASONER -> new ReasonerClient(monitor, userScope, null);
       case RESOURCES -> new ResourcesClient(monitor, userScope, null);
@@ -229,6 +259,8 @@ public enum ServiceClientCatalog {
         ownerService == null ? null : ownerService.serviceId(),
         request.getType(),
         new AtomicReference<>(
-            KlabService.ServiceStatus.offline(request.getType(), request.getId())));
+            request.getStatus() == null
+                ? KlabService.ServiceStatus.offline(request.getType(), request.getId())
+                : request.getStatus()));
   }
 }
