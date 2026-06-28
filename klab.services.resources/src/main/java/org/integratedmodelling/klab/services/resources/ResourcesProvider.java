@@ -202,7 +202,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  public boolean checkSemanticServices(Scope scope) {
+  public synchronized boolean checkSemanticServices(Scope scope) {
     // TODO this should be called repeatedly and should be able to make incremental changes
     if (!this.semanticSearchAvailable.get()) {
       var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;

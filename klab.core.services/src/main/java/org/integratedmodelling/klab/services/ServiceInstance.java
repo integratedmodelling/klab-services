@@ -363,7 +363,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     try {
 
       klabService().sampleLoad();
-      var iAmLocal = identity instanceof UserIdentity;
+      var iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
       /*
       check all needed services; put self offline if not available or not there, online otherwise; if
       there's a change in online status, report it through the service scope
@@ -395,7 +395,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         for (var serviceType : getOperationalServices()) {
           if (iAmLocal) {
             var anyAvailable =
-                    klabService().serviceScope().getService(serviceType.classify()) != null;
+                klabService().serviceScope().getService(serviceType.classify()) != null;
             if (getOperationalServices().contains(serviceType) && !anyAvailable) {
               okOperationals = false;
             }

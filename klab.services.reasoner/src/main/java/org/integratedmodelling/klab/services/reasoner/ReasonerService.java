@@ -42,7 +42,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -101,7 +100,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   public static final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
-  private final AtomicBoolean consistent = new AtomicBoolean(false);
+  private final AtomicBoolean consistent = new AtomicBoolean(true);
   private ReasonerConfiguration configuration = new ReasonerConfiguration();
   private final Map<String, String> coreConceptPeers = new HashMap<>();
   private final Map<Concept, Emergence> emergent = new HashMap<>();
@@ -110,6 +109,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private Worldview worldview;
   private SyntacticMatcher syntacticMatcher;
   private SemanticMatcher semanticMatcher;
+  private List<Notification> advisories = new ArrayList<>();
 
   /** Caches for concepts and observables. */
   private final LoadingCache<String, Concept> concepts =
@@ -299,17 +299,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       loadAuthority(authority);
     }
 
-    var ret = false;
-
     this.observationReasoner = new ObservationReasoner(this);
     this.syntacticMatcher =
         new SyntacticMatcher(this, serviceScope().getService(ResourcesService.class));
     this.semanticMatcher =
         new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
-
-    /*
-    This is called when resources are available, so this is the time to load the worldview.
-     */
 
     return true;
   }
@@ -435,10 +429,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public ServiceStatus status() {
     var ret = super.status();
-    if (ret instanceof ServiceStatusImpl serviceStatus) {
-      serviceStatus
-          .getAdvisories()
-          .add(Notification.error("Reasoner knowledge base is inconsistent"));
+    ret.getAdvisories().addAll(this.advisories);
+    if (!this.consistent.get()) {
+      ret.getAdvisories().add(Notification.error("Reasoner knowledge base is inconsistent"));
     }
     return ret;
   }
@@ -1565,7 +1558,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     observationReasoner.initializeStrategies();
 
     // assess consistent status and if consistent, set operational
-    this.consistent.set(Utils.Notifications.hasErrors(ret));
+    this.consistent.set(!Utils.Notifications.hasErrors(ret));
+    this.advisories.addAll(ret);
+
     setOperational(this.consistent.get());
 
     return Utils.Resources.createFromLexicalNotifications(ret);
@@ -1653,7 +1648,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     } catch (Throwable t) {
       inconsistent = true;
-      scope.send(Notification.error(t));
+      Logging.INSTANCE.error("failed to update knowledge", t);
+      this.advisories.add(Notification.error(t));
     } finally {
       serviceScope().setMaintenanceMode(false);
     }

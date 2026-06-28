@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.configuration.CommonConfiguration;
 import org.integratedmodelling.common.distribution.LocalInstanceImpl;
@@ -14,6 +13,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
@@ -27,8 +27,6 @@ import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -212,12 +210,35 @@ public class ServiceMonitor {
         "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
+  /**
+   * Return all the <em>operational</em> services for the given type, local services first.
+   *
+   * @param serviceClass
+   * @return
+   * @param <T>
+   */
   @SuppressWarnings("unchecked")
   public <T extends KlabService> List<T> getServices(Class<T> serviceClass) {
     return (List<T>)
         clients.keySet().stream()
             .filter(
                 s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isOperational())
+            .toList();
+  }
+
+  /**
+   * Return all the <em>available</em> services for the given type, local services first.
+   * Non-operational services are returned.
+   *
+   * @param serviceClass
+   * @return
+   * @param <T>
+   */
+  public <T extends KlabService> List<T> getAllServices(Class<T> serviceClass) {
+    return (List<T>)
+        clients.keySet().stream()
+            .filter(
+                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isAvailable())
             .toList();
   }
 
@@ -608,7 +629,10 @@ public class ServiceMonitor {
   }
 
   public boolean startAuxiliaryService(
-      Stack softwareStack, Stack.Tag distributionTag, KlabService.Type serviceType, UserScope user) {
+      Stack softwareStack,
+      Stack.Tag distributionTag,
+      KlabService.Type serviceType,
+      UserScope user) {
     return startAuxiliaryService(softwareStack, distributionTag, serviceType, user, true);
   }
 
@@ -620,12 +644,10 @@ public class ServiceMonitor {
     }
 
     var changed =
-        ensureAuxiliaryService(
-            softwareStack, distributionTag, KlabService.Type.DATABASE, null);
+        ensureAuxiliaryService(softwareStack, distributionTag, KlabService.Type.DATABASE, null);
     if (shouldStartLocalBroker(user)) {
       changed =
-          ensureAuxiliaryService(
-                  softwareStack, distributionTag, KlabService.Type.AMQP_BROKER, null)
+          ensureAuxiliaryService(softwareStack, distributionTag, KlabService.Type.AMQP_BROKER, null)
               || changed;
     }
     if (changed) {
@@ -635,7 +657,10 @@ public class ServiceMonitor {
   }
 
   private boolean ensureAuxiliaryService(
-      Stack softwareStack, Stack.Tag distributionTag, KlabService.Type serviceType, UserScope user) {
+      Stack softwareStack,
+      Stack.Tag distributionTag,
+      KlabService.Type serviceType,
+      UserScope user) {
     if (isAuxiliaryServiceStarted(serviceType)) {
       return false;
     }
@@ -736,8 +761,7 @@ public class ServiceMonitor {
 
       stoppingLocalServices = false;
       publishTransitionStatus(false);
-      startAuxiliaryService(
-          softwareStack, distributionTag, KlabService.Type.DATABASE, user, false);
+      startAuxiliaryService(softwareStack, distributionTag, KlabService.Type.DATABASE, user, false);
       if (shouldStartLocalBroker(user)) {
         startAuxiliaryService(
             softwareStack, distributionTag, KlabService.Type.AMQP_BROKER, user, false);
@@ -822,7 +846,9 @@ public class ServiceMonitor {
       localInstance.setEnvironmentOverride(
           ServiceStartupOptions.LOCAL_AUTHENTICATION_RESPONSE_ENV, localAuthenticationPackage);
       Logging.INSTANCE.info(
-          "Passing local authentication package to " + serviceType + " through process environment");
+          "Passing local authentication package to "
+              + serviceType
+              + " through process environment");
     } else {
       Logging.INSTANCE.warn(
           "Cannot pass local authentication package to "
