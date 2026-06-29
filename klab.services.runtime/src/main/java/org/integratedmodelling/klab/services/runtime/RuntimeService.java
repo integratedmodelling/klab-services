@@ -482,6 +482,9 @@ public class RuntimeService extends BaseService
               && scope.getContextObservation().getObservable().getSemantics().isCollective();
 
       if (!instantiating) {
+        // FIXME remove - this should become a query (id == 0) done by the resolver. If the coverage is
+        //  complete, the resulting reference is compiled in; otherwise, the rest of the geometry is
+        //  resolved along with it.
         var existing = scope.getObservation(observation);
         if (existing != null) {
           return CompletableFuture.completedFuture(existing);

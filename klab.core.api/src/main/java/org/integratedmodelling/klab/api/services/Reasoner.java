@@ -464,18 +464,21 @@ public interface Reasoner extends KlabService {
   Collection<Concept> directRoles(Semantics concept);
 
   /**
+   * @deprecated
    * @param semantics
    * @return
    */
   String displayName(Semantics semantics);
 
   /**
+   * @deprecated
    * @param concept
    * @return
    */
   String displayLabel(Semantics concept);
 
   /**
+   * @deprecated
    * @param concept
    * @return
    */
@@ -484,6 +487,7 @@ public interface Reasoner extends KlabService {
   /**
    * Return the base enum type (quality, subject....) for the passed observable.
    *
+   * @deprecated
    * @param observable
    * @param acceptTraits if true, will return a trait type (which can be the observable of a class
    *     model although it's not an observable per se).
@@ -494,6 +498,7 @@ public interface Reasoner extends KlabService {
   /**
    * Return the asserted source of the relationship, assuming it is unique. If it is not unique, the
    * result is arbitrary among the possible sources.
+   * @deprecated
    *
    * @param relationship a relationship concept
    * @return the source. May be null in abstract relationships.
@@ -511,6 +516,7 @@ public interface Reasoner extends KlabService {
   /**
    * Return the asserted target of the relationship, assuming it is unique. If it is not unique, the
    * result is arbitrary among the possible targets.
+   * @deprecated
    *
    * @param relationship a relationship concept
    * @return the target. May be null in abstract relationships.

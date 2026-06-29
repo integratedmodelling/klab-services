@@ -34,6 +34,7 @@ public class ActorExample extends ActorBase {
     super(behavior);
   }
 
+  /* Generated */
   @Override
   protected ActionScope main(ActionScope initialScope, SessionScope session) {
 

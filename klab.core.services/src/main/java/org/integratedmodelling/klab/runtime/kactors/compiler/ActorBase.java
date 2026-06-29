@@ -170,10 +170,6 @@ public abstract class ActorBase extends GroovyObjectSupport {
     return NO_TASK;
   }
 
-  public void fire(ActionScope scope, Object fired) {}
-
-  public void doReturn(ActionScope scope, Object returnValue) {}
-
   /**
    * Send a message to be handled by this actor. For the <code>@handle</code>-annotated actions when
    * there is no return value or it's not important. If the actor is connected to a scope, calling
