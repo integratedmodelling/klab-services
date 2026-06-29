@@ -582,7 +582,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       HttpRequest request =
           HttpRequest.newBuilder()
               .uri(URI.create(MAVEN_CENTRAL_SEARCH_API + "?" + query))
-              .timeout(Duration.ofSeconds(30))
+              .timeout(Duration.ofSeconds(60))
               .GET()
               .build();
 
