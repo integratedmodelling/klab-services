@@ -172,7 +172,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     interface Assignment extends KActorsStatement {
 
-        public enum Scope {
+        enum Scope {
             ACTOR,
             ACTION,
             FRAME

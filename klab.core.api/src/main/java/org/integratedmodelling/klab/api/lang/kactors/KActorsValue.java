@@ -66,6 +66,7 @@ public interface KActorsValue extends Serializable {
      * Constructor syntactic object that can create Java objects
      * 
      * @author mario
+     * @deprecated a constructor is an assignment
      *
      */
     interface Constructor extends Serializable {
@@ -85,7 +86,7 @@ public interface KActorsValue extends Serializable {
 
     /**
      * Expression type is VALUE for anything not part of an expression, which is the default.
-     * 
+     * @deprecated expressions have their k.LAB-wide type, no longer values
      * @return
      */
     ExpressionType getExpressionType();
