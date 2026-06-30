@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-            <version>[3,3.1)</version>
+            <version>2.3.9</version>
         </dependency>
 
         <!-- lightweight template engine for generated Groovy classes and more -->
