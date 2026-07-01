@@ -1,32 +1,40 @@
 package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
 
 import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentBase;
 import reactor.core.publisher.Sinks;
 
 // represents each action during execution, providing access to the k.Actors environment and hashes
 // for local variables
 public abstract class AgentScope extends ParametersImpl<String> implements Agent.Scope {
 
-  private final ActorBase actor;
-  boolean done = false;
-  private long actionId;
+  private final AgentBase actor;
+  private final long actionId;
+  private final List<AgentScope> children = new ArrayList<>();
+  private AtomicBoolean done = new AtomicBoolean(false);
 
-  public AgentScope(ActorBase actor) {
+  public AgentScope(AgentBase actor) {
     this.actor = actor;
+    this.actionId = 0;
   }
 
   public AgentScope(AgentScope parent, long actionId) {
     this.actor = parent.actor;
     this.actionId = actionId;
+    parent.children.add(this);
   }
 
   @Override
-  public Agent getActor() {
+  public Agent getAgent() {
     return actor;
   }
 
@@ -46,11 +54,35 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
         actor
             .getEventBus()
             .tryEmitNext(
-                new ActorBase.Event(ActorBase.EventType.RETURN, actor.id, actionId, firedObject));
+                new AgentBase.Event(AgentBase.EventType.FIRE, actor.id, actionId, firedObject));
     if (result != Sinks.EmitResult.OK) {
       // TODO handle error
-      Logging.INSTANCE.error("Failed to emit return event");
+      actor.handleNotification(Notification.error("Failed to emit return event"));
     }
+  }
+
+  /**
+   * Create a child scope with the passed action ID. IDs are unique to code blocks and are managed
+   * by the compiler.
+   *
+   * @param actionId
+   * @return
+   */
+  public AgentScope withId(long actionId) {
+    final var session = getSession();
+    final var context = getContext();
+    return new AgentScope(AgentScope.this, actionId) {
+
+      @Override
+      public SessionScope getSession() {
+        return session;
+      }
+
+      @Override
+      public ContextScope getContext() {
+        return context;
+      }
+    };
   }
 
   @Override
@@ -59,11 +91,17 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
         actor
             .getEventBus()
             .tryEmitNext(
-                new ActorBase.Event(
-                    ActorBase.EventType.RETURN, actor.id, actionId, returnedObject));
+                new AgentBase.Event(
+                    AgentBase.EventType.RETURN, actor.id, actionId, returnedObject));
     if (result == Sinks.EmitResult.OK) {
       // remove listener due to the RETURN-type subscription
-      done = true;
+      actor
+          .getEventBus()
+          .tryEmitNext(
+              new AgentBase.Event(
+                  AgentBase.EventType.TERMINATION, actor.id, actionId, returnedObject));
+      // scope is done
+      done();
     } else {
       // TODO handle error
       Logging.INSTANCE.error("Failed to emit return event");
@@ -73,13 +111,29 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
   @Override
   public PrintStream getPrintWriter() {
     // TODO configuration!
+    // PrintStream noOpStream = new PrintStream(OutputStream.nullOutputStream());
     return System.out;
   }
 
-  public boolean isDone() {
-    return done;
+  @Override
+  public synchronized boolean isDone() {
+    return done.get();
   }
 
   @Override
-  public void done(Object... conditions) {}
+  public synchronized void done(Object... conditions) {
+    if (!done.get()) {
+      for (var child : children) {
+        child.done(conditions);
+      }
+      done.set(true);
+    }
+    notifyAll();
+  }
+
+  public synchronized void awaitDone() throws InterruptedException {
+    while (!done.get()) {
+      wait();
+    }
+  }
 }

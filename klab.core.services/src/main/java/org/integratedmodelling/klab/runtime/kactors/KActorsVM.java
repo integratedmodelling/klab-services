@@ -120,13 +120,13 @@
 //
 //  // public KActorsVM(Ref actor, Scope scope/* , Map<String, Object> globalState
 //  // */) {
-//  // this.receiver = actor;
+//  // this.targetAction = actor;
 //  // this.globalState.putAll(globalState);
 //  // this.observationScope = scope;
 //  // }
 //
 //  // protected IBehavior behavior;
-//  // protected Ref receiver;
+//  // protected Ref targetAction;
 //  // Scope observationScope;
 //
 //  /*
@@ -484,7 +484,7 @@
 //         * a message carrying the name it knows us by, so that the value can be matched to
 //         * what is caught after the 'new' verb. Listener ID is the actor's name.
 //         *
-//         * // parentActor.tell(new ComponentFire(receiver.path().name(), t, receiver));
+//         * // parentActor.tell(new ComponentFire(targetAction.path().name(), t, targetAction));
 //         *
 //         * }
 //         */ else {
@@ -674,7 +674,7 @@
 //      // (this.childActorPath +
 //      // "." + actorName))
 //      // .withActorBaseName(code.getActorBaseName()).withMainArguments(arguments).withMetadata(metadata)
-//      // .withApplicationId(this.appId).withParent(receiver);
+//      // .withApplicationId(this.appId).withParent(targetAction);
 //      //
 //      // Semaphore semaphore = null;
 //      // if (actorBehavior.getDestination() == Type.COMPONENT) {
@@ -744,7 +744,7 @@
 //       */
 //      // this.localActionExecutors.put(code.getTag(), new GroupHandler(this.identity,
 //      // appId,
-//      // groupScope, receiver, null));
+//      // groupScope, targetAction, null));
 //    }
 //    for (KActorsStatement statement : code.getStatements()) {
 //      if (!execute(statement, behavior, groupScope) || scope.isInterrupted()) {
@@ -831,7 +831,7 @@
 //
 //  /**
 //   * If the call is a known function, call it and leave the value in the scope. Otherwise check if
-//   * it's a method of the valueScope receiver if we have it.
+//   * it's a method of the valueScope targetAction if we have it.
 //   *
 //   * @param call
 //   * @param fscope
@@ -911,8 +911,8 @@
 //       * carrying the name it knows us by, so that the value can be matched to what is caught
 //       * after the 'new' verb. Listener ID is the actor's name.
 //       *
-//       * // parentActor // .tell(new ComponentFire(receiver.path().name(), //
-//       * code.getValue().evaluate(scope, // identity, false), receiver));
+//       * // parentActor // .tell(new ComponentFire(targetAction.path().name(), //
+//       * code.getValue().evaluate(scope, // identity, false), targetAction));
 //       *
 //       * }
 //       */ else {
@@ -1252,7 +1252,7 @@
 //
 //    Long notifyId = scope.getListenerId();
 //
-//    /** Exec any calls that precede this one, so that the receiver is set */
+//    /** Exec any calls that precede this one, so that the targetAction is set */
 //    Object contextReceiver = null;
 //    for (Call chained : code.getChainedCalls()) {
 //      KActorsScope fscope = scope.functional(contextReceiver);
@@ -1325,7 +1325,7 @@
 //       * variable containing an actor.
 //       */
 //      if (this.localActionExecutors.containsKey(receiverName)) {
-//        // KActorsMessage m = new KActorsMessage(receiver, messageName,
+//        // KActorsMessage m = new KActorsMessage(targetAction, messageName,
 //        // code.getCallId(),
 //        // code.getArguments(),
 //        // ((KActorsScope) scope).withNotifyId(notifyId), appId);
@@ -1378,7 +1378,7 @@
 //                + " never happen. The synchronization is being ignored.");
 //      }
 //
-//      // recipient.tell(new KActorsMessage(receiver, messageName, code.getCallId(),
+//      // recipient.tell(new KActorsMessage(targetAction, messageName, code.getCallId(),
 //      // code.getArguments(),
 //      // ((KActorsScope) scope).withNotifyId(notifyId), appId));
 //
@@ -1388,7 +1388,7 @@
 //    KActorsAction libraryActionCode = null;
 //
 //    /*
-//     * check if the call is a method from the library and if it applies to the context receiver
+//     * check if the call is a method from the library and if it applies to the context targetAction
 //     * in case we have one.
 //     */
 //    for (Library library : libraries.values()) {
@@ -1401,7 +1401,7 @@
 //
 //            /*
 //             * must be compatible with the same argument of the method; otherwise we
-//             * continue on to receiver call.
+//             * continue on to targetAction call.
 //             */
 //            boolean ok =
 //                method.getMethod().getParameterCount() > 0
@@ -1498,7 +1498,7 @@
 //          KActorsRuntime.INSTANCE.getActionClass(messageName);
 //      if (actionClass != null) {
 //
-//        // TODO/FIXME was passing receiver and callIds and executorIds and whatever
+//        // TODO/FIXME was passing targetAction and callIds and executorIds and whatever
 //        executor = KActorsRuntime.INSTANCE.getSystemAction(messageName, code.getArguments(), scope);
 //
 //        if (executor != null) {

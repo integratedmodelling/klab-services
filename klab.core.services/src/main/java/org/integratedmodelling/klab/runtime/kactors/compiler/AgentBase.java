@@ -3,11 +3,15 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 import groovy.lang.GroovyObjectSupport;
 import java.net.URL;
 import java.util.function.Consumer;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
 import reactor.core.publisher.Sinks;
 
@@ -42,13 +46,14 @@ import reactor.core.publisher.Sinks;
 /// universal adapter, so that only the catalog and the app ID need to be passed (the
 /// rest would be klab:app:) - maybe with the catalog using group-dependent defaults.
 ///
-public abstract class ActorBase extends GroovyObjectSupport implements Agent {
+public abstract class AgentBase extends GroovyObjectSupport implements Agent {
 
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
   protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
   private ContextScope contextScope;
   private SessionScope sessionScope;
+  private int errors = 0;
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -63,10 +68,11 @@ public abstract class ActorBase extends GroovyObjectSupport implements Agent {
     EXTERNAL,
     FIRE,
     RETURN,
+    TERMINATION,
     EXCEPTION
   }
 
-  public record Event(EventType type, long channel, long receiver, Object value) {}
+  public record Event(EventType type, long channel, long targetAction, Object value) {}
 
   public Sinks.Many<Event> getEventBus() {
     return eventBus;
@@ -125,11 +131,11 @@ public abstract class ActorBase extends GroovyObjectSupport implements Agent {
   }
 
   // for testing only, remove
-  public ActorBase() {
+  public AgentBase() {
     this(null, null);
   }
 
-  public ActorBase(KActorsBehavior behavior, SessionScope scope) {
+  public AgentBase(KActorsBehavior behavior, SessionScope scope) {
     this.behavior = behavior;
     if (scope instanceof ContextScope) {
       this.contextScope = (ContextScope) scope;
@@ -139,22 +145,21 @@ public abstract class ActorBase extends GroovyObjectSupport implements Agent {
     } else {
       this.sessionScope = scope;
     }
+    this.rootScope = initializeScope();
   }
 
   protected AgentScope initializeScope() {
-    this.rootScope =
-        new AgentScope(this) {
-          @Override
-          public SessionScope getSession() {
-            return sessionScope;
-          }
+    return new AgentScope(this) {
+      @Override
+      public SessionScope getSession() {
+        return sessionScope;
+      }
 
-          @Override
-          public ContextScope getContext() {
-            return contextScope;
-          }
-        };
-    return rootScope;
+      @Override
+      public ContextScope getContext() {
+        return contextScope;
+      }
+    };
   }
 
   public Agent.Scope rootScope() {
@@ -184,21 +189,84 @@ public abstract class ActorBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
+   * Stop the agent if it was started as a thread.
+   *
+   * @param conditions
+   */
+  public void stop(Object... conditions) {
+    // TODO stop or finish eventbus
+    rootScope.done(conditions);
+  }
+
+  /**
    * Root-level main entry point. If there is no "main" action, one is provided to just listen for
    * any events.
    *
    * <p>Java-based actors may simply implement this.
    *
-   * @param initialScope
-   * @param session
+   * @param rootScope the rppt scope, obtained by calling #getRootScope().
    * @return
    */
-  protected abstract AgentScope main(AgentScope initialScope, SessionScope session);
+  protected abstract ExitValue main(AgentScope rootScope);
+
+  /**
+   * The compiler must override this to return the inferred execution mode for the agent. The
+   * execution mode depends on the main behavior class and the content of the actions. Even if an
+   * actors is a Behavior, the execution mode will be FUNCTION unless at least one action installs a
+   * reactor.
+   *
+   * @return
+   */
+  public abstract Verb.Type getAgentExecutionMode();
+
+  protected ExitValue runAsync(AgentScope scope, Consumer<AgentScope> runnable) {
+
+    if (rootScope != null && rootScope.isDone()) {
+      return ExitValue.failure(new KlabIllegalStateException("Agent already terminated"));
+    }
+
+    try {
+      Thread.ofVirtual()
+          .name("kactors-agent-" + scope.actionId())
+          .start(
+              () -> {
+                try {
+                  runnable.accept(scope);
+                  scope.awaitDone();
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                  scope.done(e);
+                } catch (Throwable t) {
+                  scope.done(t);
+                }
+              });
+      return TASK_RUNNING;
+    } catch (Throwable t) {
+      return ExitValue.failure(t);
+    }
+  }
+
+  public void handleNotification(Notification... notifications) {
+    if (notifications != null) {
+      for (var notification : notifications) {
+        Logging.INSTANCE.notifications(notification);
+        if (notification.getLevel().severity >= Notification.Level.Error.severity) {
+          // TODO something better than this - also involve the lowest-level scope available
+          errors++;
+        }
+      }
+    }
+  }
 
   /**
    * Start the actor as an independent thread. To stop the actor, call done() on the root scope.
    *
    * @return
    */
-  public abstract ExitValue run();
+  public ExitValue run() {
+    if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
+      return main(rootScope);
+    }
+    return runAsync(rootScope, this::main);
+  }
 }

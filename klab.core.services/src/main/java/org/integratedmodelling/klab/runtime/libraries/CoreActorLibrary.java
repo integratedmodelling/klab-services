@@ -14,12 +14,22 @@ public class CoreActorLibrary {
   @Actor(
       name = "console",
       description =
-          "A simple actor that prints to the console. All methods are static and can be called directly without instantiating the actor.")
+          "A static actor that prints to whatever console was configured for the agent. All methods are static and can be called directly without instantiating the actor.")
   public static class Console {
+
+    @Verb(name = "println", executionType = Verb.Type.FUNCTION)
+    public static void println(Agent.Scope scope, Object message) {
+      scope.getPrintWriter().println(message);
+    }
 
     @Verb(name = "print", executionType = Verb.Type.FUNCTION)
     public static void print(Agent.Scope scope, Object message) {
-      System.out.println(message);
+      scope.getPrintWriter().println(message);
+    }
+
+    @Verb(name = "format", executionType = Verb.Type.FUNCTION)
+    public static void format(Agent.Scope scope, String format, Object... args) {
+      scope.getPrintWriter().format(format, args);
     }
   }
 
@@ -44,8 +54,8 @@ public class CoreActorLibrary {
 
       // Wait until scope signals completion
       try {
-        while (!scope.isDone()) {
-          synchronized (scope) {
+        synchronized (scope) {
+          while (!scope.isDone()) {
             scope.wait();
           }
         }

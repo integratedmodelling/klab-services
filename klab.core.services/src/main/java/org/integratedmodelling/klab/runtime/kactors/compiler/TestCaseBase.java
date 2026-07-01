@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
 
-public abstract class TestCaseBase extends ActorBase {
+public abstract class TestCaseBase extends AgentBase {
 
   protected SessionScope scope;
 

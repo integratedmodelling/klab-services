@@ -2,6 +2,10 @@ package org.integratedmodelling.klab.api.utils;
 
 import java.awt.*;
 import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
@@ -22,10 +26,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -59,6 +67,99 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 
 public class Utils {
+
+  public static class GuiConsole {
+
+    private AtomicBoolean done = new AtomicBoolean(false);
+    private PrintStream stdout;
+
+    // This synchronized class will be used to write to the console window
+    private class SynchronizedByteArrayOutputStreamWrapper extends OutputStream {
+      // The console will be synchronized through a monitor.
+      // WARNING! This could delay the code trying to write to the console!
+      private final Object monitor = new Object();
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+      @Override
+      public void write(int data) throws IOException {
+        synchronized (monitor) {
+          byteArrayOutputStream.write(data);
+        }
+      }
+
+      public byte[] readEmpty() {
+        byte[] bufferContent;
+        synchronized (monitor) {
+          bufferContent = byteArrayOutputStream.toByteArray();
+          byteArrayOutputStream.reset();
+        }
+        return bufferContent;
+      }
+    }
+
+    public PrintStream systemOut() {
+      return stdout;
+    }
+
+    public void stop() {
+      this.done.set(true);
+    }
+
+    public void guiConsoleTest() {
+
+      // Remember old output stream (optional)
+      this.stdout = System.out;
+      stdout.println("Starting gui for console output"); // Still works
+      // Stream for output to gui
+      SynchronizedByteArrayOutputStreamWrapper rawout =
+          new SynchronizedByteArrayOutputStreamWrapper();
+      // Set new stream for System.out
+      System.setOut(new PrintStream(rawout, true));
+
+      // Demo gui
+      JTextArea textArea = new JTextArea();
+      JFrame window = new JFrame("Console test");
+      window.add(new JScrollPane(textArea));
+      window.setSize(500, 500);
+      window.setVisible(true);
+
+      // Console thread
+      Thread consoleThread =
+          new Thread(
+              () -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                  String pendingConsoleOutput = new String(rawout.readEmpty());
+                  textArea.append(pendingConsoleOutput);
+                }
+                try {
+                  Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+              });
+      consoleThread.start();
+
+      // Test it (for 10 sec)
+      while (!done.get()) {
+        //        System.out.println("Printing to gui console: " + i);
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+        }
+      }
+
+      // Clean up and exit
+      consoleThread.interrupt();
+      try {
+        consoleThread.join();
+      } catch (InterruptedException e) {
+      }
+      window.dispose();
+    }
+
+    public static void main(String[] args) {
+      new GuiConsole().guiConsoleTest();
+    }
+  }
 
   /**
    * Simple log appender for debugging. Simplest way to use is Debug.print(....) which will append
@@ -4398,10 +4499,16 @@ public class Utils {
   /** Ultra-simple console CLI for testing */
   public static class CLI {
 
-    Map<String, Consumer<String[]>> commands = new HashMap<>();
+    private final Map<String, Consumer<String[]>> commands = new HashMap<>();
+    private boolean useConsole = false;
 
     public static CLI create() {
       return new CLI();
+    }
+
+    public CLI withConsole() {
+      this.useConsole = true;
+      return this;
     }
 
     public CLI with(String command, Consumer<String[]> handler) {
@@ -4411,10 +4518,16 @@ public class Utils {
 
     public void run() {
       Scanner scanner = new Scanner(System.in);
-      System.out.println("This is the CLI testing utility. Type 'exit' to exit.");
-      System.out.println("Available commands: " + String.join(", ", commands.keySet()));
+      GuiConsole console = null;
+      var out = System.out;
+      if (useConsole) {
+        console = new GuiConsole();
+        out = console.systemOut();
+      }
+      out.println("This is the CLI testing utility. Type 'exit' to exit.");
+      out.println("Available commands: " + String.join(", ", commands.keySet()));
       while (true) {
-        System.out.print("> ");
+        out.print("> ");
         String input = scanner.nextLine();
         if (input == null || input.trim().isEmpty()) {
           continue;
@@ -4429,15 +4542,18 @@ public class Utils {
             handler.accept(
                 args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length + 1));
           } catch (Throwable e) {
-            System.out.println(
+            out.println(
                 "Handler threw "
                     + Paths.getLast(e.getClass().getSimpleName(), '.')
                     + " exception: "
                     + e.getMessage());
           }
         } else {
-          System.out.println("Unknown command: " + args[0]);
+          out.println("Unknown command: " + args[0]);
         }
+      }
+      if (console != null) {
+        console.stop();
       }
     }
   }

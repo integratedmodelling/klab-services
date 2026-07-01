@@ -4,19 +4,17 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public enum ActorCompiler {
+public enum AgentCompiler {
   INSTANCE;
 
-  private Map<String, Class<? extends ActorBase>> compiledActorClasses = new ConcurrentHashMap<>();
+  private Map<String, Class<? extends AgentBase>> compiledActorClasses = new ConcurrentHashMap<>();
 
-  public ActorBase compile(String urn, Scope scope) {
+  public AgentBase compile(String urn, Scope scope) {
 
-    Class<? extends ActorBase> compiledActorClass = compiledActorClasses.get(urn);
+    Class<? extends AgentBase> compiledActorClass = compiledActorClasses.get(urn);
 
     // TODO use versions intelligently
     if (compiledActorClass == null) {
@@ -28,13 +26,13 @@ public enum ActorCompiler {
       }
     }
 
-    ActorBase ret = null;
+    AgentBase ret = null;
     if (compiledActorClass != null) {}
 
     return ret;
   }
 
-  private Class<? extends ActorBase> compileBehavior(KActorsBehavior behavior) {
+  private Class<? extends AgentBase> compileBehavior(KActorsBehavior behavior) {
     return null;
   }
 }
