@@ -18,6 +18,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.integratedmodelling.klab.api.actors.Agent;
 
 /**
  * Tags a method that can be used as a functional verb in k.Actors. Must be defined for public
@@ -39,19 +40,22 @@ public @interface Verb {
   enum Type {
     /**
      * A function is a verb that will produce a value synchronously when called. Executions that use
-     * its value will always wait for it before continuing.
+     * its value will always wait for it to return the value before continuing. They should be used
+     * in assignment statements (which will wait) or in a thread by using the reactor pattern, which
+     * will remove the reactor's scope once the function returns.
      */
     FUNCTION,
     /**
      * A reactor will produce zero or a single value asynchronously, then its function will be over.
-     * Its scope determines the lifetime. Execution will wait ony when within a synchronous group of
-     * statements.
+     * It is expected to declare its own thread, exiting after calling {@link
+     * Agent.Scope#doReturn(Object)} or waiting for the scope to be closed.
      */
     REACTOR,
     /**
-     * An emitter will produce zero or more values at some point after the call. Its scope
-     * determines the lifetime of the emitter. Positioning the verb in a synchronous group makes no
-     * functional difference.
+     * An emitter will produce zero or more values at some point after the call by invoking {@link
+     * Agent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This verb will
+     * run in its thread and is expected to only exit when {@link Agent.Scope#isDone()} returns
+     * true.
      */
     EMITTER;
   }

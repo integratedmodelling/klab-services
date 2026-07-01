@@ -317,7 +317,10 @@ public enum LanguageAdapter {
   }
 
   public KimNamespace adaptNamespace(
-      NamespaceSyntax namespace, String projectName, Collection<Notification> notifications, long timestamp) {
+      NamespaceSyntax namespace,
+      String projectName,
+      Collection<Notification> notifications,
+      long timestamp) {
 
     var ret = new KimNamespaceImpl();
     ret.setUrn(namespace.getUrn());
@@ -869,7 +872,8 @@ public enum LanguageAdapter {
   public KimObservationStrategyDocument adaptStrategies(
       ObservationStrategiesSyntax definition,
       String projectName,
-      Collection<Notification> notifications, long timestamp) {
+      Collection<Notification> notifications,
+      long timestamp) {
 
     KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
     ret.setUrn(definition.getUrn());
@@ -1058,7 +1062,10 @@ public enum LanguageAdapter {
   }
 
   public KimOntology adaptOntology(
-      OntologySyntax ontology, String projectName, Collection<Notification> notifications, long timestamp) {
+      OntologySyntax ontology,
+      String projectName,
+      Collection<Notification> notifications,
+      long timestamp) {
 
     KimOntologyImpl ret = new KimOntologyImpl();
 
@@ -1153,7 +1160,8 @@ public enum LanguageAdapter {
       BehaviorSyntaxImpl syntax,
       String name,
       String projectName,
-      List<Notification> notifications, long timestamp) {
+      List<Notification> notifications,
+      long timestamp) {
     var ret = new KActorsBehaviorImpl();
     ret.setUrn(name);
     ret.setLastUpdateTimestamp(timestamp);
@@ -1183,36 +1191,99 @@ public enum LanguageAdapter {
       ActionStatementSyntax statement, List<Notification> notifications) {
     // TODO
     return switch (statement) {
-      case ActionStatementSyntax.Assert assertion -> {
-        yield null;
-      }
-      case ActionStatementSyntax.Assignment assign -> {
-        yield null;
-      }
-      case ActionStatementSyntax.Verb verbStatement -> {
-        yield adaptVerb(verbStatement, notifications);
-      }
-      case ActionStatementSyntax.Do doStatement -> {
-        yield null;
-      }
-      case ActionStatementSyntax.For forStatement -> {
-        yield null;
-      }
-      case ActionStatementSyntax.If ifStatement -> {
-        yield null;
-      }
-      case ActionStatementSyntax.Return returnStatement -> {
-        yield null;
-      }
-      case ActionStatementSyntax.While whileStatement -> {
-        yield null;
-      }
+      case ActionStatementSyntax.Assert assertion -> adaptAssert(assertion, notifications);
+      case ActionStatementSyntax.Assignment assign -> adaptAssign(assign, notifications);
+      case ActionStatementSyntax.Verb verbStatement -> adaptVerb(verbStatement, notifications);
+      case ActionStatementSyntax.Do doStatement -> adaptDo(doStatement, notifications);
+      case ActionStatementSyntax.For forStatement -> adaptFor(forStatement, notifications);
+      case ActionStatementSyntax.If ifStatement -> adaptIf(ifStatement, notifications);
+      case ActionStatementSyntax.Return returnStatement ->
+          adaptReturn(returnStatement, notifications);
+      case ActionStatementSyntax.While whileStatement -> adaptWhile(whileStatement, notifications);
+      case ActionStatementSyntax.Text textStatement -> adaptText(textStatement, notifications);
+      case ActionStatementSyntax.Fire fireStatement -> adaptFire(fireStatement, notifications);
+      case ActionStatementSyntax.Fail failStatement -> adaptFail(failStatement, notifications);
+      case ActionStatementSyntax.Break breakStatement -> adaptBreak(breakStatement, notifications);
+      case ActionStatementSyntax.Group groupStatement -> adaptGroup(groupStatement, notifications);
       default -> throw new IllegalArgumentException("unknown action statement type");
     };
   }
 
+  private KActorsStatement adaptFail(
+      ActionStatementSyntax.Fail failStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptAssign(
+      ActionStatementSyntax.Assignment assign, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptDo(
+      ActionStatementSyntax.Do doStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptFor(
+      ActionStatementSyntax.For forStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptIf(
+      ActionStatementSyntax.If ifStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptReturn(
+      ActionStatementSyntax.Return returnStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptWhile(
+      ActionStatementSyntax.While whileStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptText(
+      ActionStatementSyntax.Text textStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptFire(
+      ActionStatementSyntax.Fire fireStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptBreak(
+      ActionStatementSyntax.Break breakStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptGroup(
+      ActionStatementSyntax.Group groupStatement, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
+  private KActorsStatement adaptAssert(
+      ActionStatementSyntax.Assert assertion, List<Notification> notifications) {
+    // TODO
+    return null;
+  }
+
   private KActorsStatement adaptVerb(
       ActionStatementSyntax.Verb verbStatement, List<Notification> notifications) {
+    // TODO
     return null;
   }
 }
