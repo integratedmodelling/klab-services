@@ -567,7 +567,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       } catch (Exception e) {
         Thread.currentThread().interrupt();
-        throw new KlabIOException("Request was interrupted");
+        throw new KlabIOException("Request was interrupted", e);
       }
     }
 

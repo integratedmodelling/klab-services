@@ -47,4 +47,12 @@ public class KlabIOException extends KlabException {
     public KlabIOException(Throwable e) {
         super("Input/output error: " + e.getMessage());
     }
+
+    /**
+     * Instantiates a new klab IO exception.
+     *
+     * @param message the message
+     * @param cause the cause
+     */
+    public KlabIOException(String message, Throwable cause) { super(message, cause); }
 }
