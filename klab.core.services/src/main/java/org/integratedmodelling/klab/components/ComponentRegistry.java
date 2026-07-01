@@ -196,18 +196,31 @@ public class ComponentRegistry {
           && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
-          var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
-          if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
-              || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
-            merge(ret, updateComponent(component, status));
-          } else if (status == MavenComponentCache.Status.UNKNOWN && reportNoUpdates) {
-            ret.getNotifications()
-                .add(
-                    Notification.warning(
-                        "Unable to establish update status for component "
-                            + component.id()
-                            + " from "
-                            + component.mavenCoordinates()));
+          try {
+            var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
+            if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+                    || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+              merge(ret, updateComponent(component, status));
+            } else if (status == MavenComponentCache.Status.UNKNOWN && reportNoUpdates) {
+              ret.getNotifications()
+                      .add(
+                              Notification.warning(
+                                      "Error establishing update status for component "
+                                              + component.id()
+                                              + " from "
+                                              + component.mavenCoordinates()));
+            }
+          } catch (KlabIOException e) {
+            if (reportNoUpdates) {
+              ret.getNotifications()
+                  .add(
+                          Notification.warning(
+                                  "Unable to establish update status for component "
+                                          + component.id()
+                                          + " from "
+                                          + component.mavenCoordinates()
+                                          + " with cause " + e.getMessage()));
+            }
           }
         } else if (reportNoUpdates) {
           ret.getNotifications()
