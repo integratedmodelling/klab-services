@@ -11,17 +11,24 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 @Library(name = "actors.core")
 public class CoreActorLibrary {
 
+  /**
+   * Static actor class methods map to static actors. They must be declared (although these core
+   * ones may be automatically linked, TBD). It should be illegal to use a constructor if there are
+   * only static methods annotated with @Verb.
+   */
   @Actor(
       name = "console",
       description =
           "A static actor that prints to whatever console was configured for the agent. All methods are static and can be called directly without instantiating the actor.")
   public static class Console {
 
+    // TODO handle multiple arguments
     @Verb(name = "println", executionType = Verb.Type.FUNCTION)
     public static void println(Agent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
     }
 
+    // TODO handle multiple arguments
     @Verb(name = "print", executionType = Verb.Type.FUNCTION)
     public static void print(Agent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
@@ -38,7 +45,7 @@ public class CoreActorLibrary {
 
     // return value being a Future means this is an emitter that stays until canceled through a
     // done() or failure() sent to the scope. If static, no need to instantiate the object.
-    @Verb(name = "tick", executionType = Verb.Type.EMITTER)
+    @Verb(name = "tick", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
     public static boolean random(Agent.Scope scope, TimeUnit unit, long amount) {
 
       var timer = new java.util.Timer();

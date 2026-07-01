@@ -46,11 +46,11 @@ public @interface Verb {
      */
     FUNCTION,
     /**
-     * A reactor will produce zero or a single value asynchronously, then its function will be over.
-     * It is expected to declare its own thread, exiting after calling {@link
-     * Agent.Scope#doReturn(Object)} or waiting for the scope to be closed.
+     * A reactor will produce zero or a single value once at some point in the future, then its
+     * function will be over. It is expected to return a {@link
+     * java.util.concurrent.CompletableFuture} for the result.
      */
-    REACTOR,
+    SUPPLIER,
     /**
      * An emitter will produce zero or more values at some point after the call by invoking {@link
      * Agent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This verb will
@@ -58,6 +58,22 @@ public @interface Verb {
      * true.
      */
     EMITTER;
+  }
+
+  /**
+   * Tags the action parameters if needed. Otherwise they are automatically paired by name and type.
+   */
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.PARAMETER)
+  public @interface Argument {
+
+    /**
+     * Type if there is ambiguity.
+     *
+     * @return
+     */
+    Class<?> type() default Object.class;
   }
 
   /**
@@ -92,14 +108,28 @@ public @interface Verb {
   Class<?> receiver() default Void.class;
 
   /**
-   * Return type, if any. By default returns nothing or null.
+   * Classes fired by this verb. Fire posts the fired value to listeners but keeps running if the
+   * implementation creates a live thread. By default nothing.
+   *
+   * @return
+   */
+  Class<?> fires() default Void.class;
+
+  /**
+   * Return type, if any. Normally not used because the type is inferred from the return value, but
+   * here if there is a need to resolve ambiguities. Returning removes any listeners so it is meant
+   * for actions whose listeners are deregistered after return. If used on a supplier, it should
+   * declare the type of result that the supplier returns a {@link
+   * java.util.concurrent.CompletableFuture} for.
    *
    * @return
    */
   Class<?> returns() default Void.class;
 
   /**
-   * The execution mode of this verb.
+   * The execution mode of this verb. This may not be passed if {@link #fires()} is set, which
+   * implies EMITTER, or the method returns a value (which implies FUNCTION) or a {@link
+   * java.util.concurrent.CompletableFuture} (which implies SUPPLIER).
    *
    * @return
    */

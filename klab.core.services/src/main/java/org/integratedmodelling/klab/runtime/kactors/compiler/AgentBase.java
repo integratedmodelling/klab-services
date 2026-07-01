@@ -2,6 +2,9 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import groovy.lang.GroovyObjectSupport;
 import java.net.URL;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.Agent;
@@ -13,6 +16,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
+import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
 /// Base class for the Java/Groovy compiled actor that translates a k.Actors behavior,
@@ -51,6 +55,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
   protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
+  private final Object eventEmissionLock = new Object();
   private ContextScope contextScope;
   private SessionScope sessionScope;
   private int errors = 0;
@@ -76,6 +81,12 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
 
   public Sinks.Many<Event> getEventBus() {
     return eventBus;
+  }
+
+  public Sinks.EmitResult emitEvent(Event event) {
+    synchronized (eventEmissionLock) {
+      return eventBus.tryEmitNext(event);
+    }
   }
 
   public static class ExitValue {
@@ -218,6 +229,40 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
    * @return
    */
   public abstract Verb.Type getAgentExecutionMode();
+
+  /**
+   * Subscribe to events emitted by {@code scope}. Generated code should use this instead of wiring
+   * Reactor directly, so terminal events and subscription disposal have one implementation.
+   */
+  protected void onEvent(
+      AgentScope scope, Consumer<Event> eventConsumer, EventType... acceptedEventTypes) {
+    var acceptedTypes = acceptedEventTypes(acceptedEventTypes);
+    Disposable subscription =
+        this.eventBus
+            .asFlux()
+            .filter(event -> event.targetAction() == scope.actionId())
+            .takeUntil(event -> event.type() == EventType.TERMINATION)
+            .filter(event -> acceptedTypes.contains(event.type()))
+            .subscribe(
+                event -> {
+                  try {
+                    eventConsumer.accept(event);
+                  } catch (Throwable t) {
+                    scope.done(t);
+                  }
+                },
+                scope::done);
+    scope.disposeWith(subscription);
+  }
+
+  private Set<EventType> acceptedEventTypes(EventType... eventTypes) {
+    if (eventTypes == null || eventTypes.length == 0) {
+      return EnumSet.of(EventType.EXTERNAL, EventType.FIRE, EventType.RETURN, EventType.EXCEPTION);
+    }
+    var ret = EnumSet.noneOf(EventType.class);
+    Collections.addAll(ret, eventTypes);
+    return ret;
+  }
 
   protected ExitValue runAsync(AgentScope scope, Consumer<AgentScope> runnable) {
 

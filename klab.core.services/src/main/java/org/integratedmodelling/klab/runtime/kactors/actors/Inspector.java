@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.runtime.extension.ActionParameter;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
@@ -20,7 +19,7 @@ public class Inspector implements Closeable {
   public Inspector(TestScope testScope, SessionScope sessionScope) {}
 
   @Verb
-  public void record(@ActionParameter Map<String, Object> events) {}
+  public void record(Map<String, Object> events) {}
 
   @Override
   public void close() throws IOException {}

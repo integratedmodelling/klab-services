@@ -1,8 +1,7 @@
 package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.Agent;
@@ -11,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentBase;
+import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
 // represents each action during execution, providing access to the k.Actors environment and hashes
@@ -19,8 +19,9 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
 
   private final AgentBase actor;
   private final long actionId;
-  private final List<AgentScope> children = new ArrayList<>();
-  private AtomicBoolean done = new AtomicBoolean(false);
+  private final CopyOnWriteArrayList<AgentScope> children = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<Disposable> disposables = new CopyOnWriteArrayList<>();
+  private final AtomicBoolean done = new AtomicBoolean(false);
 
   public AgentScope(AgentBase actor) {
     this.actor = actor;
@@ -50,14 +51,15 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
 
   @Override
   public void doFire(Object firedObject) {
+    if (isDone()) {
+      return;
+    }
     var result =
         actor
-            .getEventBus()
-            .tryEmitNext(
+            .emitEvent(
                 new AgentBase.Event(AgentBase.EventType.FIRE, actor.id, actionId, firedObject));
     if (result != Sinks.EmitResult.OK) {
-      // TODO handle error
-      actor.handleNotification(Notification.error("Failed to emit return event"));
+      actor.handleNotification(Notification.error("Failed to emit fire event: " + result));
     }
   }
 
@@ -87,25 +89,18 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
 
   @Override
   public void doReturn(Object returnedObject) {
+    if (isDone()) {
+      return;
+    }
     var result =
         actor
-            .getEventBus()
-            .tryEmitNext(
+            .emitEvent(
                 new AgentBase.Event(
                     AgentBase.EventType.RETURN, actor.id, actionId, returnedObject));
-    if (result == Sinks.EmitResult.OK) {
-      // remove listener due to the RETURN-type subscription
-      actor
-          .getEventBus()
-          .tryEmitNext(
-              new AgentBase.Event(
-                  AgentBase.EventType.TERMINATION, actor.id, actionId, returnedObject));
-      // scope is done
-      done();
-    } else {
-      // TODO handle error
-      Logging.INSTANCE.error("Failed to emit return event");
+    if (result != Sinks.EmitResult.OK) {
+      Logging.INSTANCE.error("Failed to emit return event: " + result);
     }
+    done(returnedObject);
   }
 
   @Override
@@ -116,24 +111,74 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
   }
 
   @Override
-  public synchronized boolean isDone() {
+  public boolean isDone() {
     return done.get();
   }
 
   @Override
-  public synchronized void done(Object... conditions) {
-    if (!done.get()) {
+  public void done(Object... conditions) {
+    if (done.compareAndSet(false, true)) {
       for (var child : children) {
         child.done(conditions);
       }
-      done.set(true);
+      var exceptionalValue = exceptionalValue(conditions);
+      if (exceptionalValue != null) {
+        actor.emitEvent(
+            new AgentBase.Event(
+                AgentBase.EventType.EXCEPTION, actor.id, actionId, exceptionalValue));
+      }
+      actor.emitEvent(
+          new AgentBase.Event(
+              AgentBase.EventType.TERMINATION, actor.id, actionId, terminationValue(conditions)));
+      for (var disposable : disposables) {
+        disposable.dispose();
+      }
+      disposables.clear();
     }
-    notifyAll();
+    synchronized (this) {
+      notifyAll();
+    }
+  }
+
+  public void disposeWith(Disposable disposable) {
+    if (disposable == null) {
+      return;
+    }
+    if (isDone()) {
+      disposable.dispose();
+      return;
+    }
+    disposables.add(disposable);
+    if (isDone() && disposables.remove(disposable)) {
+      disposable.dispose();
+    }
   }
 
   public synchronized void awaitDone() throws InterruptedException {
     while (!done.get()) {
       wait();
     }
+  }
+
+  private Object terminationValue(Object... conditions) {
+    if (conditions == null || conditions.length == 0) {
+      return null;
+    }
+    return conditions.length == 1 ? conditions[0] : conditions;
+  }
+
+  private Object exceptionalValue(Object... conditions) {
+    if (conditions != null) {
+      for (var condition : conditions) {
+        if (condition instanceof Throwable) {
+          return condition;
+        }
+        if (condition instanceof Notification notification
+            && notification.getLevel().severity >= Notification.Level.Error.severity) {
+          return notification;
+        }
+      }
+    }
+    return null;
   }
 }
