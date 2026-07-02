@@ -8,11 +8,10 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 
 public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAction {
 
-  @Serial
-  private static final long serialVersionUID = 5202922350235994909L;
+  @Serial private static final long serialVersionUID = 5202922350235994909L;
 
   private String urn;
-  private List<KActorsStatement> code;
+  private List<KActorsStatement> code = new ArrayList<>();
   private List<String> argumentNames = new ArrayList<>();
   private boolean function;
 

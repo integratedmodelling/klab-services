@@ -2,15 +2,13 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
 
@@ -139,7 +137,7 @@ public interface Language extends Service {
    * @param message
    * @return
    */
-  List<Notification> validate(Call message);
+  List<Notification> validate(KActorsStatement.Verb message);
 
   /**
    * Execute a service call and return its result. A mismatch in the result class should produce an

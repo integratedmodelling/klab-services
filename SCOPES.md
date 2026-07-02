@@ -4,7 +4,7 @@ Scopes are the execution envelope of k.LAB. They are how an identity, a set of
 permissions, a service topology, a communication channel, and a lifecycle are
 kept together while work moves across clients and services.
 
-Most service functions are not meant to run as anonymous, stateless calls. They
+Most service functions are not meant to run as anonymous, stateless verbs. They
 run in a scope. The scope says who is asking, which services are available to
 that caller, where state is hosted, how messages and notifications return to the
 caller, and when the created state can be released.
@@ -78,7 +78,7 @@ service.
 
 A user scope is the root of all work performed by one authenticated identity.
 It restricts service access to the services and operations visible to that
-identity. It also owns the service catalog used by ordinary service calls.
+identity. It also owns the service catalog used by ordinary service verbs.
 
 At client side, authentication creates a client user scope. At service side, an
 incoming authenticated request creates or reuses a service-side user scope. The
@@ -287,7 +287,7 @@ position propagation.
 Identity propagation is carried by authentication. A client call made with an
 identity sets the authorization token. For service identities this is the
 service token. For user identities this is the user identity token. Local
-services may also use a local service secret so that privileged localhost calls
+services may also use a local service secret so that privileged localhost verbs
 can be distinguished from ordinary remote requests.
 
 Scope position propagation is carried by headers. The important headers are:
@@ -345,8 +345,8 @@ All normal service functions are accessed through scopes.
 
 At client side, service clients call the HTTP layer with the current scope. The
 HTTP layer adds the authentication and scope headers needed by the receiving
-service. Session and context calls automatically carry the host runtime ID.
-Context calls also carry transaction and observation focus when available.
+service. Session and context verbs automatically carry the host runtime ID.
+Context verbs also carry transaction and observation focus when available.
 
 At service side, implementation code asks the scope for other services:
 
@@ -402,7 +402,7 @@ Client-side scope cleanup:
 
 Service-side scope cleanup:
 
-1. The runtime release endpoint calls `close()` on the resolved session or
+1. The runtime release endpoint verbs `close()` on the resolved session or
    context scope.
 2. A service context close sends a context-closed message, disposes the digital
    twin when the service owns it, closes closeable scope data, closes messaging,
@@ -499,7 +499,7 @@ User certificate
   -> client and runtime create/register SessionScope peers
   -> user creates a context
   -> runtime creates/registers ContextScope and digital twin
-  -> downstream service calls carry authentication plus scope headers
+  -> downstream service verbs carry authentication plus scope headers
   -> receiving services resolve or reconstruct peer scopes
   -> all service functions execute through the resolved scope
   -> close/release removes scope peers and, depending on persistence, digital

@@ -94,7 +94,7 @@ Runtime
 ```
 
 The order above is not a call chain for every operation. It is a dependency
-shape. Runtime calls Resolver to resolve an observation. Resolver calls
+shape. Runtime verbs Resolver to resolve an observation. Resolver verbs
 Reasoner, Resources, and Runtime. Reasoner loads its worldview from Resources.
 Resources can use Reasoner-backed semantic indexing when it is available.
 Runtime uses Resources to make sure components, resources, and adapters needed
@@ -109,14 +109,14 @@ Runtime -> Resolver -> Reasoner -> Resources
         -> Runtime  -> Resources
 ```
 
-That cycle works because calls are scoped, service availability is advertised
+That cycle works because verbs are scoped, service availability is advertised
 through scopes, and the Runtime remains the only owner of the digital twin.
 
 ### Service Availability
 
 Services distinguish being reachable from being usable.
 
-A service is available when it has initialized enough to accept calls. A service
+A service is available when it has initialized enough to accept verbs. A service
 is operational when its advertised API can be trusted under its current
 configuration and dependencies.
 
@@ -162,7 +162,7 @@ The important scope levels are:
 - `SessionScope`: a user session pinned to one host runtime.
 - `ContextScope`: a live digital twin, or a focused view inside one.
 
-The host runtime ID travels with session and context calls. That is what lets a
+The host runtime ID travels with session and context verbs. That is what lets a
 non-runtime service reconstruct a peer context scope and still know where the
 actual digital twin lives.
 
@@ -180,7 +180,7 @@ services, or clients to a service started by the Engine.
 ### Context Peers
 
 Only one runtime hosts a digital twin. Other services may still receive
-context-scoped calls. When that happens, they reconstruct a peer context scope:
+context-scoped verbs. When that happens, they reconstruct a peer context scope:
 
 ```text
 incoming identity + scope token + host runtime ID
@@ -262,7 +262,7 @@ Resources.
 
 The output of planning is a dataflow. The dataflow is not execution yet. It is
 an executable description of observations, dependencies, references, service
-calls, resource resolutions, sharding hints, and coverage.
+verbs, resource resolutions, sharding hints, and coverage.
 
 ### Compilation And Execution
 
@@ -406,7 +406,7 @@ For a requested observation and context scope, Reasoner filters strategy
 definitions using semantic type, collective/non-collective constraints,
 patterns, context variables, strategy functions, and the current context
 observation. Matching strategies are contextualized: pattern variables are
-substituted, operations are materialized, and contextualizable service calls are
+substituted, operations are materialized, and contextualizable service verbs are
 prepared for Resolver.
 
 Resolver receives these strategies ordered by rank. It still needs to verify
@@ -586,7 +586,7 @@ The same observation can touch all four services:
 9. Runtime compiles, schedules, executes, commits, and publishes messages.
 ```
 
-The direction of ownership is just as important as the direction of calls:
+The direction of ownership is just as important as the direction of verbs:
 
 - Resources owns asset availability and rights.
 - Reasoner owns semantic interpretation.
@@ -608,7 +608,7 @@ The direction of ownership is just as important as the direction of calls:
   actually run.
 - Treat ContextScope as mandatory for observation work. UserScope is enough for
   identity-level asset operations; observations need a context.
-- Remember that service calls can be local or remote without changing the
+- Remember that service verbs can be local or remote without changing the
   architecture. The scope and service catalog hide that transport detail.
 - Do not treat capabilities as mere documentation. They tell the caller which
   worldview, components, permissions, storage defaults, schemata, and semantic

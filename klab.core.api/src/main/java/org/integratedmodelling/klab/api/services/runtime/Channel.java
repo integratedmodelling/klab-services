@@ -16,11 +16,8 @@ package org.integratedmodelling.klab.api.services.runtime;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
-import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 /**
  * A channel represents the current identity and is used to report status and send messages to any
@@ -153,12 +150,11 @@ public interface Channel {
    * registered with the runtime. Information sent through this channel will only be received by
    * receivers that have subscribed. The messages are signed with the monitor's {@link
    * #getIdentity() identity string}. If the channel is a channel to an agent, this should
-   * automatically dispatch any objects of {@link VM.AgentMessage} class to the agent reference
-   * embedded in the scope.
+   * automatically dispatch agent messages to the agent reference embedded in the scope.
    *
    * @param message anything that may be sent as a message: either a preconstructed {@link Message}
-   *     or the necessary info to build one, including a {@link MessageClass} and {@IMessage.Type}
-   *     along with any payload (any serializable object). Sending a {@link Notification} should
+   *     or the necessary info to build one, including a {@link MessageClass} and Message type along
+   *     with any payload (any serializable object). Sending a {@link Notification} should
    *     automatically promote it to a suitable logging message and enforce any logging level
    *     filtering configured. If the {@link MessageClass#ActorCommunication} is passed and an agent
    *     is embedded in the scope, the message will be sent to the agent.

@@ -1,0 +1,21 @@
+behavior test.can
+    "Description"
+	version 1.0
+	using
+		core.timer as timer, // enable core.* and maybe make it default?
+		core.console as console
+
+// simplest verb call with double event binding, one internal, one external
+action main:
+	console.print("Outside group")
+    (
+        console.println("Inside level 1/1")
+        console.println("Inside level 1/2")
+        console.println("Inside level 1/3")
+        (
+        	console.println("Inside level 2/1")
+        	console.println("Inside level 2/2")
+
+        )
+    ) :meta can
+

@@ -4250,8 +4250,8 @@ public class Utils {
 
     private static CharSequence toString(Object object) {
       // TODO can be smarter about arrays and the like
-      if (object instanceof KActorsValue) {
-        object = ((KActorsValue) object).getStatedValue();
+      if (object instanceof KActorsValue kValue) {
+        object = kValue.getValue(Object.class);
       } else if (object instanceof Classifier) {
         object = ((Classifier) object).getSourceCode();
       }

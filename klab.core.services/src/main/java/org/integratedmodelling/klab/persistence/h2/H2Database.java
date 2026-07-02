@@ -41,20 +41,17 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.sql.PooledConnection;
-
 import org.h2.engine.Constants;
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2gis.functions.factory.H2GISFunctions;
-import org.h2gis.utilities.JDBCUtilities;
 import org.h2gis.utilities.SFSUtilities;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Schema;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Serializer;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -62,7 +59,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 /**
  * A wrapper to simplify the use of a H2 database. Can be used with formally
  * specified schemata for multiple tables (rather obsoleted in design) or with
- * newer {@link IStructuredTable} interface when the structure is simple. The
+ * newer interface when the structure is simple. The
  * kboxes use the old structure, so that will remain until we reimplement them.
  * 
  * DEBUG: H2 URL for kbox "local_ferdinando.villa_un.seea.cf_seea.cf.supply"

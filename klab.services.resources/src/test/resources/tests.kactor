@@ -1,0 +1,113 @@
+behavior example
+	"Description" 
+	version 1.0
+	using 
+		core.timer as timer, // enable core.* and maybe make it default?
+		hm.raster as grids,
+		core.filesystem as io, // core. should be automatically imported
+		core.console as console,
+		core.ui as ui,
+		core.logger as log
+		
+// Test: actions (w and w/o parameters); verbs w/wout params; groups; metadata and tag for all. 
+// Then the rest. 
+
+action main:
+	emitter: sentence -> console.print(["Emitter said " + sentence])
+	functor: x -> console.print(sentence)  // should complain about sentence undef
+	for x in 1 to 10 (
+		zib(x)
+		zab(x)
+	)
+	assert [porcodio] :fail "Hostia" :dui :lu
+
+// a functor. Even without a return instruction, the action won't leave a reactor unless it has 
+// something that waits. If so, it's there forever unless in scripts, where it ends at the last 
+// instruction. When used as a reactor verb, return means fire to the upper-level context, then 
+// disappear.
+action functor:
+	console.print("Dio porco ho bestemmiato, dio can")
+	return "dio can"
+
+// an emitter (fires periodically, no return, continues firing)
+action emitter:
+	timer.random(step=10.s): time -> fire "dio puto"
+
+// reactor behavior: return is in the listener, exits action and removes listener when matched
+
+
+// group in group
+action groupingroup:
+	(
+		dio 
+		tromba 
+		(
+			porco
+			bue
+		)
+		
+	)
+
+@test
+action test:
+
+	// type prefix means constructor and 'dt' is an agent, automatically assigned. 
+	// Verbs are assigned based on type. Actions may follow immediately or later. Should have
+	// a "use <type> (as 'alias')?" mechanism allowing ambiguities; using a full class path 
+	// for straight Java matching is ugly and not feasible for parsing
+	DigitalTwin dt(dio=can)
+	
+	france <- dt.observe('staging.vxii.basic.regions.france', year=2011)
+	
+	
+	klab.new: 
+		def dt $  // comma means: wait for fire of group before invoking next (removing the trigger)
+ 	dt.observe('staging.vxii.basic.testobserver'): 
+ 		def observer $
+	dt.observe('staging.vxii.basic.testregion' :observer observer): 
+		def region $
+
+	assert [hasData(region.elevation)],
+		   [hasData(region.slope)]
+		:success ""
+		:fail ""
+
+	for 1 to 10 sborra
+
+	dt.close
+	
+@sburbo
+action vaca(a, b):
+
+	a <- 1
+	b <- dio
+
+	assert [b == 'dio'], [a == 1]
+		:fail "puto can" 
+		:success "aha"
+
+	fail "" :diocan {{ earth:Region }}
+	
+	a <- 2
+	dio(farf)
+	
+	a <- 2
+	can: (
+		a -> d
+		n -> q(can)
+	)
+	(
+		z <- 3
+		dio :bue
+	) :crosta true
+	
+	z <- 1
+	porco(a=3, b=3): (
+		# -> (can pbe)
+		a -> can
+	)
+	( 
+		porco
+	) :cul #dd
+	
+	a <- 2

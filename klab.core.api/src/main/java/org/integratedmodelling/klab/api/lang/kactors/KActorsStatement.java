@@ -85,6 +85,10 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
+    interface Return extends KActorsStatement {
+        KActorsValue getValue();
+    }
+
     interface Do extends KActorsStatement {
 
         KActorsValue getCondition();
@@ -96,6 +100,11 @@ public interface KActorsStatement extends KActorsCodeStatement {
     interface Fail extends KActorsStatement {
         String getMessage();
     }
+
+    interface Constructor extends KActorsStatement {
+        String getMessage();
+    }
+
 
     interface Break extends KActorsStatement {
 
@@ -120,7 +129,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
              *
              * @return
              */
-            List<Call> getCalls();
+            List<Verb> getCalls();
 
             /**
              * Expression to use as left side of assertion
@@ -262,7 +271,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    interface Call extends KActorsStatement {
+    interface Verb extends KActorsStatement {
 
         /**
          * @return
@@ -315,7 +324,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
          *
          * @return
          */
-        List<Call> getChainedCalls();
+        List<Verb> getChainedCalls();
 
     }
 

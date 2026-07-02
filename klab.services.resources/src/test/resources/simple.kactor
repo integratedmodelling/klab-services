@@ -1,0 +1,14 @@
+behavior test.main
+    "Description"
+	version 1.0
+	using
+		core.timer as timer, // enable core.* and maybe make it default?
+		core.console as console
+
+// simplest verb call with double event binding, one internal, one external
+action main:
+    emitter: sentence -> console.format("Emitter said %s", sentence)
+
+// an emitter (fires periodically, no return, continues firing)
+action emitter:
+    timer.random(:step 10.s): time -> fire "dio pollo"

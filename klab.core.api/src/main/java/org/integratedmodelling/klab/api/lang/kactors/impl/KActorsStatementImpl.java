@@ -38,7 +38,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   @Override
   public void visit(Visitor visitor) {}
 
-  public static class CallImpl extends KActorsStatementImpl implements KActorsStatement.Call {
+  public static class VerbImpl extends KActorsStatementImpl implements Verb {
 
     @Serial private static final long serialVersionUID = -8705959693429812179L;
 
@@ -49,7 +49,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private String message;
     private Parameters<String> arguments;
     private List<Triple<KActorsValue, KActorsStatement, String>> actions = new ArrayList<>();
-    private List<Call> chainedCalls = new ArrayList<>();
+    private List<Verb> chainedVerbs = new ArrayList<>();
 
     public void setType(Type type) {
       this.type = type;
@@ -79,8 +79,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.actions = actions;
     }
 
-    public void setChainedCalls(List<Call> chainedCalls) {
-      this.chainedCalls = chainedCalls;
+    public void setChainedCalls(List<Verb> chainedVerbs) {
+      this.chainedVerbs = chainedVerbs;
     }
 
     @Override
@@ -119,8 +119,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
 
     @Override
-    public List<Call> getChainedCalls() {
-      return this.chainedCalls;
+    public List<Verb> getChainedCalls() {
+      return this.chainedVerbs;
     }
 
     @Override
@@ -143,7 +143,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
       private Type type = Type.ASSERTION;
 
-      private List<Call> calls;
+      private List<Verb> verbs;
       private KActorsValue expression;
       private KActorsValue value;
 
@@ -153,8 +153,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       }
 
       @Override
-      public List<Call> getCalls() {
-        return this.calls;
+      public List<Verb> getCalls() {
+        return this.verbs;
       }
 
       @Override
@@ -171,8 +171,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
         this.type = type;
       }
 
-      public void setCalls(List<Call> calls) {
-        this.calls = calls;
+      public void setCalls(List<Verb> verbs) {
+        this.verbs = verbs;
       }
 
       public void setExpression(KActorsValue expression) {
@@ -400,6 +400,32 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Override
     public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
+  }
+
+  public static class ConstructorImpl extends KActorsStatementImpl implements KActorsStatement.Constructor {
+
+    @Override
+    public String getMessage() {
+      return "";
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
+  }
+
+  public static class ReturnImpl extends KActorsStatementImpl implements KActorsStatement.Return {
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
+
+    @Override
+    public KActorsValue getValue() {
       return null;
     }
   }

@@ -1,7 +1,16 @@
 package org.integratedmodelling.klab.runtime.kactors.compiler;
 
+import com.palantir.javapoet.FieldSpec;
+import com.palantir.javapoet.JavaFile;
+import com.palantir.javapoet.MethodSpec;
+import com.palantir.javapoet.TypeSpec;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.lang.model.element.Modifier;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -14,6 +23,8 @@ public class AgentCompiler {
 
   private KActorsBehavior behavior;
   private UserScope scope;
+  private String packageName = "org.integratedmodelling.klab.runtime.kactors.generated";
+  private String sourceCode;
 
   public AgentCompiler(String behaviorUrn, UserScope scope) {
     this.scope = scope;
@@ -24,12 +35,37 @@ public class AgentCompiler {
             .retrieve(behaviorUrn, KActorsBehavior.class, scope);
   }
 
+  public AgentCompiler(KActorsBehavior behavior, UserScope scope) {
+    this.scope = scope;
+    this.behavior = behavior;
+  }
+
+  /**
+   * For testing only!
+   *
+   * @param behavior
+   */
+  public AgentCompiler(KActorsBehavior behavior) {
+    this.scope = null;
+    this.behavior = behavior;
+  }
+
   public boolean compile() {
 
     // TODO use versions intelligently. All versions should have the timestamp of the behavior.
     // TODO store the behavior's last update timestamp in a separate hash and re-compile if it's
     //  different.
     var existing = compiledActorClasses.get(behavior.getUrn());
+
+    if (existing != null) {
+      return true;
+    }
+
+    var compiled = compileBehavior(behavior);
+    if (compiled != null) {
+      compiledActorClasses.put(behavior.getUrn(), compiled);
+      return true;
+    }
 
     return false;
   }
@@ -57,6 +93,47 @@ public class AgentCompiler {
   ///         add the call in asyncRun or completable future consequence to the main code buffer
   ///
   private Class<? extends AgentBase> compileBehavior(KActorsBehavior behavior) {
+
+    var classFile = generateClass(behavior);
+    if (classFile != null) {
+      Logging.INSTANCE.info("Generated class: " + classFile.typeSpec().name());
+      sourceCode = classFile.toString();
+      // TODO compile, load and return the class
+    }
+
     return null;
+  }
+
+  /**
+   * After successful compilation, the source code can be retrieved.
+   *
+   * @return
+   */
+  public String getSourceCode() {
+    return sourceCode;
+  }
+
+  private JavaFile generateClass(KActorsBehavior behavior) {
+
+    var className = Utils.CamelCase.toUpperCamelCase(behavior.getUrn(), '.');
+    var packageName = "org.integratedmodelling.klab.runtime.kactors.generated";
+    List<MethodSpec> methods = new ArrayList<>();
+    List<FieldSpec> fields = new ArrayList<>();
+
+    var analyzer = new BehaviorAnalyzer(behavior);
+    if (Utils.Notifications.hasErrors(analyzer.getNotifications())) {
+      // TODO notify somehow
+      return null;
+    }
+
+    var classSpec =
+        TypeSpec.classBuilder(className)
+            .superclass(analyzer.getAgentClass())
+            .addFields(fields)
+            .addMethods(methods)
+            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+            .build();
+
+    return JavaFile.builder(packageName, classSpec).build();
   }
 }

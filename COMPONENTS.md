@@ -55,7 +55,7 @@ bring any combination of these.
 
 ### Libraries
 
-A library is a namespace for k.LAB service calls and language extensions. It can define:
+A library is a namespace for k.LAB service verbs and language extensions. It can define:
 
 - k.IM, observation-language, or runtime functions through `@KlabFunction`.
 - k.Actors verbs through `@Verb`.
@@ -164,7 +164,7 @@ descriptor records:
 - The source service id, when applicable.
 - The registration or update timestamp.
 
-The descriptor is saved to `catalog.json` and indexed by contribution type. Service calls,
+The descriptor is saved to `catalog.json` and indexed by contribution type. Service verbs,
 adapters, annotations, verbs, importers, and exporters can then be resolved by name. When more than
 one descriptor can satisfy a request, the registry prefers the highest version compatible with the
 requested version. Exact version requests are matched exactly.
@@ -190,7 +190,7 @@ For predictable maintenance:
 - Use `-SNAPSHOT` only for components that are expected to change in place.
 - Set `Plugin-Requires` narrowly enough to prevent loading against incompatible k.LAB releases.
 - Keep the PF4J plug-in id stable across versions of the same component.
-- Use unique names for libraries, actors, adapters, and service calls.
+- Use unique names for libraries, actors, adapters, and service verbs.
 
 Side-by-side descriptors for multiple component versions can exist in the catalog, but PF4J plug-in
 ids are unique in the running plug-in manager. In practice, the runtime should be maintained as one
@@ -204,7 +204,7 @@ SNAPSHOT components.
 
 ### Manual Direct Update
 
-Upload a new `.kar` archive with `component.kar.import`, or use the service path that calls the
+Upload a new `.kar` archive with `component.kar.import`, or use the service path that verbs the
 same importer. This is the right path for local development builds, private hand-offs, and
 components that are not published to Maven.
 

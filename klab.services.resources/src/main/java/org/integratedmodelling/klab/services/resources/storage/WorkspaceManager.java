@@ -3103,7 +3103,7 @@ public class WorkspaceManager {
     return unresolvedProjects;
   }
 
-  private abstract static class Parser<T extends EObject> {
+  public abstract static class Parser<T extends EObject> {
 
     @Inject protected IParser parser;
 
