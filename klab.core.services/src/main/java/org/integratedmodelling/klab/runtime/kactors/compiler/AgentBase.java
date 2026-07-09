@@ -157,6 +157,15 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
       this.sessionScope = scope;
     }
     this.rootScope = initializeScope();
+
+    /*
+     * TODO there should be a maintained Status object that can be sent when a status message is
+     *  received. These messages should be `this.xxxx` and be pre-defined and imported; overriding
+     *  should come with a warning.
+     *
+     * The minimal CLI that can be compiled into the agent should allow for start, stop, and status at
+     * a minimum.
+     */
   }
 
   protected AgentScope initializeScope() {
@@ -188,14 +197,15 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
-   * An Actor can send a message to this actor using this. If a response is expected, the sender can
-   * add a message consumer which may be called or not.
+   * Code with this Agent's handle can send a message to this. If a response is
+   * expected, the sender can add a message consumer which may be called or not.
    *
    * @param message
    * @param sender
    * @param responseConsumer pass null if no response is expected
    */
   public void send(Message message, Agent sender, Consumer<Message> responseConsumer) {
+    // TODO handle installed actions and core pre-defined ones ("status", "stop")
     throw new UnsupportedOperationException("not implemented");
   }
 

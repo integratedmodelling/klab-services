@@ -11,16 +11,16 @@ import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 ///
 ///
 /// ```
-/// behavior test.main;
-///
-/// action main:
-///    emitter: sentence -> console.format("Emitter said %s", sentence)
-///
-///  // an emitter (fires periodically, no return, continues firing)
-/// action emitter:
-///         timer.random(step=10.s): time -> fire "dio puto"
+
 /// ```
-///
+////// behavior test.main;
+/// ///
+/// /// action main:
+/// ///    emitter: sentence -> console.format("Emitter said %s", sentence)
+/// ///
+/// ///  // an emitter (fires periodically, no return, continues firing)
+/// /// action emitter:
+/// ///         timer.random(step=10.s): time -> fire "dio puto"
 /// This must be created by the actor compiler and compiled to a .class internally.
 /// Actors that do not return must be run within an asynchronous container to work
 /// properly.

@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -40,13 +42,63 @@ public class CoreActorLibrary {
     }
   }
 
+  public static class File {
+
+  }
+
+  // TODO non-static context actor that instruments the ContextScope
+  // suppliers wrapping submit()
+  // emitters for KG commits including matchers to select KG objects
+  // emitters for failed observations and activities
+  // (enum args matched to constants with lexical analysis)
+  public static class Context {
+
+  }
+
+
+  @Actor(name = "log", description = "Logging actor")
+  public static class Logger {
+
+    // TODO info, warn, error, debug
+
+    // TODO emitter that catches log entries from the code with pattern
+
+  }
+
+  /** TODO: timer.at(datetime-string) timer.in(duration-string, quantity) */
   @Actor(name = "timer", description = "Time event generator")
   public static class Timer {
 
-    // return value being a Future means this is an emitter that stays until canceled through a
-    // done() or failure() sent to the scope. If static, no need to instantiate the object.
-    @Verb(name = "tick", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
-    public static boolean random(Agent.Scope scope, TimeUnit unit, long amount) {
+    /**
+     * Supplier of an object at given time. Objects that are not constants must be dereferenced when
+     * supplied.
+     *
+     * @param time
+     * @param object
+     * @return
+     * @param <T>
+     */
+    @Verb(name = "at", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    public static <T> CompletableFuture<T> at(Agent.Scope scope, TimeInstant time, T object) {
+      return null;
+    }
+
+    /**
+     * Supplier of an object after a given interval from method call. Objects that are not constants
+     * must be dereferenced when supplied.
+     *
+     * @param time
+     * @param object
+     * @return
+     * @param <T>
+     */
+    @Verb(name = "in", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    public static <T> CompletableFuture<T> in(Agent.Scope scope, TimeDuration time, T object) {
+      return null;
+    }
+
+    @Verb(name = "tick", fires = TimeInstant.class)
+    public static void random(Agent.Scope scope, TimeUnit unit, long amount) {
 
       var timer = new java.util.Timer();
       TimerTask task =
@@ -70,7 +122,6 @@ public class CoreActorLibrary {
         scope.done(e);
       }
       timer.cancel();
-      return false;
     }
   }
 }
