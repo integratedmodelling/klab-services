@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 
 /** Analyze the behavior and collect infomation for code generation. */
 public class BehaviorAnalyzer {

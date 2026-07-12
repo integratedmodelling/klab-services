@@ -1,19 +1,13 @@
 package org.integratedmodelling.klab.runtime.kactors.tests;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.runtime.kactors.actors.ContextActor;
-import org.integratedmodelling.klab.runtime.kactors.actors.Inspector;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
-import org.integratedmodelling.klab.runtime.kactors.compiler.TestCaseBase;
+import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 
 /**
  * TEMPORARY CLASS FOR TESTING Manually worked out translation of a k.Actors script

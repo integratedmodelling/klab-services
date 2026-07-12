@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.compiler;
+package org.integratedmodelling.klab.runtime.kactors;
 
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;

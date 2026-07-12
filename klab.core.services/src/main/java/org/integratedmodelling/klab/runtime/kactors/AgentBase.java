@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.compiler;
+package org.integratedmodelling.klab.runtime.kactors;
 
 import groovy.lang.GroovyObjectSupport;
 import java.net.URL;

@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.runtime.kactors.compiler.AgentBase;
+import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 

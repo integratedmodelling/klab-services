@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.compiler;
+package org.integratedmodelling.klab.runtime.kactors;
 
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;

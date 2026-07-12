@@ -161,7 +161,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    *
    * @return
    */
-  Type getType();
+  Type getBehaviorType();
 
   /**
    * If this is an app, return the platform this is specialized for, which may be ANY. For any other

@@ -1167,6 +1167,7 @@ public enum LanguageAdapter {
     var ret = new KActorsBehaviorImpl();
     ret.setUrn(name);
     ret.setLastUpdateTimestamp(timestamp);
+    ret.setDescription(syntax.getDocstring());
 
     for (var action : syntax.getActions()) {
       ret.getStatements().add(adaptAction(action, name, projectName, notifications));

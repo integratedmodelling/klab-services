@@ -39,7 +39,7 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
   }
 
   @Override
-  public Type getType() {
+  public Type getBehaviorType() {
     return this.type;
   }
 

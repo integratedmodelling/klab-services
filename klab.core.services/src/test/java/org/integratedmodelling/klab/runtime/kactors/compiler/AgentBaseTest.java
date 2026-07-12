@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
 import org.junit.jupiter.api.Test;
 

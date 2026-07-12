@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.compiler;
+package org.integratedmodelling.klab.runtime.kactors;
 
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;

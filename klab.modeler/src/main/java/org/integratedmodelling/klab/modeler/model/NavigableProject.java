@@ -184,11 +184,11 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
     var folderName =
         switch (document) {
           case KActorsBehavior behavior -> {
-            if (behavior.getType() == KActorsBehavior.Type.APP) {
+            if (behavior.getBehaviorType() == KActorsBehavior.Type.APP) {
               yield AppFolder.TITLE;
-            } else if (behavior.getType() == KActorsBehavior.Type.SCRIPT) {
+            } else if (behavior.getBehaviorType() == KActorsBehavior.Type.SCRIPT) {
               yield ScriptFolder.TITLE;
-            } else if (behavior.getType() == KActorsBehavior.Type.UNITTEST) {
+            } else if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
               yield TestCaseFolder.TITLE;
             }
             yield null;
@@ -213,14 +213,14 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
       existing =
           switch (document) {
             case KActorsBehavior behavior -> {
-              if (behavior.getType() == KActorsBehavior.Type.APP) {
+              if (behavior.getBehaviorType() == KActorsBehavior.Type.APP) {
                 yield new AppFolder(this);
-              } else if (behavior.getType() == KActorsBehavior.Type.SCRIPT) {
+              } else if (behavior.getBehaviorType() == KActorsBehavior.Type.SCRIPT) {
                 yield new ScriptFolder(this);
-              } else if (behavior.getType() == KActorsBehavior.Type.UNITTEST) {
+              } else if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
                 yield new TestCaseFolder(this);
               }
-              throw new KlabInternalErrorException("cannot handle " + behavior.getType());
+              throw new KlabInternalErrorException("cannot handle " + behavior.getBehaviorType());
             }
             case KimObservationStrategyDocument strategy -> new ObservationStrategiesFolder(this);
             default -> throw new KlabInternalErrorException("cannot handle " + document.getClass());

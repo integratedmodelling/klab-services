@@ -209,7 +209,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
   public NavigableProject project() {
     var parent = this.parent();
-    while (parent instanceof NavigableKlabAsset asset && !(parent instanceof NavigableProject)) {
+    while (parent instanceof NavigableKlabAsset<?> asset && !(parent instanceof NavigableProject)) {
       parent = asset.parent();
     }
     return (NavigableProject) parent;
@@ -219,7 +219,15 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     return switch (this) {
       case NavigableKimOntology doc -> KnowledgeClass.ONTOLOGY;
       case NavigableKimNamespace doc -> KnowledgeClass.NAMESPACE;
-      // TODO behaviors 		case NavigableKimOntology doc -> KlabAsset.KnowledgeClass.BEHAVIOR;
+      case NavigableKActorsBehavior doc ->
+          switch (doc.getBehaviorType()) {
+            case BEHAVIOR, USER -> KnowledgeClass.BEHAVIOR;
+            case APP -> KnowledgeClass.APPLICATION;
+            case TRAITS, COMPONENT -> KnowledgeClass.COMPONENT;
+            case UNITTEST -> KnowledgeClass.TESTCASE;
+            case SCRIPT -> KnowledgeClass.SCRIPT;
+            default -> throw new UnsupportedOperationException("unexpected behavior type");
+          };
       default -> throw new UnsupportedOperationException("unexpected resource type");
     };
   }
