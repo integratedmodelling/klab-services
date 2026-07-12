@@ -13,7 +13,4 @@ public abstract class KActorsCodeStatementImpl extends KimStatementImpl
     return tag;
   }
 
-  public void setTag(String tag) {
-    this.tag = tag;
-  }
 }

@@ -15,331 +15,309 @@ import org.integratedmodelling.klab.api.data.Metadata;
  */
 public interface KActorsStatement extends KActorsCodeStatement {
 
-    enum Type {
-        ACTION_CALL,
-        IF_STATEMENT,
-        FOR_STATEMENT,
-        DO_STATEMENT,
-        WHILE_STATEMENT,
-        TEXT_BLOCK,
-        FIRE_VALUE,
-        ASSIGNMENT,
-        CONCURRENT_GROUP,
-        SEQUENCE,
-        INSTANTIATION,
-        ASSERT_STATEMENT,
-        ASSERTION,
-        FAIL_STATEMENT,
-        BREAK_STATEMENT
-    }
+  enum Type {
+    ACTION_CALL,
+    IF_STATEMENT,
+    FOR_STATEMENT,
+    DO_STATEMENT,
+    WHILE_STATEMENT,
+    TEXT_BLOCK,
+    FIRE_VALUE,
+    ASSIGNMENT,
+    CONCURRENT_GROUP,
+    SEQUENCE,
+    INSTANTIATION,
+    ASSERT_STATEMENT,
+    ASSERTION,
+    FAIL_STATEMENT,
+    BREAK_STATEMENT
+  }
 
-    interface If extends KActorsStatement {
+  interface If extends KActorsStatement {
 
-        KActorsValue getCondition();
+    KActorsValue getCondition();
 
-        KActorsStatement getThenBody();
+    KActorsStatement getThenBody();
 
-        List<Pair<KActorsValue, KActorsStatement>> getElseIfs();
+    List<Pair<KActorsValue, KActorsStatement>> getElseIfs();
 
-        KActorsStatement getElseBody();
+    KActorsStatement getElseBody();
+  }
 
-    }
+  /**
+   * Argument lists can be extended with metadata
+   *
+   * @author mario
+   */
+  interface Arguments extends Parameters<String> {
 
-    /**
-     * Argument lists can be extended with metadata
-     *
-     * @author mario
-     */
-    interface Arguments extends Parameters<String> {
+    List<String> getMetadataKeys();
+  }
 
-        List<String> getMetadataKeys();
-    }
+  interface ConcurrentGroup extends KActorsStatement {
 
-    interface ConcurrentGroup extends KActorsStatement {
+    public List<KActorsStatement> getStatements();
 
-        public List<KActorsStatement> getStatements();
-
-        Map<String, KActorsValue> getGroupMetadata();
-
-        /**
-         * Actions with the corresponding pattern to match to fired values. If the value is null, any fired
-         * values matches.
-         *
-         * @return
-         */
-        List<Pair<KActorsValue, KActorsStatement>> getGroupActions();
-
-    }
-
-    interface Sequence extends KActorsStatement {
-
-        public List<KActorsStatement> getStatements();
-
-    }
-
-    interface While extends KActorsStatement {
-
-        KActorsValue getCondition();
-
-        KActorsStatement getBody();
-
-    }
-
-    interface Return extends KActorsStatement {
-        KActorsValue getValue();
-    }
-
-    interface Do extends KActorsStatement {
-
-        KActorsValue getCondition();
-
-        KActorsStatement getBody();
-
-    }
-
-    interface Fail extends KActorsStatement {
-        String getMessage();
-    }
-
-    interface Constructor extends KActorsStatement {
-        String getMessage();
-    }
-
-
-    interface Break extends KActorsStatement {
-
-    }
+    Map<String, KActorsValue> getGroupMetadata();
 
     /**
-     * Assertions have either a (chain of) method calls or one expression to be evaluated in context.
-     *
-     * @author Ferd
-     */
-    interface Assert extends KActorsStatement {
-
-        /**
-         * Assertions are a chain of calls or an expression with an optional comparison value.
-         *
-         * @author Ferd
-         */
-        interface Assertion extends KActorsStatement {
-
-            /**
-             * Call chain whose final result will be compared with the value.
-             *
-             * @return
-             */
-            List<Verb> getCalls();
-
-            /**
-             * Expression to use as left side of assertion
-             *
-             * @return
-             */
-            KActorsValue getExpression();
-
-            /**
-             * Value to compare with (null == 'empty' is a legitimate value producing a non-null
-             * IKActorsValue). If null, we are just asserting the absence of errors and that something
-             * non-null and non-false was returned in case there is a return value.
-             *
-             * @return
-             */
-            KActorsValue getValue();
-        }
-
-        /**
-         * Arguments, possibly empty. Used for targeting, filtering and the like.
-         *
-         * @return
-         */
-        Parameters<String> getArguments();
-
-        /**
-         * All the assertions subsumed by the statement. Arguments apply to all of them.
-         *
-         * @return
-         */
-        List<Assertion> getAssertions();
-
-    }
-
-    /**
-     * for variable in iterable (body)
-     *
-     * @author Ferd
-     */
-    interface For extends KActorsStatement {
-
-        String getVariable();
-
-        KActorsValue getIterable();
-
-        KActorsStatement getBody();
-
-    }
-
-    interface Assignment extends KActorsStatement {
-
-        enum Scope {
-            ACTOR,
-            ACTION,
-            FRAME
-        }
-
-        /**
-         * Recipient is the part before the dot if set x.y value is issued. It may be null (local variable in
-         * the internal actor's symbols), refer to the state of another actor, or be 'self' which means the
-         * value is published to the state of the k.LAB identity connected to the actor, not to the internal
-         * actor's state. It's not possible to touch the state of an identity connected to another actor.
-         *
-         * @return
-         */
-        String getRecipient();
-
-        /**
-         * Variable, which may or may not be prefixed with a recipient.
-         *
-         * @return
-         */
-        String getVariable();
-
-        /**
-         * The value to set the variable to, which will be evaluated in the scope of the recipient executing
-         * the set statement.
-         *
-         * @return
-         */
-        KActorsValue getValue();
-
-        /**
-         * Get the scope. Actor, action or block
-         *
-         * @return
-         */
-        Scope getAssignmentScope();
-    }
-
-    interface FireValue extends KActorsStatement {
-
-        KActorsValue getValue();
-
-    }
-
-    interface TextBlock extends KActorsStatement {
-
-        String getText();
-
-    }
-
-    interface Instantiation extends KActorsStatement {
-
-        /**
-         * The behavior for the new actor
-         *
-         * @return
-         */
-        String getBehavior();
-
-        /**
-         * Arguments, possibly empty, for the main action. Should include a tag if the actor must be
-         * referenced.
-         *
-         * @return
-         */
-        Parameters<String> getArguments();
-
-        /**
-         * Actions with the corresponding pattern to match values fired by the child actor. The third element
-         * is the match ID to associate with the result, which may be null (and should be set to "$" if so).
-         *
-         * @return
-         */
-        List<Triple<KActorsValue, KActorsStatement, String>> getActions();
-
-        /**
-         * Each instantiation action needs a name to reference the actor, so that the parent actors can
-         * dispatch messages to children appropriately when the actors create external controllers such as
-         * view components. If the instantiation is called more than once, the path will have a 1-based index
-         * appended after an underscore, so that any actors created in a loop can be differentiated. This gets
-         * renamed to the tag if the parameters contain one.
-         *
-         * @return the base name - either the tag assigned in the parameters or an automatically generated
-         * one.
-         */
-        String getActorBaseName();
-
-    }
-
-    interface Verb extends KActorsStatement {
-
-        /**
-         * @return
-         * @Override Each call statement has a unique ID, so that we can cache its execution strategy for
-         * repeated executions.
-         */
-        String getCallId();
-
-        /**
-         * If group != null, the call message will be null and the actions will react to the firing of any of
-         * the messages in the group.
-         *
-         * @return
-         */
-        ConcurrentGroup getGroup();
-
-        /**
-         * Parsed after checking with the loaded behavior manifest unless there is an explicit recipient. If
-         * the message is unrecognized this will be null and the engine will have to match it.
-         *
-         * @return
-         */
-        String getRecipient();
-
-        /**
-         * The message ID. Must contain the recipient when understood through behavior manifest.
-         *
-         * @return
-         */
-        String getMessage();
-
-        /**
-         * Arguments, possibly empty.
-         *
-         * @return
-         */
-        Parameters<String> getArguments();
-
-        /**
-         * Actions with the corresponding pattern to match to fired values. If the value is null, any fired
-         * values matches.
-         *
-         * @return
-         */
-        List<Triple<KActorsValue, KActorsStatement, String>> getActions();
-
-        /**
-         * The top-level action call in a statement may be preceded by any number of chained functional calls
-         * that modify the scope for execution.
-         *
-         * @return
-         */
-        List<Verb> getChainedCalls();
-
-    }
-
-    /**
-     * According to type, this statement can be cast to one of the above interfaces.
+     * Actions with the corresponding pattern to match to fired values. If the value is null, any
+     * fired values matches.
      *
      * @return
      */
-    Type getType();
+    List<Pair<KActorsValue, KActorsStatement>> getGroupActions();
+  }
+
+  interface Sequence extends KActorsStatement {
+
+    public List<KActorsStatement> getStatements();
+  }
+
+  interface While extends KActorsStatement {
+
+    KActorsValue getCondition();
+
+    KActorsStatement getBody();
+  }
+
+  interface Return extends KActorsStatement {
+    KActorsValue getValue();
+  }
+
+  interface Do extends KActorsStatement {
+
+    KActorsValue getCondition();
+
+    KActorsStatement getBody();
+  }
+
+  interface Fail extends KActorsStatement {
+    String getMessage();
+  }
+
+  interface Break extends KActorsStatement {}
+
+  /**
+   * Assertions have either a (chain of) method calls or one expression to be evaluated in context.
+   *
+   * @author Ferd
+   */
+  interface Assert extends KActorsStatement {
 
     /**
-     * All statements can receive metadata from the code using the metadata tags
+     * Assertions are a chain of calls or an expression with an optional comparison value.
+     *
+     * @author Ferd
+     */
+    interface Assertion extends KActorsStatement {
+
+      /**
+       * Call chain whose final result will be compared with the value.
+       *
+       * @return
+       */
+      List<Verb> getCalls();
+
+      /**
+       * Expression to use as left side of assertion
+       *
+       * @return
+       */
+      KActorsValue getExpression();
+
+      /**
+       * Value to compare with (null == 'empty' is a legitimate value producing a non-null
+       * IKActorsValue). If null, we are just asserting the absence of errors and that something
+       * non-null and non-false was returned in case there is a return value.
+       *
+       * @return
+       */
+      KActorsValue getValue();
+    }
+
+    /**
+     * Arguments, possibly empty. Used for targeting, filtering and the like.
      *
      * @return
      */
-    Metadata getMetadata();
+    Parameters<String> getArguments();
 
+    /**
+     * All the assertions subsumed by the statement. Arguments apply to all of them.
+     *
+     * @return
+     */
+    List<Assertion> getAssertions();
+  }
+
+  /**
+   * for variable in iterable (body)
+   *
+   * @author Ferd
+   */
+  interface For extends KActorsStatement {
+
+    String getVariable();
+
+    KActorsValue getIterable();
+
+    KActorsStatement getBody();
+  }
+
+  interface Assignment extends KActorsStatement {
+
+    enum Scope {
+      ACTOR,
+      ACTION,
+      FRAME
+    }
+
+    /**
+     * Recipient is the part before the dot if set x.y value is issued. It may be null (local
+     * variable in the internal actor's symbols), refer to the state of another actor, or be 'self'
+     * which means the value is published to the state of the k.LAB identity connected to the actor,
+     * not to the internal actor's state. It's not possible to touch the state of an identity
+     * connected to another actor.
+     *
+     * @return
+     */
+    String getRecipient();
+
+    /**
+     * Variable, which may or may not be prefixed with a recipient.
+     *
+     * @return
+     */
+    String getVariable();
+
+    /**
+     * The value to set the variable to, which will be evaluated in the scope of the recipient
+     * executing the set statement.
+     *
+     * @return
+     */
+    KActorsValue getValue();
+
+    /**
+     * Get the scope. Actor, action or block
+     *
+     * @return
+     */
+    Scope getAssignmentScope();
+  }
+
+  interface FireValue extends KActorsStatement {
+
+    KActorsValue getValue();
+  }
+
+  interface TextBlock extends KActorsStatement {
+
+    String getText();
+  }
+
+  interface Instantiation extends KActorsStatement {
+
+    /**
+     * The behavior for the new actor
+     *
+     * @return
+     */
+    String getBehavior();
+
+    /**
+     * Arguments, possibly empty, for the main action. Should include a tag if the actor must be
+     * referenced.
+     *
+     * @return
+     */
+    Parameters<String> getArguments();
+
+    /**
+     * Actions with the corresponding pattern to match values fired by the child actor. The third
+     * element is the match ID to associate with the result, which may be null (and should be set to
+     * "$" if so).
+     *
+     * @return
+     */
+    List<Triple<KActorsValue, KActorsStatement, String>> getActions();
+
+    /**
+     * Each instantiation action needs a name to reference the actor, so that the parent actors can
+     * dispatch messages to children appropriately when the actors create external controllers such
+     * as view components. If the instantiation is called more than once, the path will have a
+     * 1-based index appended after an underscore, so that any actors created in a loop can be
+     * differentiated. This gets renamed to the tag if the parameters contain one.
+     *
+     * @return the base name - either the tag assigned in the parameters or an automatically
+     *     generated one.
+     */
+    String getActorBaseName();
+  }
+
+  interface Verb extends KActorsStatement {
+
+    /**
+     * Parsed after checking with the loaded behavior manifest unless there is an explicit
+     * recipient. If the message is unrecognized this will be null and the engine will have to match
+     * it.
+     *
+     * @return
+     */
+    String getRecipient();
+
+    /**
+     * The message ID. Must contain the recipient when understood through behavior manifest.
+     *
+     * @return
+     */
+    String getMessage();
+
+    /**
+     * Arguments, possibly empty.
+     *
+     * @return
+     */
+    Parameters<String> getArguments();
+
+    /**
+     * Actions with the corresponding pattern to match to fired values. If the value is null, any
+     * fired values matches.
+     *
+     * @return
+     */
+    List<Triple<KActorsValue, KActorsStatement, String>> getActions();
+  }
+
+  /**
+   * If not null, this statement was tagged with a <code>#name</code> tag.
+   *
+   * @return
+   */
+  String getTag();
+
+  /**
+   * According to type, this statement can be cast to one of the above interfaces.
+   *
+   * @return
+   */
+  Type getType();
+
+  /**
+   * If true, this statement was preceded by <code>then</code> in the code, meaning it must wait for
+   * the previous supplier or group thereof to supply their value before being executed. Using this
+   * out of context should result in a warning.
+   *
+   * @return
+   */
+  boolean isSequential();
+
+  /**
+   * All statements can receive metadata from the code using the metadata tags. Metadata may be PODs
+   * or {@link KActorsValue}s.
+   *
+   * @return
+   */
+  Metadata getMetadata();
 }

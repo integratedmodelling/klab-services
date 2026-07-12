@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -1191,7 +1192,7 @@ public enum LanguageAdapter {
   private KActorsStatement adaptActionStatement(
       ActionStatementSyntax statement, List<Notification> notifications) {
     // TODO
-    return switch (statement) {
+    var ret = switch (statement) {
       case ActionStatementSyntax.Assert assertion -> adaptAssert(assertion, notifications);
       case ActionStatementSyntax.Assignment assign -> adaptAssign(assign, notifications);
       case ActionStatementSyntax.Verb verbStatement -> adaptVerb(verbStatement, notifications);
@@ -1206,15 +1207,14 @@ public enum LanguageAdapter {
       case ActionStatementSyntax.Fail failStatement -> adaptFail(failStatement, notifications);
       case ActionStatementSyntax.Break breakStatement -> adaptBreak(breakStatement, notifications);
       case ActionStatementSyntax.Group groupStatement -> adaptGroup(groupStatement, notifications);
-      case ActionStatementSyntax.Constructor constructorStatement ->
-          adaptConstructor(constructorStatement, notifications);
-      default -> throw new IllegalArgumentException("unknown action statement type");
+      default ->
+          throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
     };
-  }
 
-  private KActorsStatement adaptConstructor(
-      ActionStatementSyntax.Constructor constructorStatement, List<Notification> notifications) {
-    var ret = new KActorsStatementImpl.ConstructorImpl();
+    // TODO metadata, tag, sequencing
+    for (var kp : statement.getTrailingMetadata().keySet()) {
+    }
+
     return ret;
   }
 

@@ -16,6 +16,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
   private Type type;
   private String urn;
+  private String tag;
+  private boolean sequential;
 
   public void setType(Type type) {
     this.type = type;
@@ -38,29 +40,36 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   @Override
   public void visit(Visitor visitor) {}
 
+  @Override
+  public String getTag() {
+    return tag;
+  }
+
+  public void setTag(String tag) {
+    this.tag = tag;
+  }
+
+  @Override
+  public boolean isSequential() {
+    return sequential;
+  }
+
+  public void setSequential(boolean sequential) {
+    this.sequential = sequential;
+  }
+
   public static class VerbImpl extends KActorsStatementImpl implements Verb {
 
     @Serial private static final long serialVersionUID = -8705959693429812179L;
 
     private Type type = Type.ACTION_CALL;
-    private String callId;
-    private ConcurrentGroup group;
     private String recipient;
     private String message;
     private Parameters<String> arguments;
     private List<Triple<KActorsValue, KActorsStatement, String>> actions = new ArrayList<>();
-    private List<Verb> chainedVerbs = new ArrayList<>();
 
     public void setType(Type type) {
       this.type = type;
-    }
-
-    public void setCallId(String callId) {
-      this.callId = callId;
-    }
-
-    public void setGroup(ConcurrentGroup group) {
-      this.group = group;
     }
 
     public void setRecipient(String recipient) {
@@ -79,23 +88,9 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.actions = actions;
     }
 
-    public void setChainedCalls(List<Verb> chainedVerbs) {
-      this.chainedVerbs = chainedVerbs;
-    }
-
     @Override
     public Type getType() {
       return this.type;
-    }
-
-    @Override
-    public String getCallId() {
-      return this.callId;
-    }
-
-    @Override
-    public ConcurrentGroup getGroup() {
-      return this.group;
     }
 
     @Override
@@ -116,11 +111,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public List<Triple<KActorsValue, KActorsStatement, String>> getActions() {
       return this.actions;
-    }
-
-    @Override
-    public List<Verb> getChainedCalls() {
-      return this.chainedVerbs;
     }
 
     @Override
@@ -396,19 +386,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setBody(KActorsStatement body) {
       this.body = body;
-    }
-
-    @Override
-    public <T> T format(CodeAppender<T> appender) {
-      return null;
-    }
-  }
-
-  public static class ConstructorImpl extends KActorsStatementImpl implements KActorsStatement.Constructor {
-
-    @Override
-    public String getMessage() {
-      return "";
     }
 
     @Override
