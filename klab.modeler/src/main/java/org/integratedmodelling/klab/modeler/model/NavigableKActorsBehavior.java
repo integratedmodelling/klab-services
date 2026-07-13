@@ -2,16 +2,12 @@ package org.integratedmodelling.klab.modeler.model;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsAction, KActorsBehavior>
@@ -51,39 +47,44 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
   }
 
   @Override
-  public String getOutput() {
-    return delegate.getOutput();
-  }
-
-  @Override
-  public List<String> getImports() {
+  public List<Import> getImports() {
     return delegate.getImports();
   }
 
-  @Override
-  public String getStyle() {
-    return delegate.getStyle();
-  }
-
-  @Override
-  public List<String> getLocales() {
-    return delegate.getLocales();
-  }
-
-  @Override
-  public String getLabel() {
-    return delegate.getLabel();
-  }
+  //  @Override
+  //  public String getOutput() {
+  //    return delegate.getOutput();
+  //  }
+  //
+  //  @Override
+  //  public List<String> getImports() {
+  //    return delegate.getImports();
+  //  }
+  //
+  //  @Override
+  //  public String getStyle() {
+  //    return delegate.getStyle();
+  //  }
+  //
+  //  @Override
+  //  public List<String> getLocales() {
+  //    return delegate.getLocales();
+  //  }
+  //
+  //  @Override
+  //  public String getLabel() {
+  //    return delegate.getLabel();
+  //  }
 
   @Override
   public String getDescription() {
     return delegate.getDescription();
   }
 
-  @Override
-  public String getLogo() {
-    return delegate.getLogo();
-  }
+  //  @Override
+  //  public String getLogo() {
+  //    return delegate.getLogo();
+  //  }
 
   @Override
   public String getProjectId() {
@@ -91,14 +92,19 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
   }
 
   @Override
-  public Map<String, String> getStyleSpecs() {
-    return delegate.getStyleSpecs();
+  public KlabStatement.Scope getScope() {
+    return delegate.getScope();
   }
 
-  @Override
-  public boolean isPublic() {
-    return delegate.isPublic();
-  }
+  //  @Override
+  //  public Map<String, String> getStyleSpecs() {
+  //    return delegate.getStyleSpecs();
+  //  }
+  //
+  //  @Override
+  //  public boolean isPublic() {
+  //    return delegate.isPublic();
+  //  }
 
   @Override
   public KActorsBehavior.Type getBehaviorType() {

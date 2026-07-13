@@ -501,12 +501,12 @@ public class StorageImpl implements Storage {
 
     @Override
     public float get() {
-      return data.get(index++).floatValue();
+      return data.floatValue(index++);
     }
 
     @Override
     public float peek() {
-      return data.get(index).floatValue();
+      return data.floatValue(index);
     }
 
     @Override
@@ -527,12 +527,12 @@ public class StorageImpl implements Storage {
 
     @Override
     public int get() {
-      return data.get(index++).intValue();
+      return data.intValue(index++);
     }
 
     @Override
     public int peek() {
-      return data.get(index).intValue();
+      return data.intValue(index);
     }
 
     @Override
@@ -553,12 +553,12 @@ public class StorageImpl implements Storage {
 
     @Override
     public long get() {
-      return data.get(index++).longValue();
+      return data.longValue(index++);
     }
 
     @Override
     public long peek() {
-      return data.get(index).longValue();
+      return data.longValue(index);
     }
 
     @Override

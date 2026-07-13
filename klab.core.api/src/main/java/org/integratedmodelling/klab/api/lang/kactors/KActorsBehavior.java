@@ -1,11 +1,11 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 /**
  * The syntactic peer resulting from parsing a .kactor file. Specifies a behavio to be used in the
@@ -76,6 +76,19 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
     DESKTOP,
     WEB,
     MOBILE
+  }
+
+  /**
+   * Declaring imports for each new agent is now mandatory. We may automatically import the
+   * klab.core.* agents eventually.
+   */
+  interface Import {
+
+    String getImportedBehavior();
+
+    String getImportedAlias();
+
+    List<String> getImportedComponents();
   }
 
   /**
@@ -171,13 +184,13 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    */
   Platform getPlatform();
 
-  /**
-   * A string linked to the 'output' preamble statement. Used in test cases to identify the log file
-   * or available for other purposes in scripts.
-   *
-   * @return
-   */
-  String getOutput();
+//  /**
+//   * A string linked to the 'output' preamble statement. Used in test cases to identify the log file
+//   * or available for other purposes in scripts.
+//   *
+//   * @return
+//   */
+//  String getOutput();
 
   /**
    * All behaviors imported, resolved and parsed. May refer to imported behaviors or to libraries,
@@ -185,51 +198,43 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    *
    * @return
    */
-  List<String> getImports();
+  List<Import> getImports();
 
-  //    /**
-  //     * All the actions declared in this behavior (not in the imported ones)
-  //     *
-  //     * @return
-  //     */
-  //    List<KActorsAction> getActions();
+//  /**
+//   * If a style is specified in the preamble, return it here.
+//   *
+//   * @return
+//   */
+//  String getStyle();
 
-  /**
-   * If a style is specified in the preamble, return it here.
-   *
-   * @return
-   */
-  String getStyle();
-
-  /**
-   * Return the declared locales as strings. If multiple, the locale can be set on loading.
-   *
-   * @return
-   */
-  List<String> getLocales();
+//  /**
+//   * Return the declared locales as strings. If multiple, the locale can be set on loading.
+//   *
+//   * @return
+//   */
+//  List<String> getLocales();
 
   /**
-   * Label (docstring). This should/could be in metadata but we still have some API weirdness with
-   * IKimMetadata being cumbersome.
-   *
-   * @return
-   */
-  String getLabel();
-
-  /**
-   * Description (as per preamble). This should/could be in metadata but we still have some API
-   * weirdness with IKimMetadata being cumbersome.
+   * Description (docstring).
    *
    * @return
    */
   String getDescription();
 
-  /**
-   * If a logo pathname (relative to the application) has been specified, return it.
-   *
-   * @return
-   */
-  String getLogo();
+//  /**
+//   * Description (as per preamble). This should/could be in metadata but we still have some API
+//   * weirdness with IKimMetadata being cumbersome.
+//   *
+//   * @return
+//   */
+//  String getDescription();
+
+//  /**
+//   * If a logo pathname (relative to the application) has been specified, return it.
+//   *
+//   * @return
+//   */
+//  String getLogo();
 
   /**
    * Name of project we are declared into. Null if not in a project.
@@ -238,19 +243,18 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    */
   String getProjectId();
 
-  /**
-   * Optional map of style specification (CSS-like) encoded in k.Actors as a map after "style
-   * [<name> with] #{ ... }", all values and keys converted to strings.
-   *
-   * @return
-   */
-  Map<String, String> getStyleSpecs();
+//  /**
+//   * Optional map of style specification (CSS-like) encoded in k.Actors as a map after "style
+//   * [<name> with] #{ ... }", all values and keys converted to strings.
+//   *
+//   * @return
+//   */
+//  Map<String, String> getStyleSpecs();
 
   /**
-   * True if 'public' was specified in front of the declaration, which makes the behavior visible to
-   * clients before it is run. Only behaviors with getType() == Type.APP can be public.
+   * Private, project private, public
    *
    * @return
    */
-  boolean isPublic();
+  KlabStatement.Scope getScope();
 }

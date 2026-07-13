@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 public interface KActorsStatement extends KActorsCodeStatement {
 
   enum Type {
-    ACTION_CALL,
+    VERB_STATEMENT,
     IF_STATEMENT,
     FOR_STATEMENT,
     DO_STATEMENT,

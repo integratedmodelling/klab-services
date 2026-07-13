@@ -232,7 +232,7 @@ public class BehaviorTranslator {
       urls.addAll(Arrays.stream(args).map(Utils.URLs::newURL).toList());
     } else {
       // test file
-      urls.add(translator.getClass().getResource("/simplegroup.kactor"));
+      urls.add(translator.getClass().getResource("/simple.kactor"));
     }
 
     for (URL url : urls) {

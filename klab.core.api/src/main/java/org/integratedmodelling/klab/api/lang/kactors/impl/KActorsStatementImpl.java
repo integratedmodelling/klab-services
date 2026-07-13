@@ -62,7 +62,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Serial private static final long serialVersionUID = -8705959693429812179L;
 
-    private Type type = Type.ACTION_CALL;
+    private Type type = Type.VERB_STATEMENT;
     private String recipient;
     private String message;
     private Parameters<String> arguments;
