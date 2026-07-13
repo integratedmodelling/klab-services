@@ -19,9 +19,11 @@ import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -57,7 +59,7 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
 
-    var ret = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+    var ret = new KimObservableImpl();
 
     ret.setLength(observableSyntax.getCodeLength());
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
@@ -108,19 +110,19 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  private List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> asTokens(
+  private List<KimConceptImpl> asTokens(
       SemanticSyntax semanticSyntax,
       String namespace,
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
-    List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens = new ArrayList<>();
+    List<KimConceptImpl> tokens = new ArrayList<>();
     for (var token : semanticSyntax) {
       tokens.add(adaptSemanticToken(token, namespace, projectName, documentClass));
     }
     return tokens;
   }
 
-  private List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> asTokens(
+  private List<KimConceptImpl> asTokens(
       List<SemanticSyntax> second,
       String namespace,
       String projectName,
@@ -132,7 +134,7 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  public org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl adaptSemantics(
+  public KimConceptImpl adaptSemantics(
       SemanticSyntax semantics,
       String namespace,
       String projectName,
@@ -147,11 +149,11 @@ public enum LanguageAdapter {
    * distribution operator to the final concept
    */
   private KimConceptImpl adaptSemanticSequence(
-      List<org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl> tokens) {
+      List<KimConceptImpl> tokens) {
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
-    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret = null;
+    KimConceptImpl ret = null;
     Set<SemanticType> type = null;
     List<KimConcept> roles = new ArrayList<>();
     List<KimConcept> traits = new ArrayList<>();
@@ -374,6 +376,60 @@ public enum LanguageAdapter {
     return ret;
   }
 
+  private KActorsValue adaptKActorsValue(ValueSyntax valueSyntax) {
+    var ret = new KActorsValueImpl();
+    ret.setType(switch (valueSyntax.getType()) {
+        case NUMBER -> {
+          // TODO also set the value in all cases
+          yield null;
+        }
+        case STRING -> {
+          yield null;
+        }
+        case RANGE -> {
+          yield null;
+        }
+        case OBSERVABLE -> {
+          yield null;
+        }
+        case QUANTITY -> {
+          yield null;
+        }
+        case CONSTANT -> {
+          yield null;
+        }
+        case IDENTIFIER -> {
+          yield null;
+        }
+        case BOOLEAN -> {
+          yield null;
+        }
+        case LIST -> {
+          yield null;
+        }
+        case MAP -> {
+          yield null;
+        }
+        case LOCALIZED_STRING_REFERENCE -> {
+          yield null;
+        }
+        case ARGUMENT_REFERENCE -> {
+          yield null;
+        }
+        case TERNARY_EXPRESSION -> {
+          yield null;
+        }
+        case EXPRESSION -> {
+          yield null;
+        }
+        case REGULAR_EXPRESSION -> {
+          yield null;
+        }
+    });
+    ret.setDeferred(valueSyntax.isQuoted());
+    return ret;
+  }
+
   /**
    * Adapt any value that can be part of a literal, recursively unparsing its contents. We only keep
    * the syntactic info for the top-level object.
@@ -590,8 +646,8 @@ public enum LanguageAdapter {
 
   private KimConcept adaptSemantics(
       SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
-    org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl ret =
-        new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+    KimConceptImpl ret =
+        new KimConceptImpl();
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
@@ -1193,28 +1249,31 @@ public enum LanguageAdapter {
   private KActorsStatement adaptActionStatement(
       ActionStatementSyntax statement, List<Notification> notifications) {
     // TODO
-    var ret = switch (statement) {
-      case ActionStatementSyntax.Assert assertion -> adaptAssert(assertion, notifications);
-      case ActionStatementSyntax.Assignment assign -> adaptAssign(assign, notifications);
-      case ActionStatementSyntax.Verb verbStatement -> adaptVerb(verbStatement, notifications);
-      case ActionStatementSyntax.Do doStatement -> adaptDo(doStatement, notifications);
-      case ActionStatementSyntax.For forStatement -> adaptFor(forStatement, notifications);
-      case ActionStatementSyntax.If ifStatement -> adaptIf(ifStatement, notifications);
-      case ActionStatementSyntax.Return returnStatement ->
-          adaptReturn(returnStatement, notifications);
-      case ActionStatementSyntax.While whileStatement -> adaptWhile(whileStatement, notifications);
-      case ActionStatementSyntax.Text textStatement -> adaptText(textStatement, notifications);
-      case ActionStatementSyntax.Fire fireStatement -> adaptFire(fireStatement, notifications);
-      case ActionStatementSyntax.Fail failStatement -> adaptFail(failStatement, notifications);
-      case ActionStatementSyntax.Break breakStatement -> adaptBreak(breakStatement, notifications);
-      case ActionStatementSyntax.Group groupStatement -> adaptGroup(groupStatement, notifications);
-      default ->
-          throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
-    };
+    var ret =
+        switch (statement) {
+          case ActionStatementSyntax.Assert assertion -> adaptAssert(assertion, notifications);
+          case ActionStatementSyntax.Assignment assign -> adaptAssign(assign, notifications);
+          case ActionStatementSyntax.Verb verbStatement -> adaptVerb(verbStatement, notifications);
+          case ActionStatementSyntax.Do doStatement -> adaptDo(doStatement, notifications);
+          case ActionStatementSyntax.For forStatement -> adaptFor(forStatement, notifications);
+          case ActionStatementSyntax.If ifStatement -> adaptIf(ifStatement, notifications);
+          case ActionStatementSyntax.Return returnStatement ->
+              adaptReturn(returnStatement, notifications);
+          case ActionStatementSyntax.While whileStatement ->
+              adaptWhile(whileStatement, notifications);
+          case ActionStatementSyntax.Text textStatement -> adaptText(textStatement, notifications);
+          case ActionStatementSyntax.Fire fireStatement -> adaptFire(fireStatement, notifications);
+          case ActionStatementSyntax.Fail failStatement -> adaptFail(failStatement, notifications);
+          case ActionStatementSyntax.Break breakStatement ->
+              adaptBreak(breakStatement, notifications);
+          case ActionStatementSyntax.Group groupStatement ->
+              adaptGroup(groupStatement, notifications);
+          default ->
+              throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
+        };
 
     // TODO metadata, tag, sequencing
-    for (var kp : statement.getTrailingMetadata().keySet()) {
-    }
+    for (var kp : statement.getTrailingMetadata().keySet()) {}
 
     return ret;
   }
