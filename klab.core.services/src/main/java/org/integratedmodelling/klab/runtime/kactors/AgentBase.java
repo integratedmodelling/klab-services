@@ -22,13 +22,14 @@ import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
-/// Base class for the Java/Groovy compiled actor that translates a k.Actors behavior,
-/// substituting the interpreted k.Actors VM.
+/// Base class for the Java-compiled agent that translates a k.Actors behavior. Specialized
+/// agents such as test cases, scripts, and applications derive from this class, adding support
+/// for their specialized behaviors.
 ///
 /// Guidelines for the action behavior (applies to k.Actors in general):
 ///
 /// 1. Actions may contain `return` statements and/or `fire` statements. The return statement
-///    makes the action a "reactor", which will exit (removing all listeners installed in the
+///    makes the action a "supplier", which will exit (removing all listeners installed in the
 ///    action) when encountered.
 /// 2. If an action ends with a `return` statement, it will exit immediately and remove all its
 ///    listeners. So an action that ends with return normally has *functional* behavior and
@@ -39,13 +40,18 @@ import reactor.core.publisher.Sinks;
 ///    returns, making all listener(s) disappear after the first time one matches.
 /// 3. Actions that contain `fire` statements have *emitter* behavior, i.e., they install listeners
 ///    that may
-///    fire events multiple times and are only removed if and when when a match calls `return`.
+///    fire events multiple times and are only removed if and when a match calls `return`.
 /// 4. Anything fired from actions other than `main` should be intercepted by the calling
 ///    code. If `main` fires, the object fired will be visible in the containing scope. For
 ///    behaviors, the scope will be the context observation (if it has a behavior of its own).
 ///    For scripts and tests, the scope can be the session or user otherwise, assuming there is
 ///    a behavior there. The session running a test case or application has a behavior by default
 ///    and its `main` can install `when` listeners for events fired by a lower agent's main.
+/// 5. Suppliers used in a functional context (for example, as the right-hand side of an assignment)
+// are
+///    compiled with blocking behavior (i.e., calling get() on their CompletableFuture result). This
+///    can also be triggered by the calling code starting the next statement with `then`. If
+///    `then` follows a group, suppliers in the entire group will be waited for before continuing.
 ///
 /// Applications in a service's purview should be automatically available at the URL
 /// `<runtimeUrl>/<applicationUrn>.app`. The app URN should be substitutable with a
@@ -80,6 +86,15 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     EXCEPTION
   }
 
+  /**
+   * TODO the Event should contain the scope linked to it and returned by onEvent, not the channel
+   *  (which is the ID in the scope).
+   *
+   * @param type
+   * @param channel
+   * @param targetAction
+   * @param value
+   */
   public record Event(EventType type, long channel, long targetAction, Object value) {}
 
   public Sinks.Many<Event> getEventBus() {
@@ -200,8 +215,8 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
-   * Code with this Agent's handle can send a message to this. If a response is
-   * expected, the sender can add a message consumer which may be called or not.
+   * Code with this Agent's handle can send a message to this. If a response is expected, the sender
+   * can add a message consumer which may be called or not.
    *
    * @param message
    * @param sender
@@ -244,8 +259,13 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   public abstract Verb.Type getAgentExecutionMode();
 
   /**
-   * Subscribe to events emitted by {@code scope}. Generated code should use this instead of wiring
-   * Reactor directly, so terminal events and subscription disposal have one implementation.
+   * Subscribe to events emitted in the {@code scope}. Used to register actions before calling
+   * {@link #runEmitter(AgentScope, Consumer)} or {@link #runSupplier(AgentScope, Function)} in the
+   * same scope passed here. The generated code should use this instead of wiring Reactor directly,
+   * so terminal events and subscription disposal have one implementation.
+   *
+   * <p>TODO onEvent should automatically create the derived scope with the next ID, which can be
+   * used in the submission.
    */
   protected void onEvent(
       AgentScope scope, Consumer<Event> eventConsumer, EventType... acceptedEventTypes) {
@@ -277,6 +297,16 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     return ret;
   }
 
+  /**
+   * Call to start a supplier after having called {@link #onEvent(AgentScope, Consumer,
+   * EventType...)} to register its action upon completion. The supplier must return a
+   * CompletableFuture; the event registration must register EventType.RETURN.
+   *
+   * @param scope
+   * @param supplier
+   * @return
+   * @param <T>
+   */
   protected <T> ExitValue runSupplier(
       AgentScope scope, Function<AgentScope, CompletableFuture<T>> supplier) {
 
@@ -303,7 +333,16 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     }
   }
 
-  protected ExitValue runAsync(AgentScope scope, Consumer<AgentScope> runnable) {
+  /**
+   * Call to start an emitter after having called {@link #onEvent(AgentScope, Consumer,
+   * EventType...)} to register its action upon completion. The emitter is simply an AgentScope
+   * consumer; the event must be EventType.FIRE.
+   *
+   * @param scope
+   * @param runnable
+   * @return
+   */
+  protected ExitValue runEmitter(AgentScope scope, Consumer<AgentScope> runnable) {
 
     if (rootScope != null && rootScope.isDone()) {
       return ExitValue.failure(new KlabIllegalStateException("Agent already terminated"));
@@ -351,6 +390,6 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
       return main(rootScope);
     }
-    return runAsync(rootScope, this::main);
+    return runEmitter(rootScope, this::main);
   }
 }

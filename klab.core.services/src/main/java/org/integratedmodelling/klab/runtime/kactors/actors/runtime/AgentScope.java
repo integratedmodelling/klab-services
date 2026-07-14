@@ -13,8 +13,11 @@ import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
-// represents each action during execution, providing access to the k.Actors environment and hashes
-// for local variables
+/**
+ * The AgentScope provides state during execution and identifies the blocks being run so that events
+ * and actions can be properly handled by {@link AgentBase}. Each AgentScope must expose a unique ID
+ * to track its listeners in the reactor sink.
+ */
 public abstract class AgentScope extends ParametersImpl<String> implements Agent.Scope {
 
   private final AgentBase actor;
@@ -55,9 +58,8 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
       return;
     }
     var result =
-        actor
-            .emitEvent(
-                new AgentBase.Event(AgentBase.EventType.FIRE, actor.id, actionId, firedObject));
+        actor.emitEvent(
+            new AgentBase.Event(AgentBase.EventType.FIRE, actor.id, actionId, firedObject));
     if (result != Sinks.EmitResult.OK) {
       actor.handleNotification(Notification.error("Failed to emit fire event: " + result));
     }
@@ -93,10 +95,8 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
       return;
     }
     var result =
-        actor
-            .emitEvent(
-                new AgentBase.Event(
-                    AgentBase.EventType.RETURN, actor.id, actionId, returnedObject));
+        actor.emitEvent(
+            new AgentBase.Event(AgentBase.EventType.RETURN, actor.id, actionId, returnedObject));
     if (result != Sinks.EmitResult.OK) {
       Logging.INSTANCE.error("Failed to emit return event: " + result);
     }

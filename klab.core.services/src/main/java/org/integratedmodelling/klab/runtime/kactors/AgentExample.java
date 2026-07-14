@@ -116,7 +116,7 @@ public class AgentExample extends AgentBase {
         EventType.FIRE);
     /* ------ end setup code for the reactive message ------ */
 
-    runAsync(emitter_2_scope, this::emitter_2);
+    runEmitter(emitter_2_scope, this::emitter_2);
 
     return true;
   }
@@ -147,7 +147,7 @@ public class AgentExample extends AgentBase {
 
     /* ------ timer verb invocation with scope setting the ID for outgoing events ---- */
     /* ------ TODO document parameter mediation and assignment ------ */
-    runAsync(timer_3_scope, s -> CoreActorLibrary.Timer.random(s, TimeUnit.SECONDS, 1));
+    runEmitter(timer_3_scope, s -> CoreActorLibrary.Timer.random(s, TimeUnit.SECONDS, 1));
     /* ------ end of timer verb invocation. Remember type of payload for matching upstream ------ */
 
     return true;
