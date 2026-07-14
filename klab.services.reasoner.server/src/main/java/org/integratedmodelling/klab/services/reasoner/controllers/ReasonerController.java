@@ -35,10 +35,12 @@ public class ReasonerController {
       throw new IllegalArgumentException(
           operation + " requires " + expected + " concept argument(s)");
     }
+    int i = 1;
     for (Concept argument : arguments) {
-      if (argument == null) {
+      if (argument == null && i < minimum) {
         throw new IllegalArgumentException(operation + " does not accept null concepts");
       }
+      i++;
     }
   }
 
