@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -148,8 +149,7 @@ public enum LanguageAdapter {
    * intelligently from the last, apply traits where they belong and bring the first "each" or
    * distribution operator to the final concept
    */
-  private KimConceptImpl adaptSemanticSequence(
-      List<KimConceptImpl> tokens) {
+  private KimConceptImpl adaptSemanticSequence(List<KimConceptImpl> tokens) {
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
@@ -376,56 +376,58 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  private KActorsValue adaptKActorsValue(ValueSyntax valueSyntax) {
+  private KActorsValue adaptKActorsValue(
+      ValueSyntax valueSyntax, List<Notification> notifications) {
     var ret = new KActorsValueImpl();
-    ret.setType(switch (valueSyntax.getType()) {
-        case NUMBER -> {
-          // TODO also set the value in all cases
-          yield null;
-        }
-        case STRING -> {
-          yield null;
-        }
-        case RANGE -> {
-          yield null;
-        }
-        case OBSERVABLE -> {
-          yield null;
-        }
-        case QUANTITY -> {
-          yield null;
-        }
-        case CONSTANT -> {
-          yield null;
-        }
-        case IDENTIFIER -> {
-          yield null;
-        }
-        case BOOLEAN -> {
-          yield null;
-        }
-        case LIST -> {
-          yield null;
-        }
-        case MAP -> {
-          yield null;
-        }
-        case LOCALIZED_STRING_REFERENCE -> {
-          yield null;
-        }
-        case ARGUMENT_REFERENCE -> {
-          yield null;
-        }
-        case TERNARY_EXPRESSION -> {
-          yield null;
-        }
-        case EXPRESSION -> {
-          yield null;
-        }
-        case REGULAR_EXPRESSION -> {
-          yield null;
-        }
-    });
+    ret.setType(
+        switch (valueSyntax.getType()) {
+          case NUMBER -> {
+            // TODO also set the value in all cases
+            yield null;
+          }
+          case STRING -> {
+            yield null;
+          }
+          case RANGE -> {
+            yield null;
+          }
+          case OBSERVABLE -> {
+            yield null;
+          }
+          case QUANTITY -> {
+            yield null;
+          }
+          case CONSTANT -> {
+            yield null;
+          }
+          case IDENTIFIER -> {
+            yield null;
+          }
+          case BOOLEAN -> {
+            yield null;
+          }
+          case LIST -> {
+            yield null;
+          }
+          case MAP -> {
+            yield null;
+          }
+          case LOCALIZED_STRING_REFERENCE -> {
+            yield null;
+          }
+          case ARGUMENT_REFERENCE -> {
+            yield null;
+          }
+          case TERNARY_EXPRESSION -> {
+            yield null;
+          }
+          case EXPRESSION -> {
+            yield null;
+          }
+          case REGULAR_EXPRESSION -> {
+            yield null;
+          }
+        });
     ret.setDeferred(valueSyntax.isQuoted());
     return ret;
   }
@@ -646,8 +648,7 @@ public enum LanguageAdapter {
 
   private KimConcept adaptSemantics(
       SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
-    KimConceptImpl ret =
-        new KimConceptImpl();
+    KimConceptImpl ret = new KimConceptImpl();
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
@@ -1365,6 +1366,27 @@ public enum LanguageAdapter {
       ActionStatementSyntax.Verb verbStatement, List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.VerbImpl();
+
+    // TODO get the reactor name and ensure it's imported, 'self' or a core library
+    // TODO get the action name and ensure it's known for the actor. May be impossible at this stage
+
+    // cannot enforce argument mapping at this stage
+    ret.getArguments().putAll(adaptArguments(verbStatement.getArguments(), notifications));
+
+    for (var match : verbStatement.getMatches()) {
+      // TODO
+    }
+
     return ret;
+  }
+
+  private Map<String, KActorsValue> adaptArguments(
+      Map<String, ValueSyntax> arguments, List<Notification> notifications) {
+    return arguments.entrySet().stream()
+        .map(
+            e ->
+                new AbstractMap.SimpleEntry<>(
+                    e.getKey(), adaptKActorsValue(e.getValue(), notifications)))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }
