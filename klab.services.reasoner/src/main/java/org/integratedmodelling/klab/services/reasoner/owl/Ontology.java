@@ -36,7 +36,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
-import org.semanticweb.owlapi.io.OWLXMLOntologyFormat;
+import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 
 /**
@@ -84,7 +84,7 @@ public class Ontology {
     this.id = id;
     this.owl = owl;
     this.ontology = ontology;
-    this.prefix = ontology.getOntologyID().getOntologyIRI().toString();
+    this.prefix = ontologyIri(ontology).toString();
 
     scan();
   }
@@ -113,13 +113,13 @@ public class Ontology {
                 getName() + ":" + c.getIRI().getFragment()));
       }
     }
-    for (OWLProperty<?, ?> p : this.ontology.getDataPropertiesInSignature(false)) {
+    for (OWLProperty p : this.ontology.getDataPropertiesInSignature(false)) {
       if (p.getIRI().toString().contains(this.prefix)) {
         this.dpropertyIDs.add(p.getIRI().getFragment());
         this.propertyIDs.add(p.getIRI().getFragment());
       }
     }
-    for (OWLProperty<?, ?> p : this.ontology.getObjectPropertiesInSignature(false)) {
+    for (OWLProperty p : this.ontology.getObjectPropertiesInSignature(false)) {
       if (p.getIRI().toString().contains(this.prefix)) {
         this.opropertyIDs.add(p.getIRI().getFragment());
         this.propertyIDs.add(p.getIRI().getFragment());
@@ -149,10 +149,10 @@ public class Ontology {
   // @Override
   public Collection<Property> getProperties() {
     ArrayList<Property> ret = new ArrayList<>();
-    for (OWLProperty<?, ?> p : this.ontology.getDataPropertiesInSignature(false)) {
+    for (OWLProperty p : this.ontology.getDataPropertiesInSignature(false)) {
       ret.add(new Property(p, this.id));
     }
-    for (OWLProperty<?, ?> p : this.ontology.getObjectPropertiesInSignature(false)) {
+    for (OWLProperty p : this.ontology.getObjectPropertiesInSignature(false)) {
       ret.add(new Property(p, this.id));
     }
     for (OWLAnnotationProperty p : this.ontology.getAnnotationPropertiesInSignature()) {
@@ -213,11 +213,12 @@ public class Ontology {
       Set<Ontology> authorities = new HashSet<>(getDelegateOntologies());
 
       File path = Utils.Files.getPath(file.toString());
-      String myns = this.ontology.getOntologyID().getOntologyIRI().getNamespace();
+      String myns = ontologyIri(this.ontology).getNamespace();
       for (OWLOntology o : this.ontology.getImportsClosure()) {
-        String iri = o.getOntologyID().getOntologyIRI().toString();
+        IRI importedOntologyIri = ontologyIri(o);
+        String iri = importedOntologyIri.toString();
         if (iri.startsWith(myns) && !o.equals(this.ontology)) {
-          String fr = o.getOntologyID().getOntologyIRI().getFragment();
+          String fr = importedOntologyIri.getFragment();
           Ontology other = owl.getOntology(fr);
           if (other != null) {
             if (!fr.endsWith(".owl")) {
@@ -242,12 +243,12 @@ public class Ontology {
       }
     }
 
-    OWLOntologyFormat format =
+    OWLDocumentFormat format =
         this.ontology.getOWLOntologyManager().getOntologyFormat(this.ontology);
-    OWLXMLOntologyFormat owlxmlFormat = new OWLXMLOntologyFormat();
+    OWLXMLDocumentFormat owlxmlFormat = new OWLXMLDocumentFormat();
 
-    if (format.isPrefixOWLOntologyFormat()) {
-      owlxmlFormat.copyPrefixesFrom(format.asPrefixOWLOntologyFormat());
+    if (format.isPrefixOWLDocumentFormat()) {
+      owlxmlFormat.copyPrefixesFrom(format.asPrefixOWLDocumentFormat());
     }
     try {
       this.ontology
@@ -714,8 +715,7 @@ public class Ontology {
       if (!cc.getNamespace().equals(this.id) && !this.imported.contains(cc.getNamespace())) {
 
         this.imported.add(cc.getNamespace());
-        IRI importIRI =
-            owl.getOntology(cc.getNamespace()).ontology.getOntologyID().getOntologyIRI();
+        IRI importIRI = ontologyIri(owl.getOntology(cc.getNamespace()).ontology);
         OWLImportsDeclaration importDeclaraton =
             this.ontology
                 .getOWLOntologyManager()
@@ -765,7 +765,7 @@ public class Ontology {
       if (!cc.getNamespace().equals(this.id) && !this.imported.contains(cc.getNamespace())) {
 
         this.imported.add(cc.getNamespace());
-        IRI importIRI = ((Ontology) cc.getOntology(owl)).ontology.getOntologyID().getOntologyIRI();
+        IRI importIRI = ontologyIri(((Ontology) cc.getOntology(owl)).ontology);
         OWLImportsDeclaration importDeclaraton =
             this.ontology
                 .getOWLOntologyManager()
@@ -928,9 +928,7 @@ public class Ontology {
   public void createReasoner() {
 
     try {
-      this.ontology
-          .getOWLOntologyManager()
-          .loadOntology(IRI.create(this.ontology.getOntologyID().getOntologyIRI().toString()));
+      this.ontology.getOWLOntologyManager().loadOntology(ontologyIri(this.ontology));
     } catch (OWLOntologyCreationException e) {
       throw new KlabInternalErrorException(e);
     }
@@ -941,9 +939,7 @@ public class Ontology {
     if (!this.ontology.getImports().contains(((Ontology) ontology).ontology)) {
       OWLDataFactory factory = this.ontology.getOWLOntologyManager().getOWLDataFactory();
       OWLImportsDeclaration imp =
-          factory.getOWLImportsDeclaration(
-              IRI.create(
-                  ((Ontology) ontology).ontology.getOntologyID().getOntologyIRI().toString()));
+          factory.getOWLImportsDeclaration(ontologyIri(((Ontology) ontology).ontology));
       this.ontology.getOWLOntologyManager().applyChange(new AddImport(this.ontology, imp));
       this.imported.add(ontology.getName());
     }
@@ -956,6 +952,13 @@ public class Ontology {
 
   public OWLOntology getOWLOntology() {
     return this.ontology;
+  }
+
+  private static IRI ontologyIri(OWLOntology ontology) {
+    return ontology
+        .getOntologyID()
+        .getOntologyIRI()
+        .orElseThrow(() -> new KlabValidationException("anonymous ontologies are not supported"));
   }
 
   /**

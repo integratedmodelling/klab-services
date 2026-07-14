@@ -22,7 +22,6 @@
 package org.integratedmodelling.klab.services.reasoner.owl;
 
 import java.util.HashMap;
-
 import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -34,6 +33,7 @@ import org.semanticweb.owlapi.model.OWLAnnotationValue;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
 
 /**
@@ -94,7 +94,7 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
   }
 
   public OWLMetadata(OWLEntity owl, OWLOntology ontology) {
-    for (OWLAnnotation zio : owl.getAnnotations(ontology)) {
+    for (OWLAnnotation zio : EntitySearcher.getAnnotations(owl, ontology).toList()) {
       OWLAnnotationValue val = zio.getValue();
       String piri = zio.getProperty().getIRI().toString();
       String prop = metadataVocabulary.get(piri);

@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
@@ -17,9 +16,8 @@ import org.semanticweb.owlapi.model.OWLObjectMaxCardinality;
 import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLProperty;
 import org.semanticweb.owlapi.model.OWLQuantifiedRestriction;
-import org.semanticweb.owlapi.util.OWLClassExpressionVisitorAdapter;
+import org.semanticweb.owlapi.search.EntitySearcher;
 
 /**
  * Visit the hierarchy to collect the most specific among the fillers of the object restrictions on
@@ -28,7 +26,7 @@ import org.semanticweb.owlapi.util.OWLClassExpressionVisitorAdapter;
  *
  * @author ferdinando.villa
  */
-public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAdapter {
+public class SpecializingRestrictionVisitor implements OWLClassExpressionVisitor {
 
   private Set<OWLOntology> onts;
   private Set<OWLClass> processedClasses = new HashSet<>();
@@ -36,14 +34,14 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
   private Collection<Concept> result = null;
   //    private Concept             concept;
   private boolean useSuperproperties = false;
-  private OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> restriction;
+  private OWLQuantifiedRestriction<? extends OWLClassExpression> restriction;
   private OWL owl;
 
   public Collection<Concept> getResult() {
     return result == null ? new HashSet<>() : result;
   }
 
-  public OWLQuantifiedRestriction<?, ?, ?> getRestriction() {
+  public OWLQuantifiedRestriction<? extends OWLClassExpression> getRestriction() {
     return this.restriction;
   }
 
@@ -64,20 +62,19 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
   public void visit(OWLClass desc) {
 
     if (processedClasses.add(desc)) {
-      visitClassExpressions(desc.getSuperClasses(onts), desc);
-      visitClassExpressions(desc.getEquivalentClasses(onts), desc);
+      visitClassExpressions(EntitySearcher.getSuperClasses(desc, onts.stream()).toList(), desc);
+      visitClassExpressions(
+          EntitySearcher.getEquivalentClasses(desc, onts.stream()).toList(), desc);
     }
   }
 
-  private void visitRestriction(OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> desc) {
-    if (desc.getProperty() instanceof OWLProperty) {
-      Property restricted = owl.getPropertyFor((OWLProperty<?, ?>) desc.getProperty());
-      boolean matches =
-          useSuperproperties ? restricted.is(property, owl) : restricted.equals(property);
-      if (matches && addNew(owl.unwrap(desc.getFiller()))) {
-        // keep it for inspection at the end
-        this.restriction = desc;
-      }
+  private void visitRestriction(OWLQuantifiedRestriction<? extends OWLClassExpression> desc) {
+    Property restricted = owl.getPropertyFor(desc.getProperty());
+    boolean matches =
+        useSuperproperties ? restricted.is(property, owl) : restricted.equals(property);
+    if (matches && addNew(owl.unwrap(desc.getFiller()))) {
+      // keep it for inspection at the end
+      this.restriction = desc;
     }
   }
 
@@ -135,12 +132,12 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
       if (ok) {
         keep.add(toadd);
       }
-      if (remove.size() > 0) {
+      if (!remove.isEmpty()) {
         result.removeAll(remove);
       }
     }
     result.addAll(keep);
-    return keep.size() > 0;
+    return !keep.isEmpty();
   }
 
   @Override

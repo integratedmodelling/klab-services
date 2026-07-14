@@ -37,34 +37,45 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- rdf4j-rio-turtle used by Caliper at the moment -->
         <dependency>
             <groupId>org.eclipse.rdf4j</groupId>
             <artifactId>rdf4j-rio-turtle</artifactId>
-            <version>4.3.7</version>
+            <version>5.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.rdf4j</groupId>
             <artifactId>rdf4j-rio-datatypes</artifactId>
-            <version>4.3.9</version>
+            <version>5.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.rdf4j</groupId>
             <artifactId>rdf4j-rio-languages</artifactId>
-            <version>4.3.9</version>
+            <version>5.0.2</version>
         </dependency>
 
         <!-- OWL and DL reasoning -->
         <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-distribution</artifactId>
-            <version>3.4.10</version>
+            <version>5.5.1</version>
         </dependency>
         <dependency>
-            <groupId>com.hermit-reasoner</groupId>
+            <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>org.semanticweb.hermit</artifactId>
-            <version>1.3.8.4</version>
+            <version>1.4.5.519</version>
             <exclusions>
+                <!-- Keep the explicitly selected OWLAPI version above. HermiT's
+                     published POM targets OWLAPI 5.1.9. -->
+                <exclusion>
+                    <groupId>net.sourceforge.owlapi</groupId>
+                    <artifactId>owlapi-distribution</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>

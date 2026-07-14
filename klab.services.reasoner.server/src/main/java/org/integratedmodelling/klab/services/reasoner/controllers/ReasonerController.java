@@ -1,14 +1,13 @@
 package org.integratedmodelling.klab.services.reasoner.controllers;
 
-import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -28,6 +27,20 @@ import org.springframework.web.bind.annotation.*;
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
+
+  private static void requireArguments(
+      Concept[] arguments, int minimum, int maximum, String operation) {
+    if (arguments == null || arguments.length < minimum || arguments.length > maximum) {
+      String expected = minimum == maximum ? Integer.toString(minimum) : minimum + " to " + maximum;
+      throw new IllegalArgumentException(
+          operation + " requires " + expected + " concept argument(s)");
+    }
+    for (Concept argument : arguments) {
+      if (argument == null) {
+        throw new IllegalArgumentException(operation + " does not accept null concepts");
+      }
+    }
+  }
 
   /**
    * POST /resolve/concept from URN
@@ -152,6 +165,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.SUBSUMES)
   public boolean subsumes(
       @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
+    requireArguments(concepts, 2, 2, "Subsumption");
     return reasoner.klabService().is(concepts[0], concepts[1]);
   }
 
@@ -171,6 +185,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.MATCHES)
   public boolean matches(
       @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
+    requireArguments(concepts, 2, 2, "Matching");
     return reasoner.klabService().match(concepts[0], concepts[1]);
   }
 
@@ -343,9 +358,9 @@ public class ReasonerController {
   }
 
   /**
-   * Asserted or semantic distance between two concepts. If asserted is false (default) the asserted
-   * distance will be returned as an integer. Otherwise, the semantic distance will be computed and
-   * the input data array may contain a third concept to compute the distance in its context.
+   * Asserted or semantic distance between two concepts. If asserted is true, the asserted distance
+   * is returned. Otherwise semantic distance is computed, and the input array may contain a third
+   * concept to compute the distance in its context.
    */
   @Operation(
       summary = "Calculate distance between concepts",
@@ -360,6 +375,7 @@ public class ReasonerController {
       @Parameter(description = "Whether to use asserted distance")
           @RequestParam(name = "asserted", defaultValue = "false")
           boolean asserted) {
+    requireArguments(concepts, 2, 3, "Distance");
     return asserted
         ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
         : reasoner
@@ -396,6 +412,7 @@ public class ReasonerController {
       @Parameter(description = "Whether to check direct roles only")
           @RequestParam(name = "direct", defaultValue = "false")
           boolean direct) {
+    requireArguments(concept, 2, 2, "Role check");
     return direct
         ? reasoner.klabService().hasDirectRole(concept[0], concept[1])
         : reasoner.klabService().hasRole(concept[0], concept[1]);
@@ -660,14 +677,14 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.HAS_TRAIT)
   public boolean hasTrait(
-      @Parameter(description = "Semantic type") Semantics type,
-      @Parameter(description = "Trait to check") Concept trait,
+      @Parameter(description = "Semantic type and trait") @RequestBody Concept[] concepts,
       @Parameter(description = "Whether to check direct traits only")
           @RequestParam(name = "direct", defaultValue = "false")
           boolean direct) {
+    requireArguments(concepts, 2, 2, "Trait check");
     return direct
-        ? reasoner.klabService().hasDirectTrait(type, trait)
-        : reasoner.klabService().hasTrait(type, trait);
+        ? reasoner.klabService().hasDirectTrait(concepts[0], concepts[1])
+        : reasoner.klabService().hasTrait(concepts[0], concepts[1]);
   }
 
   @Operation(
@@ -679,9 +696,9 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.HAS_PARENT_ROLE)
   public boolean hasParentRole(
-      @Parameter(description = "Target concept") @RequestBody Concept o1,
-      @Parameter(description = "Role to check") Concept t) {
-    return reasoner.klabService().hasParentRole(o1, t);
+      @Parameter(description = "Target concept and role") @RequestBody Concept[] concepts) {
+    requireArguments(concepts, 2, 2, "Parent-role check");
+    return reasoner.klabService().hasParentRole(concepts[0], concepts[1]);
   }
 
   @Operation(
@@ -868,6 +885,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.COMPATIBLE)
   public boolean compatible(
       @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] args) {
+    requireArguments(args, 2, 2, "Compatibility check");
     return reasoner.klabService().compatible(args[0], args[1]);
   }
 
@@ -883,6 +901,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.CONTEXTUALLY_COMPATIBLE)
   public boolean contextuallyCompatible(
       @Parameter(description = "Array of three concepts to check") @RequestBody Concept[] args) {
+    requireArguments(args, 3, 3, "Contextual compatibility check");
     return reasoner.klabService().contextuallyCompatible(args[0], args[1], args[2]);
   }
 
@@ -924,6 +943,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.AFFECTED_BY)
   public boolean affectedBy(
       @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] args) {
+    requireArguments(args, 2, 2, "Affected-by check");
     return reasoner.klabService().affectedBy(args[0], args[1]);
   }
 
@@ -937,6 +957,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.CREATED_BY)
   public boolean createdBy(
       @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] args) {
+    requireArguments(args, 2, 2, "Created-by check");
     return reasoner.klabService().createdBy(args[0], args[1]);
   }
 
@@ -990,6 +1011,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.ROLES_FOR)
   public Collection<Concept> rolesFor(
       @Parameter(description = "Array of one or two concepts") @RequestBody Concept[] args) {
+    requireArguments(args, 1, 2, "Context role inference");
     return reasoner.klabService().rolesFor(args[0], args.length == 1 ? null : args[1]);
   }
 
@@ -1004,6 +1026,7 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.IMPLIED_ROLE)
   public Concept impliedRole(
       @Parameter(description = "Array of one or two concepts") @RequestBody Concept[] args) {
+    requireArguments(args, 1, 2, "Implied-role inference");
     return reasoner.klabService().impliedRole(args[0], args.length == 1 ? null : args[1]);
   }
 

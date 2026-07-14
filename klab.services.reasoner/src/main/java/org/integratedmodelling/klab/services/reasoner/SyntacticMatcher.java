@@ -1,8 +1,9 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import java.util.ArrayList;
+import java.util.List;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -15,10 +16,6 @@ import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Match two concept using one as a syntactic pattern for the other. Used in the rule system to
@@ -37,29 +34,11 @@ public class SyntacticMatcher {
   /**
    * @deprecated switch to the resources client and service along with a KimConcept cache
    */
-  private LoadingCache<String, KimObservable> conceptCache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20)
-          .maximumSize(400) // TODO configure
-          .build(
-              new CacheLoader<>() {
-                @Override
-                public KimObservable load(String key) throws Exception {
-                  return resourcesService.declareObservable(key);
-                }
-              });
+  private final Cache<String, KimObservable> conceptCache =
+      Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
 
-  private LoadingCache<Pair<Semantics, Semantics>, Boolean> matchCache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20)
-          .maximumSize(400) // TODO configure
-          .build(
-              new CacheLoader<>() {
-                @Override
-                public Boolean load(Pair<Semantics, Semantics> key) throws Exception {
-                  return doMatch(key.getFirst(), key.getSecond());
-                }
-              });
+  private final Cache<Pair<Semantics, Semantics>, Boolean> matchCache =
+      Caffeine.newBuilder().maximumSize(10_000).recordStats().build();
 
   public SyntacticMatcher(ReasonerService reasonerService, ResourcesService resourcesService) {
     this.reasonerService = reasonerService;
@@ -68,8 +47,9 @@ public class SyntacticMatcher {
 
   public boolean match(Semantics candidate, Semantics pattern) {
     try {
-      return matchCache.get(Pair.of(candidate, pattern));
-    } catch (ExecutionException e) {
+      return matchCache.get(
+          Pair.of(candidate, pattern), key -> doMatch(key.getFirst(), key.getSecond()));
+    } catch (RuntimeException e) {
       Logging.INSTANCE.error(e);
       return false;
     }
@@ -95,9 +75,11 @@ public class SyntacticMatcher {
     KimConcept pCandidate = null;
 
     try {
-      oCandidateObservable = conceptCache.getUnchecked(candidate.getUrn());
+      oCandidateObservable =
+          conceptCache.get(candidate.getUrn(), resourcesService::declareObservable);
       oCandidate = oCandidateObservable.getSemantics();
-      pCandidateObservable = conceptCache.getUnchecked(pattern.getUrn());
+      pCandidateObservable =
+          conceptCache.get(pattern.getUrn(), resourcesService::declareObservable);
       pCandidate = pCandidateObservable.getSemantics();
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
@@ -159,9 +141,10 @@ public class SyntacticMatcher {
       }
 
       var headSyntax = candidateOperands.getFirst();
-      var tailSyntax = Utils.Strings.join(
-          candidateOperands.stream().skip(1).map(KlabAsset::getUrn).toList(),
-          type == SemanticType.INTERSECTION ? " and " : " or ");
+      var tailSyntax =
+          Utils.Strings.join(
+              candidateOperands.stream().skip(1).map(KlabAsset::getUrn).toList(),
+              type == SemanticType.INTERSECTION ? " and " : " or ");
 
       if (tailSyntax.isEmpty()) {
         return false;

@@ -19,30 +19,28 @@ import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLProperty;
 import org.semanticweb.owlapi.model.OWLQuantifiedRestriction;
-import org.semanticweb.owlapi.util.OWLClassExpressionVisitorAdapter;
+import org.semanticweb.owlapi.search.EntitySearcher;
 
 /**
  * Visit the hierarchy to find the restriction that explicitly uses the passed concept as a filler.
  *
  * @author ferdinando.villa
  */
-public class ConceptRestrictionVisitor extends OWLClassExpressionVisitorAdapter {
+public class ConceptRestrictionVisitor implements OWLClassExpressionVisitor {
 
   private Set<OWLOntology> onts;
   private Set<OWLClass> processedClasses = new HashSet<>();
-  private OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> restriction;
-  private List<OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression>> restrictions =
+  private OWLQuantifiedRestriction<? extends OWLClassExpression> restriction;
+  private List<OWLQuantifiedRestriction<? extends OWLClassExpression>> restrictions =
       new ArrayList<>();
   private OWLClass filler;
 
-  public OWLQuantifiedRestriction<?, ?, ?> getRestriction() {
+  public OWLQuantifiedRestriction<? extends OWLClassExpression> getRestriction() {
     return this.restriction;
   }
 
-  public Collection<OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression>>
-      getRestrictions() {
+  public Collection<OWLQuantifiedRestriction<? extends OWLClassExpression>> getRestrictions() {
     return this.restrictions;
   }
 
@@ -59,13 +57,14 @@ public class ConceptRestrictionVisitor extends OWLClassExpressionVisitorAdapter 
   public void visit(OWLClass desc) {
 
     if (processedClasses.add(desc)) {
-      visitClassExpressions(desc.getSuperClasses(onts), desc);
-      visitClassExpressions(desc.getEquivalentClasses(onts), desc);
+      visitClassExpressions(EntitySearcher.getSuperClasses(desc, onts.stream()).toList(), desc);
+      visitClassExpressions(
+          EntitySearcher.getEquivalentClasses(desc, onts.stream()).toList(), desc);
     }
   }
 
-  private void visitRestriction(OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> desc) {
-    if (desc.getProperty() instanceof OWLProperty && hasFiller(desc.getFiller())) {
+  private void visitRestriction(OWLQuantifiedRestriction<? extends OWLClassExpression> desc) {
+    if (hasFiller(desc.getFiller())) {
       if (this.restriction == null) {
         this.restriction = desc;
       }

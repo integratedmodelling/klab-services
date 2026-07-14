@@ -41,6 +41,7 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.search.EntitySearcher;
 
 public class Property /* extends Knowledge implements IProperty */ {
 
@@ -116,7 +117,8 @@ public class Property /* extends Knowledge implements IProperty */ {
       if (_owl.isOWLObjectProperty()) {
 
         Set<OWLObjectPropertyExpression> dio =
-            _owl.asOWLObjectProperty().getInverses(ontology(owl));
+            EntitySearcher.getInverses(_owl.asOWLObjectProperty(), ontology(owl))
+                .collect(java.util.stream.Collectors.toSet());
 
         if (dio.size() > 1)
           throw new KlabValidationException(
@@ -137,9 +139,10 @@ public class Property /* extends Knowledge implements IProperty */ {
     synchronized (_owl) {
       if (_owl.isOWLDataProperty()) {
 
-        for (OWLDataRange c : _owl.asOWLDataProperty().getRanges(owl.manager.getOntologies())) {
+        for (OWLDataRange c :
+            EntitySearcher.getRanges(_owl.asOWLDataProperty(), owl.manager.ontologies()).toList()) {
 
-          if (c.isDatatype()) {
+          if (c.isOWLDatatype()) {
             OWLDatatype type = c.asOWLDatatype();
             Concept tltype = owl.getDatatypeMapping(type.getIRI().toString());
             if (tltype != null) {
@@ -149,7 +152,8 @@ public class Property /* extends Knowledge implements IProperty */ {
         }
       } else if (_owl.isOWLObjectProperty()) {
         for (OWLClassExpression c :
-            _owl.asOWLObjectProperty().getRanges(owl.manager.getOntologies())) {
+            EntitySearcher.getRanges(_owl.asOWLObjectProperty(), owl.manager.ontologies())
+                .toList()) {
           if (!c.isAnonymous()) ret.add(owl.getExistingOrCreate(c.asOWLClass()));
         }
       }
@@ -164,12 +168,14 @@ public class Property /* extends Knowledge implements IProperty */ {
     synchronized (this._owl) {
       if (_owl.isOWLDataProperty()) {
         for (OWLClassExpression c :
-            _owl.asOWLDataProperty().getDomains(owl.manager.getOntologies())) {
+            EntitySearcher.getDomains(_owl.asOWLDataProperty(), owl.manager.ontologies())
+                .toList()) {
           ret.add(owl.getExistingOrCreate(c.asOWLClass()));
         }
       } else if (_owl.isOWLObjectProperty()) {
         for (OWLClassExpression c :
-            _owl.asOWLObjectProperty().getDomains(owl.manager.getOntologies())) {
+            EntitySearcher.getDomains(_owl.asOWLObjectProperty(), owl.manager.ontologies())
+                .toList()) {
           ret.add(owl.getExistingOrCreate(c.asOWLClass()));
         }
       }
@@ -206,7 +212,8 @@ public class Property /* extends Knowledge implements IProperty */ {
     synchronized (_owl) {
       if (_owl.isOWLDataProperty()) {
         for (OWLOntology o : onts) {
-          for (OWLDataPropertyExpression p : _owl.asOWLDataProperty().getSuperProperties(o)) {
+          for (OWLDataPropertyExpression p :
+              EntitySearcher.getSuperProperties(_owl.asOWLDataProperty(), o).toList()) {
             ret.add(
                 new Property(
                     p.asOWLDataProperty(), owl.getConceptSpace(p.asOWLDataProperty().getIRI())));
@@ -214,7 +221,8 @@ public class Property /* extends Knowledge implements IProperty */ {
         }
       } else if (_owl.isOWLObjectProperty()) {
         for (OWLOntology o : onts) {
-          for (OWLObjectPropertyExpression p : _owl.asOWLObjectProperty().getSuperProperties(o)) {
+          for (OWLObjectPropertyExpression p :
+              EntitySearcher.getSuperProperties(_owl.asOWLObjectProperty(), o).toList()) {
             ret.add(
                 new Property(
                     p.asOWLObjectProperty(),
@@ -283,7 +291,8 @@ public class Property /* extends Knowledge implements IProperty */ {
     if (_owl.isOWLDataProperty()) {
       for (OWLOntology o : onts) {
         synchronized (this._owl) {
-          for (OWLDataPropertyExpression p : _owl.asOWLDataProperty().getSubProperties(o)) {
+          for (OWLDataPropertyExpression p :
+              EntitySearcher.getSubProperties(_owl.asOWLDataProperty(), o).toList()) {
             ret.add(
                 new Property(
                     p.asOWLDataProperty(), owl.getConceptSpace(p.asOWLDataProperty().getIRI())));
@@ -293,7 +302,8 @@ public class Property /* extends Knowledge implements IProperty */ {
     } else if (_owl.isOWLObjectProperty()) {
       for (OWLOntology o : onts) {
         synchronized (this._owl) {
-          for (OWLObjectPropertyExpression p : _owl.asOWLObjectProperty().getSubProperties(o)) {
+          for (OWLObjectPropertyExpression p :
+              EntitySearcher.getSubProperties(_owl.asOWLObjectProperty(), o).toList()) {
             ret.add(
                 new Property(
                     p.asOWLObjectProperty(),
@@ -324,8 +334,8 @@ public class Property /* extends Knowledge implements IProperty */ {
   //    @Override
   public boolean isFunctional(OWL owl) {
     return _owl.isOWLDataProperty()
-        ? _owl.asOWLDataProperty().isFunctional(ontology(owl))
-        : _owl.asOWLObjectProperty().isFunctional(ontology(owl));
+        ? EntitySearcher.isFunctional(_owl.asOWLDataProperty(), ontology(owl))
+        : EntitySearcher.isFunctional(_owl.asOWLObjectProperty(), ontology(owl));
   }
 
   //    @Override

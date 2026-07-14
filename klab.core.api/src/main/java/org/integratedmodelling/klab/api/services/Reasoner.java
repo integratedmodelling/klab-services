@@ -39,6 +39,11 @@ public interface Reasoner extends KlabService {
      * @return
      */
     String getWorldviewId();
+
+    /** Monotonically increasing revision of the loaded semantic knowledge. */
+    default long getKnowledgeRevision() {
+      return 0L;
+    }
   }
 
   /**
@@ -498,8 +503,8 @@ public interface Reasoner extends KlabService {
   /**
    * Return the asserted source of the relationship, assuming it is unique. If it is not unique, the
    * result is arbitrary among the possible sources.
-   * @deprecated
    *
+   * @deprecated
    * @param relationship a relationship concept
    * @return the source. May be null in abstract relationships.
    */
@@ -516,8 +521,8 @@ public interface Reasoner extends KlabService {
   /**
    * Return the asserted target of the relationship, assuming it is unique. If it is not unique, the
    * result is arbitrary among the possible targets.
-   * @deprecated
    *
+   * @deprecated
    * @param relationship a relationship concept
    * @return the target. May be null in abstract relationships.
    */

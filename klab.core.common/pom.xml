@@ -51,6 +51,11 @@
     </properties>
     <dependencies>
 
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- pluralization and such -->
         <dependency>
             <groupId>org.atteo</groupId>

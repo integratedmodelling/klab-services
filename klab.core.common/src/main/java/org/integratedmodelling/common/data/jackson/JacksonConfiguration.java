@@ -13,15 +13,14 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -344,6 +343,7 @@ public class JacksonConfiguration {
           ServiceCall.class,
           Observation.class,
           Histogram.class,
+          Histogram.Bin.class,
           NumericRange.class,
           Annotation.class,
           Metadata.class,

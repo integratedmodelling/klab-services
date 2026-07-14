@@ -1,17 +1,17 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
@@ -101,6 +101,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public static final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
   private final AtomicBoolean consistent = new AtomicBoolean(true);
+  private final AtomicLong knowledgeRevision = new AtomicLong();
+
+  private record SubsumptionKey(long revision, Concept concept, Concept other) {}
+
   private ReasonerConfiguration configuration = new ReasonerConfiguration();
   private final Map<String, String> coreConceptPeers = new HashMap<>();
   private final Map<Concept, Emergence> emergent = new HashMap<>();
@@ -112,27 +116,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private List<Notification> advisories = new ArrayList<>();
 
   /** Caches for concepts and observables. */
-  private final LoadingCache<String, Concept> concepts =
-      CacheBuilder.newBuilder()
-          .maximumSize(500)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<String, Concept>() {
-                public Concept load(String key) {
-                  return resolveConceptInternal(key);
-                }
-              });
+  private final Cache<String, Concept> concepts =
+      Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
 
-  private final LoadingCache<String, Observable> observables =
-      CacheBuilder.newBuilder()
-          .maximumSize(500)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<String, Observable>() {
-                public Observable load(String key) { // no checked exception
-                  return resolveObservableInternal(key);
-                }
-              });
+  private final Cache<String, Observable> observables =
+      Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+
+  private final Cache<SubsumptionKey, Boolean> subsumption =
+      Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
 
   Indexer indexer;
 
@@ -141,7 +132,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * configurable.
    */
   private Cache<Integer, SemanticExpression> semanticExpressions =
-      CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
+      Caffeine.newBuilder().expireAfterAccess(Duration.ofMinutes(10)).build();
 
   private final OWL owl;
   private final String hardwareSignature = Utils.Names.getHardwareId();
@@ -153,6 +144,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public OWL owl() {
     return owl;
+  }
+
+  public long knowledgeRevision() {
+    return knowledgeRevision.get();
+  }
+
+  private void invalidateSemanticCaches() {
+    knowledgeRevision.incrementAndGet();
+    concepts.invalidateAll();
+    observables.invalidateAll();
+    subsumption.invalidateAll();
+    if (semanticMatcher != null) {
+      semanticMatcher.resetCaches();
+    }
+    if (syntacticMatcher != null) {
+      syntacticMatcher.resetCaches();
+    }
   }
 
   private Concept nothingConcept(String urn) {
@@ -302,8 +310,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.observationReasoner = new ObservationReasoner(this);
     this.syntacticMatcher =
         new SyntacticMatcher(this, serviceScope().getService(ResourcesService.class));
-    this.semanticMatcher =
-        new SemanticMatcher(this, serviceScope().getService(ResourcesService.class));
+    this.semanticMatcher = new SemanticMatcher(this);
 
     return true;
   }
@@ -408,8 +415,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         Logging.INSTANCE.error(e);
       }
     }
-    // TODO Auto-generated method stub
-
   }
 
   private void saveConfiguration() {
@@ -438,20 +443,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept resolveConcept(String definition) {
-    try {
-      return concepts.get(definition);
-    } catch (ExecutionException e) {
-      return owl.nothing(definition, e);
-    }
+    Objects.requireNonNull(definition, "definition");
+    return concepts.get(definition, this::resolveConceptInternal);
   }
 
   @Override
   public Observable resolveObservable(String definition) {
-    try {
-      return observables.get(definition);
-    } catch (ExecutionException e) {
-      return ObservableImpl.promote(owl.nothing(definition, e), null);
-    }
+    Objects.requireNonNull(definition, "definition");
+    return observables.get(definition, this::resolveObservableInternal);
   }
 
   public Concept resolveConceptInternal(String definition) {
@@ -476,22 +475,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         serviceScope().getService(ResourcesService.class).declareObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
-      if (ret != null) {
-        observables.put(definition, ret);
-      }
     }
     return ret == null ? Observable.nothing("owl:Nothing") : ret;
   }
-
-  //  private Observable errorObservable(String definition) {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
-  //
-  //  private Concept errorConcept(String definition) {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
 
   @Override
   public Collection<Concept> operands(Semantics target) {
@@ -575,18 +561,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> allChildren(Semantics target) {
-
-    Set<Concept> ret = collectChildren(target, new HashSet<Concept>());
-    ret.add(target.asConcept());
-
+    Set<Concept> ret = collectChildren(target, new HashSet<>());
+    ret.remove(target.asConcept());
     return ret;
   }
 
   private Set<Concept> collectChildren(Semantics target, Set<Concept> hashSet) {
 
     for (Concept c : children(target)) {
-      if (!hashSet.contains(c)) collectChildren(c, hashSet);
-      hashSet.add(c);
+      if (hashSet.add(c)) {
+        collectChildren(c, hashSet);
+      }
     }
     return hashSet;
   }
@@ -716,340 +701,74 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public int semanticDistance(Semantics target, Semantics other) {
-    return semanticMatcher.semanticDistance(
-        target.asConcept(), other.asConcept(), null, true, null, serviceScope());
+    return semanticDistance(target, other, null);
   }
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    return semanticMatcher.semanticDistance(
-        target.asConcept(),
-        other.asConcept(),
-        context == null ? null : context.asConcept(),
-        true,
-        null,
-        serviceScope());
+    int distance = semanticMatcher.semanticDistance(target, other, context);
+    if (distance < 0) {
+      return distance;
+    }
+    int observableDistance = observableDistance(target, other);
+    return observableDistance < 0 ? observableDistance : distance + observableDistance;
   }
 
-  //
-  //  /**
-  //   * The workhorse of semantic distance computation can also consider any predicates that were
-  //   * abstract in the lineage of the passed concept (i.e. the concept is the result of a query
-  // with
-  //   * the abstract predicates, which has been contextualized to incarnate them into the passed
-  //   * correspondence with concrete counterparts). In that case, and only in that case, the
-  // distance
-  //   * between a concrete candidate and one that contains its predicates in the abstract form can
-  // be
-  //   * positive, i.e. a concept with abstract predicates can resolve one with concrete subclasses
-  // as
-  //   * long as the lineage contains its resolution.
-  //   *
-  //   * @param to
-  //   * @param context
-  //   * @param compareInherency
-  //   * @param resolvedAbstractPredicates
-  //   * @return
-  //   */
-  //  public int semanticDistance(
-  //      Concept from,
-  //      Concept to,
-  //      Concept context,
-  //      boolean compareInherency,
-  //      Map<Concept, Concept> resolvedAbstractPredicates) {
-  //
-  //    int distance = 0;
-  //
-  //    // String resolving = this.getDefinition();
-  //    // String resolved = concept.getDefinition();
-  //    // System.out.println("Does " + resolving + " resolve " + resolved + "?");
-  //
-  //    int mainDistance =
-  //        coreDistance(from, to, context, compareInherency, resolvedAbstractPredicates);
-  //    distance += mainDistance * 50;
-  //    if (distance < 0) {
-  //      return distance;
-  //    }
-  //
-  //    // should have all the same traits - additional traits are allowed only
-  //    // in contextual types
-  //    Set<Concept> acceptedTraits = new HashSet<>();
-  //    for (Concept t : traits(from)) {
-  //      if (t.isAbstract()
-  //          && resolvedAbstractPredicates != null
-  //          && resolvedAbstractPredicates.containsKey(t)) {
-  //        distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
-  //        acceptedTraits.add(resolvedAbstractPredicates.get(t));
-  //      } else {
-  //        boolean ok = hasTrait(to, t);
-  //        if (!ok) {
-  //          return -50;
-  //        }
-  //      }
-  //    }
-  //
-  //    for (Concept t : traits(to)) {
-  //      if (!acceptedTraits.contains(t) && !hasTrait(from, t)) {
-  //        return -50;
-  //      }
-  //    }
-  //
-  //    // same with roles.
-  //    Set<Concept> acceptedRoles = new HashSet<>();
-  //    for (Concept t : roles(from)) {
-  //      if (t.isAbstract()
-  //          && resolvedAbstractPredicates != null
-  //          && resolvedAbstractPredicates.containsKey(t)) {
-  //        distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
-  //        acceptedRoles.add(resolvedAbstractPredicates.get(t));
-  //      } else {
-  //        boolean ok = hasRole(to, t);
-  //        if (!ok) {
-  //          return -50;
-  //        }
-  //      }
-  //    }
-  //
-  //    for (Concept t : roles(to)) {
-  //      if (!acceptedRoles.contains(t) && !hasRole(from, t)) {
-  //        return -50;
-  //      }
-  //    }
-  //
-  //    //        if (context == null) {
-  //    //            context = context(to);
-  //    //        }
-  //
-  //    int component;
-  //
-  //    if (compareInherency) {
-  //
-  //      //            component = distance(context(from), context, true);
-  //      //
-  //      //            if (component < 0) {
-  //      //                double d = ((double) component / 10.0);
-  //      //                return -1 * (int) (d > 10 ? d : 10);
-  //      //            }
-  //      //            distance += component;
-  //
-  //      /*
-  //       * any EXPLICIT inherency must be the same in both.
-  //       */
-  //      Concept ourExplicitInherent = directInherent(from);
-  //      Concept itsExplicitInherent = directInherent(to);
-  //
-  //      if (ourExplicitInherent != null || itsExplicitInherent != null) {
-  //        if (ourExplicitInherent != null && itsExplicitInherent != null) {
-  //          component = distance(ourExplicitInherent, itsExplicitInherent, true);
-  //
-  //          if (component < 0) {
-  //            double d = ((double) component / 10.0);
-  //            return -1 * (int) (d > 10 ? d : 10);
-  //          }
-  //          distance += component;
-  //        } else {
-  //          return -50;
-  //        }
-  //      }
-  //
-  //      /*
-  //       * inherency must be same (theirs is ours) unless our inherent type is abstract
-  //       */
-  //      Concept ourInherent = inherent(from);
-  //      Concept itsInherent = inherent(to);
-  //
-  //      if (ourInherent != null || itsInherent != null) {
-  //
-  //        if (ourInherent != null && ourInherent.isAbstract()) {
-  //          component = distance(ourInherent, itsInherent, false);
-  //        } else if (ourInherent == null && itsInherent != null && context != null) {
-  //          /*
-  //           * Situations like: does XXX resolve YYY of ZZZ when ZZZ is the context.
-  //           */
-  //          component = distance(context, itsInherent, false);
-  //        } else {
-  //          component = distance(itsInherent, ourInherent, false);
-  //        }
-  //
-  //        if (component < 0) {
-  //          double d = ((double) component / 10.0);
-  //          return -1 * (int) (d > 10 ? d : 10);
-  //        }
-  //        distance += component;
-  //      }
-  //    }
-  //
-  //    component = distance(goal(from), goal(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(cooccurrent(from), cooccurrent(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(causant(from), causant(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(caused(from), caused(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(adjacent(from), adjacent(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(compresent(from), compresent(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    component = distance(relativeTo(from), relativeTo(to), false);
-  //    if (component < 0) {
-  //      double d = ((double) component / 10.0);
-  //      return -1 * (int) (d > 10 ? d : 10);
-  //    }
-  //    distance += component;
-  //
-  //    return distance;
-  //  }
-  //
-  //  /**
-  //   * Get the distance between the core described observables after factoring out all operators
-  // and
-  //   * ensuring they are the same. If not the same, the concepts are incompatible and the distance
-  // is
-  //   * negative.
-  //   *
-  //   * @param to
-  //   * @return
-  //   */
-  //  public int coreDistance(
-  //      Concept from,
-  //      Concept to,
-  //      Concept context,
-  //      boolean compareInherency,
-  //      Map<Concept, Concept> resolvedAbstractPredicates) {
-  //
-  //    if (from == to || from.equals(to)) {
-  //      return 0;
-  //    }
-  //
-  //    Pair<Concept, List<SemanticType>> c1ops = splitOperators(from);
-  //    Pair<Concept, List<SemanticType>> c2ops = splitOperators(to);
-  //
-  //    if (!c1ops.getSecond().equals(c2ops.getSecond())) {
-  //      return -50;
-  //    }
-  //
-  //    if (!c1ops.getSecond().isEmpty()) {
-  //      /*
-  //       * if operators were extracted, the distance must take into account traits and
-  //       * the like for the concepts they describe, so call the main method again, which
-  //       * will call this and perform the core check below.
-  //       */
-  //      return semanticDistance(
-  //          c1ops.getFirst(),
-  //          c2ops.getFirst(),
-  //          context,
-  //          compareInherency,
-  //          resolvedAbstractPredicates);
-  //    }
-  //
-  //    Concept core1 = coreObservable(c1ops.getFirst());
-  //    Concept core2 = coreObservable(c2ops.getFirst());
-  //
-  //    /*
-  //     * FIXME this must check: have operator ? (operator == operator && coreObs ==
-  //     * coreObs) : coreObs == coreObs;
-  //     */
-  //
-  //    if (core1 == null || core2 == null) {
-  //      return -100;
-  //    }
-  //
-  //    if (!from.is(SemanticType.PREDICATE) && !core1.equals(core2)) {
-  //      /*
-  //       * in order to resolve an observation, the core observables must be equal;
-  //       * subsumption is not OK (lidar elevation does not resolve elevation as it
-  //       * creates different observations; same for different observation techniques -
-  //       * easy strategy to annotate techs that make measurements incompatible = use a
-  //       * subclass instead of a related trait).
-  //       *
-  //       * Predicates are unique in being able to resolve a more specific predicate.
-  //       */
-  //      return -50;
-  //    }
-  //
-  //    /**
-  //     * Previously returning the distance, which does not work unless the core observables are
-  // the
-  //     * same (differentiated by predicates only) - which for example makes identities under 'type
-  // of'
-  //     * be compatible no matter the identity.
-  //     */
-  //    return core1.equals(core2)
-  //        ? assertedDistance(from, to)
-  //        : (assertedDistance(from, to) == 0 ? 0 : -1);
-  //  }
-  //
-  //  private int distance(Concept from, Concept to, boolean acceptAbsent) {
-  //
-  //    int ret = 0;
-  //    if (from == null && to != null) {
-  //      ret = acceptAbsent ? 50 : -50;
-  //    } else if (from != null && to == null) {
-  //      ret = -50;
-  //    } else if (from != null && to != null) {
-  //      ret = is(to, from) ? assertedDistance(to, from) : -100;
-  //      if (ret >= 0) {
-  //        for (Concept t : traits(from)) {
-  //          boolean ok = hasTrait(to, t);
-  //          if (!ok) {
-  //            return -50;
-  //          }
-  //        }
-  //        for (Concept t : traits(to)) {
-  //          if (!hasTrait(from, t)) {
-  //            ret += 10;
-  //          }
-  //        }
-  //      }
-  //    }
-  //
-  //    return ret > 100 ? 100 : ret;
-  //  }
+  private int observableDistance(Semantics target, Semantics other) {
+    if (!(target instanceof Observable targetObservable)
+        || !(other instanceof Observable otherObservable)) {
+      return 0;
+    }
+    int distance = 0;
+    Concept targetObserver = targetObservable.getObserverSemantics();
+    Concept otherObserver = otherObservable.getObserverSemantics();
+    if (targetObserver != null) {
+      if (otherObserver == null) {
+        return -50;
+      }
+      int observerDistance = semanticMatcher.assertedDistance(otherObserver, targetObserver);
+      if (observerDistance < 0) {
+        return -50;
+      }
+      distance += observerDistance;
+    } else if (otherObserver != null) {
+      distance++;
+    }
+
+    if (targetObservable.getContextualization() != null) {
+      if (otherObservable.getContextualization() == null
+          || !otherObservable.is(targetObservable.getContextualization())) {
+        return -50;
+      }
+    }
+
+    var targetMediator = targetObservable.mediator();
+    var otherMediator = otherObservable.mediator();
+    if (targetMediator != null) {
+      if (otherMediator == null || !targetMediator.isCompatible(otherMediator)) {
+        return -50;
+      }
+      if (!targetMediator.equals(otherMediator)) {
+        distance++;
+      }
+    } else if (otherMediator != null) {
+      distance++;
+    }
+    return distance;
+  }
 
   @Override
   public Concept coreObservable(Semantics first) {
-    String def = first.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
     Concept ret = first.asConcept();
-    while (def != null) {
-      ret = resolveConcept(def);
-      if (ret.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY) != null && !ret.getUrn().equals(def)) {
-        def = ret.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
-      } else {
-        break;
+    Set<String> visited = new HashSet<>();
+    while (ret != null && visited.add(ret.getUrn())) {
+      String next = ret.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
+      if (next == null) {
+        return ret;
       }
+      ret = resolveConcept(next);
     }
-    return ret;
+    return ret == null ? nothingConcept(first.getUrn()) : ret;
   }
 
   @Override
@@ -1126,20 +845,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     return false;
   }
-
-  //    @Override
-  //    public Concept directContext(Semantics concept) {
-  //        Collection<Concept> cls = this.owl.getDirectRestrictedClasses(concept.asConcept(),
-  //                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-  //        return cls.isEmpty() ? null : cls.iterator().next();
-  //    }
-  //
-  //    @Override
-  //    public Concept context(Semantics concept) {
-  //        Collection<Concept> cls = this.owl.getRestrictedClasses(concept.asConcept(),
-  //                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-  //        return cls.isEmpty() ? null : cls.iterator().next();
-  //    }
 
   @Override
   public Concept directInherent(Semantics concept) {
@@ -1322,8 +1027,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public String style(Concept concept) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException("Reasoner concept styling is not supported");
   }
 
   @Override
@@ -1341,6 +1045,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
     ret.setConsistent(this.consistent.get());
+    ret.setKnowledgeRevision(knowledgeRevision());
     return ret;
   }
 
@@ -1508,8 +1213,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> applicableObservables(Concept main) {
-    // TODO Auto-generated method stub
-    return null;
+    return this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY));
   }
 
   @Override
@@ -1540,7 +1244,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return ResourceSet.empty();
     }
 
+    invalidateSemanticCaches();
     this.worldview = worldview;
+    this.observationReasoner = new ObservationReasoner(this);
 
     this.owl.initialize(worldview.getOntologies().getFirst());
     for (KimOntology ontology : worldview.getOntologies()) {
@@ -1558,7 +1264,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     observationReasoner.initializeStrategies();
 
     // assess consistent status and if consistent, set operational
-    this.consistent.set(!Utils.Notifications.hasErrors(ret));
+    boolean logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
+    this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
+    if (!logicallyConsistent) {
+      ret.add(Notification.error("Reasoner knowledge base is logically inconsistent"));
+    }
     this.advisories.addAll(ret);
 
     setOperational(this.consistent.get());
@@ -1574,9 +1284,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     serviceScope().setMaintenanceMode(true);
 
-    // delete caches
-    this.concepts.invalidateAll();
-    this.observables.invalidateAll();
+    invalidateSemanticCaches();
 
     boolean inconsistent = false;
 
@@ -1646,6 +1354,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         resource.getNotifications().addAll(notifications);
       }
+      this.owl.flushReasoner();
+      if (this.owl.isOn() && !this.owl.isConsistent()) {
+        inconsistent = true;
+        this.advisories.add(
+            Notification.error("Reasoner knowledge base is logically inconsistent"));
+      }
     } catch (Throwable t) {
       inconsistent = true;
       Logging.INSTANCE.error("failed to update knowledge", t);
@@ -1654,9 +1368,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       serviceScope().setMaintenanceMode(false);
     }
 
-    if (inconsistent) {
-      this.consistent.set(false);
-    }
+    this.consistent.set(!inconsistent);
 
     return changes;
   }
@@ -1664,9 +1376,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public boolean is(Semantics concept, Semantics other) {
 
+    Objects.requireNonNull(concept, "concept");
+    Objects.requireNonNull(other, "other");
+
     if (concept == other || concept.equals(other)) {
       return true;
     }
+
+    var key = new SubsumptionKey(knowledgeRevision(), concept.asConcept(), other.asConcept());
+    return subsumption.get(key, ignored -> computeSubsumption(concept, other));
+  }
+
+  private boolean computeSubsumption(Semantics concept, Semantics other) {
 
     if (concept.asConcept().isCollective() != other.asConcept().isCollective()) {
       return false;
@@ -1692,49 +1413,65 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /*
-     * TODO this would be a good point to insert caching logics. It should also go
-     * in all remote clients.
-     */
-
-    /*
      * Speed up checking for logical expressions without forcing the reasoner to
      * compute complex logics.
      */
+    Boolean logicalResult = logicalSubsumption(concept, other, this::operands, this::is);
+    if (logicalResult != null) {
+      return logicalResult;
+    }
+
+    if (this.owl.isOn()) {
+      return this.owl.is(concept.asConcept(), other.asConcept());
+    }
+    Collection<Concept> collection = allParents(concept);
+    return collection.contains(other.asConcept());
+  }
+
+  static Boolean logicalSubsumption(
+      Semantics concept,
+      Semantics other,
+      Function<Semantics, Collection<Concept>> operandProvider,
+      BiPredicate<Semantics, Semantics> subsumption) {
     if (concept.is(SemanticType.UNION)) {
-
-      for (Concept c : operands(concept)) {
-        if (is(c, other)) {
-          return true;
-        }
-      }
-
-    } else if (concept.is(SemanticType.INTERSECTION)) {
-
-      for (Concept c : operands(concept)) {
-        if (!is(c, other)) {
+      for (Concept operand : operandProvider.apply(concept)) {
+        if (!subsumption.test(operand, other)) {
           return false;
         }
       }
       return true;
-
-    } else {
-      /*
-       * use the semantic closure. We may want to cache this eventually.
-       */
-      Collection<Concept> collection = allParents(concept);
-      collection.add(concept.asConcept());
-      return collection.contains(other.asConcept());
     }
-    return false;
+    if (concept.is(SemanticType.INTERSECTION)) {
+      for (Concept operand : operandProvider.apply(concept)) {
+        if (subsumption.test(operand, other)) {
+          return true;
+        }
+      }
+    }
+    return null;
   }
 
   @Override
   public Semantics domain(Semantics conceptImpl) {
-    // TODO Auto-generated method stub
+    if (conceptImpl == null) {
+      return null;
+    }
+    ArrayDeque<Concept> queue = new ArrayDeque<>();
+    Set<Concept> visited = new HashSet<>();
+    queue.add(conceptImpl.asConcept());
+    while (!queue.isEmpty()) {
+      Concept current = queue.removeFirst();
+      if (!visited.add(current)) {
+        continue;
+      }
+      if (current.is(SemanticType.DOMAIN)) {
+        return current;
+      }
+      queue.addAll(parents(current));
+    }
     return null;
   }
 
-  //  @Override
   public Concept declareConcept(KimConcept conceptDeclaration) {
     return declare(
         conceptDeclaration,
@@ -1742,7 +1479,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         serviceScope());
   }
 
-  //  @Override
   public Observable declareObservable(KimObservable observableDeclaration) {
     return declare(
         observableDeclaration,
@@ -1750,7 +1486,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         serviceScope());
   }
 
-  //  @Override
   public Observable declareObservable(
       KimObservable observableDeclaration, Map<String, Object> patternVariables) {
 
@@ -1915,7 +1650,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean hasParentRole(Semantics o1, Concept t) {
-    // TODO Auto-generated method stub
+    for (Concept role : roles(o1)) {
+      if (is(t, role)) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -1936,8 +1675,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean occurrent(Semantics context1) {
-    // TODO Auto-generated method stub
-    return false;
+    return context1 != null
+        && (context1.is(SemanticType.PROCESS) || context1.is(SemanticType.EVENT));
   }
 
   @Override
@@ -1993,17 +1732,38 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
-    return false;
+    if (matches == null) {
+      throw new KlabIllegalArgumentException("The generic match result map cannot be null");
+    }
+    if (match(candidate, pattern) && !pattern.isAbstract()) {
+      return true;
+    }
+    throw new KlabUnimplementedException(
+        "Generic semantic matching with captured substitutions is not implemented");
   }
 
   @Override
   public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
-    return null;
+    Objects.requireNonNull(pattern, "pattern");
+    Objects.requireNonNull(concreteConcepts, "concreteConcepts");
+    String declaration = pattern.getUrn();
+    for (var replacement : concreteConcepts.entrySet()) {
+      declaration =
+          declaration.replace(replacement.getKey().getUrn(), replacement.getValue().getUrn());
+    }
+    Semantics ret =
+        pattern instanceof Observable
+            ? resolveObservable(declaration)
+            : resolveConcept(declaration);
+    @SuppressWarnings("unchecked")
+    T typed = (T) ret;
+    return typed;
   }
 
   @Override
   public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
-    return null;
+    throw new KlabUnimplementedException(
+        "Inference-based generic concretization is not implemented");
   }
 
   @Override
@@ -2086,11 +1846,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     return ret;
   }
-
-  //  @Override
-  //  public Builder observableBuilder(Observable observableImpl) {
-  //    return ObservableBuilder.getBuilder(observableImpl, scope, this);
-  //  }
 
   /*
    * --- non-API
@@ -2778,20 +2533,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> rolesFor(Concept observable, Concept context) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
   }
 
   @Override
   public Concept impliedRole(Concept baseRole, Concept contextObservable) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
   }
 
   @Override
   public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException("Implied role closure is not implemented");
   }
 
   /**
@@ -2894,7 +2646,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //            Message.MessageClass.ServiceLifecycle,
     //            Message.MessageType.ServiceUnavailable,
     //            capabilities(serviceScope()));
-    // TODO Auto-generated method stub
+    invalidateSemanticCaches();
+    owl.reset();
     return super.shutdown();
   }
 
@@ -2916,7 +2669,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return observationReasoner.computeIdentificationStrategy(observable, scope);
   }
 
-  //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
     KimConcept peer =
@@ -2950,7 +2702,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return ret;
   }
 
-  //  @Override
   public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
 
     /*
@@ -3095,7 +2846,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public <T extends Serializable> T retrieveAsset(
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
-    // TODO
-    return null;
+    throw new KlabUnimplementedException(
+        "Reasoner assets cannot be retrieved through this service");
   }
 }

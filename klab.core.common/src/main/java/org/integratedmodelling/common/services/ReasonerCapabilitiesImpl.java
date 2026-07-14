@@ -1,16 +1,8 @@
 package org.integratedmodelling.common.services;
 
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
-
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
     implements Reasoner.Capabilities {
@@ -18,6 +10,7 @@ public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
   private KlabService.Type type;
   private String worldviewId;
   private boolean consistent;
+  private long knowledgeRevision;
 
   @Override
   public KlabService.Type getType() {
@@ -44,5 +37,14 @@ public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
 
   public void setConsistent(boolean consistent) {
     this.consistent = consistent;
+  }
+
+  @Override
+  public long getKnowledgeRevision() {
+    return knowledgeRevision;
+  }
+
+  public void setKnowledgeRevision(long knowledgeRevision) {
+    this.knowledgeRevision = knowledgeRevision;
   }
 }

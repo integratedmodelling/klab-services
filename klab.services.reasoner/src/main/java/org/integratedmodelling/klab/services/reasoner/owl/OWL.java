@@ -60,6 +60,7 @@ import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.*;
+import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.AutoIRIMapper;
 import org.semanticweb.owlapi.util.Version;
 import org.springframework.util.StringUtils;
@@ -227,9 +228,13 @@ public class OWL {
    * @param owl
    * @return the property for the class
    */
-  public Property getPropertyFor(OWLProperty<?, ?> owl) {
+  public Property getPropertyFor(OWLPropertyExpression expression) {
 
     Property ret = null;
+    OWLProperty owl =
+        expression instanceof OWLObjectPropertyExpression objectProperty
+            ? objectProperty.getNamedProperty()
+            : (OWLProperty) expression;
     String sch = owl.getIRI().getNamespace();
     if (sch.endsWith("#")) {
       sch = sch.substring(0, sch.length() - 1);
@@ -251,6 +256,8 @@ public class OWL {
   }
 
   public void initialize(KimOntology rootDomain) {
+
+    reset();
 
     manager = OWLManager.createOWLOntologyManager();
     // this.loadPath = loadPath;
@@ -303,6 +310,28 @@ public class OWL {
     for (KimNamespace ns : this.namespaces.values()) {
       registerWithReasoner(getOntology(ns.getUrn()));
     }
+  }
+
+  public synchronized void reset() {
+    if (reasoner != null) {
+      reasoner.dispose();
+      reasoner = null;
+    }
+    reasonerActive = false;
+    mergedReasonerOntology = null;
+    nonSemanticConcepts = null;
+    coreOntology = null;
+    thing = null;
+    nothing = null;
+    namespaces.clear();
+    ontologies.clear();
+    iri2ns.clear();
+    systemConcepts.clear();
+    xsdMappings.clear();
+    owlClasses.clear();
+    conceptsById.clear();
+    classId.set(1L);
+    manager = null;
   }
 
   public CoreOntology getCoreOntology() {
@@ -594,7 +623,7 @@ public class OWL {
         /*
          * already imported- wrap it and use it as is.
          */
-        OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
+        OWLOntology ont = manager.getOntology(e.getOntologyID());
         if (ont != null && ontologies.get(pth) == null) {
           Ontology o = new Ontology(this, ont, pth);
           try {
@@ -602,7 +631,10 @@ public class OWL {
           } catch (MalformedURLException e1) {
           }
           ontologies.put(pth, o);
-          iri2ns.put(ont.getOntologyID().getOntologyIRI().toString(), pth);
+          Optional<IRI> ontologyIri = ont.getOntologyID().getOntologyIRI();
+          if (ontologyIri.isPresent()) {
+            iri2ns.put(ontologyIri.get().toString(), pth);
+          }
         }
 
       } catch (Exception e) {
@@ -749,7 +781,7 @@ public class OWL {
       /*
        * already imported- wrap it and use it as is.
        */
-      OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
+      OWLOntology ont = manager.getOntology(e.getOntologyID());
       if (ont != null && ontologies.get(id) == null) {
         Ontology ontology = new Ontology(this, ont, id);
         ontologies.put(id, ontology);
@@ -884,15 +916,12 @@ public class OWL {
       return null;
     }
     synchronized (owl) {
-      for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
-        if (s instanceof OWLQuantifiedRestriction) {
-          if (getPropertyFor(
-                      (OWLProperty<?, ?>) ((OWLQuantifiedRestriction<?, ?, ?>) s).getProperty())
-                  .is(restricted, this)
-              && ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller()
-                  instanceof OWLClassExpression) {
-            Collection<Concept> concepts =
-                unwrap((OWLClassExpression) ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller());
+      for (OWLClassExpression s :
+          EntitySearcher.getSuperClasses(owl, manager.ontologies()).toList()) {
+        if (s instanceof OWLQuantifiedRestriction<?> restriction) {
+          if (getPropertyFor(restriction.getProperty()).is(restricted, this)
+              && restriction.getFiller() instanceof OWLClassExpression filler) {
+            Collection<Concept> concepts = unwrap(filler);
             if (concepts != null) {
               return concepts.iterator().next();
             }
@@ -918,15 +947,12 @@ public class OWL {
       return ret;
     }
     synchronized (owl) {
-      for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
-        if (s instanceof OWLQuantifiedRestriction) {
-          if (getPropertyFor(
-                      (OWLProperty<?, ?>) ((OWLQuantifiedRestriction<?, ?, ?>) s).getProperty())
-                  .is(restricted, this)
-              && ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller()
-                  instanceof OWLClassExpression) {
-            ret.addAll(
-                unwrap((OWLClassExpression) ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller()));
+      for (OWLClassExpression s :
+          EntitySearcher.getSuperClasses(owl, manager.ontologies()).toList()) {
+        if (s instanceof OWLQuantifiedRestriction<?> restriction) {
+          if (getPropertyFor(restriction.getProperty()).is(restricted, this)
+              && restriction.getFiller() instanceof OWLClassExpression filler) {
+            ret.addAll(unwrap(filler));
           }
         }
       }
@@ -1203,7 +1229,7 @@ public class OWL {
   public Property getRestrictingProperty(Concept type, Concept concept) {
     ConceptRestrictionVisitor visitor = new ConceptRestrictionVisitor(type, concept, this);
     if (visitor.getRestriction() != null) {
-      return getPropertyFor((OWLProperty<?, ?>) visitor.getRestriction().getProperty());
+      return getPropertyFor(visitor.getRestriction().getProperty());
     }
     return null;
   }
@@ -2945,7 +2971,9 @@ public class OWL {
     Set<Concept> concepts = new HashSet<>();
     OWLClass owl = getOWLClass(concept);
     synchronized (owl) {
-      Set<OWLClassExpression> set = owl.getSuperClasses(manager.getOntologies());
+      Set<OWLClassExpression> set =
+          EntitySearcher.getSuperClasses(owl, manager.ontologies())
+              .collect(java.util.stream.Collectors.toSet());
       for (OWLClassExpression s : set) {
         if (!s.equals(owl) && !(s.isAnonymous() || s.asOWLClass().isBuiltIn()))
           concepts.add(getExistingOrCreate(s.asOWLClass()));
@@ -2958,7 +2986,9 @@ public class OWL {
     Set<Concept> concepts = new HashSet<>();
     OWLClass owl = getOWLClass(concept);
     synchronized (owl) {
-      Set<OWLClassExpression> set = owl.getSubClasses(manager.getOntologies());
+      Set<OWLClassExpression> set =
+          EntitySearcher.getSubClasses(owl, manager.ontologies())
+              .collect(java.util.stream.Collectors.toSet());
       for (OWLClassExpression s : set) {
         if (!(s.isAnonymous() || s.isOWLNothing() || s.isOWLThing()))
           concepts.add(getExistingOrCreate(s.asOWLClass()));
@@ -2999,7 +3029,9 @@ public class OWL {
   public Set<Concept> getOperands(Concept asConcept) {
     Set<Concept> ret = new HashSet<>();
     OWLClass _owl = getOWLClass(asConcept);
-    Set<OWLClassExpression> set = _owl.getSuperClasses(manager.getOntologies());
+    Set<OWLClassExpression> set =
+        EntitySearcher.getSuperClasses(_owl, manager.ontologies())
+            .collect(java.util.stream.Collectors.toSet());
     for (OWLClassExpression s : set) {
       if (s instanceof OWLNaryBooleanClassExpression) {
         for (OWLClassExpression cls : ((OWLNaryBooleanClassExpression) s).getOperandsAsList()) {

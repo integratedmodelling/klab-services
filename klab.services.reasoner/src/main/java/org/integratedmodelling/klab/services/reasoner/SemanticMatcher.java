@@ -1,82 +1,195 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.*;
+import java.util.function.Function;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 
 /**
  * Computes semantic distance between concepts, with configurable caching. Clients should also
  * provide similar caching to minimize network traffic.
- *
- * <p>TODO integrate within ReasonerService and remove the corresponding code from there.
  */
 public class SemanticMatcher {
 
-  private final ReasonerService reasonerService;
-  private final ResourcesService resourcesService;
+  interface Operations {
+    Collection<Concept> traits(Semantics concept);
+
+    boolean hasTrait(Semantics concept, Concept trait);
+
+    Collection<Concept> roles(Semantics concept);
+
+    boolean hasRole(Semantics concept, Concept role);
+
+    Concept directInherent(Semantics concept);
+
+    Concept inherent(Semantics concept);
+
+    Concept goal(Semantics concept);
+
+    Concept cooccurrent(Semantics concept);
+
+    Concept causant(Semantics concept);
+
+    Concept caused(Semantics concept);
+
+    Concept adjacent(Semantics concept);
+
+    Concept compresent(Semantics concept);
+
+    Concept relativeTo(Semantics concept);
+
+    Pair<Concept, List<SemanticType>> splitOperators(Semantics concept);
+
+    Concept withoutModifiers(Concept concept, Scope scope);
+
+    boolean is(Semantics concept, Semantics other);
+
+    Collection<Concept> parents(Semantics concept);
+
+    Scope serviceScope();
+
+    long knowledgeRevision();
+  }
+
+  private static final class ServiceOperations implements Operations {
+    private final ReasonerService service;
+
+    private ServiceOperations(ReasonerService service) {
+      this.service = service;
+    }
+
+    public Collection<Concept> traits(Semantics concept) {
+      return service.traits(concept);
+    }
+
+    public boolean hasTrait(Semantics concept, Concept trait) {
+      return service.hasTrait(concept, trait);
+    }
+
+    public Collection<Concept> roles(Semantics concept) {
+      return service.roles(concept);
+    }
+
+    public boolean hasRole(Semantics concept, Concept role) {
+      return service.hasRole(concept, role);
+    }
+
+    public Concept directInherent(Semantics concept) {
+      return service.directInherent(concept);
+    }
+
+    public Concept inherent(Semantics concept) {
+      return service.inherent(concept);
+    }
+
+    public Concept goal(Semantics concept) {
+      return service.goal(concept);
+    }
+
+    public Concept cooccurrent(Semantics concept) {
+      return service.cooccurrent(concept);
+    }
+
+    public Concept causant(Semantics concept) {
+      return service.causant(concept);
+    }
+
+    public Concept caused(Semantics concept) {
+      return service.caused(concept);
+    }
+
+    public Concept adjacent(Semantics concept) {
+      return service.adjacent(concept);
+    }
+
+    public Concept compresent(Semantics concept) {
+      return service.compresent(concept);
+    }
+
+    public Concept relativeTo(Semantics concept) {
+      return service.relativeTo(concept);
+    }
+
+    public Pair<Concept, List<SemanticType>> splitOperators(Semantics concept) {
+      return service.splitOperators(concept);
+    }
+
+    public Concept withoutModifiers(Concept concept, Scope scope) {
+      return SemanticsBuilder.create(concept, service, scope)
+          .without(SemanticRole.modifiers())
+          .buildConcept();
+    }
+
+    public boolean is(Semantics concept, Semantics other) {
+      return service.is(concept, other);
+    }
+
+    public Collection<Concept> parents(Semantics concept) {
+      return service.parents(concept);
+    }
+
+    public Scope serviceScope() {
+      return service.serviceScope();
+    }
+
+    public long knowledgeRevision() {
+      return service.knowledgeRevision();
+    }
+  }
+
+  private record DistanceKey(long revision, Concept target, Concept other, Concept context) {}
+
+  private record HierarchyKey(long revision, Semantics from, Semantics to) {}
+
+  private final Operations operations;
 
   /**
    * Cache for non-contextual matching with inherency=true and no abstract predicates incarnation
    */
-  private final LoadingCache<Pair<Semantics, Semantics>, Integer> binaryMatchCache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20)
-          .maximumSize(400) // TODO configure
-          .build(
-              new CacheLoader<>() {
-                @Override
-                public Integer load(Pair<Semantics, Semantics> key) throws Exception {
-                  return computeSemanticDistance(key.getFirst(), key.getSecond());
-                }
-              });
+  private final Cache<DistanceKey, Integer> distanceCache =
+      Caffeine.newBuilder().maximumSize(10_000).recordStats().build();
 
-  /** Cache for contextual matching with inherency=true and no abstract predicates incarnation */
-  private final LoadingCache<Triple<Semantics, Semantics, Semantics>, Integer> ternaryMatchCache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20)
-          .maximumSize(400) // TODO configure
-          .build(
-              new CacheLoader<>() {
-                @Override
-                public Integer load(Triple<Semantics, Semantics, Semantics> key) throws Exception {
-                  return computeSemanticDistance(key.getFirst(), key.getSecond());
-                }
-              });
+  private final Cache<HierarchyKey, Integer> assertedDistanceCache =
+      Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
 
-  private Integer computeSemanticDistance(Semantics first, Semantics second) {
-    return semanticDistance(first, second);
+  public SemanticMatcher(ReasonerService reasonerService) {
+    this(new ServiceOperations(reasonerService));
   }
 
-  public SemanticMatcher(ReasonerService reasonerService, ResourcesService resourcesService) {
-    this.reasonerService = reasonerService;
-    this.resourcesService = resourcesService;
+  SemanticMatcher(Operations operations) {
+    this.operations = operations;
   }
 
-  // TODO use cache except in special cases
   public int semanticDistance(Semantics target, Semantics other) {
-    return semanticDistance(
-        target.asConcept(), other.asConcept(), null, true, null, reasonerService.serviceScope());
+    return semanticDistance(target, other, null);
   }
 
-  // TODO use cache except in special cases
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    return semanticDistance(
-        target.asConcept(),
-        other.asConcept(),
-        context == null ? null : context.asConcept(),
-        true,
-        null,
-        reasonerService.serviceScope());
+    Objects.requireNonNull(target, "target");
+    Objects.requireNonNull(other, "other");
+    Concept targetConcept = target.asConcept();
+    Concept otherConcept = other.asConcept();
+    Concept contextConcept = context == null ? null : context.asConcept();
+    var key =
+        new DistanceKey(
+            operations.knowledgeRevision(), targetConcept, otherConcept, contextConcept);
+    return distanceCache.get(
+        key,
+        ignored ->
+            semanticDistance(
+                targetConcept,
+                otherConcept,
+                contextConcept,
+                true,
+                null,
+                operations.serviceScope()));
   }
 
   /**
@@ -121,44 +234,52 @@ public class SemanticMatcher {
     // should have all the same traits - additional traits are allowed only
     // in contextual types
     Set<Concept> acceptedTraits = new HashSet<>();
-    for (Concept t : reasonerService.traits(from)) {
+    for (Concept t : operations.traits(from)) {
       if (t.isAbstract()
           && resolvedAbstractPredicates != null
           && resolvedAbstractPredicates.containsKey(t)) {
-        distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
+        int predicateDistance = assertedDistance(resolvedAbstractPredicates.get(t), t);
+        if (predicateDistance < 0) {
+          return -50;
+        }
+        distance += predicateDistance;
         acceptedTraits.add(resolvedAbstractPredicates.get(t));
       } else {
-        boolean ok = reasonerService.hasTrait(to, t);
+        boolean ok = operations.hasTrait(to, t);
         if (!ok) {
           return -50;
         }
       }
     }
 
-    for (Concept t : reasonerService.traits(to)) {
-      if (!acceptedTraits.contains(t) && !reasonerService.hasTrait(from, t)) {
+    for (Concept t : operations.traits(to)) {
+      if (!acceptedTraits.contains(t) && !operations.hasTrait(from, t)) {
         return -50;
       }
     }
 
     // same with roles.
     Set<Concept> acceptedRoles = new HashSet<>();
-    for (Concept t : reasonerService.roles(from)) {
+    for (Concept t : operations.roles(from)) {
       if (t.isAbstract()
           && resolvedAbstractPredicates != null
           && resolvedAbstractPredicates.containsKey(t)) {
-        distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
+        int predicateDistance = assertedDistance(resolvedAbstractPredicates.get(t), t);
+        if (predicateDistance < 0) {
+          return -50;
+        }
+        distance += predicateDistance;
         acceptedRoles.add(resolvedAbstractPredicates.get(t));
       } else {
-        boolean ok = reasonerService.hasRole(to, t);
+        boolean ok = operations.hasRole(to, t);
         if (!ok) {
           return -50;
         }
       }
     }
 
-    for (Concept t : reasonerService.roles(to)) {
-      if (!acceptedRoles.contains(t) && !reasonerService.hasRole(from, t)) {
+    for (Concept t : operations.roles(to)) {
+      if (!acceptedRoles.contains(t) && !operations.hasRole(from, t)) {
         return -50;
       }
     }
@@ -169,16 +290,15 @@ public class SemanticMatcher {
       /*
        * any EXPLICIT inherency must be the same in both.
        */
-      Concept ourExplicitInherent = reasonerService.directInherent(from);
-      Concept itsExplicitInherent = reasonerService.directInherent(to);
+      Concept ourExplicitInherent = operations.directInherent(from);
+      Concept itsExplicitInherent = operations.directInherent(to);
 
       if (ourExplicitInherent != null || itsExplicitInherent != null) {
         if (ourExplicitInherent != null && itsExplicitInherent != null) {
           component = distance(ourExplicitInherent, itsExplicitInherent, true);
 
           if (component < 0) {
-            double d = ((double) component / 10.0);
-            return -1 * (int) (d > 10 ? d : 10);
+            return normalizedIncompatibility(component);
           }
           distance += component;
         } else {
@@ -189,8 +309,8 @@ public class SemanticMatcher {
       /*
        * inherency must be same (theirs is ours) unless our inherent type is abstract
        */
-      Concept ourInherent = reasonerService.inherent(from);
-      Concept itsInherent = reasonerService.inherent(to);
+      Concept ourInherent = operations.inherent(from);
+      Concept itsInherent = operations.inherent(to);
 
       if (ourInherent != null || itsInherent != null) {
 
@@ -202,67 +322,63 @@ public class SemanticMatcher {
            */
           component = distance(context, itsInherent, false);
         } else {
-          component = distance(itsInherent, ourInherent, false);
+          component = distance(ourInherent, itsInherent, false);
         }
 
         if (component < 0) {
-          double d = ((double) component / 10.0);
-          return -1 * (int) (d > 10 ? d : 10);
+          return normalizedIncompatibility(component);
         }
         distance += component;
       }
     }
 
-    component = distance(reasonerService.goal(from), reasonerService.goal(to), false);
+    component = distance(operations.goal(from), operations.goal(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.cooccurrent(from), reasonerService.cooccurrent(to), false);
+    component = distance(operations.cooccurrent(from), operations.cooccurrent(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.causant(from), reasonerService.causant(to), false);
+    component = distance(operations.causant(from), operations.causant(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.caused(from), reasonerService.caused(to), false);
+    component = distance(operations.caused(from), operations.caused(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.adjacent(from), reasonerService.adjacent(to), false);
+    component = distance(operations.adjacent(from), operations.adjacent(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.compresent(from), reasonerService.compresent(to), false);
+    component = distance(operations.compresent(from), operations.compresent(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
-    component = distance(reasonerService.relativeTo(from), reasonerService.relativeTo(to), false);
+    component = distance(operations.relativeTo(from), operations.relativeTo(to), false);
     if (component < 0) {
-      double d = ((double) component / 10.0);
-      return -1 * (int) (d > 10 ? d : 10);
+      return normalizedIncompatibility(component);
     }
     distance += component;
 
     return distance;
+  }
+
+  private static int normalizedIncompatibility(int component) {
+    return -Math.max(10, Math.abs(component) / 10);
   }
 
   /**
@@ -285,8 +401,8 @@ public class SemanticMatcher {
       return 0;
     }
 
-    Pair<Concept, List<SemanticType>> c1ops = reasonerService.splitOperators(from);
-    Pair<Concept, List<SemanticType>> c2ops = reasonerService.splitOperators(to);
+    Pair<Concept, List<SemanticType>> c1ops = operations.splitOperators(from);
+    Pair<Concept, List<SemanticType>> c2ops = operations.splitOperators(to);
 
     if (!c1ops.getSecond().equals(c2ops.getSecond())) {
       return -50;
@@ -307,14 +423,8 @@ public class SemanticMatcher {
           scope);
     }
 
-    var core1 =
-        SemanticsBuilder.create(c1ops.getFirst(), reasonerService, scope)
-            .without(SemanticRole.modifiers())
-            .buildConcept();
-    var core2 =
-        SemanticsBuilder.create(c2ops.getFirst(), reasonerService, scope)
-            .without(SemanticRole.modifiers())
-            .buildConcept();
+    var core1 = operations.withoutModifiers(c1ops.getFirst(), scope);
+    var core2 = operations.withoutModifiers(c2ops.getFirst(), scope);
 
     /*
      * FIXME this must check: have operator ? (operator == operator && coreObs ==
@@ -343,9 +453,8 @@ public class SemanticMatcher {
      * same (differentiated by predicates only) - which for example makes identities under 'type of'
      * be compatible no matter the identity.
      */
-    return core1.equals(core2)
-        ? assertedDistance(from, to)
-        : (assertedDistance(from, to) == 0 ? 0 : -1);
+    int hierarchyDistance = assertedDistance(to, from);
+    return hierarchyDistance;
   }
 
   private int distance(Concept from, Concept to, boolean acceptAbsent) {
@@ -356,16 +465,16 @@ public class SemanticMatcher {
     } else if (from != null && to == null) {
       ret = -50;
     } else if (from != null) {
-      ret = reasonerService.is(to, from) ? assertedDistance(to, from) : -100;
+      ret = operations.is(to, from) ? assertedDistance(to, from) : -100;
       if (ret >= 0) {
-        for (Concept t : reasonerService.traits(from)) {
-          boolean ok = reasonerService.hasTrait(to, t);
+        for (Concept t : operations.traits(from)) {
+          boolean ok = operations.hasTrait(to, t);
           if (!ok) {
             return -50;
           }
         }
-        for (Concept t : reasonerService.traits(to)) {
-          if (!reasonerService.hasTrait(from, t)) {
+        for (Concept t : operations.traits(to)) {
+          if (!operations.hasTrait(from, t)) {
             ret += 10;
           }
         }
@@ -376,27 +485,38 @@ public class SemanticMatcher {
   }
 
   public int assertedDistance(Semantics from, Semantics to) {
+    Objects.requireNonNull(from, "from");
+    Objects.requireNonNull(to, "to");
+    var key = new HierarchyKey(operations.knowledgeRevision(), from, to);
+    return assertedDistanceCache.get(
+        key, ignored -> shortestAssertedDistance(from, to, operations::parents));
+  }
 
-    if (from == to || from.equals(to)) {
+  static int shortestAssertedDistance(
+      Semantics from, Semantics to, Function<Semantics, Collection<Concept>> parentProvider) {
+    if (from.equals(to)) {
       return 0;
     }
-    int ret = 1;
-    while (true) {
-      Collection<Concept> parents = reasonerService.parents(from);
-      if (parents.isEmpty()) {
-        break;
-      }
-      if (parents.contains(to)) {
-        return ret;
-      }
-      for (Concept parent : parents) {
-        int d = assertedDistance(from, parent);
-        if (d >= 0) {
-          return ret + d;
+    Set<Concept> visited = new HashSet<>();
+    ArrayDeque<Pair<Concept, Integer>> queue = new ArrayDeque<>();
+    visited.add(from.asConcept());
+    queue.add(Pair.of(from.asConcept(), 0));
+    while (!queue.isEmpty()) {
+      Pair<Concept, Integer> current = queue.removeFirst();
+      for (Concept parent : parentProvider.apply(current.getFirst())) {
+        if (parent.equals(to.asConcept())) {
+          return current.getSecond() + 1;
+        }
+        if (visited.add(parent)) {
+          queue.addLast(Pair.of(parent, current.getSecond() + 1));
         }
       }
-      ret++;
     }
     return -1;
+  }
+
+  public void resetCaches() {
+    distanceCache.invalidateAll();
+    assertedDistanceCache.invalidateAll();
   }
 }

@@ -1,20 +1,19 @@
 package org.integratedmodelling.common.services.client;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -38,32 +37,24 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   // TODO link to configuration for debugging
   private boolean useCaches = true;
-  Capabilities capabilities;
+  private volatile Capabilities capabilities;
+
+  private record BinaryKey(long revision, Concept first, Concept second) {}
+
+  private record DistanceKey(long revision, Concept target, Concept other, Concept context) {}
 
   /** Caches for concepts and observables. */
-  private LoadingCache<String, Concept> concepts =
-      CacheBuilder.newBuilder()
-          .maximumSize(200)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<String, Concept>() {
-                public Concept load(String key) {
-                  var ret = resolveConceptInternal(key);
-                  return ret == null ? Concept.nothing() : ret;
-                }
-              });
+  private final Cache<String, Concept> concepts =
+      Caffeine.newBuilder().maximumSize(2_000).recordStats().build();
 
-  private LoadingCache<String, Observable> observables =
-      CacheBuilder.newBuilder()
-          .maximumSize(200)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<String, Observable>() {
-                public Observable load(String key) { // no checked exception
-                  var ret = resolveObservableInternal(key);
-                  return ret == null ? Observable.nothing(null) : ret;
-                }
-              });
+  private final Cache<String, Observable> observables =
+      Caffeine.newBuilder().maximumSize(2_000).recordStats().build();
+
+  private final Cache<BinaryKey, Boolean> subsumption =
+      Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
+
+  private final Cache<DistanceKey, Integer> semanticDistances =
+      Caffeine.newBuilder().maximumSize(10_000).recordStats().build();
 
   ReasonerClient(
       ServiceClientCatalog.ClientMonitor monitor,
@@ -75,9 +66,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Capabilities capabilities(Scope scope) {
-    return capabilities == null
-        ? getCapabilities(scope, ReasonerCapabilitiesImpl.class)
-        : capabilities;
+    Capabilities latest = getCapabilities(scope, ReasonerCapabilitiesImpl.class);
+    Capabilities previous = capabilities;
+    if (previous != null && previous.getKnowledgeRevision() != latest.getKnowledgeRevision()) {
+      invalidateCaches();
+    }
+    capabilities = latest;
+    return latest;
   }
 
   @Override
@@ -85,12 +80,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     if (!useCaches) {
       return resolveConceptInternal(removeExcessParentheses(definition));
     }
-    try {
-      return concepts.get(removeExcessParentheses(definition));
-    } catch (ExecutionException e) {
-      Logging.INSTANCE.warn("invalid concept definition: " + definition);
-    }
-    return null;
+    String normalized = removeExcessParentheses(definition);
+    return concepts.get(
+        normalized,
+        key -> {
+          Concept ret = resolveConceptInternal(key);
+          return ret == null ? Concept.nothing() : ret;
+        });
   }
 
   @Override
@@ -98,12 +94,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     if (!useCaches) {
       return resolveObservableInternal(removeExcessParentheses(definition));
     }
-    try {
-      return observables.get(removeExcessParentheses(definition));
-    } catch (ExecutionException e) {
-      Logging.INSTANCE.warn("invalid observable definition: " + definition);
-    }
-    return null;
+    String normalized = removeExcessParentheses(definition);
+    return observables.get(
+        normalized,
+        key -> {
+          Observable ret = resolveObservableInternal(key);
+          return ret == null ? Observable.nothing(null) : ret;
+        });
   }
 
   private String removeExcessParentheses(String definition) {
@@ -124,10 +121,14 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean is(Semantics conceptImpl, Semantics other) {
-    return client.post(
-        ServicesAPI.REASONER.SUBSUMES,
-        List.of(conceptImpl.asConcept(), other.asConcept()),
-        Boolean.class);
+    var key = new BinaryKey(currentRevision(), conceptImpl.asConcept(), other.asConcept());
+    return subsumption.get(
+        key,
+        ignored ->
+            client.post(
+                ServicesAPI.REASONER.SUBSUMES,
+                List.of(conceptImpl.asConcept(), other.asConcept()),
+                Boolean.class));
   }
 
   @Override
@@ -152,7 +153,23 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
-    return null;
+    if (concepts.isEmpty()) {
+      return Concept.nothing();
+    }
+    if (concepts.size() == 1) {
+      return concepts.iterator().next();
+    }
+    String operator =
+        switch (connector) {
+          case UNION -> " or ";
+          case INTERSECTION -> " and ";
+          default ->
+              throw new KlabIllegalArgumentException("Unsupported semantic connector " + connector);
+        };
+    return resolveConcept(
+        concepts.stream()
+            .map(Concept::getUrn)
+            .collect(java.util.stream.Collectors.joining(operator)));
   }
 
   @Override
@@ -174,19 +191,27 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public int semanticDistance(Semantics target, Semantics other) {
-    return client.post(
-        ServicesAPI.REASONER.DISTANCE,
-        Lists.newArrayList(target.asConcept(), other.asConcept(), null),
-        Integer.class);
+    return semanticDistance(target, other, null);
   }
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    return client.post(
-        ServicesAPI.REASONER.DISTANCE,
-        Lists.newArrayList(
-            target.asConcept(), other.asConcept(), context == null ? null : context.asConcept()),
-        Integer.class);
+    Concept contextConcept = context == null ? null : context.asConcept();
+    var key =
+        new DistanceKey(currentRevision(), target.asConcept(), other.asConcept(), contextConcept);
+    int distance =
+        semanticDistances.get(
+            key,
+            ignored ->
+                client.post(
+                    ServicesAPI.REASONER.DISTANCE,
+                    Lists.newArrayList(target.asConcept(), other.asConcept(), contextConcept),
+                    Integer.class));
+    if (distance < 0) {
+      return distance;
+    }
+    int observableDistance = observableDistance(target, other);
+    return observableDistance < 0 ? observableDistance : distance + observableDistance;
   }
 
   @Override
@@ -207,14 +232,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Pair<Concept, List<SemanticType>> splitOperators(Semantics concept) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException(
+        "The split-operator response needs a typed transport object");
   }
 
   @Override
   public int assertedDistance(Semantics from, Semantics to) {
-    // TODO
-    return 0;
+    return client.post(
+        ServicesAPI.REASONER.DISTANCE,
+        Lists.newArrayList(from.asConcept(), to.asConcept()),
+        Integer.class,
+        "asserted",
+        "true");
   }
 
   @Override
@@ -224,14 +253,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean hasRole(Semantics concept, Concept role) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.HAS_ROLE, List.of(concept.asConcept(), role), Boolean.class);
   }
 
   @Override
   public boolean hasDirectRole(Semantics concept, Concept role) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.HAS_ROLE,
+        List.of(concept.asConcept(), role),
+        Boolean.class,
+        "direct",
+        "true");
   }
 
   @Override
@@ -379,20 +412,24 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean hasTrait(Semantics type, Concept trait) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.HAS_TRAIT, List.of(type.asConcept(), trait), Boolean.class);
   }
 
   @Override
   public boolean hasDirectTrait(Semantics type, Concept trait) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.HAS_TRAIT,
+        List.of(type.asConcept(), trait),
+        Boolean.class,
+        "direct",
+        "true");
   }
 
   @Override
   public boolean hasParentRole(Semantics o1, Concept t) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.HAS_PARENT_ROLE, List.of(o1.asConcept(), t), Boolean.class);
   }
 
   @Override
@@ -409,32 +446,35 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public String displayName(Semantics semantics) {
-    // TODO Auto-generated method stub
-    return null;
+    return semantics.displayName();
   }
 
   @Override
   public String displayLabel(Semantics concept) {
-    // TODO Auto-generated method stub
-    return null;
+    return concept.displayLabel();
   }
 
   @Override
   public String style(Concept concept) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException("Reasoner concept styling is not supported");
   }
 
   @Override
   public SemanticType observableType(Semantics observable, boolean acceptTraits) {
-    // TODO Auto-generated method stub
-    return null;
+    if (observable instanceof Observable o && o.getArtifactType() == Artifact.Type.VOID) {
+      return SemanticType.NOTHING;
+    }
+    var types = java.util.EnumSet.copyOf(observable.asConcept().getType());
+    types.retainAll(SemanticType.BASE_MODELABLE_TYPES);
+    if (types.size() != 1) {
+      throw new KlabIllegalArgumentException("Not an observable semantic type: " + observable);
+    }
+    return types.iterator().next();
   }
 
   @Override
   public Concept relationshipSource(Semantics relationship) {
-    // TODO Auto-generated method stub
-    return null;
+    return relationshipSources(relationship).stream().findFirst().orElse(null);
   }
 
   @Override
@@ -445,8 +485,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept relationshipTarget(Semantics relationship) {
-    // TODO Auto-generated method stub
-    return null;
+    return relationshipTargets(relationship).stream().findFirst().orElse(null);
   }
 
   @Override
@@ -502,44 +541,46 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean occurrent(Semantics concept) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(ServicesAPI.REASONER.OCCURRENT, concept.asConcept(), Boolean.class);
   }
 
   @Override
   public Concept leastGeneralCommon(Collection<Concept> cc) {
-    // TODO Auto-generated method stub
-    return null;
+    return client.post(ServicesAPI.REASONER.LGC, cc, Concept.class);
   }
 
   @Override
   public boolean affectedBy(Semantics affected, Semantics affecting) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.AFFECTED_BY,
+        List.of(affected.asConcept(), affecting.asConcept()),
+        Boolean.class);
   }
 
   @Override
   public boolean createdBy(Semantics affected, Semantics affecting) {
-    // TODO Auto-generated method stub
-    return false;
+    return client.post(
+        ServicesAPI.REASONER.CREATED_BY,
+        List.of(affected.asConcept(), affecting.asConcept()),
+        Boolean.class);
   }
 
   @Override
   public Collection<Concept> affectedOrCreated(Semantics semantics) {
-    // TODO Auto-generated method stub
-    return List.of();
+    return client.postCollection(
+        ServicesAPI.REASONER.AFFECTED_OR_CREATED, semantics.asConcept(), Concept.class);
   }
 
   @Override
   public Collection<Concept> affected(Semantics semantics) {
-    // TODO Auto-generated method stub
-    return List.of();
+    return client.postCollection(
+        ServicesAPI.REASONER.AFFECTED, semantics.asConcept(), Concept.class);
   }
 
   @Override
   public Collection<Concept> created(Semantics semantics) {
-    // TODO Auto-generated method stub
-    return List.of();
+    return client.postCollection(
+        ServicesAPI.REASONER.CREATED, semantics.asConcept(), Concept.class);
   }
 
   @Override
@@ -552,41 +593,65 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
-    return false;
+    if (match(candidate, pattern) && !pattern.isAbstract()) {
+      return true;
+    }
+    throw new KlabUnimplementedException(
+        "Generic semantic matching with captured substitutions is not implemented");
   }
 
   @Override
   public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
-    return null;
+    String declaration = pattern.getUrn();
+    for (var replacement : concreteConcepts.entrySet()) {
+      declaration =
+          declaration.replace(replacement.getKey().getUrn(), replacement.getValue().getUrn());
+    }
+    @SuppressWarnings("unchecked")
+    T ret =
+        (T)
+            (pattern instanceof Observable
+                ? resolveObservable(declaration)
+                : resolveConcept(declaration));
+    return ret;
   }
 
   @Override
   public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
-    return null;
+    throw new KlabUnimplementedException(
+        "Inference-based generic concretization is not implemented");
   }
 
   @Override
   public Collection<Concept> rolesFor(Concept observable, Concept context) {
-    // TODO Auto-generated method stub
-    return null;
+    return client.postCollection(
+        ServicesAPI.REASONER.ROLES_FOR,
+        context == null ? List.of(observable) : List.of(observable, context),
+        Concept.class);
   }
 
   @Override
   public Concept impliedRole(Concept baseRole, Concept contextObservable) {
-    // TODO Auto-generated method stub
-    return null;
+    return client.post(
+        ServicesAPI.REASONER.IMPLIED_ROLE,
+        contextObservable == null ? List.of(baseRole) : List.of(baseRole, contextObservable),
+        Concept.class);
   }
 
   @Override
   public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints) {
-    // TODO Auto-generated method stub
-    return null;
+    return client.postCollection(
+        ServicesAPI.REASONER.IMPLIED_ROLES,
+        role,
+        Concept.class,
+        "includeRelationshipEndpoints",
+        Boolean.toString(includeRelationshipEndpoints));
   }
 
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException(
+        "Semantic search is not exposed by the remote reasoner controller");
   }
 
   @Override
@@ -635,20 +700,19 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException(
+        "Observable build strategies are not exposed by the remote reasoner controller");
   }
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new KlabUnimplementedException(
+        "Observable build strategies are not exposed by the remote reasoner controller");
   }
 
   @Override
   public boolean resolves(Semantics toResolve, Semantics candidate, Semantics context) {
-    // TODO Auto-generated method stub
-    return false;
+    return semanticDistance(toResolve, candidate, context) >= 0;
   }
 
   @Override
@@ -661,6 +725,53 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   private void invalidateCaches() {
     concepts.invalidateAll();
     observables.invalidateAll();
+    subsumption.invalidateAll();
+    semanticDistances.invalidateAll();
+  }
+
+  private long currentRevision() {
+    Capabilities current = capabilities;
+    return current == null ? 0L : current.getKnowledgeRevision();
+  }
+
+  private int observableDistance(Semantics target, Semantics other) {
+    if (!(target instanceof Observable targetObservable)
+        || !(other instanceof Observable otherObservable)) {
+      return 0;
+    }
+    int distance = 0;
+    Concept targetObserver = targetObservable.getObserverSemantics();
+    Concept otherObserver = otherObservable.getObserverSemantics();
+    if (targetObserver != null) {
+      if (otherObserver == null) {
+        return -50;
+      }
+      int observerDistance = assertedDistance(otherObserver, targetObserver);
+      if (observerDistance < 0) {
+        return -50;
+      }
+      distance += observerDistance;
+    } else if (otherObserver != null) {
+      distance++;
+    }
+    if (targetObservable.getContextualization() != null
+        && (otherObservable.getContextualization() == null
+            || !otherObservable.is(targetObservable.getContextualization()))) {
+      return -50;
+    }
+    var targetMediator = targetObservable.mediator();
+    var otherMediator = otherObservable.mediator();
+    if (targetMediator != null) {
+      if (otherMediator == null || !targetMediator.isCompatible(otherMediator)) {
+        return -50;
+      }
+      if (!targetMediator.equals(otherMediator)) {
+        distance++;
+      }
+    } else if (otherMediator != null) {
+      distance++;
+    }
+    return distance;
   }
 
   @Override
@@ -677,7 +788,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean exportNamespace(String namespace, File directory) {
-    // TODO
-    return false;
+    throw new KlabUnimplementedException(
+        "A remote reasoner cannot export into a client-local directory");
   }
 }
