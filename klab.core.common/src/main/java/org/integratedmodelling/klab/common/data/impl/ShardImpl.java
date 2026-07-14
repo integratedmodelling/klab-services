@@ -13,12 +13,9 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 /**
  * Base buffer provides the histogram and the geometry indexing/merging.
  *
- * <p>FIXME this ends up in the knowledge graph but it's not serializable, so it will create
- * problems at client side. Must externalize the data buffers and all non-serializable information
- * to the StorageManager. This class should keep the serialized k.LAB histogram and the raw geometry
- * while the storage manager must manage the data buffer and true histogram and keep a reference
- * (also serializable) to its URN. The SM must also have low-priority threads to maintain and
- * restore the buffers as persistent storage when the persistence strategy requires it.
+ * <p>This is the serializable knowledge-graph descriptor. The storage manager owns the live data
+ * buffer and dynamic histogram; this class only keeps their durable URN and a fixed {@link
+ * Histogram} snapshot.
  */
 public class ShardImpl implements Storage.Shard {
 
@@ -27,7 +24,7 @@ public class ShardImpl implements Storage.Shard {
   private int shardIndex;
   private long timestamp;
   private Geometry geometry; // TODO must be a real Geometry, not a scale
-  private long id; // for reference in the knowledge graph
+  private long id = Observation.UNASSIGNED_ID; // for reference in the knowledge graph
   private String urn; // for persistent reference in the storage manager
   private long transientId = Klab.getNextId();
   private long parentTransientId; // manage
@@ -199,8 +196,6 @@ public class ShardImpl implements Storage.Shard {
     return parentId;
   }
 
-  // TODO revise - this must be the serializable k.LAB histogram, which implies it cannot be merged
-  //  or anything. Yet the KG does not have a proxy for the storage @geometry.
   public void setHistogram(Histogram histogram) {
     this.histogram = histogram;
   }

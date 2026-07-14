@@ -4,8 +4,11 @@ import groovy.lang.GroovyObjectSupport;
 import java.net.URL;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -272,6 +275,32 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     var ret = EnumSet.noneOf(EventType.class);
     Collections.addAll(ret, eventTypes);
     return ret;
+  }
+
+  protected <T> ExitValue runSupplier(
+      AgentScope scope, Function<AgentScope, CompletableFuture<T>> supplier) {
+
+    if (rootScope != null && rootScope.isDone()) {
+      return ExitValue.failure(new KlabIllegalStateException("Agent already terminated"));
+    }
+
+    try {
+      CompletableFuture<T> future =
+          Objects.requireNonNull(supplier.apply(scope), "supplier future");
+      scope.disposeWith(() -> future.cancel(true));
+      future.whenComplete(
+          (value, throwable) -> {
+            if (throwable == null) {
+              scope.doReturn(value);
+            } else {
+              scope.done(throwable);
+            }
+          });
+      return TASK_RUNNING;
+    } catch (Throwable t) {
+      scope.done(t);
+      return ExitValue.failure(t);
+    }
   }
 
   protected ExitValue runAsync(AgentScope scope, Consumer<AgentScope> runnable) {

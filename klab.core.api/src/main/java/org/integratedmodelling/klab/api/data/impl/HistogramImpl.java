@@ -105,7 +105,7 @@ public class HistogramImpl implements Histogram {
     }
 
     List<Bin> bins = new ArrayList<>();
-    boolean empty = false;
+    boolean empty = true;
     double missingCount;
     double min;
     double max;
@@ -142,8 +142,12 @@ public class HistogramImpl implements Histogram {
         this.max = max;
     }
 
-    public void setBins(List<Bin> bins) {
-        this.bins = bins;
+    /**
+     * Keep the concrete element type in the setter so JSON deserializers can reconstruct bins
+     * without requiring polymorphic type metadata for the {@link Bin} interface.
+     */
+    public void setBins(List<BinImpl> bins) {
+        this.bins = bins == null ? new ArrayList<>() : new ArrayList<>(bins);
     }
 
     @Override

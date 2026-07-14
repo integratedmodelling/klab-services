@@ -97,6 +97,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("id", observation.getId());
           ret.put("parentId", observation.getParentId());
           ret.put("eventTimestamps", observation.getEventTimestamps());
+          if (!observation.getHistograms().isEmpty()) {
+            ret.put(
+                "histograms", Utils.Data.serializeHistogramMap(observation.getHistograms()));
+          }
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }

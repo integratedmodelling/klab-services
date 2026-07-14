@@ -21,13 +21,13 @@ trait ObservationOps {
 
         // TODO all these pieces (check out 0.11)
         double getMax() {
-            // TODO must use the combined histogram @ state, filling in at the first call
-            return 1.0;
+            throw new UnsupportedOperationException(
+                    "Observation aggregate property 'max' is not implemented for scalar expressions")
         }
 
         double getMin() {
-            // TODO
-            return 1.0;
+            throw new UnsupportedOperationException(
+                    "Observation aggregate property 'min' is not implemented for scalar expressions")
         }
 
     }

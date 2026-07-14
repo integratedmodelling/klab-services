@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.data;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
@@ -273,6 +274,16 @@ public interface Storage {
   Histogram getHistogram();
 
   /**
+   * Return independently merged histogram snapshots for every temporal slice. Multiple spatial
+   * shards with the same timestamp are merged into one entry.
+   *
+   * @return timestamp-keyed fixed histograms, or an empty map
+   */
+  default Map<Long, Histogram> getHistograms() {
+    return Map.of();
+  }
+
+  /**
    * If there is a data key, return it. This must collect all the mappings from all shards and be
    * kept up to date.
    *
@@ -287,6 +298,12 @@ public interface Storage {
    * @param scanner
    */
   void finalizeRun(Scanner scanner);
+
+  /**
+   * Wait for any pending maintenance required to make the current shard state durable. Runtime
+   * implementations should call this before committing shard descriptors to the knowledge graph.
+   */
+  default void flush() {}
 
   /**
    * Admin-only: destroy any trace of storage and leave

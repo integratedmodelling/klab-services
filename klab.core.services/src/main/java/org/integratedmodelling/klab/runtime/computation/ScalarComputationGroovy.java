@@ -6,9 +6,11 @@ import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -132,11 +134,14 @@ public class ScalarComputationGroovy implements ScalarComputation {
       args.add(scope);
       args.add(target);
 
-      record VarInfo(String name, String type, int index) {}
+      record VarInfo(String name, String type, int index, Observation observation) {}
 
       // ordering in this one is important
       Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
       var codeStatements = new ArrayList<String>();
+      Set<String> wiredObservations = new HashSet<>();
+      Set<String> observationWrappers = new HashSet<>();
+      Set<String> predefinedVariables = new HashSet<>();
 
       for (var step : steps) {
         if (step.expressionDescriptor
@@ -151,30 +156,37 @@ public class ScalarComputationGroovy implements ScalarComputation {
           }
 
           if (step.expressionDescriptor != null) {
-            int n = 1;
             codeStatements.add(groovyDescriptor.getProcessedCode());
 
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
-              var observation = observations.get(identifier);
-              if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
-                args.add(observation);
+              var observation = desc.observation();
+              if (observation == null) {
+                addPredefinedVariable(
+                    identifier, predefinedVariables, codeInfo.getBodyInitializationStatements());
+                continue;
               }
+              boolean self = Dataflow.SELF_ID.equals(identifier);
 
               /*
                * Initialize the observation fields and the constructor arguments, passing every
                * observation needed besides self.
                */
-              codeInfo.getConstructorArguments().add("Observation " + identifier);
-              codeInfo.getFieldDeclarations().add("Observation __" + identifier);
-
-              if (desc.scalarReferenceCount() > 0) {
+              if (!self && wiredObservations.add(identifier)) {
+                args.add(observation);
+                codeInfo.getConstructorArguments().add("Observation " + identifier);
+                codeInfo.getFieldDeclarations().add("Observation __" + identifier);
                 codeInfo
                     .getConstructorInitializationStatements()
                     .add("this.__" + identifier + " = " + identifier);
+              }
 
+              if (desc.scalarReferenceCount() > 0 && !scalarBuffers.containsKey(identifier)) {
                 var typeDeclaration = getTypeDeclaration(observation);
-                scalarBuffers.put(identifier, new VarInfo(identifier, typeDeclaration, n++));
+                scalarBuffers.put(
+                    identifier,
+                    new VarInfo(
+                        identifier, typeDeclaration, scalarBuffers.size() + 1, observation));
                 codeInfo
                     .getLoopVariableAssignments()
                     .add("def " + identifier + " = " + identifier + "Buffer.get()");
@@ -188,14 +200,15 @@ public class ScalarComputationGroovy implements ScalarComputation {
               /*
                * Create observation wrappers inline before the main loop
                */
-              if (desc.nonScalarReferenceCount() > 0) {
+              if (desc.nonScalarReferenceCount() > 0
+                  && observationWrappers.add(identifier)) {
                 codeInfo
                     .getBodyInitializationStatements()
                     .add(
                         "def "
                             + identifier
-                            + "Obs = new ObservationWrapper(__"
-                            + identifier
+                            + "Obs = new ObservationWrapper("
+                            + (self ? "__self" : "__" + identifier)
                             + ", event)");
               }
             }
@@ -215,13 +228,16 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       for (String var : scalarBuffers.keySet()) {
         var info = scalarBuffers.get(var);
+        if (Dataflow.SELF_ID.equals(info.name)) {
+          continue;
+        }
         codeInfo
             .getBodyInitializationStatements()
             .add(
                 "def "
                     + info.name
                     + "Buffer = ("
-                    + getScannerType(observations.get(info.name), codeInfo)
+                    + getScannerType(info.observation, codeInfo)
                     + ") scanners.get(\""
                     + info.name
                     + "\")\n");
@@ -239,6 +255,22 @@ public class ScalarComputationGroovy implements ScalarComputation {
         return null; // or a no-op ScalarComputation
       }
       return new ScalarComputationGroovy(compiled, scope, output.toString());
+    }
+
+    private void addPredefinedVariable(
+        String identifier, Set<String> added, List<String> initializers) {
+      if (!added.add(identifier)) {
+        return;
+      }
+      switch (identifier) {
+        case "observer" -> initializers.add("def observer = scope.getObserver()");
+        case "context" -> initializers.add("def context = scope.getContextObservation()");
+        case "source" -> initializers.add("def source = scope.getSourceObservation()");
+        case "target" -> initializers.add("def target = scope.getTargetObservation()");
+        default -> {
+          // scope is already a run() argument. scale, space and time remain supplied by callers.
+        }
+      }
     }
 
     private String getScannerType(Observation observation, TemplateCodeInfo codeInfo) {

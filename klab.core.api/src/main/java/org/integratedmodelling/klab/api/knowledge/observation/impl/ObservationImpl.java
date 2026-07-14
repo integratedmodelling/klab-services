@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.impl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -46,6 +47,7 @@ public class ObservationImpl implements Observation {
   private long parentId = -1;
   private String urn;
   private Object value;
+  private Map<Long, Histogram> histograms = new TreeMap<>();
   private String name;
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
@@ -299,6 +301,15 @@ public class ObservationImpl implements Observation {
 
   public void setValue(Object value) {
     this.value = value;
+  }
+
+  @Override
+  public Map<Long, Histogram> getHistograms() {
+    return histograms;
+  }
+
+  public void setHistograms(Map<Long, ? extends Histogram> histograms) {
+    this.histograms = histograms == null ? new TreeMap<>() : new TreeMap<>(histograms);
   }
 
   public String getName() {

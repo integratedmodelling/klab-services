@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -307,6 +308,18 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   }
 
   Object getValue();
+
+  /**
+   * Durable histogram snapshots for quality observations, keyed by the start timestamp of each
+   * temporal slice. Initialization and timeless observations use timestamp 0. Implementations must
+   * expose serialized {@link org.integratedmodelling.klab.api.data.impl.HistogramImpl} values, not
+   * backend-specific live histograms.
+   *
+   * @return the available temporal histogram snapshots, or an empty map
+   */
+  default Map<Long, Histogram> getHistograms() {
+    return Map.of();
+  }
 
   /**
    * The observation records the timestamps of last update due to any event that required its

@@ -7,12 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
@@ -76,6 +78,22 @@ class AgentBaseTest {
   }
 
   @Test
+  void supplierCompletionEmitsReturnPayloadAndTerminatesScope() {
+    var agent = new ReactiveAgent();
+    var childScope = ((AgentScope) agent.rootScope()).withId(1);
+    var future = new CompletableFuture<String>();
+    var received = new CopyOnWriteArrayList<Object>();
+
+    agent.listen(childScope, event -> received.add(event.value()), AgentBase.EventType.RETURN);
+    assertSame(AgentBase.TASK_RUNNING, agent.supply(childScope, scope -> future));
+
+    future.complete("done");
+
+    assertEquals(List.of("done"), received);
+    assertTrue(childScope.isDone());
+  }
+
+  @Test
   void exceptionalScopeCompletionEmitsExceptionPayloadBeforeTermination() {
     var agent = new ReactiveAgent();
     var childScope = ((AgentScope) agent.rootScope()).withId(1);
@@ -120,6 +138,11 @@ class AgentBaseTest {
     private void listen(
         AgentScope scope, Consumer<AgentBase.Event> consumer, AgentBase.EventType... eventTypes) {
       onEvent(scope, consumer, eventTypes);
+    }
+
+    private <T> ExitValue supply(
+        AgentScope scope, Function<AgentScope, CompletableFuture<T>> supplier) {
+      return runSupplier(scope, supplier);
     }
 
     @Override

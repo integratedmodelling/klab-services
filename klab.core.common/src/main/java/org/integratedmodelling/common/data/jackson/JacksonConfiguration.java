@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -72,7 +73,7 @@ public class JacksonConfiguration {
                   f ->
                       !Modifier.isStatic(f.getModifiers())
                           && !Modifier.isTransient(f.getModifiers()))
-              .collect(Collectors.toList());
+              .toList();
       result.addAll(filteredFields);
       return result;
     }
@@ -106,7 +107,7 @@ public class JacksonConfiguration {
       this.interfaceClass = interfaceClass;
     }
 
-    Field findField(Class cls, String name) {
+    Field findField(Class<?> cls, String name) {
       try {
         return cls.getDeclaredField(name);
       } catch (Throwable t) {
@@ -342,6 +343,7 @@ public class JacksonConfiguration {
           Model.class,
           ServiceCall.class,
           Observation.class,
+          Histogram.class,
           NumericRange.class,
           Annotation.class,
           Metadata.class,

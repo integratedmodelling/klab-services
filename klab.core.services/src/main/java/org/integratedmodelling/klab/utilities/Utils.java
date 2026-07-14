@@ -422,13 +422,57 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
   public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
 
     public static String serializeHistogram(com.dynatrace.dynahist.Histogram histogram) {
-      // TODO use serialization library and produce a Base64-encoded string
-      return null;
+      if (histogram == null) {
+        return null;
+      }
+      try (var bytes = new java.io.ByteArrayOutputStream();
+          var output = new java.io.DataOutputStream(bytes)) {
+        histogram.getLayout().writeWithTypeInfo(output);
+        histogram.write(output);
+        output.flush();
+        return java.util.Base64.getEncoder().encodeToString(bytes.toByteArray());
+      } catch (java.io.IOException e) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+      }
     }
 
     public static com.dynatrace.dynahist.Histogram deserializeHistogram(String histogram) {
-      // TODO use serialization library from Base64-encoded string
-      return null;
+      if (histogram == null || histogram.isBlank()) {
+        return null;
+      }
+      try (var input =
+          new java.io.DataInputStream(
+              new java.io.ByteArrayInputStream(
+                  java.util.Base64.getDecoder().decode(histogram)))) {
+        var layout = com.dynatrace.dynahist.layout.Layout.readWithTypeInfo(input);
+        return com.dynatrace.dynahist.Histogram.readAsDynamic(layout, input);
+      } catch (IllegalArgumentException | java.io.IOException e) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+      }
+    }
+
+    public static String serializeHistogramMap(
+        Map<Long, ? extends Histogram> histograms) {
+      return Json.asString(histograms == null ? Map.of() : histograms);
+    }
+
+    public static Map<Long, Histogram> deserializeHistogramMap(String histograms) {
+      if (histograms == null || histograms.isBlank()) {
+        return new TreeMap<>();
+      }
+      try {
+        var mapper = Json.newObjectMapper();
+        var mapType =
+            mapper
+                .getTypeFactory()
+                .constructMapType(TreeMap.class, Long.class, HistogramImpl.class);
+        Map<Long, HistogramImpl> concrete = mapper.readValue(histograms, mapType);
+        var ret = new TreeMap<Long, Histogram>();
+        ret.putAll(concrete);
+        return ret;
+      } catch (java.io.IOException e) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+      }
     }
 
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
@@ -441,11 +485,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
        * Histogram histogram = new DynamicHistogram.Builder().layout(layout).create();
        */
 
-      if (histogram.getMax() <= histogram.getMin()) {
+      if (histogram == null || histogram.isEmpty()) {
         return Histogram.empty();
       }
 
       var ret = new HistogramImpl();
+      ret.setEmpty(false);
       ret.setMin(histogram.getMin());
       ret.setMax(histogram.getMax());
       try {

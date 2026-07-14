@@ -554,7 +554,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
           yield ret;
         }
-        case Storage.Shard ignored -> true;
+        case Storage.Shard shard -> shard.getId() < 0;
         default -> false;
       };
     }

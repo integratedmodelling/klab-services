@@ -274,10 +274,22 @@ public class SchedulerImpl implements Scheduler {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
+          // A shard descriptor must never be committed before its durable data file is complete.
+          storage.flush();
+          if (observation instanceof ObservationImpl observationImpl) {
+            observationImpl.setHistograms(storage.getHistograms());
+            scope.getCurrentTransaction().update(observationImpl);
+          }
           for (var buffer : storage.getNativeShards(event)) {
-            scope
-                .getCurrentTransaction()
-                .link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+            if (buffer.getId() < 0) {
+              scope
+                  .getCurrentTransaction()
+                  .link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+            } else {
+              // Re-contextualizing an existing time slice updates its histogram and descriptor;
+              // creating another Data node would orphan the old shard and duplicate its counts.
+              scope.getCurrentTransaction().update(buffer);
+            }
           }
         }
       }

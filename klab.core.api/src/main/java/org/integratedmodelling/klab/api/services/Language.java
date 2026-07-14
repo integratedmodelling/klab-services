@@ -102,10 +102,14 @@ public interface Language extends Service {
    * @return a compiled expression
    */
   default Expression compile(String expression, String language, CompilerOption... options) {
-    var processor = getLanguageProcessor(DEFAULT_EXPRESSION_LANGUAGE);
+    var selectedLanguage = language == null ? DEFAULT_EXPRESSION_LANGUAGE : language;
+    var processor = getLanguageProcessor(selectedLanguage);
+    if (processor == null) {
+      throw new IllegalArgumentException("Unsupported expression language: " + selectedLanguage);
+    }
     var descriptor =
         processor.analyze(
-            ExpressionCode.of(expression, DEFAULT_EXPRESSION_LANGUAGE),
+            ExpressionCode.of(expression, selectedLanguage),
             null,
             List.of(),
             List.of(),

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.libraries;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.Objects;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -78,9 +79,11 @@ public class CoreActorLibrary {
      * @return
      * @param <T>
      */
-    @Verb(name = "at", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    @Verb(name = "at", executionType = Verb.Type.SUPPLIER)
     public static <T> CompletableFuture<T> at(Agent.Scope scope, TimeInstant time, T object) {
-      return null;
+
+      Objects.requireNonNull(time, "time");
+      return completeAfter(time.getMilliseconds() - System.currentTimeMillis(), object);
     }
 
     /**
@@ -92,9 +95,30 @@ public class CoreActorLibrary {
      * @return
      * @param <T>
      */
-    @Verb(name = "in", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    @Verb(name = "in", executionType = Verb.Type.SUPPLIER)
     public static <T> CompletableFuture<T> in(Agent.Scope scope, TimeDuration time, T object) {
-      return null;
+
+      Objects.requireNonNull(time, "time");
+      return completeAfter(time.getMilliseconds(), object);
+    }
+
+    private static <T> CompletableFuture<T> completeAfter(long delayMilliseconds, T object) {
+      if (delayMilliseconds <= 0) {
+        return CompletableFuture.completedFuture(object);
+      }
+
+      var future = new CompletableFuture<T>();
+      var timer = new java.util.Timer(true);
+      var task =
+          new TimerTask() {
+            @Override
+            public void run() {
+              future.complete(object);
+            }
+          };
+      timer.schedule(task, delayMilliseconds);
+      future.whenComplete((value, throwable) -> timer.cancel());
+      return future;
     }
 
     @Verb(name = "tick", fires = TimeInstant.class)

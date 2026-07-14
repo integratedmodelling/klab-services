@@ -570,6 +570,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
+        if (!node.get("histograms").isNull()) {
+          instance.setHistograms(
+              Utils.Data.deserializeHistogramMap(node.get("histograms").asString()));
+        } else if (!node.get("histogram").isNull()) {
+          // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
+          // be recovered, so retain it under the initialization timestamp until the observation is
+          // contextualized again and a true slice map replaces it.
+          instance.setHistograms(
+              Map.of(
+                  0L,
+                  Utils.Json.parseObject(
+                      node.get("histogram").asString(), HistogramImpl.class)));
+        }
         //        var instanceUrn = node.get("urn").asString();
         //        if (instanceUrn != null) {
         //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
@@ -669,7 +682,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setPersistence(Persistence.valueOf(node.get("persistence").asString()));
         if (!node.get("histogram").isNull()) {
           instance.setHistogram(
-              Utils.Json.parseObject(node.get("histogram").toString(), HistogramImpl.class));
+              Utils.Json.parseObject(node.get("histogram").asString(), HistogramImpl.class));
         }
         instance.setShardingStrategy(shardingStrategy);
 
