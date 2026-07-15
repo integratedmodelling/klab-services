@@ -114,7 +114,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.VERB_STATEMENT;
     private String recipient;
     private String message;
-    private Parameters<String> arguments;
+    private Parameters<String> arguments = Parameters.create();
     private List<MatchAction> actions = new ArrayList<>();
 
     public void setType(Type type) {

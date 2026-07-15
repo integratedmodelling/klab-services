@@ -54,5 +54,9 @@ public enum ValueType {
    * A string in the form #KEY, pointing to a localized string in the companion internationalization
    * map.
    */
-  LOCALIZED_KEY
+  LOCALIZED_KEY,
+  /**
+   * A conditional expression with a condition evaluating to boolean and a true and a false branch.
+   */
+  TERNARY_EXPRESSION
 }

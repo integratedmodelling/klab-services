@@ -8,6 +8,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -383,49 +384,49 @@ public enum LanguageAdapter {
         switch (valueSyntax.getType()) {
           case NUMBER -> {
             // TODO also set the value in all cases
-            yield null;
+            yield ValueType.NUMBER;
           }
           case STRING -> {
-            yield null;
+            yield ValueType.STRING;
           }
           case RANGE -> {
-            yield null;
+            yield ValueType.RANGE;
           }
           case OBSERVABLE -> {
-            yield null;
+            yield ValueType.OBSERVABLE;
           }
           case QUANTITY -> {
-            yield null;
+            yield ValueType.QUANTITY;
           }
           case CONSTANT -> {
-            yield null;
+            yield ValueType.CONSTANT;
           }
           case IDENTIFIER -> {
-            yield null;
+            yield ValueType.IDENTIFIER;
           }
           case BOOLEAN -> {
-            yield null;
+            yield ValueType.BOOLEAN;
           }
           case LIST -> {
-            yield null;
+            yield ValueType.LIST;
           }
           case MAP -> {
-            yield null;
+            yield ValueType.MAP;
           }
           case LOCALIZED_STRING_REFERENCE -> {
-            yield null;
+            yield ValueType.LOCALIZED_KEY;
           }
           case ARGUMENT_REFERENCE -> {
-            yield null;
+            yield ValueType.NUMBERED_PATTERN;
           }
           case TERNARY_EXPRESSION -> {
-            yield null;
+            yield ValueType.TERNARY_EXPRESSION;
           }
           case EXPRESSION -> {
-            yield null;
+            yield ValueType.EXPRESSION;
           }
           case REGULAR_EXPRESSION -> {
-            yield null;
+            yield ValueType.REGEXP;
           }
         });
     ret.setDeferred(valueSyntax.isQuoted());
