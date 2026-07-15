@@ -62,11 +62,60 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Serial private static final long serialVersionUID = -8705959693429812179L;
 
+    public static class MatchActionImpl extends KActorsStatementImpl implements MatchAction {
+
+      private KActorsValue matchCriterion;
+      private KActorsStatement actionOnMatch;
+      private List<String> variables = new ArrayList<>();
+      private String captureAs;
+
+      @Override
+      public KActorsValue getMatchCriterion() {
+        return matchCriterion;
+      }
+
+      @Override
+      public KActorsStatement getActionOnMatch() {
+        return actionOnMatch;
+      }
+
+      @Override
+      public List<String> getVariables() {
+        return variables;
+      }
+
+      @Override
+      public String getCaptureAs() {
+        return captureAs;
+      }
+
+      public void setMatchCriterion(KActorsValue matchCriterion) {
+        this.matchCriterion = matchCriterion;
+      }
+
+      public void setActionOnMatch(KActorsStatement actionOnMatch) {
+        this.actionOnMatch = actionOnMatch;
+      }
+
+      public void setVariables(List<String> variables) {
+        this.variables = variables;
+      }
+
+      public void setCaptureAs(String captureAs) {
+        this.captureAs = captureAs;
+      }
+
+      @Override
+      public <T> T format(CodeAppender<T> appender) {
+        return null;
+      }
+    }
+
     private Type type = Type.VERB_STATEMENT;
     private String recipient;
     private String message;
     private Parameters<String> arguments;
-    private List<Triple<KActorsValue, KActorsStatement, String>> actions = new ArrayList<>();
+    private List<MatchAction> actions = new ArrayList<>();
 
     public void setType(Type type) {
       this.type = type;
@@ -82,10 +131,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setArguments(Parameters<String> arguments) {
       this.arguments = arguments;
-    }
-
-    public void setActions(List<Triple<KActorsValue, KActorsStatement, String>> actions) {
-      this.actions = actions;
     }
 
     @Override
@@ -109,8 +154,12 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
 
     @Override
-    public List<Triple<KActorsValue, KActorsStatement, String>> getActions() {
-      return this.actions;
+    public List<MatchAction> getActions() {
+      return actions;
+    }
+
+    public void setActions(List<MatchAction> actions) {
+      this.actions = actions;
     }
 
     @Override
@@ -223,8 +272,9 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private String recipient;
     private String variable;
     private KActorsValue value;
+    private Verb function;
 
-    private Assignment.Scope scope;
+    private Assignment.Scope assignmentScope;
 
     @Override
     public Type getType() {
@@ -248,7 +298,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Override
     public Assignment.Scope getAssignmentScope() {
-      return this.scope;
+      return this.assignmentScope;
     }
 
     public void setType(Type type) {
@@ -267,8 +317,17 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.value = value;
     }
 
-    public void setScope(Assignment.Scope scope) {
-      this.scope = scope;
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
+
+    public void setAssignmentScope(Assignment.Scope assignmentScope) {
+      this.assignmentScope = assignmentScope;
     }
 
     @Override
@@ -300,8 +359,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   }
 
   // case CONCURRENT_GROUP:
-  public static class ConcurrentGroupImpl extends KActorsStatementImpl
-      implements KActorsStatement.ConcurrentGroup {
+  public static class GroupImpl extends KActorsStatementImpl implements Group {
 
     @Serial private static final long serialVersionUID = 6294586114679129470L;
 
@@ -440,7 +498,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   }
 
   // case FIRE_VALUE:
-  public static class FireImpl extends KActorsStatementImpl implements KActorsStatement.FireValue {
+  public static class FireImpl extends KActorsStatementImpl implements Fire {
 
     @Serial private static final long serialVersionUID = -5778811918801633787L;
 
@@ -684,8 +742,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   }
 
   // case TEXT_BLOCK:
-  public static class TextBlockImpl extends KActorsStatementImpl
-      implements KActorsStatement.TextBlock {
+  public static class TextImpl extends KActorsStatementImpl implements Text {
 
     @Serial private static final long serialVersionUID = 5688683773565546787L;
 

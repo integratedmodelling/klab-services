@@ -15,6 +15,40 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
 
   @Serial private static final long serialVersionUID = 6651874316547941092L;
 
+  public static class ImportImpl implements Import {
+
+    private String importedBehavior;
+    private String importedAlias;
+    private List<String> importedComponents = new ArrayList<>();
+
+    @Override
+    public String getImportedBehavior() {
+      return importedBehavior;
+    }
+
+    @Override
+    public String getImportedAlias() {
+      return importedAlias;
+    }
+
+    @Override
+    public List<String> getImportedComponents() {
+      return importedComponents;
+    }
+
+    public void setImportedBehavior(String importedBehavior) {
+      this.importedBehavior = importedBehavior;
+    }
+
+    public void setImportedAlias(String importedAlias) {
+      this.importedAlias = importedAlias;
+    }
+
+    public void setImportedComponents(List<String> importedComponents) {
+      this.importedComponents = importedComponents;
+    }
+  }
+
   private String urn;
   private Type behaviorType;
   private Platform platform;

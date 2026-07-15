@@ -1221,54 +1221,99 @@ public enum LanguageAdapter {
       String projectName,
       List<Notification> notifications,
       long timestamp) {
+
     var ret = new KActorsBehaviorImpl();
+
     ret.setUrn(name);
     ret.setLastUpdateTimestamp(timestamp);
     ret.setDescription(syntax.getDocstring());
+    ret.setBehaviorType(
+        switch (syntax.getType()) {
+          case TESTCASE -> KActorsBehavior.Type.UNITTEST;
+          case SCRIPT -> KActorsBehavior.Type.SCRIPT;
+          case COMPONENT -> KActorsBehavior.Type.COMPONENT;
+          case LIBRARY -> KActorsBehavior.Type.TRAITS;
+          case APPLICATION -> KActorsBehavior.Type.APP;
+          case BEHAVIOR, USER -> KActorsBehavior.Type.BEHAVIOR;
+        });
+
+    for (var imp : syntax.getImports()) {
+      var imported = new KActorsBehaviorImpl.ImportImpl();
+      imported.setImportedBehavior(imp.source());
+      imported.setImportedAlias(imp.alias());
+      imported.getImportedComponents().addAll(imp.imports());
+      ret.getImports().add(imported);
+    }
 
     for (var action : syntax.getActions()) {
-      ret.getStatements().add(adaptAction(action, name, projectName, notifications));
+      ret.getStatements().add(adaptAction(action, ret, name, projectName, notifications));
     }
 
     return ret;
   }
 
   private KActorsAction adaptAction(
-      ActionSyntax action, String namespace, String projectName, List<Notification> notifications) {
+      ActionSyntax action,
+      KActorsBehavior behavior,
+      String namespace,
+      String projectName,
+      List<Notification> notifications) {
 
     var ret = new KActorsActionImpl();
+    setParsingData(action, ret);
+
     ret.setUrn(action.getName());
     for (var annotation : action.getAnnotations()) {
       adaptAnnotation(annotation, namespace, projectName, KlabAsset.KnowledgeClass.BEHAVIOR);
     }
     for (var statement : action.getStatements()) {
-      ret.getCode().add(adaptActionStatement(statement, notifications));
+      ret.getCode().add(adaptActionStatement(statement, behavior, ret, notifications));
     }
     return ret;
   }
 
+  /**
+   * Add lexical context to a language asset
+   *
+   * @param syntax
+   * @param ret
+   */
+  private void setParsingData(ParsedObject syntax, KimAssetImpl ret) {}
+
   private KActorsStatement adaptActionStatement(
-      ActionStatementSyntax statement, List<Notification> notifications) {
+      ActionStatementSyntax statement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret =
         switch (statement) {
-          case ActionStatementSyntax.Assert assertion -> adaptAssert(assertion, notifications);
-          case ActionStatementSyntax.Assignment assign -> adaptAssign(assign, notifications);
-          case ActionStatementSyntax.Verb verbStatement -> adaptVerb(verbStatement, notifications);
-          case ActionStatementSyntax.Do doStatement -> adaptDo(doStatement, notifications);
-          case ActionStatementSyntax.For forStatement -> adaptFor(forStatement, notifications);
-          case ActionStatementSyntax.If ifStatement -> adaptIf(ifStatement, notifications);
+          case ActionStatementSyntax.Assert assertion ->
+              adaptAssert(assertion, behavior, action, notifications);
+          case ActionStatementSyntax.Assignment assign ->
+              adaptAssign(assign, behavior, action, notifications);
+          case ActionStatementSyntax.Verb verbStatement ->
+              adaptVerb(verbStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Do doStatement ->
+              adaptDo(doStatement, behavior, action, notifications);
+          case ActionStatementSyntax.For forStatement ->
+              adaptFor(forStatement, behavior, action, notifications);
+          case ActionStatementSyntax.If ifStatement ->
+              adaptIf(ifStatement, behavior, action, notifications);
           case ActionStatementSyntax.Return returnStatement ->
-              adaptReturn(returnStatement, notifications);
+              adaptReturn(returnStatement, behavior, action, notifications);
           case ActionStatementSyntax.While whileStatement ->
-              adaptWhile(whileStatement, notifications);
-          case ActionStatementSyntax.Text textStatement -> adaptText(textStatement, notifications);
-          case ActionStatementSyntax.Fire fireStatement -> adaptFire(fireStatement, notifications);
-          case ActionStatementSyntax.Fail failStatement -> adaptFail(failStatement, notifications);
+              adaptWhile(whileStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Text textStatement ->
+              adaptText(textStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Fire fireStatement ->
+              adaptFire(fireStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Fail failStatement ->
+              adaptFail(failStatement, behavior, action, notifications);
           case ActionStatementSyntax.Break breakStatement ->
-              adaptBreak(breakStatement, notifications);
+              adaptBreak(breakStatement, behavior, action, notifications);
           case ActionStatementSyntax.Group groupStatement ->
-              adaptGroup(groupStatement, notifications);
+              adaptGroup(groupStatement, behavior, action, notifications);
           default ->
               throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
         };
@@ -1279,102 +1324,174 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  private KActorsStatement adaptFail(
-      ActionStatementSyntax.Fail failStatement, List<Notification> notifications) {
+  private KActorsStatement.Fail adaptFail(
+      ActionStatementSyntax.Fail failStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     var ret = new KActorsStatementImpl.FailImpl();
     return ret;
   }
 
-  private KActorsStatement adaptAssign(
-      ActionStatementSyntax.Assignment assign, List<Notification> notifications) {
+  private KActorsStatement.Assignment adaptAssign(
+      ActionStatementSyntax.Assignment assign,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.AssignmentImpl();
+    ret.setVariable(assign.getVariable());
+    if (assign.getValue() != null) {
+      ret.setValue(adaptKActorsValue(assign.getValue(), notifications));
+    } else if (assign.getFunction() != null) {
+      ret.setFunction(adaptVerb(assign.getFunction(), behavior, action, notifications));
+    }
     return ret;
   }
 
-  private KActorsStatement adaptDo(
-      ActionStatementSyntax.Do doStatement, List<Notification> notifications) {
+  private KActorsStatement.Do adaptDo(
+      ActionStatementSyntax.Do doStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.DoImpl();
     return ret;
   }
 
-  private KActorsStatement adaptFor(
-      ActionStatementSyntax.For forStatement, List<Notification> notifications) {
+  private KActorsStatement.For adaptFor(
+      ActionStatementSyntax.For forStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.ForImpl();
     return ret;
   }
 
-  private KActorsStatement adaptIf(
-      ActionStatementSyntax.If ifStatement, List<Notification> notifications) {
+  private KActorsStatement.If adaptIf(
+      ActionStatementSyntax.If ifStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.IfImpl();
     return ret;
   }
 
-  private KActorsStatement adaptReturn(
-      ActionStatementSyntax.Return returnStatement, List<Notification> notifications) {
+  private KActorsStatement.Return adaptReturn(
+      ActionStatementSyntax.Return returnStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.ReturnImpl();
     return ret;
   }
 
-  private KActorsStatement adaptWhile(
-      ActionStatementSyntax.While whileStatement, List<Notification> notifications) {
+  private KActorsStatement.While adaptWhile(
+      ActionStatementSyntax.While whileStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.WhileImpl();
     return ret;
   }
 
-  private KActorsStatement adaptText(
-      ActionStatementSyntax.Text textStatement, List<Notification> notifications) {
+  private KActorsStatement.Text adaptText(
+      ActionStatementSyntax.Text textStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
-    var ret = new KActorsStatementImpl.TextBlockImpl();
+    var ret = new KActorsStatementImpl.TextImpl();
     return ret;
   }
 
-  private KActorsStatement adaptFire(
-      ActionStatementSyntax.Fire fireStatement, List<Notification> notifications) {
+  private KActorsStatement.Fire adaptFire(
+      ActionStatementSyntax.Fire fireStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.FireImpl();
     return ret;
   }
 
-  private KActorsStatement adaptBreak(
-      ActionStatementSyntax.Break breakStatement, List<Notification> notifications) {
+  private KActorsStatement.Break adaptBreak(
+      ActionStatementSyntax.Break breakStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.BreakImpl();
     return ret;
   }
 
-  private KActorsStatement adaptGroup(
-      ActionStatementSyntax.Group groupStatement, List<Notification> notifications) {
+  private KActorsStatement.Group adaptGroup(
+      ActionStatementSyntax.Group groupStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
-    var ret = new KActorsStatementImpl.ConcurrentGroupImpl();
+    var ret = new KActorsStatementImpl.GroupImpl();
     return ret;
   }
 
-  private KActorsStatement adaptAssert(
-      ActionStatementSyntax.Assert assertion, List<Notification> notifications) {
+  private KActorsStatement.Assert adaptAssert(
+      ActionStatementSyntax.Assert assertion,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
     // TODO
     var ret = new KActorsStatementImpl.AssertImpl();
     return ret;
   }
 
-  private KActorsStatement adaptVerb(
-      ActionStatementSyntax.Verb verbStatement, List<Notification> notifications) {
-    // TODO
-    var ret = new KActorsStatementImpl.VerbImpl();
+  private KActorsStatement.Verb adaptVerb(
+      ActionStatementSyntax.Verb verbStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
 
-    // TODO get the reactor name and ensure it's imported, 'self' or a core library
+    var ret = new KActorsStatementImpl.VerbImpl();
+    var declaration = verbStatement.getName().split("\\.");
+    var reactorName = declaration.length == 1 ? "self" : declaration[0];
+    // get the reactor name and ensure it's imported, 'self' or a core library\
+    if (declaration.length == 1) {
+      // TODO must have the named action
+    } else {
+      var declared =
+          behavior.getImports().stream()
+              .filter(i -> i.getImportedAlias().equals(reactorName))
+              .findFirst();
+
+      if (declared.isEmpty()) {
+        notifications.add(
+            Notification.error(verbStatement, "Undeclared reactor: " + verbStatement.getName()));
+      }
+    }
+
     // TODO get the action name and ensure it's known for the actor. May be impossible at this stage
+
+    ret.setRecipient(reactorName);
+    ret.setMessage(declaration[declaration.length - 1]);
 
     // cannot enforce argument mapping at this stage
     ret.getArguments().putAll(adaptArguments(verbStatement.getArguments(), notifications));
 
     for (var match : verbStatement.getMatches()) {
-      // TODO
+      var m = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+      m.setMatchCriterion(
+          match.getMatchCondition() == null
+              ? null
+              : adaptKActorsValue(match.getMatchCondition(), notifications));
+      m.setActionOnMatch(
+          adaptActionStatement(match.getStatement(), behavior, action, notifications));
+      m.getVariables().addAll(match.getReactorVariables());
+      m.setCaptureAs(match.getCaptureAs());
+      ret.getActions().add(m);
     }
 
     return ret;

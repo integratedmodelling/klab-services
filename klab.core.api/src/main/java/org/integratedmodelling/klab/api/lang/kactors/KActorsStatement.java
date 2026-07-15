@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.List;
 import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -54,7 +53,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
     List<String> getMetadataKeys();
   }
 
-  interface ConcurrentGroup extends KActorsStatement {
+  interface Group extends KActorsStatement {
 
     public List<KActorsStatement> getStatements();
 
@@ -200,6 +199,14 @@ public interface KActorsStatement extends KActorsCodeStatement {
     KActorsValue getValue();
 
     /**
+     * Assignment from a verb requires a function or a supplier and triggers blocking behavior if
+     * the verb is a supplier.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
      * Get the scope. Actor, action or block
      *
      * @return
@@ -207,12 +214,12 @@ public interface KActorsStatement extends KActorsCodeStatement {
     Scope getAssignmentScope();
   }
 
-  interface FireValue extends KActorsStatement {
+  interface Fire extends KActorsStatement {
 
     KActorsValue getValue();
   }
 
-  interface TextBlock extends KActorsStatement {
+  interface Text extends KActorsStatement {
 
     String getText();
   }
@@ -258,6 +265,40 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
   interface Verb extends KActorsStatement {
 
+    interface MatchAction extends KActorsStatement {
+
+      /**
+       * Value to match against the fired output. If null, anything matches except empty, unknown or
+       * false.
+       *
+       * @return
+       */
+      KActorsValue getMatchCriterion();
+
+      /**
+       * Statement to execute in context after match succeeds.
+       *
+       * @return
+       */
+      KActorsStatement getActionOnMatch();
+
+      /**
+       * Local names of variables to match to fired output. Matches progressively on lists, filling
+       * with nulls if more variables than outputs.
+       *
+       * @return
+       */
+      List<String> getVariables();
+
+      /**
+       * Name of variable to capture the matched value with literal matches that have no variable
+       * name.
+       *
+       * @return
+       */
+      String getCaptureAs();
+    }
+
     /**
      * Parsed after checking with the loaded behavior manifest unless there is an explicit
      * recipient. If the message is unrecognized this will be null and the engine will have to match
@@ -287,7 +328,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
      *
      * @return
      */
-    List<Triple<KActorsValue, KActorsStatement, String>> getActions();
+    List<MatchAction> getActions();
   }
 
   /**
