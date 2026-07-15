@@ -7,7 +7,7 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
+import org.integratedmodelling.klab.runtime.kactors.TestScope;
 
 /**
  * TODO TBI Any actors that are Closeable are created explicitly as variables in each action inside

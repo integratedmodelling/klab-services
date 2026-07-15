@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.runtime.kactors.actors.ContextActor;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
+import org.integratedmodelling.klab.runtime.kactors.TestScope;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 
 /**

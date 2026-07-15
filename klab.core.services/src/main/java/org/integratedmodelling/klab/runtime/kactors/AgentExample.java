@@ -7,7 +7,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
 import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 
 ///  # TO BE REMOVED - example translation of following k.Actors code:
@@ -82,16 +81,7 @@ public class AgentExample extends AgentBase {
 
     /* ------ begin setup code for the timer supplier reactive message, id = 1 ------ */
     // timer.in(15.s): time -> console.format("Sono le %s", time)
-    var timer_1_scope = scope.withId(1);
-    onEvent(
-        timer_1_scope,
-        event -> {
-          // --- code compiled from the action body after the timer verb
-          CoreActorLibrary.Console.format(
-              timer_1_scope, "Passati 15 secondi: dovrebbero essere le %s\n", event.value());
-          // --- end of code
-        },
-        EventType.RETURN);
+
     /* ------ end setup code for the reactive message ------ */
 
     /* ------ timer supplier verb invocation with scope setting the ID for outgoing events ---- */
@@ -100,23 +90,35 @@ public class AgentExample extends AgentBase {
             15 * Time.Resolution.Type.SECOND.getMilliseconds(), Time.Resolution.Type.SECOND);
     var timer_1_time =
         TimeInstant.create(System.currentTimeMillis() + timer_1_duration.getMilliseconds());
-    runSupplier(timer_1_scope, s -> CoreActorLibrary.Timer.in(s, timer_1_duration, timer_1_time));
+    runSupplier(
+        onEvent(
+            scope,
+            (e, s) -> {
+              // --- code compiled from the action body after the timer verb
+              CoreActorLibrary.Console.format(
+                  s, "Passati 15 secondi: dovrebbero essere le %s\n", e.payload());
+              // --- end of code
+            },
+            EventType.RETURN),
+        s -> CoreActorLibrary.Timer.in(s, timer_1_duration, timer_1_time));
+
     /* ------ end of timer supplier verb invocation. RETURN disposes the listener. ------ */
 
     /* ------ begin setup code for the timer reactive message, id = 2 ------ */
     // emitter: sentence -> console.format("Emitter said %s", sentence)
-    var emitter_2_scope = scope.withId(2);
-    onEvent(
-        emitter_2_scope,
-        event -> {
-          // --- code compiled from the action body after the timer verb
-          CoreActorLibrary.Console.format(emitter_2_scope, "Emitter said %s\n", event.value());
-          // --- end of code
-        },
-        EventType.FIRE);
+    ;
     /* ------ end setup code for the reactive message ------ */
 
-    runEmitter(emitter_2_scope, this::emitter_2);
+    runEmitter(
+        onEvent(
+            scope,
+            (e, s) -> {
+              // --- code compiled from the action body after the timer verb
+              CoreActorLibrary.Console.format(s, "Emitter said %s\n", e.payload());
+              // --- end of code
+            },
+            EventType.FIRE),
+        this::emitter_2);
 
     return true;
   }
@@ -134,20 +136,20 @@ public class AgentExample extends AgentBase {
 
     /* ------ begin setup code for the timer reactive message, id = 3 ------ */
     // timer.random(step=10.s): time -> fire "dio puto"
-    var timer_3_scope = scope_emitter.withId(3);
-    onEvent(
-        timer_3_scope,
-        event -> {
-          // --- code compiled from the action body after the timer verb
-          scope_emitter.doFire("dio puto");
-          // --- end of code
-        },
-        EventType.FIRE);
     /* ------ end setup code for the reactive message ------ */
-
     /* ------ timer verb invocation with scope setting the ID for outgoing events ---- */
     /* ------ TODO document parameter mediation and assignment ------ */
-    runEmitter(timer_3_scope, s -> CoreActorLibrary.Timer.random(s, TimeUnit.SECONDS, 1));
+    runEmitter(
+        // this sets up the scope to react to
+        onEvent(
+            scope_emitter,
+            (event, scope) -> {
+              // --- code compiled from the action body after the timer verb
+              scope.doFire("dio puto");
+              // --- end of code
+            },
+            EventType.FIRE),
+        s -> CoreActorLibrary.Timer.random(s, TimeUnit.SECONDS, 1));
     /* ------ end of timer verb invocation. Remember type of payload for matching upstream ------ */
 
     return true;

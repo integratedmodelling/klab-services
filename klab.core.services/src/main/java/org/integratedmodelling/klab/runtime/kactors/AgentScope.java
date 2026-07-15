@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
+package org.integratedmodelling.klab.runtime.kactors;
 
 import java.io.PrintStream;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
@@ -59,7 +58,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
     }
     var result =
         actor.emitEvent(
-            new AgentBase.Event(AgentBase.EventType.FIRE, actor.id, actionId, firedObject));
+            new AgentBase.Event(AgentBase.EventType.FIRE, actionId, firedObject));
     if (result != Sinks.EmitResult.OK) {
       actor.handleNotification(Notification.error("Failed to emit fire event: " + result));
     }
@@ -96,7 +95,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
     }
     var result =
         actor.emitEvent(
-            new AgentBase.Event(AgentBase.EventType.RETURN, actor.id, actionId, returnedObject));
+            new AgentBase.Event(AgentBase.EventType.RETURN, actionId, returnedObject));
     if (result != Sinks.EmitResult.OK) {
       Logging.INSTANCE.error("Failed to emit return event: " + result);
     }
@@ -125,11 +124,11 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
       if (exceptionalValue != null) {
         actor.emitEvent(
             new AgentBase.Event(
-                AgentBase.EventType.EXCEPTION, actor.id, actionId, exceptionalValue));
+                AgentBase.EventType.EXCEPTION, actionId, exceptionalValue));
       }
       actor.emitEvent(
           new AgentBase.Event(
-              AgentBase.EventType.TERMINATION, actor.id, actionId, terminationValue(conditions)));
+              AgentBase.EventType.TERMINATION, actionId, terminationValue(conditions)));
       for (var disposable : disposables) {
         disposable.dispose();
       }

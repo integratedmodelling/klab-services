@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.runtime.kactors;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
 
 public abstract class TestCaseBase extends AgentBase {
 

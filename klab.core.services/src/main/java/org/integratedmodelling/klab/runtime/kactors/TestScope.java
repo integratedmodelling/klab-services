@@ -1,6 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
-
-import org.integratedmodelling.klab.runtime.kactors.AgentBase;
+package org.integratedmodelling.klab.runtime.kactors;
 
 public abstract class TestScope extends AgentScope {
 

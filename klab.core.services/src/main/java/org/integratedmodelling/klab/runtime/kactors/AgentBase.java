@@ -7,6 +7,8 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.integratedmodelling.common.logging.Logging;
@@ -18,7 +20,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
@@ -68,6 +69,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   private ContextScope contextScope;
   private SessionScope sessionScope;
   private int errors = 0;
+  private final AtomicLong nextId = new AtomicLong(0);
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -87,15 +89,14 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
-   * TODO the Event should contain the scope linked to it and returned by onEvent, not the channel
-   *  (which is the ID in the scope).
+   * The Event is sent to the reactor sink when a fire, return, or exception is invoked on the scope
+   * during execution.
    *
    * @param type
-   * @param channel
-   * @param targetAction
-   * @param value
+   * @param actionId
+   * @param payload
    */
-  public record Event(EventType type, long channel, long targetAction, Object value) {}
+  public record Event(EventType type, long actionId, Object payload) {}
 
   public Sinks.Many<Event> getEventBus() {
     return eventBus;
@@ -259,33 +260,62 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   public abstract Verb.Type getAgentExecutionMode();
 
   /**
-   * Subscribe to events emitted in the {@code scope}. Used to register actions before calling
-   * {@link #runEmitter(AgentScope, Consumer)} or {@link #runSupplier(AgentScope, Function)} in the
-   * same scope passed here. The generated code should use this instead of wiring Reactor directly,
-   * so terminal events and subscription disposal have one implementation.
+   * Subscribe to events emitted in a new {@code scope} created for a new action. Used to register
+   * reactions within a call to {@link #runEmitter(AgentScope, Consumer)} or {@link
+   * #runSupplier(AgentScope, Function)} that defines and starts an emitter or supplier.
    *
-   * <p>TODO onEvent should automatically create the derived scope with the next ID, which can be
-   * used in the submission.
+   * <p>The normal usage pattern is:
+   *
+   * <pre>
+   *         runEmitter(
+   *           // this sets up the scope to react to, register the reaction, and returns
+   *           // the scope for the runner
+   *           onEvent(
+   *             currentScope,
+   *             (event, scope) -> {
+   *               // --- code compiled from the action body after the timer verb
+   *               // ...
+   *               // --- end of code
+   *             },
+   *             EventType.FIRE),
+   *           // --- code that starts the emitter process
+   *           scope -> { void emitter call(s) }
+   *           // --- end of emitter
+   *         );
+   * </pre>
+   *
+   * and similarly for suppliers, using {@link #runSupplier(AgentScope, Function)}, the supplier
+   * code producing a {@link CompletableFuture}, and EventType.RETURN as the trigger.
+   *
+   * <pre>
+   *
+   * </pre>
+   *
+   * @return the scope to use for the runXXX function, with an ID that's unique within the agent.
    */
-  protected void onEvent(
-      AgentScope scope, Consumer<Event> eventConsumer, EventType... acceptedEventTypes) {
-    var acceptedTypes = acceptedEventTypes(acceptedEventTypes);
+  protected AgentScope onEvent(
+      AgentScope parentScope,
+      BiConsumer<Event, AgentScope> eventConsumer,
+      EventType... triggerEvents) {
+    var scope = parentScope.withId(nextId.incrementAndGet());
+    var acceptedTypes = acceptedEventTypes(triggerEvents);
     Disposable subscription =
         this.eventBus
             .asFlux()
-            .filter(event -> event.targetAction() == scope.actionId())
+            .filter(event -> event.actionId() == scope.actionId())
             .takeUntil(event -> event.type() == EventType.TERMINATION)
             .filter(event -> acceptedTypes.contains(event.type()))
             .subscribe(
                 event -> {
                   try {
-                    eventConsumer.accept(event);
+                    eventConsumer.accept(event, parentScope);
                   } catch (Throwable t) {
-                    scope.done(t);
+                    parentScope.done(t);
                   }
                 },
                 scope::done);
     scope.disposeWith(subscription);
+    return scope;
   }
 
   private Set<EventType> acceptedEventTypes(EventType... eventTypes) {
@@ -298,7 +328,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
-   * Call to start a supplier after having called {@link #onEvent(AgentScope, Consumer,
+   * Call to start a supplier after having called {@link #onEvent(AgentScope, BiConsumer,
    * EventType...)} to register its action upon completion. The supplier must return a
    * CompletableFuture; the event registration must register EventType.RETURN.
    *
@@ -334,7 +364,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   /**
-   * Call to start an emitter after having called {@link #onEvent(AgentScope, Consumer,
+   * Call to start an emitter after having called {@link #onEvent(AgentScope, BiConsumer,
    * EventType...)} to register its action upon completion. The emitter is simply an AgentScope
    * consumer; the event must be EventType.FIRE.
    *

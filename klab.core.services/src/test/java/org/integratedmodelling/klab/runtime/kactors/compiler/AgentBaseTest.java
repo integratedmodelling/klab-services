@@ -13,11 +13,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentBase;
-import org.integratedmodelling.klab.runtime.kactors.actors.runtime.AgentScope;
+import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.junit.jupiter.api.Test;
 
 class AgentBaseTest {
@@ -51,14 +51,16 @@ class AgentBaseTest {
   @Test
   void scopedSubscriptionsIgnoreTerminationAndDisposeOnDone() {
     var agent = new ReactiveAgent();
-    var childScope = ((AgentScope) agent.rootScope()).withId(1);
+    var parentScope = (AgentScope) agent.rootScope();
     var received = new AtomicInteger();
 
-    agent.listen(childScope, event -> received.incrementAndGet(), AgentBase.EventType.FIRE);
+    var eventScope =
+        agent.listen(
+            parentScope, (event, scope) -> received.incrementAndGet(), AgentBase.EventType.FIRE);
 
-    childScope.doFire("first");
-    childScope.done();
-    childScope.doFire("second");
+    eventScope.doFire("first");
+    eventScope.done();
+    eventScope.doFire("second");
 
     assertEquals(1, received.get());
   }
@@ -66,45 +68,79 @@ class AgentBaseTest {
   @Test
   void returnEmitsOnePayloadEventBeforeTerminatingScope() {
     var agent = new ReactiveAgent();
-    var childScope = ((AgentScope) agent.rootScope()).withId(1);
+    var parentScope = (AgentScope) agent.rootScope();
     var received = new CopyOnWriteArrayList<AgentBase.EventType>();
 
-    agent.listen(childScope, event -> received.add(event.type()), AgentBase.EventType.RETURN);
+    var eventScope =
+        agent.listen(
+            parentScope,
+            (event, scope) -> received.add(event.type()),
+            AgentBase.EventType.RETURN);
 
-    childScope.doReturn("done");
+    eventScope.doReturn("done");
 
     assertEquals(List.of(AgentBase.EventType.RETURN), received);
-    assertTrue(childScope.isDone());
+    assertTrue(eventScope.isDone());
   }
 
   @Test
   void supplierCompletionEmitsReturnPayloadAndTerminatesScope() {
     var agent = new ReactiveAgent();
-    var childScope = ((AgentScope) agent.rootScope()).withId(1);
+    var parentScope = (AgentScope) agent.rootScope();
     var future = new CompletableFuture<String>();
     var received = new CopyOnWriteArrayList<Object>();
 
-    agent.listen(childScope, event -> received.add(event.value()), AgentBase.EventType.RETURN);
-    assertSame(AgentBase.TASK_RUNNING, agent.supply(childScope, scope -> future));
+    var eventScope =
+        agent.listen(
+            parentScope,
+            (event, scope) -> received.add(event.payload()),
+            AgentBase.EventType.RETURN);
+    assertSame(AgentBase.TASK_RUNNING, agent.supply(eventScope, scope -> future));
 
     future.complete("done");
 
     assertEquals(List.of("done"), received);
-    assertTrue(childScope.isDone());
+    assertTrue(eventScope.isDone());
   }
 
   @Test
   void exceptionalScopeCompletionEmitsExceptionPayloadBeforeTermination() {
     var agent = new ReactiveAgent();
-    var childScope = ((AgentScope) agent.rootScope()).withId(1);
+    var parentScope = (AgentScope) agent.rootScope();
     var received = new CopyOnWriteArrayList<AgentBase.EventType>();
 
-    agent.listen(childScope, event -> received.add(event.type()), AgentBase.EventType.EXCEPTION);
+    var eventScope =
+        agent.listen(
+            parentScope,
+            (event, scope) -> received.add(event.type()),
+            AgentBase.EventType.EXCEPTION);
 
-    childScope.done(new IllegalStateException("boom"));
+    eventScope.done(new IllegalStateException("boom"));
 
     assertEquals(List.of(AgentBase.EventType.EXCEPTION), received);
-    assertTrue(childScope.isDone());
+    assertTrue(eventScope.isDone());
+  }
+
+  @Test
+  void nestedEmitterRelaysFireThroughEnclosingActionScope() {
+    var agent = new ReactiveAgent();
+    var rootScope = (AgentScope) agent.rootScope();
+    var received = new CopyOnWriteArrayList<Object>();
+
+    var enclosingActionScope =
+        agent.listen(
+            rootScope,
+            (event, scope) -> received.add(event.payload()),
+            AgentBase.EventType.FIRE);
+    var nestedVerbScope =
+        agent.listen(
+            enclosingActionScope,
+            (event, scope) -> scope.doFire("relayed"),
+            AgentBase.EventType.FIRE);
+
+    nestedVerbScope.doFire("source");
+
+    assertEquals(List.of("relayed"), received);
   }
 
   private static class BackgroundAgent extends AgentBase {
@@ -135,9 +171,11 @@ class AgentBaseTest {
       super(null, null);
     }
 
-    private void listen(
-        AgentScope scope, Consumer<AgentBase.Event> consumer, AgentBase.EventType... eventTypes) {
-      onEvent(scope, consumer, eventTypes);
+    private AgentScope listen(
+        AgentScope scope,
+        BiConsumer<Event, AgentScope> consumer,
+        AgentBase.EventType... eventTypes) {
+      return onEvent(scope, consumer, eventTypes);
     }
 
     private <T> ExitValue supply(
