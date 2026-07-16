@@ -8,78 +8,80 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * All statements in k.LAB-supported languages are serializables. The resource service maintains the catalog
- * of available projects and resources, managing the transfer of pre-parsed projects with their behaviors and
- * namespaces to the semantic and resolver services.
+ * All statements in k.LAB-supported languages are serializables. The resource service maintains the
+ * catalog of available projects and resources, managing the transfer of pre-parsed projects with
+ * their behaviors and namespaces to the semantic and resolver services.
  *
  * @author mario
  */
 public interface Statement extends Serializable {
 
+  /**
+   * Each main type of statement exposes a visit() method that takes a specialized visitor
+   * descending from this tag interface.
+   *
+   * @author Ferd
+   */
+  interface Visitor {
+
+    // TODO
+    interface Context {}
+
+    void visitAnnotation(Annotation annotation, Context context);
+
     /**
-     * Each main type of statement exposes a visit() method that takes a specialized visitor descending from
-     * this tag interface.
+     * If the statement contains any other statements, visit each one. Order is not guaranteed to be
+     * the one of definition.
      *
-     * @author Ferd
+     * @param statement
      */
-    abstract interface Visitor {
+    void visitStatement(Statement statement, Context context);
+  }
 
+  /**
+   * If this comes from a document, return the offset in the source code. Otherwise return -1. The
+   * way to access the containing document is not specified in the API and is up to the
+   * implementation.
+   *
+   * @return
+   */
+  int getOffsetInDocument();
 
-        void visitAnnotation(Annotation annotation);
+  /**
+   * If {@link #getOffsetInDocument()} returns >= 0, this must return a valid length of the textual
+   * specification starting at the offset.
+   *
+   * @return
+   */
+  int getLength();
 
+  /**
+   * @return the annotations
+   */
+  List<Annotation> getAnnotations();
 
-        /**
-         * If the statement contains any other statements, visit each one. Order is not guaranteed to be the
-         * one of definition.
-         *
-         * @param statement
-         */
-        void visitStatement(Statement statement);
-    }
+  /**
+   * @return the reason for deprecation
+   */
+  String getDeprecation();
 
-    /**
-     * If this comes from a document, return the offset in the source code. Otherwise return -1. The way to
-     * access the containing document is not specified in the API and is up to the implementation.
-     *
-     * @return
-     */
-    int getOffsetInDocument();
+  /**
+   * @return true if deprecated
+   */
+  boolean isDeprecated();
 
-    /**
-     * If {@link #getOffsetInDocument()} returns >= 0, this must return a valid length of the textual
-     * specification starting at the offset.
-     *
-     * @return
-     */
-    int getLength();
+  /**
+   * Any errors, warnings or info are reported as notifications. Check error notifications to see if
+   * the statement is legal.
+   *
+   * @return
+   */
+  Collection<Notification> getNotifications();
 
-    /**
-     * @return the annotations
-     */
-    List<Annotation> getAnnotations();
-
-    /**
-     * @return the reason for deprecation
-     */
-    String getDeprecation();
-
-    /**
-     * @return true if deprecated
-     */
-    boolean isDeprecated();
-
-    /**
-     * Any errors, warnings or info are reported as notifications. Check error notifications to see if the
-     * statement is legal.
-     *
-     * @return
-     */
-    Collection<Notification> getNotifications();
-
-    /**
-     * To be specialized downstream.
-     *
-     * @param visitor
-     */
-    public void visit(Visitor visitor);
+  /**
+   * To be specialized downstream.
+   *
+   * @param visitor
+   */
+  public void visit(Visitor visitor);
 }

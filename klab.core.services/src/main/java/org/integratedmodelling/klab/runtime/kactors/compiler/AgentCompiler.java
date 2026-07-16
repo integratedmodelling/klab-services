@@ -26,6 +26,7 @@ public class AgentCompiler {
   private UserScope scope;
   private String packageName = "org.integratedmodelling.klab.runtime.kactors.generated";
   private String sourceCode;
+  private BehaviorAnalyzer analyzer;
 
   public AgentCompiler(String behaviorUrn, UserScope scope) {
     this.scope = scope;
@@ -49,9 +50,14 @@ public class AgentCompiler {
   public AgentCompiler(KActorsBehavior behavior) {
     this.scope = null;
     this.behavior = behavior;
+    this.analyzer = new BehaviorAnalyzer(behavior);
   }
 
   public boolean compile() {
+
+    if (!analyzer.analyze()) {
+      return false;
+    }
 
     // TODO use versions intelligently. All versions should have the timestamp of the behavior.
     // TODO store the behavior's last update timestamp in a separate hash and re-compile if it's
@@ -121,7 +127,6 @@ public class AgentCompiler {
     List<MethodSpec> methods = new ArrayList<>();
     List<FieldSpec> fields = new ArrayList<>();
 
-    var analyzer = new BehaviorAnalyzer(behavior);
     if (Utils.Notifications.hasErrors(analyzer.getNotifications())) {
       // TODO notify somehow
       return null;

@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
@@ -12,11 +16,6 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
-
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
     extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
@@ -186,10 +185,10 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
             boolean stop = false;
 
             @Override
-            public void visitAnnotation(Annotation annotation) {}
+            public void visitAnnotation(Annotation annotation, Context context) {}
 
             @Override
-            public void visitStatement(Statement statement) {
+            public void visitStatement(Statement statement, Context context) {
               if (!stop) {
                 stop = getStatementAt(offset, statement, path);
               }

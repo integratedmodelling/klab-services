@@ -2676,12 +2676,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     peer.visit(
         new Statement.Visitor() {
           @Override
-          public void visitAnnotation(Annotation annotation) {
+          public void visitAnnotation(Annotation annotation, Context context) {
             // TODO
           }
 
           @Override
-          public void visitStatement(Statement statement) {
+          public void visitStatement(Statement statement, Context context) {
             // TODO call the method below with the ref if we have it
           }
 

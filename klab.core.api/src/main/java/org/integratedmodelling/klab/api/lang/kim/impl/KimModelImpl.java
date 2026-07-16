@@ -137,7 +137,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     public void visit(Visitor visitor) {
 
         for (var annotation : getAnnotations()) {
-            visitor.visitAnnotation(annotation);
+            visitor.visitAnnotation(annotation, null);
         }
 
         for (var observable : getObservables()) {

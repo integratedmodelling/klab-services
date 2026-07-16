@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -33,6 +35,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.languages.BehaviorSyntaxImpl;
+import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
 
@@ -383,28 +386,38 @@ public enum LanguageAdapter {
     ret.setType(
         switch (valueSyntax.getType()) {
           case NUMBER -> {
-            // TODO also set the value in all cases
+            ret.setStatedValue(valueSyntax.getPod(Number.class));
             yield ValueType.NUMBER;
           }
           case STRING -> {
+            ret.setStatedValue(valueSyntax.getPod(String.class));
             yield ValueType.STRING;
           }
           case RANGE -> {
+            ret.setStatedValue(adaptNumericRange(valueSyntax.getPod(RangeLiteral.class)));
             yield ValueType.RANGE;
           }
           case OBSERVABLE -> {
             yield ValueType.OBSERVABLE;
           }
           case QUANTITY -> {
+            QuantityImpl quantity = new QuantityImpl();
+            quantity.setUnit(valueSyntax.getPod(QuantityLiteral.class).getUnit());
+            quantity.setCurrency(valueSyntax.getPod(QuantityLiteral.class).getCurrency());
+            quantity.setValue(valueSyntax.getPod(QuantityLiteral.class).getValue());
+            ret.setStatedValue(quantity);
             yield ValueType.QUANTITY;
           }
           case CONSTANT -> {
+            ret.setStatedValue(valueSyntax.getPod(Object.class));
             yield ValueType.CONSTANT;
           }
           case IDENTIFIER -> {
+            ret.setStatedValue(valueSyntax.getPod(Object.class));
             yield ValueType.IDENTIFIER;
           }
           case BOOLEAN -> {
+            ret.setStatedValue(valueSyntax.getPod(Boolean.class));
             yield ValueType.BOOLEAN;
           }
           case LIST -> {
@@ -426,7 +439,11 @@ public enum LanguageAdapter {
             yield ValueType.EXPRESSION;
           }
           case REGULAR_EXPRESSION -> {
+            ret.setStatedValue(Pattern.compile(valueSyntax.getPod(String.class)));
             yield ValueType.REGEXP;
+          }
+          case NODATA -> {
+            yield ValueType.NODATA;
           }
         });
     ret.setDeferred(valueSyntax.isQuoted());
@@ -1158,6 +1175,14 @@ public enum LanguageAdapter {
 
     ret.getNotifications().addAll(notifications);
 
+    return ret;
+  }
+
+  private NumericRange adaptNumericRange(RangeLiteral range) {
+    // TODO open/close; should distinguish integers for iterations etc.
+    var ret = new NumericRangeImpl();
+    ret.setLowerBound(range.getFrom().doubleValue());
+    ret.setUpperBound(range.getTo().doubleValue());
     return ret;
   }
 

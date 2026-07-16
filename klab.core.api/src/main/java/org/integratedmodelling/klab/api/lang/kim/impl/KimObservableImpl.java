@@ -259,7 +259,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     public void visit(Visitor visitor) {
 
         for (var annotation : getAnnotations()) {
-            visitor.visitAnnotation(annotation);
+            visitor.visitAnnotation(annotation, null);
         }
 
         if (semantics != null) {

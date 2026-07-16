@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentBase;
@@ -28,6 +30,7 @@ public class BehaviorAnalyzer {
 
   public record ExpressionInfo(String expression, Expression.Descriptor descriptor) {}
 
+  private final KActorsBehavior behavior;
   private final List<Notification> notifications = new ArrayList<>();
   private final Map<String, ActionInfo> actions = new LinkedHashMap<>();
   private final List<VariableInfo> fields = new ArrayList<>();
@@ -35,10 +38,23 @@ public class BehaviorAnalyzer {
   private Class<? extends AgentBase> agentClass = AgentBase.class;
 
   public BehaviorAnalyzer(KActorsBehavior behavior) {
-    analyze(behavior);
+    this.behavior = behavior;
   }
 
-  private void analyze(KActorsBehavior behavior) {}
+  public boolean analyze() {
+
+    // Collect all info in a first passs
+    new KActorsVisitor() {
+
+
+    }.visit(behavior);
+
+    // Verify all info in the second pass, collecting notifications
+
+    // If all tests pass, return true
+
+    return true;
+  }
 
   public Map<String, ActionInfo> getActions() {
     return actions;

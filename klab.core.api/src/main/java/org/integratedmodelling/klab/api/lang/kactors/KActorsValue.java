@@ -1,8 +1,16 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.integratedmodelling.klab.api.collections.Identifier;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
 /**
  * Values can be a lot of different things in k.Actors and serve as matches for fired values, so we
@@ -26,26 +34,32 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 public interface KActorsValue extends KActorsCodeStatement, Serializable {
 
   enum Type {
-    NUMBER,
-    STRING,
-    RANGE,
-    OBSERVABLE,
-    QUANTITY,
-    CONSTANT,
-    IDENTIFIER,
-    BOOLEAN,
-    LIST,
-    MAP,
+    NUMBER(Number.class),
+    STRING(String.class),
+    RANGE(NumericRange.class),
+    OBSERVABLE(KimObservable.class),
+    QUANTITY(Quantity.class),
+    CONSTANT(String.class),
+    IDENTIFIER(Identifier.class),
+    BOOLEAN(Boolean.class),
+    LIST(List.class),
+    MAP(Parameters.class),
     /** Localized string resolved externally - #UPPERCASE_ID */
-    LOCALIZED_STRING_REFERENCE,
+    LOCALIZED_STRING_REFERENCE(String.class),
     /** Numbered argument reference, 1-based - $argN */
-    ARGUMENT_REFERENCE,
+    ARGUMENT_REFERENCE(Integer.class),
     /** Ternary expression, forces lazy evaluation unless in metadata */
-    TERNARY_EXPRESSION,
+    TERNARY_EXPRESSION(Void.class /* TODO */),
     /** Code expressions [....] also get encoded as ValueSyntax */
-    EXPRESSION,
+    EXPRESSION(String.class),
 
-    REGULAR_EXPRESSION,
+    REGULAR_EXPRESSION(Pattern.class);
+
+    final Class<?> implementationClass;
+
+    Type(Class<?> implementationClass) {
+      this.implementationClass = implementationClass;
+    }
   }
 
   //    /**
