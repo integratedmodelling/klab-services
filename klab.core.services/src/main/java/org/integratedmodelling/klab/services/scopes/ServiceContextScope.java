@@ -738,6 +738,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     //    var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
 
+    var querySourceIds =
+        observation.getId() == Observation.QUERY_ID
+            ? observation.getMetadata().getList(Metadata.IM_QUERY_SOURCE_IDS, Long.class)
+            : List.<Long>of();
+
     // look first in the currentTransaction graph if there is a transaction
     if (currentTransaction != null) {
       for (var obs :
@@ -750,13 +755,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO for substantials, this should be in the context of a collective, and the collective
         //  should provide the identification strategy
         if (obs.target() instanceof Observation o
-            && (isSameInstance(observation, o)
-                || (SemanticType.isDependent(observation.getObservable().getSemantics().getType())
-                    && observation
-                        .getObservable()
-                        .getSemantics()
-                        .getUrn()
-                        .equals(observation.getObservable().getSemantics().getUrn())))) {
+            && (!querySourceIds.isEmpty()
+                ? querySourceIds.contains(o.getId())
+                : (isSameInstance(observation, o)
+                    || (SemanticType.isDependent(
+                            observation.getObservable().getSemantics().getType())
+                        && observation
+                            .getObservable()
+                            .getSemantics()
+                            .getUrn()
+                            .equals(o.getObservable().getSemantics().getUrn()))))) {
           return o;
         }
       }
@@ -774,7 +782,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD);
 
-    if (!observation.getObservable().getSemantics().isCollective()
+    if (!querySourceIds.isEmpty()) {
+      query =
+          query.where(
+              "id", KnowledgeGraph.Query.Operator.EQUALS, querySourceIds.getFirst());
+    } else if (!observation.getObservable().getSemantics().isCollective()
         && SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())) {
       query =
           query.where(
@@ -858,8 +870,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return currentTransaction == null ? null : currentTransaction.getActivity();
   }
 
-  public void contextualize(Observation observation) {
-    this.digitalTwin.getScheduler().submit(observation, this);
+  public boolean contextualize(Observation observation) {
+    return this.digitalTwin.getScheduler().submit(observation, this);
   }
 
   /** Reinitialize a context scope after a timeout if so configured. */

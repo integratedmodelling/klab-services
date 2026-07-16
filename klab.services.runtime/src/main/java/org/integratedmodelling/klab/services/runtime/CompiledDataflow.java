@@ -49,6 +49,7 @@ public class CompiledDataflow {
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
   private final Map<Long, ExecutorImpl> operations = new HashMap<>();
   private final Map<Long, Observation> dependentObservations = new HashMap<>();
+  private final Map<Actuator, Observation> actuatorObservations = new IdentityHashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
@@ -378,6 +379,7 @@ public class CompiledDataflow {
   }
 
   private synchronized void requireObservations(Actuator rootActuator) {
+    actuatorObservations.put(rootActuator, rootObservation);
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
@@ -385,9 +387,12 @@ public class CompiledDataflow {
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
     // we don't add the root observation because it's added externally
-    if (rootObservation.getId() != actuator.getId()
-        && !observationMap.containsKey(actuator.getId())) {
-      observationMap.put(actuator.getId(), requireObservation(actuator));
+    if (rootActuator != actuator && !actuatorObservations.containsKey(actuator)) {
+      var observation =
+          actuator.getActuatorType() == Actuator.Type.REFERENCE
+              ? actuator.getObservation()
+              : observationMap.computeIfAbsent(actuator.getId(), id -> requireObservation(actuator));
+      actuatorObservations.put(actuator, observation);
     }
     for (var child : actuator.getChildren()) {
       requireObservation(child, observationMap);
@@ -528,9 +533,6 @@ public class CompiledDataflow {
             });
 
     // now add the root to a temporary map so that we can properly set up the links
-    var allObservations = new HashMap<>(dependentObservations);
-    allObservations.put(rootObservation.getId(), rootObservation);
-
     /*
      * Establish the computation rank for the scheduler
      */
@@ -568,15 +570,16 @@ public class CompiledDataflow {
       if (!actuator.getComputation().isEmpty()) {
         transaction.add(actuator);
         transaction.link(
-            allObservations.get(actuator.getId()),
+            actuatorObservations.get(actuator),
             actuator,
             GraphModel.Relationship.CONTEXTUALIZED_BY,
-            // TODO the geometry key or something else must be in the link.
             "geometry",
-            ((ActuatorImpl) actuator).getResolvedGeometry());
+            actuator.getCoverage() == null
+                ? ((ActuatorImpl) actuator).getResolvedGeometry()
+                : actuator.getCoverage());
         if (operations.containsKey(actuator.getId())) {
           transaction.resolveWith(
-              allObservations.get(actuator.getId()), operations.get(actuator.getId()));
+              actuatorObservations.get(actuator), operations.get(actuator.getId()));
         }
       }
     }
@@ -589,11 +592,14 @@ public class CompiledDataflow {
     for (var edge : dependencyGraph.edgeSet()) {
       var aSource = dependencyGraph.getEdgeSource(edge);
       var aTarget = dependencyGraph.getEdgeTarget(edge);
-      var source = allObservations.get(aSource.getId());
-      var target = allObservations.get(aTarget.getId());
-      // TODO geometry?
-      transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
-      // TODO the geometry should probably be here if coverage is not full
+      var source = actuatorObservations.get(aSource);
+      var target = actuatorObservations.get(aTarget);
+      // A detached query view is an execution-time binding, never a graph asset. Positive-ID
+      // references retain AFFECTS so that later events can still propagate from them.
+      if (source.getId() != Observation.QUERY_ID) {
+        // TODO the execution coverage should be recorded when the partial-storage policy is known.
+        transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
+      }
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
 
@@ -714,18 +720,12 @@ public class CompiledDataflow {
       localReferences.put(Dataflow.SELF_ID, observation);
       // only scan the direct dependents, references or not.
       for (var child : actuator.getChildren()) {
-        localReferences.put(
-            child.getName(),
-            dependentObservations.values().stream()
-                .filter(
-                    observation ->
-                        observation.getObservable().equals(child.getObservation().getObservable()))
-                .findFirst()
-                .orElseThrow(
-                    () ->
-                        new KlabInternalErrorException(
-                            "Missing dependent observation for "
-                                + child.getObservation().getObservable())));
+        var childObservation = actuatorObservations.get(child);
+        if (childObservation == null) {
+          throw new KlabInternalErrorException(
+              "Missing dependent observation for " + child.getObservation().getObservable());
+        }
+        localReferences.put(child.getName(), childObservation);
       }
     }
 
@@ -780,11 +780,19 @@ public class CompiledDataflow {
       }
 
       if (ret) {
-        executionScope.commit();
-        executionScope
-            .getService(RuntimeService.class)
-            .submitContextualizationResult(
-                contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
+        try {
+          executionScope
+              .getService(RuntimeService.class)
+              .submitContextualizationResult(
+                  contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
+          if (executionScope.commit() < 0) {
+            throw new KlabInternalErrorException("Could not commit contextualization transaction");
+          }
+        } catch (Throwable t) {
+          executionScope.fail(t);
+          observation.getNotifications().add(Notification.error(t.getMessage(), t));
+          ret = false;
+        }
       } else {
         executionScope.fail(failure);
         executionScope

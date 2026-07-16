@@ -126,6 +126,7 @@ public class DataflowCompiler {
     catalog.add(observation.getId());
 
     var ret = new ArrayList<Actuator>();
+    var references = new ArrayList<Actuator>();
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {
 
       var child = resolutionGraph.graph().getEdgeTarget(edge);
@@ -142,6 +143,18 @@ public class DataflowCompiler {
         actuator.setStrategyUrn(observationStrategy.getUrn());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);
+      } else if (child instanceof Observable) {
+        references.add(
+            compileReference(
+                resolutionGraph.getResolved(edge.observationId), childCoverage, edge.localName));
+      }
+    }
+
+    if (ret.isEmpty()) {
+      ret.addAll(references);
+    } else {
+      for (var actuator : ret) {
+        actuator.getChildren().addAll(references);
       }
     }
 

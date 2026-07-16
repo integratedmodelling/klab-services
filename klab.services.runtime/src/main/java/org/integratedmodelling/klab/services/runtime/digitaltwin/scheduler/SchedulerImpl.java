@@ -90,11 +90,11 @@ public class SchedulerImpl implements Scheduler {
   }
 
   @Override
-  public void submit(Observation observation, ContextScope scope) {
+  public boolean submit(Observation observation, ContextScope scope) {
 
     // TODO we should not register observations that are unaffected by others unless they're events
     if (observation.isEmpty()) {
-      return;
+      return false;
     }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
@@ -114,11 +114,19 @@ public class SchedulerImpl implements Scheduler {
         // PROCESS! Time events will affect it
       }
       // TODO store the disposable that this returns so that we can remove it upon termination
-      processor
-          .asFlux()
-          .filterWhen(event -> Mono.just(checkApplies(registration, event)))
-          .subscribe(e -> handleEvent(registration, e));
+      var subscription =
+          processor
+              .asFlux()
+              .filter(event -> event.getType() != Event.Type.INITIALIZATION)
+              .filterWhen(event -> Mono.just(checkApplies(registration, event)))
+              .subscribe(e -> handleEvent(registration, e));
+      var initialized = initialize(observation, serviceContextScope);
+      if (!initialized) {
+        subscription.dispose();
+      }
+      return initialized;
     }
+    return false;
   }
 
   @Override
@@ -143,15 +151,15 @@ public class SchedulerImpl implements Scheduler {
    *
    * @param observation
    */
-  private void initialize(Observation observation, ServiceContextScope scope) {
+  private boolean initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     try {
-      if (contextualize(observation, scale, scope, this.initializationEvent)) {
-        //        scope.commit();
-      }
+      return contextualize(observation, scale, scope, this.initializationEvent);
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
       scope.fail(t);
+      observation.getNotifications().add(Notification.error(t.getMessage(), t));
+      return false;
     }
   }
 

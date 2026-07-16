@@ -32,9 +32,12 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
@@ -46,6 +49,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -464,6 +468,37 @@ public class RuntimeService extends BaseService
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
+    if (submitted.getId() > 0 || submitted.isEmpty()) {
+      return CompletableFuture.completedFuture(submitted);
+    }
+
+    if (submitted.getId() == Observation.QUERY_ID) {
+      return CompletableFuture.completedFuture(query(submitted, scope));
+    }
+
+    /*
+     * A complete query is the terminal answer. Partial and empty queries must continue to the
+     * resolver, which will retain the covered part as a reference and resolve only the remainder.
+     * Doing this before register() also prevents its semantic identity checks from hiding partial
+     * quality coverage.
+     */
+    var existing = queryForSubmission(submitted, scope);
+    if (existing != null && !existing.isEmpty()) {
+      var requested =
+          submitted.getGeometry() == null && scope.getContextObservation() != null
+              ? scope.getContextObservation().getGeometry()
+              : submitted.getGeometry();
+      if (requested != null) {
+        var requestedScale = GeometryRepository.INSTANCE.scale(requested, scope);
+        var existingCoverage =
+            Coverage.create(requestedScale, 0.0)
+                .merge(existing.getGeometry(), LogicalConnector.UNION);
+        if (existingCoverage.isComplete()) {
+          return CompletableFuture.completedFuture(existing);
+        }
+      }
+    }
+
     var observation = register(submitted, scope);
 
     if (observation.getId() > 0 || observation.isEmpty()) {
@@ -481,15 +516,7 @@ public class RuntimeService extends BaseService
           scope.getContextObservation() != null
               && scope.getContextObservation().getObservable().getSemantics().isCollective();
 
-      if (!instantiating) {
-        // FIXME remove - this should become a query (id == 0) done by the resolver. If the coverage is
-        //  complete, the resulting reference is compiled in; otherwise, the rest of the geometry is
-        //  resolved along with it.
-        var existing = scope.getObservation(observation);
-        if (existing != null) {
-          return CompletableFuture.completedFuture(existing);
-        }
-      } else {
+      if (instantiating) {
         /**
          * TODO we must check the existing cohorts and build the observation that queries the
          * objects in the requested geometry. Any missing coverage will become the next
@@ -723,6 +750,10 @@ public class RuntimeService extends BaseService
           .thenApply(
               dataflow -> {
                 observation.getNotifications().addAll(dataflow.getNotifications());
+                if (observation instanceof ObservationImpl observationImpl
+                    && dataflow instanceof DataflowImpl dataflowImpl) {
+                  observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
+                }
                 var encoded =
                     org.integratedmodelling.common.utils.Utils.Dataflows.encode(
                         dataflow, resolutionScope);
@@ -754,11 +785,30 @@ public class RuntimeService extends BaseService
 
                 if (!o.isEmpty()) {
                   submissionScope.getCurrentTransaction().registerExecutors();
-                  submissionScope.contextualize(o);
+                  if (!submissionScope.contextualize(o)) {
+                    submission.setName("SUB FAIL");
+                    submissionScope.fail();
+                    var failed =
+                        Observation.empty(
+                            Notification.error(
+                                "Contextualization of "
+                                    + o.getObservable().getUrn()
+                                    + " failed"));
+                    failed.getNotifications().addAll(o.getNotifications());
+                    return failed;
+                  }
 
                   // TODO add more info about the contextualization to the action's metadata
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
+                  if (commitId < 0) {
+                    var failed =
+                        Observation.empty(
+                            Notification.error(
+                                "Commit of " + o.getObservable().getUrn() + " failed"));
+                    failed.getNotifications().addAll(o.getNotifications());
+                    return failed;
+                  }
                   if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
                   }
@@ -779,6 +829,302 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
+  }
+
+  /**
+   * Resolve an ID-0 observation exclusively against knowledge already visible in the scope. Query
+   * execution is deliberately kept outside the submission transaction: it creates no activities,
+   * dataflows, observations, or scheduler work.
+   */
+  private Observation query(Observation query, ContextScope scope) {
+
+    if (!(scope instanceof ServiceContextScope serviceScope)) {
+      return Observation.empty(
+          Notification.error("Observation queries require a service context scope"));
+    }
+    if (query.getObservable() == null) {
+      return Observation.empty(Notification.error("Cannot query an observation without semantics"));
+    }
+
+    var semantics = query.getObservable().getSemantics();
+    if (query.getObservable().is(SemanticType.QUALITY)) {
+      return queryQuality(query, serviceScope);
+    }
+    if (SemanticType.isSubstantial(semantics.getType()) && semantics.isCollective()) {
+      return queryCollective(query, serviceScope);
+    }
+
+    return Observation.empty(
+        Notification.error(
+            "Observation queries are only supported for qualities and collective substantials"));
+  }
+
+  private Observation queryForSubmission(Observation submitted, ContextScope scope) {
+    var observable = submitted.getObservable();
+    if (observable == null
+        || !(observable.is(SemanticType.QUALITY)
+            || (SemanticType.isSubstantial(observable.getSemantics().getType())
+                && observable.getSemantics().isCollective()))) {
+      return null;
+    }
+    var builder = new Observation.NaiveBuilder(observable, scope);
+    builder.geometry(submitted.getGeometry()).query();
+    return query(builder.make(), scope);
+  }
+
+  private Observation queryQuality(Observation query, ServiceContextScope scope) {
+
+    var context = scope.getContextObservation();
+    if (context == null) {
+      return Observation.empty(
+          Notification.error("Cannot query a quality without a context observation"));
+    }
+
+    var requestedGeometry =
+        sanitizeQueryGeometry(query.getGeometry() == null ? context.getGeometry() : query.getGeometry());
+    if (requestedGeometry == null || requestedGeometry.isEmpty()) {
+      return Observation.empty(
+          Notification.error("Cannot query a quality without a valid requested geometry"));
+    }
+
+    var source = findQualitySource(query, context, scope);
+    if (source == null || source.getGeometry() == null) {
+      return Observation.empty(
+          Notification.info(
+              "No source observation exists for " + query.getObservable().getUrn()));
+    }
+
+    var actualGeometry = intersection(requestedGeometry, source.getGeometry());
+    if (actualGeometry == null || actualGeometry.isEmpty() || actualGeometry.size() == 0) {
+      return Observation.empty(
+          Notification.info(
+              "No source observation covers the requested geometry for "
+                  + query.getObservable().getUrn()));
+    }
+
+    var coverage = coverage(requestedGeometry, actualGeometry);
+    if (coverage <= 0.0) {
+      return Observation.empty(
+          Notification.info(
+              "No source observation covers the requested geometry for "
+                  + query.getObservable().getUrn()));
+    }
+    if (coverage >= 1.0 - 1.0e-9) {
+      return source;
+    }
+
+    var result = queryResult(source, actualGeometry, requestedGeometry, coverage);
+    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(source.getId()));
+    result
+        .getNotifications()
+        .add(
+            Notification.warning(
+                "Query result covers "
+                    + String.format(Locale.ROOT, "%.2f%%", coverage * 100.0)
+                    + " of the requested geometry"));
+    return result;
+  }
+
+  private Observation findQualitySource(
+      Observation query, Observation context, ServiceContextScope scope) {
+
+    var observableUrn = query.getObservable().getUrn();
+    var transaction = scope.getCurrentTransaction();
+    if (transaction != null) {
+      var local =
+          transaction.outgoing(context).stream()
+              .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
+              .map(KnowledgeGraph.Link::target)
+              .filter(Observation.class::isInstance)
+              .map(Observation.class::cast)
+              .filter(o -> o.getId() > 0)
+              .filter(o -> observableUrn.equals(o.getObservable().getUrn()))
+              .findFirst()
+              .orElse(null);
+      if (local != null) {
+        return local;
+      }
+    }
+
+    var result =
+        scope
+            .getDigitalTwin()
+            .getKnowledgeGraph()
+            .query(Observation.class, scope)
+            .source(context)
+            .along(GraphModel.Relationship.HAS_CHILD)
+            .where("observable", KnowledgeGraph.Query.Operator.EQUALS, observableUrn)
+            .run(scope);
+    return result.isEmpty() ? null : result.getFirst();
+  }
+
+  private Observation queryCollective(Observation query, ServiceContextScope scope) {
+
+    var cohort = getCohortFor(query.getObservable().getSemantics().singular(), scope, false);
+    if (cohort == null) {
+      return Observation.empty(
+          Notification.info("No cohort exists for " + query.getObservable().getUrn()));
+    }
+
+    var contributors = findCollectiveContributors(query, cohort, scope);
+    if (contributors.isEmpty()) {
+      return Observation.empty(
+          Notification.info(
+              "No collective observation contributes to the cohort for "
+                  + query.getObservable().getUrn()));
+    }
+
+    Geometry contributedGeometry = null;
+    var contributorIds = new ArrayList<Long>();
+    for (var contributor : contributors) {
+      if (contributor.getGeometry() != null && !contributor.getGeometry().isEmpty()) {
+        contributedGeometry = union(contributedGeometry, contributor.getGeometry());
+        contributorIds.add(contributor.getId());
+      }
+    }
+    if (contributedGeometry == null || contributedGeometry.isEmpty()) {
+      return Observation.empty(
+          Notification.info(
+              "Collective observations for "
+                  + query.getObservable().getUrn()
+                  + " have no geometry"));
+    }
+
+    var requestedGeometry =
+        sanitizeQueryGeometry(
+            query.getGeometry() == null ? contributedGeometry : query.getGeometry());
+    var actualGeometry = intersection(requestedGeometry, contributedGeometry);
+    if (actualGeometry == null || actualGeometry.isEmpty() || actualGeometry.size() == 0) {
+      return Observation.empty(
+          Notification.info(
+              "No collective observation covers the requested geometry for "
+                  + query.getObservable().getUrn()));
+    }
+
+    var collectiveCoverage = coverage(requestedGeometry, actualGeometry);
+    var result = queryResult(query, actualGeometry, requestedGeometry, collectiveCoverage);
+    result.setChildrenCount(contributors.stream().mapToInt(Observation::getChildrenCount).sum());
+    result.getMetadata().put(Metadata.IM_QUERY_COHORT_ID, cohort.getId());
+    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, contributorIds);
+    if (collectiveCoverage < 1.0 - 1.0e-9) {
+      result
+          .getNotifications()
+          .add(
+              Notification.warning(
+                  "Collective query result covers "
+                      + String.format(Locale.ROOT, "%.2f%%", collectiveCoverage * 100.0)
+                      + " of the requested geometry"));
+    }
+    return result;
+  }
+
+  private List<Observation> findCollectiveContributors(
+      Observation query, Cohort cohort, ServiceContextScope scope) {
+
+    var ret = new LinkedHashMap<String, Observation>();
+    var observableUrn = query.getObservable().getUrn();
+    var transaction = scope.getCurrentTransaction();
+    if (transaction != null) {
+      transaction.incoming(cohort).stream()
+          .filter(link -> link.type() == GraphModel.Relationship.CONTRIBUTED_TO)
+          .map(KnowledgeGraph.Link::source)
+          .filter(Observation.class::isInstance)
+          .map(Observation.class::cast)
+          .filter(o -> observableUrn.equals(o.getObservable().getUrn()))
+          .forEach(o -> ret.put(querySourceKey(o), o));
+    }
+
+    if (cohort.getId() > 0) {
+      scope
+          .getDigitalTwin()
+          .getKnowledgeGraph()
+          .query(Observation.class, scope)
+          .target(cohort)
+          .along(GraphModel.Relationship.CONTRIBUTED_TO)
+          .where("observable", KnowledgeGraph.Query.Operator.EQUALS, observableUrn)
+          .run(scope)
+          .forEach(o -> ret.put(querySourceKey(o), o));
+    }
+    return new ArrayList<>(ret.values());
+  }
+
+  private String querySourceKey(Observation observation) {
+    return observation.getId() > 0
+        ? "id:" + observation.getId()
+        : "transient:" + observation.getTransientId();
+  }
+
+  private Geometry sanitizeQueryGeometry(Geometry geometry) {
+    return geometry == null ? null : GeometryRepository.INSTANCE.sanitize(geometry);
+  }
+
+  static Geometry union(Geometry first, Geometry second) {
+    if (first == null) {
+      return second;
+    }
+    if (second == null) {
+      return first;
+    }
+    return GeometryRepository.INSTANCE.getUnion(first, second, Geometry.class);
+  }
+
+  static Geometry intersection(Geometry first, Geometry second) {
+    if (first == null || second == null) {
+      return null;
+    }
+    return GeometryRepository.INSTANCE.getIntersection(first, second, Geometry.class);
+  }
+
+  /** Compute exact dimensional coverage without the resolver's minimum-contribution thresholds. */
+  static double coverage(Geometry requested, Geometry actual) {
+    if (requested == null || actual == null) {
+      return 0.0;
+    }
+    Scale requestedScale = GeometryRepository.INSTANCE.scale(requested);
+    Scale actualScale = GeometryRepository.INSTANCE.scale(actual);
+    if (requestedScale == null || actualScale == null || actualScale.size() == 0) {
+      return 0.0;
+    }
+
+    double coverage = 1.0;
+    for (Extent<?> requestedExtent : requestedScale.getExtents()) {
+      var actualExtent = actualScale.extent(requestedExtent.getType());
+      if (actualExtent == null || actualExtent.isEmpty()) {
+        return 0.0;
+      }
+      double requestedSize = requestedExtent.getDimensionSize();
+      double actualSize = actualExtent.getDimensionSize();
+      double dimensionalCoverage;
+      if (Double.isFinite(requestedSize) && requestedSize > 0) {
+        dimensionalCoverage = actualSize / requestedSize;
+      } else {
+        dimensionalCoverage = requestedExtent.equals(actualExtent) ? 1.0 : 0.0;
+      }
+      coverage *= Math.max(0.0, Math.min(1.0, dimensionalCoverage));
+    }
+    return Math.max(0.0, Math.min(1.0, coverage));
+  }
+
+  static ObservationImpl queryResult(
+      Observation source, Geometry actualGeometry, Geometry requestedGeometry, double coverage) {
+    var result = new ObservationImpl();
+    result.setId(Observation.QUERY_ID);
+    result.setObservable(source.getObservable());
+    result.setName(source.getName());
+    result.setUrn(source.getUrn());
+    result.setGeometry(actualGeometry);
+    result.setValue(source.getValue());
+    result.setMetadata(Metadata.create(source.getMetadata()));
+    result.setHistograms(source.getHistograms());
+    result.setEventTimestamps(new ArrayList<>(source.getEventTimestamps()));
+    result.setContextualizationData(source.getContextualizationData());
+    result.setNotifications(new ArrayList<>(source.getNotifications()));
+    result.setResolvedCoverage(coverage);
+    result.getMetadata().put(Metadata.IM_QUERY_COVERAGE, coverage);
+    result
+        .getMetadata()
+        .put(Metadata.IM_QUERY_GEOMETRY, requestedGeometry == null ? null : requestedGeometry.encode());
+    return result;
   }
 
   /**
@@ -849,7 +1195,10 @@ public class RuntimeService extends BaseService
   @Override
   public Observation register(Observation observation, ContextScope scope) {
 
-    if (observation.getId() < -1 || observation.getId() > 0 || observation.isEmpty()) {
+    if (observation.getId() == Observation.QUERY_ID
+        || observation.getId() < -1
+        || observation.getId() > 0
+        || observation.isEmpty()) {
       return observation;
     }
 
@@ -870,34 +1219,6 @@ public class RuntimeService extends BaseService
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
             return existing;
-          }
-        }
-      } else if (SemanticType.isDependent(observation.getObservable().getSemantics().getType())) {
-
-        if (serviceContextScope.getContextObservation() != null) {
-
-          var existing =
-              serviceContextScope
-                  .getChildrenOf(serviceContextScope.getContextObservation())
-                  .stream()
-                  .filter(
-                      child ->
-                          child instanceof Observation oChild
-                              && oChild
-                                  .getObservable()
-                                  .asConcept()
-                                  .getUrn()
-                                  .equals(
-                                      observation
-                                          .getObservable()
-                                          .getSemantics()
-                                          .asConcept()
-                                          .getUrn()))
-                  .findFirst()
-                  .orElse(null);
-
-          if (existing instanceof ObservationImpl existingImpl) {
-            return existingImpl;
           }
         }
       }
@@ -1233,7 +1554,7 @@ public class RuntimeService extends BaseService
     /*
     Any submission tasks to be spawned for sub-contextualizations
      */
-    List<Callable<Observation>> tasks = new ArrayList<>();
+    List<CompletableFuture<Observation>> tasks = new ArrayList<>();
 
     if (outcome == Activity.Outcome.SUCCESS) {
       if (scope.getTarget().getObservable().getContextualization()
@@ -1246,26 +1567,9 @@ public class RuntimeService extends BaseService
         for (var child : scope.getOutcomes()) {
           // enqueue tasks to resolve any new observation
           tasks.add(
-              Executors.callable(
-                  () -> {
-                    contextScope
-                        .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
-                        .submit(child, contextScope)
-                        .thenApply(
-                            obs -> {
-                              // TODO any sub-states for the new object!
-                              return obs;
-                            })
-                        .exceptionally(
-                            (obs -> {
-                              scope
-                                  .getTarget()
-                                  .getNotifications()
-                                  .add(Notification.error(obs.getMessage(), obs));
-                              return child;
-                            }));
-                  },
-                  child));
+              contextScope
+                  .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+                  .submit(child, contextScope));
         }
 
       } else if (scope.getTarget().getObservable().getContextualization()
@@ -1288,15 +1592,22 @@ public class RuntimeService extends BaseService
        */
 
       if (!tasks.isEmpty()) {
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-          if (executor.invokeAll(tasks).stream().anyMatch(Future::isCancelled)) {
-            scope
-                .getTarget()
-                .getNotifications()
-                .add(Notification.error("One or more contextualizations were cancelled"));
+        try {
+          CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).join();
+          for (var task : tasks) {
+            var result = task.join();
+            if (result == null || result.isEmpty()) {
+              if (result != null) {
+                scope.getTarget().getNotifications().addAll(result.getNotifications());
+              }
+              throw new KlabIllegalStateException(
+                  "One or more instantiated observations failed contextualization");
+            }
           }
-        } catch (InterruptedException e) {
-          scope.getTarget().getNotifications().add(Notification.error(e.getMessage(), e));
+        } catch (CompletionException e) {
+          var cause = e.getCause() == null ? e : e.getCause();
+          scope.getTarget().getNotifications().add(Notification.error(cause.getMessage(), cause));
+          throw e;
         }
       }
 

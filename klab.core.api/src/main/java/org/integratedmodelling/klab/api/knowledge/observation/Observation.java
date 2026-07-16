@@ -63,14 +63,14 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   long UNASSIGNED_ID = -1;
 
   /**
-   * An observation whose ID is 0 is a query observation, which is returned whenever the observation
-   * made can return more objects that what was resolved. This only happens with instantiations
-   * (collective observables), which may return the set of resolved objects that pre-existed (and
-   * were possibly classified/characterized) or resolved in whatever geometry wasn't already
-   * covered.
+   * An observation whose ID is 0 is either a query submitted to the runtime or a query result. Query
+   * results are views of existing knowledge and are never stored in the knowledge graph. A quality
+   * query with complete coverage returns the original resolved observation instead, with its
+   * positive ID.
    *
-   * <p>Query observations will have their number of children set to the total result and require
-   * further action from the client to retrieve the full set of results.
+   * <p>Collective query results report the observations that contributed knowledge of the requested
+   * geometry in metadata. Their geometry may include areas where the contributing collective
+   * observations found no substantial instances.
    */
   long QUERY_ID = 0;
 

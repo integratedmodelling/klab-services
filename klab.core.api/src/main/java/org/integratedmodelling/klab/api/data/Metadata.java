@@ -211,6 +211,18 @@ public interface Metadata extends Parameters<String> {
 
   String IM_COMMIT = "im:commit";
 
+  /** Proportional coverage of the requested geometry in an observation query result. */
+  String IM_QUERY_COVERAGE = "im:query-coverage";
+
+  /** Encoded geometry requested in an observation query. */
+  String IM_QUERY_GEOMETRY = "im:query-geometry";
+
+  /** IDs of the observations whose geometries contributed to an observation query result. */
+  String IM_QUERY_SOURCE_IDS = "im:query-source-ids";
+
+  /** ID of the cohort addressed by a collective observation query. */
+  String IM_QUERY_COHORT_ID = "im:query-cohort-id";
+
   /** For legacy resources */
   String IM_ORIGINAL_URN = "im:original-urn";
 

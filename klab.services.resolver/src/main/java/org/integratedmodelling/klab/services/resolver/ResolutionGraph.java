@@ -69,6 +69,7 @@ public class ResolutionGraph {
    * resolved successfully upstream and we only need to add a reference to it.
    */
   private Observation resolved;
+  private long resolvedKey;
 
   private boolean empty;
 
@@ -135,7 +136,8 @@ public class ResolutionGraph {
     this.targetCoverage =
         Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
-    this.observations.put(resolvedObservation.getId(), resolvedObservation);
+    this.resolvedKey = referenceKey(resolvedObservation);
+    this.observations.put(this.resolvedKey, resolvedObservation);
     //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
@@ -208,9 +210,9 @@ public class ResolutionGraph {
     this.graph.addVertex(childGraph.target);
     var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
     if (childGraph.getResolved() != null) {
-      edge.observationId = childGraph.getResolved().getId();
+      edge.observationId = childGraph.resolvedKey;
     } else {
-      edge.observationId = --internalObservationId;
+      edge.observationId = rootGraph().nextInternalObservationId();
     }
     this.graph.addEdge(this.target, childGraph.target, edge);
 
@@ -278,6 +280,27 @@ public class ResolutionGraph {
 
   public ResolutionGraph createReference(Observable observable, Observation resolving) {
     return new ResolutionGraph(observable, resolving, this);
+  }
+
+  /** Add knowledge already present in the runtime as a reference contribution to this target. */
+  public void addReference(Observation reference, Coverage coverage) {
+    this.graph.addVertex(this.target);
+    this.graph.addVertex(reference.getObservable());
+    var edge = new ResolutionEdge(coverage, null);
+    edge.observationId = referenceKey(reference);
+    this.observations.put(edge.observationId, reference);
+    this.graph.addEdge(this.target, reference.getObservable(), edge);
+    this.targetCoverage = this.targetCoverage.merge(coverage, LogicalConnector.UNION);
+  }
+
+  private long referenceKey(Observation observation) {
+    return observation.getId() == Observation.QUERY_ID
+        ? rootGraph().nextInternalObservationId()
+        : observation.getId();
+  }
+
+  private long nextInternalObservationId() {
+    return --internalObservationId;
   }
 
   /**

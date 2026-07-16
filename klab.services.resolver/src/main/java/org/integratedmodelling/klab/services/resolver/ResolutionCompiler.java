@@ -29,6 +29,18 @@ import org.jgrapht.graph.DefaultEdge;
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
 
+  private record QueryMatch(
+      Observation result,
+      Observation reference,
+      Scale requestedScale,
+      Scale coveredScale,
+      Coverage coverage) {
+
+    boolean hasCoverage() {
+      return result != null && !result.isEmpty() && !coverage.isEmpty();
+    }
+  }
+
   private Graph<RuntimeAsset, DefaultEdge> resolutionCache =
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
@@ -74,18 +86,20 @@ public class ResolutionCompiler {
       }
     }
 
-    if (observation.getObservable().getSemantics().isCollective()) {
-      if (scope.getObserver() != null && scope.getObserver().getGeometry() != null) {
-        geometry =
-            GeometryRepository.INSTANCE.getUnion(
-                geometry, scope.getObserver().getGeometry(), Scale.class);
-      }
-    }
     return geometry;
   }
 
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
+
+    return resolve(observation, scope, parentGraph, null);
+  }
+
+  private ResolutionGraph resolve(
+      Observation observation,
+      ContextScope scope,
+      ResolutionGraph parentGraph,
+      QueryMatch suppliedQuery) {
 
     if (observation.getId() > 0) {
       return parentGraph;
@@ -95,7 +109,29 @@ public class ResolutionCompiler {
     if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
       return ResolutionGraph.empty();
     }
-    var scale = GeometryRepository.INSTANCE.scale(resolutionGeometry, scope);
+    var scale =
+        suppliedQuery == null
+            ? GeometryRepository.INSTANCE.scale(resolutionGeometry, scope)
+            : suppliedQuery.requestedScale();
+    var query =
+        suppliedQuery == null
+            ? query(observation.getObservable(), scale, scope)
+            : suppliedQuery;
+    if (query.hasCoverage() && query.coverage().isComplete()) {
+      var ret = parentGraph.createChild(observation, scale);
+      ret.addReference(query.reference(), query.coverage());
+      return ret;
+    }
+
+    var scaleToResolve = scale;
+    if (query.hasCoverage()) {
+      scaleToResolve = missingScale(scale, query.coveredScale());
+      if (scaleToResolve == null || scaleToResolve.isEmpty()) {
+        var ret = parentGraph.createChild(observation, scale);
+        ret.addReference(query.reference(), query.coverage());
+        return ret;
+      }
+    }
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
       if (resolvable.getSecond().getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
@@ -113,6 +149,9 @@ public class ResolutionCompiler {
     }
 
     ResolutionGraph ret = parentGraph.createChild(observation, scale);
+    if (query.hasCoverage()) {
+      ret.addReference(query.reference(), query.coverage());
+    }
     boolean complete = false;
 
     scope =
@@ -139,7 +178,7 @@ public class ResolutionCompiler {
       //        cScope = cScope.within(observation);
       //      }
 
-      var strategyResolution = resolve(strategy, scale, ret, /* cScope */ scope);
+      var strategyResolution = resolve(strategy, scaleToResolve, ret, /* cScope */ scope);
       var cov = strategyResolution.checkCoverage(strategyResolution);
       if (!cov.isRelevant()) {
         continue;
@@ -347,16 +386,6 @@ public class ResolutionCompiler {
     Scale scale = originalScale;
     ContextScope scope = originalScope;
 
-    if (observable.getSemantics().isCollective()) {
-      /*
-       * Use the observer's scale if there is an observer with a significant geometry
-       */
-      if (scope.getObserver() != null
-          && !(scope.getObserver().getGeometry().isScalar()
-              || !scope.getObserver().getGeometry().isEmpty())) {
-        scale = GeometryRepository.INSTANCE.scale(scope.getObserver().getGeometry());
-      }
-    }
     Observation context = scope.getContextObservation();
     if (context == null && !SemanticType.isSubstantial(observable.getSemantics().getType())) {
       scope.error(
@@ -375,12 +404,26 @@ public class ResolutionCompiler {
 
     var contextualizedScope = contextualizeScope(scope, observable, scaleToCover, graph);
 
-    //  create the observation in unresolved state
+    var query = query(observable, contextualizedScope.getSecond(), contextualizedScope.getFirst());
+    if (query.hasCoverage() && query.coverage().isComplete()) {
+      return graph.createReference(observable, query.reference());
+    }
+
+    var geometry = contextualizedScope.getSecond().as(Geometry.class);
+    if (query.hasCoverage()) {
+      var missing = missingScale(contextualizedScope.getSecond(), query.coveredScale());
+      if (missing == null || missing.isEmpty()) {
+        return graph.createReference(observable, query.reference());
+      }
+      geometry = missing.as(Geometry.class);
+    }
+
+    // create the observation in unresolved state, restricted to the uncovered geometry
     var observation =
         requireObservation(
             observable,
             contextualizedScope.getFirst(),
-            contextualizedScope.getSecond().as(Geometry.class));
+            geometry);
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
@@ -389,7 +432,63 @@ public class ResolutionCompiler {
     }
 
     // resolve the observation in the scope
-    return resolve(observation, contextualizedScope.getFirst(), graph);
+    return resolve(observation, contextualizedScope.getFirst(), graph, query);
+  }
+
+  /** Query the runtime without changing its state and normalize the result for resolution. */
+  private QueryMatch query(Observable observable, Scale requestedScale, ContextScope scope) {
+
+    if (!(observable.is(SemanticType.QUALITY)
+        || (SemanticType.isSubstantial(observable.getSemantics().getType())
+            && observable.getSemantics().isCollective()))) {
+      return new QueryMatch(
+          null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
+    }
+
+    var result =
+        scope
+            .observation(observable)
+            .geometry(requestedScale.as(Geometry.class))
+            .query()
+            .submit()
+            .join();
+    if (result == null || result.isEmpty() || result.getGeometry() == null) {
+      return new QueryMatch(
+          result, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
+    }
+
+    var coveredScale = GeometryRepository.INSTANCE.scale(result.getGeometry(), scope);
+    var coverage = Coverage.create(requestedScale, 0.0).merge(coveredScale, LogicalConnector.UNION);
+    Observation reference = result;
+    if (observable.is(SemanticType.QUALITY) && result.getId() == Observation.QUERY_ID) {
+      var source = scope.getObservation(result);
+      if (source != null && source.getId() > 0) {
+        reference = source;
+      }
+    }
+    return new QueryMatch(result, reference, requestedScale, coveredScale, coverage);
+  }
+
+  private Scale missingScale(Scale requested, Scale covered) {
+    var missing =
+        GeometryRepository.INSTANCE.getMerged(
+            requested, covered, LogicalConnector.EXCLUSION, Scale.class);
+    if (missing == null) {
+      return requested;
+    }
+
+    /*
+     * A Scale is a Cartesian product of extents, so some complements (and extents that do not yet
+     * implement EXCLUSION) cannot be represented by one Scale. Never under-resolve in that case:
+     * retain the reference but let the new actuator cover the full request.
+     */
+    var coveredProportion =
+        Coverage.create(requested, 0.0).merge(covered, LogicalConnector.UNION).getCoverage();
+    var missingProportion =
+        Coverage.create(requested, 0.0).merge(missing, LogicalConnector.UNION).getCoverage();
+    return Math.abs((1.0 - coveredProportion) - missingProportion) <= 1.0e-6
+        ? missing
+        : requested;
   }
 
   /**
@@ -415,17 +514,9 @@ public class ResolutionCompiler {
   }
 
   /**
-   * If the runtime contains the observation, return it (in resolved or unresolved status but with a
-   * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID,
-   * without submitting it to the runtime. The unresolved ID will tell us that it's an internally
-   * created, provisional observation that the runtime does not have.
-   *
-   * <p>TODO/FIXME: the most challenging situation isn't handled yet: the observer's context has
-   * shifted and a previous collective observation no longer covers it entirely or at all, so
-   * existing obs will CONTRIBUTE to the resolution and the one to be resolved needs to cover the
-   * remaining geometry. The issue of instance identity is very hard to address here, and we may
-   * need a strategy to swap objects (repeating any resolution that involved them) or recognize them
-   * as candidates for the same instance.
+   * Register a provisional observation for the geometry that remains after the runtime query. The
+   * query itself is performed before this method so registration cannot hide partial coverage by
+   * returning a semantic match whose geometry is insufficient.
    *
    * @param observable
    * @param scope

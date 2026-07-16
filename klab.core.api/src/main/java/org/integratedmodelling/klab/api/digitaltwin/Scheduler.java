@@ -132,9 +132,9 @@ public interface Scheduler {
    *
    * @param observation
    * @param scope a scope pre-contextualized to the contextualization activity and DT transaction.
-   * @return
+   * @return true if initial contextualization completed successfully
    */
-  void submit(Observation observation, ContextScope scope);
+  boolean submit(Observation observation, ContextScope scope);
 
   /**
    * Register an executor compiled from the actuator that resolves the passed observation in the

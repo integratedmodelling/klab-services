@@ -150,7 +150,12 @@ public interface RuntimeService extends KlabService {
    * observation will have its {@link Observation#getId()} set to a valid ID (>0) and a valid URN.
    *
    * <p>If the observation submitted is resolved (its ID is valid when submitted), the submission is
-   * ignored and the completed future for the submitted observation is returned. An observation of a
+   * ignored and the completed future for the submitted observation is returned. If its ID is {@link
+   * Observation#QUERY_ID}, no resolution or contextualization is performed and the current
+   * knowledge graph is queried instead. Queries are accepted for qualities in the context specified
+   * by the scope and for collective substantials. A successful partial or collective query result
+   * retains ID 0; a fully covered quality query returns the original resolved observation. An
+   * observation of a
    * substantial (endurant subject or agent) must have a valid URN specifying its unique identity,
    * including a namespace and an identifier separated by a colon, which will be prefixed with the
    * scope ID and a predefined catalog name to form the final URN when resolved. An observation of a
@@ -160,8 +165,9 @@ public interface RuntimeService extends KlabService {
    * graph unaltered. Note that observations of individual substantials, i.e., non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
    * resolver, i.e., the ID/URN will be valid and the knowledge graph will contain the observation.
-   * All other observations will complete exceptionally if no dataflow can be built for them, and
-   * the knowledge graph will not contain the observation submitted after completion.
+   * All other observations return an empty observation with explanatory notifications if no
+   * dataflow can be built for them, and the knowledge graph will not contain the observation
+   * submitted after completion.
    *
    * <p>During submission, all activities generated will be sent to the scope and can be intercepted
    * for monitoring. Upon successful completion, all activities, plans, and observations will also
@@ -172,18 +178,18 @@ public interface RuntimeService extends KlabService {
    * @param scope the context scope in which to submit the observation. Must be compatible with the
    *     observation's semantics.
    * @return a future that completes with the resolved observation when resolution is complete. The
-   *     observation returned in the future may be an empty one if resolution has failed. If
-   *     successful, it will be the same object submitted, completed with its URN and ID, along with
-   *     possible metadata.
+   *     observation returned in the future may be empty if resolution failed, or may be an existing
+   *     observation/query view when the requested geometry is already covered.
    */
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
   /**
    * Return an unresolved observation after checking the validity w.r.t. the scope and assigning a
-   * negative ID that is unique within the scope. If the observation already exists at a concrete
-   * knowledge graph insertion point as specified by the scope, return the corresponding resolved
-   * observation with its positive ID. The observation will be empty if the scope is invalid or if
-   * the observation is not compatible with it.
+   * negative ID that is unique within the scope. The observation will be empty if the scope is
+   * invalid or if the observation is not compatible with it. Identity matches for individual
+   * substantials may return the corresponding resolved observation with its positive ID; coverage
+   * matches for qualities and collectives are handled by {@link #submit(Observation, ContextScope)}
+   * and the resolver through ID-0 queries.
    *
    * <p>The observation must mandatorily have id {@link Observation#UNASSIGNED_ID}. If the scope has
    * resolved contextual observations, the position will be checked against the resolved ones. If
