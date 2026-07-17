@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.Statement;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -72,6 +74,23 @@ public interface Notification extends Serializable {
     int getOffsetInDocument();
 
     int getLength();
+
+    /**
+     * Use when creating notifications that pertain to a lexical element in a document.
+     *
+     * @param statement
+     * @param document
+     * @return
+     */
+    static LexicalContext of(Statement statement, KlabDocument<?> document) {
+      var ret = new NotificationImpl.LexicalContextImpl();
+      ret.setLength(statement.getLength());
+      ret.setOffsetInDocument(statement.getOffsetInDocument());
+      ret.setDocumentType(KlabAsset.KnowledgeClass.classify(document.getClass()));
+      ret.setDocumentUrn(document.getUrn());
+      ret.setProjectUrn(document.getProjectName());
+      return ret;
+    }
   }
 
   /**

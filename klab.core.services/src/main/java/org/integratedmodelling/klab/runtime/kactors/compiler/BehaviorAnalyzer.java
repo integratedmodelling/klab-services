@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.runtime.kactors.compiler;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import org.h2.expression.Variable;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
+import org.integratedmodelling.klab.api.lang.kactors.*;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
@@ -15,27 +15,9 @@ import org.integratedmodelling.klab.runtime.kactors.AgentBase;
 /** Analyze the behavior and collect infomation for code generation. */
 public class BehaviorAnalyzer {
 
-  public record ActionInfo(
-      String name, Verb.Type executionType, List<VariableInfo> parameters, BlockInfo body) {}
-
-  public record ImportInfo(String name, Class<?> javaClass) {}
-
-  public record BlockInfo(
-      long id,
-      List<VariableInfo> variables,
-      List<BlockInfo> blocks,
-      List<ExpressionInfo> expressions) {}
-
-  public record VariableInfo(String name) {}
-
-  public record ExpressionInfo(String expression, Expression.Descriptor descriptor) {}
-
   private final KActorsBehavior behavior;
-  private final List<Notification> notifications = new ArrayList<>();
-  private final Map<String, ActionInfo> actions = new LinkedHashMap<>();
-  private final List<VariableInfo> fields = new ArrayList<>();
-  private final List<ImportInfo> imports = new ArrayList<>();
   private Class<? extends AgentBase> agentClass = AgentBase.class;
+  private List<Notification> notifications = new ArrayList<>();
 
   public BehaviorAnalyzer(KActorsBehavior behavior) {
     this.behavior = behavior;
@@ -43,36 +25,23 @@ public class BehaviorAnalyzer {
 
   public boolean analyze() {
 
-    // Collect all info in a first passs
-    new KActorsVisitor() {
+    // Collect all info in a first pass
+    var visitor = new KActorsVisitor();
+    visitor.visit(behavior);
+    this.notifications.addAll(visitor.getNotifications());
 
-
-    }.visit(behavior);
-
-    // Verify all info in the second pass, collecting notifications
+    // Verify all info in the second pass, w.r.t. the component manager, collecting notifications
 
     // If all tests pass, return true
 
     return true;
   }
 
-  public Map<String, ActionInfo> getActions() {
-    return actions;
-  }
-
-  public List<VariableInfo> getFields() {
-    return fields;
-  }
-
   public Class<? extends AgentBase> getAgentClass() {
     return agentClass;
   }
 
-  public List<Notification> getNotifications() {
+  public Collection<Notification> getNotifications() {
     return notifications;
-  }
-
-  public List<ImportInfo> getImports() {
-    return imports;
   }
 }

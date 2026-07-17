@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
@@ -183,7 +182,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       private Type type = Type.ASSERTION;
 
       private List<Verb> verbs;
-      private KActorsValue expression;
       private KActorsValue value;
 
       @Override
@@ -197,11 +195,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       }
 
       @Override
-      public KActorsValue getExpression() {
-        return this.expression;
-      }
-
-      @Override
       public KActorsValue getValue() {
         return this.value;
       }
@@ -212,10 +205,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
       public void setCalls(List<Verb> verbs) {
         this.verbs = verbs;
-      }
-
-      public void setExpression(KActorsValue expression) {
-        this.expression = expression;
       }
 
       public void setValue(KActorsValue value) {
@@ -363,10 +352,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Serial private static final long serialVersionUID = 6294586114679129470L;
 
-    private Type type = Type.CONCURRENT_GROUP;
+    private Type type = Type.GROUP;
     private List<KActorsStatement> statements = new ArrayList<>();
-    private Map<String, KActorsValue> groupMetadata = new LinkedHashMap<>();
-    private List<Pair<KActorsValue, KActorsStatement>> groupActions = new ArrayList<>();
 
     @Override
     public Type getType() {
@@ -378,30 +365,12 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       return this.statements;
     }
 
-    @Override
-    public Map<String, KActorsValue> getGroupMetadata() {
-      return this.groupMetadata;
-    }
-
-    @Override
-    public List<Pair<KActorsValue, KActorsStatement>> getGroupActions() {
-      return this.groupActions;
-    }
-
     public void setType(Type type) {
       this.type = type;
     }
 
     public void setStatements(List<KActorsStatement> statements) {
       this.statements = statements;
-    }
-
-    public void setGroupMetadata(Map<String, KActorsValue> groupMetadata) {
-      this.groupMetadata = groupMetadata;
-    }
-
-    public void setGroupActions(List<Pair<KActorsValue, KActorsStatement>> groupActions) {
-      this.groupActions = groupActions;
     }
 
     @Override

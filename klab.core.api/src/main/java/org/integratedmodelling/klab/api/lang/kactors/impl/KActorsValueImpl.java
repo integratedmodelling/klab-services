@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.kactors.impl;
 
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Verb;
@@ -26,7 +27,13 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 
   @Override
   public <T> T getValue(Class<T> cls) {
-    return null;
+    if (statedValue == null) {
+      return null;
+    }
+    if (cls.isAssignableFrom(ValueType.class)) {
+      return (T) statedValue;
+    }
+    throw new KlabIllegalStateException("k.Actors value is unexpectedly null");
   }
 
   @Override
@@ -82,4 +89,8 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 
   @Override
   public void visit(Visitor visitor) {}
+
+  public String toString() {
+    return "kval[" + type + "=" + statedValue + "]";
+  }
 }

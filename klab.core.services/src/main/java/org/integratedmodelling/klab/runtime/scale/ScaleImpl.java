@@ -381,12 +381,6 @@ public class ScaleImpl implements Scale {
     return this.universal;
   }
 
-  //	@Override
-  public Scale mergeContext(Scale scale, Type... dimensions) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   @Override
   public Geometry merge(Scale other, LogicalConnector how) {
 

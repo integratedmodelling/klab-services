@@ -20,6 +20,9 @@ public interface Statement extends Serializable {
    * Each main type of statement exposes a visit() method that takes a specialized visitor
    * descending from this tag interface.
    *
+   * TODO/FIXME this is underdeveloped and should have specialized versions for different languages,
+   *  not necessarily descending from a main interface
+   *
    * @author Ferd
    */
   interface Visitor {

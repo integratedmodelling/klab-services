@@ -186,7 +186,10 @@ public class RuntimeService extends BaseService
 
     if (createMainKnowledgeGraph()) {
       // internal libraries
-      getComponentRegistry().loadExtensions("org.integratedmodelling.klab.services.runtime");
+      getComponentRegistry()
+          .loadExtensions(
+              "org.integratedmodelling.klab.services.runtime",
+              "org.integratedmodelling.klab.runtime.libraries");
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
@@ -791,9 +794,7 @@ public class RuntimeService extends BaseService
                     var failed =
                         Observation.empty(
                             Notification.error(
-                                "Contextualization of "
-                                    + o.getObservable().getUrn()
-                                    + " failed"));
+                                "Contextualization of " + o.getObservable().getUrn() + " failed"));
                     failed.getNotifications().addAll(o.getNotifications());
                     return failed;
                   }
@@ -881,7 +882,8 @@ public class RuntimeService extends BaseService
     }
 
     var requestedGeometry =
-        sanitizeQueryGeometry(query.getGeometry() == null ? context.getGeometry() : query.getGeometry());
+        sanitizeQueryGeometry(
+            query.getGeometry() == null ? context.getGeometry() : query.getGeometry());
     if (requestedGeometry == null || requestedGeometry.isEmpty()) {
       return Observation.empty(
           Notification.error("Cannot query a quality without a valid requested geometry"));
@@ -890,8 +892,7 @@ public class RuntimeService extends BaseService
     var source = findQualitySource(query, context, scope);
     if (source == null || source.getGeometry() == null) {
       return Observation.empty(
-          Notification.info(
-              "No source observation exists for " + query.getObservable().getUrn()));
+          Notification.info("No source observation exists for " + query.getObservable().getUrn()));
     }
 
     var actualGeometry = intersection(requestedGeometry, source.getGeometry());
@@ -1123,7 +1124,9 @@ public class RuntimeService extends BaseService
     result.getMetadata().put(Metadata.IM_QUERY_COVERAGE, coverage);
     result
         .getMetadata()
-        .put(Metadata.IM_QUERY_GEOMETRY, requestedGeometry == null ? null : requestedGeometry.encode());
+        .put(
+            Metadata.IM_QUERY_GEOMETRY,
+            requestedGeometry == null ? null : requestedGeometry.encode());
     return result;
   }
 
@@ -1786,8 +1789,7 @@ public class RuntimeService extends BaseService
               + session.getClass().getName());
       return null;
     }
-    var ret =
-        new ServiceContextScope(serviceSessionScope, configuration, userScope.getUser());
+    var ret = new ServiceContextScope(serviceSessionScope, configuration, userScope.getUser());
     if (!userScope.getUser().getUsername().equals(ret.getUser().getUsername())) {
       ret = ret.withIdentity(userScope.getIdentity());
     }

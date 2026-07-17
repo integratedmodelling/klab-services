@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.List;
-import java.util.Map;
+
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 
 /**
@@ -23,9 +22,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
     TEXT_BLOCK,
     FIRE_VALUE,
     ASSIGNMENT,
-    CONCURRENT_GROUP,
-    SEQUENCE,
-    INSTANTIATION,
+    GROUP,
     ASSERT_STATEMENT,
     ASSERTION,
     FAIL_STATEMENT,
@@ -54,22 +51,6 @@ public interface KActorsStatement extends KActorsCodeStatement {
   }
 
   interface Group extends KActorsStatement {
-
-    public List<KActorsStatement> getStatements();
-
-    Map<String, KActorsValue> getGroupMetadata();
-
-    /**
-     * Actions with the corresponding pattern to match to fired values. If the value is null, any
-     * fired values matches.
-     *
-     * @return
-     */
-    List<Pair<KActorsValue, KActorsStatement>> getGroupActions();
-  }
-
-  interface Sequence extends KActorsStatement {
-
     public List<KActorsStatement> getStatements();
   }
 
@@ -119,16 +100,10 @@ public interface KActorsStatement extends KActorsCodeStatement {
       List<Verb> getCalls();
 
       /**
-       * Expression to use as left side of assertion
-       *
-       * @return
-       */
-      KActorsValue getExpression();
-
-      /**
        * Value to compare with (null == 'empty' is a legitimate value producing a non-null
        * IKActorsValue). If null, we are just asserting the absence of errors and that something
-       * non-null and non-false was returned in case there is a return value.
+       * non-null and non-false was returned in case there is a return value. The value may be an
+       * expression that needs to be evaluated.
        *
        * @return
        */

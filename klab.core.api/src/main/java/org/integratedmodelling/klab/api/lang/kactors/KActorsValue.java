@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
 /**
- * Values can be a lot of different things in k.Actors and serve as matches for fired values, so we
+ * Values can be a lot of different things in k.Actors and double as matches for fired values, so we
  * categorize them on parsing to allow quick matching. The categorization includes the distinction
  * between syntactic roles and is not just about type (e.g. a naked identifier is not a string). A
  * derived class should use this as delegate to define as() to match types to useful objects not
@@ -33,100 +33,12 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
  */
 public interface KActorsValue extends KActorsCodeStatement, Serializable {
 
-  enum Type {
-    NUMBER(Number.class),
-    STRING(String.class),
-    RANGE(NumericRange.class),
-    OBSERVABLE(KimObservable.class),
-    QUANTITY(Quantity.class),
-    CONSTANT(String.class),
-    IDENTIFIER(Identifier.class),
-    BOOLEAN(Boolean.class),
-    LIST(List.class),
-    MAP(Parameters.class),
-    /** Localized string resolved externally - #UPPERCASE_ID */
-    LOCALIZED_STRING_REFERENCE(String.class),
-    /** Numbered argument reference, 1-based - $argN */
-    ARGUMENT_REFERENCE(Integer.class),
-    /** Ternary expression, forces lazy evaluation unless in metadata */
-    TERNARY_EXPRESSION(Void.class /* TODO */),
-    /** Code expressions [....] also get encoded as ValueSyntax */
-    EXPRESSION(String.class),
-
-    REGULAR_EXPRESSION(Pattern.class);
-
-    final Class<?> implementationClass;
-
-    Type(Class<?> implementationClass) {
-      this.implementationClass = implementationClass;
-    }
-  }
-
-  //    /**
-  //     * Only used in cast expression (value as <type>)
-  //     *
-  //     * @author Ferd
-  //     *
-  //     */
-  //    enum DataType {
-  //        INTEGER, NUMBER, TEXT, CONCEPT, BOOLEAN
-  //    }
-
-  //    /**
-  //     * If the value subsumes others in an expression, it will have an expression type other than
-  //     * VALUE. For now only supporting ternary operators, eventually we can build expression
-  // trees
-  //     * with operators, assuming the parenthesization can be dealt with in the parser (probably
-  // not
-  //     * unless we use different brackets for groups).
-  //     *
-  //     * @author Ferd
-  //     *
-  //     */
-  //    enum ExpressionType {
-  //
-  //        /**
-  //         * The default: this value just means itself
-  //         */
-  //        VALUE,
-  //
-  //        /**
-  //         * An expression where the current value is the condition and there is a "then" and an
-  //         * "else" value
-  //         */
-  //        TERNARY_OPERATOR
-  //    }
-//
-//  /**
-//   * Constructor syntactic object that can create Java objects
-//   *
-//   * @author mario
-//   * @deprecated a constructor is an assignment
-//   */
-//  interface Constructor extends Serializable {
-//
-//    String getClasspath();
-//
-//    String getClassname();
-//
-//    String getComponent();
-//
-//    Arguments getArguments();
-//  }
-
   /**
    * The value type
    *
    * @return
    */
   ValueType getType();
-
-  //    /**
-  //     * Expression type is VALUE for anything not part of an expression, which is the default.
-  //     * @deprecated expressions have their k.LAB-wide type, no longer values
-  //     * @return
-  //     */
-  //    ExpressionType getExpressionType();
 
   /**
    * The value stated in the value statement. Will contain expression text, literals, or k.IM
@@ -153,24 +65,6 @@ public interface KActorsValue extends KActorsCodeStatement, Serializable {
    */
   boolean isExclusive();
 
-  //    /**
-  //     * If {@link #getExpressionType()} returns {@link ValueType#TERNARY_EXPRESSION}, this
-  // contains
-  //     * the value to evaluate if this evaluates to true.
-  //     *
-  //     * @return
-  //     */
-  //    KActorsValue getTrueCase();
-
-  //    /**
-  //     * If {@link #getExpressionType()} returns {@link ValueType#TERNARY_EXPRESSION}, this
-  // contains
-  //     * the value to evaluate if this evaluates to false.
-  //     *
-  //     * @return
-  //     */
-  //    KActorsValue getFalseCase();
-
   /**
    * A value prefixed with ` is deferred and its evaluation should be postponed for as long as
    * possible when passing as argument in actor calls or construction.
@@ -179,13 +73,6 @@ public interface KActorsValue extends KActorsCodeStatement, Serializable {
    */
   boolean isDeferred();
 
-  //    /**
-  //     * The value may consist of a chain of calls to be evaluated as functions.
-  //     *
-  //     * @return
-  //     */
-  //    List<Verb> getCallChain();
-
   /**
    * If a cast was assigned using <code>as</code>, report the type to cast to after evaluation.
    * Otherwise null.
@@ -193,12 +80,4 @@ public interface KActorsValue extends KActorsCodeStatement, Serializable {
    * @return
    */
   String getCast();
-
-  //    /**
-  //     * Java class constructor
-  //     *
-  //     * @return
-  //     */
-  //    Constructor getConstructor();
-
 }

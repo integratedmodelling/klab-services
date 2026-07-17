@@ -269,6 +269,9 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
       } else if (how == LogicalConnector.INTERSECTION) {
         mergedStart = Long.max(thisStart, otherStart);
         mergedEnd = Long.min(thisEnd, otherEnd);
+      } else if (how == LogicalConnector.EXCLUSION) {
+        // TODO remove the temporal extent and report empty if the result is not a proper temporal
+        //  extent
       }
 
       // TODO this removes the extension and the type, and may change the resolution
@@ -366,9 +369,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
   public boolean overlaps(Time o) {
     return intersects(o)
         && !contains(o)
-        && !(o != null
-            && startMillis(o) <= startMillis(this)
-            && endMillis(o) >= endMillis(this));
+        && !(o != null && startMillis(o) <= startMillis(this) && endMillis(o) >= endMillis(this));
   }
 
   @Override
