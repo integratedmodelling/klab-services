@@ -29,18 +29,18 @@ public class CoreActorLibrary {
   public static class Console {
 
     // TODO handle multiple arguments
-    @Verb(name = "println", executionType = Verb.Type.FUNCTION)
+    @Verb(name = "println", executionType = Verb.Type.FUNCTION, returns = Void.class)
     public static void println(Agent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
     }
 
     // TODO handle multiple arguments
-    @Verb(name = "print", executionType = Verb.Type.FUNCTION)
+    @Verb(name = "print", executionType = Verb.Type.FUNCTION, returns = Void.class)
     public static void print(Agent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
     }
 
-    @Verb(name = "format", executionType = Verb.Type.FUNCTION)
+    @Verb(name = "format", executionType = Verb.Type.FUNCTION, returns = Void.class)
     public static void format(Agent.Scope scope, String format, Object... args) {
       scope.getPrintWriter().format(format, args);
     }
@@ -61,7 +61,6 @@ public class CoreActorLibrary {
     public Context(ContextScope context) {
       this.context = context;
     }
-
 
     /**
      * Constructor. Must take all context options

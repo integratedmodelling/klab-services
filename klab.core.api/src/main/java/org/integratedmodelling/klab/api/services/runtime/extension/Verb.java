@@ -19,6 +19,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * Tags a method that can be used as a functional verb in k.Actors. Must be defined for public
@@ -66,7 +67,49 @@ public @interface Verb {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.PARAMETER)
-  public @interface Argument {
+  @interface Argument {
+
+    /**
+     * Name is optional because actions can be called without named parameters. In that case, the
+     * matching will be done by type; if there are ambiguities, the order of declaration will count.
+     *
+     * @return
+     */
+    String name() default "";
+
+    /**
+     * Mandatory description for the documentation.
+     *
+     * @return
+     */
+    String description();
+
+    /**
+     * @return
+     */
+    boolean optional() default false;
+
+    /**
+     * If true, argument must be an observation
+     *
+     * @return
+     */
+    boolean observation() default false;
+
+    /**
+     * If true, argument must be an actor. Observations of agents with associated behaviors are
+     * automatically promoted.
+     *
+     * @return
+     */
+    boolean actor() default false;
+
+    /**
+     * If true, must be a POD literal and nothing else is accepted.
+     *
+     * @return
+     */
+    boolean constant() default false;
 
     /**
      * Type if there is ambiguity.
@@ -97,15 +140,6 @@ public @interface Verb {
    * @return
    */
   String description() default "";
-
-  /**
-   * This (which can override the same field in @{@link Library} allows adapting a Java object of
-   * this class so that it is recognized as an agent. The method or class tagged must take that
-   * object as a first parameter (of the constructor if a class).
-   *
-   * @return
-   */
-  Class<?> receiver() default Void.class;
 
   /**
    * Classes fired by this verb. Fire posts the fired value to listeners but keeps running if the

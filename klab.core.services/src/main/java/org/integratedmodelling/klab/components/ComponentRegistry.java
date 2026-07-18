@@ -92,12 +92,12 @@ public class ComponentRegistry {
       new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> annotationFinder =
       new HashSetValuedHashMap<>();
-  private MultiValuedMap<String, Extensions.ComponentDescriptor> verbFinder =
-      new HashSetValuedHashMap<>();
   // these are found by media type, not URN
   private MultiValuedMap<String, Extensions.ComponentDescriptor> exporterFinder =
       new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> importerFinder =
+      new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> actorFinder =
       new HashSetValuedHashMap<>();
   /*
    * Adapter descriptors include those registered from other services.
@@ -131,24 +131,6 @@ public class ComponentRegistry {
             service.serviceId(),
             System.currentTimeMillis());
   }
-
-  //  /**
-  //   * Call passing the capabilities of any service whose components we want to index.
-  //   *
-  //   * @param capabilities
-  //   */
-  //  public void registerService(KlabService.ServiceCapabilities capabilities) {
-  //    if (capabilities != null) {
-  //      for (var component : capabilities.getComponents()) {
-  //        for (var adapter : component.adapters()) {
-  //          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
-  //        }
-  //      }
-  //    } else {
-  //      throw new KlabServiceAccessException(
-  //          "The service capabilities are not available. Is the service online?");
-  //    }
-  //  }
 
   public MavenComponentCache getComponentCache() {
     return this.cache;
@@ -371,8 +353,8 @@ public class ComponentRegistry {
       for (var annotation : descriptor.annotations().keySet()) {
         annotationFinder.put(annotation, descriptor);
       }
-      for (var verb : descriptor.verbs().keySet()) {
-        verbFinder.put(verb, descriptor);
+      for (var verb : descriptor.actors().keySet()) {
+        actorFinder.put(verb, descriptor);
       }
 
       components.put(descriptor.id(), descriptor);
@@ -409,18 +391,24 @@ public class ComponentRegistry {
     removeDescriptorReferences(adapterFinder, component);
     removeDescriptorReferences(serviceFinder, component);
     removeDescriptorReferences(annotationFinder, component);
-    removeDescriptorReferences(verbFinder, component);
+    removeDescriptorReferences(actorFinder, component);
     removeDescriptorReferences(exporterFinder, component);
     removeDescriptorReferences(importerFinder, component);
 
     removeFunctionImplementations(component.services());
     removeFunctionImplementations(component.annotations());
-    removeFunctionImplementations(component.verbs());
+    removeActorImplementations(component.actors());
     removeFunctionImplementations(component.exporters());
     removeFunctionImplementations(component.importers());
     removeComponentAdapters(component);
 
     return ret;
+  }
+
+  private void removeActorImplementations(Map<String, List<Extensions.ActorDescriptor>> actors) {
+    for (var key : new ArrayList<>(actors.keySet())) {
+      actors.remove(key);
+    }
   }
 
   private void removeDescriptorReferences(
@@ -648,10 +636,6 @@ public class ComponentRegistry {
     if (ret != null) {
       return ret;
     }
-    ret = target.verbs().get(urn);
-    if (ret != null) {
-      return ret;
-    }
     ret = target.annotations().get(urn);
     if (ret != null) {
       return ret;
@@ -765,12 +749,12 @@ public class ComponentRegistry {
             .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
             .add(service.getSecond());
       }
-      for (var service : library.verbs()) {
-        verbFinder.put(service.getFirst().getName(), componentDescriptor);
+      for (var actor : library.actors()) {
+        actorFinder.put(actor.getFirst(), componentDescriptor);
         componentDescriptor
-            .verbs()
-            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
-            .add(service.getSecond());
+            .actors()
+            .computeIfAbsent(actor.getFirst(), key -> new ArrayList<>())
+            .add(actor.getSecond());
       }
       for (var service : library.exporters()) {
         serviceFinder.put(service.getFirst().getName(), componentDescriptor);
@@ -809,7 +793,7 @@ public class ComponentRegistry {
 
     var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
-    var verbs = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var actors = new ArrayList<Pair<String, Extensions.ActorDescriptor>>();
     var exporters = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var importers = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
 
@@ -819,9 +803,10 @@ public class ComponentRegistry {
             createContextualizerPrototype(
                 namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-      } else if (clss.isAnnotationPresent(Verb.class)) {
-        var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
-        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+      } else if (clss.isAnnotationPresent(Actor.class)) {
+        var descriptor =
+            createActorDescriptor(clss.getAnnotation(Actor.class), namespacePrefix, clss);
+        actors.add(Pair.of(descriptor.urn, descriptor));
       } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
             createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
@@ -842,10 +827,10 @@ public class ComponentRegistry {
         var serviceInfo =
             createPrototype(namespacePrefix, method.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-      } else if (method.isAnnotationPresent(Verb.class)) {
-        var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
-        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-      }
+      } /*else if (method.isAnnotationPresent(Verb.class)) {
+          var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
+          verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        }*/
     }
 
     libraries.add(
@@ -854,7 +839,7 @@ public class ComponentRegistry {
             annotation.description(),
             prototypes,
             annotations,
-            verbs,
+            actors,
             exporters,
             importers));
   }
@@ -867,7 +852,7 @@ public class ComponentRegistry {
 
     var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
-    var verbs = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var actors = new ArrayList<Pair<String, Extensions.ActorDescriptor>>();
     var importers = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var exporters = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
 
@@ -877,13 +862,17 @@ public class ComponentRegistry {
             createContextualizerPrototype(
                 namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-      } else if (clss.isAnnotationPresent(Verb.class)) {
-        var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
-        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-      } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
+      } /*else if (clss.isAnnotationPresent(Verb.class)) {
+          var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
+          verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+        } */ else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
             createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+      } else if (clss.isAnnotationPresent(Actor.class)) {
+        var descriptor =
+            createActorDescriptor(clss.getAnnotation(Actor.class), namespacePrefix, clss);
+        actors.add(Pair.of(descriptor.urn, descriptor));
       }
     }
 
@@ -899,10 +888,10 @@ public class ComponentRegistry {
         var serviceInfo =
             createPrototype(namespacePrefix, method.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-      } else if (method.isAnnotationPresent(Verb.class)) {
-        var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
-        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-      } else if (method.isAnnotationPresent(Importer.class)) {
+      } /*else if (method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
+          var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
+          verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        }*/ else if (method.isAnnotationPresent(Importer.class)) {
         var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
         importers.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
         ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
@@ -919,9 +908,28 @@ public class ComponentRegistry {
             annotation.description(),
             prototypes,
             annotations,
-            verbs,
+            actors,
             exporters,
             importers));
+  }
+
+  private Extensions.ActorDescriptor createActorDescriptor(
+      Actor actor, String namespacePrefix, Class<?> cls) {
+
+    var ret = new Extensions.ActorDescriptor();
+    ret.urn = actor.name();
+    ret.description = actor.description();
+
+    // annotated methods
+    for (Method method : cls.getDeclaredMethods()) {
+      if (Modifier.isPublic(method.getModifiers())
+          && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
+        var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
+        ret.verbs.add(createFunctionDescriptor(serviceInfo, cls, method));
+      }
+    }
+
+    return ret;
   }
 
   private Extensions.FunctionDescriptor createFunctionDescriptor(
@@ -1352,9 +1360,10 @@ public class ComponentRegistry {
 
     var ret = new ServiceInfoImpl();
 
-    // TODO
+    // TODO finish the descriptor - needs fires/returns, type, etc.
+    // TODO needs arguments
 
-    ret.setName(namespacePrefix + annotation.name());
+    ret.setName(annotation.name());
     ret.setDescription(annotation.description());
     ret.setFunctionType(ServiceInfo.FunctionType.VERB);
 
@@ -1621,13 +1630,13 @@ public class ComponentRegistry {
             .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
             .add(service.getSecond());
       }
-      for (var service : library.verbs()) {
-        verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
-        localComponentDescriptor
-            .verbs()
-            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
-            .add(service.getSecond());
-      }
+      //      for (var service : library.verbs()) {
+      //        verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
+      //        localComponentDescriptor
+      //            .verbs()
+      //            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
+      //            .add(service.getSecond());
+      //      }
     }
   }
 

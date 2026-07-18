@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +24,7 @@ public interface Extensions {
    * @param description
    * @param services
    * @param annotations
-   * @param verbs
+   * @param actors
    * @param exporters
    * @param importers
    */
@@ -31,9 +33,18 @@ public interface Extensions {
       String description,
       List<Pair<ServiceInfo, FunctionDescriptor>> services,
       List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
-      List<Pair<ServiceInfo, FunctionDescriptor>> verbs,
+      List<Pair<String, ActorDescriptor>> actors,
       List<Pair<ServiceInfo, FunctionDescriptor>> exporters,
-      List<Pair<ServiceInfo, FunctionDescriptor>> importers) {}
+      List<Pair<ServiceInfo, FunctionDescriptor>> importers) {
+
+    public LibraryDescriptor {
+      services = services == null ? new ArrayList<>() : services;
+      annotations = annotations == null ? new ArrayList<>() : annotations;
+      actors = actors == null ? new ArrayList<>() : actors;
+      exporters = exporters == null ? new ArrayList<>() : exporters;
+      importers = importers == null ? new ArrayList<>() : importers;
+    }
+  }
 
   /**
    * Describes a component which may bring with itself libraries and adapters with their content.
@@ -55,8 +66,8 @@ public interface Extensions {
    *     including those hosted within libraries.
    * @param annotations descriptor for all special annotations and their handler methods, including
    *     those in libraries
-   * @param verbs descriptor for all {@link Verb}-annotated methods and classes in the component,
-   *     including those in libraries.
+   * @param actors descriptor for all {@link Actor}-annotated classes in the component, including
+   *     those in libraries.
    */
   record ComponentDescriptor(
       String id,
@@ -72,12 +83,22 @@ public interface Extensions {
       //  types
       Map<String, List<FunctionDescriptor>> services,
       Map<String, List<FunctionDescriptor>> annotations,
-      Map<String, List<FunctionDescriptor>> verbs,
+      Map<String, List<ActorDescriptor>> actors,
       Map<String, List<FunctionDescriptor>> exporters,
       Map<String, List<FunctionDescriptor>> importers,
       String sourceServiceId, // ID of source service for updates,
       long timestamp // time of creation/last update
-  ) {
+      ) {
+
+    public ComponentDescriptor {
+      libraries = libraries == null ? new ArrayList<>() : libraries;
+      adapters = adapters == null ? new ArrayList<>() : adapters;
+      services = services == null ? new HashMap<>() : services;
+      annotations = annotations == null ? new HashMap<>() : annotations;
+      actors = actors == null ? new HashMap<>() : actors;
+      exporters = exporters == null ? new HashMap<>() : exporters;
+      importers = importers == null ? new HashMap<>() : importers;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -103,6 +124,8 @@ public interface Extensions {
               + "services, "
               + adapters.size()
               + " adapters, "
+              + actors.size()
+              + " actors, "
               + annotations.size()
               + " adapters");
     }
@@ -119,5 +142,12 @@ public interface Extensions {
     public boolean staticClass; // TODO remove (not now because it messes up config)
     public boolean staticMethod;
     public boolean error;
+  }
+
+  class ActorDescriptor {
+    public String urn;
+    public String version;
+    public String description;
+    public List<FunctionDescriptor> verbs = new ArrayList<>();
   }
 }
