@@ -10,101 +10,90 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimens
 
 public interface UnitService extends Service {
 
-    /**
-     * 
-     * @param string
-     * @return
-     */
-    Unit getUnit(String string);
+  /**
+   * @param string
+   * @return
+   */
+  Unit getUnit(String string);
 
-    /**
-     * 
-     * @param concept
-     * @return
-     */
-    Unit getDefaultUnitFor(Concept concept);
+  /**
+   * @param concept
+   * @return
+   */
+  Unit getDefaultUnitFor(Concept concept);
 
-    /**
-     * Return the unit for meters.
-     * 
-     * @return
-     */
-    Unit meters();
+  /**
+   * Return the unit for meters.
+   *
+   * @return
+   */
+  Unit meters();
 
-    /**
-     * Square meters
-     * 
-     * @return
-     */
-    Unit squareMeters();
+  /**
+   * Square meters
+   *
+   * @return
+   */
+  Unit squareMeters();
 
-    Unit milliseconds();
+  Unit milliseconds();
 
-    /**
-     * 
-     * @param unitImpl
-     * @param other
-     * @return
-     */
-    boolean isCompatible(Unit unit, Unit other);
+  /**
+   * @param unit
+   * @param other
+   * @return
+   */
+  boolean isCompatible(Unit unit, Unit other);
 
-    /**
-     * 
-     * @param d
-     * @param from
-     * @param to
-     * @return
-     */
-    Number convert(Number d, Unit from, Unit to);
+  /**
+   * @param d
+   * @param from
+   * @param to
+   * @return
+   */
+  Number convert(Number d, Unit from, Unit to);
 
-    /**
-     * 
-     * @param value
-     * @param unitImpl
-     * @param locator
-     * @return
-     */
-    Number convert(Number value, Unit unit, Locator locator);
+  /**
+   * @param value
+   * @param unit
+   * @param locator
+   * @return
+   */
+  Number convert(Number value, Unit unit, Locator locator);
 
-    /**
-     * 
-     * @param unitImpl
-     * @param unit
-     * @return
-     */
-    Unit multiply(Unit unit, Unit other);
+  /**
+   * @param unit
+   * @param other
+   * @return
+   */
+  Unit multiply(Unit unit, Unit other);
 
-    /**
-     * 
-     * @param unitImpl
-     * @param unit
-     * @return
-     */
-    Unit divide(Unit unit, Unit other);
+  /**
+   * @param unit
+   * @param other
+   * @return
+   */
+  Unit divide(Unit unit, Unit other);
 
-    /**
-     * 
-     * @param unitImpl
-     * @param scale
-     * @return
-     */
-    Unit scale(Unit unit, double scale);
+  /**
+   * @param unit
+   * @param scale
+   * @return
+   */
+  Unit scale(Unit unit, double scale);
 
-    /**
-     * 
-     * @param unitImpl
-     * @param dimension
-     * @return
-     */
-    Pair<Unit, Unit> splitExtent(Unit unit, ExtentDimension dimension);
+  /**
+   * @param unit
+   * @param dimension
+   * @return
+   */
+  Pair<Unit, Unit> splitExtent(Unit unit, ExtentDimension dimension);
 
-    /**
-     * 
-     * @param unitImpl
-     * @param observable
-     * @param scale
-     * @return
-     */
-    Unit contextualize(Unit unit, Observable observable, Geometry scale);
-
+  /**
+   * @param unit
+   * @param observable
+   * @param scale
+   * @return
+   */
+  Unit contextualize(Unit unit, Observable observable, Geometry scale);
 }

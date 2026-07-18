@@ -408,10 +408,16 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       var sourceAsset =
-          contextScope
-              .getDigitalTwin()
-              .getKnowledgeGraph()
-              .getAsset(sourceId, contextScope, RuntimeAsset.class);
+          sourceId == RuntimeAsset.CONTEXT_ASSET_ID
+              ? RuntimeAsset.CONTEXT_ASSET
+              : sourceId == RuntimeAsset.PROVENANCE_ASSET_ID
+                  ? RuntimeAsset.PROVENANCE_ASSET
+                  : sourceId == RuntimeAsset.DATAFLOW_ASSET_ID
+                      ? RuntimeAsset.DATAFLOW_ASSET
+                      : contextScope
+                          .getDigitalTwin()
+                          .getKnowledgeGraph()
+                          .getAsset(sourceId, contextScope, RuntimeAsset.class);
       if (sourceAsset == null) {
         return List.of();
       }

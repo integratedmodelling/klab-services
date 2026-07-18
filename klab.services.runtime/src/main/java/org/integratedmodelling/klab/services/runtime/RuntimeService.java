@@ -812,6 +812,12 @@ public class RuntimeService extends BaseService
                   }
                   if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
+                    // The service owns synchronization: every connected client, not only the
+                    // submitting UI, must learn about the committed graph update.
+                    submissionScope.send(
+                        Message.MessageClass.DigitalTwin,
+                        Message.MessageType.ObservationSubmissionFinished,
+                        o);
                   }
                 } else {
                   submission.setName("SUB FAIL");

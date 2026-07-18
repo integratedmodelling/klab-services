@@ -5,7 +5,6 @@ import com.google.common.cache.CacheBuilder;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.common.knowledge.CohortImpl;
@@ -32,7 +31,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.DefaultEdge;
 
 /**
@@ -49,11 +48,10 @@ import org.jgrapht.graph.DefaultEdge;
  * additional graph data, updates to asset metadata, and querying of assets and relationships. It
  * also exposes local methods for querying that do not require a round-trip to the runtime.
  *
- * <p>The finalizedAsset field is a set of IDs for all assets whose child structure in the client
- * graph reflects the service-level graph. When an asset's ID is not in the set, the client will ask
- * the service for the structure of the asset's children at any request, then put it back in the
- * set. When a KG commit comes with a modification notice, the ID is removed to invalidate the
- * graph's structure relative to that asset.
+ * <p>Completeness is tracked per asset, direction and relationship. Missing adjacency slices are
+ * loaded from the service on demand and are only marked complete after all referenced assets have
+ * been retrieved. Modifying commits invalidate the affected slices so a later graph walk refreshes
+ * them.
  *
  * <p>If the local methods are used instead of querying the remote graph, the contents of the
  * client-side KG may be incomplete w.r.t. the service-side graph. The presence of observations is
@@ -67,8 +65,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   private final ContextScope scope;
   private final RuntimeClient runtimeClient;
-  private final Graph<Long, Relationship> graph = new DefaultDirectedGraph<>(Relationship.class);
-  private final Set<Long> finalizedAssets = new HashSet<>();
+  private final Graph<Long, Relationship> graph = new DirectedPseudograph<>(Relationship.class);
+  /** Adjacencies that have been completely retrieved from the service. Guarded by {@link #graph}. */
+  private final Set<Adjacency> loadedAdjacencies = new HashSet<>();
+  /** Assets whose cached representation must not be reused after a modifying commit. */
+  private final Set<Long> invalidatedAssets = new HashSet<>();
+  /** Commit IDs are the idempotency key for AMQP redelivery and local/remote duplicate events. */
+  private final Map<Long, KnowledgeGraph.Commit> appliedCommits = new HashMap<>();
   private final Queue<KnowledgeGraph.Commit> commitQueue = new ConcurrentLinkedQueue<>();
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
@@ -92,7 +95,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             GraphModel.Relationship.HAS_PROVENANCE,
             RuntimeAsset.CONTEXT_ASSET.getId(),
             RuntimeAsset.PROVENANCE_ASSET.getId(),
-            Map.of()));
+            Map.of("builtin", true)));
     this.graph.addEdge(
         RuntimeAsset.CONTEXT_ASSET.getId(),
         RuntimeAsset.DATAFLOW_ASSET.getId(),
@@ -100,73 +103,43 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             GraphModel.Relationship.HAS_DATAFLOW,
             RuntimeAsset.CONTEXT_ASSET.getId(),
             RuntimeAsset.DATAFLOW_ASSET.getId(),
-            Map.of()));
+            Map.of("builtin", true)));
   }
 
   public void ingest(Observation observation) {
-
-    assetCache.put(observation.getId(), observation);
-
     Set<Long> focusIds = new HashSet<>();
     focusIds.add(observation.getId());
 
     if (observation.getMetadata().containsKey(Metadata.IM_COMMIT_ID)) {
 
       var commitId = observation.getMetadata().get(Metadata.IM_COMMIT_ID, Number.class);
+      synchronized (graph) {
+        var appliedCommit = appliedCommits.get(commitId.longValue());
+        if (appliedCommit != null) {
+          observation.getMetadata().put(Metadata.IM_COMMIT, appliedCommit);
+          return;
+        }
+      }
+      assetCache.put(observation.getId(), observation);
       var commit = runtimeClient.getCommit(commitId.longValue(), scope);
       if (commit != null) {
-
-        commitQueue.add(commit);
-
-        // add it to the observation so that clients downstream can find it without further requests
-        observation.getMetadata().put(Metadata.IM_COMMIT, commit);
-
-        // preload cohorts as we can't easily do that without complicating the logic
-        for (var id : commit.getAddedCohorts()) {
-          if (assetCache.getIfPresent(id) == null) {
-            assetCache.put(id, retrieveFromGraph(id, Cohort.class, scope));
-          }
-        }
-
         synchronized (graph) {
-          /* Add all IDs to the thin graph and let get() do the rest when the assets are needed. */
-          commit.getAddedAssets().forEach(graph::addVertex);
-          graph.removeAllVertices(commit.getDeletedAssets());
-          finalizedAssets.addAll(commit.getAddedAssets());
-          finalizedAssets.removeAll(commit.getDeletedAssets());
-          finalizedAssets.removeAll(commit.getModifiedAssets());
-          for (var link : commit.getAddedLinks()) {
-            graph.addVertex(link.getFirst());
-            graph.addVertex(link.getSecond());
-            graph.addEdge(
-                link.getFirst(),
-                link.getSecond(),
-                new Relationship(
-                    GraphModel.Relationship.valueOf(link.getThird()),
-                    link.getFirst(),
-                    link.getSecond(),
-                    Map.of("commit", commit.getId())));
-            // if we had the source observation, we must maintain the child count manually
-            if (!commit.getAddedObservations().contains(link.getFirst())
-                && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
-              var existingObservation = assetCache.getIfPresent(link.getFirst());
-              if (existingObservation instanceof ObservationImpl observationImpl) {
-                observationImpl.setChildrenCount(observationImpl.getChildrenCount() + 1);
-              }
-            }
-            if (!commit.getAddedCohorts().contains(link.getFirst())
-                && link.getThird().equals(GraphModel.Relationship.HAS_MEMBER.toString())) {
-              var existingCohort = assetCache.getIfPresent(link.getFirst());
-              if (existingCohort instanceof CohortImpl cohortImpl) {
-                cohortImpl.setChildrenCount(cohortImpl.getChildrenCount() + 1);
-              }
-            }
-            if (!commit.getAddedObservations().contains(link.getFirst())
-                && commit.getAddedObservations().contains(link.getSecond())
-                && link.getThird().equals(GraphModel.Relationship.HAS_CHILD.toString())) {
-              // this isn't linked to the observation, record it for the UI
-              focusIds.add(link.getSecond());
-            }
+          var appliedCommit = appliedCommits.get(commit.getId());
+          if (appliedCommit != null) {
+            observation.getMetadata().put(Metadata.IM_COMMIT, appliedCommit);
+            return;
+          }
+          try {
+            applyCommit(commit, focusIds);
+            appliedCommits.put(commit.getId(), commit);
+            commitQueue.add(commit);
+            // Add it to the observation so downstream consumers do not need another request.
+            observation.getMetadata().put(Metadata.IM_COMMIT, commit);
+            // The payload is the freshest representation when it is also marked as modified.
+            assetCache.put(observation.getId(), observation);
+            invalidatedAssets.remove(observation.getId());
+          } catch (Throwable t) {
+            scope.warn("Cannot apply knowledge graph commit " + commit.getId(), t);
           }
         }
       }
@@ -180,7 +153,109 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       //                Message.MessageType.ObservationsInFocus,
       //                Utils.Strings.join(focusIds, ",")));
       //      }
+    } else {
+      assetCache.put(observation.getId(), observation);
     }
+  }
+
+  private void applyCommit(KnowledgeGraph.Commit commit, Set<Long> focusIds) {
+
+    // Validate relationship names before changing local state so malformed commits are atomic.
+    for (var link : commit.getDeletedLinks()) {
+      GraphModel.Relationship.valueOf(link.getThird());
+    }
+    for (var link : commit.getAddedLinks()) {
+      GraphModel.Relationship.valueOf(link.getThird());
+    }
+
+    for (var link : commit.getDeletedLinks()) {
+      var relationship = GraphModel.Relationship.valueOf(link.getThird());
+      if (removeRelationship(link.getFirst(), link.getSecond(), relationship)) {
+        adjustChildCount(link.getFirst(), relationship, -1);
+      }
+    }
+
+    for (var id : commit.getDeletedAssets()) {
+      if (graph.containsVertex(id)) {
+        graph.removeVertex(id);
+      }
+      assetCache.invalidate(id);
+      invalidatedAssets.add(id);
+      invalidateAdjacencies(id);
+    }
+
+    for (var id : commit.getModifiedAssets()) {
+      assetCache.invalidate(id);
+      invalidatedAssets.add(id);
+      invalidateAdjacencies(id);
+    }
+
+    commit.getAddedAssets().forEach(graph::addVertex);
+    for (var link : commit.getAddedLinks()) {
+      var relationship = GraphModel.Relationship.valueOf(link.getThird());
+      graph.addVertex(link.getFirst());
+      graph.addVertex(link.getSecond());
+      if (addRelationship(
+          link.getFirst(),
+          link.getSecond(),
+          relationship,
+          Map.of("commit", commit.getId()))) {
+        adjustChildCount(link.getFirst(), relationship, 1);
+      }
+      if (!commit.getAddedObservations().contains(link.getFirst())
+          && commit.getAddedObservations().contains(link.getSecond())
+          && relationship == GraphModel.Relationship.HAS_CHILD) {
+        focusIds.add(link.getSecond());
+      }
+    }
+  }
+
+  private boolean addRelationship(
+      long sourceId,
+      long targetId,
+      GraphModel.Relationship relationship,
+      Map<String, Object> metadata) {
+    if (findRelationship(sourceId, targetId, relationship) != null) {
+      return false;
+    }
+    graph.addEdge(
+        sourceId,
+        targetId,
+        new Relationship(relationship, sourceId, targetId, metadata == null ? Map.of() : metadata));
+    return true;
+  }
+
+  private Relationship findRelationship(
+      long sourceId, long targetId, GraphModel.Relationship relationship) {
+    if (!graph.containsVertex(sourceId) || !graph.containsVertex(targetId)) {
+      return null;
+    }
+    return graph.getAllEdges(sourceId, targetId).stream()
+        .filter(edge -> edge.relationship == relationship)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private boolean removeRelationship(
+      long sourceId, long targetId, GraphModel.Relationship relationship) {
+    var edge = findRelationship(sourceId, targetId, relationship);
+    return edge != null && graph.removeEdge(edge);
+  }
+
+  private void adjustChildCount(
+      long sourceId, GraphModel.Relationship relationship, int difference) {
+    var source = assetCache.getIfPresent(sourceId);
+    if (relationship == GraphModel.Relationship.HAS_CHILD
+        && source instanceof ObservationImpl observation) {
+      observation.setChildrenCount(Math.max(0, observation.getChildrenCount() + difference));
+    } else if (relationship == GraphModel.Relationship.HAS_MEMBER
+        && source instanceof CohortImpl cohort) {
+      cohort.setChildrenCount(Math.max(0, cohort.getChildrenCount() + difference));
+    }
+  }
+
+  private void invalidateAdjacencies(long assetId) {
+    loadedAdjacencies.removeIf(adjacency -> adjacency.assetId == assetId);
   }
 
   /**
@@ -219,7 +294,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       int depth,
       Collection<GraphModel.Relationship> acceptedRelationships) {
 
-    Graph<RuntimeAsset, Relationship> ret = new DefaultDirectedGraph<>(Relationship.class);
+    Graph<RuntimeAsset, Relationship> ret = new DirectedPseudograph<>(Relationship.class);
 
     var focalAsset = focus.iterator().next();
     var actualDepth = depth;
@@ -237,7 +312,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     EnumSet<GraphModel.Relationship> nonRecursive = EnumSet.copyOf(acceptedRelationships);
     nonRecursive.remove(GraphModel.Relationship.HAS_CHILD);
     for (var relationship : nonRecursive) {
-      for (var asset : ret.vertexSet()) {
+      for (var asset : new ArrayList<>(ret.vertexSet())) {
         for (var link : getLinks(asset, relationship.direction(), scope, relationship)) {
           ret.addVertex(
               relationship.direction() == GraphModel.Relationship.Direction.OUTGOING
@@ -266,40 +341,20 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   /**
-   * Get the children of the passed asset, revising the hierarchy by querying the server-side KG
-   * whenever the asset is not in the finalizedAssets set, meaning it does not come from a commit or
-   * has been modified at service side.
+   * Get the children of the passed asset, loading or refreshing the corresponding service-side
+   * adjacency when necessary.
    *
    * @return
    */
   public List<RuntimeAsset> getChildAssets(RuntimeAsset asset) {
-    if (!finalizedAssets.contains(asset.getId())) {
-      var children = new ArrayList<RuntimeAsset>();
-      // do NOT add the children! If this is from a commit, they will have been added when ingesting
-      // it
-      finalizedAssets.add(asset.getId());
-      for (var child : scope.getChildrenOf(asset)) {
-        assetCache.put(child.getId(), child);
-        graph.addVertex(child.getId());
-        graph.addEdge(
-            asset.getId(),
-            child.getId(),
-            new Relationship(
-                asset instanceof Cohort
-                    ? GraphModel.Relationship.HAS_MEMBER
-                    : GraphModel.Relationship.HAS_CHILD,
-                asset.getId(),
-                child.getId(),
-                Map.of()));
-        children.add(child);
-      }
-      return children;
-    }
-    return outgoing(
-        asset,
+    var relationship =
         asset instanceof Cohort
             ? GraphModel.Relationship.HAS_MEMBER
-            : GraphModel.Relationship.HAS_CHILD);
+            : GraphModel.Relationship.HAS_CHILD;
+    return getLinks(asset, GraphModel.Relationship.Direction.OUTGOING, scope, relationship).stream()
+        .map(Link::target)
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   @Override
@@ -333,14 +388,17 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    * @return a list of {@link RuntimeAsset} nodes that are incoming to the source node
    */
   public List<RuntimeAsset> incoming(RuntimeAsset target, GraphModel.Relationship relationship) {
-    var asset = assetCache.getIfPresent(target.getId());
-    if (asset == null) {
-      return List.of();
+    synchronized (graph) {
+      var asset = assetCache.getIfPresent(target.getId());
+      if (asset == null || !graph.containsVertex(asset.getId())) {
+        return List.of();
+      }
+      return graph.incomingEdgesOf(asset.getId()).stream()
+          .filter(edge -> relationship == null || edge.relationship == relationship)
+          .map(defaultEdge -> getAsset(graph.getEdgeSource(defaultEdge), scope, RuntimeAsset.class))
+          .filter(Objects::nonNull)
+          .toList();
     }
-    return graph.incomingEdgesOf(asset.getId()).stream()
-        .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> getAsset(graph.getEdgeSource(defaultEdge), scope, RuntimeAsset.class))
-        .toList();
   }
 
   /**
@@ -365,26 +423,33 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       rels.addAll(List.of(relationships));
     }
 
-    var asset = assetCache.getIfPresent(target.getId());
-    var incoming =
-        graph.incomingEdgesOf(asset.getId()).stream()
-            .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
-            .map(
-                defaultEdge ->
-                    Pair.of(
-                        assetCache.getIfPresent(graph.getEdgeSource(defaultEdge)),
-                        defaultEdge.relationship))
-            .toList();
-    var outgoing =
-        graph.outgoingEdgesOf(asset.getId()).stream()
-            .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
-            .map(
-                defaultEdge ->
-                    Pair.of(
-                        assetCache.getIfPresent(graph.getEdgeTarget(defaultEdge)),
-                        defaultEdge.relationship))
-            .toList();
-    return Utils.Collections.join(incoming, outgoing);
+    synchronized (graph) {
+      var asset = assetCache.getIfPresent(target.getId());
+      if (asset == null || !graph.containsVertex(asset.getId())) {
+        return List.of();
+      }
+      var incoming =
+          graph.incomingEdgesOf(asset.getId()).stream()
+              .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
+              .map(
+                  edge ->
+                      Pair.of(
+                          getAsset(graph.getEdgeSource(edge), scope, RuntimeAsset.class),
+                          edge.relationship))
+              .filter(pair -> pair.getFirst() != null)
+              .toList();
+      var outgoing =
+          graph.outgoingEdgesOf(asset.getId()).stream()
+              .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
+              .map(
+                  edge ->
+                      Pair.of(
+                          getAsset(graph.getEdgeTarget(edge), scope, RuntimeAsset.class),
+                          edge.relationship))
+              .filter(pair -> pair.getFirst() != null)
+              .toList();
+      return Utils.Collections.join(incoming, outgoing);
+    }
   }
 
   /**
@@ -397,14 +462,17 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    *     <p>TODO improve with multiple relationships from a set
    */
   public List<RuntimeAsset> outgoing(RuntimeAsset source, GraphModel.Relationship relationship) {
-    var asset = assetCache.getIfPresent(source.getId());
-    if (asset == null) {
-      return List.of();
+    synchronized (graph) {
+      var asset = assetCache.getIfPresent(source.getId());
+      if (asset == null || !graph.containsVertex(asset.getId())) {
+        return List.of();
+      }
+      return graph.outgoingEdgesOf(asset.getId()).stream()
+          .filter(edge -> relationship == null || edge.relationship == relationship)
+          .map(defaultEdge -> getAsset(graph.getEdgeTarget(defaultEdge), scope, RuntimeAsset.class))
+          .filter(Objects::nonNull)
+          .toList();
     }
-    return graph.outgoingEdgesOf(asset.getId()).stream()
-        .filter(edge -> relationship == null || edge.relationship == relationship)
-        .map(defaultEdge -> getAsset(graph.getEdgeTarget(defaultEdge), scope, RuntimeAsset.class))
-        .toList();
   }
 
   @Override
@@ -474,55 +542,146 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       RuntimeAsset asset,
       GraphModel.Relationship.Direction direction,
       ContextScope scope,
-      GraphModel.Relationship... relationship) {
-
-    if (relationship == null || relationship.length == 0) {
-      return List.of();
-    }
-
-    // TODO create a set.split(predicate) method to avoid this pain
-    var ret = new ArrayList<Link>();
-    var out =
-        Arrays.stream(relationship)
-            .filter(r -> r.direction() == GraphModel.Relationship.Direction.OUTGOING)
-            .toList();
-    EnumSet<GraphModel.Relationship> outgoing =
-        out.isEmpty() ? EnumSet.noneOf(GraphModel.Relationship.class) : EnumSet.copyOf(out);
-    var in =
-        Arrays.stream(relationship)
-            .filter(r -> r.direction() == GraphModel.Relationship.Direction.INCOMING)
-            .toList();
-    EnumSet<GraphModel.Relationship> incoming =
-        in.isEmpty() ? EnumSet.noneOf(GraphModel.Relationship.class) : EnumSet.copyOf(in);
+    GraphModel.Relationship... relationship) {
 
     synchronized (graph) {
-      if (!outgoing.isEmpty()) {
-        for (var rel : graph.outgoingEdgesOf(asset.getId())) {
-          if (outgoing.contains(rel.relationship)) {
-            var l = new LinkImpl();
-            l.setSource(getAsset(rel.sourceId, scope, RuntimeAsset.class));
-            l.setTarget(getAsset(rel.targetId, scope, RuntimeAsset.class));
-            l.setRelationship(rel.relationship);
-            l.getProperties().putAll(rel.metadata);
-            ret.add(l);
-          }
-        }
-      }
+      // A commit may already have supplied useful links. A failed remote refresh must not hide
+      // those links; leaving the adjacency unloaded ensures a later walk will retry.
+      loadAdjacency(asset, direction, scope, relationship);
 
-      if (!incoming.isEmpty()) {
-        for (var rel : graph.incomingEdgesOf(asset.getId())) {
-          if (incoming.contains(rel.relationship)) {
-            var l = new LinkImpl();
-            l.setSource(getAsset(rel.sourceId, scope, RuntimeAsset.class));
-            l.setTarget(getAsset(rel.targetId, scope, RuntimeAsset.class));
-            l.setRelationship(rel.relationship);
-            l.getProperties().putAll(rel.metadata);
-            ret.add(l);
+      if (!graph.containsVertex(asset.getId())) {
+        return List.of();
+      }
+      var accepted =
+          relationship == null || relationship.length == 0
+              ? EnumSet.allOf(GraphModel.Relationship.class)
+              : EnumSet.copyOf(Arrays.asList(relationship));
+      var edges =
+          direction == GraphModel.Relationship.Direction.OUTGOING
+              ? graph.outgoingEdgesOf(asset.getId())
+              : graph.incomingEdgesOf(asset.getId());
+      var ret = new ArrayList<Link>();
+      for (var rel : edges) {
+        if (!accepted.contains(rel.relationship)) {
+          continue;
+        }
+        var sourceAsset = getAsset(rel.sourceId, scope, RuntimeAsset.class);
+        var targetAsset = getAsset(rel.targetId, scope, RuntimeAsset.class);
+        if (sourceAsset == null || targetAsset == null) {
+          continue;
+        }
+        var link = new LinkImpl();
+        link.setSource(sourceAsset);
+        link.setTarget(targetAsset);
+        link.setRelationship(rel.relationship);
+        link.getProperties().putAll(rel.metadata);
+        ret.add(link);
+      }
+      return ret;
+    }
+  }
+
+  /**
+   * Load and atomically replace one slice of an asset's adjacency. A failed request leaves the
+   * slice unloaded, allowing the next graph walk to retry.
+   */
+  private boolean loadAdjacency(
+      RuntimeAsset asset,
+      GraphModel.Relationship.Direction direction,
+      ContextScope requestScope,
+      GraphModel.Relationship... relationships) {
+
+    var cachedAsset = assetCache.getIfPresent(asset.getId());
+    if (invalidatedAssets.contains(asset.getId())) {
+      cachedAsset = retrieveFromGraph(asset.getId(), RuntimeAsset.class, requestScope);
+      if (cachedAsset == null) {
+        return false;
+      }
+      assetCache.put(cachedAsset.getId(), cachedAsset);
+      invalidatedAssets.remove(asset.getId());
+    } else if (cachedAsset == null) {
+      cachedAsset = asset;
+      assetCache.put(asset.getId(), asset);
+    }
+    var focalAsset = cachedAsset;
+
+    var requested =
+        relationships == null || relationships.length == 0
+            ? EnumSet.allOf(GraphModel.Relationship.class)
+            : EnumSet.copyOf(Arrays.asList(relationships));
+    if (requested.stream().allMatch(type -> adjacencyLoaded(focalAsset.getId(), direction, type))) {
+      return true;
+    }
+
+    Collection<KnowledgeGraph.LinkInfo> remoteLinks;
+    try {
+      remoteLinks =
+          runtimeClient.getLinkInfo(
+              focalAsset,
+              direction,
+              requestScope,
+              requested.toArray(GraphModel.Relationship[]::new));
+    } catch (Throwable t) {
+      requestScope.warn("Cannot retrieve knowledge graph links for asset " + focalAsset.getId(), t);
+      return false;
+    }
+    if (remoteLinks == null) {
+      return false;
+    }
+
+    var retrievedAssets = new HashMap<Long, RuntimeAsset>();
+    retrievedAssets.put(focalAsset.getId(), focalAsset);
+    for (var link : remoteLinks) {
+      for (var id : List.of(link.getSourceId(), link.getTargetId())) {
+        if (!retrievedAssets.containsKey(id)) {
+          var endpoint = assetCache.getIfPresent(id);
+          if (endpoint == null) {
+            endpoint = retrieveFromGraph(id, RuntimeAsset.class, requestScope);
           }
+          if (endpoint == null) {
+            return false;
+          }
+          retrievedAssets.put(id, endpoint);
         }
       }
     }
-    return ret;
+
+    graph.addVertex(focalAsset.getId());
+    retrievedAssets.forEach(
+        (id, endpoint) -> {
+          graph.addVertex(id);
+          assetCache.put(id, endpoint);
+        });
+
+    var existing =
+        direction == GraphModel.Relationship.Direction.OUTGOING
+            ? new ArrayList<>(graph.outgoingEdgesOf(focalAsset.getId()))
+            : new ArrayList<>(graph.incomingEdgesOf(focalAsset.getId()));
+    for (var edge : existing) {
+      if (requested.contains(edge.relationship)
+          && !edge.metadata.containsKey("commit")
+          && !edge.metadata.containsKey("builtin")) {
+        graph.removeEdge(edge);
+      }
+    }
+    for (var link : remoteLinks) {
+      var properties =
+          link.getProperties() == null
+              ? Map.<String, Object>of()
+              : new HashMap<String, Object>(link.getProperties());
+      addRelationship(
+          link.getSourceId(), link.getTargetId(), link.getType(), properties);
+    }
+    requested.forEach(
+        type -> loadedAdjacencies.add(new Adjacency(focalAsset.getId(), direction, type)));
+    return true;
+  }
+
+  private boolean adjacencyLoaded(
+      long assetId,
+      GraphModel.Relationship.Direction direction,
+      GraphModel.Relationship relationship) {
+    return loadedAdjacencies.contains(new Adjacency(assetId, direction, relationship));
   }
 
   @Override
@@ -557,18 +716,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void populate(RuntimeAsset contextAsset, GraphModel.Relationship relationship, int i) {
 
     if (i > 0) {
-      for (var node :
-          query(Observation.class, scope).source(contextAsset).along(relationship).run(scope)) {
-        graph.addVertex(node.getId());
-        assetCache.put(node.getId(), node);
-        graph.addEdge(
-            contextAsset.getId(),
-            node.getId(),
-            new Relationship(relationship, contextAsset.getId(), node.getId(), Map.of()));
-        populate(node, relationship, i - 1);
+      for (var link :
+          getLinks(
+              contextAsset,
+              GraphModel.Relationship.Direction.OUTGOING,
+              scope,
+              relationship)) {
+        populate(link.target(), relationship, i - 1);
       }
     }
   }
+
+  private record Adjacency(
+      long assetId,
+      GraphModel.Relationship.Direction direction,
+      GraphModel.Relationship relationship) {}
 
   /**
    * Relationship for the client graph has equals() and hashCode() so that no duplicated

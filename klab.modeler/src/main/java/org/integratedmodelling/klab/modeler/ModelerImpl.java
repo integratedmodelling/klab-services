@@ -272,12 +272,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             })
         .thenApply(
             obs -> {
-              // for the benefit of linked DTs
+              // Notifications remain client-local. The runtime publishes the successful commit
+              // event so that all clients see one authoritative graph update.
               obs.getNotifications().forEach(currentContext::send);
-              currentContext.send(
-                  Message.MessageClass.DigitalTwin,
-                  Message.MessageType.ObservationSubmissionFinished,
-                  obs);
               dispatch(
                   this,
                   UIEvent.ObservationSubmissionFinished,

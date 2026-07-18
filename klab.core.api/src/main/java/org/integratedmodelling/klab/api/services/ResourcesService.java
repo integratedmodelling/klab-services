@@ -414,7 +414,7 @@ public interface ResourcesService extends KlabService {
    * assets.
    *
    * <p>FIXME rename to assetInfo
-   *
+   * @deprecated use streamlined API
    * @param urn
    * @param scope
    * @return
@@ -424,7 +424,7 @@ public interface ResourcesService extends KlabService {
   /**
    * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own
    * resource metadata - i.e. workspaces, projects, components and resources.
-   *
+   * @deprecated use streamlined API (update/store)
    * @param urn
    * @param info the new resource status from now on
    * @param scope
@@ -509,7 +509,7 @@ public interface ResourcesService extends KlabService {
    * Return all the document URNs that depend directly on the passed namespace. This is used for
    * special purposes as the <code>resolve</code> endpoints in the service return the full closure
    * of any resource needed.
-   *
+   * @deprecated use streamlined API (resolve) - we shouldn't need this
    * @param namespaceId the ID of the namespace to find dependents for
    * @return list of URNs that depend on the specified namespace
    */
@@ -530,14 +530,14 @@ public interface ResourcesService extends KlabService {
    * available to the resolver prior to loading any namespace. This is used for special purposes as
    * the <code>resolve</code> endpoints in the service return the full closure of any resource
    * needed.
-   *
+   * @deprecated use streamlined API (resolve) - dependency info is in the resourceset
    * @param namespaceId the ID of the namespace to find precursors for
    * @return list of namespaces that are dependencies of the specified namespace
    */
   List<String> precursors(String namespaceId);
 
   /**
-   * Return the info associated withany locally hosted resources whose URN, metadata or other field
+   * Return the info associated with any locally hosted resources whose URN, metadata or other field
    * matches the passed pattern. If any resource types are passed, only return results for those.
    * The pattern should allow wildcards and be matched intelligently, with ways to specify exact
    * matches as needed. The result should be sorted best match first. Under no circumstance there

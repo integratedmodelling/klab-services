@@ -229,17 +229,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset) {
 
-    // TODO use the client graph if the children # is the same as the existing relationships
-    return digitalTwin
-        .getKnowledgeGraph()
-        .getLinks(
-            asset,
-            GraphModel.Relationship.Direction.OUTGOING,
-            this,
-            GraphModel.Relationship.HAS_CHILD)
-        .stream()
-        .map(KnowledgeGraph.Link::target)
-        .toList();
+    return digitalTwin.getKnowledgeGraph().getChildAssets(asset);
   }
 
   @Override
@@ -427,9 +417,6 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   public void createDigitalTwin(String id) {
     this.digitalTwin = new ClientDigitalTwin(this, id);
-    this.digitalTwin
-        .getKnowledgeGraph()
-        .populate(RuntimeAsset.CONTEXT_ASSET, GraphModel.Relationship.HAS_CHILD, 2);
   }
 
   @Override

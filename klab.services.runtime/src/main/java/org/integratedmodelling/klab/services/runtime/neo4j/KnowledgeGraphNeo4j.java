@@ -1911,11 +1911,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     // Build the most selective match possible: use the node label and its stored id
     var sourceLabel = getLabel(asset);
-    var idValue = getId(asset);
-    if (!(idValue instanceof Long sourceId)) {
-      // Only numeric IDs are supported by LinkInfoImpl
+    var sourceKey = getId(asset);
+    if (sourceKey == null) {
       return List.of();
     }
+    var sourceId = asset.getId();
 
     // Relationship type filter
     String relTypeFilter = null;
@@ -1942,7 +1942,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + " RETURN type(r) AS rtype, properties(r) AS rprops, m.id AS mid")
             .replace("{label}", sourceLabel);
 
-    var result = query(query, Map.of("id", sourceId), scope);
+    var result = query(query, Map.of("id", sourceKey), scope);
     if (result == null || result.records().isEmpty()) {
       return List.of();
     }
@@ -1956,13 +1956,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (midValue.isNull()) {
         continue;
       }
-      Long targetId;
-      if (midValue.type().name().equalsIgnoreCase("INTEGER")) {
-        targetId = midValue.asLong();
-      } else if (midValue.type().name().equalsIgnoreCase("STRING")) {
-        // LinkInfoImpl can only carry numeric IDs, skip non-numeric targets
-        continue;
-      } else {
+      var oppositeId = transferId(midValue);
+      if (oppositeId == null) {
         continue;
       }
 
@@ -1975,12 +1970,40 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
       link.setProperties(p);
-      link.setSourceId(sourceId);
-      link.setTargetId(targetId);
+      if (direction == GraphModel.Relationship.Direction.OUTGOING) {
+        link.setSourceId(sourceId);
+        link.setTargetId(oppositeId);
+      } else {
+        // The focal node is the target of an incoming relationship. Preserve the canonical
+        // relationship orientation in the transfer object rather than the query's point of view.
+        link.setSourceId(oppositeId);
+        link.setTargetId(sourceId);
+      }
       links.add(link);
     }
 
     return links;
+  }
+
+  /** Translate Neo4j's context-qualified IDs to the stable synthetic IDs used by clients. */
+  private Long transferId(Value id) {
+    if (id.type().name().equalsIgnoreCase("INTEGER")) {
+      return id.asLong();
+    }
+    if (id.type().name().equalsIgnoreCase("STRING")) {
+      var stringId = id.asString();
+      if (rootContextId.equals(stringId)) {
+        return RuntimeAsset.CONTEXT_ASSET_ID;
+      }
+      if ((rootContextId + ".PROVENANCE").equals(stringId)) {
+        return RuntimeAsset.PROVENANCE_ASSET_ID;
+      }
+      if ((rootContextId + ".DATAFLOW").equals(stringId)) {
+        return RuntimeAsset.DATAFLOW_ASSET_ID;
+      }
+    }
+    // LinkInfo carries long IDs, so string-keyed assets such as agents cannot use this endpoint.
+    return null;
   }
 
   @Override

@@ -407,8 +407,6 @@ public class DigitalTwinImpl implements DigitalTwin {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
 
-              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
-
               if (trivial
                   && !(target instanceof Observation)
                   && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
@@ -416,6 +414,9 @@ public class DigitalTwinImpl implements DigitalTwin {
               }
               var relationshipData = getRelationshipData(edge);
               kgTransaction.link(source, target, edge.relationship, relationshipData);
+              // Only advertise relationships that were actually persisted. In particular, trivial
+              // transactions contain transient activity edges that are intentionally skipped.
+              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
             }
           }
         } catch (Exception e) {
@@ -452,8 +453,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                         .toList());
 
             commit.getAddedLinks().addAll(linked);
-            // TODO add modified and deleted assets. Also we may need to notify changed n. of
-            //  children
+            commit
+                .getModifiedAssets()
+                .addAll(modified.stream().map(RuntimeAsset::getId).filter(id -> id >= 0).toList());
             commitCache.put(commit.getId(), commit);
 
             ret = commit.getId();
