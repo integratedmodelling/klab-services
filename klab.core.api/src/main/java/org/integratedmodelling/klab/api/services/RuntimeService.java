@@ -244,15 +244,6 @@ public interface RuntimeService extends KlabService {
 
     Set<CRUDOperation> getPermissions();
 
-    //    /**
-    //     * True if this runtime provides an AMQP broker service on {@link
-    //     * org.integratedmodelling.klab.api.services.runtime.Channel#LOCAL_BROKER_URL} for local
-    //     * messaging. This should only return true in a local service authenticated with a user
-    //     * certificate.
-    //     *
-    //     * @return
-    //     */
-    //    boolean isBroker();
   }
 
   /**

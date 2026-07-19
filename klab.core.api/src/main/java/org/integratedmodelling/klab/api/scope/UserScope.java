@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.scope;
 
+import java.net.URL;
+import java.util.List;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-
-import java.net.URL;
-import java.util.List;
 
 /**
  * User scopes restrict a service's permissions to those available to a specific user. The group
@@ -85,9 +85,13 @@ public interface UserScope extends ReactiveScope {
    * an independent SessionScope. The session created with this method will expire and disappear
    * after termination of the application or script.
    *
-   * @param behaviorName
+   * <p>If this is run through a {@link ContextScope} (which inherits from SessionScope) which is
+   * focused on a context observation that is an agent, the behavior will be assigned to the
+   * observation and started; the association will be stored in the knowledge graph.
+   *
+   * @param behavior
    * @param hostService
    * @return
    */
-  SessionScope run(String behaviorName, RuntimeService hostService);
+  SessionScope run(KActorsBehavior behavior, RuntimeService hostService);
 }

@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -123,7 +124,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   }
 
   @Override
-  public SessionScope run(String behaviorName, RuntimeService hostService) {
+  public SessionScope run(KActorsBehavior behavior, RuntimeService hostService) {
     // TODO as above, pass the behavior and the services and let the remote assign the ID
     return null;
   }

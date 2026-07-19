@@ -17,9 +17,8 @@ public enum KlabLanguage {
       case OBSERVATION -> "obs";
       case OBSERVABLE -> "semantics";
       case K_ACTORS -> "kactor";
-      default ->
-          throw new KlabIllegalStateException(
-              "Language not supported for document extensions: " + this);
+      // not used, but needed during language resolution by the editor
+      case KLAB_EXPRESSION_LANGUAGE -> "kexpr";
     };
   }
 
@@ -44,7 +43,7 @@ public enum KlabLanguage {
       case OBSERVATION -> "observation";
       case OBSERVABLE -> "observable";
       case K_ACTORS -> "kactor";
-      default -> throw new KlabIllegalStateException("Language not supported by a parser: " + this);
+      case KLAB_EXPRESSION_LANGUAGE -> "kexpr";
     };
   }
 
@@ -55,7 +54,7 @@ public enum KlabLanguage {
       case OBSERVATION -> "org.integratedmodelling.languages.Observation";
       case OBSERVABLE -> "org.integratedmodelling.languages.Observable";
       case K_ACTORS -> "org.integratedmodelling.languages.KActors";
-      default -> throw new KlabIllegalStateException("Language not supported by a parser: " + this);
+      case KLAB_EXPRESSION_LANGUAGE -> "org.integratedmodelling.languages.KlabExpression";
     };
   }
 }

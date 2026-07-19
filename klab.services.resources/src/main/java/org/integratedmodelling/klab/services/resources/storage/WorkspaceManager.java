@@ -72,6 +72,7 @@ import org.integratedmodelling.languages.observable.ConceptExpression;
 import org.integratedmodelling.languages.observable.ObservableSemantics;
 import org.integratedmodelling.languages.observable.ObservableSequence;
 import org.integratedmodelling.languages.observation.Strategies;
+import org.integratedmodelling.languages.services.KActorsGrammarAccess;
 import org.integratedmodelling.languages.services.KimGrammarAccess;
 import org.integratedmodelling.languages.services.ObservableGrammarAccess;
 import org.integratedmodelling.languages.services.ObservationGrammarAccess;
@@ -738,7 +739,7 @@ public class WorkspaceManager {
       return new KActorsStandaloneSetup().createInjectorAndDoEMFRegistration();
     }
 
-    @Inject ObservableGrammarAccess grammarAccess;
+    @Inject KActorsGrammarAccess grammarAccess;
 
     @Override
     public Version getVersion() {
