@@ -40,7 +40,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.*;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -327,6 +330,22 @@ public class JacksonConfiguration {
           KimNamespace.class,
           KimObservationStrategyDocument.class,
           KActorsBehavior.class,
+          KActorsAction.class,
+          KActorsStatement.Arguments.class,
+          KActorsStatement.Assert.class,
+          KActorsStatement.Assignment.class,
+          KActorsStatement.Break.class,
+          KActorsStatement.Do.class,
+          KActorsStatement.Fail.class,
+          KActorsStatement.Fire.class,
+          KActorsStatement.For.class,
+          KActorsStatement.Group.class,
+          KActorsStatement.If.class,
+          KActorsStatement.Return.class,
+          KActorsStatement.Text.class,
+          KActorsStatement.Verb.class,
+          KActorsStatement.While.class,
+          KActorsValue.class,
           KimModel.class,
           Activity.class,
           Agent.class,

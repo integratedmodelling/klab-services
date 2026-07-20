@@ -295,12 +295,16 @@ public class WorkspaceManager {
       if (operation == null) {
         return List.of(
             ResourceSet.empty(
-                Notification.error("No repository operation was specified", UIView.Interactivity.DISPLAY)));
+                Notification.error(
+                    "No repository operation was specified", UIView.Interactivity.DISPLAY)));
       }
 
       if ((operation == RepositoryState.Operation.COMMIT_AND_SWITCH
               || operation == RepositoryState.Operation.MERGE_CHANGES_FROM)
-          && (arguments == null || arguments.length == 0 || arguments[0] == null || arguments[0].isBlank())) {
+          && (arguments == null
+              || arguments.length == 0
+              || arguments[0] == null
+              || arguments[0].isBlank())) {
         return List.of(
             ResourceSet.empty(
                 Notification.error(
@@ -317,8 +321,7 @@ public class WorkspaceManager {
                         ? "Committed by k.LAB resources " + "service"
                         : arguments[0],
                     scope);
-            case GET_LATEST ->
-                Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
+            case GET_LATEST -> Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
             case SAVE_CHANGES ->
                 Utils.Git.commitChanges(
                     fileProjectStorage.getRootFolder(),
@@ -326,7 +329,8 @@ public class WorkspaceManager {
                         ? "Committed by k.LAB resources service"
                         : arguments[0],
                     scope);
-            case PUBLISH_CHANGES -> Utils.Git.pushChanges(fileProjectStorage.getRootFolder(), scope);
+            case PUBLISH_CHANGES ->
+                Utils.Git.pushChanges(fileProjectStorage.getRootFolder(), scope);
             case COMMIT_AND_SWITCH ->
                 Utils.Git.commitAndSwitch(fileProjectStorage.getRootFolder(), arguments[0], scope);
             case DISCARD_LOCAL_CHANGES -> Utils.Git.hardReset(fileProjectStorage.getRootFolder());
@@ -2276,7 +2280,9 @@ public class WorkspaceManager {
 
     ResourceSet resourceSet =
         resourceSetForWorkspace(
-            projectDescriptor == null ? getWorkspaceForProject(project) : projectDescriptor.workspace,
+            projectDescriptor == null
+                ? getWorkspaceForProject(project)
+                : projectDescriptor.workspace,
             result);
 
     if (documentUrn == null) {
@@ -2320,11 +2326,7 @@ public class WorkspaceManager {
       }
       if (worldviewOntology) {
         addDeletedResource(
-            worldviewChange,
-            deletedUrn,
-            project,
-            previous,
-            KlabAsset.KnowledgeClass.ONTOLOGY);
+            worldviewChange, deletedUrn, project, previous, KlabAsset.KnowledgeClass.ONTOLOGY);
       }
     } else if (change.getFirst() == ProjectStorage.ResourceType.STRATEGY && _worldview != null) {
       _worldview.setObservationStrategies(_observationStrategyDocuments);
@@ -2337,7 +2339,11 @@ public class WorkspaceManager {
     }
 
     addDeletedResource(
-        resourceSet, deletedUrn, project, previous, knowledgeClassForResourceType(change.getFirst()));
+        resourceSet,
+        deletedUrn,
+        project,
+        previous,
+        knowledgeClassForResourceType(change.getFirst()));
   }
 
   private ResourceSet resourceSetForWorkspace(String workspace, Map<String, ResourceSet> result) {
@@ -2620,6 +2626,72 @@ public class WorkspaceManager {
       scope.error(e);
     }
     return null;
+  }
+
+  public KActorsBehavior readBehavior(String input) {
+
+    var errors = new AtomicBoolean(false);
+    var notams = new ArrayList<Notification>();
+
+    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    var parsed = behaviorParser.parse(inputStream, notams);
+    KActorsBehavior ret = null;
+
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+
+    if (!notams.isEmpty()) {
+
+      // TODO extract lexical context
+      Logging.INSTANCE.error(
+          "k.Actors submitted code has errors: ",
+          Klab.ErrorCode.RESOURCE_VALIDATION,
+          Klab.ErrorContext.OBSERVATION_STRATEGY);
+
+      Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+    } else {
+
+      List<Notification> notifications = new ArrayList<>();
+      var syntax =
+          new BehaviorSyntaxImpl(parsed, this.languageValidationScope) {
+
+            @Override
+            protected void logWarning(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
+                          .Warning));
+            }
+
+            @Override
+            protected void logError(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
+              errors.set(true);
+            }
+          };
+
+      if (!errors.get()) {
+        ret =
+            LanguageAdapter.INSTANCE.adaptBehavior(
+                syntax, syntax.getUrn(), "no.project", notifications, System.currentTimeMillis());
+      }
+    }
+
+    return ret;
   }
 
   private KActorsBehavior loadBehavior(URL url, String project) {

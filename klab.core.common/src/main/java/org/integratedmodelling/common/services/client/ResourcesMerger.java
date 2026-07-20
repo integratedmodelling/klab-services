@@ -369,7 +369,7 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public KActorsBehavior readBehavior(URL url) {
+  public KActorsBehavior readBehavior(URL url, UserScope scope) {
     return null;
   }
 

@@ -621,7 +621,7 @@ public interface ResourcesService extends KlabService {
    *
    * @param url
    */
-  KActorsBehavior readBehavior(URL url);
+  KActorsBehavior readBehavior(URL url, UserScope scope);
 
   /**
    * After importing any kind of resource, call this to register its permissions and ownership with

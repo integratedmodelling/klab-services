@@ -6,12 +6,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
-
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.integratedmodelling.common.data.BaseDataImpl;
@@ -20,7 +17,6 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -38,8 +34,8 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
@@ -47,7 +43,6 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -695,9 +690,12 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().modelGeometry(modelUrn);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
-  public @ResponseBody KActorsBehavior readBehavior(@RequestParam("url") URL url) {
-    return resourcesServer.klabService().readBehavior(url);
+  @PostMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
+  public @ResponseBody KActorsBehavior readBehavior(
+      @RequestBody String input, Principal principal) {
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+    return resourcesServer.klabService().getWorkspaceManager().readBehavior(input);
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RIGHTS)

@@ -1605,9 +1605,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public KActorsBehavior readBehavior(URL url) {
-    return null;
-    //        return KActorsAdapter.INSTANCE.readBehavior(url);
+  public KActorsBehavior readBehavior(URL url, UserScope scope) {
+    var content = Utils.URLs.readUrlContents(url);
+    return workspaceManager.readBehavior(content);
   }
 
   @Override
@@ -1877,5 +1877,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
+  }
+
+  /**
+   * Used by controllers
+   *
+   * @return
+   */
+  public WorkspaceManager getWorkspaceManager() {
+    return workspaceManager;
   }
 }

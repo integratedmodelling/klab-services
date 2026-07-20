@@ -5,8 +5,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.io.File;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -15,8 +13,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
-
-import org.apache.http.HttpHeaders;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -29,7 +25,6 @@ import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -482,9 +477,11 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public KActorsBehavior readBehavior(URL url) {
-    // TODO Auto-generated method stub
-    return null;
+  public KActorsBehavior readBehavior(URL url, UserScope scope) {
+    var content = Utils.URLs.readUrlContents(url);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.READ_BEHAVIOR, content, KActorsBehavior.class);
   }
 
   @Override

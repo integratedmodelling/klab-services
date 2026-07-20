@@ -5369,47 +5369,6 @@ public class Utils {
       return reachable;
     }
 
-    // /**
-    // * Look for thinklab.resource.path in properties, if found scan the path to
-    // resolve
-    // * the passed name as a file url. If the url is already resolved, just return
-    // it. If
-    // * the path contains a http-based URL prefix just use that without checking.
-    // *
-    // * @param url
-    // * @param properties
-    // * @return a resolved url or the original one if not resolved.
-    // */
-    // public static String resolveUrl(String url, Properties properties) {
-    //
-    // String ret = url;
-    //
-    // if (ret.contains(":/"))
-    // return ret;
-    //
-    // String prop = ".";
-    //
-    // for (String path : prop.split(";")) {
-    //
-    // if (path.startsWith("http") && path.contains("/")) {
-    // ret = path + url;
-    // break;
-    // }
-    //
-    // File pth = new File(path + File.separator + url);
-    //
-    // if (pth.exists()) {
-    // try {
-    // ret = pth.toURI().toURL().toString();
-    // break;
-    // } catch (MalformedURLException e) {
-    // }
-    // }
-    // }
-    //
-    // return ret;
-    // }
-
     /**
      * Copy the given URL to the given local file, return number of bytes copied.
      *
@@ -5641,6 +5600,21 @@ public class Utils {
         }
         copy(url, temp);
         return temp;
+      }
+    }
+
+    /**
+     * Read the contents of the given URL as a string.
+     *
+     * @param url
+     * @return
+     * @throws KlabIOException
+     */
+    public static String readUrlContents(URL url) throws KlabIOException {
+      try (var is = url.openStream()) {
+        return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      } catch (IOException e) {
+        throw new KlabIOException(e);
       }
     }
 
