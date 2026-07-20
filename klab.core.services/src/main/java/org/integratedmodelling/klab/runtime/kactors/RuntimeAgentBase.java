@@ -12,7 +12,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -60,7 +60,7 @@ import reactor.core.publisher.Sinks;
 /// universal adapter, so that only the catalog and the app ID need to be passed (the
 /// rest would be klab:app:) - maybe with the catalog using group-dependent defaults.
 ///
-public abstract class AgentBase extends GroovyObjectSupport implements Agent {
+public abstract class RuntimeAgentBase extends GroovyObjectSupport implements RuntimeAgent {
 
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
@@ -161,11 +161,11 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
   }
 
   // for testing only, remove
-  public AgentBase() {
+  public RuntimeAgentBase() {
     this(null, null);
   }
 
-  public AgentBase(KActorsBehavior behavior, SessionScope scope) {
+  public RuntimeAgentBase(KActorsBehavior behavior, SessionScope scope) {
     this.behavior = behavior;
     if (scope instanceof ContextScope) {
       this.contextScope = (ContextScope) scope;
@@ -201,7 +201,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
     };
   }
 
-  public Agent.Scope rootScope() {
+  public RuntimeAgent.Scope rootScope() {
     return rootScope;
   }
 
@@ -223,7 +223,7 @@ public abstract class AgentBase extends GroovyObjectSupport implements Agent {
    * @param sender
    * @param responseConsumer pass null if no response is expected
    */
-  public void send(Message message, Agent sender, Consumer<Message> responseConsumer) {
+  public void send(Message message, RuntimeAgent sender, Consumer<Message> responseConsumer) {
     // TODO handle installed actions and core pre-defined ones ("status", "stop")
     throw new UnsupportedOperationException("not implemented");
   }

@@ -16,19 +16,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
-import org.integratedmodelling.klab.runtime.kactors.AgentBase;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.junit.jupiter.api.Test;
 
-class AgentBaseTest {
+class RuntimeAgentBaseTest {
 
   @Test
   void nonFunctionAgentWaitsForRootScopeDoneAfterMainReturns() throws Exception {
-    var agent = new BackgroundAgent();
+    var agent = new BackgroundRuntimeAgent();
     Thread thread = null;
 
     try {
-      assertSame(AgentBase.TASK_RUNNING, agent.run());
+      assertSame(RuntimeAgentBase.TASK_RUNNING, agent.run());
       assertTrue(agent.mainReturned.await(1, TimeUnit.SECONDS));
 
       thread = agent.agentThread.get();
@@ -50,13 +50,13 @@ class AgentBaseTest {
 
   @Test
   void scopedSubscriptionsIgnoreTerminationAndDisposeOnDone() {
-    var agent = new ReactiveAgent();
+    var agent = new ReactiveRuntimeAgent();
     var parentScope = (AgentScope) agent.rootScope();
     var received = new AtomicInteger();
 
     var eventScope =
         agent.listen(
-            parentScope, (event, scope) -> received.incrementAndGet(), AgentBase.EventType.FIRE);
+                parentScope, (event, scope) -> received.incrementAndGet(), RuntimeAgentBase.EventType.FIRE);
 
     eventScope.doFire("first");
     eventScope.done();
@@ -67,35 +67,35 @@ class AgentBaseTest {
 
   @Test
   void returnEmitsOnePayloadEventBeforeTerminatingScope() {
-    var agent = new ReactiveAgent();
+    var agent = new ReactiveRuntimeAgent();
     var parentScope = (AgentScope) agent.rootScope();
-    var received = new CopyOnWriteArrayList<AgentBase.EventType>();
+    var received = new CopyOnWriteArrayList<RuntimeAgentBase.EventType>();
 
     var eventScope =
         agent.listen(
-            parentScope,
-            (event, scope) -> received.add(event.type()),
-            AgentBase.EventType.RETURN);
+                parentScope,
+                (event, scope) -> received.add(event.type()),
+                RuntimeAgentBase.EventType.RETURN);
 
     eventScope.doReturn("done");
 
-    assertEquals(List.of(AgentBase.EventType.RETURN), received);
+    assertEquals(List.of(RuntimeAgentBase.EventType.RETURN), received);
     assertTrue(eventScope.isDone());
   }
 
   @Test
   void supplierCompletionEmitsReturnPayloadAndTerminatesScope() {
-    var agent = new ReactiveAgent();
+    var agent = new ReactiveRuntimeAgent();
     var parentScope = (AgentScope) agent.rootScope();
     var future = new CompletableFuture<String>();
     var received = new CopyOnWriteArrayList<Object>();
 
     var eventScope =
         agent.listen(
-            parentScope,
-            (event, scope) -> received.add(event.payload()),
-            AgentBase.EventType.RETURN);
-    assertSame(AgentBase.TASK_RUNNING, agent.supply(eventScope, scope -> future));
+                parentScope,
+                (event, scope) -> received.add(event.payload()),
+                RuntimeAgentBase.EventType.RETURN);
+    assertSame(RuntimeAgentBase.TASK_RUNNING, agent.supply(eventScope, scope -> future));
 
     future.complete("done");
 
@@ -105,50 +105,50 @@ class AgentBaseTest {
 
   @Test
   void exceptionalScopeCompletionEmitsExceptionPayloadBeforeTermination() {
-    var agent = new ReactiveAgent();
+    var agent = new ReactiveRuntimeAgent();
     var parentScope = (AgentScope) agent.rootScope();
-    var received = new CopyOnWriteArrayList<AgentBase.EventType>();
+    var received = new CopyOnWriteArrayList<RuntimeAgentBase.EventType>();
 
     var eventScope =
         agent.listen(
-            parentScope,
-            (event, scope) -> received.add(event.type()),
-            AgentBase.EventType.EXCEPTION);
+                parentScope,
+                (event, scope) -> received.add(event.type()),
+                RuntimeAgentBase.EventType.EXCEPTION);
 
     eventScope.done(new IllegalStateException("boom"));
 
-    assertEquals(List.of(AgentBase.EventType.EXCEPTION), received);
+    assertEquals(List.of(RuntimeAgentBase.EventType.EXCEPTION), received);
     assertTrue(eventScope.isDone());
   }
 
   @Test
   void nestedEmitterRelaysFireThroughEnclosingActionScope() {
-    var agent = new ReactiveAgent();
+    var agent = new ReactiveRuntimeAgent();
     var rootScope = (AgentScope) agent.rootScope();
     var received = new CopyOnWriteArrayList<Object>();
 
     var enclosingActionScope =
         agent.listen(
-            rootScope,
-            (event, scope) -> received.add(event.payload()),
-            AgentBase.EventType.FIRE);
+                rootScope,
+                (event, scope) -> received.add(event.payload()),
+                RuntimeAgentBase.EventType.FIRE);
     var nestedVerbScope =
         agent.listen(
-            enclosingActionScope,
-            (event, scope) -> scope.doFire("relayed"),
-            AgentBase.EventType.FIRE);
+                enclosingActionScope,
+                (event, scope) -> scope.doFire("relayed"),
+                RuntimeAgentBase.EventType.FIRE);
 
     nestedVerbScope.doFire("source");
 
     assertEquals(List.of("relayed"), received);
   }
 
-  private static class BackgroundAgent extends AgentBase {
+  private static class BackgroundRuntimeAgent extends RuntimeAgentBase {
 
     private final CountDownLatch mainReturned = new CountDownLatch(1);
     private final AtomicReference<Thread> agentThread = new AtomicReference<>();
 
-    private BackgroundAgent() {
+    private BackgroundRuntimeAgent() {
       super(null, null);
     }
 
@@ -165,16 +165,16 @@ class AgentBaseTest {
     }
   }
 
-  private static class ReactiveAgent extends AgentBase {
+  private static class ReactiveRuntimeAgent extends RuntimeAgentBase {
 
-    private ReactiveAgent() {
+    private ReactiveRuntimeAgent() {
       super(null, null);
     }
 
     private AgentScope listen(
         AgentScope scope,
         BiConsumer<Event, AgentScope> consumer,
-        AgentBase.EventType... eventTypes) {
+        RuntimeAgentBase.EventType... eventTypes) {
       return onEvent(scope, consumer, eventTypes);
     }
 

@@ -44,8 +44,8 @@ It includes the following software components:
     - configurable runtime for local, enhanced local (using GPU and virtual memory) 
       and distributed computation;
     - Ability to connect to remote computations and build interactive, distributed 
-      agent systems (based on Akka);
-    - Groovy-based agent modeling language bindings;
+      runtimeAgent systems (based on Akka);
+    - Groovy-based runtimeAgent modeling language bindings;
     - support for machine learning through WEKA integration;
     - support for calibration and data assimilation through OpenDA integration;
     - REST API and UI for web-based modeling and administration

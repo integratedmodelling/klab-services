@@ -15,6 +15,7 @@ import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
@@ -81,6 +83,12 @@ public class RuntimeClient extends BaseServiceClient
     return client
         .withScope(scope)
         .post(ServicesAPI.RUNTIME.REGISTER_OBSERVATION, observation, Observation.class);
+  }
+
+  @Override
+  public Agent runAgent(KActorsBehavior behavior, UserScope scope) {
+    // TODO
+    return null;
   }
 
   @Override

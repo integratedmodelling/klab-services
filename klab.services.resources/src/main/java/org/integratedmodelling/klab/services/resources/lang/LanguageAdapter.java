@@ -383,6 +383,7 @@ public enum LanguageAdapter {
   private KActorsValue adaptKActorsValue(
       ValueSyntax valueSyntax, List<Notification> notifications) {
     var ret = new KActorsValueImpl();
+    setParsingData(valueSyntax, ret);
     ret.setType(
         switch (valueSyntax.getType()) {
           case NUMBER -> {
@@ -1304,7 +1305,10 @@ public enum LanguageAdapter {
    * @param syntax
    * @param ret
    */
-  private void setParsingData(ParsedObject syntax, KimAssetImpl ret) {}
+  private void setParsingData(ParsedObject syntax, KimAssetImpl ret) {
+    ret.setOffsetInDocument(syntax.getCodeOffset());
+    ret.setLength(syntax.getCodeLength());
+  }
 
   private KActorsStatement adaptActionStatement(
       ActionStatementSyntax statement,
@@ -1343,6 +1347,8 @@ public enum LanguageAdapter {
           default ->
               throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
         };
+
+    setParsingData(statement, (KimAssetImpl) ret);
 
     // TODO metadata, tag, sequencing
     for (var kp : statement.getTrailingMetadata().keySet()) {}
@@ -1509,6 +1515,7 @@ public enum LanguageAdapter {
 
     for (var match : verbStatement.getMatches()) {
       var m = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+      setParsingData(match, m);
       m.setMatchCriterion(
           match.getMatchCondition() == null
               ? null

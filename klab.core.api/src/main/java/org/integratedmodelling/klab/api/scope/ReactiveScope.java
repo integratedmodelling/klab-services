@@ -1,16 +1,10 @@
 package org.integratedmodelling.klab.api.scope;
 
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.concurrent.Future;
-
 /**
- * A reactive scope talks to a Klab agent through the exposed {@link
- * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref agent ref} and can route
+ * A reactive scope talks to a Klab agent through the exposed {@link Agent agent} and can route
  * messages to the agent. It also adds the ask() method to wait for an agent's response. All scopes
  * except {@link ServiceScope} are reactive.
  */
@@ -30,20 +24,5 @@ public interface ReactiveScope extends MessagingChannel, Scope {
    *
    * @return the agent or null.
    */
-  KActorsBehavior.Ref getAgent();
-
-  /**
-   * Pass a message to the agent based on the passed arguments and expect a response of the passed
-   * type, blocking until one is received. Implementation may impose timeouts.
-   *
-   * @param resultClass the expected result type
-   * @param messageArgs anything that can be converted to a {@link
-   *     org.integratedmodelling.klab.api.services.runtime.Message}, including a prebuilt Message.
-   *     The MessageClass will be automatically set to {@link
-   *     org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication}
-   *     and passing anything else will cause an exception.
-   * @param <T>
-   * @return
-   */
-  <T extends Serializable> T ask(Class<T> resultClass, Object... messageArgs);
+  Agent getAgent();
 }

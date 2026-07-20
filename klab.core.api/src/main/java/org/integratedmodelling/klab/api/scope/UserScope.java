@@ -79,19 +79,19 @@ public interface UserScope extends ReactiveScope {
   SessionScope getUserSession(RuntimeService hostService);
 
   /**
-   * Run an individual application, test case or script and return the scope that controls it.
-   * Different VMs and agent behaviors are used according to the type, which can only be one of the
-   * independently runnable behaviors: APP, SCRIPT or TESTCASE. Each behavior at this level creates
-   * an independent SessionScope. The session created with this method will expire and disappear
-   * after termination of the application or script.
+   * Run an individual application, test case or script in a new session and return the scope that
+   * controls it. Different VMs and agent behaviors are used according to the type, which can only
+   * be one of the independently runnable behaviors: APP, SCRIPT or TESTCASE. Each behavior at this
+   * level creates an independent SessionScope whose {@link #getAgent()} returns the handle to the
+   * agent. The session created with this method will expire and disappear after termination of the
+   * application or script; conversely, the agent will stop when the session is released.
    *
    * <p>If this is run through a {@link ContextScope} (which inherits from SessionScope) which is
    * focused on a context observation that is an agent, the behavior will be assigned to the
    * observation and started; the association will be stored in the knowledge graph.
    *
    * @param behavior
-   * @param hostService
    * @return
    */
-  SessionScope run(KActorsBehavior behavior, RuntimeService hostService);
+  SessionScope run(KActorsBehavior behavior);
 }

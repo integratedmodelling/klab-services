@@ -156,7 +156,7 @@ public interface Channel {
    *     or the necessary info to build one, including a {@link MessageClass} and Message type along
    *     with any payload (any serializable object). Sending a {@link Notification} should
    *     automatically promote it to a suitable logging message and enforce any logging level
-   *     filtering configured. If the {@link MessageClass#ActorCommunication} is passed and an agent
+   *     filtering configured. If the {@link MessageClass#AgentCommunication} is passed and an agent
    *     is embedded in the scope, the message will be sent to the agent.
    * @return the completed message that was sent, for reference, or null if sending failed
    */

@@ -5,7 +5,7 @@ import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -30,18 +30,18 @@ public class CoreActorLibrary {
 
     // TODO handle multiple arguments
     @Verb(name = "println", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void println(Agent.Scope scope, Object message) {
+    public static void println(RuntimeAgent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
     }
 
     // TODO handle multiple arguments
     @Verb(name = "print", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void print(Agent.Scope scope, Object message) {
+    public static void print(RuntimeAgent.Scope scope, Object message) {
       scope.getPrintWriter().println(message);
     }
 
     @Verb(name = "format", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void format(Agent.Scope scope, String format, Object... args) {
+    public static void format(RuntimeAgent.Scope scope, String format, Object... args) {
       scope.getPrintWriter().format(format, args);
     }
   }
@@ -97,7 +97,7 @@ public class CoreActorLibrary {
      * @param <T>
      */
     @Verb(name = "at", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> at(Agent.Scope scope, TimeInstant time, T object) {
+    public static <T> CompletableFuture<T> at(RuntimeAgent.Scope scope, TimeInstant time, T object) {
 
       Objects.requireNonNull(time, "time");
       return completeAfter(time.getMilliseconds() - System.currentTimeMillis(), object);
@@ -113,7 +113,7 @@ public class CoreActorLibrary {
      * @param <T>
      */
     @Verb(name = "in", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> in(Agent.Scope scope, TimeDuration time, T object) {
+    public static <T> CompletableFuture<T> in(RuntimeAgent.Scope scope, TimeDuration time, T object) {
 
       Objects.requireNonNull(time, "time");
       return completeAfter(time.getMilliseconds(), object);
@@ -139,7 +139,7 @@ public class CoreActorLibrary {
     }
 
     @Verb(name = "tick", fires = TimeInstant.class)
-    public static void tick(Agent.Scope scope, TimeUnit unit, long amount) {
+    public static void tick(RuntimeAgent.Scope scope, TimeUnit unit, long amount) {
 
       var timer = new java.util.Timer();
       TimerTask task =
@@ -166,7 +166,7 @@ public class CoreActorLibrary {
     }
 
     @Verb(name = "random", fires = TimeInstant.class)
-    public static void random(Agent.Scope scope, TimeUnit unit, long amount) {
+    public static void random(RuntimeAgent.Scope scope, TimeUnit unit, long amount) {
 
       var timer = new java.util.Timer();
       scheduleRandomTick(scope, timer, unit.toMillis(amount));
@@ -185,7 +185,7 @@ public class CoreActorLibrary {
     }
 
     private static void scheduleRandomTick(
-        Agent.Scope scope, java.util.Timer timer, long averageDelayMilliseconds) {
+            RuntimeAgent.Scope scope, java.util.Timer timer, long averageDelayMilliseconds) {
 
       if (scope.isDone()) {
         return;

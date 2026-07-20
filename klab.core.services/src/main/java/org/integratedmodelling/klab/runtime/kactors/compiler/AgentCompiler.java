@@ -14,12 +14,12 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.runtime.kactors.AgentBase;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 
 public class AgentCompiler {
 
   // TODO URN should contain the version/build number (with build == timestamp)
-  private static Map<String, Class<? extends AgentBase>> compiledActorClasses =
+  private static Map<String, Class<? extends RuntimeAgentBase>> compiledActorClasses =
       new ConcurrentHashMap<>();
 
   private KActorsBehavior behavior;
@@ -99,7 +99,7 @@ public class AgentCompiler {
   ///           compile the reaction body within the subscription closure
   ///         add the call in asyncRun or completable future consequence to the main code buffer
   ///
-  private Class<? extends AgentBase> compileBehavior(KActorsBehavior behavior) {
+  private Class<? extends RuntimeAgentBase> compileBehavior(KActorsBehavior behavior) {
 
     var classFile = generateClass(behavior);
     if (classFile != null) {

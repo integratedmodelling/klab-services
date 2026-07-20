@@ -229,7 +229,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public SessionScope run(KActorsBehavior behavior, RuntimeService host) {
+  public SessionScope run(KActorsBehavior behavior) {
+    // TODO
     throw new KlabIllegalStateException(
         "Sessions at service side must be created through the service API");
   }

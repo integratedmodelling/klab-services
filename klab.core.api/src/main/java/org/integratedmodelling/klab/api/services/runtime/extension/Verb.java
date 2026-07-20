@@ -18,8 +18,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.integratedmodelling.klab.api.actors.Agent;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 
 /**
  * Tags a method that can be used as a functional verb in k.Actors. Must be defined for public
@@ -54,8 +53,8 @@ public @interface Verb {
     SUPPLIER,
     /**
      * An emitter will produce zero or more values at some point after the call by invoking {@link
-     * Agent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This verb will
-     * run in its thread and is expected to only exit when {@link Agent.Scope#isDone()} returns
+     * RuntimeAgent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This verb will
+     * run in its thread and is expected to only exit when {@link RuntimeAgent.Scope#isDone()} returns
      * true.
      */
     EMITTER;

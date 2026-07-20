@@ -411,14 +411,10 @@ public class SchedulerImpl implements Scheduler {
 
   private void post(Event event, Scope scope) {
     processor.emitNext(
-        event,
-        new Sinks.EmitFailureHandler() {
-          @Override
-          public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
-            scope.error(
-                "Scheduler: internal: failed to emit event " + event + ": result is " + emitResult);
-            return false;
-          }
+        event, (signalType, emitResult) -> {
+          scope.error(
+              "Scheduler: internal: failed to emit event " + event + ": result is " + emitResult);
+          return false;
         });
   }
 
@@ -443,33 +439,4 @@ public class SchedulerImpl implements Scheduler {
     }
   }
 
-  //  public static void main(String[] dio) {
-  //
-  //    var scheduler = new SchedulerImpl(null, null);
-  //    AtomicInteger obsId = new AtomicInteger(1);
-  //
-  //    Utils.Java.repl(
-  //        "> ",
-  //        s -> {
-  //          //          switch (s) {
-  //          //            // add a new observation and subscribe it to events
-  //          //            case "+" ->
-  //          //                scheduler.register(
-  //          //                    new Registration(
-  //          //                        "Obs" + obsId.getAndIncrement(),
-  //          //                        "Concept",
-  //          //                        SemanticType.AGENT,
-  //          //                        System.currentTimeMillis(),
-  //          //                        -1L));
-  //          //            // send init event
-  //          //            case "i" -> scheduler.post(new Event());
-  //          //            // send time event between now and 1s after
-  //          //            case "t" ->
-  //          //                scheduler.post(
-  //          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis()
-  // +
-  //          // 1000));
-  //          //          }
-  //        });
-  //  }
 }

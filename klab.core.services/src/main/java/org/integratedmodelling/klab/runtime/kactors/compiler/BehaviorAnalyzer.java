@@ -2,21 +2,15 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import java.util.*;
 
-import org.h2.expression.Variable;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.kactors.*;
-import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
-import org.integratedmodelling.klab.runtime.kactors.AgentBase;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 
 /** Analyze the behavior and collect infomation for code generation. */
 public class BehaviorAnalyzer {
 
   private final KActorsBehavior behavior;
-  private Class<? extends AgentBase> agentClass = AgentBase.class;
+  private Class<? extends RuntimeAgentBase> agentClass = RuntimeAgentBase.class;
   private List<Notification> notifications = new ArrayList<>();
 
   public BehaviorAnalyzer(KActorsBehavior behavior) {
@@ -37,7 +31,7 @@ public class BehaviorAnalyzer {
     return true;
   }
 
-  public Class<? extends AgentBase> getAgentClass() {
+  public Class<? extends RuntimeAgentBase> getAgentClass() {
     return agentClass;
   }
 

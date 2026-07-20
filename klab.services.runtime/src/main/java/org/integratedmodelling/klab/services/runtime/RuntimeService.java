@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -40,6 +39,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -1239,6 +1239,12 @@ public class RuntimeService extends BaseService
 
     throw new KlabInternalErrorException(
         "RuntimeService::register() called with unexpected scope implementation");
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.actors.Agent runAgent(
+      KActorsBehavior behavior, UserScope scope) {
+    return null;
   }
 
   /**

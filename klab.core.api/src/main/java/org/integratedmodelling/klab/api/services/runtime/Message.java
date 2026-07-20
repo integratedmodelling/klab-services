@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
@@ -12,7 +11,6 @@ import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -111,7 +109,7 @@ public interface Message extends Serializable {
     /** Messages sent or received by the view actor, called from behaviors. */
     ViewActor,
     /** These are skipped from queues and sent directly to the scope's agent. */
-    ActorCommunication;
+    AgentCommunication;
 
     public final MessageType[] messageTypes;
 

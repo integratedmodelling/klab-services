@@ -17,7 +17,7 @@ package org.integratedmodelling.klab.api.exceptions;
 
 // TODO: Auto-generated Javadoc
 
-import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 
 import java.io.Serial;
 
@@ -33,7 +33,7 @@ public class KlabActorException extends KlabException {
 
   @Serial private static final long serialVersionUID = 461213337593957416L;
 
-  private Agent agent;
+  private RuntimeAgent runtimeAgent;
 
   /** Instantiates a new klab illegal status exception. */
   public KlabActorException() {
@@ -46,9 +46,9 @@ public class KlabActorException extends KlabException {
    *
    * @param arg0 the arg 0
    */
-  public KlabActorException(Agent agent, String arg0) {
+  public KlabActorException(RuntimeAgent runtimeAgent, String arg0) {
     super(arg0);
-    this.agent = agent;
+    this.runtimeAgent = runtimeAgent;
     // TODO Auto-generated constructor stub
   }
 
@@ -57,8 +57,8 @@ public class KlabActorException extends KlabException {
    *
    * @param e the e
    */
-  public KlabActorException(Agent agent, Throwable e) {
+  public KlabActorException(RuntimeAgent runtimeAgent, Throwable e) {
     super(e);
-    this.agent = agent;
+    this.runtimeAgent = runtimeAgent;
   }
 }

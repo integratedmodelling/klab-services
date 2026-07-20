@@ -51,7 +51,7 @@ action groupingroup:
 @test
 action test:
 
-	// type prefix means constructor and 'dt' is an agent, automatically assigned. 
+	// type prefix means constructor and 'dt' is an runtimeAgent, automatically assigned.
 	// Verbs are assigned based on type. Actions may follow immediately or later. Should have
 	// a "use <type> (as 'alias')?" mechanism allowing ambiguities; using a full class path 
 	// for straight Java matching is ugly and not feasible for parsing

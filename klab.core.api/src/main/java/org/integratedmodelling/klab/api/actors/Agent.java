@@ -1,111 +1,83 @@
 package org.integratedmodelling.klab.api.actors;
 
-import java.io.PrintStream;
-import java.net.URL;
-import java.util.function.Consumer;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.runtime.Message;
+import java.io.Serializable;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * The runtime peer of a k.Actors agent. The agent can be connected to a {@link
- * org.integratedmodelling.klab.api.scope.UserScope} (user agent with configurable behavior
- * instantiated on authentication), a {@link SessionScope} (applications, scripts or test cases,
- * each running within a session that is private to the agent), a {@link ContextScope} (for DT-wide
- * automation) or an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}
- * (autonomous agents within a {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}.
+ * The handle to an agent running in a runtime service. This is available at both client and service
+ * side. The agent runs a k.Actors {@link
+ * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior} and may or may not be tied to a
+ * {@link org.integratedmodelling.klab.api.scope.UserScope}, {@link
+ * org.integratedmodelling.klab.api.scope.SessionScope} or {@link
+ * org.integratedmodelling.klab.api.scope.ContextScope}. In addition, the agent may represent an
+ * agent {@link org.integratedmodelling.klab.api.knowledge.observation.Observation} in a {@link
+ * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}. In all these cases, the reference to
+ * the agent is obtained through their respective hosts. Otherwise, a raw behavior may be submitted
+ * to the runtime for execution outside of these scopes.
  *
- * <p>Both client and service-side agents implement this interface.
+ * <p>Agents may specialize into applications, test cases or script agents that offer a handle to
+ * their ongoing execution.
  */
 public interface Agent {
 
   /**
-   * Agent scope, containing the local state for the agent and its actions, and methods to implement
-   * agent function in Java @{@link
-   * org.integratedmodelling.klab.api.services.runtime.extension.Verb} implementations, which use
-   * the scope to interact with the agent.
-   */
-  interface Scope extends Parameters<String> {
-
-    /**
-     * A SessionScope is always defined during an agent's lifetime. The scope may be a ContextScope
-     * when the agent is part of a digital twin.
-     *
-     * @return the current session scope. Never null.
-     */
-    SessionScope getSession();
-
-    /**
-     * A ContextScope is only defined during an agent's lifetime if the agent is part of an active
-     * digital twin.
-     *
-     * @return the current context scope, or null if not in a digital twin.
-     */
-    ContextScope getContext();
-
-    /**
-     * The agent that runs in this scope.
-     *
-     * @return
-     */
-    Agent getAgent();
-
-    /**
-     * Call this to fire an event to any subscribers, leaving the agent's code running. Can be
-     * called multiple times during the lifetime of the agent, which must be tagged as an emitter to
-     * work correctly.
-     *
-     * @param firedObject
-     */
-    void doFire(Object firedObject);
-
-    /**
-     * Calling return will stop the actor's code execution and return the passed object to any
-     * subscribed listener.
-     *
-     * @param returnedObject
-     */
-    void doReturn(Object returnedObject);
-
-    /**
-     * If the agent is capable of writing to a console, this will return a PrintStream.
-     *
-     * @return a PrintStream for output or a no-op PrintStream (ideally logging) if the agent is not
-     *     capable of writing to a console.
-     */
-    PrintStream getPrintWriter();
-
-    /**
-     * Action code that runs in the background must check this to know when to exit.
-     *
-     * @return true if the agent is done, false otherwise.
-     */
-    boolean isDone();
-
-    /**
-     * The actor code may call this to signal that it's done. If an exception or an error
-     * notification is passed, the actor will be stopped exceptionally and should report
-     * accordingly.
-     */
-    void done(Object... conditions);
-  }
-
-  /**
-   * The actor's URL identifies it uniquely within the runtime it's part of and enables REST and
-   * HTTP access to the accessible state of the actor.
+   * The URN of the agent, unique within the runtime service.
    *
    * @return
    */
-  URL getURL();
+  String getUrn();
 
   /**
-   * An Actor can send a message to this actor using this. If a response is expected, the sender can
-   * add a message consumer which may be called or not.
+   * The URN of the behavior the agent is running.
    *
-   * @param message
-   * @param sender
-   * @param responseConsumer pass null if no response is expected
+   * @return
    */
-  void send(Message message, Agent sender, Consumer<Message> responseConsumer);
+  String getBehaviorUrn();
+
+  /**
+   * Send a ping and return whether the agent responds.
+   *
+   * @return
+   */
+  boolean isAlive();
+
+  /**
+   * Agent start their existence in a running state. They may stop due to error, their host going
+   * out of scope, or being stopped by the user through this call.
+   *
+   * @return
+   */
+  boolean stop();
+
+  /**
+   * Agents maintain notifications sent through the messaging system. If the agent is not alive,
+   * these may explain why.
+   *
+   * @return
+   */
+  List<Notification> getNotifications();
+
+  /**
+   * Send a message asynchronously.
+   *
+   * @param <T>
+   * @param message
+   */
+  <T extends Serializable> void tell(T message);
+
+  /**
+   * Ask a question and wait for the response. Assumes a fast response or no response;
+   * implementations should use a sensible timeout and behave as needed (null return or unchecked
+   * exception) if it's exceeded.
+   *
+   * @param <T>
+   * @param <R>
+   * @param message
+   * @param responseClass
+   * @return
+   */
+  <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
+      T message, Class<? extends R> responseClass);
 }

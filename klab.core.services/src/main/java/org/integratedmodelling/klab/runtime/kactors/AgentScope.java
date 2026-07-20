@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -14,18 +14,18 @@ import reactor.core.publisher.Sinks;
 
 /**
  * The AgentScope provides state during execution and identifies the blocks being run so that events
- * and actions can be properly handled by {@link AgentBase}. Each AgentScope must expose a unique ID
+ * and actions can be properly handled by {@link RuntimeAgentBase}. Each AgentScope must expose a unique ID
  * to track its listeners in the reactor sink.
  */
-public abstract class AgentScope extends ParametersImpl<String> implements Agent.Scope {
+public abstract class AgentScope extends ParametersImpl<String> implements RuntimeAgent.Scope {
 
-  private final AgentBase actor;
+  private final RuntimeAgentBase actor;
   private final long actionId;
   private final CopyOnWriteArrayList<AgentScope> children = new CopyOnWriteArrayList<>();
   private final CopyOnWriteArrayList<Disposable> disposables = new CopyOnWriteArrayList<>();
   private final AtomicBoolean done = new AtomicBoolean(false);
 
-  public AgentScope(AgentBase actor) {
+  public AgentScope(RuntimeAgentBase actor) {
     this.actor = actor;
     this.actionId = 0;
   }
@@ -37,7 +37,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
   }
 
   @Override
-  public Agent getAgent() {
+  public RuntimeAgent getAgent() {
     return actor;
   }
 
@@ -58,7 +58,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
     }
     var result =
         actor.emitEvent(
-            new AgentBase.Event(AgentBase.EventType.FIRE, actionId, firedObject));
+            new RuntimeAgentBase.Event(RuntimeAgentBase.EventType.FIRE, actionId, firedObject));
     if (result != Sinks.EmitResult.OK) {
       actor.handleNotification(Notification.error("Failed to emit fire event: " + result));
     }
@@ -95,7 +95,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
     }
     var result =
         actor.emitEvent(
-            new AgentBase.Event(AgentBase.EventType.RETURN, actionId, returnedObject));
+            new RuntimeAgentBase.Event(RuntimeAgentBase.EventType.RETURN, actionId, returnedObject));
     if (result != Sinks.EmitResult.OK) {
       Logging.INSTANCE.error("Failed to emit return event: " + result);
     }
@@ -123,12 +123,12 @@ public abstract class AgentScope extends ParametersImpl<String> implements Agent
       var exceptionalValue = exceptionalValue(conditions);
       if (exceptionalValue != null) {
         actor.emitEvent(
-            new AgentBase.Event(
-                AgentBase.EventType.EXCEPTION, actionId, exceptionalValue));
+            new RuntimeAgentBase.Event(
+                    RuntimeAgentBase.EventType.EXCEPTION, actionId, exceptionalValue));
       }
       actor.emitEvent(
-          new AgentBase.Event(
-              AgentBase.EventType.TERMINATION, actionId, terminationValue(conditions)));
+          new RuntimeAgentBase.Event(
+                  RuntimeAgentBase.EventType.TERMINATION, actionId, terminationValue(conditions)));
       for (var disposable : disposables) {
         disposable.dispose();
       }

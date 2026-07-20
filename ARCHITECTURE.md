@@ -251,7 +251,7 @@ resolve the observation.
 
 Resolver works inside the context scope it receives. It uses that scope to get
 the Reasoner, Resources, and Runtime services. The scope also carries resolution
-constraints such as geometry, provenance agent, namespace, project, scenario,
+constraints such as geometry, provenance runtimeAgent, namespace, project, scenario,
 observer, and context observation.
 
 Reasoner returns candidate observation strategies that match the observable and

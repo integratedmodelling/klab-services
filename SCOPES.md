@@ -365,7 +365,7 @@ The runtime, resolver, reasoner, resources service, knowledge graph, dataflow
 compiler, and digital twin code all use scopes this way. For example,
 submitting an observation requires a context scope; retrieving resources uses
 the requesting scope; knowledge graph queries receive a scope so visibility,
-agent, provenance, and context are preserved.
+runtimeAgent, provenance, and context are preserved.
 
 Public service endpoints such as health and status can be scope-light. Ordinary
 stateful operations should not be.

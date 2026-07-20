@@ -1,8 +1,5 @@
 package org.integratedmodelling.common.view;
 
-import org.apache.commons.compress.utils.IOUtils;
-import org.apache.commons.compress.utils.Lists;
-import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.utils.Utils;
@@ -37,7 +34,6 @@ import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -255,7 +251,7 @@ public abstract class AbstractUIController implements UIController {
       case Query -> {}
       case Run -> {}
       case ViewActor -> {}
-      case ActorCommunication -> {}
+      case AgentCommunication -> {}
       case KnowledgeLifecycle -> {}
     }
   }

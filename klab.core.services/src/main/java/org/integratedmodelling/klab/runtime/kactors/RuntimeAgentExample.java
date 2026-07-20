@@ -27,9 +27,9 @@ import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 /// Actors that do not return must be run within an asynchronous container to work
 /// properly.
 ///
-public class AgentExample extends AgentBase {
+public class RuntimeAgentExample extends RuntimeAgentBase {
 
-  public AgentExample() {
+  public RuntimeAgentExample() {
     super(null, null);
   }
 
@@ -157,7 +157,7 @@ public class AgentExample extends AgentBase {
 
   public static void main(String[] args) {
 
-    var agent = new AgentExample();
+    var agent = new RuntimeAgentExample();
     Utils.CLI.create().with("start", c -> agent.run()).with("stop", c -> agent.stop()).run();
   }
 }

@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 
-public abstract class TestCaseBase extends AgentBase {
+public abstract class TestCaseBase extends RuntimeAgentBase {
 
   protected SessionScope scope;
 

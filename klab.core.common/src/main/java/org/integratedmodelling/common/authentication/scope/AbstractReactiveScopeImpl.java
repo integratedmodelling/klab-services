@@ -1,31 +1,20 @@
 package org.integratedmodelling.common.authentication.scope;
 
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
-
-import java.io.Serializable;
-import java.util.*;
-import java.util.function.Predicate;
 
 /**
- * A scope that hosts an agent ref and will route messages with {@link
- * org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication} class
- * to them instead of sending through the normal channels. This scope also exposes an {@link
- * #ask(Class, Object...)} method that blocks until an agent's response is received.
+ * A scope that can hosts an agent refence and will route messages with {@link
+ * org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#AgentCommunication} class
+ * to them instead of sending through the normal channels.
  */
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl
     implements ReactiveScope {
 
-  protected KActorsBehavior.Ref agent;
+  protected Agent agent;
   private String hostServiceId;
 
   public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
@@ -33,20 +22,20 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl
   }
 
   @Override
-  public KActorsBehavior.Ref getAgent() {
+  public Agent getAgent() {
     return this.agent;
   }
 
-  public void setAgent(KActorsBehavior.Ref agent) {
+  public void setAgent(Agent agent) {
     this.agent = agent;
   }
 
   @Override
   public Message send(Object... args) {
     var message = Message.create(this, args);
-    if (message.getMessageClass() == Message.MessageClass.ActorCommunication
+    if (message.getMessageClass() == Message.MessageClass.AgentCommunication
         && agent != null
-        && !agent.isEmpty()) {
+        && agent.isAlive()) {
       agent.tell(message);
       return message;
     } else {
@@ -64,28 +53,6 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl
       scope = scope.getParentScope();
     }
     return null;
-  }
-
-  @Override
-  public <T extends Serializable> T ask(Class<T> responseClass, Object... args) {
-
-    if (agent == null || agent.isEmpty()) {
-      return null;
-    }
-
-    var message = Message.create(this, args);
-    if (message.getMessageClass() == null && message instanceof MessageImpl message1) {
-      message1.setMessageClass(Message.MessageClass.ActorCommunication);
-    }
-    if (message.getMessageClass() == Message.MessageClass.ActorCommunication) {
-      return agent.ask(message, responseClass);
-    }
-
-    throw new KlabInternalErrorException(
-        "wrong message with class "
-            + message.getMessageClass()
-            + " "
-            + "sent to ReactiveScope::ask");
   }
 
   @Override

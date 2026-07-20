@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -10,11 +11,11 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -155,11 +156,11 @@ public interface RuntimeService extends KlabService {
    * knowledge graph is queried instead. Queries are accepted for qualities in the context specified
    * by the scope and for collective substantials. A successful partial or collective query result
    * retains ID 0; a fully covered quality query returns the original resolved observation. An
-   * observation of a
-   * substantial (endurant subject or agent) must have a valid URN specifying its unique identity,
-   * including a namespace and an identifier separated by a colon, which will be prefixed with the
-   * scope ID and a predefined catalog name to form the final URN when resolved. An observation of a
-   * dependent is normally not given a URN upon submission; it will contain one after it's resolved.
+   * observation of a substantial (endurant subject or agent) must have a valid URN specifying its
+   * unique identity, including a namespace and an identifier separated by a colon, which will be
+   * prefixed with the scope ID and a predefined catalog name to form the final URN when resolved.
+   * An observation of a dependent is normally not given a URN upon submission; it will contain one
+   * after it's resolved.
    *
    * <p>The submit operation is transactional, i.e., a failed submission will leave the knowledge
    * graph unaltered. Note that observations of individual substantials, i.e., non-collective
@@ -205,6 +206,23 @@ public interface RuntimeService extends KlabService {
   Observation register(Observation observation, ContextScope scope);
 
   /**
+   * Run an agent in the given scope. The agent must be given a valid KActors behavior. Based on the
+   * scope passed, the agent will be associated with the correct host; if the scope is a {@link
+   * ContextScope} and the scope if focused on an agent observation as the contextObservation, the
+   * observation will become the host rather than the full ContextScope. If the scope is a raw
+   * {@link UserScope}, the destination of the agent will depend on whether the behavior is an
+   * application/script/testcase (which will run unhosted) or a behavior (which will represent the
+   * user). Normal usage in a scoped context requires using {@link SessionScope#run(KActorsBehavior,
+   * RuntimeService)} for the session-hosted agents and using binding in k.IM models to associate
+   * behaviors to hosts. Direct use of runAgent should only be used for testing and debugging.
+   *
+   * @param behavior
+   * @param scope
+   * @return
+   */
+  Agent runAgent(KActorsBehavior behavior, UserScope scope);
+
+  /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.
    * The incoming request will propose to use resources, functions and the like; the runtime may
    * provide some of those natively or use the resources services to locate them and load them. If
@@ -243,7 +261,6 @@ public interface RuntimeService extends KlabService {
     Storage.Type getDefaultStorageType();
 
     Set<CRUDOperation> getPermissions();
-
   }
 
   /**
