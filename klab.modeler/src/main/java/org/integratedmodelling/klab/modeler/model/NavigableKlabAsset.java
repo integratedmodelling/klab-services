@@ -68,6 +68,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
   protected abstract List<NavigableAsset> createChildren();
 
+  @Override
   public T getDelegate() {
     return delegate;
   }

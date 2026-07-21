@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class JacksonConfiguration {
 
@@ -68,7 +69,10 @@ public class JacksonConfiguration {
         return Collections.emptyList();
       }
 
-      List<Field> result = new ArrayList<>(getAllFields(clazz.getSuperclass()));
+      Map<String, Field> fieldsByName = new LinkedHashMap<>();
+      for (var field : getAllFields(clazz.getSuperclass())) {
+        fieldsByName.put(field.getName(), field);
+      }
       List<Field> filteredFields =
           Arrays.stream(clazz.getDeclaredFields())
               .filter(
@@ -76,25 +80,52 @@ public class JacksonConfiguration {
                       !Modifier.isStatic(f.getModifiers())
                           && !Modifier.isTransient(f.getModifiers()))
               .toList();
-      result.addAll(filteredFields);
-      return result;
+      for (var field : filteredFields) {
+        // A subclass field is the state exposed by the subclass accessors and must replace a
+        // same-named implementation detail inherited from a superclass.
+        fieldsByName.put(field.getName(), field);
+      }
+      return new ArrayList<>(fieldsByName.values());
     }
 
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      if (value instanceof NavigableAsset navigableAsset) {
+        var delegate = navigableAsset.getDelegate();
+        if (delegate != null && delegate != value) {
+          // Navigable assets are view-side decorators with bidirectional parent/children links.
+          // Only their domain delegate belongs on the wire; reflecting over the decorator would
+          // recurse indefinitely and emit a class that cannot be reconstructed by the receiver.
+          serializers.defaultSerializeValue(delegate, gen);
+          return;
+        }
+      }
       gen.writeStartObject();
       gen.writeObjectField(CLASS_FIELD, value.getClass().getName());
       for (Field field : getAllFields(value.getClass())) {
         field.setAccessible(true); // You might want to set modifier to public first.
+        final Object fieldValue;
         try {
-          var fvalue = field.get(value);
-          if (fvalue != null) {
-            gen.writeObjectField(field.getName(), fvalue);
+          fieldValue = field.get(value);
+        } catch (IllegalAccessException e) {
+          throw JsonMappingException.from(
+              gen,
+              "Cannot access field "
+                  + field.getName()
+                  + " while serializing "
+                  + value.getClass().getName(),
+              e);
+        }
+        if (fieldValue != null) {
+          // Never swallow an exception from here: serializers may already have opened an array or
+          // object in the generator. Continuing would corrupt its context and replace the useful
+          // cause with errors such as "Current context not Object but Array".
+          try {
+            gen.writeObjectField(field.getName(), fieldValue);
+          } catch (IOException e) {
+            throw JsonMappingException.wrapWithPath(e, value, field.getName());
           }
-        } catch (Throwable t) {
-          // screw that
-          Logging.INSTANCE.error(t);
         }
       }
       gen.writeEndObject();

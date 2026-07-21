@@ -58,6 +58,8 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
+import org.integratedmodelling.klab.runtime.kactors.ServiceAgent;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
@@ -1242,8 +1244,30 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public org.integratedmodelling.klab.api.actors.Agent runAgent(
-          KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
+  public ServiceAgent runAgent(
+      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
+    return compileAndRunAgent(behavior, suggestedAgentName, compileOnly, scope);
+  }
+
+  private ServiceAgent compileAndRunAgent(
+      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
+
+    var compiler = new AgentCompiler(behavior, scope);
+    var ret = new ServiceAgent();
+    ret.setBehaviorUrn(behavior.getUrn());
+
+    if (compiler.compile()) {
+      // exec
+      if (!compileOnly) {
+        // set url, name, and setup channels
+        // run the agent catching any startup exceptions in a new notification
+        // set the agent in the handle and record isAlive()
+        // send any notifications through AMQP channel and prepare for communication
+        // put the agent somewhere
+      }
+    }
+    ret.getNotifications().addAll(compiler.getNotifications());
+
     return null;
   }
 

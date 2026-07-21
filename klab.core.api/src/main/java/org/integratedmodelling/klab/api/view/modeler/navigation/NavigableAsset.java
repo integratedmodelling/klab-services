@@ -11,6 +11,17 @@ import java.util.List;
  */
 public interface NavigableAsset extends KlabAsset {
 
+    /**
+     * Return the domain asset wrapped by this navigation node. Navigation state such as parents,
+     * children and local UI metadata is not part of the domain asset and must not cross service
+     * boundaries.
+     *
+     * @return the wrapped asset, or null for synthetic navigation nodes
+     */
+    default KlabAsset getDelegate() {
+        return this;
+    }
+
     /*
      * Metadata keys for local metadata, changed by interacting with the services. These are propagated
      * across the asset hierarchy by explicitly calling functions  on
