@@ -393,8 +393,7 @@ public abstract class BaseServiceClient implements KlabService {
     /*
     If we're notifying a remote service, do not add local services to the request.
      */
-    var notification =
-        Utils.URLs.isLocalHost(this.getUrl()) ? request.copy() : request.withoutLocalServices();
+    var notification = isLocal() ? request.copy() : request.withoutLocalServices();
 
     if (notification.getServices().isEmpty()) {
       return false;

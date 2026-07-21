@@ -409,6 +409,18 @@ public interface ServicesAPI {
      * specifies whether those will be available to the runtime and upon which conditions.
      */
     String RESOLVE_CONTEXTUALIZERS = API_BASE + "/resolve";
+
+    /**
+     * POST endpoint that takes an AgentInstantiationRequest and returns the Agent that was
+     * instantiated.
+     */
+    String INSTANTIATE_AGENT = API_BASE + "/instantiate/agent";
+
+    /**
+     * CRUD endpoint to control a remote agent. The request is one of the operations
+     * that can be performed on the agent (TBD as an enum)
+     */
+    String AGENT = API_BASE + "/agent/{urn}/{request}";
   }
 
   interface RESOURCES {

@@ -492,7 +492,7 @@ public abstract class BaseService implements KlabService {
   protected boolean isAllowed(CRUDOperation operation, UserScope scope) {
     var rights = getServiceConfiguration().getPermissions().get(operation);
     if (rights == null) {
-      return Utils.URLs.isLocalHost(getUrl());
+      return isLocal();
     }
     return rights.checkAuthorization(scope);
   }

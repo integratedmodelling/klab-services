@@ -38,7 +38,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.common.data.DataRequest;
-import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
+import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;

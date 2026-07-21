@@ -27,7 +27,6 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -78,7 +77,7 @@ public class ResourcesKBox {
     this.databaseFile =
         BaseService.getFileInConfigurationSubdirectory(options, "data", "resources.db");
     RocksDBModule storeModule = RocksDBModule.withConfig().filePath(databaseFile.getPath()).build();
-    this.local = Utils.URLs.isLocalHost(service.getUrl());
+    this.local = service.isLocal();
 
     this.db =
         Nitrite.builder()

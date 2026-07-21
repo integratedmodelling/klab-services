@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -480,6 +481,15 @@ public interface KlabService extends Service {
    * @return
    */
   boolean loadResources(ResourceSet resourceSet, Scope scope);
+
+  /**
+   * Weak check for whether the service is running locally.
+   *
+   * @return true if local
+   */
+  default boolean isLocal() {
+    return getUrl() == null || Utils.URLs.isLocalHost(getUrl());
+  }
 
   /**
    * This will find any export schema installed at service side to honor the request.

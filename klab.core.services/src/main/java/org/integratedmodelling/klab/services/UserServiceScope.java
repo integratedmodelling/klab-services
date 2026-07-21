@@ -143,7 +143,7 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
     }
 
     /* sort the list to ensure that a local service is always first */
-    ret.sort(Comparator.comparing(s -> Utils.URLs.isLocalHost(s.getUrl()) ? 0 : 1));
+    ret.sort(Comparator.comparing(s -> s.isLocal() ? 0 : 1));
 
     return ret;
   }

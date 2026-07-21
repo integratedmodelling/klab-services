@@ -22,13 +22,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
 import reactor.core.publisher.Sinks;
 
 /**
@@ -76,7 +74,7 @@ public class SchedulerImpl implements Scheduler {
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
-    this.timeEmitter = new TimeEmitter(/*this*/);
+    this.timeEmitter = new TimeEmitter(/*this*/ );
     this.processor = Sinks.many().replay().all();
     initializeScheduler();
   }
@@ -133,6 +131,22 @@ public class SchedulerImpl implements Scheduler {
   public void registerExecutor(
       Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor) {
     executors.put(observation, executor);
+  }
+
+  @Override
+  public boolean switchToRealTime(long until) {
+
+    if (System.currentTimeMillis() < epochEnd) {
+      return false;
+    }
+
+    if (until < 0) {
+      this.timeEmitter.startRealtimeClock();
+    } else {
+      this.timeEmitter.startRealtimeClock(until);
+    }
+
+    return true;
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
@@ -355,13 +369,13 @@ public class SchedulerImpl implements Scheduler {
       this.epochEnd = tEnd;
     }
     /* ensure that all events are there */
-//    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
-//      // if anything has changed, notify the scope listeners
-//      rootScope.send(
-//          Message.MessageClass.DigitalTwin,
-//          Message.MessageType.ScheduleModified,
-//          TimeEmitter.getSchedule());
-//    }
+    //    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
+    //      // if anything has changed, notify the scope listeners
+    //      rootScope.send(
+    //          Message.MessageClass.DigitalTwin,
+    //          Message.MessageType.ScheduleModified,
+    //          TimeEmitter.getSchedule());
+    //    }
     return Triple.of(tStart, tEnd, time.getResolution());
   }
 
@@ -411,7 +425,8 @@ public class SchedulerImpl implements Scheduler {
 
   private void post(Event event, Scope scope) {
     processor.emitNext(
-        event, (signalType, emitResult) -> {
+        event,
+        (signalType, emitResult) -> {
           scope.error(
               "Scheduler: internal: failed to emit event " + event + ": result is " + emitResult);
           return false;
@@ -438,5 +453,4 @@ public class SchedulerImpl implements Scheduler {
       initialize(registration.observation(), registration.scope);
     }
   }
-
 }

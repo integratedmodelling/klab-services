@@ -46,7 +46,7 @@ public class Message {
               .getData()
               .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
 
-      if (federation == null && Utils.URLs.isLocalHost(runtime.getUrl())) {
+      if (federation == null && runtime.isLocal()) {
         federation = Federation.local();
       }
 

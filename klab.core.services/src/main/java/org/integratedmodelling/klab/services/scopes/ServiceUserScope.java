@@ -9,7 +9,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -229,7 +228,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public SessionScope run(KActorsBehavior behavior) {
+  public SessionScope run(KActorsBehavior behavior, RuntimeService hostService) {
     // TODO
     throw new KlabIllegalStateException(
         "Sessions at service side must be created through the service API");
@@ -433,15 +432,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     if (status == null) {
       return false;
     }
-    return status.isOperational() || (isLocalService(service) && status.isAvailable());
+    return status.isOperational() || (service.isLocal() && status.isAvailable());
   }
 
   private <T extends KlabService> void sortLocalFirst(List<T> services) {
-    services.sort(Comparator.comparing(s -> isLocalService(s) ? 0 : 1));
-  }
-
-  private boolean isLocalService(KlabService service) {
-    return service.getUrl() != null && Utils.URLs.isLocalHost(service.getUrl());
+    services.sort(Comparator.comparing(s -> s.isLocal() ? 0 : 1));
   }
 
   @Override

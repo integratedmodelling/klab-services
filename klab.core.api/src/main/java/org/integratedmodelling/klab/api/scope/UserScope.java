@@ -86,12 +86,13 @@ public interface UserScope extends ReactiveScope {
    * agent. The session created with this method will expire and disappear after termination of the
    * application or script; conversely, the agent will stop when the session is released.
    *
-   * <p>If this is run through a {@link ContextScope} (which inherits from SessionScope) which is
+   * <p>If this is called on a {@link ContextScope} (which inherits from SessionScope) which is
    * focused on a context observation that is an agent, the behavior will be assigned to the
    * observation and started; the association will be stored in the knowledge graph.
    *
    * @param behavior
+   * @param hostService
    * @return
    */
-  SessionScope run(KActorsBehavior behavior);
+  SessionScope run(KActorsBehavior behavior, RuntimeService hostService);
 }

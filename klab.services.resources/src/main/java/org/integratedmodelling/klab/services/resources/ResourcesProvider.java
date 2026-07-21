@@ -1530,7 +1530,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     resource.setResourceUrn(ns);
     resource.setResourceVersion(namespace.getVersion());
     resource.setServiceId(serviceId());
-    resource.setLocal(Utils.URLs.isLocalHost(getUrl()));
+    resource.setLocal(isLocal());
     storage.put(ns, resource);
 
     return true;

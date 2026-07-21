@@ -1243,7 +1243,7 @@ public class RuntimeService extends BaseService
 
   @Override
   public org.integratedmodelling.klab.api.actors.Agent runAgent(
-      KActorsBehavior behavior, UserScope scope) {
+          KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
     return null;
   }
 

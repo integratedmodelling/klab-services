@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
@@ -36,6 +37,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
 
 public class RuntimeClient extends BaseServiceClient
     implements RuntimeService, RuntimeService.Admin {
@@ -86,9 +88,19 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public Agent runAgent(KActorsBehavior behavior, UserScope scope) {
-    // TODO
-    return null;
+  public Agent runAgent(KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly,
+                        UserScope scope) {
+    var request = new AgentInstantiationRequest();
+    request.setBehavior(behavior);
+    request.setCompileOnly(compileOnly);
+    request.setSuggestedName(suggestedAgentName);
+    if (scope instanceof ContextScope contextScope
+        && contextScope.getContextObservation() != null
+        && contextScope.getContextObservation().getObservable().is(SemanticType.AGENT)) {
+      request.setObservationId(contextScope.getContextObservation().getId());
+    }
+
+    return client.withScope(scope).post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, Agent.class);
   }
 
   @Override

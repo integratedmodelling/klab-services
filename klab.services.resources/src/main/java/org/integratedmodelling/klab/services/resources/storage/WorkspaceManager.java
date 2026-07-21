@@ -399,7 +399,7 @@ public class WorkspaceManager {
     projectResource.setServiceId(service.serviceId());
     projectResource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
     projectResource.setOperation(CRUDOperation.UPDATE_METADATA);
-    projectResource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+    projectResource.setLocal(service.isLocal());
     return projectResource;
   }
 
@@ -608,7 +608,7 @@ public class WorkspaceManager {
             resource.setResourceVersion(ontology.getVersion());
             resource.setServiceId(service.serviceId());
             resource.setKnowledgeClass(KlabAsset.KnowledgeClass.ONTOLOGY);
-            resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+            resource.setLocal(service.isLocal());
             resource.setTimestamp(ontology.getLastUpdateTimestamp());
             ret.getOntologies().add(resource);
           });
@@ -619,7 +619,7 @@ public class WorkspaceManager {
             resource.setResourceVersion(strategy.getVersion());
             resource.setServiceId(service.serviceId());
             resource.setKnowledgeClass(KlabAsset.KnowledgeClass.ONTOLOGY);
-            resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+            resource.setLocal(service.isLocal());
             resource.setTimestamp(strategy.getLastUpdateTimestamp());
             ret.getObservationStrategies().add(resource);
           });
@@ -630,7 +630,7 @@ public class WorkspaceManager {
       result.setServiceId(service.serviceId());
       result.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
       result.getMetadata().putAll(_worldview.getMetadata());
-      result.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+      result.setLocal(service.isLocal());
       result.setTimestamp(System.currentTimeMillis());
 
       ret.getResults().add(result);
@@ -2377,7 +2377,7 @@ public class WorkspaceManager {
             knowledgeClass,
             previous == null ? System.currentTimeMillis() : previous.getLastUpdateTimestamp(),
             false);
-    resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+    resource.setLocal(service.isLocal());
 
     switch (knowledgeClass) {
       case NAMESPACE -> resourceSet.getNamespaces().add(resource);
@@ -2434,7 +2434,7 @@ public class WorkspaceManager {
       resource.setKnowledgeClass(KlabAsset.classify(asset));
       resource.getNotifications().addAll(asset.getNotifications());
       resource.setProjectUrn(asset.getProjectName());
-      resource.setLocal(Utils.URLs.isLocalHost(service.getUrl()));
+      resource.setLocal(service.isLocal());
       if (resourceSet.getServices().containsKey(service.serviceId())) {
         resourceSet.getServices().put(service.serviceId(), service.getUrl());
       }

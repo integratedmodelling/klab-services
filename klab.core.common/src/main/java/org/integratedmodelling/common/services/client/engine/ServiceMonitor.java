@@ -223,9 +223,9 @@ public class ServiceMonitor {
   }
 
   /**
-   * Return services usable from a locally running service scope. Local services that are initialized
-   * and available are returned even if they have not completed operationalization yet; remote
-   * services still need to be operational.
+   * Return services usable from a locally running service scope. Local services that are
+   * initialized and available are returned even if they have not completed operationalization yet;
+   * remote services still need to be operational.
    *
    * @param serviceClass
    * @return
@@ -246,9 +246,7 @@ public class ServiceMonitor {
                   return serviceClass.isAssignableFrom(s.getClass())
                       && status != null
                       && (status.isOperational()
-                          || (includeLocalAvailable
-                              && Utils.URLs.isLocalHost(s.getUrl())
-                              && status.isAvailable()));
+                          || (includeLocalAvailable && s.isLocal() && status.isAvailable()));
                 })
             .toList();
   }
@@ -280,7 +278,7 @@ public class ServiceMonitor {
     boolean localPrimaryServiceActive = false;
 
     for (var service : clientSnapshot()) {
-      var remote = service.getUrl() != null && !Utils.URLs.isLocalHost(service.getUrl());
+      var remote = !service.isLocal();
       var sStatus = clients.get(service);
       if (sStatus == null) {
         continue;
@@ -471,7 +469,7 @@ public class ServiceMonitor {
 
   private void refreshLocalClientStatuses() {
     for (var client : clientSnapshot()) {
-      if (Utils.URLs.isLocalHost(client.getUrl())) {
+      if (client.isLocal()) {
         refreshClientStatus(client);
       }
     }
@@ -495,7 +493,7 @@ public class ServiceMonitor {
   }
 
   private boolean isLocalServiceClient(BaseServiceClient client, KlabService.Type type) {
-    return Utils.URLs.isLocalHost(client.getUrl()) && type == KlabService.Type.classify(client);
+    return client.isLocal() && type == KlabService.Type.classify(client);
   }
 
   private boolean isLocalServiceReachable(KlabService.Type type) {
@@ -564,10 +562,7 @@ public class ServiceMonitor {
     stoppingLocalServices = true;
     publishTransitionStatus(true);
 
-    var services =
-        clientSnapshot().stream()
-            .filter(service -> Utils.URLs.isLocalHost(service.getUrl()))
-            .toList();
+    var services = clientSnapshot().stream().filter(BaseServiceClient::isLocal).toList();
 
     Thread.ofVirtual()
         .name("klab-local-instance-stop")

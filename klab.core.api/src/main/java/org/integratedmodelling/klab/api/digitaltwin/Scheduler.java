@@ -1,23 +1,14 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.digitaltwin.impl.EventImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.SchedulerEventImpl;
-import org.integratedmodelling.klab.api.lang.TetraFunction;
 import org.integratedmodelling.klab.api.lang.TriFunction;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Scheduler for arbitrary actions that can be registered to happen at given transitions, in either
@@ -113,11 +104,9 @@ public interface Scheduler {
     Observation getEvent();
 
     static Event initialization() {
-        return new EventImpl();
+      return new EventImpl();
     }
-
   }
-
 
   /**
    * Called when a new observation has been resolved. The scheduler will adapt its schedule to
@@ -145,6 +134,21 @@ public interface Scheduler {
    */
   void registerExecutor(
       Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor);
+
+  /**
+   * Emit any events that intercept the registered observation between the latest time registered
+   * and the current time, then and schedule them. After that, start the real-time clock and emit
+   * relevant events when the current time is reached.
+   *
+   * <p>Registering an observation with real time extent will call this, or it can be called
+   * explicitly when desired.
+   *
+   * @param until the time instant at which to stop the real-time clock, or negative to run until
+   *     the end of the DT's lifetime.
+   * @return true if the real-time clock was started or was already running; false when the epoch end
+   *     is less recent than the current real time.
+   */
+  boolean switchToRealTime(long until);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime

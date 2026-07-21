@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.common.data;
+package org.integratedmodelling.klab.rest;
 
 public class ResourceContextualizationRequest {
 

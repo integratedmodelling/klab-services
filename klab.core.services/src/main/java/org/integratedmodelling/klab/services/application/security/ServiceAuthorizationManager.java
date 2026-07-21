@@ -275,17 +275,17 @@ public class ServiceAuthorizationManager {
     var privilegedLocalService =
         serverKey != null
             && serverKey.equals(klabService.get().klabService().getServiceSecret())
-            && Utils.URLs.isLocalHost(klabService.get().klabService().getUrl());
+            && klabService.get().klabService().isLocal();
 
-//    Logging.INSTANCE.info(
-//        klabService.get().klabService().serviceType()
-//            + " validating token : token is "
-//            + (token == null
-//                ? "null"
-//                : (ServicesAPI.ANONYMOUS_TOKEN.equals(token) ? "anonymous" : "not anonymous"))
-//            + " and service is "
-//            + (serviceAuthenticated ? "authenticated" : "not authenticated")
-//            + " through a certificate");
+    //    Logging.INSTANCE.info(
+    //        klabService.get().klabService().serviceType()
+    //            + " validating token : token is "
+    //            + (token == null
+    //                ? "null"
+    //                : (ServicesAPI.ANONYMOUS_TOKEN.equals(token) ? "anonymous" : "not anonymous"))
+    //            + " and service is "
+    //            + (serviceAuthenticated ? "authenticated" : "not authenticated")
+    //            + " through a certificate");
 
     /*
     we move on to JWT parsing only if the service is authenticated with the hub and the user is not
@@ -379,24 +379,25 @@ public class ServiceAuthorizationManager {
       if (owner instanceof UserIdentity user) {
         if (!user.isAnonymous()) {
           if (ret == null || "anonymous".equals(ret.getUsername())) {
-//            Logging.INSTANCE.info(
-//                "Authorizing privileged local request as service owner "
-//                    + user.getUsername()
-//                    + "; incoming token="
-//                    + tokenDescription(token)
-//                    + "; scopeHeader="
-//                    + scopeHeader);
+            //            Logging.INSTANCE.info(
+            //                "Authorizing privileged local request as service owner "
+            //                    + user.getUsername()
+            //                    + "; incoming token="
+            //                    + tokenDescription(token)
+            //                    + "; scopeHeader="
+            //                    + scopeHeader);
             ret = authorizationFromLocalOwner(user, token, requestHeaders);
           }
         } else {
-//          Logging.INSTANCE.warn(
-//              "Privileged local request in "
-//                  + klabService.get().klabService().serviceName()
-//                  + " has an anonymous service owner; incoming token="
-//                  + tokenDescription(token)
-//                  + "; scopeHeader="
-//                  + scopeHeader
-//                  + ". The service probably started without a local authentication package.");
+          //          Logging.INSTANCE.warn(
+          //              "Privileged local request in "
+          //                  + klabService.get().klabService().serviceName()
+          //                  + " has an anonymous service owner; incoming token="
+          //                  + tokenDescription(token)
+          //                  + "; scopeHeader="
+          //                  + scopeHeader
+          //                  + ". The service probably started without a local authentication
+          // package.");
         }
       }
     }
@@ -411,15 +412,15 @@ public class ServiceAuthorizationManager {
           new EngineAuthorization(
               "nohub", "anonymous", null, requestHeaders, List.of(), anonymousRoles);
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
-//      Logging.INSTANCE.info(
-//          "Falling back to anonymous authorization in "
-//              + klabService.get().klabService().serviceName()
-//              + "; privilegedLocalService="
-//              + privilegedLocalService
-//              + "; token="
-//              + tokenDescription(token)
-//              + "; scopeHeader="
-//              + scopeHeader);
+      //      Logging.INSTANCE.info(
+      //          "Falling back to anonymous authorization in "
+      //              + klabService.get().klabService().serviceName()
+      //              + "; privilegedLocalService="
+      //              + privilegedLocalService
+      //              + "; token="
+      //              + tokenDescription(token)
+      //              + "; scopeHeader="
+      //              + scopeHeader);
     }
 
     if (privilegedLocalService) {

@@ -719,7 +719,7 @@ public class Utils {
           descriptor.setServiceId(service.serviceId());
           descriptor.setOperation(operation);
           descriptor.setKnowledgeClass(KlabAsset.classify(resource));
-          descriptor.setLocal(URLs.isLocalHost(service.getUrl()));
+          descriptor.setLocal(service.isLocal());
           descriptor.setProjectUrn(
               resource instanceof KlabDocument<?> doc ? doc.getProjectName() : null);
           if (resource instanceof KlabDocument<?> document) {

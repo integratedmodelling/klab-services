@@ -124,7 +124,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   }
 
   @Override
-  public SessionScope run(KActorsBehavior behavior) {
+  public SessionScope run(KActorsBehavior behavior, RuntimeService hostService) {
     // TODO as above, pass the behavior and the services and let the remote assign the ID
     return null;
   }

@@ -47,7 +47,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.common.data.DataRequest;
-import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
+import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 
 public class ResourcesClient extends BaseServiceClient implements ResourcesService {
 

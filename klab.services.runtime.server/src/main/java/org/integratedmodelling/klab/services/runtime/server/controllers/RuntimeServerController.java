@@ -38,6 +38,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
+import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
+import org.integratedmodelling.klab.rest.AgentInstantiationResponse;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -105,6 +107,52 @@ public class RuntimeServerController {
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  /**
+   * @param request
+   * @param principal
+   * @return
+   */
+  @Operation(
+      summary =
+          "Create an agent with the behavior in the request. Optionally only run a compile pass",
+      description = "Returns an agent response that may be converted into a remote Agent")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Observation submitted successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
+  @PostMapping(ServicesAPI.RUNTIME.INSTANTIATE_AGENT)
+  public @ResponseBody AgentInstantiationResponse instantiateAgent(
+      @RequestBody AgentInstantiationRequest request, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope = authorization.getScope(ContextScope.class);
+      var agent =
+          runtimeService
+              .klabService()
+              .runAgent(
+                  request.getBehavior(),
+                  request.getSuggestedName(),
+                  request.isCompileOnly(),
+                  scope);
+      if (agent != null) {
+        var ret = new AgentInstantiationResponse();
+        ret.setBehaviorUrn(request.getBehavior().getUrn());
+        ret.setAgentUrl(
+            runtimeService.klabService().getUrl()
+                + ServicesAPI.RUNTIME.AGENT
+                + "/"
+                + agent.getUrn());
+        ret.setAlive(agent.isAlive());
+        ret.getNotifications().addAll(agent.getNotifications());
+        return ret;
+      }
+      return null;
+    }
+    throw new KlabInternalErrorException(
+        "Unexpected implementation of agent instantiation authorization");
   }
 
   /**

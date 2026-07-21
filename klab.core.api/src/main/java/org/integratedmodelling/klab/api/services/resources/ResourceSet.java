@@ -371,7 +371,7 @@ public class ResourceSet implements Serializable {
     result.setResourceVersion(version);
     result.setKnowledgeClass(info.getKnowledgeClass());
     result.setServiceId(info.getServiceId());
-    result.setLocal(service == null ? false : Utils.URLs.isLocalHost(service.getUrl()));
+    result.setLocal(service != null && service.isLocal());
     ret.getResults().add(result);
     return ret;
   }

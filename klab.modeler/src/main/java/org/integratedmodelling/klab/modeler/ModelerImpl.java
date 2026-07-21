@@ -7,7 +7,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -107,10 +106,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
           || status.getCondition() == Engine.Status.EngineCondition.ACTIVE_LOCAL_ONLY) {
         var localRuntime =
             user().getServices(RuntimeService.class).stream()
-                .filter(
-                    service ->
-                        org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
-                            service.getUrl()))
+                .filter(KlabService::isLocal)
                 .findAny()
                 .orElse(null);
 
@@ -379,10 +375,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   private DigitalTwin.Configuration defaultDigitalTwinConfiguration(String name) {
-    var runtime =
-        user()
-            .findService(RuntimeService.class, service -> Utils.URLs.isLocalHost(service.getUrl()))
-            .orElse(null);
+    var runtime = user().findService(RuntimeService.class, KlabService::isLocal).orElse(null);
 
     if (runtime == null) {
       user()

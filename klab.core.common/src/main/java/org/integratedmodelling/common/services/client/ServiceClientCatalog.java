@@ -101,6 +101,16 @@ public enum ServiceClientCatalog {
             ownerServiceId, // null in clients that are not owned by a service; validated otherwise
         KlabService.Type type, // if not null, will be validated
         AtomicReference<KlabService.ServiceStatus> status) {
+      this(url, serverId, ownerServiceId, type, status, true);
+    }
+
+    ClientMonitor(
+        URL url,
+        String serverId,
+        String ownerServiceId,
+        KlabService.Type type,
+        AtomicReference<KlabService.ServiceStatus> status,
+        boolean startPolling) {
       this.client = Utils.Http.getServiceClient(url);
       this.url = url;
       this.serverId = serverId;
@@ -108,7 +118,9 @@ public enum ServiceClientCatalog {
       this.type = type;
       this.status = status;
       this.local = Utils.URLs.isLocalHost(url);
-      Thread.ofVirtual().start(this::connect);
+      if (startPolling) {
+        Thread.ofVirtual().start(this::connect);
+      }
     }
 
     public void registerClient(BaseServiceClient client) {
