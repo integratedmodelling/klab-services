@@ -41,10 +41,9 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  * after completion. In the normal execution model, actions that contain <code>fire</code>
  * instructions are <em>emitters</em> and can result in repeated emissions; a <code>return</code>
  * within one of their match actions stops scheduled emissions and removes listeners, with its
- * operand available as an exit code.
- * Actions without emissions whose match actions return a value are <em>suppliers</em> and remove
- * their listeners once the value is returned; actions without match actions are simple
- * <em>functions</em> that execute synchronously.
+ * operand available as an exit code. Actions without emissions whose match actions return a value
+ * are <em>suppliers</em> and remove their listeners once the value is returned; actions without
+ * match actions are simple <em>functions</em> that execute synchronously.
  *
  * <p>For the rest, k.Actors uses standard control flow statements and a simple, terse syntax. The
  * k.LAB environment provides verbs that enable control of all k.LAB functions, such as submitting
@@ -90,23 +89,23 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
   enum Type {
     /**
      * The behavior defines an observed gent. Normally bound to observations through a k.IM @bind
-     * annotation, it can also be run independently from the IDE.
+     * annotation, it can also be run independently of the IDE.
      */
     BEHAVIOR,
     /**
      * The behavior will be incorporated in a session actor, creating a session-level application.
      * The specialized application scope will first collect the intended UI structure from the group
-     * structure (specifying, through group metadata, layout, IDs and composition for all UI
+     * structure (specifying, through group metadata, layout, IDs, and composition for all UI
      * containers) and the UI verbs they contain (specifying actions on user interaction), then
      * build a JSON specification of the UI which will be sent to the intended front-end for
      * rendering. The UI verbs support all widgets and can be rendered in a desktop, mobile, or web
-     * application according to the front-end technology. The UI is dynamic and containers/widgets
+     * application according to the front-end technology. The UI is dynamic, and containers/widgets
      * can be added to, enabled, disabled, and removed under the behavior's control.
      */
     APP,
     /**
      * The behavior will be incorporated in a user actor, specifying initialization actions (such as
-     * selecting a specific digital twin), interception of errors and any calls that won't make it
+     * selecting a specific digital twin), interception of errors, and any calls that won't make it
      * to other actors, listeners for specific observables and the like. A user actor definition is
      * typically located in a user profile saved to the k.LAB data directory or in online group
      * metadata. Formally a USER behavior is identical to a standard BEHAVIOR, but the USER

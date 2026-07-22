@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.actors.ClientAgent;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
@@ -88,8 +89,8 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public Agent runAgent(KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly,
-                        UserScope scope) {
+  public Agent runAgent(
+      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
     var request = new AgentInstantiationRequest();
     request.setBehavior(behavior);
     request.setCompileOnly(compileOnly);
@@ -100,7 +101,9 @@ public class RuntimeClient extends BaseServiceClient
       request.setObservationId(contextScope.getContextObservation().getId());
     }
 
-    return client.withScope(scope).post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, Agent.class);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, ClientAgent.class);
   }
 
   @Override
