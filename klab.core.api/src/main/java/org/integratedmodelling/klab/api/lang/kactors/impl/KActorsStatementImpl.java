@@ -2,9 +2,7 @@ package org.integratedmodelling.klab.api.lang.kactors.impl;
 
 import java.io.Serial;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
@@ -113,7 +111,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.VERB_STATEMENT;
     private String recipient;
     private String message;
-    private Parameters<String> arguments = Parameters.create();
+    private Arguments arguments = new KActorsArgumentsImpl();
     private List<MatchAction> actions = new ArrayList<>();
 
     public void setType(Type type) {
@@ -128,7 +126,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.message = message;
     }
 
-    public void setArguments(Parameters<String> arguments) {
+    public void setArguments(Arguments arguments) {
       this.arguments = arguments;
     }
 
@@ -148,7 +146,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
 
     @Override
-    public Parameters<String> getArguments() {
+    public Arguments getArguments() {
       return this.arguments;
     }
 
@@ -182,6 +180,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       private Type type = Type.ASSERTION;
 
       private List<Verb> verbs;
+      private KActorsValue expression;
       private KActorsValue value;
 
       @Override
@@ -195,6 +194,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       }
 
       @Override
+      public KActorsValue getExpression() {
+        return expression;
+      }
+
+      @Override
       public KActorsValue getValue() {
         return this.value;
       }
@@ -205,6 +209,10 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
       public void setCalls(List<Verb> verbs) {
         this.verbs = verbs;
+      }
+
+      public void setExpression(KActorsValue expression) {
+        this.expression = expression;
       }
 
       public void setValue(KActorsValue value) {
@@ -258,7 +266,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Serial private static final long serialVersionUID = -7539637852015470864L;
 
     private Type type = Type.ASSIGNMENT;
-    private String recipient;
     private String variable;
     private KActorsValue value;
     private Verb function;
@@ -268,11 +275,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Type getType() {
       return this.type;
-    }
-
-    @Override
-    public String getRecipient() {
-      return this.recipient;
     }
 
     @Override
@@ -292,10 +294,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     public void setType(Type type) {
       this.type = type;
-    }
-
-    public void setRecipient(String recipient) {
-      this.recipient = recipient;
     }
 
     public void setVariable(String variable) {
@@ -387,6 +385,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.DO_STATEMENT;
     private KActorsValue condition;
     private KActorsStatement body;
+    private Verb function;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
 
     @Override
     public Type getType() {
@@ -423,6 +431,26 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
   public static class ReturnImpl extends KActorsStatementImpl implements KActorsStatement.Return {
 
+    @Serial private static final long serialVersionUID = -4956873828205184896L;
+
+    private Type type = Type.RETURN_STATEMENT;
+    private Verb function;
+    private KActorsValue value;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    @Override
+    public Type getType() {
+      return type;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
+
     @Override
     public <T> T format(CodeAppender<T> appender) {
       return null;
@@ -430,11 +458,14 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Override
     public KActorsValue getValue() {
-      return null;
+      return value;
+    }
+
+    public void setValue(KActorsValue value) {
+      this.value = value;
     }
   }
 
-  // case FAIL_STATEMENT:
   public static class FailImpl extends KActorsStatementImpl implements KActorsStatement.Fail {
 
     @Serial private static final long serialVersionUID = -4224842263629289954L;
@@ -473,6 +504,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     private Type type = Type.FIRE_VALUE;
     private KActorsValue value;
+    private Verb function;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
 
     @Override
     public Type getType() {
@@ -498,7 +539,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
   }
 
-  // case FOR_STATEMENT:
   public static class ForImpl extends KActorsStatementImpl implements KActorsStatement.For {
 
     @Serial private static final long serialVersionUID = 8082208856388206845L;
@@ -507,7 +547,17 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     private String variable;
     private KActorsValue iterable;
+    private Verb function;
     private KActorsStatement body;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
 
     @Override
     public Type getType() {
@@ -560,8 +610,18 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     private KActorsValue condition;
     private KActorsStatement thenBody;
-    private List<Pair<KActorsValue, KActorsStatement>> elseIfs = new ArrayList<>();
+    private Verb function;
+    private List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> elseIfs = new ArrayList<>();
     private KActorsStatement elseBody;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
 
     @Override
     public Type getType() {
@@ -579,7 +639,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
 
     @Override
-    public List<Pair<KActorsValue, KActorsStatement>> getElseIfs() {
+    public List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> getElseIfs() {
       return this.elseIfs;
     }
 
@@ -600,7 +660,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.thenBody = thenBody;
     }
 
-    public void setElseIfs(List<Pair<KActorsValue, KActorsStatement>> elseIfs) {
+    public void setElseIfs(List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> elseIfs) {
       this.elseIfs = elseIfs;
     }
 
@@ -654,6 +714,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.WHILE_STATEMENT;
     private KActorsValue condition;
     private KActorsStatement body;
+    private Verb function;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
 
     @Override
     public Type getType() {

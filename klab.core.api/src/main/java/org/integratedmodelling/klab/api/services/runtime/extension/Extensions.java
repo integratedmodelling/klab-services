@@ -148,6 +148,7 @@ public interface Extensions {
     public String urn;
     public String version;
     public String description;
+    public String javaClassName;
     public List<FunctionDescriptor> verbs = new ArrayList<>();
   }
 }

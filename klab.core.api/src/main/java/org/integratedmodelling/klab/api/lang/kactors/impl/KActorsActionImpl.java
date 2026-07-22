@@ -13,7 +13,8 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
   private String urn;
   private List<KActorsStatement> code = new ArrayList<>();
   private List<String> argumentNames = new ArrayList<>();
-  private boolean function;
+  private boolean isStatic;
+  private org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type actionType;
 
   @Override
   public String getUrn() {
@@ -31,8 +32,13 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
   }
 
   @Override
-  public boolean isFunction() {
-    return this.function;
+  public boolean isStatic() {
+    return this.isStatic;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type getActionType() {
+    return actionType;
   }
 
   public void setUrn(String urn) {
@@ -47,12 +53,18 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
     this.argumentNames = argumentNames;
   }
 
-  public void setFunction(boolean function) {
-    this.function = function;
+  public void setStatic(boolean isStatic) {
+    this.isStatic = isStatic;
   }
 
   @Override
   public void visit(Visitor visitor) {}
+
+  @Override
+  public void setActionType(
+      org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type actionType) {
+    this.actionType = actionType;
+  }
 
   @Override
   public <T> T format(CodeAppender<T> appender) {

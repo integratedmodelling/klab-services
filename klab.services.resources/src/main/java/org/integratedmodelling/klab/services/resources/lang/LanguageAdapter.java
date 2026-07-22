@@ -8,6 +8,7 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.Version;
@@ -437,6 +438,7 @@ public enum LanguageAdapter {
             yield ValueType.TERNARY_EXPRESSION;
           }
           case EXPRESSION -> {
+            ret.setStatedValue(valueSyntax.getPod(String.class));
             yield ValueType.EXPRESSION;
           }
           case REGULAR_EXPRESSION -> {
@@ -1349,9 +1351,20 @@ public enum LanguageAdapter {
         };
 
     setParsingData(statement, (KimAssetImpl) ret);
-
-    // TODO metadata, tag, sequencing
-    for (var kp : statement.getTrailingMetadata().keySet()) {}
+    var implementation = (KActorsStatementImpl) ret;
+    implementation.setSequential(statement.isSequential());
+    implementation.setTag(statement.getTag());
+    var metadata = Metadata.create();
+    statement
+        .getTrailingMetadata()
+        .forEach(
+            (key, value) ->
+                metadata.put(
+                    key,
+                    value instanceof ValueSyntax syntax
+                        ? adaptKActorsValue(syntax, notifications)
+                        : value));
+    implementation.setMetadata(metadata);
 
     return ret;
   }
@@ -1362,6 +1375,7 @@ public enum LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.FailImpl();
+    ret.setMessage(failStatement.getMessage());
     return ret;
   }
 
@@ -1373,6 +1387,10 @@ public enum LanguageAdapter {
     // TODO
     var ret = new KActorsStatementImpl.AssignmentImpl();
     ret.setVariable(assign.getVariable());
+    ret.setAssignmentScope(
+        assign.getScope() == ActionStatementSyntax.Assignment.Scope.BLOCK
+            ? KActorsStatement.Assignment.Scope.FRAME
+            : KActorsStatement.Assignment.Scope.ACTOR);
     if (assign.getValue() != null) {
       ret.setValue(adaptKActorsValue(assign.getValue(), notifications));
     } else if (assign.getFunction() != null) {
@@ -1386,8 +1404,16 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.DoImpl();
+    ret.setCondition(
+        doStatement.getCondition() == null
+            ? null
+            : adaptKActorsValue(doStatement.getCondition(), notifications));
+    ret.setFunction(
+        doStatement.getFunction() == null
+            ? null
+            : adaptVerb(doStatement.getFunction(), behavior, action, notifications));
+    ret.setBody(adaptActionStatement(doStatement.getStatement(), behavior, action, notifications));
     return ret;
   }
 
@@ -1396,8 +1422,17 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.ForImpl();
+    ret.setVariable(forStatement.getVariable());
+    ret.setIterable(
+        forStatement.getCondition() == null
+            ? null
+            : adaptKActorsValue(forStatement.getCondition(), notifications));
+    ret.setFunction(
+        forStatement.getFunction() == null
+            ? null
+            : adaptVerb(forStatement.getFunction(), behavior, action, notifications));
+    ret.setBody(adaptActionStatement(forStatement.getStatement(), behavior, action, notifications));
     return ret;
   }
 
@@ -1406,8 +1441,39 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.IfImpl();
+    var thenBranch = ifStatement.getThenBranch();
+    ret.setCondition(
+        thenBranch.getCondition() == null
+            ? null
+            : adaptKActorsValue(thenBranch.getCondition(), notifications));
+    ret.setFunction(
+        thenBranch.getFunction() == null
+            ? null
+            : adaptVerb(thenBranch.getFunction(), behavior, action, notifications));
+    ret.setThenBody(
+        adaptActionStatement(thenBranch.getStatement(), behavior, action, notifications));
+    ret.setElseIfs(
+        ifStatement.getElseIfBranches().stream()
+            .map(
+                branch ->
+                    Pair.of(
+                        Pair.of(
+                            branch.getCondition() == null
+                                ? null
+                                : adaptKActorsValue(branch.getCondition(), notifications),
+                            branch.getFunction() == null
+                                ? null
+                                : adaptVerb(
+                                    branch.getFunction(), behavior, action, notifications)),
+                        adaptActionStatement(
+                            branch.getStatement(), behavior, action, notifications)))
+            .toList());
+    ret.setElseBody(
+        ifStatement.getElseStatement() == null
+            ? null
+            : adaptActionStatement(
+                ifStatement.getElseStatement(), behavior, action, notifications));
     return ret;
   }
 
@@ -1416,8 +1482,13 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.ReturnImpl();
+    if (returnStatement.getReturnValue() != null) {
+      ret.setValue(adaptKActorsValue(returnStatement.getReturnValue(), notifications));
+    } else if (returnStatement.getFunction() != null) {
+      ret.setFunction(
+          adaptVerb(returnStatement.getFunction(), behavior, action, notifications));
+    }
     return ret;
   }
 
@@ -1426,8 +1497,17 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.WhileImpl();
+    ret.setCondition(
+        whileStatement.getCondition() == null
+            ? null
+            : adaptKActorsValue(whileStatement.getCondition(), notifications));
+    ret.setFunction(
+        whileStatement.getFunction() == null
+            ? null
+            : adaptVerb(whileStatement.getFunction(), behavior, action, notifications));
+    ret.setBody(
+        adaptActionStatement(whileStatement.getStatement(), behavior, action, notifications));
     return ret;
   }
 
@@ -1436,8 +1516,8 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.TextImpl();
+    ret.setText(textStatement.getText());
     return ret;
   }
 
@@ -1446,8 +1526,12 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.FireImpl();
+    if (fireStatement.getFiredValue() != null) {
+      ret.setValue(adaptKActorsValue(fireStatement.getFiredValue(), notifications));
+    } else if (fireStatement.getFunction() != null) {
+      ret.setFunction(adaptVerb(fireStatement.getFunction(), behavior, action, notifications));
+    }
     return ret;
   }
 
@@ -1466,8 +1550,11 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.GroupImpl();
+    ret.setStatements(
+        groupStatement.getStatements().stream()
+            .map(statement -> adaptActionStatement(statement, behavior, action, notifications))
+            .toList());
     return ret;
   }
 
@@ -1476,8 +1563,38 @@ public enum LanguageAdapter {
       KActorsBehavior behavior,
       KActorsAction action,
       List<Notification> notifications) {
-    // TODO
     var ret = new KActorsStatementImpl.AssertImpl();
+    var arguments = Parameters.<String>create();
+    arguments.putAll(adaptArguments(assertion.getArguments(), notifications));
+    ret.setArguments(arguments);
+    ret.setAssertions(
+        assertion.getAssertions().stream()
+            .map(
+                syntax -> {
+                  var adapted = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+                  setParsingData(syntax, adapted);
+                  adapted.setExpression(
+                      syntax.getExpression() == null
+                          ? null
+                          : adaptKActorsValue(syntax.getExpression(), notifications));
+                  adapted.setCalls(
+                      syntax.getMethodCall() == null
+                          ? List.of()
+                          : List.of(
+                              adaptVerb(
+                                  syntax.getMethodCall(), behavior, action, notifications)));
+                  if (syntax.getExpectedValue() != null) {
+                    adapted.setValue(adaptKActorsValue(syntax.getExpectedValue(), notifications));
+                  } else if (syntax.isOk()) {
+                    var ok = new KActorsValueImpl();
+                    ok.setType(ValueType.BOOLEAN);
+                    ok.setStatedValue(Boolean.TRUE);
+                    adapted.setValue(ok);
+                  }
+                  return adapted;
+                })
+            .map(KActorsStatement.Assert.Assertion.class::cast)
+            .toList());
     return ret;
   }
 

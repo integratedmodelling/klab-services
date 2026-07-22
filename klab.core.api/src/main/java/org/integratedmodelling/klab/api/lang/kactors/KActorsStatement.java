@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -13,6 +12,10 @@ import org.integratedmodelling.klab.api.data.Metadata;
  */
 public interface KActorsStatement extends KActorsCodeStatement {
 
+  /**
+   * Type of statement for easier categorization by the parser and compiler. Each concrete statement
+   * carries its own type.
+   */
   enum Type {
     VERB_STATEMENT,
     IF_STATEMENT,
@@ -21,6 +24,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
     WHILE_STATEMENT,
     TEXT_BLOCK,
     FIRE_VALUE,
+    RETURN_STATEMENT,
     ASSIGNMENT,
     GROUP,
     ASSERT_STATEMENT,
@@ -29,57 +33,180 @@ public interface KActorsStatement extends KActorsCodeStatement {
     BREAK_STATEMENT
   }
 
+  /** The syntactic counterpart of a k.Actors <code>if</code> statement. */
   interface If extends KActorsStatement {
 
+    /**
+     * A value that evaluates to true or false. Only one between getCondition() and getFunction()
+     * may be non-null.
+     *
+     * @return
+     */
     KActorsValue getCondition();
 
+    /**
+     * The function or supplier that evaluates to true or false when the condition is supplied
+     * through a functional verb; requires a function or a supplier and triggers blocking behavior
+     * if the verb is a supplier. Only one between getCondition() and getFunction() may be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * The body of the if statement.
+     *
+     * @return
+     */
     KActorsStatement getThenBody();
 
-    List<Pair<KActorsValue, KActorsStatement>> getElseIfs();
+    /**
+     * The conditions and bodies of any <code>else if</code> statement. The condition may be a verb
+     * or a value; only one of them may be non-null.
+     *
+     * @return
+     */
+    List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> getElseIfs();
 
+    /**
+     * The body of the <code>else</code> statement if present.
+     *
+     * @return
+     */
     KActorsStatement getElseBody();
   }
 
   /**
-   * Argument lists can be extended with metadata
-   *
-   * @author mario
+   * Argument lists are normal {@link Parameters} (they can have both named and unnamed keys) and
+   * can be extended with metadata.
    */
   interface Arguments extends Parameters<String> {
 
+    /**
+     * Any metadata supplied after the parameters using the k.Actors metadata syntax.
+     *
+     * @return
+     */
     List<String> getMetadataKeys();
   }
 
+  /**
+   * A group of statements is merely a list of statements, included in parentheses in k.Actors,
+   * which can optionally have trailing metadata and a tag.
+   */
   interface Group extends KActorsStatement {
-    public List<KActorsStatement> getStatements();
+
+    /**
+     * The sequence of statements in a group
+     *
+     * @return
+     */
+    List<KActorsStatement> getStatements();
   }
 
+  /** The syntactic counterpart of a k.Actors <code>if</code> statement. */
   interface While extends KActorsStatement {
 
+    /**
+     * The termination condition, which must evaluate to a boolean. Only one between *
+     * getCondition() and getFunction() may be non-null.
+     *
+     * @return
+     */
     KActorsValue getCondition();
 
+    /**
+     * Defined when the condition is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getCondition() and getFunction() may be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * The body of the loop
+     *
+     * @return
+     */
     KActorsStatement getBody();
   }
 
+  /** The syntactic counterpart of a k.Actors <code>return</code> statement. */
   interface Return extends KActorsStatement {
+
+    /**
+     * The returned value. Exactly one between getValue() and getFunction() must be non-null. In an
+     * emitter's reactive return the value is an exit code; executing the return stops scheduled
+     * emissions and removes listeners without changing the action's emitter type.
+     *
+     * @return
+     */
     KActorsValue getValue();
+
+    /**
+     * Defined when the return value is supplied through a functional verb; requires a function or
+     * a supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getValue() and getFunction() must be non-null. See {@link #getValue()} for the emitter exit
+     * code case.
+     *
+     * @return
+     */
+    Verb getFunction();
   }
 
+  /** The syntactic counterpart of a k.Actors <code>do</code> statement. */
   interface Do extends KActorsStatement {
 
+    /**
+     * The condition to be evaluated after the body.
+     *
+     * @return
+     */
     KActorsValue getCondition();
 
+    /**
+     * Defined when the condition is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getIterable() and getFunction() may be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * The body of the loop.
+     *
+     * @return
+     */
     KActorsStatement getBody();
   }
 
+  /**
+   * The syntactic counterpart of a k.Actors <code>fail</code> statement, used in assertions and
+   * test cases, or to throw exceptions during agent execution.
+   */
   interface Fail extends KActorsStatement {
+
+    /**
+     * Message to communicate upon failure. More information and how to display it (for example,
+     * interactivity in UI applications) may be specified in metadata.
+     *
+     * @return
+     */
     String getMessage();
   }
 
+  /**
+   * The syntactic counterpart of a k.Actors <code>break</code> statement, used to exit loops. Has
+   * no specs but may carry metadata for special uses.
+   */
   interface Break extends KActorsStatement {}
 
   /**
    * Assertions have either a (chain of) method calls or one expression to be evaluated in context.
+   * They should not appear in production behaviors and may not be retained when any agent other
+   * than test cases are compiled for production.
    *
    * @author Ferd
    */
@@ -92,6 +219,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
      */
     interface Assertion extends KActorsStatement {
 
+      /** Expression whose result is being asserted, mutually exclusive with {@link #getCalls()}. */
+      KActorsValue getExpression();
+
       /**
        * Call chain whose final result will be compared with the value.
        *
@@ -100,10 +230,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
       List<Verb> getCalls();
 
       /**
-       * Value to compare with (null == 'empty' is a legitimate value producing a non-null
-       * IKActorsValue). If null, we are just asserting the absence of errors and that something
-       * non-null and non-false was returned in case there is a return value. The value may be an
-       * expression that needs to be evaluated.
+       * Expected value to compare with. If null, the expression or call result is expected to be
+       * successful and truthy; <code>is ok</code> is represented by a boolean true value.
        *
        * @return
        */
@@ -125,41 +253,64 @@ public interface KActorsStatement extends KActorsCodeStatement {
     List<Assertion> getAssertions();
   }
 
-  /**
-   * for variable in iterable (body)
-   *
-   * @author Ferd
-   */
+  /** The syntactic counterpart of a k.Actors <code>for</code> statement */
   interface For extends KActorsStatement {
 
+    /**
+     * The variable to associate to any iteration.
+     *
+     * @return
+     */
     String getVariable();
 
+    /**
+     * The expression to iterate over, which must evaluate to an {@link Iterable}.Only one between
+     * getIterable() and getFunction() may be non-null.
+     *
+     * @return
+     */
     KActorsValue getIterable();
 
+    /**
+     * Defined when the iterable is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getIterable() and getFunction() may be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * The body of the loop, which will receive the #getVariable as a local variable.
+     *
+     * @return
+     */
     KActorsStatement getBody();
   }
 
+  /**
+   * Assignments use different syntax in different scopes. To initialize the state of an agent, the
+   * <code>def</code> assignment must be used, which is only legal in an <code>init</code> action.
+   * If an action in the same behavior wants to modify the value of a state variable, it must use
+   * <code>set</code> assignments. Frame-scoped variables are assigned using the <code>
+   * variable <- value</code> syntax, and the resulting variables are only visible within the scope
+   * of the assignment (current action or group and any lower-level groups). It is illegal to use a
+   * known state variable name on the left side of a scoped assignment.
+   */
   interface Assignment extends KActorsStatement {
 
     enum Scope {
+      /** Defined using <code>def</code> and changed through <code>set</code> */
       ACTOR,
-      ACTION,
+      /**
+       * Stack frame variable. Defined using <code>x <- value</code> and changeable with the same
+       * syntax in its scope of visibility.
+       */
       FRAME
     }
 
     /**
-     * Recipient is the part before the dot if set x.y value is issued. It may be null (local
-     * variable in the internal actor's symbols), refer to the state of another actor, or be 'self'
-     * which means the value is published to the state of the k.LAB identity connected to the actor,
-     * not to the internal actor's state. It's not possible to touch the state of an identity
-     * connected to another actor.
-     *
-     * @return
-     */
-    String getRecipient();
-
-    /**
-     * Variable, which may or may not be prefixed with a recipient.
+     * Variable name, always a simple lowercase identifier.
      *
      * @return
      */
@@ -167,7 +318,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * The value to set the variable to, which will be evaluated in the scope of the recipient
-     * executing the set statement.
+     * executing the set statement. Expressions are represented as values of expression type.
+     * Exactly one between getValue() and getFunction() must be non-null.
      *
      * @return
      */
@@ -175,37 +327,68 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Assignment from a verb requires a function or a supplier and triggers blocking behavior if
-     * the verb is a supplier.
+     * the verb is a supplier. Exactly one between getValue() and getFunction() must be non-null.
      *
      * @return
      */
     Verb getFunction();
 
-    /**
-     * Get the scope. Actor, action or block
-     *
-     * @return
-     */
+    /** Get the scope (actor state or frame) */
     Scope getAssignmentScope();
   }
 
+  /** The syntactic counterpart of a <code>fire</code> statement */
   interface Fire extends KActorsStatement {
 
+    /**
+     * The value to be fired through the {@link
+     * org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope} as an event for the agent's event
+     * bus. Only one between getValue() and getFunction() may be non-null.
+     *
+     * @return
+     */
     KActorsValue getValue();
+
+    /**
+     * Defined when the value is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getIterable() and getFunction() may be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
   }
 
+  /**
+   * The syntactic counterpart of a text statement, corresponding to an extended text literal with
+   * template fields and extended Markdown syntax, whose usage depends on the execution context
+   * (chiefly used in user-facing applications).
+   */
   interface Text extends KActorsStatement {
 
+    /**
+     * The unprocessed text of the statement. May be analyzed and returned as a smarter object in
+     * the future.
+     *
+     * @return
+     */
     String getText();
   }
 
+  /**
+   * The syntactic counterpart of a verb statement, corresponding to a verb invocation with possible
+   * actions to match to values and execute if the verb is a supplier or an emitter. A verb
+   * statement is a message to an imported agent (or to <code>self</code>), always contains a
+   * recipient and a message selector, and optionally actions to match to returned or fired outputs.
+   * It is an error to assign match actions to a verb statement that is not a supplier or emitter.
+   */
   interface Verb extends KActorsStatement {
 
     interface MatchAction extends KActorsStatement {
 
       /**
-       * Value to match against the fired output. If null, anything matches except empty, unknown or
-       * false.
+       * Value to match against the emitted/returned output. If null, nothing matches except empty,
+       * unknown or false.
        *
        * @return
        */
@@ -219,8 +402,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
       KActorsStatement getActionOnMatch();
 
       /**
-       * Local names of variables to match to fired output. Matches progressively on lists, filling
-       * with nulls if more variables than outputs.
+       * Local names of variables to match to fired output when those are needed in the subsequent
+       * actions. Multiple variables are matched sequentially when the value emitted is a list or a
+       * tuple, and filled with nulls if more variables than outputs are present.
        *
        * @return
        */
@@ -228,7 +412,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
       /**
        * Name of variable to capture the matched value with literal matches that have no variable
-       * name.
+       * name: for example when matching a regular expression (<code>
+       * verb: /regexp/ as x -> action(x)
+       * </code>).
        *
        * @return
        */
@@ -237,15 +423,15 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Parsed after checking with the loaded behavior manifest unless there is an explicit
-     * recipient. If the message is unrecognized this will be null and the engine will have to match
-     * it.
+     * recipient. Never null (the code may not use a recipient, but that will be validated against
+     * the agent's own actions and report <code>self</code>).
      *
      * @return
      */
     String getRecipient();
 
     /**
-     * The message ID. Must contain the recipient when understood through behavior manifest.
+     * The message selector
      *
      * @return
      */
@@ -256,11 +442,13 @@ public interface KActorsStatement extends KActorsCodeStatement {
      *
      * @return
      */
-    Parameters<String> getArguments();
+    Arguments getArguments();
 
     /**
      * Actions with the corresponding pattern to match to fired values. If the value is null, any
-     * fired values matches.
+     * fired values matches. A verb that resolves to a {@link
+     * org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type#FUNCTION} cannot have
+     * match actions.
      *
      * @return
      */
@@ -284,15 +472,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
   /**
    * If true, this statement was preceded by <code>then</code> in the code, meaning it must wait for
    * the previous supplier or group thereof to supply their value before being executed. Using this
-   * out of context should result in a warning.
+   * out of context (when the previous statement has no match actions to wait for) should result in
+   * a warning.
    *
    * @return
    */
   boolean isSequential();
 
   /**
-   * All statements can receive metadata from the code using the metadata tags. Metadata may be PODs
-   * or {@link KActorsValue}s.
+   * All statements can receive metadata from the code using the metadata tags. Metadata values may
+   * be PODs or {@link KActorsValue}s.
    *
    * @return
    */

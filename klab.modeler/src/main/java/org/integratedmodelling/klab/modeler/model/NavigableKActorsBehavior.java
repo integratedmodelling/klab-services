@@ -24,8 +24,6 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
         .toList();
   }
 
-  // TODO
-
   @Override
   public Set<String> importedNamespaces(boolean withinType) {
     return delegate.importedNamespaces(withinType);
@@ -51,60 +49,20 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
     return delegate.getImports();
   }
 
-  //  @Override
-  //  public String getOutput() {
-  //    return delegate.getOutput();
-  //  }
-  //
-  //  @Override
-  //  public List<String> getImports() {
-  //    return delegate.getImports();
-  //  }
-  //
-  //  @Override
-  //  public String getStyle() {
-  //    return delegate.getStyle();
-  //  }
-  //
-  //  @Override
-  //  public List<String> getLocales() {
-  //    return delegate.getLocales();
-  //  }
-  //
-  //  @Override
-  //  public String getLabel() {
-  //    return delegate.getLabel();
-  //  }
+  @Override
+  public List<String> getInheritedBehaviors() {
+    return delegate.getInheritedBehaviors();
+  }
 
   @Override
   public String getDescription() {
     return delegate.getDescription();
   }
 
-  //  @Override
-  //  public String getLogo() {
-  //    return delegate.getLogo();
-  //  }
-
-  @Override
-  public String getProjectId() {
-    return delegate.getProjectId();
-  }
-
   @Override
   public KlabStatement.Scope getScope() {
     return delegate.getScope();
   }
-
-  //  @Override
-  //  public Map<String, String> getStyleSpecs() {
-  //    return delegate.getStyleSpecs();
-  //  }
-  //
-  //  @Override
-  //  public boolean isPublic() {
-  //    return delegate.isPublic();
-  //  }
 
   @Override
   public KActorsBehavior.Type getBehaviorType() {

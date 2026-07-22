@@ -1,0 +1,15 @@
+script test.statement.verb.operands
+    "Exercise verb operands and nested bodies across statement forms."
+    version 1.0
+    using
+        test.helpers as helper
+
+action main:
+    while helper.ready() break
+    do break while helper.ready()
+    for item in helper.items() break
+    for helper.items() break
+    if helper.ready() return helper.code()
+    else if helper.other() fire helper.code()
+    fail "no result"
+    assert helper.ready() is ok, [true] is true

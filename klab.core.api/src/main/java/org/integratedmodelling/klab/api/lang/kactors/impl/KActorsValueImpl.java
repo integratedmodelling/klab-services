@@ -30,10 +30,14 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
     if (statedValue == null) {
       return null;
     }
-    if (cls.isAssignableFrom(ValueType.class)) {
-      return (T) statedValue;
+    if (cls.isInstance(statedValue)) {
+      return cls.cast(statedValue);
     }
-    throw new KlabIllegalStateException("k.Actors value is unexpectedly null");
+    throw new KlabIllegalStateException(
+        "k.Actors value is a "
+            + statedValue.getClass().getName()
+            + ", not a "
+            + cls.getName());
   }
 
   @Override

@@ -1,22 +1,73 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.*;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
 /**
- * A configurable visitor that walks an entire parsed {@link KActorsBehavior}. Subclasses can
- * override the typed visit methods to collect information and the context factory methods to carry
- * additional state through the syntax tree.
- *
- * <p>The default implementation of each compound-statement visitor continues the traversal.
- * Overrides that still need to visit children must call the corresponding {@code super} method.
+ * A configurable visitor that walks and semantically indexes a parsed {@link KActorsBehavior}.
+ * The parser guarantees syntactic correctness; this class establishes lexical scopes, records the
+ * information needed by a compiler, infers action execution modes and reports model-level errors.
  */
 public class KActorsVisitor {
+
+  /** Extension point for checks that require runtime components or language services. */
+  public interface Validator {
+
+    /**
+     * Classify a call whose target is supplied by an imported/inherited behavior or Java
+     * extension. The returned type should be the effective type, including reactive calls made by
+     * the target action itself, so callers can reason about lifecycle across behavior boundaries.
+     */
+    default Verb.Type classifyActionCall(
+        KActorsStatement.Verb verb, KActorsContext context) {
+      return Verb.Type.FUNCTION;
+    }
+
+    default List<Notification> validateBehavior(
+        KActorsBehavior behavior, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateImport(
+        KActorsBehavior.Import imported, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateAction(KActorsAction action, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateAssignment(
+        KActorsStatement.Assignment assignment, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateVerbCall(
+        KActorsStatement.Verb verb, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateArguments(
+        KActorsStatement.Verb verb,
+        KActorsStatement.Arguments arguments,
+        KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateExpression(
+        Expression.Descriptor expressionDescriptor, KActorsContext context) {
+      return List.of();
+    }
+
+  }
+
+  /** Syntax-only validator used when component-backed resolution is not available. */
+  public static class LenientValidator implements Validator {}
 
   public record ActionInfo(
       KActorsAction statement,
@@ -24,25 +75,53 @@ public class KActorsVisitor {
       Verb.Type executionType,
       List<VariableInfo> parameters,
       int returns,
-      int fires) {}
+      int fires,
+      Set<Verb.Type> calledActionTypes) {
+    public ActionInfo {
+      parameters = List.copyOf(parameters);
+      calledActionTypes = Set.copyOf(calledActionTypes);
+    }
 
-  public record ImportInfo(String name, Class<?> javaClass) {}
+    public boolean callsSuppliers() {
+      return calledActionTypes.contains(Verb.Type.SUPPLIER);
+    }
+
+    public boolean callsEmitters() {
+      return calledActionTypes.contains(Verb.Type.EMITTER);
+    }
+
+    /** Effective mode when this action is invoked, including all transitively invoked actions. */
+    public Verb.Type effectiveExecutionType() {
+      if (executionType == Verb.Type.EMITTER || callsEmitters()) {
+        return Verb.Type.EMITTER;
+      }
+      if (executionType == Verb.Type.SUPPLIER || callsSuppliers()) {
+        return Verb.Type.SUPPLIER;
+      }
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  public record ImportInfo(
+      KActorsBehavior.Import statement,
+      String name,
+      String behaviorUrn,
+      Class<?> javaClass) {}
 
   public record CallInfo(
       KActorsStatement.Verb statement,
       String agent,
       String verb,
+      String action,
       Parameters<String> arguments,
-      Map<String, VariableInfo> knownVariables) {}
+      Map<String, VariableInfo> knownVariables,
+      Verb.Type executionType,
+      boolean valueRequired) {
+    public CallInfo {
+      knownVariables = Collections.unmodifiableMap(new LinkedHashMap<>(knownVariables));
+    }
+  }
 
-  /**
-   * Variable info will record the name and type if known, or the agent/verb pair for later checking
-   *
-   * @param name
-   * @param type
-   * @param agentUrn
-   * @param verbUrn
-   */
   public record VariableInfo(
       KActorsCodeStatement statement,
       String name,
@@ -50,30 +129,32 @@ public class KActorsVisitor {
       String agentUrn,
       String verbUrn) {}
 
-  // the context will contain all known variables at the point of declaration
-  public record ExpressionInfo(String expression, Map<String, VariableInfo> knownVariables) {}
+  public record ExpressionInfo(
+      KActorsValue statement, Object expression, Map<String, VariableInfo> knownVariables) {
+    public ExpressionInfo {
+      knownVariables = Collections.unmodifiableMap(new LinkedHashMap<>(knownVariables));
+    }
+  }
 
-  private final List<Notification> notifications = new ArrayList<>();
-  private final Map<String, ActionInfo> actions = new LinkedHashMap<>();
-  private final List<VariableInfo> fields = new ArrayList<>();
-  private final List<ImportInfo> imports = new ArrayList<>();
-  private final List<CallInfo> calls = new ArrayList<>();
-  private final List<ExpressionInfo> expressions = new ArrayList<>();
-
-  /** Context associated with one point in a behavior traversal. */
+  /** Context at one lexical point in the traversal. Child contexts copy visible variables. */
   public static class KActorsContext {
 
     protected final KActorsContext parent;
     protected final KActorsBehavior behavior;
-    protected final KActorsAction action;
-    protected final List<KActorsStatement> upstream;
-    Map<String, VariableInfo> knownVariables = new LinkedHashMap<>();
+    protected KActorsAction action;
+    protected List<KActorsStatement> upstream;
+    protected final Validator validator;
+    protected final Map<String, VariableInfo> knownVariables;
+    protected int loopDepth;
+    protected KActorsStatement previousStatement;
 
-    public KActorsContext(KActorsBehavior behavior) {
+    public KActorsContext(KActorsBehavior behavior, Validator validator) {
       this.parent = null;
       this.behavior = Objects.requireNonNull(behavior, "behavior");
       this.action = null;
+      this.validator = Objects.requireNonNullElseGet(validator, LenientValidator::new);
       this.upstream = List.of();
+      this.knownVariables = new LinkedHashMap<>();
     }
 
     protected KActorsContext(KActorsContext context) {
@@ -81,27 +162,28 @@ public class KActorsVisitor {
       this.behavior = context.behavior;
       this.action = context.action;
       this.upstream = context.upstream;
+      this.validator = context.validator;
+      this.knownVariables = new LinkedHashMap<>(context.knownVariables);
+      this.loopDepth = context.loopDepth;
+      this.previousStatement = context.previousStatement;
     }
 
     protected KActorsContext(KActorsContext context, KActorsAction action) {
-      this.parent = Objects.requireNonNull(context, "context");
-      this.behavior = context.behavior;
+      this(context);
       this.action = Objects.requireNonNull(action, "action");
-      this.upstream = context.upstream;
     }
 
     protected KActorsContext(KActorsContext context, KActorsStatement statement) {
-      this.parent = Objects.requireNonNull(context, "context");
-      this.behavior = context.behavior;
-      this.action = context.action;
+      this(context);
       var statements = new ArrayList<>(context.upstream);
       statements.add(Objects.requireNonNull(statement, "statement"));
       this.upstream = List.copyOf(statements);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends KActorsStatement> T getUpstreamStatement(Class<T> statementClass) {
       for (int i = upstream.size() - 1; i >= 0; i--) {
-        if (statementClass.isAssignableFrom(upstream.get(i).getClass())) {
+        if (statementClass.isInstance(upstream.get(i))) {
           return (T) upstream.get(i);
         }
       }
@@ -120,7 +202,6 @@ public class KActorsVisitor {
       return action;
     }
 
-    /** Return the statement path from the action body to the statement currently being visited. */
     public List<KActorsStatement> getUpstream() {
       return upstream;
     }
@@ -129,252 +210,701 @@ public class KActorsVisitor {
       return upstream.isEmpty() ? null : upstream.getLast();
     }
 
-    public KActorsContext withLocalVariables(List<VariableInfo> localVars) {
-      for (var v : localVars) {
-        this.knownVariables.put(v.name(), v);
+    public KActorsStatement getPreviousStatement() {
+      return previousStatement;
+    }
+
+    public Map<String, VariableInfo> getKnownVariables() {
+      return Collections.unmodifiableMap(knownVariables);
+    }
+
+    public VariableInfo getVariable(String name) {
+      return knownVariables.get(name);
+    }
+
+    public boolean isInsideLoop() {
+      return loopDepth > 0;
+    }
+
+    public KActorsContext withLocalVariables(Collection<VariableInfo> localVariables) {
+      var ret = new KActorsContext(this);
+      if (localVariables != null) {
+        for (var variable : localVariables) {
+          if (variable != null && variable.name() != null) {
+            ret.knownVariables.put(variable.name(), variable);
+          }
+        }
       }
-      return this;
+      return ret;
     }
   }
 
-  /** Create the root context for a behavior. */
-  protected KActorsContext createBehaviorContext(KActorsBehavior behavior) {
-    return new KActorsContext(behavior);
+  private static final Set<String> BUILT_IN_IDENTIFIERS = Set.of("self", "scope");
+
+  private final List<Notification> notifications = new ArrayList<>();
+  private final Map<String, ActionInfo> actions = new LinkedHashMap<>();
+  private final List<VariableInfo> fields = new ArrayList<>();
+  private final List<ImportInfo> imports = new ArrayList<>();
+  private final List<CallInfo> calls = new ArrayList<>();
+  private final List<ExpressionInfo> expressions = new ArrayList<>();
+  private final Map<String, KActorsAction> actionDeclarations = new LinkedHashMap<>();
+  private final Map<String, VariableInfo> fieldDeclarations = new LinkedHashMap<>();
+  private final Map<KActorsAction, ActionAccumulator> actionAccumulators = new IdentityHashMap<>();
+  private final List<PendingCall> pendingCalls = new ArrayList<>();
+
+  private record PendingCall(
+      KActorsStatement.Verb statement, KActorsContext context, boolean valueRequired) {}
+
+  private static final class ActionAccumulator {
+    private int returns;
+    private int fires;
+    private int reactiveReturns;
+    private final EnumSet<Verb.Type> calledActionTypes = EnumSet.noneOf(Verb.Type.class);
+    private final Set<String> localCallees = new LinkedHashSet<>();
   }
 
-  /** Create the context used while visiting an action. */
+  protected KActorsContext createBehaviorContext(KActorsBehavior behavior, Validator validator) {
+    return new KActorsContext(behavior, validator);
+  }
+
   protected KActorsContext createActionContext(
       KActorsContext upstreamContext, KActorsAction action) {
     return new KActorsContext(upstreamContext, action);
   }
 
-  /** Create the context used while visiting a statement. */
   protected KActorsContext createStatementContext(
       KActorsContext upstreamContext, KActorsStatement statement) {
     return new KActorsContext(upstreamContext, statement);
   }
 
   public void visit(KActorsBehavior behavior) {
-    var context = requireContext(createBehaviorContext(behavior), "behavior");
-    // FIXME if @init is present, scan that first for `def`, which is only allowed there
-    for (var action : behavior.getStatements()) {
-      visitAction(action, createActionContext(context, action));
+    visit(behavior, new LenientValidator());
+  }
+
+  public void visit(KActorsBehavior behavior, Validator validator) {
+    reset();
+    visitedBehavior = Objects.requireNonNull(behavior, "behavior");
+    var context = requireContext(createBehaviorContext(behavior, validator), "behavior");
+    addNotifications(context.validator.validateBehavior(behavior, context));
+    indexBehavior(context);
+    collectActorFields(behavior);
+    context.knownVariables.putAll(fieldDeclarations);
+
+    var init = actionDeclarations.get("init");
+    if (init != null) {
+      visitAction(init, createActionContext(context, init));
     }
+    for (var action : safe(behavior.getStatements())) {
+      if (action != init) {
+        visitAction(action, createActionContext(context, action));
+      }
+    }
+    finishActions();
+    finishCalls();
+    finishCalledActionTypes();
+  }
+
+  private void reset() {
+    notifications.clear();
+    actions.clear();
+    fields.clear();
+    imports.clear();
+    calls.clear();
+    expressions.clear();
+    actionDeclarations.clear();
+    fieldDeclarations.clear();
+    actionAccumulators.clear();
+    pendingCalls.clear();
+    visitedBehavior = null;
+  }
+
+  private void indexBehavior(KActorsContext context) {
+    var behavior = context.behavior;
+    if (behavior.getDescription() == null || behavior.getDescription().isBlank()) {
+      error("Behavior description is mandatory", behavior);
+    }
+
+    var aliases = new HashSet<String>();
+    for (var imported : safe(behavior.getImports())) {
+      var alias = imported.getImportedAlias();
+      imports.add(new ImportInfo(imported, alias, imported.getImportedBehavior(), null));
+      if (alias == null || alias.isBlank()) {
+        notifications.add(Notification.error("Imported behaviors must declare a local alias"));
+      } else if ("self".equals(alias)) {
+        notifications.add(Notification.error("The import alias 'self' is reserved"));
+      } else if (!aliases.add(alias)) {
+        notifications.add(Notification.error("Duplicate import alias: " + alias));
+      }
+      addNotifications(context.validator.validateImport(imported, context));
+    }
+
+    for (var action : safe(behavior.getStatements())) {
+      var previous = actionDeclarations.putIfAbsent(action.getUrn(), action);
+      if (previous != null) {
+        error("Duplicate action: " + action.getUrn(), action);
+      }
+    }
+
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.TRAITS) {
+      if (actionDeclarations.containsKey("init") || actionDeclarations.containsKey("main")) {
+        notifications.add(Notification.error("Trait behaviors cannot declare init or main actions"));
+      }
+    } else if (behavior.getBehaviorType() == KActorsBehavior.Type.TASK
+        && !actionDeclarations.containsKey("main")) {
+      notifications.add(Notification.error("Task behaviors must declare a main action"));
+    }
+  }
+
+  private void collectActorFields(KActorsBehavior behavior) {
+    var init = actionDeclarations.get("init");
+    if (init == null) {
+      return;
+    }
+    for (var statement : safe(init.getCode())) {
+      collectActorFields(statement);
+    }
+    fields.addAll(fieldDeclarations.values());
+  }
+
+  private void collectActorFields(KActorsStatement statement) {
+    if (statement == null) {
+      return;
+    }
+    if (statement instanceof KActorsStatement.Assignment assignment
+        && assignment.getAssignmentScope() == KActorsStatement.Assignment.Scope.ACTOR) {
+      fieldDeclarations.putIfAbsent(assignment.getVariable(), variableFor(assignment));
+    }
+    forEachChild(statement, this::collectActorFields);
   }
 
   protected void visitAction(KActorsAction action, KActorsContext context) {
+    addNotifications(context.validator.validateAction(action, context));
     visitAnnotations(action.getAnnotations(), context);
-    visitValues(action.getMetadata(), context);
-    for (var statement : action.getCode()) {
-      visitStatement(statement, createStatementContext(context, statement));
+    visitMetadataValues(action.getMetadata(), context);
+    var parameters = new ArrayList<VariableInfo>();
+    var names = new HashSet<String>();
+    for (var name : safe(action.getArgumentNames())) {
+      if (!names.add(name)) {
+        error("Duplicate action parameter: " + name, action);
+      }
+      var parameter = new VariableInfo(action, name, null, null, null);
+      parameters.add(parameter);
+      context.knownVariables.put(name, parameter);
     }
+    actionAccumulators.put(action, new ActionAccumulator());
+    visitBlock(action.getCode(), context);
+    actions.put(
+        action.getUrn(),
+        new ActionInfo(
+            action,
+            action.getUrn(),
+            Verb.Type.FUNCTION,
+            parameters,
+            0,
+            0,
+            Set.of()));
   }
 
-  public void visitAnnotation(Annotation annotation, KActorsContext context) {}
+  public void visitAnnotation(Annotation annotation, KActorsContext context) {
+    visitValues(annotation, context);
+  }
 
   public final void visitStatement(KActorsStatement statement, KActorsContext context) {
-
+    if (statement == null) {
+      return;
+    }
+    if (statement.isSequential() && !hasMatchActions(context.previousStatement)) {
+      warning("'then' has no preceding reactive call to wait for", statement);
+    }
     visitAnnotations(statement.getAnnotations(), context);
-    visitValues(statement.getMetadata(), context);
+    visitMetadataValues(statement.getMetadata(), context);
 
     switch (statement) {
-      case KActorsStatement.Verb.MatchAction matchStatement -> visitMatch(matchStatement, context);
+      case KActorsStatement.Verb.MatchAction match -> visitMatch(match, context);
       case KActorsStatement.Assert.Assertion assertion -> visitAssertion(assertion, context);
-      case KActorsStatement.Do doStatement -> visitDo(doStatement, context);
-      case KActorsStatement.Assert assertStatement -> visitAssert(assertStatement, context);
-      case KActorsStatement.Fail failStatement -> visitFail(failStatement, context);
-      case KActorsStatement.Fire fireStatement -> visitFire(fireStatement, context);
-      case KActorsStatement.If ifStatement -> visitIf(ifStatement, context);
-      case KActorsStatement.While whileStatement -> visitWhile(whileStatement, context);
-      case KActorsStatement.For forStatement -> visitFor(forStatement, context);
+      case KActorsStatement.Do loop -> visitDo(loop, context);
+      case KActorsStatement.Assert assertion -> visitAssert(assertion, context);
+      case KActorsStatement.Fail fail -> visitFail(fail, context);
+      case KActorsStatement.Fire fire -> visitFire(fire, context);
+      case KActorsStatement.If conditional -> visitIf(conditional, context);
+      case KActorsStatement.While loop -> visitWhile(loop, context);
+      case KActorsStatement.For loop -> visitFor(loop, context);
       case KActorsStatement.Break breakStatement -> visitBreak(breakStatement, context);
-      case KActorsStatement.Text textStatement -> visitText(textStatement, context);
-      case KActorsStatement.Assignment assignmentStatement ->
-          visitAssignment(assignmentStatement, context);
-      case KActorsStatement.Verb verbStatement -> visitVerb(verbStatement, context);
-      case KActorsStatement.Group groupStatement -> visitGroup(groupStatement, context);
+      case KActorsStatement.Text text -> visitText(text, context);
+      case KActorsStatement.Assignment assignment -> visitAssignment(assignment, context);
+      case KActorsStatement.Verb verb -> visitVerb(verb, context);
+      case KActorsStatement.Group group -> visitGroup(group, context);
       case KActorsStatement.Return returnStatement -> visitReturn(returnStatement, context);
-      default -> throw new IllegalArgumentException("Unsupported statement type: " + statement);
+      default -> error("Unsupported statement type: " + statement.getClass().getName(), statement);
     }
   }
 
   protected void visitMatch(
       KActorsStatement.Verb.MatchAction matchStatement, KActorsContext context) {
-
-    var criterion = matchStatement.getMatchCriterion();
-    var localVars = new ArrayList<VariableInfo>();
-    if (criterion.getType() == ValueType.IDENTIFIER) {
-      // can be a string or a list. Type is matched to upstream verb
-      var verb = context.getUpstreamStatement(KActorsStatement.Verb.class);
-      for (var idv :
-          (criterion.getValue(Object.class) instanceof List
-              ? criterion.getValue(List.class)
-              : List.of(criterion.getValue(Object.class)))) {
-        var id = idv.toString();
-        localVars.add(
-            new VariableInfo(criterion, id, null, verb.getRecipient(), verb.getMessage()));
-      }
+    var localVariables = new ArrayList<VariableInfo>();
+    var upstreamVerb = context.getUpstreamStatement(KActorsStatement.Verb.class);
+    var agent = upstreamVerb == null ? null : upstreamVerb.getRecipient();
+    var verb = upstreamVerb == null ? null : upstreamVerb.getMessage();
+    for (var name : safe(matchStatement.getVariables())) {
+      localVariables.add(new VariableInfo(matchStatement, name, null, agent, verb));
     }
-
-    visitStatementIfPresent(matchStatement.getActionOnMatch(), context, localVars);
+    if (matchStatement.getCaptureAs() != null) {
+      localVariables.add(
+          new VariableInfo(matchStatement, matchStatement.getCaptureAs(), null, agent, verb));
+    }
+    var criterion = matchStatement.getMatchCriterion();
+    if (criterion != null) {
+      if (criterion.getType() == ValueType.IDENTIFIER) {
+        var raw = valueOf(criterion);
+        var values = raw instanceof Collection<?> collection ? collection : List.of(raw);
+        for (var value : values) {
+          if (value != null) {
+            localVariables.add(
+                new VariableInfo(criterion, value.toString(), null, agent, verb));
+          }
+        }
+      }
+      visitValue(criterion, context.withLocalVariables(localVariables));
+    }
+    visitNested(matchStatement.getActionOnMatch(), context, localVariables, false);
   }
 
   protected void visitValue(KActorsValue value, KActorsContext context) {
+    visitValue(value, context, true);
+  }
+
+  private void visitValue(
+      KActorsValue value, KActorsContext context, boolean resolveIdentifiers) {
     visitAnnotations(value.getAnnotations(), context);
+    var raw = valueOf(value);
     if (value.getType() == ValueType.EXPRESSION) {
-      expressions.add(
-          new ExpressionInfo(
-              value.getValue(String.class), new LinkedHashMap<>(context.knownVariables)));
-    } else if (value.getType() == ValueType.IDENTIFIER) {
-      /*
-       * TODO ensure it's known; if not, add a notification with LexicalContext.of(value)
-       */
-      System.out.println(value);
+      expressions.add(new ExpressionInfo(value, raw, context.knownVariables));
+      if (raw instanceof Expression.Descriptor descriptor) {
+        addNotifications(context.validator.validateExpression(descriptor, context));
+      }
+    } else if (resolveIdentifiers && value.getType() == ValueType.IDENTIFIER && raw != null) {
+      var identifier = raw.toString();
+      if (!context.knownVariables.containsKey(identifier)
+          && !BUILT_IN_IDENTIFIERS.contains(identifier)) {
+        error("Unknown identifier: " + identifier, value);
+      }
     }
+    visitValues(raw, context, resolveIdentifiers);
   }
 
-  protected void visitDo(KActorsStatement.Do doStatement, KActorsContext context) {
-    visitStatementIfPresent(doStatement.getBody(), context, List.of());
-    visitValueIfPresent(doStatement.getCondition(), context);
+  protected void visitDo(KActorsStatement.Do statement, KActorsContext context) {
+    validateAlternative(statement.getCondition(), statement.getFunction(), "do condition", statement);
+    visitNested(statement.getBody(), context, List.of(), true);
+    visitValueIfPresent(statement.getCondition(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    validateBooleanValue(statement.getCondition(), "do condition");
   }
 
-  protected void visitAssert(KActorsStatement.Assert assertStatement, KActorsContext context) {
-    visitValues(assertStatement.getArguments(), context);
-    for (var assertion : assertStatement.getAssertions()) {
-      visitStatement(assertion, context);
+  protected void visitAssert(KActorsStatement.Assert statement, KActorsContext context) {
+    if (context.behavior.getBehaviorType() != KActorsBehavior.Type.UNITTEST) {
+      warning("Assertions in non-test behaviors may be omitted by production compilation", statement);
+    }
+    visitValues(statement.getArguments(), context);
+    for (var assertion : safe(statement.getAssertions())) {
+      visitNested(assertion, context, List.of(), false);
     }
   }
 
   protected void visitAssertion(
       KActorsStatement.Assert.Assertion assertion, KActorsContext context) {
-    if (assertion.getCalls() != null) {
-      for (var call : assertion.getCalls()) {
-        visitStatement(call, context);
-      }
+    for (var call : safe(assertion.getCalls())) {
+      visitNested(call, context, List.of(), false);
     }
+    visitValueIfPresent(assertion.getExpression(), context);
     visitValueIfPresent(assertion.getValue(), context);
   }
 
   protected void visitFail(KActorsStatement.Fail failStatement, KActorsContext context) {}
 
-  protected void visitFire(KActorsStatement.Fire fireStatement, KActorsContext context) {
-    if (context.getUpstreamStatement(KActorsStatement.Verb.MatchAction.class) != null) {
-      // increment fire count in the current action
+  protected void visitFire(KActorsStatement.Fire statement, KActorsContext context) {
+    validateAlternative(statement.getValue(), statement.getFunction(), "fire value", statement);
+    var accumulator = actionAccumulators.get(context.action);
+    if (accumulator != null) {
+      accumulator.fires++;
     }
-    visitValueIfPresent(fireStatement.getValue(), context);
+    visitValueIfPresent(statement.getValue(), context);
+    visitVerbAsValue(statement.getFunction(), context);
   }
 
-  protected void visitIf(KActorsStatement.If ifStatement, KActorsContext context) {
-    visitValueIfPresent(ifStatement.getCondition(), context);
-    visitStatementIfPresent(ifStatement.getThenBody(), context, List.of());
-    for (var elseIf : ifStatement.getElseIfs()) {
-      visitValueIfPresent(elseIf.getFirst(), context);
-      visitStatementIfPresent(elseIf.getSecond(), context, List.of());
+  protected void visitIf(KActorsStatement.If statement, KActorsContext context) {
+    validateAlternative(statement.getCondition(), statement.getFunction(), "if condition", statement);
+    visitValueIfPresent(statement.getCondition(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    validateBooleanValue(statement.getCondition(), "if condition");
+    visitNested(statement.getThenBody(), context, List.of(), false);
+    for (var elseIf : safe(statement.getElseIfs())) {
+      if (elseIf == null || elseIf.getFirst() == null) {
+        continue;
+      }
+      var condition = elseIf.getFirst();
+      validateAlternative(condition.getFirst(), condition.getSecond(), "else-if condition", statement);
+      visitValueIfPresent(condition.getFirst(), context);
+      visitVerbAsValue(condition.getSecond(), context);
+      validateBooleanValue(condition.getFirst(), "else-if condition");
+      visitNested(elseIf.getSecond(), context, List.of(), false);
     }
-    visitStatementIfPresent(ifStatement.getElseBody(), context, List.of());
+    visitNested(statement.getElseBody(), context, List.of(), false);
   }
 
-  protected void visitWhile(KActorsStatement.While whileStatement, KActorsContext context) {
-    visitValueIfPresent(whileStatement.getCondition(), context);
-    visitStatementIfPresent(whileStatement.getBody(), context, List.of());
+  protected void visitWhile(KActorsStatement.While statement, KActorsContext context) {
+    validateAlternative(statement.getCondition(), statement.getFunction(), "while condition", statement);
+    visitValueIfPresent(statement.getCondition(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    validateBooleanValue(statement.getCondition(), "while condition");
+    visitNested(statement.getBody(), context, List.of(), true);
   }
 
-  // for, assignment and match are those that can define contextual variables
-  protected void visitFor(KActorsStatement.For forStatement, KActorsContext context) {
-    visitValueIfPresent(forStatement.getIterable(), context);
-    visitStatementIfPresent(
-        forStatement.getBody(),
-        context,
-        List.of(
-            new VariableInfo(
-                forStatement.getIterable(),
-                forStatement.getVariable(),
-                forStatement.getIterable().getType(),
-                null,
-                null)));
+  protected void visitFor(KActorsStatement.For statement, KActorsContext context) {
+    validateAlternative(statement.getIterable(), statement.getFunction(), "for iterable", statement);
+    visitValueIfPresent(statement.getIterable(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    validateIterableValue(statement.getIterable(), statement);
+    var loopVariables = new ArrayList<VariableInfo>();
+    if (statement.getVariable() != null && !statement.getVariable().isBlank()) {
+      loopVariables.add(
+          new VariableInfo(statement, statement.getVariable(), null, null, null));
+    }
+    visitNested(statement.getBody(), context, loopVariables, true);
   }
 
-  protected void visitBreak(KActorsStatement.Break breakStatement, KActorsContext context) {}
+  protected void visitBreak(KActorsStatement.Break statement, KActorsContext context) {
+    if (!context.isInsideLoop()) {
+      error("break can only be used inside a loop", statement);
+    }
+  }
 
   protected void visitText(KActorsStatement.Text textStatement, KActorsContext context) {}
 
   protected void visitAssignment(
-      KActorsStatement.Assignment assignmentStatement, KActorsContext context) {
-
-    VariableInfo varInfo = null;
-    if (assignmentStatement.getValue() != null) {
-      varInfo =
-          new VariableInfo(
-              assignmentStatement.getValue(),
-              assignmentStatement.getVariable(),
-              assignmentStatement.getValue().getType(),
-              null,
-              null);
-    } else {
-      varInfo =
-          new VariableInfo(
-              assignmentStatement.getFunction(),
-              assignmentStatement.getVariable(),
-              null,
-              assignmentStatement.getFunction().getRecipient(),
-              assignmentStatement.getFunction().getMessage());
+      KActorsStatement.Assignment statement, KActorsContext context) {
+    validateAlternative(statement.getValue(), statement.getFunction(), "assignment value", statement);
+    if (isImported(statement.getVariable())) {
+      error("An assignment cannot override an import alias: " + statement.getVariable(), statement);
+    } else if (statement.getAssignmentScope() == KActorsStatement.Assignment.Scope.FRAME
+        && fieldDeclarations.containsKey(statement.getVariable())) {
+      error("A frame variable cannot override actor state: " + statement.getVariable(), statement);
+    } else if (statement.getAssignmentScope() == KActorsStatement.Assignment.Scope.ACTOR
+        && !"init".equals(context.action == null ? null : context.action.getUrn())
+        && !fieldDeclarations.containsKey(statement.getVariable())) {
+      error("Unknown actor state variable: " + statement.getVariable(), statement);
     }
-
-    visitValueIfPresent(assignmentStatement.getValue(), context);
-    visitStatementIfPresent(assignmentStatement.getFunction(), context, List.of(varInfo));
+    addNotifications(context.validator.validateAssignment(statement, context));
+    visitValueIfPresent(statement.getValue(), context);
+    visitVerbAsValue(statement.getFunction(), context);
   }
 
-  protected void visitVerb(KActorsStatement.Verb verbStatement, KActorsContext context) {
-
-    /*
-    TODO check for receiver declared and known action.
-    TODO check action parameters if possible
-     */
-    // record call with the known variables for later checking
-    calls.add(
-        new CallInfo(
-            verbStatement,
-            verbStatement.getRecipient() == null ? "self" : verbStatement.getRecipient(),
-            verbStatement.getMessage(),
-            verbStatement.getArguments(),
-            new LinkedHashMap<>(context.knownVariables)));
-
-    visitValues(verbStatement.getArguments(), context);
-    for (var matchAction : verbStatement.getActions()) {
-      visitStatement(matchAction, context);
+  protected void visitVerb(KActorsStatement.Verb statement, KActorsContext context) {
+    pendingCalls.add(new PendingCall(statement, context, isValuePosition(context)));
+    addNotifications(context.validator.validateVerbCall(statement, context));
+    addNotifications(context.validator.validateArguments(statement, statement.getArguments(), context));
+    visitValues(statement.getArguments(), context);
+    for (var matchAction : safe(statement.getActions())) {
+      visitNested(matchAction, context, List.of(), false);
     }
   }
 
-  protected void visitGroup(KActorsStatement.Group groupStatement, KActorsContext context) {
-    for (var statement : groupStatement.getStatements()) {
-      visitStatement(statement, context);
+  protected void visitGroup(KActorsStatement.Group statement, KActorsContext context) {
+    visitBlock(statement.getStatements(), context);
+  }
+
+  protected void visitReturn(KActorsStatement.Return statement, KActorsContext context) {
+    var accumulator = actionAccumulators.get(context.action);
+    var reactive = context.getUpstreamStatement(KActorsStatement.Verb.MatchAction.class) != null;
+    if (accumulator != null) {
+      accumulator.returns++;
+      if (reactive) {
+        accumulator.reactiveReturns++;
+      }
+    }
+    validateAlternative(statement.getValue(), statement.getFunction(), "return value", statement);
+    visitValueIfPresent(statement.getValue(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+  }
+
+  private void visitBlock(List<KActorsStatement> statements, KActorsContext parent) {
+    var block = new KActorsContext(parent);
+    for (var statement : safe(statements)) {
+      var statementContext = createStatementContext(block, statement);
+      visitStatement(statement, statementContext);
+      if (statement instanceof KActorsStatement.Assignment assignment
+          && assignment.getAssignmentScope() == KActorsStatement.Assignment.Scope.FRAME) {
+        block.knownVariables.put(assignment.getVariable(), variableFor(assignment));
+      }
+      block.previousStatement = statement;
     }
   }
 
-  protected void visitReturn(KActorsStatement.Return returnStatement, KActorsContext context) {
-    if (context.getUpstreamStatement(KActorsStatement.Verb.MatchAction.class) != null) {
-      // increment reactor return count in the current action
-    } else {
-      // check if we're downstream of an if; if so, will need a final return
+  private void visitNested(
+      KActorsStatement statement,
+      KActorsContext parent,
+      Collection<VariableInfo> variables,
+      boolean loop) {
+    if (statement == null) {
+      return;
     }
+    var nested = parent.withLocalVariables(variables);
+    if (loop) {
+      nested.loopDepth++;
+    }
+    visitStatement(statement, createStatementContext(nested, statement));
+  }
 
-    visitValueIfPresent(returnStatement.getValue(), context);
+  private void visitVerbAsValue(KActorsStatement.Verb verb, KActorsContext context) {
+    if (verb != null) {
+      visitStatement(verb, createStatementContext(context, verb));
+    }
+  }
+
+  private void finishActions() {
+    for (var entry : actions.entrySet()) {
+      var old = entry.getValue();
+      var accumulator = actionAccumulators.get(old.statement());
+      var type =
+          accumulator.fires > 0
+              ? Verb.Type.EMITTER
+              : accumulator.reactiveReturns > 0 ? Verb.Type.SUPPLIER : Verb.Type.FUNCTION;
+      old.statement().setActionType(type);
+      entry.setValue(
+          new ActionInfo(
+              old.statement(),
+              old.name(),
+              type,
+              old.parameters(),
+              accumulator.returns,
+              accumulator.fires,
+              Set.of()));
+    }
+  }
+
+  private void finishCalls() {
+    for (var pending : pendingCalls) {
+      var statement = pending.statement();
+      var recipient = normalizeRecipient(statement.getRecipient());
+      Verb.Type executionType = null;
+      if ("self".equals(recipient)) {
+        var target = actions.get(statement.getMessage());
+        if (target == null) {
+          if (safe(visitedBehavior.getInheritedBehaviors()).isEmpty()) {
+            error("Unknown self action: " + statement.getMessage(), statement);
+          }
+        } else {
+          executionType = target.executionType();
+          actionAccumulators.get(pending.context().action).localCallees.add(target.name());
+        }
+      } else if (!isImported(recipient) && !pending.context().knownVariables.containsKey(recipient)) {
+        error("Undeclared verb recipient: " + recipient, statement);
+      }
+      if (executionType == null) {
+        executionType =
+            Objects.requireNonNullElse(
+                pending.context().validator.classifyActionCall(statement, pending.context()),
+                Verb.Type.FUNCTION);
+      }
+      if (executionType != Verb.Type.FUNCTION && pending.context().action != null) {
+        actionAccumulators
+            .get(pending.context().action)
+            .calledActionTypes
+            .add(executionType);
+      }
+      if (executionType == Verb.Type.FUNCTION && !safe(statement.getActions()).isEmpty()) {
+        error("Function calls cannot declare match actions", statement);
+      }
+      if (executionType == Verb.Type.EMITTER && pending.valueRequired()) {
+        error("Emitter calls cannot be used where a value is required", statement);
+      }
+      calls.add(
+          new CallInfo(
+              statement,
+              recipient,
+              statement.getMessage(),
+              pending.context().action == null ? null : pending.context().action.getUrn(),
+              statement.getArguments(),
+              pending.context().knownVariables,
+              executionType,
+              pending.valueRequired()));
+    }
+  }
+
+  private void finishCalledActionTypes() {
+    boolean changed;
+    do {
+      changed = false;
+      for (var action : actions.values()) {
+        var accumulator = actionAccumulators.get(action.statement());
+        for (var calleeName : accumulator.localCallees) {
+          var callee = actions.get(calleeName);
+          if (callee == null) {
+            continue;
+          }
+          if (callee.executionType() != Verb.Type.FUNCTION) {
+            changed |= accumulator.calledActionTypes.add(callee.executionType());
+          }
+          changed |=
+              accumulator.calledActionTypes.addAll(
+                  actionAccumulators.get(callee.statement()).calledActionTypes);
+        }
+      }
+    } while (changed);
+
+    for (var entry : actions.entrySet()) {
+      var action = entry.getValue();
+      var accumulator = actionAccumulators.get(action.statement());
+      var completed =
+          new ActionInfo(
+              action.statement(),
+              action.name(),
+              action.executionType(),
+              action.parameters(),
+              action.returns(),
+              action.fires(),
+              accumulator.calledActionTypes);
+      completed.statement().setActionType(completed.effectiveExecutionType());
+      entry.setValue(completed);
+    }
+  }
+
+  private boolean isImported(String recipient) {
+    return imports.stream().anyMatch(info -> Objects.equals(info.name(), recipient));
+  }
+
+  private boolean isValuePosition(KActorsContext context) {
+    if (context.upstream.size() < 2) {
+      return false;
+    }
+    var parent = context.upstream.get(context.upstream.size() - 2);
+    return parent instanceof KActorsStatement.Assignment
+        || parent instanceof KActorsStatement.If
+        || parent instanceof KActorsStatement.While
+        || parent instanceof KActorsStatement.Do
+        || parent instanceof KActorsStatement.For
+        || parent instanceof KActorsStatement.Return
+        || parent instanceof KActorsStatement.Fire;
+  }
+
+  private VariableInfo variableFor(KActorsStatement.Assignment assignment) {
+    if (assignment.getValue() != null) {
+      return new VariableInfo(
+          assignment.getValue(), assignment.getVariable(), assignment.getValue().getType(), null, null);
+    }
+    var function = assignment.getFunction();
+    return new VariableInfo(
+        assignment,
+        assignment.getVariable(),
+        null,
+        function == null ? null : normalizeRecipient(function.getRecipient()),
+        function == null ? null : function.getMessage());
+  }
+
+  private void validateAlternative(
+      Object value, Object function, String role, KActorsCodeStatement statement) {
+    if ((value == null) == (function == null)) {
+      error("Exactly one " + role + " or functional verb must be supplied", statement);
+    }
+  }
+
+  private void validateBooleanValue(KActorsValue value, String role) {
+    if (value != null
+        && value.getType() != ValueType.BOOLEAN
+        && value.getType() != ValueType.EXPRESSION
+        && value.getType() != ValueType.IDENTIFIER) {
+      error("The " + role + " must evaluate to boolean", value);
+    }
+  }
+
+  private void validateIterableValue(
+      KActorsValue value, KActorsCodeStatement statement) {
+    if (value == null) {
+      return;
+    }
+    var type = value.getType();
+    if (type != ValueType.LIST
+        && type != ValueType.SET
+        && type != ValueType.MAP
+        && type != ValueType.RANGE
+        && type != ValueType.EXPRESSION
+        && type != ValueType.IDENTIFIER) {
+      error("The for iterable must evaluate to an Iterable", statement);
+    }
+  }
+
+  private boolean hasMatchActions(KActorsStatement statement) {
+    if (statement instanceof KActorsStatement.Verb verb) {
+      return !safe(verb.getActions()).isEmpty();
+    }
+    if (statement instanceof KActorsStatement.Group group) {
+      return safe(group.getStatements()).stream().anyMatch(this::hasMatchActions);
+    }
+    return false;
+  }
+
+  private void forEachChild(
+      KActorsStatement statement, java.util.function.Consumer<KActorsStatement> consumer) {
+    switch (statement) {
+      case KActorsStatement.Group group -> safe(group.getStatements()).forEach(consumer);
+      case KActorsStatement.If conditional -> {
+        consumer.accept(conditional.getFunction());
+        consumer.accept(conditional.getThenBody());
+        for (var elseIf : safe(conditional.getElseIfs())) {
+          if (elseIf != null && elseIf.getFirst() != null) {
+            consumer.accept(elseIf.getFirst().getSecond());
+            consumer.accept(elseIf.getSecond());
+          }
+        }
+        consumer.accept(conditional.getElseBody());
+      }
+      case KActorsStatement.While loop -> {
+        consumer.accept(loop.getFunction());
+        consumer.accept(loop.getBody());
+      }
+      case KActorsStatement.Do loop -> {
+        consumer.accept(loop.getBody());
+        consumer.accept(loop.getFunction());
+      }
+      case KActorsStatement.For loop -> {
+        consumer.accept(loop.getFunction());
+        consumer.accept(loop.getBody());
+      }
+      case KActorsStatement.Assignment assignment -> consumer.accept(assignment.getFunction());
+      case KActorsStatement.Fire fire -> consumer.accept(fire.getFunction());
+      case KActorsStatement.Return returned -> consumer.accept(returned.getFunction());
+      case KActorsStatement.Verb verb -> safe(verb.getActions()).forEach(consumer);
+      case KActorsStatement.Verb.MatchAction match -> consumer.accept(match.getActionOnMatch());
+      case KActorsStatement.Assert assertion -> safe(assertion.getAssertions()).forEach(consumer);
+      case KActorsStatement.Assert.Assertion assertion -> safe(assertion.getCalls()).forEach(consumer);
+      default -> {}
+    }
   }
 
   private void visitAnnotations(List<Annotation> annotations, KActorsContext context) {
-    if (annotations != null) {
-      for (var annotation : annotations) {
-        visitAnnotation(annotation, context);
-      }
+    for (var annotation : safe(annotations)) {
+      visitAnnotation(annotation, context);
     }
   }
 
-  private void visitValues(java.util.Map<String, ?> values, KActorsContext context) {
-    if (values != null) {
-      for (var value : values.values()) {
-        if (value instanceof KActorsValue kActorsValue) {
-          visitValue(kActorsValue, context);
-        }
+  private void visitValues(Object values, KActorsContext context) {
+    visitValues(values, context, true);
+  }
+
+  private void visitMetadataValues(Object values, KActorsContext context) {
+    visitValues(values, context, false);
+  }
+
+  private void visitValues(
+      Object values, KActorsContext context, boolean resolveIdentifiers) {
+    if (values instanceof KActorsValue value) {
+      visitValue(value, context, resolveIdentifiers);
+    } else if (values instanceof Map<?, ?> map) {
+      map.values().forEach(value -> visitValues(value, context, resolveIdentifiers));
+    } else if (values instanceof Iterable<?> iterable) {
+      iterable.forEach(value -> visitValues(value, context, resolveIdentifiers));
+    } else if (values instanceof Object[] array) {
+      for (var value : array) {
+        visitValues(value, context, resolveIdentifiers);
       }
     }
   }
@@ -385,26 +915,69 @@ public class KActorsVisitor {
     }
   }
 
-  private void visitStatementIfPresent(
-      KActorsStatement statement, KActorsContext context, List<VariableInfo> localVars) {
-    if (statement != null) {
-      visitStatement(statement, context.withLocalVariables(localVars));
+  private Object valueOf(KActorsValue value) {
+    try {
+      return value.getValue(Object.class);
+    } catch (RuntimeException ignored) {
+      return null;
     }
+  }
+
+  private void addNotifications(Collection<Notification> additions) {
+    if (additions != null) {
+      additions.stream().filter(Objects::nonNull).forEach(notifications::add);
+    }
+  }
+
+  private void error(String message, KActorsCodeStatement statement) {
+    notifications.add(
+        Notification.error(message, Notification.LexicalContext.of(statement, visitedBehavior)));
+  }
+
+  private void error(String message, KActorsBehavior behavior) {
+    notifications.add(Notification.error(message));
+  }
+
+  private void warning(String message, KActorsCodeStatement statement) {
+    notifications.add(
+        Notification.warning(message, Notification.LexicalContext.of(statement, visitedBehavior)));
+  }
+
+  private KActorsBehavior visitedBehavior;
+
+  private String normalizeRecipient(String recipient) {
+    return recipient == null || recipient.isBlank() ? "self" : recipient;
   }
 
   private KActorsContext requireContext(KActorsContext context, String element) {
     return Objects.requireNonNull(context, "The " + element + " context factory returned null");
   }
 
+  private static <T> List<T> safe(List<T> values) {
+    return values == null ? List.of() : values;
+  }
+
+  public Map<String, ActionInfo> getActions() {
+    return Collections.unmodifiableMap(actions);
+  }
+
   public List<VariableInfo> getFields() {
-    return fields;
+    return List.copyOf(fields);
   }
 
   public List<Notification> getNotifications() {
-    return notifications;
+    return List.copyOf(notifications);
   }
 
   public List<ImportInfo> getImports() {
-    return imports;
+    return List.copyOf(imports);
+  }
+
+  public List<CallInfo> getCalls() {
+    return List.copyOf(calls);
+  }
+
+  public List<ExpressionInfo> getExpressions() {
+    return List.copyOf(expressions);
   }
 }

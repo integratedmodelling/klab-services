@@ -47,9 +47,6 @@ public enum ValueType {
   /** Only for matching any object that has a specified annotation. */
   ANNOTATION,
 
-  /** A component path and possibly arguments passed after 'new' */
-  COMPONENT,
-
   /**
    * A string in the form #KEY, pointing to a localized string in the companion internationalization
    * map.

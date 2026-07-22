@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.util.List;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-
-import java.util.List;
 
 public class NavigableKActorsAction extends NavigableKlabStatement<KActorsAction>
     implements KActorsAction {
@@ -23,8 +22,19 @@ public class NavigableKActorsAction extends NavigableKlabStatement<KActorsAction
   }
 
   @Override
-  public boolean isFunction() {
-    return delegate.isFunction();
+  public boolean isStatic() {
+    return delegate.isStatic();
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type getActionType() {
+    return delegate.getActionType();
+  }
+
+  @Override
+  public void setActionType(
+      org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type actionType) {
+    delegate.setActionType(actionType);
   }
 
   @Override

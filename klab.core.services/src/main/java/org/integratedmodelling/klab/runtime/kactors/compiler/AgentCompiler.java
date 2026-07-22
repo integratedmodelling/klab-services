@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 
 public class AgentCompiler {
@@ -94,8 +95,10 @@ public class AgentCompiler {
   /// of reactive forms and assign IDs to them proactively. Inferrable return types should be
   /// remembered for parameter matching. Actions that return from the main thread are functions;
   /// actions that return from a reactor body are suppliers. Any fire call makes the action an
-  /// emitter. These determine the execution mode of the action. The analysis should build the
-  /// same data structure for a k.Actors action that a @Verb annotation provides.
+  /// emitter; a return from one of its reactor bodies stops emissions and listeners without
+  /// changing that classification, and its operand is available as an exit code. These determine
+  /// the execution mode of the action. The analysis
+  /// should build the same data structure for a k.Actors action that a @Verb annotation provides.
   ///
   /// Compilation pass: for each action:
   ///   Compile each statement and add the code to a temporary buffer.
@@ -140,6 +143,15 @@ public class AgentCompiler {
       return null;
     }
 
+    methods.add(
+        MethodSpec.methodBuilder("getAgentExecutionMode")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .returns(Verb.Type.class)
+            .addStatement(
+                "return $T.$L", Verb.Type.class, analyzer.getAgentExecutionMode().name())
+            .build());
+
     var classSpec =
         TypeSpec.classBuilder(className)
             .superclass(analyzer.getAgentClass())
@@ -158,5 +170,13 @@ public class AgentCompiler {
    */
   public List<Notification> getNotifications() {
     return notifications;
+  }
+
+  public Verb.Type getAgentExecutionMode() {
+    return analyzer.getAgentExecutionMode();
+  }
+
+  public BehaviorAnalyzer.Lifecycle getLifecycle() {
+    return analyzer.getLifecycle();
   }
 }
