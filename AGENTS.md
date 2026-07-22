@@ -278,7 +278,9 @@ same scope.
 ### 5.3. Concurrency and `then`
 
 Reactive calls normally install listeners and let execution continue. Prefix a following statement
-with `then` when it must wait for the preceding reactive call or reactive group to complete:
+with `then` when it must wait for the preceding reactive call to supply its first value. When the
+preceding statement is a group, every reactive call in that group must supply a value before
+execution continues:
 
 ```kactors
 (

@@ -471,9 +471,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
   /**
    * If true, this statement was preceded by <code>then</code> in the code, meaning it must wait for
-   * the previous supplier or group thereof to supply their value before being executed. Using this
-   * out of context (when the previous statement has no match actions to wait for) should result in
-   * a warning.
+   * the previous reactive call, or every reactive call in the previous group, to supply its first
+   * value before being executed. Using this out of context (when the previous statement has no
+   * match actions to wait for) should result in a warning.
    *
    * @return
    */

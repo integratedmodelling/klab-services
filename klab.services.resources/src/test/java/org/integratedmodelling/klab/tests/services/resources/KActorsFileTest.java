@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
@@ -52,6 +53,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertStatementVerbOperands),
         new Case(
+            "/behavior-contract.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertBehaviorContract),
+        new Case(
             "/simplegroup.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertGroupedBehaviorParses));
@@ -82,6 +87,10 @@ class KActorsFileTest {
     var analyzer = result.requireAnalyzer();
     assertEquals("test.main", behavior.getUrn());
     assertEquals(KActorsBehavior.Type.BEHAVIOR, behavior.getBehaviorType());
+    assertEquals("1.0.0", behavior.getVersion().toString());
+    assertEquals("test.project", behavior.getProjectName());
+    assertEquals(KActorsBehavior.Platform.ANY, behavior.getPlatform());
+    assertTrue(behavior.getSourceCode().contains("behavior test.main"));
     assertEquals(
         List.of("timer", "console"),
         behavior.getImports().stream().map(KActorsBehavior.Import::getImportedAlias).toList());
@@ -100,6 +109,38 @@ class KActorsFileTest {
     assertEquals(Verb.Type.EMITTER, main.statement().getActionType());
     assertEquals(Verb.Type.EMITTER, analyzer.getAgentExecutionMode());
     assertEquals(BehaviorAnalyzer.Lifecycle.PERSISTENT, analyzer.getLifecycle());
+
+    var firstCall = main.statement().getCode().getFirst();
+    assertEquals("test.main", firstCall.getNamespace());
+    assertEquals("test.project", firstCall.getProjectName());
+    assertEquals(KlabAsset.KnowledgeClass.BEHAVIOR, firstCall.getDocumentClass());
+    assertTrue(firstCall.getLength() > 0);
+  }
+
+  private void assertBehaviorContract(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var behavior = result.requireBehavior();
+    assertEquals(KActorsBehavior.Type.BEHAVIOR, behavior.getBehaviorType());
+    assertEquals("2.3.0", behavior.getVersion().toString());
+    assertEquals(KActorsBehavior.Platform.ANY, behavior.getPlatform());
+    assertEquals("test.project", behavior.getProjectName());
+    assertTrue(behavior.getSourceCode().contains("behavior test.user.contract"));
+
+    var main = behavior.getStatements().getFirst();
+    assertEquals(List.of("entry"), main.getAnnotations().stream().map(a -> a.getName()).toList());
+    assertEquals("test.user.contract", main.getNamespace());
+    assertEquals("test.project", main.getProjectName());
+    assertEquals(KlabAsset.KnowledgeClass.BEHAVIOR, main.getDocumentClass());
+
+    var returned =
+        assertInstanceOf(KActorsStatement.Return.class, main.getCode().getFirst()).getValue();
+    assertNotNull(returned);
+    assertNull(returned.getCast(), "an absent cast must be represented by null");
+    assertEquals(Integer.valueOf(0), returned.as(Integer.class));
+    assertEquals("test.user.contract", returned.getNamespace());
+    assertEquals("test.project", returned.getProjectName());
   }
 
   private void assertGroupedBehaviorParses(KActorsTestSupport.Result result) {

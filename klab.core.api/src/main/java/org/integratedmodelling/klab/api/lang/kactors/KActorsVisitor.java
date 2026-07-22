@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.Ternary;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
@@ -488,6 +489,10 @@ public class KActorsVisitor {
           && !BUILT_IN_IDENTIFIERS.contains(identifier)) {
         error("Unknown identifier: " + identifier, value);
       }
+    } else if (value.getType() == ValueType.TERNARY_EXPRESSION
+        && raw instanceof Ternary ternary
+        && ternary.getCondition() instanceof KActorsValue condition) {
+      validateBooleanValue(condition, "ternary condition");
     }
     visitValues(raw, context, resolveIdentifiers);
   }
@@ -906,6 +911,10 @@ public class KActorsVisitor {
       for (var value : array) {
         visitValues(value, context, resolveIdentifiers);
       }
+    } else if (values instanceof Ternary ternary) {
+      visitValues(ternary.getCondition(), context, resolveIdentifiers);
+      visitValues(ternary.getTrueCase(), context, resolveIdentifiers);
+      visitValues(ternary.getFalseCase(), context, resolveIdentifiers);
     }
   }
 

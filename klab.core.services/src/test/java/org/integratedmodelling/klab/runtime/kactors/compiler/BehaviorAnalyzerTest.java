@@ -2,7 +2,15 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
+import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
@@ -249,6 +257,151 @@ class BehaviorAnalyzerTest {
     assertTrue(compiler.getSourceCode().contains("return Verb.Type.EMITTER;"));
   }
 
+  @Test
+  void compilerEmitsJavaThatCompilesForExpressionsAndLocalState() {
+    var assignment =
+        assignment(
+            "answer", KActorsStatement.Assignment.Scope.FRAME, expression("21 * 2"));
+    var compiler =
+        new AgentCompiler(behavior(action("main", assignment, returned(identifier("answer")))));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("Expression expression_0"));
+    assertTrue(compiler.getSourceCode().contains("compileExpression(\"21 * 2\")"));
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void compilerEmitsNestedTernaryValuesAsJavaConditionalExpressions() {
+    var selected =
+        ternary(
+            expression("firstCondition"),
+            number(1),
+            ternary(expression("secondCondition"), number(2), number(3)));
+    var compiler =
+        new AgentCompiler(
+            behavior(
+                action(
+                    "main",
+                    assignment("selected", KActorsStatement.Assignment.Scope.FRAME, selected),
+                    returned(identifier("selected")))));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(generated.contains("truthy(evaluateExpression(this.expression_0"), generated);
+    assertTrue(generated.contains("truthy(evaluateExpression(this.expression_1"), generated);
+    assertTrue(generated.contains("? 1 : (truthy("), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void compilerEmitsScopedHandlersForReactiveVerbMatches() {
+    var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    match.setVariables(List.of("value"));
+    match.setActionOnMatch(fired(identifier("value")));
+    var stream = verb("external", "stream");
+    stream.setActions(List.of(match));
+    var source = behavior(action("main", stream));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var compiler =
+        new AgentCompiler(
+            source,
+            null,
+            new ResolvingValidator(),
+            new AgentCompiler.Resolver() {});
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("runEmitter("));
+    assertTrue(compiler.getSourceCode().contains("bindMatch("));
+    assertTrue(compiler.getSourceCode().contains("EventType.FIRE"));
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void compilerWaitsForEveryReactiveCallInAGroupBeforeThenStatement() {
+    var first = verb("external", "first");
+    first.setActions(List.of(match(verb("external", "nested"))));
+    var second = verb("external", "second");
+    second.setActions(
+        List.of(match(assignment("secondValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
+    var group = new KActorsStatementImpl.GroupImpl();
+    group.setStatements(List.of(first, second));
+    var after = verb("external", "after");
+    after.setSequential(true);
+    var source = behavior(action("main", group, after));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return "after".equals(verb.getMessage()) ? Verb.Type.FUNCTION : Verb.Type.SUPPLIER;
+          }
+        };
+    var compiler = new AgentCompiler(source, null, validator, new AgentCompiler.Resolver() {});
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    var barrier =
+        Pattern.compile("awaitReactions\\(reaction_\\d+, reaction_\\d+\\);").matcher(generated);
+    assertTrue(barrier.find(), generated);
+    assertTrue(barrier.start() < generated.indexOf("\"after\""), generated);
+    assertFalse(generated.contains("TODO honor `then`"));
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void compilerRecursivelyGeneratesResolvedBehaviorImports() {
+    var dependency = behavior(action("helper", returned(number(7))));
+    dependency.setUrn("test.dependency");
+    var source = behavior(action("main", returned(number(1))));
+    source.setImports(List.of(imported("test.dependency", "dependency")));
+    var compiler =
+        new AgentCompiler(
+            source,
+            null,
+            new KActorsVisitor.LenientValidator(),
+            new AgentCompiler.Resolver() {
+              @Override
+              public KActorsBehavior resolveBehavior(String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+                return "test.dependency".equals(urn) ? dependency : null;
+              }
+            });
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertEquals(Set.of("test.behavior", "test.dependency"), compiler.getGeneratedSources().keySet());
+    assertGeneratedJavaCompiles(compiler.getGeneratedSources().get("test.dependency"));
+  }
+
+  private static void assertGeneratedJavaCompiles(String source) {
+    var compiler = ToolProvider.getSystemJavaCompiler();
+    assertNotNull(compiler, "tests require a JDK");
+    var diagnostics = new DiagnosticCollector<JavaFileObject>();
+    var classMatcher = Pattern.compile("public final class ([A-Za-z0-9_$]+)").matcher(source);
+    assertTrue(classMatcher.find(), source);
+    var unit =
+        new SimpleJavaFileObject(
+            URI.create(
+                "string:///org/integratedmodelling/klab/runtime/kactors/generated/"
+                    + classMatcher.group(1)
+                    + ".java"),
+            JavaFileObject.Kind.SOURCE) {
+          @Override
+          public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+            return source;
+          }
+        };
+    var task =
+        compiler.getTask(
+            null,
+            null,
+            diagnostics,
+            List.of("-proc:none", "-classpath", System.getProperty("java.class.path")),
+            null,
+            List.of(unit));
+    assertTrue(task.call(), () -> diagnostics.getDiagnostics().toString() + "\n" + source);
+  }
+
   private static class ResolvingValidator extends KActorsVisitor.LenientValidator {
     private boolean verbValidated;
 
@@ -318,6 +471,13 @@ class BehaviorAnalyzerTest {
     return statement;
   }
 
+  private static KActorsStatementImpl.VerbImpl.MatchActionImpl match(
+      KActorsStatement actionOnMatch) {
+    var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    match.setActionOnMatch(actionOnMatch);
+    return match;
+  }
+
   private static KActorsValueImpl number(int number) {
     var value = new KActorsValueImpl();
     value.setType(ValueType.NUMBER);
@@ -329,6 +489,25 @@ class BehaviorAnalyzerTest {
     var value = new KActorsValueImpl();
     value.setType(ValueType.IDENTIFIER);
     value.setStatedValue(identifier);
+    return value;
+  }
+
+  private static KActorsValueImpl expression(String expression) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.EXPRESSION);
+    value.setStatedValue(expression);
+    return value;
+  }
+
+  private static KActorsValueImpl ternary(
+      KActorsValueImpl condition, KActorsValueImpl trueCase, KActorsValueImpl falseCase) {
+    var ternary = new TernaryImpl();
+    ternary.setCondition(condition);
+    ternary.setTrueCase(trueCase);
+    ternary.setFalseCase(falseCase);
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.TERNARY_EXPRESSION);
+    value.setStatedValue(ternary);
     return value;
   }
 

@@ -1,25 +1,40 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
 import groovy.lang.GroovyObjectSupport;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.computation.GroovyProcessor;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
@@ -50,9 +65,9 @@ import reactor.core.publisher.Sinks;
 ///    and its `main` can install `when` listeners for events fired by a lower agent's main.
 /// 5. Suppliers used in a functional context (for example, as the right-hand side of an assignment)
 // are
-///    compiled with blocking behavior (i.e., calling get() on their CompletableFuture result). This
-///    can also be triggered by the calling code starting the next statement with `then`. If
-///    `then` follows a group, suppliers in the entire group will be waited for before continuing.
+///    compiled with blocking behavior (i.e., calling get() on their CompletableFuture result). A
+///    `then` statement waits for the preceding reactor's first value. If `then` follows a group,
+///    every reactor in the group must supply a value before execution continues.
 ///
 /// Applications in a service's purview should be automatically available at the URL
 /// `<runtimeUrl>/<applicationUrn>.app`. The app URN should be substitutable with a
@@ -70,6 +85,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private SessionScope sessionScope;
   private int errors = 0;
   private final AtomicLong nextId = new AtomicLong(0);
+  private final AtomicBoolean started = new AtomicBoolean(false);
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -116,8 +132,9 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     private Object returnValue = null;
 
     public static ExitValue success(Object returnValue) {
-      // TODO
-      return new ExitValue();
+      var ret = new ExitValue();
+      ret.setReturnValue(returnValue);
+      return ret;
     }
 
     public static ExitValue failure(Object... args) {
@@ -236,6 +253,378 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   public void stop(Object... conditions) {
     // TODO stop or finish eventbus
     rootScope.done(conditions);
+  }
+
+  /** A deliberately small status surface used by generated test CLIs. */
+  public String status() {
+    if (rootScope == null || rootScope.isDone()) {
+      return "stopped";
+    }
+    return started.get() ? "running" : "ready";
+  }
+
+  /**
+   * Resolve an imported actor at runtime. Callers embedding generated agents can pass explicit
+   * bindings to the generated constructor. Component-backed deployments may override this method
+   * to consult their component registry; unresolved imports fail only when invoked.
+   */
+  protected Object resolveImportedActor(
+      String urn, String alias, Map<String, Object> explicitBindings) {
+    if (explicitBindings != null) {
+      if (explicitBindings.containsKey(alias)) {
+        return explicitBindings.get(alias);
+      }
+      if (explicitBindings.containsKey(urn)) {
+        return explicitBindings.get(urn);
+      }
+    }
+    return new UnresolvedActor(urn, alias);
+  }
+
+  protected record UnresolvedActor(String urn, String alias) {}
+
+  /** Compile one analyzed k.Actors expression into the generated agent's immutable fields. */
+  protected Expression compileExpression(String code) {
+    var descriptor =
+        new GroovyProcessor()
+            .analyze(
+                ExpressionCode.of(code, "groovy"),
+                rootScope == null ? null : rootScope.getSession(),
+                List.of(),
+                List.of());
+    return descriptor.compile();
+  }
+
+  protected Object evaluateExpression(
+      Expression expression, AgentScope scope, Map<String, Object> frame) {
+    org.integratedmodelling.klab.api.scope.Scope evaluationScope = null;
+    if (scope != null) {
+      evaluationScope = scope.getContext() == null ? scope.getSession() : scope.getContext();
+    }
+    return expression.eval(evaluationScope, frame == null ? Map.of() : frame);
+  }
+
+  protected Map<String, Object> bindArguments(List<String> names, Object... arguments) {
+    var ret = new LinkedHashMap<String, Object>();
+    var supplied = arguments == null ? new Object[0] : arguments;
+    if (supplied.length == 1 && supplied[0] instanceof Map<?, ?> map) {
+      map.forEach((key, value) -> ret.put(String.valueOf(key), value));
+      return ret;
+    }
+    for (int i = 0; i < names.size(); i++) {
+      ret.put(names.get(i), i < supplied.length ? supplied[i] : null);
+    }
+    return ret;
+  }
+
+  protected Map<String, Object> childFrame(Map<String, Object> parent) {
+    return parent == null ? new LinkedHashMap<>() : new LinkedHashMap<>(parent);
+  }
+
+  protected Object resolveIdentifier(String name, Map<String, Object> frame) {
+    if ("self".equals(name)) {
+      return this;
+    }
+    if (frame != null && frame.containsKey(name)) {
+      return frame.get(name);
+    }
+    if (rootScope != null && rootScope.containsKey(name)) {
+      return rootScope.get(name);
+    }
+    throw new KlabActorException(this, "Unresolved k.Actors identifier: " + name);
+  }
+
+  protected void setActorState(String name, Object value) {
+    rootScope.put(name, value);
+  }
+
+  protected Object literalValue(ValueType type, String encoded) {
+    // Extension point for observables, quantities, ranges, ternaries, localized strings and other
+    // non-POD literals whose definitive runtime mediation belongs to language/runtime services.
+    return encoded;
+  }
+
+  protected boolean truthy(Object value) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Boolean bool) {
+      return bool;
+    }
+    if (value instanceof Number number) {
+      return number.doubleValue() != 0;
+    }
+    if (value instanceof CharSequence sequence) {
+      return !sequence.isEmpty();
+    }
+    if (value instanceof Collection<?> collection) {
+      return !collection.isEmpty();
+    }
+    if (value instanceof Map<?, ?> map) {
+      return !map.isEmpty();
+    }
+    return true;
+  }
+
+  protected Iterable<?> asIterable(Object value) {
+    if (value instanceof Iterable<?> iterable) {
+      return iterable;
+    }
+    if (value != null && value.getClass().isArray()) {
+      var ret = new ArrayList<>();
+      for (int i = 0; i < Array.getLength(value); i++) {
+        ret.add(Array.get(value, i));
+      }
+      return ret;
+    }
+    throw new KlabActorException(this, "Value is not iterable: " + value);
+  }
+
+  protected boolean matches(
+      Object payload, ValueType type, Object criterion, boolean exclusive) {
+    boolean match =
+        switch (type) {
+          case ANYTHING -> true;
+          case ANYVALUE, ANYTRUE -> truthy(payload);
+          case NODATA -> payload == null;
+          case EMPTY ->
+              payload == null
+                  || (payload instanceof Collection<?> collection && collection.isEmpty())
+                  || (payload instanceof Map<?, ?> map && map.isEmpty())
+                  || (payload instanceof CharSequence sequence && sequence.isEmpty());
+          case ERROR -> payload instanceof Throwable || payload instanceof Notification;
+          case REGEXP ->
+              criterion instanceof java.util.regex.Pattern pattern
+                  && payload != null
+                  && pattern.matcher(payload.toString()).matches();
+          case CLASS, TYPE ->
+              criterion instanceof Class<?> cls && payload != null && cls.isInstance(payload);
+          case LIST, SET -> criterion instanceof Collection<?> set && set.contains(payload);
+          default -> Objects.equals(payload, criterion);
+        };
+    return exclusive ? !match : match;
+  }
+
+  protected void bindMatch(
+      Map<String, Object> frame,
+      Object payload,
+      List<String> variables,
+      String captureAs) {
+    if (captureAs != null && !captureAs.isBlank()) {
+      frame.put(captureAs, payload);
+    }
+    if (variables == null || variables.isEmpty()) {
+      return;
+    }
+    List<?> values;
+    if (payload instanceof List<?> list) {
+      values = list;
+    } else if (payload != null && payload.getClass().isArray()) {
+      var arrayValues = new ArrayList<>();
+      for (int i = 0; i < Array.getLength(payload); i++) {
+        arrayValues.add(Array.get(payload, i));
+      }
+      values = arrayValues;
+    } else {
+      values = Collections.singletonList(payload);
+    }
+    for (int i = 0; i < variables.size(); i++) {
+      frame.put(variables.get(i), i < values.size() ? values.get(i) : null);
+    }
+  }
+
+  protected Object invokeFunction(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
+    Object ret = invokeActor(actor, verb, scope, arguments);
+    if (ret instanceof CompletableFuture<?> future) {
+      return future.join();
+    }
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  protected CompletableFuture<Object> invokeSupplier(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
+    Object ret = invokeActor(actor, verb, scope, arguments);
+    if (ret instanceof CompletableFuture<?> future) {
+      return (CompletableFuture<Object>) future;
+    }
+    return CompletableFuture.completedFuture(ret);
+  }
+
+  protected void invokeEmitter(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
+    invokeActor(actor, verb, scope, arguments);
+  }
+
+  protected Object invokeSelfFunction(String action, AgentScope scope, Object... arguments) {
+    return invokeGeneratedAction(action, scope, arguments);
+  }
+
+  protected CompletableFuture<Object> invokeSelfSupplier(
+      String action, AgentScope scope, Object... arguments) {
+    Object ret = invokeGeneratedAction(action, scope, arguments);
+    if (ret instanceof CompletableFuture<?> future) {
+      @SuppressWarnings("unchecked")
+      var typed = (CompletableFuture<Object>) future;
+      return typed;
+    }
+    return CompletableFuture.completedFuture(ret);
+  }
+
+  protected void invokeSelfEmitter(String action, AgentScope scope, Object... arguments) {
+    invokeGeneratedAction(action, scope, arguments);
+  }
+
+  private Object invokeGeneratedAction(String action, AgentScope scope, Object... arguments) {
+    try {
+      Method method = findMethod(getClass(), "action_" + action, false);
+      return method.invoke(this, scope, arguments);
+    } catch (InvocationTargetException e) {
+      throw actorFailure(e.getTargetException());
+    } catch (ReflectiveOperationException e) {
+      throw actorFailure(e);
+    }
+  }
+
+  private Object invokeActor(Object actor, String verb, AgentScope scope, Object... arguments) {
+    if (actor instanceof UnresolvedActor unresolved) {
+      throw new KlabActorException(
+          this,
+          "Imported actor '" + unresolved.alias() + "' (" + unresolved.urn() + ") was not bound");
+    }
+    if (actor instanceof RuntimeAgentBase runtimeAgent) {
+      return runtimeAgent.invokeGeneratedAction(verb, scope, arguments);
+    }
+    Class<?> actorClass = actor instanceof Class<?> cls ? cls : actor.getClass();
+    Object target = actor instanceof Class<?> ? null : actor;
+    try {
+      Method method = findActorMethod(actorClass, verb, target == null, scope, arguments);
+      Object[] actualArguments = prepareArguments(method, scope, arguments);
+      return method.invoke(Modifier.isStatic(method.getModifiers()) ? null : target, actualArguments);
+    } catch (InvocationTargetException e) {
+      throw actorFailure(e.getTargetException());
+    } catch (ReflectiveOperationException | IllegalArgumentException e) {
+      throw actorFailure(e);
+    }
+  }
+
+  private Method findActorMethod(
+      Class<?> actorClass,
+      String verb,
+      boolean requireStatic,
+      AgentScope scope,
+      Object[] arguments)
+      throws NoSuchMethodException {
+    for (Method method : actorClass.getMethods()) {
+      var annotation = method.getAnnotation(Verb.class);
+      String exposedName =
+          annotation == null || annotation.name().isBlank() ? method.getName() : annotation.name();
+      if (exposedName.equals(verb)
+          && (!requireStatic || Modifier.isStatic(method.getModifiers()))
+          && canPrepareArguments(method, scope, arguments)) {
+        method.setAccessible(true);
+        return method;
+      }
+    }
+    throw new NoSuchMethodException(actorClass.getName() + "." + verb);
+  }
+
+  private Method findMethod(Class<?> type, String name, boolean publicOnly)
+      throws NoSuchMethodException {
+    for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+      for (Method method : current.getDeclaredMethods()) {
+        if (method.getName().equals(name)) {
+          method.setAccessible(true);
+          return method;
+        }
+      }
+      if (publicOnly) {
+        break;
+      }
+    }
+    throw new NoSuchMethodException(type.getName() + "." + name);
+  }
+
+  private boolean canPrepareArguments(Method method, AgentScope scope, Object[] arguments) {
+    try {
+      prepareArguments(method, scope, arguments);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
+  private Object[] prepareArguments(Method method, AgentScope scope, Object[] supplied) {
+    var parameters = method.getParameterTypes();
+    var ret = new Object[parameters.length];
+    int source = 0;
+    for (int target = 0; target < parameters.length; target++) {
+      Class<?> parameter = parameters[target];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        ret[target] = scope;
+      } else if (method.isVarArgs() && target == parameters.length - 1) {
+        Class<?> component = parameter.getComponentType();
+        Object array = Array.newInstance(component, supplied.length - source);
+        for (int i = source; i < supplied.length; i++) {
+          Array.set(array, i - source, coerceArgument(supplied[i], component));
+        }
+        ret[target] = array;
+        source = supplied.length;
+      } else if (source < supplied.length) {
+        ret[target] = coerceArgument(supplied[source++], parameter);
+      } else {
+        throw new IllegalArgumentException("Not enough arguments for " + method);
+      }
+    }
+    if (source != supplied.length) {
+      throw new IllegalArgumentException("Too many arguments for " + method);
+    }
+    return ret;
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private Object coerceArgument(Object value, Class<?> target) {
+    if (value == null || target.isInstance(value)) {
+      return value;
+    }
+    if (target.isPrimitive() && value instanceof Number number) {
+      if (target == int.class) return number.intValue();
+      if (target == long.class) return number.longValue();
+      if (target == double.class) return number.doubleValue();
+      if (target == float.class) return number.floatValue();
+      if (target == short.class) return number.shortValue();
+      if (target == byte.class) return number.byteValue();
+    }
+    if (target == boolean.class && value instanceof Boolean) {
+      return value;
+    }
+    if (target.isEnum() && value instanceof CharSequence text) {
+      return Enum.valueOf((Class<? extends Enum>) target, text.toString());
+    }
+    if (target == String.class) {
+      return value.toString();
+    }
+    // TODO mediate Quantity into value/unit parameters and use descriptor-declared conversions.
+    throw new IllegalArgumentException(
+        "Cannot coerce " + value.getClass().getName() + " to " + target.getName());
+  }
+
+  private KlabActorException actorFailure(Throwable throwable) {
+    return throwable instanceof KlabActorException actorException
+        ? actorException
+        : new KlabActorException(this, throwable);
+  }
+
+  protected void handleText(String text, AgentScope scope, Map<String, Object> frame) {
+    scope.getPrintWriter().print(text);
+  }
+
+  protected void assertValue(Object actual, Object expected) {
+    boolean success = expected == null ? truthy(actual) : Objects.equals(actual, expected);
+    if (!success) {
+      throw new AssertionError("k.Actors assertion failed: expected " + expected + ", got " + actual);
+    }
   }
 
   /**
@@ -364,6 +753,34 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   /**
+   * Complete the first-value signal generated for a reactive call. A normal RETURN or FIRE releases
+   * a following {@code then}; an exception propagates through the barrier instead of allowing the
+   * sequential statement to run.
+   */
+  protected void completeReaction(CompletableFuture<Void> completion, Event event) {
+    if (completion == null || completion.isDone()) {
+      return;
+    }
+    if (event != null && event.type() == EventType.EXCEPTION) {
+      Throwable failure =
+          event.payload() instanceof Throwable throwable
+              ? throwable
+              : new KlabActorException(this, String.valueOf(event.payload()));
+      completion.completeExceptionally(failure);
+    } else {
+      completion.complete(null);
+    }
+  }
+
+  /** Wait until every reactive call in the preceding statement or group has produced a value. */
+  @SafeVarargs
+  protected final void awaitReactions(CompletableFuture<?>... completions) {
+    if (completions != null && completions.length > 0) {
+      CompletableFuture.allOf(completions).join();
+    }
+  }
+
+  /**
    * Call to start an emitter after having called {@link #onEvent(AgentScope, BiConsumer,
    * EventType...)} to register its action upon completion. The emitter is simply an AgentScope
    * consumer; the event must be EventType.FIRE.
@@ -417,8 +834,13 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @return
    */
   public ExitValue run() {
+    if (!started.compareAndSet(false, true)) {
+      return ExitValue.failure(new KlabIllegalStateException("Agent has already been started"));
+    }
     if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
-      return main(rootScope);
+      var result = main(rootScope);
+      rootScope.done(result);
+      return result;
     }
     return runEmitter(rootScope, this::main);
   }

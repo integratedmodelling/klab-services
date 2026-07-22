@@ -1,0 +1,7 @@
+behavior test.user.contract
+    "Exercise behavior and action contract fields."
+    version 2.3
+
+@entry
+action main:
+    return 0

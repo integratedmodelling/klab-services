@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
@@ -28,8 +29,10 @@ class RuntimeAgentBaseTest {
     Thread thread = null;
 
     try {
+      assertEquals("ready", agent.status());
       assertSame(RuntimeAgentBase.TASK_RUNNING, agent.run());
       assertTrue(agent.mainReturned.await(1, TimeUnit.SECONDS));
+      assertEquals("running", agent.status());
 
       thread = agent.agentThread.get();
       assertNotNull(thread);
@@ -40,6 +43,7 @@ class RuntimeAgentBaseTest {
       thread.join(1000);
 
       assertFalse(thread.isAlive());
+      assertEquals("stopped", agent.status());
     } finally {
       agent.rootScope().done();
       if (thread != null) {
@@ -143,6 +147,63 @@ class RuntimeAgentBaseTest {
     assertEquals(List.of("relayed"), received);
   }
 
+  @Test
+  void reflectiveActorBridgeInjectsScopeAndHonorsExecutionShapes() {
+    var agent = new ReactiveRuntimeAgent();
+    var scope = (AgentScope) agent.rootScope();
+
+    assertEquals(3L, agent.function(TestActor.class, "sum", scope, 1, 2));
+    assertEquals("ready", agent.supplier(TestActor.class, "later", scope).join());
+
+    var received = new CopyOnWriteArrayList<Object>();
+    var eventScope =
+        agent.listen(
+            scope,
+            (event, parent) -> received.add(event.payload()),
+            RuntimeAgentBase.EventType.FIRE);
+    agent.emitter(TestActor.class, "emit", eventScope, "event");
+    assertEquals(List.of("event"), received);
+  }
+
+  @Test
+  void sequentialBarrierWaitsForEveryReaction() {
+    var agent = new ReactiveRuntimeAgent();
+    var first = new CompletableFuture<Void>();
+    var second = new CompletableFuture<Void>();
+    var waiting = CompletableFuture.runAsync(() -> agent.await(first, second));
+
+    first.complete(null);
+    assertFalse(waiting.isDone(), "one completed reactor must not release the group barrier");
+
+    second.complete(null);
+    waiting.join();
+    assertTrue(waiting.isDone());
+  }
+
+  private static class TestActor {
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "sum",
+        executionType = Verb.Type.FUNCTION)
+    public static long sum(RuntimeAgent.Scope scope, long left, long right) {
+      return left + right;
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "later",
+        executionType = Verb.Type.SUPPLIER)
+    public static CompletableFuture<String> later(RuntimeAgent.Scope scope) {
+      return CompletableFuture.completedFuture("ready");
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "emit",
+        executionType = Verb.Type.EMITTER)
+    public static void emit(RuntimeAgent.Scope scope, Object value) {
+      scope.doFire(value);
+    }
+  }
+
   private static class BackgroundRuntimeAgent extends RuntimeAgentBase {
 
     private final CountDownLatch mainReturned = new CountDownLatch(1);
@@ -181,6 +242,23 @@ class RuntimeAgentBaseTest {
     private <T> ExitValue supply(
         AgentScope scope, Function<AgentScope, CompletableFuture<T>> supplier) {
       return runSupplier(scope, supplier);
+    }
+
+    private Object function(Object actor, String verb, AgentScope scope, Object... arguments) {
+      return invokeFunction(actor, verb, scope, arguments);
+    }
+
+    private CompletableFuture<Object> supplier(
+        Object actor, String verb, AgentScope scope, Object... arguments) {
+      return invokeSupplier(actor, verb, scope, arguments);
+    }
+
+    private void emitter(Object actor, String verb, AgentScope scope, Object... arguments) {
+      invokeEmitter(actor, verb, scope, arguments);
+    }
+
+    private void await(CompletableFuture<?>... completions) {
+      awaitReactions(completions);
     }
 
     @Override

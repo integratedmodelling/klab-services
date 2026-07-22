@@ -406,9 +406,12 @@ public class ComponentRegistry {
   }
 
   private void removeActorImplementations(Map<String, List<Extensions.ActorDescriptor>> actors) {
-    for (var key : new ArrayList<>(actors.keySet())) {
-      actors.remove(key);
+    for (var descriptors : actors.values()) {
+      for (var actor : descriptors) {
+        actor.verbs.forEach(this::removeFunctionImplementation);
+      }
     }
+    actors.clear();
   }
 
   private void removeDescriptorReferences(
@@ -649,6 +652,20 @@ public class ComponentRegistry {
       return ret;
     }
     return null;
+  }
+
+  /**
+   * Return the Java actor descriptors registered under the requested actor URN. The descriptors
+   * are serializable; use {@link #implementation(Extensions.FunctionDescriptor)} for the matching
+   * reflective method/class information retained by this registry.
+   */
+  public List<Extensions.ActorDescriptor> getActorDescriptors(String urn, Version version) {
+    Extensions.ComponentDescriptor target = selectBestComponent(actorFinder.get(urn), version);
+    if (target == null) {
+      return List.of();
+    }
+    var descriptors = target.actors().get(urn);
+    return descriptors == null ? List.of() : List.copyOf(descriptors);
   }
 
   /**
@@ -919,6 +936,7 @@ public class ComponentRegistry {
     var ret = new Extensions.ActorDescriptor();
     ret.urn = actor.name();
     ret.description = actor.description();
+    ret.javaClassName = cls.getName();
 
     // annotated methods
     for (Method method : cls.getDeclaredMethods()) {

@@ -19,6 +19,7 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
   private Object statedValue;
   private boolean exclusive;
   private boolean deferred;
+  private String cast;
 
   @Override
   public ValueType getType() {
@@ -42,8 +43,7 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 
   @Override
   public <T> T as(Class<? extends T> cls) {
-    // TODO Auto-generated method stub
-    return null;
+    return statedValue == null ? null : cls.cast(statedValue);
   }
 
   public Object getStatedValue() {
@@ -62,7 +62,7 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 
   @Override
   public String getCast() {
-    return "";
+    return cast;
   }
 
   public void setType(ValueType type) {
@@ -79,6 +79,10 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 
   public void setDeferred(boolean deferred) {
     this.deferred = deferred;
+  }
+
+  public void setCast(String cast) {
+    this.cast = cast;
   }
 
   @Override

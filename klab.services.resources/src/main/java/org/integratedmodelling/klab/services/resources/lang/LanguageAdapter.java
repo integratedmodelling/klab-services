@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
+import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -102,7 +103,11 @@ public enum LanguageAdapter {
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
     AnnotationImpl ret = new AnnotationImpl();
-    ret.setName(annotation.getName());
+    var annotationName = annotation.getName();
+    ret.setName(
+        annotationName != null && annotationName.startsWith("@")
+            ? annotationName.substring(1)
+            : annotationName);
     for (int n = 0; n < annotation.getUnnamedParameterCount(); n++) {
       ret.getUnnamedArguments()
           .add(
@@ -382,9 +387,12 @@ public enum LanguageAdapter {
   }
 
   private KActorsValue adaptKActorsValue(
-      ValueSyntax valueSyntax, List<Notification> notifications) {
+      ValueSyntax valueSyntax,
+      String namespace,
+      String projectName,
+      List<Notification> notifications) {
     var ret = new KActorsValueImpl();
-    setParsingData(valueSyntax, ret);
+    setParsingData(valueSyntax, ret, namespace, projectName);
     ret.setType(
         switch (valueSyntax.getType()) {
           case NUMBER -> {
@@ -400,6 +408,12 @@ public enum LanguageAdapter {
             yield ValueType.RANGE;
           }
           case OBSERVABLE -> {
+            ret.setStatedValue(
+                adaptValue(
+                    valueSyntax.getPod(Object.class),
+                    namespace,
+                    projectName,
+                    KlabAsset.KnowledgeClass.BEHAVIOR));
             yield ValueType.OBSERVABLE;
           }
           case QUANTITY -> {
@@ -423,18 +437,53 @@ public enum LanguageAdapter {
             yield ValueType.BOOLEAN;
           }
           case LIST -> {
+            ret.setStatedValue(
+                adaptValue(
+                    valueSyntax.getPod(Object.class),
+                    namespace,
+                    projectName,
+                    KlabAsset.KnowledgeClass.BEHAVIOR));
             yield ValueType.LIST;
           }
           case MAP -> {
+            ret.setStatedValue(
+                adaptValue(
+                    valueSyntax.getPod(Object.class),
+                    namespace,
+                    projectName,
+                    KlabAsset.KnowledgeClass.BEHAVIOR));
             yield ValueType.MAP;
           }
           case LOCALIZED_STRING_REFERENCE -> {
+            ret.setStatedValue(valueSyntax.getPod(String.class));
             yield ValueType.LOCALIZED_KEY;
           }
           case ARGUMENT_REFERENCE -> {
+            ret.setStatedValue(valueSyntax.getPod(Integer.class));
             yield ValueType.NUMBERED_PATTERN;
           }
           case TERNARY_EXPRESSION -> {
+            var syntax = valueSyntax.getPod(TernaryExpressionSyntax.class);
+            if (syntax == null
+                || syntax.getCondition() == null
+                || syntax.getTrueCase() == null
+                || syntax.getFalseCase() == null) {
+              notifications.add(
+                  Notification.error(
+                      valueSyntax, "The parser returned an incomplete ternary expression"));
+            } else {
+              var ternary = new TernaryImpl();
+              ternary.setCondition(
+                  adaptKActorsValue(
+                      syntax.getCondition(), namespace, projectName, notifications));
+              ternary.setTrueCase(
+                  adaptKActorsValue(
+                      syntax.getTrueCase(), namespace, projectName, notifications));
+              ternary.setFalseCase(
+                  adaptKActorsValue(
+                      syntax.getFalseCase(), namespace, projectName, notifications));
+              ret.setStatedValue(ternary);
+            }
             yield ValueType.TERNARY_EXPRESSION;
           }
           case EXPRESSION -> {
@@ -1255,6 +1304,11 @@ public enum LanguageAdapter {
 
     ret.setUrn(name);
     ret.setLastUpdateTimestamp(timestamp);
+    ret.setProjectName(projectName);
+    ret.setSourceCode(syntax.encode());
+    ret.setVersion(
+        syntax.getVersion() == null ? Version.CURRENT_VERSION : Version.create(syntax.getVersion()));
+    ret.setPlatform(KActorsBehavior.Platform.ANY);
     ret.setDescription(syntax.getDocstring());
     ret.setBehaviorType(
         switch (syntax.getType()) {
@@ -1263,8 +1317,20 @@ public enum LanguageAdapter {
           case COMPONENT -> KActorsBehavior.Type.COMPONENT;
           case LIBRARY -> KActorsBehavior.Type.TRAITS;
           case APPLICATION -> KActorsBehavior.Type.APP;
-          case BEHAVIOR, USER -> KActorsBehavior.Type.BEHAVIOR;
+          case BEHAVIOR -> KActorsBehavior.Type.BEHAVIOR;
+          case USER -> KActorsBehavior.Type.USER;
         });
+
+    ret.setAnnotations(
+        syntax.getAnnotations().stream()
+            .map(
+                annotation ->
+                    adaptAnnotation(
+                        annotation,
+                        name,
+                        projectName,
+                        KlabAsset.KnowledgeClass.BEHAVIOR))
+            .toList());
 
     for (var imp : syntax.getImports()) {
       var imported = new KActorsBehaviorImpl.ImportImpl();
@@ -1277,6 +1343,7 @@ public enum LanguageAdapter {
     for (var action : syntax.getActions()) {
       ret.getStatements().add(adaptAction(action, ret, name, projectName, notifications));
     }
+    ret.setNotifications(new ArrayList<>(notifications));
 
     return ret;
   }
@@ -1289,12 +1356,9 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
 
     var ret = new KActorsActionImpl();
-    setParsingData(action, ret);
+    setParsingData(action, ret, namespace, projectName);
 
     ret.setUrn(action.getName());
-    for (var annotation : action.getAnnotations()) {
-      adaptAnnotation(annotation, namespace, projectName, KlabAsset.KnowledgeClass.BEHAVIOR);
-    }
     for (var statement : action.getStatements()) {
       ret.getCode().add(adaptActionStatement(statement, behavior, ret, notifications));
     }
@@ -1307,9 +1371,27 @@ public enum LanguageAdapter {
    * @param syntax
    * @param ret
    */
-  private void setParsingData(ParsedObject syntax, KimAssetImpl ret) {
+  private void setParsingData(
+      ParsedObject syntax, KimAssetImpl ret, String namespace, String projectName) {
     ret.setOffsetInDocument(syntax.getCodeOffset());
     ret.setLength(syntax.getCodeLength());
+    ret.setProjectName(projectName);
+    ret.setDeprecation(syntax.getDeprecation());
+    ret.setDeprecated(syntax.getDeprecation() != null);
+    ret.setAnnotations(
+        syntax.getAnnotations().stream()
+            .map(
+                annotation ->
+                    adaptAnnotation(
+                        annotation,
+                        namespace,
+                        projectName,
+                        KlabAsset.KnowledgeClass.BEHAVIOR))
+            .toList());
+    if (ret instanceof KimStatementImpl statement) {
+      statement.setNamespace(namespace);
+      statement.setDocumentClass(KlabAsset.KnowledgeClass.BEHAVIOR);
+    }
   }
 
   private KActorsStatement adaptActionStatement(
@@ -1350,7 +1432,7 @@ public enum LanguageAdapter {
               throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
         };
 
-    setParsingData(statement, (KimAssetImpl) ret);
+    setParsingData(statement, (KimAssetImpl) ret, behavior.getUrn(), behavior.getProjectName());
     var implementation = (KActorsStatementImpl) ret;
     implementation.setSequential(statement.isSequential());
     implementation.setTag(statement.getTag());
@@ -1362,7 +1444,8 @@ public enum LanguageAdapter {
                 metadata.put(
                     key,
                     value instanceof ValueSyntax syntax
-                        ? adaptKActorsValue(syntax, notifications)
+                        ? adaptKActorsValue(
+                            syntax, behavior.getUrn(), behavior.getProjectName(), notifications)
                         : value));
     implementation.setMetadata(metadata);
 
@@ -1392,7 +1475,9 @@ public enum LanguageAdapter {
             ? KActorsStatement.Assignment.Scope.FRAME
             : KActorsStatement.Assignment.Scope.ACTOR);
     if (assign.getValue() != null) {
-      ret.setValue(adaptKActorsValue(assign.getValue(), notifications));
+      ret.setValue(
+          adaptKActorsValue(
+              assign.getValue(), behavior.getUrn(), behavior.getProjectName(), notifications));
     } else if (assign.getFunction() != null) {
       ret.setFunction(adaptVerb(assign.getFunction(), behavior, action, notifications));
     }
@@ -1408,7 +1493,11 @@ public enum LanguageAdapter {
     ret.setCondition(
         doStatement.getCondition() == null
             ? null
-            : adaptKActorsValue(doStatement.getCondition(), notifications));
+            : adaptKActorsValue(
+                doStatement.getCondition(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
     ret.setFunction(
         doStatement.getFunction() == null
             ? null
@@ -1427,7 +1516,11 @@ public enum LanguageAdapter {
     ret.setIterable(
         forStatement.getCondition() == null
             ? null
-            : adaptKActorsValue(forStatement.getCondition(), notifications));
+            : adaptKActorsValue(
+                forStatement.getCondition(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
     ret.setFunction(
         forStatement.getFunction() == null
             ? null
@@ -1446,7 +1539,11 @@ public enum LanguageAdapter {
     ret.setCondition(
         thenBranch.getCondition() == null
             ? null
-            : adaptKActorsValue(thenBranch.getCondition(), notifications));
+            : adaptKActorsValue(
+                thenBranch.getCondition(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
     ret.setFunction(
         thenBranch.getFunction() == null
             ? null
@@ -1461,7 +1558,11 @@ public enum LanguageAdapter {
                         Pair.of(
                             branch.getCondition() == null
                                 ? null
-                                : adaptKActorsValue(branch.getCondition(), notifications),
+                                : adaptKActorsValue(
+                                    branch.getCondition(),
+                                    behavior.getUrn(),
+                                    behavior.getProjectName(),
+                                    notifications),
                             branch.getFunction() == null
                                 ? null
                                 : adaptVerb(
@@ -1484,7 +1585,12 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.ReturnImpl();
     if (returnStatement.getReturnValue() != null) {
-      ret.setValue(adaptKActorsValue(returnStatement.getReturnValue(), notifications));
+      ret.setValue(
+          adaptKActorsValue(
+              returnStatement.getReturnValue(),
+              behavior.getUrn(),
+              behavior.getProjectName(),
+              notifications));
     } else if (returnStatement.getFunction() != null) {
       ret.setFunction(
           adaptVerb(returnStatement.getFunction(), behavior, action, notifications));
@@ -1501,7 +1607,11 @@ public enum LanguageAdapter {
     ret.setCondition(
         whileStatement.getCondition() == null
             ? null
-            : adaptKActorsValue(whileStatement.getCondition(), notifications));
+            : adaptKActorsValue(
+                whileStatement.getCondition(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
     ret.setFunction(
         whileStatement.getFunction() == null
             ? null
@@ -1528,7 +1638,12 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.FireImpl();
     if (fireStatement.getFiredValue() != null) {
-      ret.setValue(adaptKActorsValue(fireStatement.getFiredValue(), notifications));
+      ret.setValue(
+          adaptKActorsValue(
+              fireStatement.getFiredValue(),
+              behavior.getUrn(),
+              behavior.getProjectName(),
+              notifications));
     } else if (fireStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(fireStatement.getFunction(), behavior, action, notifications));
     }
@@ -1565,18 +1680,28 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.AssertImpl();
     var arguments = Parameters.<String>create();
-    arguments.putAll(adaptArguments(assertion.getArguments(), notifications));
+    arguments.putAll(
+        adaptArguments(
+            assertion.getArguments(),
+            behavior.getUrn(),
+            behavior.getProjectName(),
+            notifications));
     ret.setArguments(arguments);
     ret.setAssertions(
         assertion.getAssertions().stream()
             .map(
                 syntax -> {
                   var adapted = new KActorsStatementImpl.AssertImpl.AssertionImpl();
-                  setParsingData(syntax, adapted);
+                  setParsingData(
+                      syntax, adapted, behavior.getUrn(), behavior.getProjectName());
                   adapted.setExpression(
                       syntax.getExpression() == null
                           ? null
-                          : adaptKActorsValue(syntax.getExpression(), notifications));
+                          : adaptKActorsValue(
+                              syntax.getExpression(),
+                              behavior.getUrn(),
+                              behavior.getProjectName(),
+                              notifications));
                   adapted.setCalls(
                       syntax.getMethodCall() == null
                           ? List.of()
@@ -1584,7 +1709,12 @@ public enum LanguageAdapter {
                               adaptVerb(
                                   syntax.getMethodCall(), behavior, action, notifications)));
                   if (syntax.getExpectedValue() != null) {
-                    adapted.setValue(adaptKActorsValue(syntax.getExpectedValue(), notifications));
+                    adapted.setValue(
+                        adaptKActorsValue(
+                            syntax.getExpectedValue(),
+                            behavior.getUrn(),
+                            behavior.getProjectName(),
+                            notifications));
                   } else if (syntax.isOk()) {
                     var ok = new KActorsValueImpl();
                     ok.setType(ValueType.BOOLEAN);
@@ -1607,36 +1737,29 @@ public enum LanguageAdapter {
     var ret = new KActorsStatementImpl.VerbImpl();
     var declaration = verbStatement.getName().split("\\.");
     var reactorName = declaration.length == 1 ? "self" : declaration[0];
-    // get the reactor name and ensure it's imported, 'self' or a core library\
-    if (declaration.length == 1) {
-      // TODO must have the named action
-    } else {
-      var declared =
-          behavior.getImports().stream()
-              .filter(i -> i.getImportedAlias().equals(reactorName))
-              .findFirst();
-
-      if (declared.isEmpty()) {
-        notifications.add(
-            Notification.error(verbStatement, "Undeclared reactor: " + verbStatement.getName()));
-      }
-    }
-
-    // TODO get the action name and ensure it's known for the actor. May be impossible at this stage
-
     ret.setRecipient(reactorName);
     ret.setMessage(declaration[declaration.length - 1]);
 
     // cannot enforce argument mapping at this stage
-    ret.getArguments().putAll(adaptArguments(verbStatement.getArguments(), notifications));
+    ret.getArguments()
+        .putAll(
+            adaptArguments(
+                verbStatement.getArguments(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
 
     for (var match : verbStatement.getMatches()) {
       var m = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
-      setParsingData(match, m);
+      setParsingData(match, m, behavior.getUrn(), behavior.getProjectName());
       m.setMatchCriterion(
           match.getMatchCondition() == null
               ? null
-              : adaptKActorsValue(match.getMatchCondition(), notifications));
+              : adaptKActorsValue(
+                  match.getMatchCondition(),
+                  behavior.getUrn(),
+                  behavior.getProjectName(),
+                  notifications));
       m.setActionOnMatch(
           adaptActionStatement(match.getStatement(), behavior, action, notifications));
       m.getVariables().addAll(match.getReactorVariables());
@@ -1648,12 +1771,21 @@ public enum LanguageAdapter {
   }
 
   private Map<String, KActorsValue> adaptArguments(
-      Map<String, ValueSyntax> arguments, List<Notification> notifications) {
+      Map<String, ValueSyntax> arguments,
+      String namespace,
+      String projectName,
+      List<Notification> notifications) {
     return arguments.entrySet().stream()
         .map(
             e ->
                 new AbstractMap.SimpleEntry<>(
-                    e.getKey(), adaptKActorsValue(e.getValue(), notifications)))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                    e.getKey(),
+                    adaptKActorsValue(e.getValue(), namespace, projectName, notifications)))
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (left, right) -> right,
+                LinkedHashMap::new));
   }
 }
