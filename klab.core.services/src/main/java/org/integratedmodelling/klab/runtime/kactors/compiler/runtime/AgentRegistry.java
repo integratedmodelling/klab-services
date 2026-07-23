@@ -282,6 +282,11 @@ public enum AgentRegistry {
   }
 
   private CompiledBehavior translateBehavior(KActorsBehavior behavior, Scope scope) {
+
+    /*
+    FIXME - supply the compiler with a sensible validator and resolver!
+     */
+
     var compiler =
         scope instanceof UserScope userScope
             ? new AgentCompiler(behavior, userScope)
