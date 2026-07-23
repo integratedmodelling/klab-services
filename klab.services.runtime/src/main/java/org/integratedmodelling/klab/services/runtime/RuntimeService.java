@@ -10,6 +10,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
+import org.integratedmodelling.common.runtime.actors.ClientAgent;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
@@ -1244,16 +1245,26 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public ServiceAgent runAgent(
+  public ClientAgent runAgent(
       KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
     return compileAndRunAgent(behavior, suggestedAgentName, compileOnly, scope);
   }
 
-  private ServiceAgent compileAndRunAgent(
+  /**
+   * Produce a ClientAgent which can be serialized for JSON transmission. The agent manager will
+   * store a ServiceAgent peer.
+   *
+   * @param behavior
+   * @param suggestedAgentName
+   * @param compileOnly
+   * @param scope
+   * @return
+   */
+  private ClientAgent compileAndRunAgent(
       KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
 
     var compiler = new AgentCompiler(behavior, scope);
-    var ret = new ServiceAgent();
+    var ret = new ClientAgent();
     ret.setBehaviorUrn(behavior.getUrn());
 
     if (compiler.compile()) {
@@ -1268,7 +1279,7 @@ public class RuntimeService extends BaseService
     }
     ret.getNotifications().addAll(compiler.getNotifications());
 
-    return null;
+    return ret;
   }
 
   /**

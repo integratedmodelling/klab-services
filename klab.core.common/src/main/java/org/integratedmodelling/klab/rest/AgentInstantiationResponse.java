@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.rest;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -9,7 +10,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 public class AgentInstantiationResponse {
 
-  private List<Notification> notifications;
+  private List<Notification> notifications = new ArrayList<>();
   private String agentUrl;
   private String agentName;
   private String behaviorUrn;

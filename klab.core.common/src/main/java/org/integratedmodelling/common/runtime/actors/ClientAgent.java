@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.runtime.actors;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.actors.Agent;
@@ -10,21 +11,24 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 /** The client-side Agent incarnates the service-side agent in the runtime. */
 public class ClientAgent implements Agent {
 
-  private Scope scope;
+  private List<Notification> notifications = new ArrayList<>();
+  private boolean alive;
+  private String behaviorUrn;
+  private String urn;
 
   @Override
   public String getUrn() {
-    return "";
+    return this.urn;
   }
 
   @Override
   public String getBehaviorUrn() {
-    return "";
+    return this.behaviorUrn;
   }
 
   @Override
   public boolean isAlive() {
-    return false;
+    return this.alive;
   }
 
   @Override
@@ -34,7 +38,23 @@ public class ClientAgent implements Agent {
 
   @Override
   public List<Notification> getNotifications() {
-    return List.of();
+    return this.notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
+
+  public void setAlive(boolean alive) {
+    this.alive = alive;
+  }
+
+  public void setBehaviorUrn(String behaviorUrn) {
+    this.behaviorUrn = behaviorUrn;
+  }
+
+  public void setUrn(String urn) {
+    this.urn = urn;
   }
 
   @Override
