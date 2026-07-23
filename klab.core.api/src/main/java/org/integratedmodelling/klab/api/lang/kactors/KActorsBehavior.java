@@ -150,7 +150,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
 
     /**
      * A task is a script that runs in normal asynchronous mode. It must have a main and can only be
-     * run from the IDE, CLI or through an engine launched with the task URN as an option (which
+     * run from the IDE, CLI, or through an engine launched with the task URN as an option (which
      * will run the task and then exit).
      */
     TASK

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.kactors.compiler.BehaviorAnalyzer;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
@@ -71,7 +72,11 @@ class KActorsFileTest {
         new Case(
             "/library-invalid-lifecycle.kactor",
             new KActorsVisitor.LenientValidator(),
-            this::assertLibraryRejectsLifecycleActions));
+            this::assertLibraryRejectsLifecycleActions),
+        new Case(
+            "/midcomplexity.kactor",
+            midComplexityValidator(),
+            this::assertMidComplexityCompiles));
   }
 
   private KActorsVisitor.Validator timerValidator() {
@@ -87,6 +92,28 @@ class KActorsFileTest {
           };
         }
         return Verb.Type.FUNCTION;
+      }
+    };
+  }
+
+  private KActorsVisitor.Validator midComplexityValidator() {
+    return new KActorsVisitor.LenientValidator() {
+      @Override
+      public Verb.Type classifyActionCall(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        if ("timer".equals(verb.getRecipient())) {
+          return switch (verb.getMessage()) {
+            case "in" -> Verb.Type.SUPPLIER;
+            case "random" -> Verb.Type.EMITTER;
+            default -> null;
+          };
+        }
+        if (List.of("console", "context", "strings").contains(verb.getRecipient())) {
+          return Verb.Type.FUNCTION;
+        }
+        return "agent".equals(verb.getRecipient()) && "send".equals(verb.getMessage())
+            ? Verb.Type.SUPPLIER
+            : null;
       }
     };
   }
@@ -189,6 +216,23 @@ class KActorsFileTest {
     var messages = result.requireAnalyzer().getNotifications().toString();
     assertTrue(messages.contains("Library behaviors cannot declare the init action"), messages);
     assertTrue(messages.contains("Library behaviors cannot declare the main action"), messages);
+  }
+
+  private void assertMidComplexityCompiles(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    assertFalse(
+        result.requireAnalyzer().getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification
+                        .getMessage()
+                        .contains("'then' has no preceding reactive call to wait for")),
+        () -> result.requireAnalyzer().getNotifications().toString());
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(assertDoesNotThrow(compiler::compile), () -> compiler.getNotifications().toString());
+    assertNotNull(compiler.getSourceCode());
+    assertTrue(compiler.getSourceCode().contains("awaitReactions("));
   }
 
   private void assertEmitterReactiveReturnIsAnExitCode(KActorsTestSupport.Result result) {

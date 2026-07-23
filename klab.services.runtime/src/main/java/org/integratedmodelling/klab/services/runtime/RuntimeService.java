@@ -10,7 +10,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
-import org.integratedmodelling.common.runtime.actors.ClientAgent;
+import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
@@ -59,8 +59,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
-import org.integratedmodelling.klab.runtime.kactors.ServiceAgent;
-import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
+import org.integratedmodelling.klab.runtime.kactors.compiler.runtime.AgentRegistry;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
@@ -1245,7 +1244,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public ClientAgent runAgent(
+  public org.integratedmodelling.klab.api.actors.Agent runAgent(
       KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
     return compileAndRunAgent(behavior, suggestedAgentName, compileOnly, scope);
   }
@@ -1260,25 +1259,15 @@ public class RuntimeService extends BaseService
    * @param scope
    * @return
    */
-  private ClientAgent compileAndRunAgent(
+  private org.integratedmodelling.klab.api.actors.Agent compileAndRunAgent(
       KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
-
-    var compiler = new AgentCompiler(behavior, scope);
-    var ret = new ClientAgent();
-    ret.setBehaviorUrn(behavior.getUrn());
-
-    if (compiler.compile()) {
-      // exec
-      if (!compileOnly) {
-        // set url, name, and setup channels
-        // run the agent catching any startup exceptions in a new notification
-        // set the agent in the handle and record isAlive()
-        // send any notifications through AMQP channel and prepare for communication
-        // put the agent somewhere
-      }
+    var request = new AgentImpl();
+    request.setBehaviorUrn(behavior.getUrn());
+    request.setName(suggestedAgentName);
+    var ret = AgentRegistry.INSTANCE.getOrCreateAgent(request, behavior, scope);
+    if (!compileOnly && ret.isViable()) {
+      ret.start();
     }
-    ret.getNotifications().addAll(compiler.getNotifications());
-
     return ret;
   }
 

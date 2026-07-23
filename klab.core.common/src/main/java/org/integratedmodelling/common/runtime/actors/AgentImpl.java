@@ -5,16 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.actors.Agent;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** The client-side Agent incarnates the service-side agent in the runtime. */
-public class ClientAgent implements Agent {
+public class AgentImpl implements Agent {
 
   private List<Notification> notifications = new ArrayList<>();
   private boolean alive;
   private String behaviorUrn;
   private String urn;
+  private boolean viable;
+  private String javaCode;
+  private String name;
 
   @Override
   public String getUrn() {
@@ -27,8 +29,45 @@ public class ClientAgent implements Agent {
   }
 
   @Override
+  public boolean isViable() {
+    return viable;
+  }
+
+  @Override
   public boolean isAlive() {
     return this.alive;
+  }
+
+  @Override
+  public boolean start(Object... arguments) {
+    return false;
+  }
+
+  public void setViable(boolean viable) {
+    this.viable = viable;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+   * non-API: if requested and compilation has succeeded, the Java code of the agent for inspection
+   * and debugging
+   *
+   * @return
+   */
+  public String getJavaCode() {
+    return javaCode;
+  }
+
+  public void setJavaCode(String javaCode) {
+    this.javaCode = javaCode;
   }
 
   @Override

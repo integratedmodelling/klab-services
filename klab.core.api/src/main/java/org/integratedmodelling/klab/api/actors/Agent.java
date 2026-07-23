@@ -37,11 +37,42 @@ public interface Agent {
   String getBehaviorUrn();
 
   /**
-   * Send a ping and return whether the agent responds.
+   * All agents have a name, which may be automatically generated and is not guaranteed to be
+   * unique. If the agent is linked to an {@link
+   * org.integratedmodelling.klab.api.knowledge.observation.Observation} the name is mandatorily the
+   * same as the observation's. A name request is submitted with the instantiation call and may be
+   * honored or not by the runtime.
+   *
+   * @return the name of the agent. Never null.
+   */
+  String getName();
+
+  /**
+   * The agent is returned at the runAgent endpoint of the {@link
+   * org.integratedmodelling.klab.api.services.RuntimeService} in a stopped state. This method must
+   * be checked before starting it; if the agent isn't viable (either because of compilation errors
+   * or runtime failure) a subsequent call to {@link #start(Object...)} ()} will fail. If the agent
+   * is not viable, notifications may explain why.
+   *
+   * @return
+   */
+  boolean isViable();
+
+  /**
+   * Send a ping and return whether the agent responds, which happens only after {@link
+   * #start(Object...)} has been successfully called.
    *
    * @return
    */
   boolean isAlive();
+
+  /**
+   * Start the agent, passing any arguments to its behavior's constructor. A false return indicates
+   * that the agent could not be started; notifications may explain why.
+   *
+   * @return
+   */
+  boolean start(Object... arguments);
 
   /**
    * Agent start their existence in a running state. They may stop due to error, their host going

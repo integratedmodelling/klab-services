@@ -104,6 +104,7 @@ public class AgentCompiler {
   private final Map<String, ResolvedActor> resolvedActors = new LinkedHashMap<>();
   private final BehaviorAnalyzer analyzer;
   private String sourceCode;
+  private String qualifiedClassName;
   private int generatedName;
 
   /** Build the Java-extension half of a resolver from a live component registry. */
@@ -252,12 +253,31 @@ public class AgentCompiler {
     return compiledActorClasses.get(behaviorUrn);
   }
 
+  /**
+   * Register a class produced from this compiler's source. Class loading is owned by the runtime
+   * registry, but this keeps the legacy behavior-URN lookup usable by compiler clients.
+   */
+  public static void registerCompiledClass(
+      String behaviorUrn, Class<? extends RuntimeAgentBase> compiledClass) {
+    if (behaviorUrn != null && compiledClass != null) {
+      compiledActorClasses.put(behaviorUrn, compiledClass);
+    }
+  }
+
+  /** The binary name of the primary generated class, available after {@link #compile()}. */
+  public String getQualifiedClassName() {
+    return qualifiedClassName;
+  }
+
   private JavaFile generateClass(KActorsBehavior sourceBehavior) {
     if (Utils.Notifications.hasErrors(analyzer.getNotifications())) {
       return null;
     }
     generatedName = 0;
     String className = Utils.CamelCase.toUpperCamelCase(sourceBehavior.getUrn(), '.');
+    if (sourceBehavior == behavior) {
+      qualifiedClassName = packageName + "." + className;
+    }
     var classBuilder =
         TypeSpec.classBuilder(className)
             .superclass(analyzer.getAgentClass())
@@ -525,10 +545,11 @@ public class AgentCompiler {
           code.addStatement(
               "handleText($S, $L, $L)", text.getText(), context.scope(), context.frame());
       case KActorsStatement.Group group -> emitGroup(group, code, context, awaitCompletion);
-      case KActorsStatement.If conditional -> emitIf(conditional, code, context);
-      case KActorsStatement.While loop -> emitWhile(loop, code, context);
-      case KActorsStatement.Do loop -> emitDo(loop, code, context);
-      case KActorsStatement.For loop -> emitFor(loop, code, context);
+      case KActorsStatement.If conditional ->
+          emitIf(conditional, code, context, awaitCompletion);
+      case KActorsStatement.While loop -> emitWhile(loop, code, context, awaitCompletion);
+      case KActorsStatement.Do loop -> emitDo(loop, code, context, awaitCompletion);
+      case KActorsStatement.For loop -> emitFor(loop, code, context, awaitCompletion);
       case KActorsStatement.Assert assertion -> emitAssert(assertion, code, context);
       case KActorsStatement.Assert.Assertion assertion -> emitAssertion(assertion, code, context);
       default -> code.add("// TODO unsupported statement $L\n", statement.getType());
@@ -593,42 +614,65 @@ public class AgentCompiler {
   }
 
   private void emitIf(
-      KActorsStatement.If conditional, CodeBlock.Builder code, CompilationContext context) {
+      KActorsStatement.If conditional,
+      CodeBlock.Builder code,
+      CompilationContext context,
+      boolean awaitCompletion) {
     code.beginControlFlow(
         "if (truthy($L))",
         valueOrCall(conditional.getCondition(), conditional.getFunction(), context));
-    emitStatement(conditional.getThenBody(), code, context.withoutCompletionCollectors());
+    emitStatement(
+        conditional.getThenBody(),
+        code,
+        context.withoutCompletionCollectors(),
+        awaitCompletion);
     for (var elseIf : conditional.getElseIfs()) {
       code.nextControlFlow(
           "else if (truthy($L))",
           valueOrCall(elseIf.getFirst().getFirst(), elseIf.getFirst().getSecond(), context));
-      emitStatement(elseIf.getSecond(), code, context.withoutCompletionCollectors());
+      emitStatement(
+          elseIf.getSecond(), code, context.withoutCompletionCollectors(), awaitCompletion);
     }
     if (conditional.getElseBody() != null) {
       code.nextControlFlow("else");
-      emitStatement(conditional.getElseBody(), code, context.withoutCompletionCollectors());
+      emitStatement(
+          conditional.getElseBody(),
+          code,
+          context.withoutCompletionCollectors(),
+          awaitCompletion);
     }
     code.endControlFlow();
   }
 
   private void emitWhile(
-      KActorsStatement.While loop, CodeBlock.Builder code, CompilationContext context) {
+      KActorsStatement.While loop,
+      CodeBlock.Builder code,
+      CompilationContext context,
+      boolean awaitCompletion) {
     code.beginControlFlow(
         "while (truthy($L))", valueOrCall(loop.getCondition(), loop.getFunction(), context));
-    emitStatement(loop.getBody(), code, context.withoutCompletionCollectors());
+    emitStatement(
+        loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow();
   }
 
   private void emitDo(
-      KActorsStatement.Do loop, CodeBlock.Builder code, CompilationContext context) {
+      KActorsStatement.Do loop,
+      CodeBlock.Builder code,
+      CompilationContext context,
+      boolean awaitCompletion) {
     code.beginControlFlow("do");
-    emitStatement(loop.getBody(), code, context.withoutCompletionCollectors());
+    emitStatement(
+        loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow(
         "while (truthy($L))", valueOrCall(loop.getCondition(), loop.getFunction(), context));
   }
 
   private void emitFor(
-      KActorsStatement.For loop, CodeBlock.Builder code, CompilationContext context) {
+      KActorsStatement.For loop,
+      CodeBlock.Builder code,
+      CompilationContext context,
+      boolean awaitCompletion) {
     String item = nextName("item");
     code.beginControlFlow(
         "for (Object $L : asIterable($L))",
@@ -637,7 +681,8 @@ public class AgentCompiler {
     if (loop.getVariable() != null && !loop.getVariable().isBlank()) {
       code.addStatement("$L.put($S, $L)", context.frame(), loop.getVariable(), item);
     }
-    emitStatement(loop.getBody(), code, context.withoutCompletionCollectors());
+    emitStatement(
+        loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow();
   }
 
@@ -768,8 +813,11 @@ public class AgentCompiler {
               .build();
     }
     if (type == null) {
-      code.addStatement(
-          "runDynamicVerb($L, $S, $L, $L)",
+      // The listener contains a handler built with addStatement(), so it already carries
+      // JavaPoet's statement markers. Wrapping it in addStatement() would nest $[ ... $] and
+      // fail when JavaFile is rendered.
+      code.add(
+          "runDynamicVerb($L, $S, $L, $L);\n",
           dynamicReceiver(verb, context),
           verb.getMessage(),
           listener,

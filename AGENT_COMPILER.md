@@ -60,7 +60,9 @@ The stages are intentionally separate:
    execution mode and lifecycle.
 4. `AgentCompiler` resolves imports and recursively generates dependency sources.
 5. `AgentCompiler` emits the Java class through JavaPoet.
-6. The generated class delegates runtime behavior to `RuntimeAgentBase` and `AgentScope`.
+6. `AgentRegistry` compiles all generated sources in memory, loads the resulting classes, and
+   instantiates the primary generated class.
+7. The generated class delegates runtime behavior to `RuntimeAgentBase` and `AgentScope`.
 
 ## 3. Entry points and outputs
 
@@ -95,10 +97,31 @@ After `compile()`:
 - `getNotifications()` returns analysis/compiler notifications;
 - `getAgentExecutionMode()` returns `FUNCTION`, `SUPPLIER`, or `EMITTER`;
 - `getLifecycle()` returns `FINITE` or `PERSISTENT`;
+- `getQualifiedClassName()` returns the binary name needed by a class loader;
 - `getGeneratedSource(urn)` consults the process-wide generated-source cache.
 
-`getCompiledClass(urn)` exists, but its cache is not populated until an in-memory Java compilation
-and classloading stage is implemented.
+`AgentRegistry` calls `AgentCompiler.registerCompiledClass(...)` after successful class loading, so
+the legacy `getCompiledClass(urn)` lookup is populated as well.
+
+### 3.1 Runtime compilation and instances
+
+`AgentRegistry.INSTANCE.getOrCreateAgent(...)` is the deployment entry point. It:
+
+- resolves a behavior URN through `ResourcesService`, unless the caller already has the parsed
+  behavior;
+- caches successful classes and compilation failures by behavior URN, version, and creation
+  timestamp;
+- submits the primary and recursively generated sources to the JDK `JavaCompiler` in one task;
+- retains bytecode in memory and loads it through a registry-owned class loader;
+- invokes the generated
+  `(KActorsBehavior, SessionScope, Map<String, Object>, Object...)` constructor;
+- assigns a unique `<scope-id>:agent:<id>` URN and indexes the stopped instance by that URN;
+- returns Java diagnostics as error notifications if class compilation or loading fails.
+
+`INCLUDE_JAVA_CODE` includes generated source in the returned service handle.
+`DO_NOT_COMPILE_JAVA` stops after source translation and validation and does not create a class or
+instance. Explicitly stopped agents remove themselves from the instance registry; naturally
+finished finite agents may remain available for inspection until `releaseAgent(urn)` is called.
 
 ## 4. Semantic analysis
 
@@ -538,12 +561,12 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 ### 12.1 Compilation and deployment
 
-- Add an in-memory Java compiler and classloader, populate `compiledActorClasses`, and return useful
-  diagnostics with source locations.
-- Decide cache identity and invalidation. Current generated-source caches are static and keyed only
-  by behavior URN, without version, worldview, validator, component set, or classloader identity.
+- Extend cache identity beyond URN, version, and behavior timestamp when validator, worldview,
+  component-set, or component-classloader changes must invalidate a class.
 - Instantiate and wire recursively generated behavior imports.
 - Detect and report dependency cycles and unresolved imports consistently.
+- Carry initialization arguments into construction. The registry constructor seam is ready, but
+  `Agent.start(Object...)` currently warns when arguments are supplied after construction.
 
 ### 12.2 Class and behavior composition
 
@@ -622,16 +645,19 @@ construction into `RuntimeAgentBase.literalValue(...)` or a more specific runtim
 
 ### Add a compiler backend
 
-An in-memory backend should consume all entries from `getGeneratedSources()` in dependency order,
-compile them in one task where possible, map Java diagnostics back to behavior/source locations,
-load them in a component-aware classloader, and populate the compiled-class cache atomically only
-after the full set succeeds.
+The in-memory backend is implemented by `AgentRegistry`. Backend extensions should preserve its
+single-task compilation of all `getGeneratedSources()` entries and atomic result caching. Likely
+extensions are mapping Java diagnostics back to original k.Actors lexical locations and choosing a
+component-aware parent classloader when imported Java actors come from plug-ins.
 
 ## 14. Tests and development workflow
 
 `BehaviorAnalyzerTest` constructs syntax beans directly and covers validation, type propagation,
 lifecycle, source generation, recursive imports, Java source compilation, reactive handlers, and
 group `then` barriers.
+
+`AgentRegistryTest` performs the full source-to-bytecode-to-instance round trip and covers class
+reuse, canonical URN lookup, stop-time deregistration, and source-only translation.
 
 `RuntimeAgentBaseTest` covers event routing, scope disposal, supplier completion, nested emitter
 relay, execution lifecycle, reflective Java actor calls, and the all-reactions barrier.

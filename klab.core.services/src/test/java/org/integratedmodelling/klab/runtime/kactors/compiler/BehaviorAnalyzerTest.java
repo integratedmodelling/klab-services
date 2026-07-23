@@ -94,6 +94,46 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void rejectsDuplicateTagsWithinABehavior() {
+    var first = fired(number(1));
+    first.setTag("status");
+    var second = fired(number(2));
+    second.setTag("status");
+    var analyzer = new BehaviorAnalyzer(behavior(action("main", first, second)));
+
+    assertFalse(analyzer.analyze());
+    assertTrue(messages(analyzer).contains("Duplicate tag #status"), messages(analyzer));
+  }
+
+  @Test
+  void rejectsTagsDuplicatedByImportsAndInheritedBehaviors() {
+    var local = fired(number(1));
+    local.setTag("inherited");
+    var behavior = behavior(action("main", local));
+    behavior.setImports(List.of(imported("component.widgets", "widgets")));
+    behavior.setInheritedBehaviors(List.of("traits.base"));
+    var analyzer =
+        new BehaviorAnalyzer(
+            behavior,
+            new KActorsVisitor.LenientValidator() {
+              @Override
+              public List<String> getBehaviorTags(
+                  String behaviorUrn, KActorsVisitor.KActorsContext context) {
+                return switch (behaviorUrn) {
+                  case "component.widgets" -> List.of("shared", "component");
+                  case "traits.base" -> List.of("shared", "inherited");
+                  default -> List.of();
+                };
+              }
+            });
+
+    assertFalse(analyzer.analyze());
+    var messages = messages(analyzer);
+    assertTrue(messages.contains("Duplicate tag #shared"), messages);
+    assertTrue(messages.contains("Duplicate tag #inherited"), messages);
+  }
+
+  @Test
   void emitterMayStopFromAMatchAndExposeTheReturnValueAsAnExitCode() {
     var stop = returned(number(0));
     var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();

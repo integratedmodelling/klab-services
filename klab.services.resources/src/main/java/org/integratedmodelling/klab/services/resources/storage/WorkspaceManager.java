@@ -47,6 +47,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImp
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -2688,6 +2689,15 @@ public class WorkspaceManager {
         ret =
             LanguageAdapter.INSTANCE.adaptBehavior(
                 syntax, syntax.getUrn(), "no.project", notifications, System.currentTimeMillis());
+        /*
+        unless there are already syntax errors in the behavior, perform basic validation
+        using the lenient validator and add any logical errors/warnings to the result
+         */
+        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
+          var visitor = new KActorsVisitor();
+          visitor.visit(ret);
+          ret.getNotifications().addAll(visitor.getNotifications());
+        }
       }
     }
 

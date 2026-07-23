@@ -10,6 +10,7 @@ public class AgentInstantiationRequest {
 
   private KActorsBehavior behavior;
   private boolean compileOnly;
+  private boolean reportJavaCode;
   private long observationId;
   private String suggestedName;
 
@@ -43,5 +44,13 @@ public class AgentInstantiationRequest {
 
   public void setSuggestedName(String suggestedName) {
     this.suggestedName = suggestedName;
+  }
+
+  public boolean isReportJavaCode() {
+    return reportJavaCode;
+  }
+
+  public void setReportJavaCode(boolean reportJavaCode) {
+    this.reportJavaCode = reportJavaCode;
   }
 }

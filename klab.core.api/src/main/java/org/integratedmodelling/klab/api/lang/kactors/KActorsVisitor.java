@@ -70,6 +70,16 @@ public class KActorsVisitor {
       return List.of();
     }
 
+    /**
+     * Return all tags exposed by an imported or inherited behavior, including tags contributed
+     * transitively by its own imports and inheritances. Implementations may resolve the URN to
+     * either a parsed behavior or a component-provided actor descriptor. Returning an empty list
+     * leaves cross-behavior tag validation disabled for that unresolved reference.
+     */
+    default List<String> getBehaviorTags(String behaviorUrn, KActorsContext context) {
+      return List.of();
+    }
+
     default List<Notification> validateAction(KActorsAction action, KActorsContext context) {
       return List.of();
     }
@@ -277,6 +287,7 @@ public class KActorsVisitor {
   private final List<ExpressionInfo> expressions = new ArrayList<>();
   private final Map<String, KActorsAction> actionDeclarations = new LinkedHashMap<>();
   private final Map<String, VariableInfo> fieldDeclarations = new LinkedHashMap<>();
+  private final Map<String, String> tagDeclarations = new LinkedHashMap<>();
   private final Map<KActorsAction, ActionAccumulator> actionAccumulators = new IdentityHashMap<>();
   private final List<PendingCall> pendingCalls = new ArrayList<>();
 
@@ -342,6 +353,7 @@ public class KActorsVisitor {
     expressions.clear();
     actionDeclarations.clear();
     fieldDeclarations.clear();
+    tagDeclarations.clear();
     actionAccumulators.clear();
     pendingCalls.clear();
     visitedBehavior = null;
@@ -365,6 +377,11 @@ public class KActorsVisitor {
         notifications.add(Notification.error("Duplicate import alias: " + alias));
       }
       addNotifications(context.validator.validateImport(imported, context));
+      registerReferencedTags(imported.getImportedBehavior(), context);
+    }
+
+    for (var inheritedBehavior : safe(behavior.getInheritedBehaviors())) {
+      registerReferencedTags(inheritedBehavior, context);
     }
 
     for (var action : safe(behavior.getStatements())) {
@@ -410,6 +427,7 @@ public class KActorsVisitor {
   }
 
   protected void visitAction(KActorsAction action, KActorsContext context) {
+    registerTag(action.getTag(), action, "behavior " + visitedBehavior.getUrn());
     addNotifications(context.validator.validateAction(action, context));
     visitAnnotations(action.getAnnotations(), context);
     visitMetadataValues(action.getMetadata(), context);
@@ -439,6 +457,7 @@ public class KActorsVisitor {
     if (statement == null) {
       return;
     }
+    registerTag(statement.getTag(), statement, "behavior " + visitedBehavior.getUrn());
     if (statement.isSequential() && !hasMatchActions(context.previousStatement)) {
       warning("'then' has no preceding reactive call to wait for", statement);
     }
@@ -906,13 +925,21 @@ public class KActorsVisitor {
   }
 
   private boolean hasMatchActions(KActorsStatement statement) {
+    if (statement == null) {
+      return false;
+    }
     if (statement instanceof KActorsStatement.Verb verb) {
       return !safe(verb.getActions()).isEmpty();
     }
-    if (statement instanceof KActorsStatement.Group group) {
-      return safe(group.getStatements()).stream().anyMatch(this::hasMatchActions);
-    }
-    return false;
+    var found = new java.util.concurrent.atomic.AtomicBoolean();
+    forEachChild(
+        statement,
+        child -> {
+          if (!found.get() && hasMatchActions(child)) {
+            found.set(true);
+          }
+        });
+    return found.get();
   }
 
   private void forEachChild(
@@ -1003,6 +1030,34 @@ public class KActorsVisitor {
   private void addNotifications(Collection<Notification> additions) {
     if (additions != null) {
       additions.stream().filter(Objects::nonNull).forEach(notifications::add);
+    }
+  }
+
+  private void registerReferencedTags(String behaviorUrn, KActorsContext context) {
+    if (behaviorUrn == null || behaviorUrn.isBlank()) {
+      return;
+    }
+    for (var tag : safe(context.validator.getBehaviorTags(behaviorUrn, context))) {
+      registerTag(tag, null, "referenced behavior " + behaviorUrn);
+    }
+  }
+
+  private void registerTag(String tag, KActorsCodeStatement statement, String origin) {
+    if (tag == null || tag.isBlank()) {
+      return;
+    }
+    var normalized = tag.startsWith("#") ? tag.substring(1) : tag;
+    if (normalized.isBlank()) {
+      return;
+    }
+    var previous = tagDeclarations.putIfAbsent(normalized, origin);
+    if (previous != null) {
+      var message = "Duplicate tag #" + normalized + " (already declared in " + previous + ")";
+      if (statement == null) {
+        notifications.add(Notification.error(message));
+      } else {
+        error(message, statement);
+      }
     }
   }
 

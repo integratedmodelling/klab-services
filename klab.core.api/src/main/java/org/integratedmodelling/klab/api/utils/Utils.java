@@ -2765,6 +2765,10 @@ public class Utils {
       return count;
     }
 
+    public static boolean isLowercase(String string) {
+      return string.equals(string.toLowerCase());
+    }
+
     public List<String> shortestUniquePrefix(List<String> strings) {
       TrieNode root = new TrieNode();
       for (String s : strings) {
