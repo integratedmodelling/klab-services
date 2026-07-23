@@ -88,8 +88,11 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
 
   enum Type {
     /**
-     * The behavior defines an observed gent. Normally bound to observations through a k.IM @bind
-     * annotation, it can also be run independently of the IDE.
+     * The behavior defines an observed agent. Normally bound to observations through a k.IM @bind
+     * annotation, The observation must be a {@link
+     * org.integratedmodelling.klab.api.knowledge.SemanticType#AGENT}. It can also be run
+     * independently of an observation for debugging, creating unbound agents that can communicate
+     * to each other.
      */
     BEHAVIOR,
     /**
@@ -104,14 +107,15 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      */
     APP,
     /**
-     * The behavior will be incorporated in a user actor, specifying initialization actions (such as
+     * The user actor is bound to the {@link UserScope} to specify initialization actions (such as
      * selecting a specific digital twin), interception of errors, and any calls that won't make it
-     * to other actors, listeners for specific observables and the like. A user actor definition is
-     * typically located in a user profile saved to the k.LAB data directory or in online group
-     * metadata. Formally a USER behavior is identical to a standard BEHAVIOR, but the USER
-     * characterization in the preamble is needed for safety. A USER behavior can stand for a {@link
-     * org.integratedmodelling.klab.api.identities.Federation} in federated contexts, in which case
-     * it must be provided with the same group metadata that specify the federation.
+     * to other actors, listeners for specific observables, and the like. A user actor definition is
+     * typically located in a user profile saved to the k.LAB data directory or as a URL in online
+     * group metadata. Formally a USER behavior is identical to a standard BEHAVIOR, but the USER
+     * characterization in the preamble is needed for safety of association. A USER behavior can
+     * stand for a {@link org.integratedmodelling.klab.api.identities.Federation} in federated
+     * contexts, in which case it must be provided with the same group metadata that specify the
+     * federation.
      */
     USER,
     /**
@@ -124,8 +128,8 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
 
     /**
      * A library is a reusable collection of callable actions imported by agents. Unlike a trait it
-     * does not contribute an inherited personality and, because it is not independently
-     * constructed or started, it cannot define {@code init} or {@code main}.
+     * does not contribute an inherited personality and, because it is not independently constructed
+     * or started, it cannot define {@code init} or {@code main}.
      */
     LIBRARY,
 
@@ -141,17 +145,21 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      * A component is an actor that exists in its own right but is created and used from another
      * agent. It normally provides UI elements or another composable subsystem. Components may
      * define {@code init} as their constructor and {@code main} as their startup action. The system
-     * rejects direct observation bindings to components and creates them through actor construction.
+     * rejects direct observation bindings to components and creates them through actor
+     * construction.
      */
     COMPONENT,
 
-    /** A script is a batch job run in synchronous mode as the behavior of a session. */
+    /**
+     * A script is a batch job run in synchronous mode as the behavior of a session. It is not
+     * expected to be associated to an observation and will not persist beyond its serial execution.
+     */
     SCRIPT,
 
     /**
-     * A task is a script that runs in normal asynchronous mode. It must have a main and can only be
-     * run from the IDE, CLI, or through an engine launched with the task URN as an option (which
-     * will run the task and then exit).
+     * A task is a script that runs in normal asynchronous mode and can be associated to an
+     * observation that is not an agent. It must have a main and can perform bookkeeping, check on a
+     * resource's status, monitor critical online resources, etc.
      */
     TASK
   }
