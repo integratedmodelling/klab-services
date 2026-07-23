@@ -36,7 +36,7 @@ This model supports several usages:
 - reusable components that can be imported by other actors and implement UI elements;
 - synchronous batch scripts;
 - comprehensive test cases covering the entire k.LAB lifecycle;
-- reusable traits/libraries of actions;
+- reusable traits that contribute an inherited agent personality, and action libraries;
 - bridges to Java extensions supplied by k.LAB components.
 
 The core idiom is deliberately verbal. A statement such as `timer.in(15.s)` asks the actor named
@@ -97,10 +97,11 @@ must be chosen as stable, globally meaningful names when the behavior will be sh
 | `app` | A session-level interactive application                                                                                                  | Long-lived until explicitly stopped |
 | `desktop app`, `web app`, `mobile app` | An application specialized for a front-end platform                                                                                      | Long-lived until explicitly stopped |
 | `public ... app` | A public application declaration, available through a k.LAB service facing an authenticated user; it may also carry a platform qualifier | Long-lived until explicitly stopped |
-| `component` | A composable actor that can be created by another actor, commonly a UI component                                                         | Long-lived while its owner uses it |
+| `component` | A self-contained composable actor created and used from another agent, commonly a UI component                                             | May initialize and run `main`; long-lived while its owner uses it |
 | `script` | A synchronous batch job in a session scope                                                                                               | Expected to finish unless it starts emitter work |
 | `testcase` | A collection of actions, normally annotated with `@test`, run under a test scope                                                         | Runs explicitly and produces test results |
-| `trait` or `library` | Reusable state/actions inherited by other behaviors                                                                                      | Cannot declare `init` or `main` |
+| `trait` | An inheritable agent personality contributing state and actions                                                                           | May declare `init` and `main`; both are adopted through inheritance |
+| `library` | A reusable collection of callable actions                                                                                                  | Cannot declare `init` or `main` and is not started independently |
 
 The Java API also reserves `USER` and `TASK` behavior types. The current Xtext grammar does not
 expose source keywords for them; do not invent `user` or `task` declarations until the grammar is
@@ -178,7 +179,10 @@ on installed runtime components.
 - Other actions run only when called, inherited, or selected through an annotation such as
   `@handle` or `@test`.
 
-Traits/libraries cannot declare `init` or `main`.
+Traits may declare `init` and `main`: these participate in the inherited initialization and
+startup behavior of the adopting agent. Components may also declare both because each component is
+an actor with its own construction and startup lifecycle. Libraries cannot declare either special
+action because they are action collections rather than constructed or started actors.
 
 ### 4.2. Function, supplier, and emitter actions
 
@@ -198,10 +202,11 @@ from imported behaviors or Java extensions. An action that both fires values and
 reactive return remains an emitter; the return is its cleanup/termination path and its operand is
 the exit code.
 
-The runtime uses the effective types of `init` and `main` to decide whether an independently
-started behavior can finish or must remain alive. Actor-like behaviors, applications, and
-components are normally persistent; scripts are normally finite unless their effective work is
-emitter-like.
+The runtime uses the effective types of `init` and `main` to decide whether a started actor can
+finish or must remain alive. Actor-like behaviors, applications, and components are normally
+persistent; scripts are normally finite unless their effective work is emitter-like. A trait's
+special actions affect the lifecycle of the agent that inherits it rather than starting the trait
+independently. Libraries have no lifecycle entry points.
 
 ## 5. Calls, arguments, and event matching
 
@@ -526,10 +531,10 @@ active component version.
 
 ### 10.3. Components
 
-A `component` is an actor intended to be created and owned by another actor rather than run or
-bound independently. Components are useful for reusable UI panels, controllers, or reactive
-subsystems. Their public actions form the component API; `init` accepts construction state and
-`main` starts their behavior.
+A `component` is a self-contained actor that exists in its own right but is created, owned, and
+used from inside another agent rather than bound directly to an observation. Components are useful
+for reusable UI panels, controllers, or reactive subsystems. Their public actions form the
+component API; `init` accepts construction state and `main` starts their behavior.
 
 ### 10.4. Scripts
 
@@ -561,10 +566,13 @@ Keep each test action focused, use descriptive action names, and prefer explicit
 
 ### 10.6. Traits and libraries
 
-A `trait` or `library` packages reusable actions and protected state for inheritance. Because it
-cannot own `init` or `main`, it describes a capability rather than an independently running actor.
-Use small traits with clear action contracts and declare overrides explicitly in consuming
-behaviors.
+A `trait` is an inheritable agent personality. It can package actions and protected state, and it
+may define `init` and `main`; those special actions are incorporated into the adopting agent
+through inheritance. Traits are not instantiated or bound independently. Use small traits with
+clear action contracts and declare overrides explicitly in consuming behaviors.
+
+A `library` is an importable collection of callable actions. It is not an inherited personality
+and has no construction or startup lifecycle, so `init` and `main` are invalid in a library.
 
 ### 10.7. Java actor extensions
 
@@ -588,7 +596,7 @@ checks at least the following:
 - the behavior has a nonblank description;
 - imports have unique aliases and do not use `self`;
 - actions and action arguments are not duplicated;
-- traits do not declare `init` or `main`;
+- libraries do not declare `init` or `main`; traits and components may declare both;
 - calls to `self` name a known local or inherited action;
 - explicit receivers are imported or are visible actor variables;
 - function calls do not declare match actions;

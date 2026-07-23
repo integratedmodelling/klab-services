@@ -86,6 +86,12 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private int errors = 0;
   private final AtomicLong nextId = new AtomicLong(0);
   private final AtomicBoolean started = new AtomicBoolean(false);
+  private final Object dynamicLifecycleLock = new Object();
+  private int activeDynamicCalls;
+  private boolean dynamicMainCompleted;
+  private boolean dynamicRootCompleted;
+  private Object dynamicMainResult;
+  private Throwable dynamicFailure;
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -476,6 +482,120 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     invokeGeneratedAction(action, scope, arguments);
   }
 
+  /**
+   * Invoke a verb whose function/supplier/emitter nature could not be established during
+   * validation. The selected runtime method determines the contract: a normal return is a
+   * function result, {@link CompletableFuture} is a supplier, and {@code void} is an emitter.
+   * Results are relayed through the supplied action scope so compiled match actions and lifecycle
+   * barriers continue to use the normal event model.
+   */
+  protected ExitValue runDynamicVerb(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
+    if (rootScope != null && rootScope.isDone()) {
+      return ExitValue.failure(new KlabIllegalStateException("Agent already terminated"));
+    }
+    dynamicCallStarted();
+    try {
+      Thread.ofVirtual()
+          .name("kactors-dynamic-" + scope.actionId())
+          .start(
+              () -> {
+                boolean completionDeferred = false;
+                try {
+                  var invocation = invokeActorDynamically(actor, verb, scope, arguments);
+                  switch (invocation.type()) {
+                    case FUNCTION -> scope.doReturn(invocation.value());
+                    case SUPPLIER -> {
+                      @SuppressWarnings("unchecked")
+                      var future = (CompletableFuture<Object>) invocation.value();
+                      scope.disposeWith(() -> future.cancel(true));
+                      completionDeferred = true;
+                      try {
+                        future.whenComplete(
+                            (value, error) -> {
+                              try {
+                                if (error == null) {
+                                  scope.doReturn(value);
+                                } else {
+                                  scope.done(error);
+                                }
+                              } catch (Throwable t) {
+                                scope.done(t);
+                                dynamicFailure(t);
+                              } finally {
+                                dynamicCallFinished(error);
+                              }
+                            });
+                      } catch (Throwable t) {
+                        completionDeferred = false;
+                        throw t;
+                      }
+                    }
+                    case EMITTER -> scope.awaitDone();
+                  }
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                  scope.done(e);
+                  dynamicFailure(e);
+                } catch (Throwable t) {
+                  scope.done(t);
+                  dynamicFailure(t);
+                } finally {
+                  if (!completionDeferred) {
+                    dynamicCallFinished(null);
+                  }
+                }
+              });
+      return TASK_RUNNING;
+    } catch (Throwable t) {
+      scope.done(t);
+      dynamicCallFinished(t);
+      return ExitValue.failure(t);
+    }
+  }
+
+  /**
+   * Mark the statically compiled part of {@code main} as complete while unresolved dynamic calls
+   * are still being classified and executed. The root scope completes when every dynamic function
+   * or supplier has settled. A dynamic emitter keeps the root alive until its action scope is
+   * explicitly completed.
+   */
+  protected ExitValue awaitDynamicCalls(Object result) {
+    synchronized (dynamicLifecycleLock) {
+      dynamicMainCompleted = true;
+      dynamicMainResult = result;
+    }
+    finishDynamicLifecycleIfReady();
+    return TASK_RUNNING;
+  }
+
+  /** Error counterpart of {@link #awaitDynamicCalls(Object)}. */
+  protected ExitValue failDynamicCalls(Throwable error) {
+    synchronized (dynamicLifecycleLock) {
+      dynamicMainCompleted = true;
+      if (dynamicFailure == null) {
+        dynamicFailure = error;
+      }
+      if (dynamicRootCompleted) {
+        return ExitValue.failure(error);
+      }
+      dynamicRootCompleted = true;
+    }
+    rootScope.done(error);
+    return ExitValue.failure(error);
+  }
+
+  /** Resolve an unknown call used as a value, joining suppliers and returning null for emitters. */
+  protected Object invokeDynamicValue(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
+    var invocation = invokeActorDynamically(actor, verb, scope, arguments);
+    return switch (invocation.type()) {
+      case FUNCTION -> invocation.value();
+      case SUPPLIER -> ((CompletableFuture<?>) invocation.value()).join();
+      case EMITTER -> null;
+    };
+  }
+
   private Object invokeGeneratedAction(String action, AgentScope scope, Object... arguments) {
     try {
       Method method = findMethod(getClass(), "action_" + action, false);
@@ -488,25 +608,93 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   private Object invokeActor(Object actor, String verb, AgentScope scope, Object... arguments) {
+    return invokeActorDynamically(actor, verb, scope, arguments).value();
+  }
+
+  private record DynamicInvocation(Verb.Type type, Object value) {}
+
+  private void dynamicCallStarted() {
+    synchronized (dynamicLifecycleLock) {
+      activeDynamicCalls++;
+    }
+  }
+
+  private void dynamicFailure(Throwable error) {
+    synchronized (dynamicLifecycleLock) {
+      if (dynamicFailure == null) {
+        dynamicFailure = error;
+      }
+    }
+  }
+
+  private void dynamicCallFinished(Throwable error) {
+    synchronized (dynamicLifecycleLock) {
+      if (error != null && dynamicFailure == null) {
+        dynamicFailure = error;
+      }
+      activeDynamicCalls--;
+    }
+    finishDynamicLifecycleIfReady();
+  }
+
+  private void finishDynamicLifecycleIfReady() {
+    Object result;
+    Throwable failure;
+    synchronized (dynamicLifecycleLock) {
+      if (!dynamicMainCompleted || activeDynamicCalls != 0 || dynamicRootCompleted) {
+        return;
+      }
+      dynamicRootCompleted = true;
+      result = dynamicMainResult;
+      failure = dynamicFailure;
+    }
+    if (failure == null) {
+      rootScope.done(result);
+    } else {
+      rootScope.done(failure);
+    }
+  }
+
+  private DynamicInvocation invokeActorDynamically(
+      Object actor, String verb, AgentScope scope, Object... arguments) {
     if (actor instanceof UnresolvedActor unresolved) {
       throw new KlabActorException(
           this,
           "Imported actor '" + unresolved.alias() + "' (" + unresolved.urn() + ") was not bound");
     }
     if (actor instanceof RuntimeAgentBase runtimeAgent) {
-      return runtimeAgent.invokeGeneratedAction(verb, scope, arguments);
+      try {
+        Method method = findMethod(runtimeAgent.getClass(), "action_" + verb, false);
+        return invokeDynamically(method, runtimeAgent, scope, arguments);
+      } catch (ReflectiveOperationException e) {
+        throw actorFailure(e);
+      }
     }
     Class<?> actorClass = actor instanceof Class<?> cls ? cls : actor.getClass();
     Object target = actor instanceof Class<?> ? null : actor;
     try {
       Method method = findActorMethod(actorClass, verb, target == null, scope, arguments);
-      Object[] actualArguments = prepareArguments(method, scope, arguments);
-      return method.invoke(Modifier.isStatic(method.getModifiers()) ? null : target, actualArguments);
+      return invokeDynamically(method, target, scope, arguments);
     } catch (InvocationTargetException e) {
       throw actorFailure(e.getTargetException());
     } catch (ReflectiveOperationException | IllegalArgumentException e) {
       throw actorFailure(e);
     }
+  }
+
+  private DynamicInvocation invokeDynamically(
+      Method method, Object target, AgentScope scope, Object[] arguments)
+      throws ReflectiveOperationException {
+    Object[] actualArguments = prepareArguments(method, scope, arguments);
+    Object value =
+        method.invoke(Modifier.isStatic(method.getModifiers()) ? null : target, actualArguments);
+    Verb.Type type =
+        method.getReturnType() == void.class
+            ? Verb.Type.EMITTER
+            : CompletableFuture.class.isAssignableFrom(method.getReturnType())
+                ? Verb.Type.SUPPLIER
+                : Verb.Type.FUNCTION;
+    return new DynamicInvocation(type, value);
   }
 
   private Method findActorMethod(

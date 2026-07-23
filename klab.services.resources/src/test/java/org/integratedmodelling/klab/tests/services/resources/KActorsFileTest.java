@@ -59,7 +59,19 @@ class KActorsFileTest {
         new Case(
             "/simplegroup.kactor",
             new KActorsVisitor.LenientValidator(),
-            this::assertGroupedBehaviorParses));
+            this::assertGroupedBehaviorParses),
+        new Case(
+            "/trait-lifecycle.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertTraitLifecycleActions),
+        new Case(
+            "/component-lifecycle.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertComponentLifecycleActions),
+        new Case(
+            "/library-invalid-lifecycle.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertLibraryRejectsLifecycleActions));
   }
 
   private KActorsVisitor.Validator timerValidator() {
@@ -152,6 +164,31 @@ class KActorsFileTest {
         6,
         result.requireAnalyzer().getCalls().size(),
         "calls nested in groups must be visible to analysis");
+  }
+
+  private void assertTraitLifecycleActions(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    assertEquals(KActorsBehavior.Type.TRAITS, result.requireBehavior().getBehaviorType());
+    assertTrue(result.requireAnalyzer().getActions().containsKey("init"));
+    assertTrue(result.requireAnalyzer().getActions().containsKey("main"));
+  }
+
+  private void assertComponentLifecycleActions(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    assertEquals(KActorsBehavior.Type.COMPONENT, result.requireBehavior().getBehaviorType());
+    assertTrue(result.requireAnalyzer().getActions().containsKey("init"));
+    assertTrue(result.requireAnalyzer().getActions().containsKey("main"));
+  }
+
+  private void assertLibraryRejectsLifecycleActions(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertFalse(result.analysisSuccessful());
+    assertEquals(KActorsBehavior.Type.LIBRARY, result.requireBehavior().getBehaviorType());
+    var messages = result.requireAnalyzer().getNotifications().toString();
+    assertTrue(messages.contains("Library behaviors cannot declare the init action"), messages);
+    assertTrue(messages.contains("Library behaviors cannot declare the main action"), messages);
   }
 
   private void assertEmitterReactiveReturnIsAnExitCode(KActorsTestSupport.Result result) {

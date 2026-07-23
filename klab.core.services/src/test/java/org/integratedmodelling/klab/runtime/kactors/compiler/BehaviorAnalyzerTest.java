@@ -63,6 +63,37 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void traitsAndComponentsAllowLifecycleActionsButLibrariesRejectThem() {
+    var trait = behavior(action("init"), action("main", returned(number(0))));
+    trait.setBehaviorType(KActorsBehavior.Type.TRAITS);
+    var traitAnalyzer = new BehaviorAnalyzer(trait);
+
+    assertTrue(traitAnalyzer.analyze(), messages(traitAnalyzer));
+    assertTrue(traitAnalyzer.getActions().containsKey("init"));
+    assertTrue(traitAnalyzer.getActions().containsKey("main"));
+
+    var component = behavior(action("init"), action("main", returned(number(0))));
+    component.setBehaviorType(KActorsBehavior.Type.COMPONENT);
+    var componentAnalyzer = new BehaviorAnalyzer(component);
+
+    assertTrue(componentAnalyzer.analyze(), messages(componentAnalyzer));
+    assertTrue(componentAnalyzer.getActions().containsKey("init"));
+    assertTrue(componentAnalyzer.getActions().containsKey("main"));
+
+    var library = behavior(action("init"), action("main", returned(number(0))));
+    library.setBehaviorType(KActorsBehavior.Type.LIBRARY);
+    var libraryAnalyzer = new BehaviorAnalyzer(library);
+
+    assertFalse(libraryAnalyzer.analyze());
+    assertTrue(
+        messages(libraryAnalyzer).contains("Library behaviors cannot declare the init action"),
+        messages(libraryAnalyzer));
+    assertTrue(
+        messages(libraryAnalyzer).contains("Library behaviors cannot declare the main action"),
+        messages(libraryAnalyzer));
+  }
+
+  @Test
   void emitterMayStopFromAMatchAndExposeTheReturnValueAsAnExitCode() {
     var stop = returned(number(0));
     var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
@@ -243,6 +274,115 @@ class BehaviorAnalyzerTest {
         Verb.Type.SUPPLIER, analyzer.getActions().get("main").effectiveExecutionType());
     assertEquals(Verb.Type.SUPPLIER, analyzer.getAgentExecutionMode());
     assertEquals(BehaviorAnalyzer.Lifecycle.FINITE, analyzer.getLifecycle());
+  }
+
+  @Test
+  void unknownCallsRemainUnclassifiedAndSkipVerbValidation() {
+    var call = verb("external", "maybeReactive");
+    var source = behavior(action("main", call));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var verbValidated = new java.util.concurrent.atomic.AtomicBoolean();
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public List<Notification> validateVerbCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            verbValidated.set(true);
+            return List.of();
+          }
+
+          @Override
+          public boolean warnAboutUnknownActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return true;
+          }
+        };
+    var analyzer = new BehaviorAnalyzer(source, validator);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertNull(analyzer.getCalls().getFirst().executionType());
+    assertFalse(verbValidated.get(), "unknown calls must not run type-dependent validation");
+    assertTrue(analyzer.getActions().get("main").callsUnknownActions());
+    assertEquals(Verb.Type.EMITTER, analyzer.getAgentExecutionMode());
+    assertEquals(BehaviorAnalyzer.Lifecycle.PERSISTENT, analyzer.getLifecycle());
+    assertTrue(
+        analyzer.getNotifications().stream()
+            .anyMatch(notification -> notification.getMessage().contains("Cannot establish")));
+  }
+
+  @Test
+  void validatorCanClassifyRecipientsFromAssignmentAndLoopProducerCalls() {
+    var assignedProducer = verb("external", "makeWorker");
+    var assignedCall = verb("worker", "run");
+    var iterableProducer = verb("external", "workers");
+    var loopCall = verb("workerItem", "run");
+    var loop = new KActorsStatementImpl.ForImpl();
+    loop.setVariable("workerItem");
+    loop.setFunction(iterableProducer);
+    loop.setBody(loopCall);
+    var source =
+        behavior(
+            action(
+                "main",
+                assignment("worker", KActorsStatement.Assignment.Scope.FRAME, assignedProducer),
+                assignedCall,
+                loop));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var producers = new java.util.IdentityHashMap<KActorsStatement.Verb, KActorsStatement.Verb>();
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return verb == assignedProducer || verb == iterableProducer
+                ? Verb.Type.FUNCTION
+                : null;
+          }
+
+          @Override
+          public Verb.Type classifyActionCallFromProducer(
+              KActorsStatement.Verb verb,
+              KActorsStatement.Verb recipientProducer,
+              KActorsVisitor.KActorsContext context) {
+            producers.put(verb, recipientProducer);
+            return Verb.Type.SUPPLIER;
+          }
+        };
+    var analyzer = new BehaviorAnalyzer(source, validator);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertSame(assignedProducer, producers.get(assignedCall));
+    assertSame(iterableProducer, producers.get(loopCall));
+    assertEquals(
+        Verb.Type.SUPPLIER,
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == assignedCall)
+            .findFirst()
+            .orElseThrow()
+            .executionType());
+  }
+
+  @Test
+  void compilerRoutesUnknownCallsThroughTheDynamicRuntimeBridge() {
+    var statementCall = verb("external", "unknownStatement");
+    var valueCall = verb("external", "unknownValue");
+    var source =
+        behavior(
+            action(
+                "main",
+                statementCall,
+                assignment("value", KActorsStatement.Assignment.Scope.FRAME, valueCall),
+                returned(identifier("value"))));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var compiler = new AgentCompiler(source);
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(generated.contains("runDynamicVerb("), generated);
+    assertTrue(generated.contains("invokeDynamicValue("), generated);
+    assertTrue(generated.contains("awaitDynamicCalls("), generated);
+    assertTrue(generated.contains("EventType.RETURN, EventType.FIRE"), generated);
+    assertGeneratedJavaCompiles(generated);
   }
 
   @Test
@@ -448,6 +588,17 @@ class BehaviorAnalyzerTest {
     assignment.setVariable(name);
     assignment.setAssignmentScope(scope);
     assignment.setValue(value);
+    return assignment;
+  }
+
+  private static KActorsStatementImpl.AssignmentImpl assignment(
+      String name,
+      KActorsStatement.Assignment.Scope scope,
+      KActorsStatementImpl.VerbImpl function) {
+    var assignment = new KActorsStatementImpl.AssignmentImpl();
+    assignment.setVariable(name);
+    assignment.setAssignmentScope(scope);
+    assignment.setFunction(function);
     return assignment;
   }
 

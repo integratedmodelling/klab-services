@@ -10,9 +10,9 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
 /**
- * A configurable visitor that walks and semantically indexes a parsed {@link KActorsBehavior}.
- * The parser guarantees syntactic correctness; this class establishes lexical scopes, records the
- * information needed by a compiler, infers action execution modes and reports model-level errors.
+ * A configurable visitor that walks and semantically indexes a parsed {@link KActorsBehavior}. The
+ * parser guarantees syntactic correctness; this class establishes lexical scopes, records the
+ * information needed by a compiler, infers action execution modes, and reports model-level errors.
  */
 public class KActorsVisitor {
 
@@ -20,17 +20,48 @@ public class KActorsVisitor {
   public interface Validator {
 
     /**
-     * Classify a call whose target is supplied by an imported/inherited behavior or Java
-     * extension. The returned type should be the effective type, including reactive calls made by
-     * the target action itself, so callers can reason about lifecycle across behavior boundaries.
+     * Classify a call whose target is supplied by an imported/inherited behavior or Java extension.
+     * The returned type should be the effective type, including reactive calls made by the target
+     * action itself, so callers can reason about lifecycle across behavior boundaries.
+     *
+     * <p>A null return value means that the type remains unknown and validation should be turned
+     * off. As this normally happens when the recipient results from another verb, the {@link
+     * #classifyActionCallFromProducer(KActorsStatement.Verb, KActorsStatement.Verb,
+     * KActorsContext)} will normally be called after this has failed to classify the verb, and that
+     * call will include the provenance of the action that produced the recipient, so that more
+     * sophisticated tests can be made before giving up.
+     *
+     * <p>If the type of the action cannot be established in either way, the {@link
+     * #warnAboutUnknownActionCall(KActorsStatement.Verb, KActorsContext)} method controls whether a
+     * warning should be emitted or not.
      */
-    default Verb.Type classifyActionCall(
-        KActorsStatement.Verb verb, KActorsContext context) {
-      return Verb.Type.FUNCTION;
+    default Verb.Type classifyActionCall(KActorsStatement.Verb verb, KActorsContext context) {
+      return null;
     }
 
-    default List<Notification> validateBehavior(
-        KActorsBehavior behavior, KActorsContext context) {
+    /**
+     * Try to classify a call on a variable produced by another verb. This is invoked only when
+     * {@link #classifyActionCall(KActorsStatement.Verb, KActorsContext)} returned {@code null} and
+     * the recipient can be traced to an assignment or loop iterable supplied by a verb.
+     *
+     * @param verb the call whose execution type is needed
+     * @param recipientProducer the earlier call that produced the recipient value
+     * @param context the lexical context of {@code verb}
+     * @return the execution type, or {@code null} when it remains unknown
+     */
+    default Verb.Type classifyActionCallFromProducer(
+        KActorsStatement.Verb verb,
+        KActorsStatement.Verb recipientProducer,
+        KActorsContext context) {
+      return null;
+    }
+
+    /** Whether the visitor should warn when a call remains dynamically typed. */
+    default boolean warnAboutUnknownActionCall(KActorsStatement.Verb verb, KActorsContext context) {
+      return false;
+    }
+
+    default List<Notification> validateBehavior(KActorsBehavior behavior, KActorsContext context) {
       return List.of();
     }
 
@@ -54,9 +85,7 @@ public class KActorsVisitor {
     }
 
     default List<Notification> validateArguments(
-        KActorsStatement.Verb verb,
-        KActorsStatement.Arguments arguments,
-        KActorsContext context) {
+        KActorsStatement.Verb verb, KActorsStatement.Arguments arguments, KActorsContext context) {
       return List.of();
     }
 
@@ -64,7 +93,6 @@ public class KActorsVisitor {
         Expression.Descriptor expressionDescriptor, KActorsContext context) {
       return List.of();
     }
-
   }
 
   /** Syntax-only validator used when component-backed resolution is not available. */
@@ -77,7 +105,8 @@ public class KActorsVisitor {
       List<VariableInfo> parameters,
       int returns,
       int fires,
-      Set<Verb.Type> calledActionTypes) {
+      Set<Verb.Type> calledActionTypes,
+      boolean callsUnknownActions) {
     public ActionInfo {
       parameters = List.copyOf(parameters);
       calledActionTypes = Set.copyOf(calledActionTypes);
@@ -104,10 +133,7 @@ public class KActorsVisitor {
   }
 
   public record ImportInfo(
-      KActorsBehavior.Import statement,
-      String name,
-      String behaviorUrn,
-      Class<?> javaClass) {}
+      KActorsBehavior.Import statement, String name, String behaviorUrn, Class<?> javaClass) {}
 
   public record CallInfo(
       KActorsStatement.Verb statement,
@@ -128,7 +154,8 @@ public class KActorsVisitor {
       String name,
       ValueType type,
       String agentUrn,
-      String verbUrn) {}
+      String verbUrn,
+      KActorsStatement.Verb producerCall) {}
 
   public record ExpressionInfo(
       KActorsValue statement, Object expression, Map<String, VariableInfo> knownVariables) {
@@ -262,6 +289,7 @@ public class KActorsVisitor {
     private int reactiveReturns;
     private final EnumSet<Verb.Type> calledActionTypes = EnumSet.noneOf(Verb.Type.class);
     private final Set<String> localCallees = new LinkedHashSet<>();
+    private boolean callsUnknownActions;
   }
 
   protected KActorsContext createBehaviorContext(KActorsBehavior behavior, Validator validator) {
@@ -346,9 +374,12 @@ public class KActorsVisitor {
       }
     }
 
-    if (behavior.getBehaviorType() == KActorsBehavior.Type.TRAITS) {
-      if (actionDeclarations.containsKey("init") || actionDeclarations.containsKey("main")) {
-        notifications.add(Notification.error("Trait behaviors cannot declare init or main actions"));
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.LIBRARY) {
+      for (var reservedAction : List.of("init", "main")) {
+        var action = actionDeclarations.get(reservedAction);
+        if (action != null) {
+          error("Library behaviors cannot declare the " + reservedAction + " action", action);
+        }
       }
     } else if (behavior.getBehaviorType() == KActorsBehavior.Type.TASK
         && !actionDeclarations.containsKey("main")) {
@@ -388,7 +419,7 @@ public class KActorsVisitor {
       if (!names.add(name)) {
         error("Duplicate action parameter: " + name, action);
       }
-      var parameter = new VariableInfo(action, name, null, null, null);
+      var parameter = new VariableInfo(action, name, null, null, null, null);
       parameters.add(parameter);
       context.knownVariables.put(name, parameter);
     }
@@ -397,13 +428,7 @@ public class KActorsVisitor {
     actions.put(
         action.getUrn(),
         new ActionInfo(
-            action,
-            action.getUrn(),
-            Verb.Type.FUNCTION,
-            parameters,
-            0,
-            0,
-            Set.of()));
+            action, action.getUrn(), Verb.Type.FUNCTION, parameters, 0, 0, Set.of(), false));
   }
 
   public void visitAnnotation(Annotation annotation, KActorsContext context) {
@@ -447,11 +472,11 @@ public class KActorsVisitor {
     var agent = upstreamVerb == null ? null : upstreamVerb.getRecipient();
     var verb = upstreamVerb == null ? null : upstreamVerb.getMessage();
     for (var name : safe(matchStatement.getVariables())) {
-      localVariables.add(new VariableInfo(matchStatement, name, null, agent, verb));
+      localVariables.add(new VariableInfo(matchStatement, name, null, agent, verb, null));
     }
     if (matchStatement.getCaptureAs() != null) {
       localVariables.add(
-          new VariableInfo(matchStatement, matchStatement.getCaptureAs(), null, agent, verb));
+          new VariableInfo(matchStatement, matchStatement.getCaptureAs(), null, agent, verb, null));
     }
     var criterion = matchStatement.getMatchCriterion();
     if (criterion != null) {
@@ -461,7 +486,7 @@ public class KActorsVisitor {
         for (var value : values) {
           if (value != null) {
             localVariables.add(
-                new VariableInfo(criterion, value.toString(), null, agent, verb));
+                new VariableInfo(criterion, value.toString(), null, agent, verb, null));
           }
         }
       }
@@ -474,8 +499,7 @@ public class KActorsVisitor {
     visitValue(value, context, true);
   }
 
-  private void visitValue(
-      KActorsValue value, KActorsContext context, boolean resolveIdentifiers) {
+  private void visitValue(KActorsValue value, KActorsContext context, boolean resolveIdentifiers) {
     visitAnnotations(value.getAnnotations(), context);
     var raw = valueOf(value);
     if (value.getType() == ValueType.EXPRESSION) {
@@ -498,7 +522,8 @@ public class KActorsVisitor {
   }
 
   protected void visitDo(KActorsStatement.Do statement, KActorsContext context) {
-    validateAlternative(statement.getCondition(), statement.getFunction(), "do condition", statement);
+    validateAlternative(
+        statement.getCondition(), statement.getFunction(), "do condition", statement);
     visitNested(statement.getBody(), context, List.of(), true);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
@@ -507,7 +532,8 @@ public class KActorsVisitor {
 
   protected void visitAssert(KActorsStatement.Assert statement, KActorsContext context) {
     if (context.behavior.getBehaviorType() != KActorsBehavior.Type.UNITTEST) {
-      warning("Assertions in non-test behaviors may be omitted by production compilation", statement);
+      warning(
+          "Assertions in non-test behaviors may be omitted by production compilation", statement);
     }
     visitValues(statement.getArguments(), context);
     for (var assertion : safe(statement.getAssertions())) {
@@ -537,7 +563,8 @@ public class KActorsVisitor {
   }
 
   protected void visitIf(KActorsStatement.If statement, KActorsContext context) {
-    validateAlternative(statement.getCondition(), statement.getFunction(), "if condition", statement);
+    validateAlternative(
+        statement.getCondition(), statement.getFunction(), "if condition", statement);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
     validateBooleanValue(statement.getCondition(), "if condition");
@@ -547,7 +574,8 @@ public class KActorsVisitor {
         continue;
       }
       var condition = elseIf.getFirst();
-      validateAlternative(condition.getFirst(), condition.getSecond(), "else-if condition", statement);
+      validateAlternative(
+          condition.getFirst(), condition.getSecond(), "else-if condition", statement);
       visitValueIfPresent(condition.getFirst(), context);
       visitVerbAsValue(condition.getSecond(), context);
       validateBooleanValue(condition.getFirst(), "else-if condition");
@@ -557,7 +585,8 @@ public class KActorsVisitor {
   }
 
   protected void visitWhile(KActorsStatement.While statement, KActorsContext context) {
-    validateAlternative(statement.getCondition(), statement.getFunction(), "while condition", statement);
+    validateAlternative(
+        statement.getCondition(), statement.getFunction(), "while condition", statement);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
     validateBooleanValue(statement.getCondition(), "while condition");
@@ -565,14 +594,16 @@ public class KActorsVisitor {
   }
 
   protected void visitFor(KActorsStatement.For statement, KActorsContext context) {
-    validateAlternative(statement.getIterable(), statement.getFunction(), "for iterable", statement);
+    validateAlternative(
+        statement.getIterable(), statement.getFunction(), "for iterable", statement);
     visitValueIfPresent(statement.getIterable(), context);
     visitVerbAsValue(statement.getFunction(), context);
     validateIterableValue(statement.getIterable(), statement);
     var loopVariables = new ArrayList<VariableInfo>();
     if (statement.getVariable() != null && !statement.getVariable().isBlank()) {
       loopVariables.add(
-          new VariableInfo(statement, statement.getVariable(), null, null, null));
+          new VariableInfo(
+              statement, statement.getVariable(), null, null, null, statement.getFunction()));
     }
     visitNested(statement.getBody(), context, loopVariables, true);
   }
@@ -585,9 +616,9 @@ public class KActorsVisitor {
 
   protected void visitText(KActorsStatement.Text textStatement, KActorsContext context) {}
 
-  protected void visitAssignment(
-      KActorsStatement.Assignment statement, KActorsContext context) {
-    validateAlternative(statement.getValue(), statement.getFunction(), "assignment value", statement);
+  protected void visitAssignment(KActorsStatement.Assignment statement, KActorsContext context) {
+    validateAlternative(
+        statement.getValue(), statement.getFunction(), "assignment value", statement);
     if (isImported(statement.getVariable())) {
       error("An assignment cannot override an import alias: " + statement.getVariable(), statement);
     } else if (statement.getAssignmentScope() == KActorsStatement.Assignment.Scope.FRAME
@@ -605,8 +636,6 @@ public class KActorsVisitor {
 
   protected void visitVerb(KActorsStatement.Verb statement, KActorsContext context) {
     pendingCalls.add(new PendingCall(statement, context, isValuePosition(context)));
-    addNotifications(context.validator.validateVerbCall(statement, context));
-    addNotifications(context.validator.validateArguments(statement, statement.getArguments(), context));
     visitValues(statement.getArguments(), context);
     for (var matchAction : safe(statement.getActions())) {
       visitNested(matchAction, context, List.of(), false);
@@ -682,7 +711,8 @@ public class KActorsVisitor {
               old.parameters(),
               accumulator.returns,
               accumulator.fires,
-              Set.of()));
+              Set.of(),
+              false));
     }
   }
 
@@ -701,20 +731,47 @@ public class KActorsVisitor {
           executionType = target.executionType();
           actionAccumulators.get(pending.context().action).localCallees.add(target.name());
         }
-      } else if (!isImported(recipient) && !pending.context().knownVariables.containsKey(recipient)) {
+      } else if (!isImported(recipient)
+          && !pending.context().knownVariables.containsKey(recipient)) {
         error("Undeclared verb recipient: " + recipient, statement);
       }
       if (executionType == null) {
         executionType =
-            Objects.requireNonNullElse(
-                pending.context().validator.classifyActionCall(statement, pending.context()),
-                Verb.Type.FUNCTION);
+            pending.context().validator.classifyActionCall(statement, pending.context());
       }
-      if (executionType != Verb.Type.FUNCTION && pending.context().action != null) {
-        actionAccumulators
-            .get(pending.context().action)
-            .calledActionTypes
-            .add(executionType);
+      if (executionType == null) {
+        var variable = pending.context().knownVariables.get(recipient);
+        if (variable != null && variable.producerCall() != null) {
+          executionType =
+              pending
+                  .context()
+                  .validator
+                  .classifyActionCallFromProducer(
+                      statement, variable.producerCall(), pending.context());
+        }
+      }
+      if (executionType == null) {
+        if (pending.context().action != null) {
+          actionAccumulators.get(pending.context().action).callsUnknownActions = true;
+        }
+        if (pending.context().validator.warnAboutUnknownActionCall(statement, pending.context())) {
+          warning(
+              "Cannot establish execution type for " + recipient + "." + statement.getMessage(),
+              statement);
+        }
+      } else {
+        addNotifications(
+            pending.context().validator.validateVerbCall(statement, pending.context()));
+        addNotifications(
+            pending
+                .context()
+                .validator
+                .validateArguments(statement, statement.getArguments(), pending.context()));
+      }
+      if (executionType != null
+          && executionType != Verb.Type.FUNCTION
+          && pending.context().action != null) {
+        actionAccumulators.get(pending.context().action).calledActionTypes.add(executionType);
       }
       if (executionType == Verb.Type.FUNCTION && !safe(statement.getActions()).isEmpty()) {
         error("Function calls cannot declare match actions", statement);
@@ -752,6 +809,11 @@ public class KActorsVisitor {
           changed |=
               accumulator.calledActionTypes.addAll(
                   actionAccumulators.get(callee.statement()).calledActionTypes);
+          if (actionAccumulators.get(callee.statement()).callsUnknownActions
+              && !accumulator.callsUnknownActions) {
+            accumulator.callsUnknownActions = true;
+            changed = true;
+          }
         }
       }
     } while (changed);
@@ -767,7 +829,8 @@ public class KActorsVisitor {
               action.parameters(),
               action.returns(),
               action.fires(),
-              accumulator.calledActionTypes);
+              accumulator.calledActionTypes,
+              accumulator.callsUnknownActions);
       completed.statement().setActionType(completed.effectiveExecutionType());
       entry.setValue(completed);
     }
@@ -794,7 +857,12 @@ public class KActorsVisitor {
   private VariableInfo variableFor(KActorsStatement.Assignment assignment) {
     if (assignment.getValue() != null) {
       return new VariableInfo(
-          assignment.getValue(), assignment.getVariable(), assignment.getValue().getType(), null, null);
+          assignment.getValue(),
+          assignment.getVariable(),
+          assignment.getValue().getType(),
+          null,
+          null,
+          null);
     }
     var function = assignment.getFunction();
     return new VariableInfo(
@@ -802,7 +870,8 @@ public class KActorsVisitor {
         assignment.getVariable(),
         null,
         function == null ? null : normalizeRecipient(function.getRecipient()),
-        function == null ? null : function.getMessage());
+        function == null ? null : function.getMessage(),
+        function);
   }
 
   private void validateAlternative(
@@ -821,8 +890,7 @@ public class KActorsVisitor {
     }
   }
 
-  private void validateIterableValue(
-      KActorsValue value, KActorsCodeStatement statement) {
+  private void validateIterableValue(KActorsValue value, KActorsCodeStatement statement) {
     if (value == null) {
       return;
     }
@@ -880,7 +948,8 @@ public class KActorsVisitor {
       case KActorsStatement.Verb verb -> safe(verb.getActions()).forEach(consumer);
       case KActorsStatement.Verb.MatchAction match -> consumer.accept(match.getActionOnMatch());
       case KActorsStatement.Assert assertion -> safe(assertion.getAssertions()).forEach(consumer);
-      case KActorsStatement.Assert.Assertion assertion -> safe(assertion.getCalls()).forEach(consumer);
+      case KActorsStatement.Assert.Assertion assertion ->
+          safe(assertion.getCalls()).forEach(consumer);
       default -> {}
     }
   }
@@ -899,8 +968,7 @@ public class KActorsVisitor {
     visitValues(values, context, false);
   }
 
-  private void visitValues(
-      Object values, KActorsContext context, boolean resolveIdentifiers) {
+  private void visitValues(Object values, KActorsContext context, boolean resolveIdentifiers) {
     if (values instanceof KActorsValue value) {
       visitValue(value, context, resolveIdentifiers);
     } else if (values instanceof Map<?, ?> map) {

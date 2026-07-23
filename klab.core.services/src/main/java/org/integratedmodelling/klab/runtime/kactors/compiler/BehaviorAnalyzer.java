@@ -134,6 +134,11 @@ public class BehaviorAnalyzer {
   }
 
   private Verb.Type executionMode(KActorsVisitor.ActionInfo action) {
+    // Unknown calls are run through the dynamic runtime bridge. Keep an independently started
+    // agent alive conservatively because the unresolved call may turn out to be an emitter.
+    if (action.callsUnknownActions()) {
+      return Verb.Type.EMITTER;
+    }
     return action.effectiveExecutionType();
   }
 

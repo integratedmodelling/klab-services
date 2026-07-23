@@ -45,6 +45,11 @@ import org.integratedmodelling.languages.api.*;
 public enum LanguageAdapter {
   INSTANCE;
 
+  private static final Pattern KACTORS_LIBRARY_KIND =
+      Pattern.compile(
+          "\\A(?:\\s+|//[^\\r\\n]*(?:\\R|\\z)|/\\*.*?\\*/)*(trait|library)\\b",
+          Pattern.DOTALL);
+
   Map<String, Instance> instanceAnnotations = new HashMap<>();
   Map<String, Class<?>> instanceImplementations = new HashMap<>();
 
@@ -1315,7 +1320,7 @@ public enum LanguageAdapter {
           case TESTCASE -> KActorsBehavior.Type.UNITTEST;
           case SCRIPT -> KActorsBehavior.Type.SCRIPT;
           case COMPONENT -> KActorsBehavior.Type.COMPONENT;
-          case LIBRARY -> KActorsBehavior.Type.TRAITS;
+          case LIBRARY -> libraryKind(syntax.encode());
           case APPLICATION -> KActorsBehavior.Type.APP;
           case BEHAVIOR -> KActorsBehavior.Type.BEHAVIOR;
           case USER -> KActorsBehavior.Type.USER;
@@ -1392,6 +1397,16 @@ public enum LanguageAdapter {
       statement.setNamespace(namespace);
       statement.setDocumentClass(KlabAsset.KnowledgeClass.BEHAVIOR);
     }
+  }
+
+  private KActorsBehavior.Type libraryKind(String sourceCode) {
+    if (sourceCode != null) {
+      var matcher = KACTORS_LIBRARY_KIND.matcher(sourceCode);
+      if (matcher.find() && "trait".equals(matcher.group(1))) {
+        return KActorsBehavior.Type.TRAITS;
+      }
+    }
+    return KActorsBehavior.Type.LIBRARY;
   }
 
   private KActorsStatement adaptActionStatement(

@@ -166,6 +166,67 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void dynamicVerbBridgeDiscoversFunctionSupplierAndEmitterAtRuntime() throws Exception {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+
+    assertEquals(3L, agent.dynamicValue(TestActor.class, "sum", root, 1, 2));
+    assertEquals("ready", agent.dynamicValue(TestActor.class, "later", root));
+
+    var returned = new CopyOnWriteArrayList<Object>();
+    var supplierDone = new CountDownLatch(1);
+    var supplierScope =
+        agent.listen(
+            root,
+            (event, parent) -> {
+              returned.add(event.payload());
+              supplierDone.countDown();
+            },
+            RuntimeAgentBase.EventType.RETURN);
+    assertSame(
+        RuntimeAgentBase.TASK_RUNNING,
+        agent.dynamic(TestActor.class, "later", supplierScope));
+    assertTrue(supplierDone.await(1, TimeUnit.SECONDS));
+    assertEquals(List.of("ready"), returned);
+
+    agent.dynamicMainDone("main result");
+    root.awaitDone();
+    assertTrue(root.isDone(), "finite dynamic calls must allow the root lifecycle to finish");
+
+    var emitterAgent = new ReactiveRuntimeAgent();
+    var emitterRoot = (AgentScope) emitterAgent.rootScope();
+    var fired = new CopyOnWriteArrayList<Object>();
+    var emitterDone = new CountDownLatch(1);
+    var emitterScope =
+        emitterAgent.listen(
+            emitterRoot,
+            (event, parent) -> {
+              fired.add(event.payload());
+              emitterDone.countDown();
+            },
+            RuntimeAgentBase.EventType.FIRE);
+    assertSame(
+        RuntimeAgentBase.TASK_RUNNING,
+        emitterAgent.dynamic(TestActor.class, "emit", emitterScope, "event"));
+    assertTrue(emitterDone.await(1, TimeUnit.SECONDS));
+    assertEquals(List.of("event"), fired);
+    emitterAgent.dynamicMainDone("main result");
+    var rootCompletion =
+        CompletableFuture.runAsync(
+            () -> {
+              try {
+                emitterRoot.awaitDone();
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+              }
+            });
+    assertFalse(rootCompletion.isDone(), "a dynamic emitter must keep the root lifecycle alive");
+    emitterScope.done();
+    rootCompletion.get(1, TimeUnit.SECONDS);
+  }
+
+  @Test
   void sequentialBarrierWaitsForEveryReaction() {
     var agent = new ReactiveRuntimeAgent();
     var first = new CompletableFuture<Void>();
@@ -255,6 +316,20 @@ class RuntimeAgentBaseTest {
 
     private void emitter(Object actor, String verb, AgentScope scope, Object... arguments) {
       invokeEmitter(actor, verb, scope, arguments);
+    }
+
+    private ExitValue dynamic(
+        Object actor, String verb, AgentScope scope, Object... arguments) {
+      return runDynamicVerb(actor, verb, scope, arguments);
+    }
+
+    private Object dynamicValue(
+        Object actor, String verb, AgentScope scope, Object... arguments) {
+      return invokeDynamicValue(actor, verb, scope, arguments);
+    }
+
+    private ExitValue dynamicMainDone(Object result) {
+      return awaitDynamicCalls(result);
     }
 
     private void await(CompletableFuture<?>... completions) {

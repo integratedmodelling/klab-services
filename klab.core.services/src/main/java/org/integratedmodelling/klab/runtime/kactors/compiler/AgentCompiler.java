@@ -379,13 +379,21 @@ public class AgentCompiler {
       switch (main.effectiveExecutionType()) {
         case FUNCTION -> {
           method.addStatement("Object result = invokeSelfFunction($S, rootScope)", "main");
-          method.addStatement("return ExitValue.success(result)");
+          method.addStatement(
+              main.callsUnknownActions()
+                  ? "return awaitDynamicCalls(result)"
+                  : "return ExitValue.success(result)");
         }
         case SUPPLIER -> {
           method.addStatement(
               "$T<Object> result = invokeSelfSupplier($S, rootScope)", CompletableFuture.class, "main");
-          method.addStatement(
-              "result.whenComplete((value, error) -> { if (error == null) rootScope.done(value); else rootScope.done(error); })");
+          if (main.callsUnknownActions()) {
+            method.addStatement(
+                "result.whenComplete((value, error) -> { if (error == null) awaitDynamicCalls(value); else failDynamicCalls(error); })");
+          } else {
+            method.addStatement(
+                "result.whenComplete((value, error) -> { if (error == null) rootScope.done(value); else rootScope.done(error); })");
+          }
           method.addStatement("return TASK_RUNNING");
         }
         case EMITTER -> {
@@ -394,10 +402,13 @@ public class AgentCompiler {
         }
       }
     }
-    method.nextControlFlow("catch ($T error)", Throwable.class)
-        .addStatement("rootScope.done(error)")
-        .addStatement("return ExitValue.failure(error)")
-        .endControlFlow();
+    method.nextControlFlow("catch ($T error)", Throwable.class);
+    if (main != null && main.callsUnknownActions()) {
+      method.addStatement("return failDynamicCalls(error)");
+    } else {
+      method.addStatement("rootScope.done(error)").addStatement("return ExitValue.failure(error)");
+    }
+    method.endControlFlow();
     return method.build();
   }
 
@@ -660,7 +671,7 @@ public class AgentCompiler {
       CompilationContext context,
       boolean awaitCompletion) {
     var info = calls.get(verb);
-    Verb.Type type = info == null ? Verb.Type.FUNCTION : info.executionType();
+    Verb.Type type = info == null ? null : info.executionType();
     if (type == Verb.Type.FUNCTION) {
       code.addStatement("$L", invoke(verb, type, context.scope(), context));
       return;
@@ -733,17 +744,37 @@ public class AgentCompiler {
           .endControlFlow();
     }
 
-    CodeBlock listener =
-        CodeBlock.builder()
-            .add(
-                "onEvent($L, ($L, $L) -> {\n$L}, EventType.$L, EventType.EXCEPTION)",
-                context.scope(),
-                event,
-                eventScope,
-                handler.build(),
-                type == Verb.Type.SUPPLIER ? "RETURN" : "FIRE")
-            .build();
-    if (type == Verb.Type.SUPPLIER) {
+    CodeBlock listener;
+    if (type == null) {
+      listener =
+          CodeBlock.builder()
+              .add(
+                  "onEvent($L, ($L, $L) -> {\n$L}, EventType.RETURN, EventType.FIRE, EventType.EXCEPTION)",
+                  context.scope(),
+                  event,
+                  eventScope,
+                  handler.build())
+              .build();
+    } else {
+      listener =
+          CodeBlock.builder()
+              .add(
+                  "onEvent($L, ($L, $L) -> {\n$L}, EventType.$L, EventType.EXCEPTION)",
+                  context.scope(),
+                  event,
+                  eventScope,
+                  handler.build(),
+                  type == Verb.Type.SUPPLIER ? "RETURN" : "FIRE")
+              .build();
+    }
+    if (type == null) {
+      code.addStatement(
+          "runDynamicVerb($L, $S, $L, $L)",
+          dynamicReceiver(verb, context),
+          verb.getMessage(),
+          listener,
+          arguments(verb, context));
+    } else if (type == Verb.Type.SUPPLIER) {
       code.add(
           "runSupplier($L, callScope -> $L);\n",
           listener,
@@ -779,7 +810,15 @@ public class AgentCompiler {
       return CodeBlock.of("null");
     }
     var info = calls.get(verb);
-    Verb.Type type = info == null ? Verb.Type.FUNCTION : info.executionType();
+    Verb.Type type = info == null ? null : info.executionType();
+    if (type == null) {
+      return CodeBlock.of(
+          "invokeDynamicValue($L, $S, $L, $L)",
+          dynamicReceiver(verb, context),
+          verb.getMessage(),
+          context.scope(),
+          arguments(verb, context));
+    }
     CodeBlock invocation = invoke(verb, type, context.scope(), context);
     return type == Verb.Type.SUPPLIER ? CodeBlock.of("$L.join()", invocation) : invocation;
   }
@@ -814,6 +853,13 @@ public class AgentCompiler {
       return CodeBlock.of("this.actor_$L", javaIdentifier(recipient));
     }
     return CodeBlock.of("resolveIdentifier($S, $L)", recipient, context.frame());
+  }
+
+  private CodeBlock dynamicReceiver(
+      KActorsStatement.Verb verb, CompilationContext context) {
+    return verb.getRecipient() == null || "self".equals(verb.getRecipient())
+        ? CodeBlock.of("this")
+        : receiver(verb.getRecipient(), context);
   }
 
   private CodeBlock arguments(KActorsStatement.Verb verb, CompilationContext context) {

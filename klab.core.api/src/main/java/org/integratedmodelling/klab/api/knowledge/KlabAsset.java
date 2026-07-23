@@ -147,7 +147,7 @@ public interface KlabAsset extends Serializable {
       case Resource resource -> KnowledgeClass.RESOURCE;
       case KActorsBehavior behavior ->
           switch (behavior.getBehaviorType()) {
-            case BEHAVIOR, TASK, USER, TRAITS -> KnowledgeClass.BEHAVIOR;
+            case BEHAVIOR, TASK, USER, TRAITS, LIBRARY -> KnowledgeClass.BEHAVIOR;
             case APP -> KnowledgeClass.APPLICATION;
             case UNITTEST -> KnowledgeClass.TESTCASE;
             case COMPONENT -> KnowledgeClass.COMPONENT;

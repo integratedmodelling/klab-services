@@ -117,11 +117,18 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
     USER,
     /**
      * The behavior is a collection of actions to be incorporated in another actor definition as a
-     * collection of traits ("personality"). It can simply be declared as a "library". Traits are
-     * imported using the 'import' clause in the k.Actors preamble, or explicitly with a system
-     * action; they cannot be bound to anything directly. Traits cannot have init and main actions.
+     * collection of traits (a "personality"). Traits are adopted through inheritance and cannot be
+     * bound or instantiated directly. They may define {@code init} and {@code main}; inherited
+     * initialization and main behavior become part of the adopting agent.
      */
     TRAITS,
+
+    /**
+     * A library is a reusable collection of callable actions imported by agents. Unlike a trait it
+     * does not contribute an inherited personality and, because it is not independently
+     * constructed or started, it cannot define {@code init} or {@code main}.
+     */
+    LIBRARY,
 
     /**
      * The behavior defines a collection of annotated unit tests, through actions annotated
@@ -132,10 +139,10 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
     UNITTEST,
 
     /**
-     * A component is an actor that should be created only by other actors and normally provides a
-     * piece of behavior including UI elements, or anything else that makes it "composable". The
-     * system will reject any bindings to components and only let this be created using the 'new'
-     * verb in apps.
+     * A component is an actor that exists in its own right but is created and used from another
+     * agent. It normally provides UI elements or another composable subsystem. Components may
+     * define {@code init} as their constructor and {@code main} as their startup action. The system
+     * rejects direct observation bindings to components and creates them through actor construction.
      */
     COMPONENT,
 
