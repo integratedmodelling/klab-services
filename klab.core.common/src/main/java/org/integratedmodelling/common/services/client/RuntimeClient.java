@@ -17,6 +17,7 @@ import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -89,11 +90,19 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public Agent runAgent(
-      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
+  public Agent createAgent(
+      KActorsBehavior behavior,
+      String suggestedAgentName,
+      Collection<RuntimeAgent.CompilationOptions> options,
+      UserScope scope) {
     var request = new AgentInstantiationRequest();
     request.setBehavior(behavior);
-    request.setCompileOnly(compileOnly);
+    request.setCompileOnly(options.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
+    request.setReportJavaCode(options.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE));
+    request.setDoNotBindObservation(
+        options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION));
+    request.setDoNotBindSession(
+        options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_SESSION));
     request.setSuggestedName(suggestedAgentName);
     if (scope instanceof ContextScope contextScope
         && contextScope.getContextObservation() != null

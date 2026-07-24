@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.integratedmodelling.common.logging.Logging;
@@ -17,6 +18,8 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -39,7 +42,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
-import org.integratedmodelling.klab.rest.AgentInstantiationResponse;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -125,31 +127,42 @@ public class RuntimeServerController {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   @PostMapping(ServicesAPI.RUNTIME.INSTANTIATE_AGENT)
-  public @ResponseBody AgentInstantiationResponse instantiateAgent(
+  public @ResponseBody Agent instantiateAgent(
       @RequestBody AgentInstantiationRequest request, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
+
       var scope = authorization.getScope(ContextScope.class);
-      var agent =
-          runtimeService
-              .klabService()
-              .runAgent(
-                  request.getBehavior(),
-                  request.getSuggestedName(),
-                  request.isCompileOnly(),
-                  scope);
-      if (agent != null) {
-        var ret = new AgentInstantiationResponse();
-        ret.setBehaviorUrn(request.getBehavior().getUrn());
-        ret.setAgentUrl(
-            runtimeService.klabService().getUrl()
-                + ServicesAPI.RUNTIME.AGENT
-                + "/"
-                + agent.getUrn());
-        ret.setAlive(agent.isAlive());
-        ret.getNotifications().addAll(agent.getNotifications());
-        return ret;
+      var options = EnumSet.noneOf(RuntimeAgent.CompilationOptions.class);
+      if (request.isCompileOnly()) {
+        options.add(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA);
       }
-      return null;
+      if (request.isDoNotBindObservation()) {
+        options.add(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION);
+      }
+      if (request.isDoNotBindSession()) {
+        options.add(RuntimeAgent.CompilationOptions.DO_NOT_BIND_SESSION);
+      }
+      if (request.isReportJavaCode()) {
+        options.add(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE);
+      }
+
+      return runtimeService
+          .klabService()
+          .createAgent(request.getBehavior(), request.getSuggestedName(), options, scope);
+
+      //      if (agent != null) {
+      //        var ret = new AgentInstantiationResponse();
+      //        ret.setBehaviorUrn(request.getBehavior().getUrn());
+      //        ret.setAgentUrl(
+      //            runtimeService.klabService().getUrl()
+      //                + ServicesAPI.RUNTIME.AGENT
+      //                + "/"
+      //                + agent.getUrn());
+      //        ret.setAlive(agent.isAlive());
+      //        ret.getNotifications().addAll(agent.getNotifications());
+      //        return ret;
+      //      }
+      //      return null;
     }
     throw new KlabInternalErrorException(
         "Unexpected implementation of agent instantiation authorization");

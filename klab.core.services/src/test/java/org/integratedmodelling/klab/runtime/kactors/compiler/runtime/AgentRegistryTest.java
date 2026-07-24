@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.UUID;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
@@ -60,8 +61,8 @@ class AgentRegistryTest {
             request(behavior.getUrn(), null),
             behavior,
             null,
-            AgentRegistry.Options.DO_NOT_COMPILE_JAVA,
-            AgentRegistry.Options.INCLUDE_JAVA_CODE);
+            RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA,
+            RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE);
 
     assertTrue(translated.isViable(), () -> translated.getNotifications().toString());
     assertNull(translated.getUrn());

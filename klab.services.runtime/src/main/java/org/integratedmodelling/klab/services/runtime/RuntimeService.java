@@ -16,6 +16,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -1244,9 +1245,12 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public org.integratedmodelling.klab.api.actors.Agent runAgent(
-      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
-    return compileAndRunAgent(behavior, suggestedAgentName, compileOnly, scope);
+  public org.integratedmodelling.klab.api.actors.Agent createAgent(
+      KActorsBehavior behavior,
+      String suggestedAgentName,
+      Collection<RuntimeAgent.CompilationOptions> options,
+      UserScope scope) {
+    return compileAndRunAgent(behavior, suggestedAgentName, options, scope);
   }
 
   /**
@@ -1255,19 +1259,28 @@ public class RuntimeService extends BaseService
    *
    * @param behavior
    * @param suggestedAgentName
-   * @param compileOnly
+   * @param options
    * @param scope
    * @return
    */
   private org.integratedmodelling.klab.api.actors.Agent compileAndRunAgent(
-      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope) {
+      KActorsBehavior behavior,
+      String suggestedAgentName,
+      Collection<RuntimeAgent.CompilationOptions> options,
+      UserScope scope) {
+
     var request = new AgentImpl();
     request.setBehaviorUrn(behavior.getUrn());
     request.setName(suggestedAgentName);
-    var ret = AgentRegistry.INSTANCE.getOrCreateAgent(request, behavior, scope);
-    if (!compileOnly && ret.isViable()) {
+
+    var ret =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request, behavior, scope, options.toArray(RuntimeAgent.CompilationOptions[]::new));
+
+    if (!options.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA) && ret.isViable()) {
       ret.start();
     }
+
     return ret;
   }
 

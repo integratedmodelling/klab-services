@@ -11,6 +11,8 @@ public class AgentInstantiationRequest {
   private KActorsBehavior behavior;
   private boolean compileOnly;
   private boolean reportJavaCode;
+  private boolean doNotBindSession;
+  private boolean doNotBindObservation;
   private long observationId;
   private String suggestedName;
 
@@ -48,6 +50,22 @@ public class AgentInstantiationRequest {
 
   public boolean isReportJavaCode() {
     return reportJavaCode;
+  }
+
+  public boolean isDoNotBindSession() {
+    return doNotBindSession;
+  }
+
+  public void setDoNotBindSession(boolean doNotBindSession) {
+    this.doNotBindSession = doNotBindSession;
+  }
+
+  public boolean isDoNotBindObservation() {
+    return doNotBindObservation;
+  }
+
+  public void setDoNotBindObservation(boolean doNotBindObservation) {
+    this.doNotBindObservation = doNotBindObservation;
   }
 
   public void setReportJavaCode(boolean reportJavaCode) {

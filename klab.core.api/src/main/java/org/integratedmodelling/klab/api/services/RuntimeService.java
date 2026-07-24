@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -206,25 +207,30 @@ public interface RuntimeService extends KlabService {
   Observation register(Observation observation, ContextScope scope);
 
   /**
-   * Run an agent in the given scope. The agent must be given a valid KActors behavior. Based on the
-   * scope passed, the agent will be associated with the correct host; if the scope is a {@link
-   * ContextScope} and the scope if focused on an agent observation as the contextObservation, the
-   * observation will become the host rather than the full ContextScope. If the scope is a raw
-   * {@link UserScope}, the destination of the agent will depend on whether the behavior is an
-   * application/script/testcase (which will run unhosted) or a behavior (which will represent the
-   * user). Normal usage in a scoped context requires using {@link UserScope#run(KActorsBehavior,
-   * RuntimeService)} for the session-hosted agents and using binding in k.IM models to associate
-   * behaviors to hosts. Direct use of runAgent should only be used for testing and debugging.
+   * Create an agent with the given behavior in the given scope. The k.Actors behavior must be valid
+   * and appropriate to the scope. Based on the scope passed, the agent will be associated with the
+   * correct host; if the scope is a {@link ContextScope} and the scope if focused on an agent
+   * observation as the contextObservation, the observation will become the host rather than the
+   * full ContextScope. If the scope is a raw {@link UserScope}, the destination of the agent will
+   * depend on whether the behavior is an application/script/testcase (which will run unhosted) or a
+   * behavior (which will represent the user). Normal usage in a scoped context requires using
+   * {@link UserScope#run(KActorsBehavior, RuntimeService)} for the session-hosted agents and using
+   * binding in k.IM models to associate behaviors to hosts. Direct use of runAgent should only be
+   * used for testing and debugging.
    *
    * @param behavior the behavior to run
    * @param suggestedAgentName a name to suggest for the agent; may not be honored
-   * @param compileOnly if true, the agent will not be run but only compiled; notifications in the
-   *     agent returned carry the results of compilation
+   * @param options affect the compilation of the agent; may determine the viability of the returned
+   *     agent
    * @param scope the scope in which to run the agent. Must be compatible with the behavior.
-   * @return an agent whose alive status and notifications must be checked before use
+   * @return an agent whose state and notifications must be checked before use. Any error is
+   *     notified through the returned agent's state and notifications.
    */
-  Agent runAgent(
-      KActorsBehavior behavior, String suggestedAgentName, boolean compileOnly, UserScope scope);
+  Agent createAgent(
+      KActorsBehavior behavior,
+      String suggestedAgentName,
+      Collection<RuntimeAgent.CompilationOptions> options,
+      UserScope scope);
 
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.

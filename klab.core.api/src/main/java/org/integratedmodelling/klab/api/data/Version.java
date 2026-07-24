@@ -343,10 +343,17 @@ public class Version implements Comparable<Version>, Serializable {
     if ((major != other.major)
         || (minor != other.minor)
         || (build != other.build)
-        || !modifier.equalsIgnoreCase(other.modifier)) {
+        || !modifiersAreEqual(other)) {
       return false;
     }
     return true;
+  }
+
+  private boolean modifiersAreEqual(Version other) {
+    return (modifier == null && other.modifier == null)
+        || (modifier != null
+            && other.modifier != null
+            && modifier.equalsIgnoreCase(other.modifier));
   }
 
   /**

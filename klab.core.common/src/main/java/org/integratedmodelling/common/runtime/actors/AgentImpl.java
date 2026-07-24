@@ -17,6 +17,8 @@ public class AgentImpl implements Agent {
   private boolean viable;
   private String javaCode;
   private String name;
+  private String scopeId;
+  private long observationId;
 
   @Override
   public String getUrn() {
@@ -64,6 +66,33 @@ public class AgentImpl implements Agent {
    */
   public String getJavaCode() {
     return javaCode;
+  }
+
+  /**
+   * non-API: the ID of the observation the agent is bound to, if any. Can be only an AGENT if the
+   * behavior is a BEHAVIOR; can be any observation if a TASK
+   *
+   * @return
+   */
+  public long getObservationId() {
+    return observationId;
+  }
+
+  public void setObservationId(long observationId) {
+    this.observationId = observationId;
+  }
+
+  /**
+   * non-API: the ID of the scope the agent belongs to, if any
+   *
+   * @return
+   */
+  public String getScopeId() {
+    return scopeId;
+  }
+
+  public void setScopeId(String scopeId) {
+    this.scopeId = scopeId;
   }
 
   public void setJavaCode(String javaCode) {

@@ -28,6 +28,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -48,14 +49,6 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
  */
 public enum AgentRegistry {
   INSTANCE;
-
-  /** Passed to {@link #getOrCreateAgent(Agent, Scope, Options...)}. */
-  public enum Options {
-    /** Include the generated Java code in service-side handles that support it. */
-    INCLUDE_JAVA_CODE,
-    /** Stop after source generation and validation; do not compile or instantiate the class. */
-    DO_NOT_COMPILE_JAVA
-  }
 
   private record BehaviorKey(String urn, Version version, long timestamp) {
 
@@ -85,7 +78,8 @@ public enum AgentRegistry {
    * Otherwise its behavior URN is resolved through the resources service in the supplied user
    * scope, compiled (or retrieved from the class cache), instantiated, and registered.
    */
-  public Agent getOrCreateAgent(Agent agent, Scope scope, Options... options) {
+  public Agent getOrCreateAgent(
+      Agent agent, Scope scope, RuntimeAgent.CompilationOptions... options) {
     Objects.requireNonNull(agent, "agent");
     Objects.requireNonNull(scope, "scope");
 
@@ -115,9 +109,7 @@ public enum AgentRegistry {
       return getOrCreateAgent(agent, behavior, scope, options);
     } catch (Throwable failure) {
       return failedHandle(
-          agent,
-          "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn(),
-          unwrap(failure));
+          agent, "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn(), unwrap(failure));
     }
   }
 
@@ -126,7 +118,10 @@ public enum AgentRegistry {
    * behavior. It also provides the seam needed for initialization arguments in a future API.
    */
   public Agent getOrCreateAgent(
-      Agent agent, KActorsBehavior behavior, Scope scope, Options... options) {
+      Agent agent,
+      KActorsBehavior behavior,
+      Scope scope,
+      RuntimeAgent.CompilationOptions... options) {
     Objects.requireNonNull(agent, "agent");
     Objects.requireNonNull(behavior, "behavior");
 
@@ -152,14 +147,14 @@ public enum AgentRegistry {
 
     var requestedOptions =
         options == null || options.length == 0
-            ? java.util.Set.<Options>of()
+            ? java.util.Set.<RuntimeAgent.CompilationOptions>of()
             : java.util.Set.copyOf(Arrays.asList(options));
-    if (requestedOptions.contains(Options.DO_NOT_COMPILE_JAVA)) {
+    if (requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)) {
       var translated = translateBehavior(behavior, scope);
       var sourceOnly = copyHandle(agent, behavior);
       sourceOnly.getNotifications().addAll(translated.notifications());
       sourceOnly.setViable(translated.source() != null);
-      if (requestedOptions.contains(Options.INCLUDE_JAVA_CODE)) {
+      if (requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)) {
         sourceOnly.setJavaCode(translated.source());
       }
       return sourceOnly;
@@ -170,14 +165,15 @@ public enum AgentRegistry {
     try {
       compiled = classes.computeIfAbsent(key, ignored -> compileBehavior(behavior, scope));
     } catch (Throwable failure) {
-      return failedHandle(agent, "Unexpected failure compiling " + behavior.getUrn(), unwrap(failure));
+      return failedHandle(
+          agent, "Unexpected failure compiling " + behavior.getUrn(), unwrap(failure));
     }
 
     if (!compiled.successful()) {
       var failed = copyHandle(agent, behavior);
       failed.getNotifications().addAll(compiled.notifications());
       failed.setViable(false);
-      if (requestedOptions.contains(Options.INCLUDE_JAVA_CODE)) {
+      if (requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)) {
         failed.setJavaCode(compiled.source());
       }
       return failed;
@@ -193,7 +189,9 @@ public enum AgentRegistry {
               chooseName(agent, behavior),
               runtime,
               compiled.notifications(),
-              requestedOptions.contains(Options.INCLUDE_JAVA_CODE) ? compiled.source() : null);
+              requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)
+                  ? compiled.source()
+                  : null);
       instances.put(urn, managed);
       return managed;
     } catch (Throwable failure) {
@@ -205,7 +203,7 @@ public enum AgentRegistry {
               Notification.error(
                   "Cannot instantiate compiled agent " + behavior.getUrn(), unwrap(failure)));
       failed.setViable(false);
-      if (requestedOptions.contains(Options.INCLUDE_JAVA_CODE)) {
+      if (requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)) {
         failed.setJavaCode(compiled.source());
       }
       return failed;
@@ -356,8 +354,7 @@ public enum AgentRegistry {
     }
   }
 
-  private List<Notification> javaDiagnostics(
-      DiagnosticCollector<JavaFileObject> diagnostics) {
+  private List<Notification> javaDiagnostics(DiagnosticCollector<JavaFileObject> diagnostics) {
     var ret = new ArrayList<Notification>();
     for (var diagnostic : diagnostics.getDiagnostics()) {
       if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
@@ -568,7 +565,8 @@ public enum AgentRegistry {
 
     private SourceFile(String binaryName, String source) {
       super(
-          URI.create("string:///" + binaryName.replace('.', '/') + JavaFileObject.Kind.SOURCE.extension),
+          URI.create(
+              "string:///" + binaryName.replace('.', '/') + JavaFileObject.Kind.SOURCE.extension),
           JavaFileObject.Kind.SOURCE);
       this.source = source;
     }

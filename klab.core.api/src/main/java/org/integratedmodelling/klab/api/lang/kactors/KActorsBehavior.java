@@ -69,7 +69,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  * they are parsed from k.Actor source code using the {@link
  * org.integratedmodelling.klab.api.services.ResourcesService#readBehavior(URL, UserScope)} and
  * compiled/executed by a runtime, in the desired scope, by {@link
- * org.integratedmodelling.klab.api.services.RuntimeService#runAgent(KActorsBehavior, String,
+ * org.integratedmodelling.klab.api.services.RuntimeService#createAgent(KActorsBehavior, String,
  * boolean, UserScope)}. An {@link org.integratedmodelling.klab.api.actors.Agent} object
  * (serializable in its client version) is the runtime peer of a running agent and can be used to
  * send messages to the agent or inquire about its status. The AMQP pipeline is used by agents to

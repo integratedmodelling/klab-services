@@ -4,8 +4,11 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 /**
@@ -19,6 +22,29 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  * <p>Both client and service-side agents implement this interface.
  */
 public interface RuntimeAgent {
+
+  /**
+   * Passed to {@link
+   * org.integratedmodelling.klab.api.services.RuntimeService#createAgent(KActorsBehavior, String,
+   * java.util.Collection<CompilationOptions>, UserScope)}
+   */
+  public enum CompilationOptions {
+    /** Include the generated Java code in service-side handles that support it. */
+    INCLUDE_JAVA_CODE,
+    /** Stop after source generation and validation; do not compile or instantiate the class. */
+    DO_NOT_COMPILE_JAVA,
+    /** Do not bind the agent to any observation even if one is present in the scope. */
+    DO_NOT_BIND_OBSERVATION,
+    /**
+     * Do not bind the agent to the session or the scope in any way - just create an independent
+     * agent
+     */
+    DO_NOT_BIND_SESSION,
+    /**
+     * Compile with debugging enabled. Currently unimplemented.
+     */
+    COMPILE_FOR_DEBUGGING
+  }
 
   /**
    * Agent scope, containing the local state for the agent and its actions, and methods to implement
