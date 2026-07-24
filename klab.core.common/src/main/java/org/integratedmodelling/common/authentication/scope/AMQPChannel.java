@@ -56,6 +56,9 @@ public class AMQPChannel {
   private boolean online = false;
   private String channelTag;
   private Collection<Message.Queue> queues;
+  private final Boolean durableExchange;
+  private final boolean autoDeleteExchange;
+  private final boolean deleteExchangeOnClose;
 
   /**
    * Creates a new AMQPChannel with the specified federation and queue.
@@ -69,12 +72,38 @@ public class AMQPChannel {
       String exchangeId,
       org.integratedmodelling.klab.api.services.runtime.Channel channel,
       Consumer<Message> messageConsumer) {
+    this(federation, exchangeId, channel, messageConsumer, null, false, false);
+  }
+
+  /**
+   * Create a symmetric agent channel. Agent exchanges are transient and auto-delete after their
+   * last bound consumer disappears. Unlike scope channels, either side can publish or consume.
+   */
+  public static AMQPChannel forAgent(
+      Federation federation,
+      String agentUrn,
+      org.integratedmodelling.klab.api.services.runtime.Channel channel,
+      Consumer<Message> messageConsumer) {
+    return new AMQPChannel(federation, agentUrn, channel, messageConsumer, false, true, false);
+  }
+
+  private AMQPChannel(
+      Federation federation,
+      String exchangeId,
+      org.integratedmodelling.klab.api.services.runtime.Channel channel,
+      Consumer<Message> messageConsumer,
+      Boolean durableExchange,
+      boolean autoDeleteExchange,
+      boolean deleteExchangeOnClose) {
 
     this.brokerUri = federation.getBroker();
     this.exchangeId = exchangeId;
     this.federation = federation;
     this.messageConsumer = messageConsumer;
     this.klabChannel = channel;
+    this.durableExchange = durableExchange;
+    this.autoDeleteExchange = autoDeleteExchange;
+    this.deleteExchangeOnClose = deleteExchangeOnClose;
     if (exchangeId == null
         || channel == null
         || (klabChannel instanceof Scope scope && scope.getType() == Scope.Type.SESSION)) {
@@ -112,7 +141,10 @@ public class AMQPChannel {
   private boolean connect() {
 
     // initialize for the federation. If we are a context, refine later
-    var persistence = Federation.LOCAL_FEDERATION_ID.equals(federation.getId()) ? 1 : 2;
+    var persistence =
+        durableExchange == null
+            ? Federation.LOCAL_FEDERATION_ID.equals(federation.getId()) ? 1 : 2
+            : durableExchange ? 2 : 1;
 
     try {
       // Create connection factory
@@ -140,18 +172,16 @@ public class AMQPChannel {
               .build();
 
       // Declare a fanout exchange
-      amqpChannel.exchangeDeclare(exchangeId, BuiltinExchangeType.FANOUT, persistence == 2);
+      amqpChannel.exchangeDeclare(
+          exchangeId, BuiltinExchangeType.FANOUT, persistence == 2, autoDeleteExchange, null);
 
       connected = true;
-      // Create a unique queue for this consumer. This should delete itself. Not sure if we should
-      // use expiration
-      consumerQueue = amqpChannel.queueDeclare().getQueue();
-
-      // Bind the queue to the exchange
-      // For FANOUT exchanges the routing key is ignored; use empty string for clarity
-      amqpChannel.queueBind(consumerQueue, exchangeId, "");
 
       if (messageConsumer != null) {
+        // Create and bind a transient queue only for receivers. Sender-only channels do not need a
+        // queue and no longer consume every publication only to discard it.
+        consumerQueue = amqpChannel.queueDeclare().getQueue();
+        amqpChannel.queueBind(consumerQueue, exchangeId, "");
 
         DeliverCallback deliverCallback =
             (consumerTag, delivery) -> {
@@ -262,8 +292,10 @@ public class AMQPChannel {
         if (consumerQueue != null) {
           amqpChannel.queueDelete(consumerQueue);
         }
-        if (klabChannel instanceof ContextScope contextScope
-            && !contextScope.getDigitalTwin().isClient()) {
+        if (deleteExchangeOnClose
+            || (!autoDeleteExchange
+                && klabChannel instanceof ContextScope contextScope
+                && !contextScope.getDigitalTwin().isClient())) {
           amqpChannel.exchangeDelete(exchangeId);
         }
         amqpChannel.close();

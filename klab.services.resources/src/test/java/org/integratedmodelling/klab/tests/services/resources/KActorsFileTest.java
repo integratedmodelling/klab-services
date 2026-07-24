@@ -70,6 +70,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertComponentLifecycleActions),
         new Case(
+            "/console-agent.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertConsoleInputHandler),
+        new Case(
             "/library-invalid-lifecycle.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertLibraryRejectsLifecycleActions),
@@ -207,6 +211,17 @@ class KActorsFileTest {
     assertEquals(KActorsBehavior.Type.COMPONENT, result.requireBehavior().getBehaviorType());
     assertTrue(result.requireAnalyzer().getActions().containsKey("init"));
     assertTrue(result.requireAnalyzer().getActions().containsKey("main"));
+  }
+
+  private void assertConsoleInputHandler(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var action = result.requireBehavior().getStatements().getFirst();
+    assertEquals("read_line", action.getUrn());
+    assertEquals(List.of("stdin"), action.getAnnotations().stream().map(a -> a.getName()).toList());
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("handlers.put(\"STDIN\""));
   }
 
   private void assertLibraryRejectsLifecycleActions(KActorsTestSupport.Result result) {

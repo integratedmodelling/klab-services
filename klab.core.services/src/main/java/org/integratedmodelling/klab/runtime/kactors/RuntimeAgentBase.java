@@ -16,12 +16,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.actors.AgentEventBus;
+import org.integratedmodelling.common.runtime.actors.AgentImpl;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
@@ -32,6 +37,7 @@ import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.computation.GroovyProcessor;
@@ -86,6 +92,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private int errors = 0;
   private final AtomicLong nextId = new AtomicLong(0);
   private final AtomicBoolean started = new AtomicBoolean(false);
+  private final AtomicBoolean failureReported = new AtomicBoolean(false);
+  private final AtomicBoolean consoleAttached = new AtomicBoolean(false);
+  private final List<RuntimeAgentBase> inheritedBehaviorInstances =
+      new CopyOnWriteArrayList<>();
+  private String agentUrn;
+  private org.integratedmodelling.klab.api.scope.Scope creatingScope;
+  private Consumer<Notification> notificationConsumer;
+  private final Disposable lifecycleSubscription;
   private final Object dynamicLifecycleLock = new Object();
   private int activeDynamicCalls;
   private boolean dynamicMainCompleted;
@@ -119,6 +133,47 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @param payload
    */
   public record Event(EventType type, long actionId, Object payload) {}
+
+  /** Compile-time descriptor for an action annotated with {@code @handle}. */
+  public static final class AgentMessageHandler {
+
+    private final RuntimeAgentBase target;
+    private final String action;
+    private final Verb.Type executionType;
+    private final List<String> argumentNames;
+
+    public AgentMessageHandler(
+        String action, Verb.Type executionType, List<String> argumentNames) {
+      this(null, action, executionType, argumentNames);
+    }
+
+    private AgentMessageHandler(
+        RuntimeAgentBase target,
+        String action,
+        Verb.Type executionType,
+        List<String> argumentNames) {
+      this.target = target;
+      this.action = action;
+      this.executionType = executionType;
+      this.argumentNames = argumentNames == null ? List.of() : List.copyOf(argumentNames);
+    }
+
+    public String action() {
+      return action;
+    }
+
+    public Verb.Type executionType() {
+      return executionType;
+    }
+
+    public List<String> argumentNames() {
+      return argumentNames;
+    }
+
+    private AgentMessageHandler targeting(RuntimeAgentBase target) {
+      return new AgentMessageHandler(target, action, executionType, argumentNames);
+    }
+  }
 
   public Sinks.Many<Event> getEventBus() {
     return eventBus;
@@ -199,6 +254,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       this.sessionScope = scope;
     }
     this.rootScope = initializeScope();
+    this.lifecycleSubscription =
+        eventBus
+            .asFlux()
+            .filter(event -> event.actionId() == 0)
+            .filter(
+                event ->
+                    event.type() == EventType.EXCEPTION
+                        || event.type() == EventType.TERMINATION)
+            .subscribe(this::handleLifecycleEvent);
 
     /*
      * TODO there should be a maintained Status object that can be sent when a status message is
@@ -239,6 +303,43 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   /**
+   * Connect this runtime instance to all local and remote peers of its serializable agent handle.
+   * The transport is intentionally maintained by {@link AgentEventBus}, not by the handle.
+   */
+  public boolean initializeMessaging(
+      String agentUrn,
+      org.integratedmodelling.klab.api.scope.Scope creatingScope,
+      Consumer<Notification> notificationConsumer) {
+    this.agentUrn = agentUrn;
+    this.creatingScope = creatingScope;
+    this.notificationConsumer = notificationConsumer;
+    if (!(creatingScope instanceof MessagingChannel messagingChannel)
+        || !messagingChannel.isConnected()) {
+      notifyAgent(
+          Notification.info(
+              "Agent messaging is disabled because its creating scope is not connected"));
+      return false;
+    }
+    if (!AgentEventBus.INSTANCE.subscribe(agentUrn, this, messagingChannel, this::receiveMessage)) {
+      notifyAgent(
+          Notification.info(
+              "Agent messaging is disabled because its AMQP transport could not be established"));
+      return false;
+    }
+    return true;
+  }
+
+  /** Disconnect the runtime peer without modifying the serializable agent handle. */
+  public void closeMessaging() {
+    consoleAttached.set(false);
+    if (agentUrn != null) {
+      AgentEventBus.INSTANCE.unsubscribe(agentUrn, this);
+    }
+    lifecycleSubscription.dispose();
+    inheritedBehaviorInstances.forEach(RuntimeAgentBase::closeMessaging);
+  }
+
+  /**
    * Code with this Agent's handle can send a message to this. If a response is expected, the sender
    * can add a message consumer which may be called or not.
    *
@@ -247,8 +348,54 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @param responseConsumer pass null if no response is expected
    */
   public void send(Message message, RuntimeAgent sender, Consumer<Message> responseConsumer) {
-    // TODO handle installed actions and core pre-defined ones ("status", "stop")
-    throw new UnsupportedOperationException("not implemented");
+    requireAgentMessage(message);
+    String senderUrn =
+        sender instanceof Agent agent
+            ? agent.getUrn()
+            : sender instanceof RuntimeAgentBase runtime ? runtime.agentUrn : null;
+    receiveMessage(
+        senderUrn == null
+            ? message
+            : Message.create(
+                senderUrn,
+                message.getMessageClass(),
+                message.getMessageType(),
+                message.getPayload(Object.class)));
+    // Response-producing custom actions are not installed yet. The callback remains part of the
+    // contract so ask/reply can be layered on message correlation without changing this method.
+  }
+
+  @Override
+  public boolean send(String recipientAgentUrn, Message message) {
+    requireAgentMessage(message);
+    return agentUrn != null
+        && AgentEventBus.INSTANCE.publish(agentUrn, recipientAgentUrn, message);
+  }
+
+  @Override
+  public boolean sendToScope(Message message) {
+    if (!(creatingScope instanceof MessagingChannel messagingChannel)
+        || !messagingChannel.isConnected()
+        || message == null) {
+      return false;
+    }
+    creatingScope.send(message);
+    return true;
+  }
+
+  @Override
+  public boolean sendToConsole(RuntimeAgent.ConsoleMessageType type, String text) {
+    if ((type != RuntimeAgent.ConsoleMessageType.STDOUT
+            && type != RuntimeAgent.ConsoleMessageType.STDERR)
+        || !consoleAttached.get()
+        || agentUrn == null) {
+      return false;
+    }
+    return AgentEventBus.INSTANCE.publish(
+        agentUrn,
+        agentUrn,
+        Message.MessageType.CustomAgentMessage,
+        new RuntimeAgent.CustomMessage(type.constant(), text));
   }
 
   /**
@@ -257,7 +404,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @param conditions
    */
   public void stop(Object... conditions) {
-    // TODO stop or finish eventbus
+    inheritedBehaviorInstances.forEach(inherited -> inherited.stop(conditions));
     rootScope.done(conditions);
   }
 
@@ -267,6 +414,230 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return "stopped";
     }
     return started.get() ? "running" : "ready";
+  }
+
+  private void receiveMessage(Message message) {
+    requireAgentMessage(message);
+    switch (message.getMessageType()) {
+      case AgentStartRequested -> {
+        if (!started.get()) {
+          try {
+            run();
+          } catch (Throwable failure) {
+            rootScope.done(failure);
+          }
+        } else {
+          publishStatus(Message.MessageType.AgentStatusChanged, null);
+        }
+      }
+      case AgentStopRequested -> stop("Stop requested by " + message.getDispatchId());
+      case AgentStatusRequested -> publishStatus(Message.MessageType.AgentStatusChanged, null);
+      case CustomAgentMessage -> handleCustomAgentMessage(message);
+      default -> {
+        // Lifecycle reports are consumed by remote handles, not by the executing runtime peer.
+      }
+    }
+  }
+
+  /**
+   * Entry point for language-defined messages. The compiler/runtime can override this to dispatch
+   * the constant discriminator to installed k.Actors handlers.
+   */
+  protected void handleCustomAgentMessage(Message message) {
+    var customMessage = message.getPayload(RuntimeAgent.CustomMessage.class);
+    if (customMessage == null || customMessage.type() == null) {
+      notifyAgent(Notification.warning("Ignoring an agent message without a custom payload"));
+      return;
+    }
+    String messageClass = customMessage.type().getValue();
+    if (RuntimeAgent.ConsoleMessageType.CONSOLE_ATTACH.name().equals(messageClass)) {
+      consoleAttached.set(true);
+      return;
+    }
+    if (RuntimeAgent.ConsoleMessageType.CONSOLE_DETACH.name().equals(messageClass)) {
+      consoleAttached.set(false);
+      return;
+    }
+    if (RuntimeAgent.ConsoleMessageType.STDIN.name().equals(messageClass)) {
+      consoleAttached.set(true);
+    } else if (RuntimeAgent.ConsoleMessageType.STDOUT.name().equals(messageClass)
+        || RuntimeAgent.ConsoleMessageType.STDERR.name().equals(messageClass)) {
+      // Output is consumed by client consoles sharing this agent endpoint.
+      return;
+    }
+    var handler = agentMessageHandlers().get(messageClass);
+    if (handler == null) {
+      emitEvent(new Event(EventType.EXTERNAL, 0, customMessage));
+      return;
+    }
+    Object payload = mediateAgentMessagePayload(customMessage);
+    Agent sender = senderHandle(message.getDispatchId());
+    Object[] arguments =
+        handler.argumentNames().stream()
+            .map(name -> "sender".equals(name) ? sender : payload)
+            .toArray();
+    dispatchAgentMessage(handler, arguments);
+  }
+
+  /**
+   * Generated classes override this and merge their declarations with {@code super}, allowing
+   * handlers inherited through a generated behavior superclass to remain active.
+   */
+  protected Map<String, AgentMessageHandler> agentMessageHandlers() {
+    return Map.of();
+  }
+
+  /**
+   * Merge handlers contributed by an inherited behavior delegate. Earlier inherited behaviors
+   * retain precedence; local generated handlers are added afterward and may override them.
+   */
+  protected final void inheritAgentMessageHandlers(
+      Map<String, AgentMessageHandler> handlers, RuntimeAgentBase inheritedBehavior) {
+    if (inheritedBehavior != null) {
+      inheritedBehavior
+          .agentMessageHandlers()
+          .forEach(
+              (messageClass, handler) ->
+                  handlers.putIfAbsent(messageClass, handler.targeting(inheritedBehavior)));
+    }
+  }
+
+  /**
+   * Retain an inherited behavior delegate as part of this agent's lifecycle. Generated
+   * constructors use this hook so reactive inherited handlers are stopped and disposed with their
+   * owning agent.
+   */
+  protected final RuntimeAgentBase registerInheritedBehavior(RuntimeAgentBase inheritedBehavior) {
+    if (inheritedBehavior != null) {
+      inheritedBehaviorInstances.add(inheritedBehavior);
+    }
+    return inheritedBehavior;
+  }
+
+  private void dispatchAgentMessage(AgentMessageHandler handler, Object[] arguments) {
+    RuntimeAgentBase target = handler.target == null ? this : handler.target;
+    var actionScope = target.rootScope.withId(target.nextId.incrementAndGet());
+    actionScope.disposeWith(
+        target.eventBus
+            .asFlux()
+            .filter(event -> event.actionId() == actionScope.actionId())
+            .filter(event -> event.type() == EventType.EXCEPTION)
+            .take(1)
+            .subscribe(event -> rootScope.done(event.payload())));
+    Thread.ofVirtual()
+        .name("kactors-message-" + handler.action())
+        .start(
+            () -> {
+              try {
+                switch (handler.executionType()) {
+                  case FUNCTION -> {
+                    Object result =
+                        target.invokeSelfFunction(handler.action(), actionScope, arguments);
+                    actionScope.done(result);
+                  }
+                  case SUPPLIER ->
+                      target
+                          .invokeSelfSupplier(handler.action(), actionScope, arguments)
+                          .whenComplete(
+                              (result, failure) -> {
+                                if (failure == null) {
+                                  actionScope.done(result);
+                                } else {
+                                  actionScope.done(failure);
+                                }
+                              });
+                  case EMITTER ->
+                      target.invokeSelfEmitter(handler.action(), actionScope, arguments);
+                }
+              } catch (Throwable failure) {
+                actionScope.done(failure);
+              }
+            });
+  }
+
+  /**
+   * Restore a registered DTO that crossed the Jackson {@code Object} boundary as a map. Unknown
+   * advertised class names are deliberately left as maps: components must explicitly register
+   * their serializable message types with {@link AgentEventBus#registerPayloadType(Class)}.
+   */
+  protected Object mediateAgentMessagePayload(RuntimeAgent.CustomMessage message) {
+    Object payload = message.payload();
+    if (!(payload instanceof Map<?, ?> map) || message.payloadClass() == null) {
+      return payload;
+    }
+    Class<? extends java.io.Serializable> payloadType =
+        AgentEventBus.INSTANCE.resolvePayloadType(message.payloadClass());
+    if (payloadType == null) {
+      notifyAgent(
+          Notification.warning(
+              "Agent payload type "
+                  + message.payloadClass()
+                  + " is not registered; delivering it as a map"));
+      return payload;
+    }
+    try {
+      return JacksonConfiguration.newObjectMapper().convertValue(map, payloadType);
+    } catch (IllegalArgumentException failure) {
+      notifyAgent(
+          Notification.warning(
+              "Cannot restore agent payload " + message.payloadClass() + ": " + failure.getMessage()));
+      return payload;
+    }
+  }
+
+  /** Build a lightweight reply handle whose outgoing messages originate from this agent. */
+  protected Agent senderHandle(String senderUrn) {
+    var sender = new AgentImpl();
+    sender.setUrn(senderUrn);
+    sender.setViable(senderUrn != null && !senderUrn.isBlank());
+    sender.setLocalSenderUrn(agentUrn);
+    return sender;
+  }
+
+  private void handleLifecycleEvent(Event event) {
+    if (event.type() == EventType.EXCEPTION) {
+      failureReported.set(true);
+      publishStatus(Message.MessageType.AgentFailed, event.payload());
+    } else if (event.type() == EventType.TERMINATION) {
+      publishStatus(Message.MessageType.AgentStopped, event.payload());
+      publishStatus(Message.MessageType.AgentStatusChanged, event.payload());
+    }
+  }
+
+  private void publishStatus(Message.MessageType type, Object detail) {
+    if (agentUrn == null) {
+      return;
+    }
+    AgentEventBus.INSTANCE.publish(
+        agentUrn,
+        type,
+        new RuntimeAgent.Status(
+            agentUrn,
+            failureReported.get()
+                ? RuntimeAgent.State.FAILED
+                : switch (status()) {
+                  case "running" -> RuntimeAgent.State.RUNNING;
+                  case "ready" -> RuntimeAgent.State.READY;
+                  default -> RuntimeAgent.State.STOPPED;
+                },
+            !failureReported.get(),
+            detail == null ? null : String.valueOf(detail),
+            System.currentTimeMillis()));
+  }
+
+  private void notifyAgent(Notification notification) {
+    handleNotification(notification);
+    if (notificationConsumer != null) {
+      notificationConsumer.accept(notification);
+    }
+  }
+
+  private void requireAgentMessage(Message message) {
+    if (message == null
+        || message.getMessageClass() != Message.MessageClass.AgentCommunication) {
+      throw new IllegalArgumentException(
+          "Runtime agents only receive messages in the AgentCommunication class");
+    }
   }
 
   /**
@@ -1025,11 +1396,18 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (!started.compareAndSet(false, true)) {
       return ExitValue.failure(new KlabIllegalStateException("Agent has already been started"));
     }
-    if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
-      var result = main(rootScope);
-      rootScope.done(result);
-      return result;
+    publishStatus(Message.MessageType.AgentStarted, null);
+    publishStatus(Message.MessageType.AgentStatusChanged, null);
+    try {
+      if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
+        var result = main(rootScope);
+        rootScope.done(result);
+        return result;
+      }
+      return runEmitter(rootScope, this::main);
+    } catch (Throwable failure) {
+      rootScope.done(failure);
+      throw actorFailure(failure);
     }
-    return runEmitter(rootScope, this::main);
   }
 }

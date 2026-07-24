@@ -11,7 +11,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.lang.TernaryImpl;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
@@ -25,6 +27,80 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.junit.jupiter.api.Test;
 
 class BehaviorAnalyzerTest {
+
+  @Test
+  void compilerRegistersNamedAndUnnamedHandleAnnotations() {
+    var named = action("namedHandler");
+    named.setArgumentNames(List.of("payload", "sender"));
+    var namedParameters = new java.util.LinkedHashMap<String, Object>();
+    namedParameters.put("class", Constant.create("NAMED"));
+    named.setAnnotations(
+        List.of(Annotation.of("handle", namedParameters)));
+    var unnamedAnnotation = Annotation.of("handle");
+    unnamedAnnotation.putUnnamed(Constant.create("UNNAMED"));
+    var unnamed = action("unnamedHandler");
+    unnamed.setAnnotations(List.of(unnamedAnnotation));
+    var compiler = new AgentCompiler(behavior(named, unnamed));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String source = compiler.getSourceCode();
+    assertTrue(source.contains("handlers.put(\"NAMED\""), source);
+    assertTrue(source.contains("\"namedHandler\", Verb.Type.FUNCTION"), source);
+    assertTrue(source.contains("List.of(\"payload\", \"sender\")"), source);
+    assertTrue(source.contains("handlers.put(\"UNNAMED\""), source);
+  }
+
+  @Test
+  void compilerRegistersStdinAnnotationAsConsoleInputHandler() {
+    var stdin = action("readLine");
+    stdin.setArgumentNames(List.of("line", "sender"));
+    stdin.setAnnotations(List.of(Annotation.of("stdin")));
+    var compiler = new AgentCompiler(behavior(stdin));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String source = compiler.getSourceCode();
+    assertTrue(source.contains("handlers.put(\"STDIN\""), source);
+    assertTrue(source.contains("\"readLine\", Verb.Type.FUNCTION"), source);
+    assertTrue(source.contains("List.of(\"line\", \"sender\")"), source);
+  }
+
+  @Test
+  void compilerComposesHandlersFromInheritedBehaviors() {
+    var inheritedAction = action("inheritedHandler");
+    var annotation = Annotation.of("handle");
+    annotation.putUnnamed(Constant.create("INHERITED"));
+    inheritedAction.setAnnotations(List.of(annotation));
+    var inherited = behavior(inheritedAction);
+    inherited.setUrn("traits.handlers");
+    inherited.setBehaviorType(KActorsBehavior.Type.TRAITS);
+    var child = behavior();
+    child.setInheritedBehaviors(List.of(inherited.getUrn()));
+    var compiler =
+        new AgentCompiler(
+            child,
+            null,
+            new KActorsVisitor.LenientValidator(),
+            new AgentCompiler.Resolver() {
+              @Override
+              public KActorsBehavior resolveBehavior(
+                  String urn,
+                  org.integratedmodelling.klab.api.scope.UserScope scope) {
+                return inherited.getUrn().equals(urn) ? inherited : null;
+              }
+            });
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getGeneratedSources().containsKey(inherited.getUrn()));
+    assertTrue(
+        compiler
+            .getGeneratedSources()
+            .get(inherited.getUrn())
+            .contains("handlers.put(\"INHERITED\""));
+    assertTrue(
+        compiler
+            .getSourceCode()
+            .contains("inheritAgentMessageHandlers(handlers, this.inherited_0)"));
+  }
 
   @Test
   void infersActionTypesAndBuildsCompilerRecords() {

@@ -208,6 +208,94 @@ persistent; scripts are normally finite unless their effective work is emitter-l
 special actions affect the lifecycle of the agent that inherits it rather than starting the trait
 independently. Libraries have no lifecycle entry points.
 
+### 4.3. Agent messages and `@handle`
+
+Running agents communicate through their agent URNs. Communication is bidirectional: a remote
+client handle can control and message its service-side peer, agents can message other agents, and
+an agent can send a message to the scope that created it. Agent handles remain ordinary
+serializable beans; reconnecting a deserialized handle uses its URN rather than serialized broker
+or listener state.
+
+Custom k.Actors messages are identified by an uppercase constant. Bind an action to one exact
+message constant with either form of the `@handle` annotation:
+
+```kactors
+@handle(TEMPERATURE_CHANGED)
+action temperature_changed(reading, sender):
+    console.format("Received %s", reading)
+
+@handle(class=RESET_REQUESTED)
+action reset(payload):
+    set status READY
+```
+
+The annotation's main unnamed argument, or its named `class` argument, must be a `CONSTANT`.
+When a matching custom message arrives:
+
+- the runtime invokes the annotated action asynchronously using its inferred function, supplier,
+  or emitter execution type;
+- every declared argument except the exact reserved name `sender` receives the message payload;
+- an argument named `sender`, if present, receives an agent handle for the sending URN. Messages
+  sent through that handle are addressed back to the sender and identify the current agent as
+  their source;
+- an exception escaping the handler fails the owning agent and is reported as a lifecycle status
+  change.
+
+Handlers contributed by inherited behaviors remain active and execute against the retained
+inherited behavior instance, preserving its initialized state. A local handler for the same
+constant overrides inherited handlers. If multiple inherited behaviors handle the same constant,
+the first behavior in the inheritance order wins.
+
+Custom message payloads should normally use portable scalar, list, map, or other types already
+supported by the runtime's Jackson configuration. Component-defined serializable DTOs are also
+supported when the extension registers the same payload class on both communicating runtimes.
+If a receiver does not recognize an advertised DTO class, it receives the decoded map and a
+warning instead of loading an arbitrary class named by the message.
+
+Start, stop, status request, status change, and failure are runtime lifecycle messages rather than
+custom constants. Remote handles use these to control a running peer and maintain their local
+view of its state. Correlated `ask`/reply is not implemented yet; a handler can currently respond
+by sending a normal message through its injected `sender` handle.
+
+Messaging is available only when the scope used to create or reconnect the agent has a connected
+messaging channel. Agent creation still succeeds without one: messaging is disabled and the
+returned agent contains an info-level notification explaining why.
+
+### 4.4. Interactive agent consoles
+
+Use `@stdin` to make an action receive lines from an attached client-side agent console:
+
+```kactors
+behavior examples.console
+    "A manually testable console behavior."
+    version 1.0
+    using
+        core.console as console
+
+@stdin
+action read_line(line, sender):
+    console.format("received: %s%n", line)
+```
+
+`@stdin` is shorthand for the reserved `STDIN` agent-message class and takes no annotation
+arguments. The action follows the same binding rules as `@handle`: each ordinary parameter
+receives the input line and an optional parameter named exactly `sender` receives the sending
+agent handle. Inherited `@stdin` actions are retained; a local one overrides them.
+
+The core `console` actor sends output to every console currently attached to the agent. It exposes:
+
+- `print(values...)` and `println(values...)` for standard output;
+- `format(pattern, values...)` and its `printf` alias;
+- `error(values...)`, `errorln(values...)`, and `errorf(pattern, values...)` for standard error;
+- `flush`, which flushes the local fallback writer.
+
+An `AgentConsole` attaches when constructed with a connected client-side `Agent` handle. Its
+`sendLine(...)` method forwards one logical line, `onOutput(...)` receives standard-output and
+standard-error chunks, and `run(...)` provides a blocking terminal loop over ordinary Java input
+and print streams. Closing the console detaches it without stopping or disconnecting the agent.
+If no remote console is attached, the core console verbs fall back to the runtime's local output
+stream.
+
 ## 5. Calls, arguments, and event matching
 
 ### 5.1. Calling actions
@@ -619,7 +707,9 @@ diagnostics on the responsible code.
 The resources service parses a `.kactor` source into `KActorsBehavior`. The runtime service accepts
 that behavior at its agent-running endpoint, analyzes it, optionally compiles it to Java, and starts
 it in the requested user/session scope. The returned runtime agent can receive messages and report
-status until it finishes or is explicitly stopped.
+status until it finishes or is explicitly stopped. When the creating scope is connected to
+messaging, the returned handle's URN also identifies its bidirectional message endpoint; otherwise
+the agent runs normally with messaging disabled and an explanatory info notification.
 
 The parser grammar is ahead of parts of the Java compiler, and extension-provided verb catalogs are
 still evolving. When documentation, historical examples, and implementation disagree:

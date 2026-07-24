@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.lang.model.element.Modifier;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -102,6 +104,8 @@ public class AgentCompiler {
   private final IdentityHashMap<KActorsValue, String> expressionFields = new IdentityHashMap<>();
   private final Map<String, KActorsVisitor.ImportInfo> imports = new LinkedHashMap<>();
   private final Map<String, ResolvedActor> resolvedActors = new LinkedHashMap<>();
+  private final Map<String, KActorsBehavior> inheritedBehaviors = new LinkedHashMap<>();
+  private final Map<String, String> inheritedFields = new LinkedHashMap<>();
   private final BehaviorAnalyzer analyzer;
   private String sourceCode;
   private String qualifiedClassName;
@@ -234,6 +238,29 @@ public class AgentCompiler {
       }
       notifications.addAll(compiler.analyzer.getNotifications());
     }
+    inheritedBehaviors.clear();
+    for (var inheritedUrn : behavior.getInheritedBehaviors()) {
+      var inheritedBehavior = resolver.resolveBehavior(inheritedUrn, scope);
+      if (inheritedBehavior == null || path.contains(inheritedBehavior.getUrn())) {
+        continue;
+      }
+      var nextPath = new LinkedHashSet<>(path);
+      nextPath.add(inheritedBehavior.getUrn());
+      var compiler = new AgentCompiler(inheritedBehavior, scope, validator, resolver);
+      if (compiler.analyzer.analyze()) {
+        compiler.indexAnalysis();
+        compiler.resolveImportsAndCompileDependencies(nextPath);
+        var javaFile = compiler.generateClass(inheritedBehavior);
+        if (javaFile != null) {
+          compiler.sourceCode = javaFile.toString();
+          dependencySources.putAll(compiler.dependencySources);
+          dependencySources.put(inheritedBehavior.getUrn(), compiler.sourceCode);
+          generatedActorSources.put(inheritedBehavior.getUrn(), compiler.sourceCode);
+          inheritedBehaviors.put(inheritedUrn, inheritedBehavior);
+        }
+      }
+      notifications.addAll(compiler.analyzer.getNotifications());
+    }
   }
 
   public String getSourceCode() {
@@ -285,10 +312,12 @@ public class AgentCompiler {
 
     addExpressionFields(classBuilder);
     addImportFields(classBuilder);
+    addInheritanceFields(classBuilder);
     addConstructors(classBuilder, className);
     for (var action : sourceBehavior.getStatements()) {
       classBuilder.addMethod(compileAction(action));
     }
+    classBuilder.addMethod(compileMessageHandlers(sourceBehavior));
     classBuilder.addMethod(compileMain());
     classBuilder.addMethod(compileExecutionMode());
     classBuilder.addMethod(compileCliMain(className));
@@ -312,6 +341,18 @@ public class AgentCompiler {
                 FieldSpec.builder(
                         Object.class, "actor_" + javaIdentifier(alias), Modifier.PRIVATE, Modifier.FINAL)
                     .build()));
+  }
+
+  private void addInheritanceFields(TypeSpec.Builder type) {
+    inheritedFields.clear();
+    int index = 0;
+    for (var inheritedUrn : inheritedBehaviors.keySet()) {
+      String field = "inherited_" + index++;
+      inheritedFields.put(inheritedUrn, field);
+      type.addField(
+          FieldSpec.builder(RuntimeAgentBase.class, field, Modifier.PRIVATE, Modifier.FINAL)
+              .build());
+    }
   }
 
   private void addConstructors(TypeSpec.Builder type, String className) {
@@ -342,6 +383,12 @@ public class AgentCompiler {
             .varargs(true)
             .addStatement("super(behavior, scope)");
 
+    for (var entry : inheritedBehaviors.entrySet()) {
+      constructor.addStatement(
+          "this.$L = registerInheritedBehavior(new $T(null, scope, importedActors, new Object[0]))",
+          inheritedFields.get(entry.getKey()),
+          generatedClass(entry.getValue().getUrn()));
+    }
     for (var expression : analyzer.getExpressions()) {
       String field = expressionFields.get(expression.statement());
       constructor.addStatement(
@@ -382,6 +429,74 @@ public class AgentCompiler {
         .returns(Verb.Type.class)
         .addStatement("return $T.$L", Verb.Type.class, analyzer.getAgentExecutionMode().name())
         .build();
+  }
+
+  private MethodSpec compileMessageHandlers(KActorsBehavior sourceBehavior) {
+    var handlerType = ClassName.get(RuntimeAgentBase.AgentMessageHandler.class);
+    var returnType =
+        ParameterizedTypeName.get(
+            ClassName.get(Map.class), ClassName.get(String.class), handlerType);
+    var method =
+        MethodSpec.methodBuilder("agentMessageHandlers")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PROTECTED)
+            .returns(returnType)
+            .addStatement(
+                "var handlers = new $T<String, $T>(super.agentMessageHandlers())",
+                LinkedHashMap.class,
+                handlerType);
+    for (var field : inheritedFields.values()) {
+      method.addStatement("inheritAgentMessageHandlers(handlers, this.$L)", field);
+    }
+    for (var action : sourceBehavior.getStatements()) {
+      for (var annotation : action.getAnnotations()) {
+        boolean standardInput = "stdin".equals(annotation.getName());
+        if (!standardInput && !"handle".equals(annotation.getName())) {
+          continue;
+        }
+        String messageClass =
+            standardInput
+                ? RuntimeAgent.ConsoleMessageType.STDIN.name()
+                : messageClass(annotation);
+        if (messageClass == null || messageClass.isBlank()) {
+          notifications.add(
+              Notification.warning(
+                  "The @handle annotation requires a CONSTANT as its unnamed parameter or 'class' parameter"));
+          continue;
+        }
+        method.addStatement(
+            "handlers.put($S, new $T($S, $T.$L, $L))",
+            messageClass,
+            handlerType,
+            action.getUrn(),
+            Verb.Type.class,
+            action.getActionType().name(),
+            stringList(action.getArgumentNames()));
+      }
+    }
+    method.addStatement("return $T.copyOf(handlers)", Map.class);
+    return method.build();
+  }
+
+  private String messageClass(org.integratedmodelling.klab.api.lang.Annotation annotation) {
+    Object declared =
+        annotation.containsKey("class")
+            ? annotation.get("class")
+            : annotation.getUnnamedArguments().isEmpty()
+                ? annotation.get(org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY)
+                : annotation.getUnnamedArguments().getFirst();
+    if (declared instanceof Constant constant) {
+      return constant.getValue();
+    }
+    if (declared instanceof KActorsValue value && value.getType() == ValueType.CONSTANT) {
+      Object constant = value.getValue(Object.class);
+      return constant instanceof Constant typed ? typed.getValue() : String.valueOf(constant);
+    }
+    return null;
+  }
+
+  private ClassName generatedClass(String behaviorUrn) {
+    return ClassName.get(packageName, Utils.CamelCase.toUpperCamelCase(behaviorUrn, '.'));
   }
 
   private MethodSpec compileMain() {

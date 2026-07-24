@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.api.actors;
 
 import java.io.PrintStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.function.Consumer;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -22,6 +25,147 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  * <p>Both client and service-side agents implement this interface.
  */
 public interface RuntimeAgent {
+
+  enum State {
+    READY,
+    RUNNING,
+    STOPPED,
+    FAILED
+  }
+
+  /**
+   * Reserved custom-message discriminators used by interactive agent consoles. The enum names are
+   * the exact constants carried by {@link CustomMessage}.
+   */
+  enum ConsoleMessageType {
+    CONSOLE_ATTACH,
+    CONSOLE_DETACH,
+    STDIN,
+    STDOUT,
+    STDERR;
+
+    public Constant constant() {
+      return Constant.create(name());
+    }
+  }
+
+  /**
+   * Serializable lifecycle snapshot exchanged between all peers of an agent handle.
+   *
+   * @param agentUrn runtime-wide agent identity
+   * @param state current lifecycle state
+   * @param viable whether the agent can still be used
+   * @param detail optional status or failure detail
+   * @param timestamp sender-side timestamp
+   */
+  final class Status implements Serializable {
+
+    @Serial private static final long serialVersionUID = 1L;
+
+    private String agentUrn;
+    private State state;
+    private boolean viable;
+    private String detail;
+    private long timestamp;
+
+    public Status() {}
+
+    public Status(String agentUrn, State state, boolean viable, String detail, long timestamp) {
+      this.agentUrn = agentUrn;
+      this.state = state;
+      this.viable = viable;
+      this.detail = detail;
+      this.timestamp = timestamp;
+    }
+
+    public String agentUrn() {
+      return agentUrn;
+    }
+
+    public State state() {
+      return state;
+    }
+
+    public boolean viable() {
+      return viable;
+    }
+
+    public String detail() {
+      return detail;
+    }
+
+    public long timestamp() {
+      return timestamp;
+    }
+
+    public void setAgentUrn(String agentUrn) {
+      this.agentUrn = agentUrn;
+    }
+
+    public void setState(State state) {
+      this.state = state;
+    }
+
+    public void setViable(boolean viable) {
+      this.viable = viable;
+    }
+
+    public void setDetail(String detail) {
+      this.detail = detail;
+    }
+
+    public void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
+    }
+  }
+
+  /**
+   * Payload for {@link Message.MessageType#CustomAgentMessage}. k.Actors code uses the constant as
+   * the message discriminator instead of extending the Java message-type enum.
+   */
+  final class CustomMessage implements Serializable {
+
+    @Serial private static final long serialVersionUID = 1L;
+
+    private Constant type;
+    private Object payload;
+    private String payloadClass;
+
+    public CustomMessage() {}
+
+    public CustomMessage(Constant type, Serializable payload) {
+      if (type == null || type.getValue() == null || type.getValue().isBlank()) {
+        throw new IllegalArgumentException("A custom agent message requires a constant type");
+      }
+      this.type = type;
+      this.payload = payload;
+      this.payloadClass = payload == null ? null : payload.getClass().getName();
+    }
+
+    public Constant type() {
+      return type;
+    }
+
+    public Serializable payload() {
+      return payload instanceof Serializable serializable ? serializable : null;
+    }
+
+    public String payloadClass() {
+      return payloadClass;
+    }
+
+    public void setType(Constant type) {
+      this.type = type;
+    }
+
+    public void setPayload(Serializable payload) {
+      this.payload = payload;
+    }
+
+    public void setPayloadClass(String payloadClass) {
+      this.payloadClass = payloadClass;
+    }
+  }
 
   /**
    * Passed to {@link
@@ -124,6 +268,30 @@ public interface RuntimeAgent {
    * @return
    */
   URL getURL();
+
+  /**
+   * Send an agent-communication message to a local or remote agent peer identified by URN.
+   *
+   * @return true when the message was accepted by the local event bus/transport
+   */
+  boolean send(String recipientAgentUrn, Message message);
+
+  /**
+   * Send a message through the most specific scope that hosts this agent.
+   *
+   * @return true if an instrumented hosting scope accepted the message
+   */
+  boolean sendToScope(Message message);
+
+  /**
+   * Send text to all console peers currently attached to this agent. Implementations return false
+   * when no console is attached or messaging is unavailable, allowing extensions to fall back to
+   * a local writer.
+   *
+   * @param type {@link ConsoleMessageType#STDOUT} or {@link ConsoleMessageType#STDERR}
+   * @param text text chunk, including any desired line terminator
+   */
+  boolean sendToConsole(ConsoleMessageType type, String text);
 
   /**
    * An Actor can send a message to this actor using this. If a response is expected, the sender can

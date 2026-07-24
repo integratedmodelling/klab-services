@@ -25,12 +25,14 @@ The current pipeline implements:
 - control flow, assignments, returns, firing, matching, assertions, and text;
 - supplier and emitter event handlers;
 - `then` barriers for one reactive call or all reactive calls in a preceding group;
+- bidirectional AMQP lifecycle and custom-message routing by agent URN;
+- generated `@handle(CONSTANT)` dispatch, including inherited handlers and sender reply handles;
 - reflective invocation of generated actions and Java actor verbs.
 
-The compiler does **not** yet compile and load the generated Java into the running JVM. A successful
-`compile()` currently means that semantic analysis succeeded and Java source was produced. Several
-parts of descriptor-driven Java integration and runtime mediation also remain deliberately simple;
-they are listed in [Section 12](#12-known-gaps-and-future-work).
+`AgentCompiler.compile()` performs semantic analysis and Java source generation. `AgentRegistry`
+then compiles all generated sources in memory and loads them into the running JVM. Several parts of
+descriptor-driven Java integration and runtime mediation remain deliberately simple; they are
+listed in [Section 12](#12-known-gaps-and-future-work).
 
 ## 2. Pipeline overview
 
@@ -47,7 +49,8 @@ flowchart LR
     F --> G[Recursive dependency sources]
     F --> H[JavaPoet source]
     H --> I[RuntimeAgentBase contract]
-    H -. not implemented .-> J[In-memory javac and classloader]
+    H --> J[AgentRegistry in-memory javac and classloader]
+    I --> K[AgentEventBus and AMQP]
 ```
 
 The stages are intentionally separate:
@@ -357,6 +360,29 @@ function directly and starts non-functions on a virtual thread.
 Persistent agents receive a minimal CLI with `start`, `stop`, and `status`. Finite agents construct
 the actor with CLI strings as `init` arguments and invoke it once.
 
+### 6.4 Agent-message handler generation
+
+For each action annotated with `@handle`, `AgentCompiler` reads the annotation's named `class`
+argument first and otherwise its main unnamed argument. The value must be a
+`KActorsValue.Type.CONSTANT`; invalid or missing values produce a compiler warning and do not
+install a handler.
+
+Generated classes override:
+
+```java
+protected Map<String, RuntimeAgentBase.AgentMessageHandler> agentMessageHandlers()
+```
+
+The map key is the constant's string value. Each descriptor records the generated action name,
+effective `Verb.Type`, and declared argument names. The generated map starts with superclass
+handlers, merges retained inherited-behavior delegates in declaration order with `putIfAbsent`,
+then inserts local handlers with `put`. Consequently local handlers override inherited ones and
+the first inherited behavior wins inherited collisions.
+
+Inherited handlers target the actual inherited behavior instance, not the outer agent. This is
+required to preserve inherited initialization and actor state. The outer agent retains those
+delegates and stops and disposes them with its own lifecycle.
+
 ## 7. Statement generation
 
 | k.Actors statement | Current Java strategy |
@@ -555,6 +581,159 @@ The component side exposes:
 `CoreActorLibrary` contains small examples of all three execution shapes: console functions, timer
 suppliers returning `CompletableFuture`, and timer emitters calling `RuntimeAgent.Scope.doFire`.
 
+### 11.1 Agent messaging architecture
+
+All agent traffic has `Message.MessageClass.AgentCommunication`. Its currently supported
+`MessageType` values are:
+
+| Type | Direction and payload |
+| --- | --- |
+| `AgentStartRequested` | Handle or agent to runtime peer; no payload. |
+| `AgentStopRequested` | Handle or agent to runtime peer; no payload. |
+| `AgentStatusRequested` | Handle or agent to runtime peer; no payload. |
+| `AgentStarted` | Runtime peer to subscribers; `RuntimeAgent.Status`. |
+| `AgentStopped` | Runtime peer to subscribers; `RuntimeAgent.Status`. |
+| `AgentStatusChanged` | Runtime peer to subscribers; `RuntimeAgent.Status`. |
+| `AgentFailed` | Runtime peer to subscribers; `RuntimeAgent.Status`. |
+| `CustomAgentMessage` | Either direction; `RuntimeAgent.CustomMessage`. |
+
+`RuntimeAgent.Status` carries the agent URN, lifecycle state, viability, optional detail, and
+timestamp. `RuntimeAgent.CustomMessage` carries a mandatory `Constant` discriminator, a
+serializable payload, and the sender-side payload class name used only as a mediation hint.
+
+`AgentEventBus.INSTANCE` lives in `klab.core.common`, where both clients and services can use it.
+It owns all live transport state so that `AgentImpl` remains a serializable data object. A
+transport is keyed by federation ID, broker, and agent URN. Multiple local handles subscribe by
+URN and object identity to one transport; unsubscribing the last owner closes that transport.
+
+`AMQPChannel.forAgent(...)` creates the symmetric agent channel. Agent exchanges are addressed by
+URN, and each receiving peer uses a transient queue. A sender-only transport avoids creating a
+consumer until a subscription requires one. This avoids routing all agents through a shared queue
+and then filtering high-volume traffic after reception. Both service agents and client handles may
+publish and receive; the asymmetric sender/receiver convention used by ordinary service scopes
+does not restrict agent channels.
+
+Publications accept separate sender and recipient URNs. The event bus rebuilds the message
+envelope with the selected sender identity before local or AMQP delivery, so a payload cannot
+override its source by supplying a forged dispatch ID. The sender's connected federation selects
+the destination transport.
+
+`AgentRegistry` calls `RuntimeAgentBase.initializeMessaging(...)` only after assigning the
+canonical instance URN. The method requires a creating scope that is a connected
+`MessagingChannel`. Missing or disconnected messaging is not an agent-creation failure: it
+returns `false` and adds an info notification to the returned agent. Explicit stop and registry
+release close the runtime subscription.
+
+### 11.2 Runtime dispatch and reply handles
+
+`RuntimeAgentBase` consumes lifecycle requests directly. It publishes start, stop, status, and
+failure reports as lifecycle changes occur. Client `AgentImpl` instances subscribe through
+`connect(MessagingChannel)`, request current status after connecting, update their local status
+from reports, and publish remote start, stop, and custom messages through the same bus.
+
+At the public API boundary, use `Agent.tell(...)`. To target a language handler, construct the
+custom envelope explicitly:
+
+```java
+agent.tell(
+    new RuntimeAgent.CustomMessage(
+        Constant.create("TEMPERATURE_CHANGED"), componentMessage));
+```
+
+Passing a `Constant` alone sends that discriminator with a null payload. Passing any other
+serializable object directly uses the generic `message` discriminator, so it will not reach a
+more specific `@handle(CONSTANT)` action. Extensions that already own sender and recipient URNs
+may use `AgentEventBus.publish(senderUrn, recipientUrn, ...)` directly, but should normally prefer
+the handle API so endpoint and source semantics remain centralized.
+
+For `CustomAgentMessage`, the runtime looks up the exact constant string in
+`agentMessageHandlers()`. A message without a matching language handler is emitted as an
+`EXTERNAL` runtime event so lower-level extensions can still observe it. A matched handler runs on
+a named virtual thread with a new action scope:
+
+- the exact parameter name `sender` receives an `AgentImpl` targeting the incoming dispatch URN;
+- all other parameters receive the mediated payload, including multiple unrecognized parameters;
+- functions use `invokeSelfFunction`, suppliers use `invokeSelfSupplier`, and emitters use
+  `invokeSelfEmitter`;
+- handler failures complete the owning root scope exceptionally and therefore publish failure
+  status.
+
+The injected sender handle also stores the receiving agent's URN as its runtime-only source.
+Calling `tell(...)` on it therefore replies to the original sender while preserving the current
+agent as the new message source. This field is deliberately not serialized. Request correlation
+and response-producing handlers are not installed yet, so `ask(...)` remains unsupported.
+
+`RuntimeAgentBase.sendToScope(Message)` sends through the connected creating scope. It returns
+`false` when no usable scope channel exists, matching the graceful agent-messaging fallback.
+
+### 11.3 Custom payload mediation and extension safety
+
+Jackson handles payload classes already configured in `JacksonConfiguration` normally. A custom
+DTO carried through an `Object` property may instead arrive as a map. Components that define such
+DTOs must register the concrete class on **both** communicating runtimes after the component is
+loaded and before messages are exchanged:
+
+```java
+AgentEventBus.INSTANCE.registerPayloadType(MyComponentMessage.class);
+```
+
+The class must implement `Serializable`, be concrete, and be convertible by the configured Jackson
+mapper. Prefer a stable bean or record schema with ordinary data properties. Keep the same binary
+class name and compatible property contract on both peers.
+
+The registry stores the supplied `Class` object, so a class loaded on demand by PF4J is mediated
+with that component classloader. The receiver never calls `Class.forName` on the untrusted
+`payloadClass` string. An unregistered advertised type is delivered as its decoded map with a
+warning; a registered type that cannot be converted is likewise left as a map. The wire class name
+is therefore a lookup hint, not authority to load or instantiate arbitrary code.
+
+Extension payloads should be data only. Do not send `Class`, `ClassLoader`, reflective objects,
+open resources, credentials, executable callbacks, or large/cyclic object graphs. Prefer scalar
+values, lists, maps, or small versioned DTOs, and use distinct constants or explicit schema fields
+when introducing incompatible revisions. Registration is currently process-wide and has no
+component-unload invalidation hook, so hot replacement of a DTO class requires coordinated
+component lifecycle handling.
+
+This payload registry solves PF4J class identity for message rehydration. It does not yet make the
+generated-source compiler's parent classloader and classpath fully component-aware; generated
+agents that directly reference dynamically loaded implementation classes still require the
+classloader work listed below.
+
+### 11.4 Interactive console protocol
+
+Interactive consoles use the same `CustomAgentMessage` transport and reserve these
+`RuntimeAgent.ConsoleMessageType` constants:
+
+| Constant | Purpose |
+| --- | --- |
+| `CONSOLE_ATTACH` | Mark the agent endpoint as having an interested console peer. |
+| `CONSOLE_DETACH` | Remove that attachment. |
+| `STDIN` | Carry one input line from the client to a generated action. |
+| `STDOUT` | Carry one standard-output text chunk from the agent. |
+| `STDERR` | Carry one standard-error text chunk from the agent. |
+
+`AgentCompiler` translates an action annotation named `stdin` into an
+`AgentMessageHandler` keyed by `STDIN`; it needs no constant argument. Dispatch, sender injection,
+execution type, inheritance, failure handling, and override precedence are therefore identical to
+ordinary `@handle` actions.
+
+`RuntimeAgentBase` intercepts attach/detach and output constants before general language dispatch.
+Input implicitly attaches the console and continues to the generated `STDIN` handler. The
+`sendToConsole(...)` API accepts only `STDOUT` and `STDERR`, publishes from and to the canonical
+agent URN, and returns false if messaging or console attachment is unavailable.
+
+`CoreActorLibrary.Console` uses `sendToConsole(...)` for `print`, `println`, `format`/`printf`,
+`error`, `errorln`, and `errorf`. Output is sent as already formatted text chunks, including line
+terminators where appropriate, so transports and UIs must not add their own newline. If
+`sendToConsole(...)` returns false, the implementation writes to the local agent writer or
+`System.err`.
+
+The common `AgentConsole` class is deliberately UI-neutral. It adds a runtime-only listener to
+`AgentImpl`, sends attach/detach automatically, exposes `sendLine` and `onOutput`, and can run a
+blocking stream-based terminal. It does not own the agent lifecycle or its AMQP connection.
+JavaFX or other UI peers must marshal output callbacks to their UI thread and close listener
+subscriptions when changing targets.
+
 ## 12. Known gaps and future work
 
 The following items are either explicit TODOs or incomplete integration boundaries.
@@ -571,9 +750,11 @@ The following items are either explicit TODOs or incomplete integration boundari
 ### 12.2 Class and behavior composition
 
 - Select specialized runtime bases for scripts, tests, applications, and other behavior types.
-- Resolve inherited behaviors, compile inherited actions/state, and implement override dispatch.
-- Decide how multiple inherited actions and imported versions are selected.
-- Complete actor URL, message handling, status objects, and event-bus shutdown semantics.
+- Generalize inherited action/state composition beyond the retained delegates currently used for
+  `@handle` actions.
+- Decide how imported behavior versions are selected.
+- Complete actor URL, correlated ask/reply, rich failure details, and retained finite-agent
+  event-bus cleanup semantics.
 
 ### 12.3 Java actor resolution
 
@@ -585,6 +766,9 @@ The following items are either explicit TODOs or incomplete integration boundari
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are
   still partially marked TODO in `ComponentRegistry`.
 - Add quantity/unit, geometry, observable, scope, and service-specific parameter mediation.
+- Make the generated-code compiler and cache component-classloader aware. Custom message DTO
+  mediation is PF4J-safe through explicit class registration, but direct generated references are
+  a separate classloading boundary.
 
 ### 12.4 Generated language semantics
 
@@ -653,14 +837,15 @@ component-aware parent classloader when imported Java actors come from plug-ins.
 ## 14. Tests and development workflow
 
 `BehaviorAnalyzerTest` constructs syntax beans directly and covers validation, type propagation,
-lifecycle, source generation, recursive imports, Java source compilation, reactive handlers, and
-group `then` barriers.
+lifecycle, source generation, recursive imports, Java source compilation, reactive handlers,
+generated `@handle` metadata and inheritance, and group `then` barriers.
 
 `AgentRegistryTest` performs the full source-to-bytecode-to-instance round trip and covers class
 reuse, canonical URN lookup, stop-time deregistration, and source-only translation.
 
 `RuntimeAgentBaseTest` covers event routing, scope disposal, supplier completion, nested emitter
-relay, execution lifecycle, reflective Java actor calls, and the all-reactions barrier.
+relay, execution lifecycle, lifecycle message types, disconnected messaging, custom payload
+mediation and handler dispatch, reflective Java actor calls, and the all-reactions barrier.
 
 Run the focused core suite with:
 

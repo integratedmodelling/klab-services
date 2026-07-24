@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -15,13 +19,109 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.runtime.actors.AgentEventBus;
+import org.integratedmodelling.common.runtime.actors.AgentImpl;
+import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
+
+  @Test
+  void agentMessageContractIncludesLifecycleStatusAndCustomTypes() {
+    var types = Arrays.asList(Message.MessageClass.AgentCommunication.messageTypes);
+
+    assertTrue(types.contains(Message.MessageType.AgentStartRequested));
+    assertTrue(types.contains(Message.MessageType.AgentStopRequested));
+    assertTrue(types.contains(Message.MessageType.AgentStatusRequested));
+    assertTrue(types.contains(Message.MessageType.AgentStarted));
+    assertTrue(types.contains(Message.MessageType.AgentStopped));
+    assertTrue(types.contains(Message.MessageType.AgentStatusChanged));
+    assertTrue(types.contains(Message.MessageType.AgentFailed));
+    assertTrue(types.contains(Message.MessageType.CustomAgentMessage));
+
+    var custom =
+        new RuntimeAgent.CustomMessage(Constant.create("temperature_changed"), Double.valueOf(12.5));
+    var message =
+        Message.create(
+            "sender:agent:1",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            custom);
+
+    assertEquals(Message.Queue.Events, message.getQueue());
+    assertEquals(
+        "temperature_changed",
+        message.getPayload(RuntimeAgent.CustomMessage.class).type().getValue());
+  }
+
+  @Test
+  void disconnectedClientHandleKeepsMessagingDisabled() {
+    var agent = new AgentImpl();
+    agent.setUrn("test:agent:1");
+    agent.setViable(true);
+
+    assertFalse(agent.connect(null));
+    assertFalse(agent.start());
+    assertEquals(1, agent.getNotifications().size());
+    assertEquals(Notification.Level.Info, agent.getNotifications().getFirst().getLevel());
+  }
+
+  @Test
+  void disconnectedCreatingScopeDisablesMessagingWithInfoNotification() {
+    var agent = new ReactiveRuntimeAgent();
+    var notifications = new CopyOnWriteArrayList<Notification>();
+
+    assertFalse(agent.initializeMessaging("test:agent:1", null, notifications::add));
+    assertEquals(1, notifications.size());
+    assertEquals(Notification.Level.Info, notifications.getFirst().getLevel());
+  }
+
+  @Test
+  void customMessagesInvokeMatchingHandlerWithRestoredPayloadAndSender() throws Exception {
+    AgentEventBus.INSTANCE.registerPayloadType(TestPayload.class);
+    var outbound =
+        Message.create(
+            "sender:agent:7",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            new RuntimeAgent.CustomMessage(
+                Constant.create("TEMPERATURE_CHANGED"), new TestPayload("station-a", 12.5)));
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var received = mapper.readValue(mapper.writeValueAsString(outbound), Message.class);
+    var agent = new MessageHandlingRuntimeAgent();
+
+    agent.send(received, null, null);
+
+    assertTrue(agent.handled.await(1, TimeUnit.SECONDS));
+    assertEquals(new TestPayload("station-a", 12.5), agent.payload.get());
+    assertEquals("sender:agent:7", agent.sender.get().getUrn());
+  }
+
+  @Test
+  void stdinMessagesInvokeTheReservedConsoleHandler() throws Exception {
+    var agent = new MessageHandlingRuntimeAgent();
+    var input =
+        Message.create(
+            "client:console:1",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            new RuntimeAgent.CustomMessage(
+                RuntimeAgent.ConsoleMessageType.STDIN.constant(), "inspect status"));
+
+    agent.send(input, null, null);
+
+    assertTrue(agent.inputHandled.await(1, TimeUnit.SECONDS));
+    assertEquals("inspect status", agent.input.get());
+    assertEquals("client:console:1", agent.inputSender.get().getUrn());
+  }
 
   @Test
   void nonFunctionAgentWaitsForRootScopeDoneAfterMainReturns() throws Exception {
@@ -262,6 +362,99 @@ class RuntimeAgentBaseTest {
         executionType = Verb.Type.EMITTER)
     public static void emit(RuntimeAgent.Scope scope, Object value) {
       scope.doFire(value);
+    }
+  }
+
+  public static class TestPayload implements Serializable {
+
+    @Serial private static final long serialVersionUID = 1L;
+
+    private String station;
+    private double value;
+
+    public TestPayload() {}
+
+    private TestPayload(String station, double value) {
+      this.station = station;
+      this.value = value;
+    }
+
+    public String getStation() {
+      return station;
+    }
+
+    public void setStation(String station) {
+      this.station = station;
+    }
+
+    public double getValue() {
+      return value;
+    }
+
+    public void setValue(double value) {
+      this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof TestPayload other
+          && station.equals(other.station)
+          && Double.compare(value, other.value) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+      return java.util.Objects.hash(station, value);
+    }
+  }
+
+  private static class MessageHandlingRuntimeAgent extends RuntimeAgentBase {
+
+    private final CountDownLatch handled = new CountDownLatch(1);
+    private final CountDownLatch inputHandled = new CountDownLatch(1);
+    private final AtomicReference<TestPayload> payload = new AtomicReference<>();
+    private final AtomicReference<Agent> sender = new AtomicReference<>();
+    private final AtomicReference<String> input = new AtomicReference<>();
+    private final AtomicReference<Agent> inputSender = new AtomicReference<>();
+
+    private MessageHandlingRuntimeAgent() {
+      super(null, null);
+    }
+
+    @Override
+    protected Map<String, AgentMessageHandler> agentMessageHandlers() {
+      return Map.of(
+          "TEMPERATURE_CHANGED",
+          new AgentMessageHandler(
+              "temperatureChanged", Verb.Type.FUNCTION, List.of("payload", "sender")),
+          RuntimeAgent.ConsoleMessageType.STDIN.name(),
+          new AgentMessageHandler("readLine", Verb.Type.FUNCTION, List.of("line", "sender")));
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_temperatureChanged(AgentScope scope, Object... arguments) {
+      payload.set((TestPayload) arguments[0]);
+      sender.set((Agent) arguments[1]);
+      handled.countDown();
+      return VOID_VALUE;
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_readLine(AgentScope scope, Object... arguments) {
+      input.set((String) arguments[0]);
+      inputSender.set((Agent) arguments[1]);
+      inputHandled.countDown();
+      return VOID_VALUE;
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.EMITTER;
     }
   }
 

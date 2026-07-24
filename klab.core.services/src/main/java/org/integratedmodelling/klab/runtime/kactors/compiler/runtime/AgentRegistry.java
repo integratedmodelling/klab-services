@@ -193,6 +193,7 @@ public enum AgentRegistry {
                   ? compiled.source()
                   : null);
       instances.put(urn, managed);
+      runtime.initializeMessaging(urn, scope, managed.notifications::add);
       return managed;
     } catch (Throwable failure) {
       var failed = copyHandle(agent, behavior);
@@ -238,7 +239,11 @@ public enum AgentRegistry {
    */
   public boolean releaseAgent(String urn) {
     var agent = instances.get(urn);
-    return agent != null && !agent.isAlive() && instances.remove(urn, agent);
+    if (agent == null || agent.isAlive() || !instances.remove(urn, agent)) {
+      return false;
+    }
+    agent.runtime.closeMessaging();
+    return true;
   }
 
   private CompiledBehavior compileBehavior(KActorsBehavior behavior, Scope scope) {
@@ -530,6 +535,7 @@ public enum AgentRegistry {
         notifications.add(Notification.error("Agent stop failed", unwrap(failure)));
         return false;
       } finally {
+        runtime.closeMessaging();
         instances.remove(urn, this);
       }
     }

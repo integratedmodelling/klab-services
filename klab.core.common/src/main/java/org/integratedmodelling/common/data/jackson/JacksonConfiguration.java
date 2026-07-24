@@ -15,6 +15,8 @@ import java.net.URL;
 import java.util.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -345,6 +347,7 @@ public class JacksonConfiguration {
           Notification.class,
           Project.Manifest.class,
           Identifier.class,
+          Constant.class,
           Dataflow.class,
           Triple.class,
           Unit.class,
@@ -352,6 +355,8 @@ public class JacksonConfiguration {
           KlabAsset.class,
           Currency.class,
           Message.class,
+          RuntimeAgent.Status.class,
+          RuntimeAgent.CustomMessage.class,
           Worldview.class,
           Workspace.class,
           Concept.class,

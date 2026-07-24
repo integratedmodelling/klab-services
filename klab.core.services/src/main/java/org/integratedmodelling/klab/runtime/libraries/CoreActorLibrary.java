@@ -28,21 +28,70 @@ public class CoreActorLibrary {
           "A static actor that prints to whatever console was configured for the agent. All methods are static and can be called directly without instantiating the actor.")
   public static class Console {
 
-    // TODO handle multiple arguments
     @Verb(name = "println", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void println(RuntimeAgent.Scope scope, Object message) {
-      scope.getPrintWriter().println(message);
+    public static void println(RuntimeAgent.Scope scope, Object... messages) {
+      write(
+          scope, RuntimeAgent.ConsoleMessageType.STDOUT, render(messages) + System.lineSeparator());
     }
 
-    // TODO handle multiple arguments
     @Verb(name = "print", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void print(RuntimeAgent.Scope scope, Object message) {
-      scope.getPrintWriter().println(message);
+    public static void print(RuntimeAgent.Scope scope, Object... messages) {
+      write(scope, RuntimeAgent.ConsoleMessageType.STDOUT, render(messages));
     }
 
     @Verb(name = "format", executionType = Verb.Type.FUNCTION, returns = Void.class)
     public static void format(RuntimeAgent.Scope scope, String format, Object... args) {
-      scope.getPrintWriter().format(format, args);
+      write(scope, RuntimeAgent.ConsoleMessageType.STDOUT, String.format(format, args));
+    }
+
+    @Verb(name = "printf", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void printf(RuntimeAgent.Scope scope, String format, Object... args) {
+      format(scope, format, args);
+    }
+
+    @Verb(name = "error", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void error(RuntimeAgent.Scope scope, Object... messages) {
+      write(scope, RuntimeAgent.ConsoleMessageType.STDERR, render(messages));
+    }
+
+    @Verb(name = "errorln", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void errorln(RuntimeAgent.Scope scope, Object... messages) {
+      write(
+          scope, RuntimeAgent.ConsoleMessageType.STDERR, render(messages) + System.lineSeparator());
+    }
+
+    @Verb(name = "errorf", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void errorf(RuntimeAgent.Scope scope, String format, Object... args) {
+      write(scope, RuntimeAgent.ConsoleMessageType.STDERR, String.format(format, args));
+    }
+
+    @Verb(name = "flush", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void flush(RuntimeAgent.Scope scope) {
+      scope.getPrintWriter().flush();
+    }
+
+    private static String render(Object... messages) {
+      if (messages == null || messages.length == 0) {
+        return "";
+      }
+      var builder = new StringBuilder();
+      for (var message : messages) {
+        builder.append(String.valueOf(message));
+      }
+      return builder.toString();
+    }
+
+    private static void write(
+        RuntimeAgent.Scope scope, RuntimeAgent.ConsoleMessageType stream, String text) {
+      if (!scope.getAgent().sendToConsole(stream, text)) {
+        if (stream == RuntimeAgent.ConsoleMessageType.STDERR) {
+          System.err.print(text);
+          System.err.flush();
+        } else {
+          scope.getPrintWriter().print(text);
+          scope.getPrintWriter().flush();
+        }
+      }
     }
   }
 
@@ -97,7 +146,8 @@ public class CoreActorLibrary {
      * @param <T>
      */
     @Verb(name = "at", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> at(RuntimeAgent.Scope scope, TimeInstant time, T object) {
+    public static <T> CompletableFuture<T> at(
+        RuntimeAgent.Scope scope, TimeInstant time, T object) {
 
       Objects.requireNonNull(time, "time");
       return completeAfter(time.getMilliseconds() - System.currentTimeMillis(), object);
@@ -113,7 +163,8 @@ public class CoreActorLibrary {
      * @param <T>
      */
     @Verb(name = "in", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> in(RuntimeAgent.Scope scope, TimeDuration time, T object) {
+    public static <T> CompletableFuture<T> in(
+        RuntimeAgent.Scope scope, TimeDuration time, T object) {
 
       Objects.requireNonNull(time, "time");
       return completeAfter(time.getMilliseconds(), object);
@@ -185,7 +236,7 @@ public class CoreActorLibrary {
     }
 
     private static void scheduleRandomTick(
-            RuntimeAgent.Scope scope, java.util.Timer timer, long averageDelayMilliseconds) {
+        RuntimeAgent.Scope scope, java.util.Timer timer, long averageDelayMilliseconds) {
 
       if (scope.isDone()) {
         return;

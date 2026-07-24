@@ -36,6 +36,8 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -95,14 +97,20 @@ public class RuntimeClient extends BaseServiceClient
       String suggestedAgentName,
       Collection<RuntimeAgent.CompilationOptions> options,
       UserScope scope) {
+    var requestedOptions =
+        options == null
+            ? java.util.Set.<RuntimeAgent.CompilationOptions>of()
+            : java.util.Set.copyOf(options);
     var request = new AgentInstantiationRequest();
     request.setBehavior(behavior);
-    request.setCompileOnly(options.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
-    request.setReportJavaCode(options.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE));
+    request.setCompileOnly(
+        requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
+    request.setReportJavaCode(
+        requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE));
     request.setDoNotBindObservation(
-        options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION));
+        requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION));
     request.setDoNotBindSession(
-        options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_SESSION));
+        requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_SESSION));
     request.setSuggestedName(suggestedAgentName);
     if (scope instanceof ContextScope contextScope
         && contextScope.getContextObservation() != null
@@ -110,9 +118,20 @@ public class RuntimeClient extends BaseServiceClient
       request.setObservationId(contextScope.getContextObservation().getId());
     }
 
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, AgentImpl.class);
+    var agent =
+        client
+            .withScope(scope)
+            .post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, AgentImpl.class);
+    if (agent != null && agent.getUrn() != null && scope instanceof MessagingChannel channel) {
+      agent.connect(channel);
+    } else if (agent != null && agent.getUrn() != null) {
+      agent
+          .getNotifications()
+          .add(
+              Notification.info(
+                  "Agent messaging is disabled because its creating scope is not connected"));
+    }
+    return agent;
   }
 
   @Override

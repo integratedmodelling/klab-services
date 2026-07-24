@@ -4,7 +4,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.actors.Agent;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** The client-side Agent incarnates the service-side agent in the runtime. */
@@ -19,6 +25,9 @@ public class AgentImpl implements Agent {
   private String name;
   private String scopeId;
   private long observationId;
+  private transient String localSenderUrn;
+  private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
+      new CopyOnWriteArrayList<>();
 
   @Override
   public String getUrn() {
@@ -42,7 +51,15 @@ public class AgentImpl implements Agent {
 
   @Override
   public boolean start(Object... arguments) {
-    return false;
+    if (!viable || urn == null || arguments != null && arguments.length > 0) {
+      if (arguments != null && arguments.length > 0) {
+        notifications.add(
+            Notification.warning(
+                "Remote initialization arguments are not yet supported by agent messaging"));
+      }
+      return false;
+    }
+    return AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStartRequested);
   }
 
   public void setViable(boolean viable) {
@@ -101,7 +118,8 @@ public class AgentImpl implements Agent {
 
   @Override
   public boolean stop() {
-    return false;
+    return urn != null
+        && AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStopRequested);
   }
 
   @Override
@@ -126,11 +144,125 @@ public class AgentImpl implements Agent {
   }
 
   @Override
-  public <T extends Serializable> void tell(T message) {}
+  public <T extends Serializable> void tell(T message) {
+    if (urn == null || message == null) {
+      return;
+    }
+    if (message instanceof Message agentMessage) {
+      AgentEventBus.INSTANCE.publish(messageSenderUrn(), urn, agentMessage);
+      return;
+    }
+    RuntimeAgent.CustomMessage customMessage =
+        message instanceof RuntimeAgent.CustomMessage custom
+            ? custom
+            : message instanceof Constant constant
+                ? new RuntimeAgent.CustomMessage(constant, null)
+                : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
+    AgentEventBus.INSTANCE.publish(
+        messageSenderUrn(), urn, Message.MessageType.CustomAgentMessage, customMessage);
+  }
 
   @Override
   public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
       T message, Class<? extends R> responseClass) {
-    return null;
+    return CompletableFuture.failedFuture(
+        new UnsupportedOperationException(
+            "Agent request/reply correlation is not implemented yet; use tell() for asynchronous messages"));
+  }
+
+  /**
+   * Attach this deserialized handle to its AMQP peer. Transport state remains centralized in
+   * {@link AgentEventBus} and is not serialized with the bean.
+   */
+  public boolean connect(MessagingChannel channel) {
+    if (urn == null || !AgentEventBus.INSTANCE.subscribe(urn, this, channel, this::receiveMessage)) {
+      notifications.add(
+          Notification.info(
+              "Agent messaging is disabled because its creating scope is not connected"));
+      return false;
+    }
+    AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStatusRequested);
+    return true;
+  }
+
+  public void disconnect() {
+    if (urn != null) {
+      AgentEventBus.INSTANCE.unsubscribe(urn, this);
+    }
+  }
+
+  /**
+   * Observe messages received by this client-side handle without creating another AMQP consumer.
+   * Listeners are runtime-only and are never serialized with the handle.
+   *
+   * @return a subscription that removes the listener when closed
+   */
+  public AutoCloseable addMessageListener(Consumer<Message> listener) {
+    if (listener == null) {
+      return () -> {};
+    }
+    listeners().add(listener);
+    return () -> listeners().remove(listener);
+  }
+
+  /** Runtime-only origin used by sender handles injected into {@code @handle} actions. */
+  public void setLocalSenderUrn(String localSenderUrn) {
+    this.localSenderUrn = localSenderUrn;
+  }
+
+  private String messageSenderUrn() {
+    return localSenderUrn == null ? urn : localSenderUrn;
+  }
+
+  void receiveMessage(Message message) {
+    if (message == null
+        || message.getMessageClass() != Message.MessageClass.AgentCommunication) {
+      return;
+    }
+    switch (message.getMessageType()) {
+      case AgentStarted -> applyStatus(message, true);
+      case AgentStopped -> applyStatus(message, false);
+      case AgentStatusChanged -> applyStatus(message, null);
+      case AgentFailed -> {
+        applyStatus(message, false);
+        viable = false;
+        var status = message.getPayload(RuntimeAgent.Status.class);
+        notifications.add(
+            Notification.error(
+                status == null || status.detail() == null
+                    ? "The remote agent failed"
+                    : status.detail()));
+      }
+      default -> {
+        // Requests and custom events are handled by runtime peers or application subscribers.
+      }
+    }
+    for (var listener : listeners()) {
+      try {
+        listener.accept(message);
+      } catch (Throwable failure) {
+        notifications.add(
+            Notification.warning("Agent message listener failed: " + failure.getMessage()));
+      }
+    }
+  }
+
+  private CopyOnWriteArrayList<Consumer<Message>> listeners() {
+    if (messageListeners == null) {
+      messageListeners = new CopyOnWriteArrayList<>();
+    }
+    return messageListeners;
+  }
+
+  private void applyStatus(Message message, Boolean aliveDefault) {
+    var status = message.getPayload(RuntimeAgent.Status.class);
+    if (status == null) {
+      if (aliveDefault != null) {
+        this.alive = aliveDefault;
+      }
+      return;
+    }
+    this.alive = status.state() == RuntimeAgent.State.RUNNING;
+    this.viable = status.viable();
   }
 }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
@@ -108,8 +109,16 @@ public interface Message extends Serializable {
     Run,
     /** Messages sent or received by the view actor, called from behaviors. */
     ViewActor,
-    /** These are skipped from queues and sent directly to the scope's agent. */
-    AgentCommunication;
+    /** Messages exchanged by local or remote peers of a runtime agent. */
+    AgentCommunication(
+        MessageType.AgentStartRequested,
+        MessageType.AgentStopRequested,
+        MessageType.AgentStatusRequested,
+        MessageType.AgentStarted,
+        MessageType.AgentStopped,
+        MessageType.AgentStatusChanged,
+        MessageType.AgentFailed,
+        MessageType.CustomAgentMessage);
 
     public final MessageType[] messageTypes;
 
@@ -217,7 +226,20 @@ public interface Message extends Serializable {
      * <p>TODO add the current context path and the user to the metadata in case it comes from a
      * linked DT.
      */
-    ObservationSubmissionFinished(Queue.Events, Observation.class);
+    ObservationSubmissionFinished(Queue.Events, Observation.class),
+
+    /*
+     * Runtime-agent messages. Agent exchanges are routed by agent URN, so these queues classify
+     * local handling without requiring every agent to consume and filter a shared scope exchange.
+     */
+    AgentStartRequested(Queue.Events, Void.class),
+    AgentStopRequested(Queue.Events, Void.class),
+    AgentStatusRequested(Queue.Status, Void.class),
+    AgentStarted(Queue.Events, RuntimeAgent.Status.class),
+    AgentStopped(Queue.Events, RuntimeAgent.Status.class),
+    AgentStatusChanged(Queue.Status, RuntimeAgent.Status.class),
+    AgentFailed(Queue.Errors, RuntimeAgent.Status.class),
+    CustomAgentMessage(Queue.Events, RuntimeAgent.CustomMessage.class);
 
 //    /**
 //     * Sent within the client with class UserInterface to communicate a list of IDs that should be
@@ -427,7 +449,7 @@ public interface Message extends Serializable {
       } else if (ob != null) {
         if (ret.getPayload() == null) {
           ret.setPayload(ob);
-          ret.setPayloadClass("Unknown");
+          ret.setPayloadClass(ob.getClass().getName());
         } else {
           throw new IllegalArgumentException("payload already set: too many arguments");
         }

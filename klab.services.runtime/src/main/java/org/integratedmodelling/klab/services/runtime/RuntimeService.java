@@ -1269,15 +1269,24 @@ public class RuntimeService extends BaseService
       Collection<RuntimeAgent.CompilationOptions> options,
       UserScope scope) {
 
+    var requestedOptions =
+        options == null
+            ? java.util.Set.<RuntimeAgent.CompilationOptions>of()
+            : java.util.Set.copyOf(options);
+
     var request = new AgentImpl();
     request.setBehaviorUrn(behavior.getUrn());
     request.setName(suggestedAgentName);
 
     var ret =
         AgentRegistry.INSTANCE.getOrCreateAgent(
-            request, behavior, scope, options.toArray(RuntimeAgent.CompilationOptions[]::new));
+            request,
+            behavior,
+            scope,
+            requestedOptions.toArray(RuntimeAgent.CompilationOptions[]::new));
 
-    if (!options.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA) && ret.isViable()) {
+    if (!requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)
+        && ret.isViable()) {
       ret.start();
     }
 

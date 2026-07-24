@@ -1,0 +1,7 @@
+behavior test.console
+    "Receive lines from an attached agent console."
+    version 1.0
+
+@stdin
+action read_line:
+    return "handled"
