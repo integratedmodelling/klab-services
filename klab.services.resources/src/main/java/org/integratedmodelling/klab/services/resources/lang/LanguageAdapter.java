@@ -11,6 +11,8 @@ import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.impl.ConstantImpl;
+import org.integratedmodelling.klab.api.collections.impl.IdentifierImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.Version;
@@ -41,6 +43,7 @@ import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
+import org.integratedmodelling.languages.observable.Literal;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
@@ -520,25 +523,8 @@ public enum LanguageAdapter {
 
     Object object = value;
     if (object instanceof ParsedLiteral parsedLiteral) {
-      if (parsedLiteral.isIdentifier()) {
-        return Utils.Strings.isLowercase(parsedLiteral.getPod().toString())
-            ? Identifier.create(parsedLiteral.getPod().toString())
-            : Constant.create(parsedLiteral.getPod().toString());
-      }
-      if (parsedLiteral.getCurrency() != null || parsedLiteral.getUnit() != null) {
-        QuantityImpl ret = new QuantityImpl();
-        ret.setCurrency(parsedLiteral.getCurrency());
-        ret.setUnit(parsedLiteral.getUnit());
-        ret.setValue(parsedLiteral.getPod() instanceof Number number ? number : 0);
-        return ret;
-      }
-      object = adaptValue(parsedLiteral.getPod(), namespace, projectName, documentClass);
-      if (object == null) {
-        return null;
-      }
-    } /*else if (object instanceof Literal literal) {
-          object = literal.get(Object.class);
-      } */ else if (object instanceof ObservableSyntax observableSyntax) {
+      return adaptLiteral(parsedLiteral, namespace, projectName, documentClass);
+    } else if (object instanceof ObservableSyntax observableSyntax) {
       object = adaptObservable(observableSyntax, namespace, projectName, documentClass);
     } else if (object instanceof SemanticSyntax semanticSyntax) {
       object = adaptSemantics(semanticSyntax, namespace, projectName, documentClass);
@@ -571,6 +557,36 @@ public enum LanguageAdapter {
       }
       default -> object;
     };
+  }
+
+  private Object adaptLiteral(
+      ParsedLiteral literal,
+      String namespace,
+      String projectName,
+      KlabAsset.KnowledgeClass documentClass) {
+    if (literal.getCurrency() != null) {
+      var quantity = new QuantityImpl();
+      quantity.setValue((Number) literal.getPod());
+      quantity.setCurrency(literal.getCurrency());
+      return quantity;
+    } else if (literal.getUnit() != null) {
+      var quantity = new QuantityImpl();
+      quantity.setValue((Number) literal.getPod());
+      quantity.setUnit(literal.getUnit());
+      return quantity;
+    } else if (literal.isIdentifier()) {
+      if (Utils.Strings.isLowercase(literal.getPod().toString())) {
+        var identifier = new IdentifierImpl();
+        identifier.setValue(literal.getPod().toString());
+        return identifier;
+      } else {
+        var constant = new ConstantImpl();
+        constant.setValue(literal.getPod().toString());
+        return constant;
+      }
+    }
+
+    return adaptValue(literal.getPod(), namespace, projectName, documentClass);
   }
 
   private KlabStatement adaptModel(ModelSyntax model, KimNamespace namespace) {
