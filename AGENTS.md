@@ -142,6 +142,11 @@ Inherited `init` actions run before the local `init`. Local actions may override
 use `@override` to make that intent explicit. Inherited actor state may be changed with `set`, but
 must not be redeclared.
 
+Every behavior kind may inherit a `trait`. Otherwise the inherited behavior must have the same
+kind as its child. The two specialized behavior kinds are exceptions: `user` and `task` behaviors
+may also inherit an ordinary `behavior`. For example, an application may inherit another
+application or any trait, but it cannot inherit a script or an ordinary behavior.
+
 `worldview` selects the semantic worldview used to interpret observable declarations and semantic
 operations in the behavior.
 

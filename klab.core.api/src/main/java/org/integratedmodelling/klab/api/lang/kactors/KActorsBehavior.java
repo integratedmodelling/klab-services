@@ -163,7 +163,18 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      * documentation, bookkeeping, status checks, and monitoring, but cannot modify the knowledge
      * graph.
      */
-    TASK
+    TASK;
+
+    /**
+     * Return whether this behavior type may inherit a behavior of the supplied type. Traits can be
+     * inherited by every behavior type. Other inheritance requires equal types, except that USER
+     * and TASK are specializations of BEHAVIOR and may inherit it directly.
+     */
+    public boolean canInherit(Type inheritedType) {
+      return inheritedType == TRAIT
+          || inheritedType == this
+          || ((this == USER || this == TASK) && inheritedType == BEHAVIOR);
+    }
   }
 
   /** Applications can be localized to a specific platform, */

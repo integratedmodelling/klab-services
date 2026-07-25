@@ -162,7 +162,15 @@ public class AgentCompiler {
    */
   public static Environment runtimeEnvironment(ComponentRegistry registry, UserScope scope) {
     Objects.requireNonNull(registry, "registry");
-    var resolver = componentResolver(registry);
+    return runtimeEnvironment(componentResolver(registry), scope);
+  }
+
+  /**
+   * Build the runtime validator around a caller-supplied resolver. This overload is useful for
+   * services that compose resource and component resolution themselves.
+   */
+  public static Environment runtimeEnvironment(Resolver resolver, UserScope scope) {
+    Objects.requireNonNull(resolver, "resolver");
     var validator =
         new KActorsVisitor.LenientValidator() {
           @Override
@@ -233,6 +241,37 @@ public class AgentCompiler {
             return List.of(
                 Notification.error(
                     "Cannot resolve imported actor " + imported.getImportedBehavior()));
+          }
+
+          @Override
+          public List<Notification> validateInheritance(
+              String inheritedBehaviorUrn, KActorsVisitor.KActorsContext context) {
+            try {
+              var inheritedBehavior = resolver.resolveBehavior(inheritedBehaviorUrn, scope);
+              if (inheritedBehavior == null) {
+                return List.of(
+                    Notification.error(
+                        "Cannot resolve inherited behavior " + inheritedBehaviorUrn));
+              }
+              var childType = context.getBehavior().getBehaviorType();
+              var inheritedType = inheritedBehavior.getBehaviorType();
+              if (childType != null && childType.canInherit(inheritedType)) {
+                return List.of();
+              }
+              return List.of(
+                  Notification.error(
+                      (childType == null ? "Unclassified" : childType)
+                          + " behavior "
+                          + context.getBehavior().getUrn()
+                          + " cannot inherit "
+                          + (inheritedType == null ? "an unclassified" : inheritedType)
+                          + " behavior "
+                          + inheritedBehaviorUrn));
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot validate inherited behavior " + inheritedBehaviorUrn, failure));
+            }
           }
 
           @Override
@@ -340,6 +379,9 @@ public class AgentCompiler {
     notifications.addAll(analyzer.getNotifications());
     indexAnalysis();
     resolveImportsAndCompileDependencies(new LinkedHashSet<>(Set.of(behavior.getUrn())));
+    if (Utils.Notifications.hasErrors(notifications)) {
+      return false;
+    }
 
     JavaFile classFile = generateClass(behavior);
     if (classFile == null) {
@@ -404,7 +446,26 @@ public class AgentCompiler {
     inheritedBehaviors.clear();
     for (var inheritedUrn : behavior.getInheritedBehaviors()) {
       var inheritedBehavior = resolver.resolveBehavior(inheritedUrn, scope);
-      if (inheritedBehavior == null || path.contains(inheritedBehavior.getUrn())) {
+      if (inheritedBehavior == null) {
+        notifications.add(
+            Notification.error("Cannot resolve inherited behavior " + inheritedUrn));
+        continue;
+      }
+      var childType = behavior.getBehaviorType();
+      var inheritedType = inheritedBehavior.getBehaviorType();
+      if (childType == null || !childType.canInherit(inheritedType)) {
+        notifications.add(
+            Notification.error(
+                childType
+                    + " behavior "
+                    + behavior.getUrn()
+                    + " cannot inherit "
+                    + inheritedType
+                    + " behavior "
+                    + inheritedUrn));
+        continue;
+      }
+      if (path.contains(inheritedBehavior.getUrn())) {
         continue;
       }
       var nextPath = new LinkedHashSet<>(path);

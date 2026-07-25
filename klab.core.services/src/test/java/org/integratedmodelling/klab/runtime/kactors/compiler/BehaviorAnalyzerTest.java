@@ -348,6 +348,47 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void runtimeValidatorEnforcesBehaviorInheritanceTypes() {
+    for (var childType : KActorsBehavior.Type.values()) {
+      assertTrue(
+          childType.canInherit(KActorsBehavior.Type.TRAIT), childType + " must inherit traits");
+      assertTrue(childType.canInherit(childType), childType + " must inherit its own type");
+    }
+
+    KActorsBehavior.Type[][] allowed = {
+      {KActorsBehavior.Type.BEHAVIOR, KActorsBehavior.Type.TRAIT},
+      {KActorsBehavior.Type.APP, KActorsBehavior.Type.APP},
+      {KActorsBehavior.Type.USER, KActorsBehavior.Type.BEHAVIOR},
+      {KActorsBehavior.Type.TASK, KActorsBehavior.Type.BEHAVIOR}
+    };
+    for (var inheritance : allowed) {
+      var compiler = inheritanceCompiler(inheritance[0], inheritance[1]);
+      assertTrue(
+          compiler.compile(),
+          () ->
+              inheritance[0]
+                  + " should inherit "
+                  + inheritance[1]
+                  + ": "
+                  + compiler.getNotifications());
+    }
+
+    KActorsBehavior.Type[][] rejected = {
+      {KActorsBehavior.Type.APP, KActorsBehavior.Type.BEHAVIOR},
+      {KActorsBehavior.Type.BEHAVIOR, KActorsBehavior.Type.APP},
+      {KActorsBehavior.Type.USER, KActorsBehavior.Type.TASK},
+      {KActorsBehavior.Type.TASK, KActorsBehavior.Type.USER}
+    };
+    for (var inheritance : rejected) {
+      var compiler = inheritanceCompiler(inheritance[0], inheritance[1]);
+      assertFalse(compiler.compile(), inheritance[0] + " must not inherit " + inheritance[1]);
+      assertTrue(
+          compiler.getNotifications().toString().contains("cannot inherit"),
+          () -> compiler.getNotifications().toString());
+    }
+  }
+
+  @Test
   void adaptedAssignmentsAcquireTheTargetAgentTypeAndCompileThroughRuntimeHook() {
     var adapted = assignment("worker", KActorsStatement.Assignment.Scope.FRAME, number(1));
     adapted.setAdaptedBehaviorUrn("workers.specialized");
@@ -762,6 +803,28 @@ class BehaviorAnalyzerTest {
             null,
             List.of(unit));
     assertTrue(task.call(), () -> diagnostics.getDiagnostics().toString() + "\n" + source);
+  }
+
+  private static AgentCompiler inheritanceCompiler(
+      KActorsBehavior.Type childType, KActorsBehavior.Type inheritedType) {
+    var inherited = behavior(action("helper", returned(number(1))));
+    inherited.setUrn("test.inherited." + inheritedType.name().toLowerCase());
+    inherited.setBehaviorType(inheritedType);
+    var child = behavior(action("main", returned(number(0))));
+    child.setUrn("test.child." + childType.name().toLowerCase());
+    child.setBehaviorType(childType);
+    child.setInheritedBehaviors(List.of(inherited.getUrn()));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return inherited.getUrn().equals(urn) ? inherited : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    return new AgentCompiler(
+        child, null, environment.validator(), environment.resolver());
   }
 
   @Test

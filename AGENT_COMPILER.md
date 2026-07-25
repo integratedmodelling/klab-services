@@ -205,6 +205,7 @@ components, or language processors. Its methods are:
 Verb.Type classifyActionCall(Verb verb, KActorsContext context)
 List<Notification> validateBehavior(KActorsBehavior behavior, KActorsContext context)
 List<Notification> validateImport(KActorsBehavior.Import imported, KActorsContext context)
+List<Notification> validateInheritance(String inheritedBehaviorUrn, KActorsContext context)
 List<Notification> validateAction(KActorsAction action, KActorsContext context)
 List<Notification> validateAssignment(Assignment assignment, KActorsContext context)
 List<Notification> validateAdaptation(
@@ -226,6 +227,12 @@ types, generated invocation methods, and actor lifecycle.
 calls as functions. It is useful for syntax-focused tests, but production compilation should use a
 validator backed by behavior resources, component descriptors, expression services, and argument
 prototypes.
+
+The runtime validator resolves every URN in an `inherits` clause and applies
+`KActorsBehavior.Type.canInherit(...)`. A trait is valid for every child type; otherwise parent and
+child types must match, with the additional allowance that USER and TASK may inherit BEHAVIOR.
+Unresolved parents and incompatible types are compilation errors. The same validator is used
+recursively, so the rule also applies throughout the inherited behavior graph.
 
 For a local assignment with an adaptation clause, `sourceVariable` describes the value before
 conversion, including its `ValueType`, source behavior identity, or producer call when known. The

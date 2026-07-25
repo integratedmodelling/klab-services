@@ -71,6 +71,15 @@ public class KActorsVisitor {
     }
 
     /**
+     * Validate one behavior named in the current behavior's {@code inherits} clause. Implementations
+     * that can resolve runtime resources should verify both its existence and type compatibility.
+     */
+    default List<Notification> validateInheritance(
+        String inheritedBehaviorUrn, KActorsContext context) {
+      return List.of();
+    }
+
+    /**
      * Return all tags exposed by an imported or inherited behavior, including tags contributed
      * transitively by its own imports and inheritances. Implementations may resolve the URN to
      * either a parsed behavior or a component-provided actor descriptor. Returning an empty list
@@ -405,6 +414,7 @@ public class KActorsVisitor {
     }
 
     for (var inheritedBehavior : safe(behavior.getInheritedBehaviors())) {
+      addNotifications(context.validator.validateInheritance(inheritedBehavior, context));
       registerReferencedTags(inheritedBehavior, context);
     }
 
