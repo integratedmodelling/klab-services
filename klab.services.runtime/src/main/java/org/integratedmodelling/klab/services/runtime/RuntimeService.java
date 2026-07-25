@@ -1370,7 +1370,7 @@ public class RuntimeService extends BaseService
     Objects.requireNonNull(behavior, "behavior");
     Objects.requireNonNull(requestScope, "scope");
     if (behavior.getBehaviorType() == KActorsBehavior.Type.COMPONENT
-        || behavior.getBehaviorType() == KActorsBehavior.Type.TRAITS) {
+        || behavior.getBehaviorType() == KActorsBehavior.Type.TRAIT) {
       throw new KlabIllegalArgumentException(
           behavior.getBehaviorType()
               + " behaviors cannot be created as independent runtime agents");

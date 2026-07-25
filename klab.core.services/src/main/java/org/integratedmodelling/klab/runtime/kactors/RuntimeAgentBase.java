@@ -785,6 +785,23 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     throw new KlabActorException(this, "Unresolved k.Actors identifier: " + name);
   }
 
+  /**
+   * Adapt a value to an object implementing the requested k.Actors behavior.
+   *
+   * <p>Generated local assignments carrying an {@code as <behavior-urn>} clause call this method
+   * after evaluating the original value and before storing it in the frame. Specialized runtime
+   * agents or component-backed bases may override it to perform the actual conversion.
+   *
+   * @param value unadapted assignment value
+   * @param behaviorUrn target behavior URN validated by the compiler environment
+   * @param scope current action scope
+   * @return the adapted object
+   */
+  protected Object adaptToBehavior(Object value, String behaviorUrn, AgentScope scope) {
+    throw new KlabActorException(
+        this, "No runtime adapter is available for behavior " + behaviorUrn);
+  }
+
   protected void setActorState(String name, Object value) {
     rootScope.put(name, value);
   }

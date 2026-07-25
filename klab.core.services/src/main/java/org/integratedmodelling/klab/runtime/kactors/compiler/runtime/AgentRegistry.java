@@ -95,6 +95,8 @@ public enum AgentRegistry {
   private final ConcurrentMap<BehaviorKey, CompiledBehavior> classes = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ManagedAgent> instances = new ConcurrentHashMap<>();
   private final AtomicLong nextAgentId = new AtomicLong();
+  private final Object userAgentLock = new Object();
+  private volatile ManagedAgent userAgent;
 
   /**
    * Resolve the behavior named by the supplied handle and return a stopped runtime agent.
@@ -237,6 +239,16 @@ public enum AgentRegistry {
       }
       return sourceOnly;
     }
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.USER
+        && !Thread.holdsLock(userAgentLock)) {
+      synchronized (userAgentLock) {
+        if (userAgent != null) {
+          return userAgent;
+        }
+        return getOrCreateAgent(
+            agent, behavior, scope, observation, validator, resolver, options);
+      }
+    }
 
     var key = new BehaviorKey(behavior, validator, resolver);
     CompiledBehavior compiled;
@@ -278,6 +290,9 @@ public enum AgentRegistry {
                   ? compiled.source()
                   : null);
       instances.put(urn, managed);
+      if (behavior.getBehaviorType() == KActorsBehavior.Type.USER) {
+        userAgent = managed;
+      }
       runtime.initializeMessaging(urn, scope, managed.notifications::add);
       return managed;
     } catch (Throwable failure) {
@@ -340,6 +355,9 @@ public enum AgentRegistry {
     var agent = instances.get(urn);
     if (agent == null || agent.isAlive() || !instances.remove(urn, agent)) {
       return false;
+    }
+    if (userAgent == agent) {
+      userAgent = null;
     }
     agent.runtime.closeMessaging();
     return true;
@@ -757,6 +775,9 @@ public enum AgentRegistry {
       } finally {
         runtime.closeMessaging();
         instances.remove(urn, this);
+        if (userAgent == this) {
+          userAgent = null;
+        }
       }
     }
 

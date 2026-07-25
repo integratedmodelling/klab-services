@@ -151,7 +151,7 @@ before construction and released when the root agent scope terminates, including
 and explicit stop. Source-only translation creates no dedicated session.
 
 `USER` behaviors are moved to that same root `ServiceUserScope`, even when requested from a
-session or context. `COMPONENT` and `TRAITS` are rejected by direct runtime creation; recursive
+session or context. `COMPONENT` and `TRAIT` are rejected by direct runtime creation; recursive
 compilation and construction through imports or inheritance remain valid.
 
 `RuntimeAgent.getCreationScope()` exposes the selected scope to Java implementations. It is
@@ -207,6 +207,11 @@ List<Notification> validateBehavior(KActorsBehavior behavior, KActorsContext con
 List<Notification> validateImport(KActorsBehavior.Import imported, KActorsContext context)
 List<Notification> validateAction(KActorsAction action, KActorsContext context)
 List<Notification> validateAssignment(Assignment assignment, KActorsContext context)
+List<Notification> validateAdaptation(
+    Assignment assignment,
+    String behaviorUrn,
+    VariableInfo sourceVariable,
+    KActorsContext context)
 List<Notification> validateVerbCall(Verb verb, KActorsContext context)
 List<Notification> validateArguments(Verb verb, Arguments arguments, KActorsContext context)
 List<Notification> validateExpression(Expression.Descriptor expression, KActorsContext context)
@@ -221,6 +226,14 @@ types, generated invocation methods, and actor lifecycle.
 calls as functions. It is useful for syntax-focused tests, but production compilation should use a
 validator backed by behavior resources, component descriptors, expression services, and argument
 prototypes.
+
+For a local assignment with an adaptation clause, `sourceVariable` describes the value before
+conversion, including its `ValueType`, source behavior identity, or producer call when known. The
+runtime compiler environment first resolves the target as a `KActorsBehavior`, then delegates
+adapter compatibility to `AgentCompiler.Resolver.validateBehaviorAdaptation(...)`. Error
+notifications prevent the new variable from acquiring the target agent type. On success its
+`VariableInfo.agentUrn` is the target behavior URN, so subsequent calls are classified and
+validated against that behavior.
 
 ### 4.4 Action type inference
 
@@ -425,6 +438,7 @@ delegates and stops and disposes them with its own lifecycle.
 | --- | --- |
 | Verb call | Select function/supplier/emitter invocation from `CallInfo`; reactive calls install event handlers. |
 | Frame assignment | Put the evaluated value in the current frame map. |
+| Adapted frame assignment | Evaluate once, call `adaptToBehavior(value, behaviorUrn, scope)`, then put the returned agent/object in the frame. |
 | Actor assignment | Put the value in the root `AgentScope`. |
 | `return` | Return normally, complete a supplier future, or terminate a reactive/emitter scope with an exit value. |
 | `fire` | Call `AgentScope.doFire(value)`. |
@@ -518,6 +532,12 @@ Frames are `LinkedHashMap<String,Object>` instances:
 - groups and match actions copy it with `childFrame`;
 - identifier lookup checks the frame, then root actor state;
 - `self` resolves to the generated agent.
+
+Behavior adaptation is deliberately confined to frame assignments. The visitor rejects an `as`
+behavior clause on actor state. Generated code calls the protected
+`RuntimeAgentBase.adaptToBehavior(...)` hook; its base implementation fails explicitly until a
+specialized runtime or component supplies an adapter. This keeps generated source stable while
+conversion policy, wrapper lifetime, and object identity remain runtime responsibilities.
 
 ## 10. Invocation and parameter matching
 

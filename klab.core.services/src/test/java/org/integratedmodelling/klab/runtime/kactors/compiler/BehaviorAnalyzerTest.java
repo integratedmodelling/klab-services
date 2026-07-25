@@ -89,7 +89,7 @@ class BehaviorAnalyzerTest {
     inheritedAction.setAnnotations(List.of(annotation));
     var inherited = behavior(inheritedAction);
     inherited.setUrn("traits.handlers");
-    inherited.setBehaviorType(KActorsBehavior.Type.TRAITS);
+    inherited.setBehaviorType(KActorsBehavior.Type.TRAIT);
     var child = behavior();
     child.setInheritedBehaviors(List.of(inherited.getUrn()));
     var compiler =
@@ -158,7 +158,7 @@ class BehaviorAnalyzerTest {
   @Test
   void traitsAndComponentsAllowLifecycleActionsButLibrariesRejectThem() {
     var trait = behavior(action("init"), action("main", returned(number(0))));
-    trait.setBehaviorType(KActorsBehavior.Type.TRAITS);
+    trait.setBehaviorType(KActorsBehavior.Type.TRAIT);
     var traitAnalyzer = new BehaviorAnalyzer(trait);
 
     assertTrue(traitAnalyzer.analyze(), messages(traitAnalyzer));
@@ -345,6 +345,87 @@ class BehaviorAnalyzerTest {
         analyzer.getNotifications().stream()
             .filter(notification -> notification.getMessage().equals("Unknown identifier: local"))
             .count());
+  }
+
+  @Test
+  void adaptedAssignmentsAcquireTheTargetAgentTypeAndCompileThroughRuntimeHook() {
+    var adapted = assignment("worker", KActorsStatement.Assignment.Scope.FRAME, number(1));
+    adapted.setAdaptedBehaviorUrn("workers.specialized");
+    var call = verb("worker", "process");
+    var behavior = behavior(action("main", adapted, call));
+    var adaptationValidated = new boolean[1];
+    var callValidated = new boolean[1];
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public List<Notification> validateAdaptation(
+              KActorsStatement.Assignment assignment,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            adaptationValidated[0] =
+                "workers.specialized".equals(behaviorUrn)
+                    && sourceVariable.type() == ValueType.NUMBER;
+            return List.of();
+          }
+
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var variable = context.getVariable(verb.getRecipient());
+            return variable != null && "workers.specialized".equals(variable.agentUrn())
+                ? Verb.Type.FUNCTION
+                : null;
+          }
+
+          @Override
+          public List<Notification> validateVerbCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            callValidated[0] = true;
+            return List.of();
+          }
+        };
+    var analyzer = new BehaviorAnalyzer(behavior, validator);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertTrue(adaptationValidated[0]);
+    assertTrue(callValidated[0]);
+    assertEquals(
+        "workers.specialized",
+        analyzer.getCalls().getFirst().knownVariables().get("worker").agentUrn());
+
+    var compiler = new AgentCompiler(behavior, null, validator, null);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("adaptToBehavior("), compiler.getSourceCode());
+    assertTrue(compiler.getSourceCode().contains("\"workers.specialized\""), compiler.getSourceCode());
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void behaviorAdaptationIsLocalOnlyAndValidationErrorsDoNotTypeTheVariable() {
+    var actorAssignment =
+        assignment("worker", KActorsStatement.Assignment.Scope.ACTOR, number(1));
+    actorAssignment.setAdaptedBehaviorUrn("workers.specialized");
+    var localAssignment =
+        assignment("other", KActorsStatement.Assignment.Scope.FRAME, number(2));
+    localAssignment.setAdaptedBehaviorUrn("workers.missing");
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public List<Notification> validateAdaptation(
+              KActorsStatement.Assignment assignment,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            return List.of(Notification.error("Unknown adaptation behavior " + behaviorUrn));
+          }
+        };
+    var analyzer =
+        new BehaviorAnalyzer(behavior(action("init", actorAssignment), action("main", localAssignment)), validator);
+
+    assertFalse(analyzer.analyze());
+    assertTrue(messages(analyzer).contains("only allowed on local frame assignments"));
+    assertTrue(messages(analyzer).contains("Unknown adaptation behavior workers.missing"));
   }
 
   @Test

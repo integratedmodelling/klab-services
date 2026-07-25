@@ -89,6 +89,27 @@ public class KActorsVisitor {
       return List.of();
     }
 
+    /**
+     * Validate conversion of an assignment's original value to the requested behavior. The source
+     * variable describes the value before adaptation, including literal type or producer-call
+     * provenance. Environment-aware implementations must resolve {@code behaviorUrn} and determine
+     * whether an adapter can be created for that source.
+     *
+     * @param assignment the local assignment carrying the {@code as} clause
+     * @param behaviorUrn requested target behavior
+     * @param sourceVariable compile-time description of the unadapted value
+     * @param context lexical context
+     * @return diagnostics; any error prevents the assigned variable from acquiring the target
+     *     behavior type
+     */
+    default List<Notification> validateAdaptation(
+        KActorsStatement.Assignment assignment,
+        String behaviorUrn,
+        VariableInfo sourceVariable,
+        KActorsContext context) {
+      return List.of();
+    }
+
     default List<Notification> validateVerbCall(
         KActorsStatement.Verb verb, KActorsContext context) {
       return List.of();
@@ -290,6 +311,8 @@ public class KActorsVisitor {
   private final Map<String, String> tagDeclarations = new LinkedHashMap<>();
   private final Map<KActorsAction, ActionAccumulator> actionAccumulators = new IdentityHashMap<>();
   private final List<PendingCall> pendingCalls = new ArrayList<>();
+  private final Map<KActorsStatement.Assignment, VariableInfo> assignmentVariables =
+      new IdentityHashMap<>();
 
   private record PendingCall(
       KActorsStatement.Verb statement, KActorsContext context, boolean valueRequired) {}
@@ -356,6 +379,7 @@ public class KActorsVisitor {
     tagDeclarations.clear();
     actionAccumulators.clear();
     pendingCalls.clear();
+    assignmentVariables.clear();
     visitedBehavior = null;
   }
 
@@ -649,6 +673,35 @@ public class KActorsVisitor {
       error("Unknown actor state variable: " + statement.getVariable(), statement);
     }
     addNotifications(context.validator.validateAssignment(statement, context));
+    var sourceVariable = unadaptedVariableFor(statement, context);
+    String adaptedBehaviorUrn = normalized(statement.getAdaptedBehaviorUrn());
+    if (adaptedBehaviorUrn != null) {
+      if (statement.getAssignmentScope() != KActorsStatement.Assignment.Scope.FRAME) {
+        error("Behavior adaptation is only allowed on local frame assignments", statement);
+      } else {
+        var adaptationNotifications =
+            safe(
+                context
+                    .validator
+                    .validateAdaptation(
+                        statement, adaptedBehaviorUrn, sourceVariable, context));
+        addNotifications(adaptationNotifications);
+        if (adaptationNotifications.stream()
+            .noneMatch(
+                notification ->
+                    notification.getLevel().severity >= Notification.Level.Error.severity)) {
+          assignmentVariables.put(
+              statement,
+              new VariableInfo(
+                  statement,
+                  statement.getVariable(),
+                  null,
+                  adaptedBehaviorUrn,
+                  null,
+                  sourceVariable.producerCall()));
+        }
+      }
+    }
     visitValueIfPresent(statement.getValue(), context);
     visitVerbAsValue(statement.getFunction(), context);
   }
@@ -758,8 +811,8 @@ public class KActorsVisitor {
         executionType =
             pending.context().validator.classifyActionCall(statement, pending.context());
       }
+      var variable = pending.context().knownVariables.get(recipient);
       if (executionType == null) {
-        var variable = pending.context().knownVariables.get(recipient);
         if (variable != null && variable.producerCall() != null) {
           executionType =
               pending
@@ -778,7 +831,8 @@ public class KActorsVisitor {
               "Cannot establish execution type for " + recipient + "." + statement.getMessage(),
               statement);
         }
-      } else {
+      }
+      if (executionType != null || (variable != null && variable.agentUrn() != null)) {
         addNotifications(
             pending.context().validator.validateVerbCall(statement, pending.context()));
         addNotifications(
@@ -874,7 +928,29 @@ public class KActorsVisitor {
   }
 
   private VariableInfo variableFor(KActorsStatement.Assignment assignment) {
+    var adapted = assignmentVariables.get(assignment);
+    if (adapted != null) {
+      return adapted;
+    }
+    return unadaptedVariableFor(assignment, null);
+  }
+
+  private VariableInfo unadaptedVariableFor(
+      KActorsStatement.Assignment assignment, KActorsContext context) {
     if (assignment.getValue() != null) {
+      if (context != null && assignment.getValue().getType() == ValueType.IDENTIFIER) {
+        var identifier = assignment.getValue().getValue(String.class);
+        var source = context.knownVariables.get(identifier);
+        if (source != null) {
+          return new VariableInfo(
+              assignment,
+              assignment.getVariable(),
+              source.type(),
+              source.agentUrn(),
+              source.verbUrn(),
+              source.producerCall());
+        }
+      }
       return new VariableInfo(
           assignment.getValue(),
           assignment.getVariable(),
@@ -891,6 +967,10 @@ public class KActorsVisitor {
         function == null ? null : normalizeRecipient(function.getRecipient()),
         function == null ? null : function.getMessage(),
         function);
+  }
+
+  private String normalized(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
   private void validateAlternative(

@@ -271,6 +271,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Verb function;
 
     private Assignment.Scope assignmentScope;
+    private String adaptedBehaviorUrn;
 
     @Override
     public Type getType() {
@@ -290,6 +291,15 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Assignment.Scope getAssignmentScope() {
       return this.assignmentScope;
+    }
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return this.adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
     }
 
     public void setType(Type type) {

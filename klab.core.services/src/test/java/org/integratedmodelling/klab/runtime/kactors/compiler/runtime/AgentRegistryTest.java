@@ -79,6 +79,31 @@ class AgentRegistryTest {
   }
 
   @Test
+  void userBehaviorHasAtMostOneRegisteredInstancePerRuntime() {
+    var behavior =
+        finiteBehavior("test.registry.user." + UUID.randomUUID().toString().replace("-", ""));
+    behavior.setBehaviorType(KActorsBehavior.Type.USER);
+
+    var first =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "first user"), behavior, null);
+    var second =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "second user"), behavior, null);
+
+    assertTrue(first.isViable(), () -> first.getNotifications().toString());
+    assertSame(first, second);
+    assertTrue(first.stop());
+
+    var replacement =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "replacement user"), behavior, null);
+    assertTrue(replacement.isViable(), () -> replacement.getNotifications().toString());
+    assertTrue(!first.getUrn().equals(replacement.getUrn()));
+    assertTrue(replacement.stop());
+  }
+
+  @Test
   void customCompilerEnvironmentAndObservationReachTheRuntimeInstance() {
     var behavior =
         finiteBehavior("test.registry.environment." + UUID.randomUUID().toString().replace("-", ""));

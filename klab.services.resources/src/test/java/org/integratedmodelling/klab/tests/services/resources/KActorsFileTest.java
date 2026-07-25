@@ -70,6 +70,18 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertComponentLifecycleActions),
         new Case(
+            "/task-behavior.kactor",
+            new KActorsVisitor.LenientValidator(),
+            result -> assertBehaviorType(result, KActorsBehavior.Type.TASK)),
+        new Case(
+            "/user-behavior.kactor",
+            new KActorsVisitor.LenientValidator(),
+            result -> assertBehaviorType(result, KActorsBehavior.Type.USER)),
+        new Case(
+            "/adapted-assignment.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertAdaptedAssignment),
+        new Case(
             "/console-agent.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertConsoleInputHandler),
@@ -200,7 +212,7 @@ class KActorsFileTest {
   private void assertTraitLifecycleActions(KActorsTestSupport.Result result) {
     assertNoParsingOrAdaptationErrors(result);
     assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
-    assertEquals(KActorsBehavior.Type.TRAITS, result.requireBehavior().getBehaviorType());
+    assertEquals(KActorsBehavior.Type.TRAIT, result.requireBehavior().getBehaviorType());
     assertTrue(result.requireAnalyzer().getActions().containsKey("init"));
     assertTrue(result.requireAnalyzer().getActions().containsKey("main"));
   }
@@ -211,6 +223,24 @@ class KActorsFileTest {
     assertEquals(KActorsBehavior.Type.COMPONENT, result.requireBehavior().getBehaviorType());
     assertTrue(result.requireAnalyzer().getActions().containsKey("init"));
     assertTrue(result.requireAnalyzer().getActions().containsKey("main"));
+  }
+
+  private void assertBehaviorType(
+      KActorsTestSupport.Result result, KActorsBehavior.Type expectedType) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    assertEquals(expectedType, result.requireBehavior().getBehaviorType());
+  }
+
+  private void assertAdaptedAssignment(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var assignment =
+        assertInstanceOf(
+            KActorsStatement.Assignment.class,
+            result.requireBehavior().getStatements().getFirst().getCode().getFirst());
+    assertEquals(KActorsStatement.Assignment.Scope.FRAME, assignment.getAssignmentScope());
+    assertEquals("test.target", assignment.getAdaptedBehaviorUrn());
   }
 
   private void assertConsoleInputHandler(KActorsTestSupport.Result result) {

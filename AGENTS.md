@@ -99,15 +99,15 @@ must be chosen as stable, globally meaningful names when the behavior will be sh
 | `public ... app` | A public application declaration, available through a k.LAB service facing an authenticated user; it may also carry a platform qualifier | Long-lived until explicitly stopped |
 | `component` | A self-contained composable actor created and used from another agent, commonly a UI component                                             | May initialize and run `main`; long-lived while its owner uses it |
 | `script` | A synchronous batch job in a session scope                                                                                               | Expected to finish unless it starts emitter work |
+| `task` | A restricted behavior attached to any observation for post-processing, documentation, or monitoring                                      | Runs in the request context; cannot modify the knowledge graph |
+| `user` | The behavior instrumenting the user that owns the request                                                                                  | Exactly one instance per runtime, bound to the root user scope |
 | `testcase` | A collection of actions, normally annotated with `@test`, run under a test scope                                                         | Runs explicitly and produces test results |
 | `trait` | An inheritable agent personality contributing state and actions                                                                           | May declare `init` and `main`; both are adopted through inheritance |
 | `library` | A reusable collection of callable actions                                                                                                  | Cannot declare `init` or `main` and is not started independently |
 
-The Java API also reserves `USER` and `TASK` behavior types. The current Xtext grammar does not
-expose source keywords for them; do not invent `user` or `task` declarations until the grammar is
-extended. Through the Java API, a `USER` behavior always runs in the root user scope that owns the
-requesting session or context. Components and traits cannot be started through direct runtime
-agent creation; they are instantiated only as imports or incorporated through inheritance.
+A `USER` behavior always runs in the root user scope that owns the requesting session or context.
+Components and traits cannot be started through direct runtime agent creation; they are
+instantiated only as imports or incorporated through inheritance.
 
 ### 3.2. Imports
 
@@ -468,6 +468,19 @@ The right side may be a literal, a square-bracket expression, a function, or a s
 variable cannot shadow actor state. Variables introduced by action arguments, loop iteration, and
 match captures are also frame-local.
 
+An `as` clause adapts the evaluated object to a named behavior before storing it:
+
+```kactors
+specialized <- existing as examples.specialized_worker
+specialized.process(job)
+```
+
+Behavior adaptation is legal only on local `<-` assignments. The target behavior must resolve in
+the active runtime environment, and its adapter must accept the original value's type. After
+validation, the assigned variable is treated as an agent implementing the target behavior, so its
+action calls are validated against that behavior. Adaptation does not mutate the original object;
+the runtime adapter decides whether to wrap it, derive a new agent, or reject the conversion.
+
 ## 8. Control flow and statements
 
 Every action contains one or more statements. Parentheses create a group, which establishes a
@@ -647,7 +660,19 @@ action main:
     console.print(result)
 ```
 
-### 10.5. Test cases
+### 10.5. Tasks and user behaviors
+
+A `task` is observation-scoped like an ordinary behavior, but the observation need not have
+`SemanticType.AGENT`. Tasks run with restricted capabilities: they may post-process results,
+produce documentation, or monitor resources and observations, but cannot modify the knowledge
+graph. Every task declares `main`.
+
+A `user` behavior instruments the root `UserScope` owning the request. It can configure or react to
+user-level activity independently of the session or context from which it was requested. A runtime
+retains at most one user-behavior instance; stopping or releasing that instance permits a
+replacement to be created.
+
+### 10.6. Test cases
 
 A `testcase` groups independently runnable `@test` actions. Use it for runtime services, semantic
 operations, actors, and application behavior—not only pure functions. Test scopes collect action
@@ -656,7 +681,7 @@ and assertion results for later reporting.
 Keep each test action focused, use descriptive action names, and prefer explicit match branches for
 `empty` and `exception` when testing reactive calls.
 
-### 10.6. Traits and libraries
+### 10.7. Traits and libraries
 
 A `trait` is an inheritable agent personality. It can package actions and protected state, and it
 may define `init` and `main`; those special actions are incorporated into the adopting agent
@@ -666,7 +691,7 @@ clear action contracts and declare overrides explicitly in consuming behaviors.
 A `library` is an importable collection of callable actions. It is not an inherited personality
 and has no construction or startup lifecycle, so `init` and `main` are invalid in a library.
 
-### 10.7. Java actor extensions
+### 10.8. Java actor extensions
 
 Components can expose Java classes as actors and Java methods as verbs. From k.Actors they look like
 ordinary imports and calls. The runtime validator is responsible for:

@@ -78,15 +78,7 @@ public interface RuntimeAgent {
     public Status() {}
 
     public Status(String agentUrn, State state, boolean viable, String detail, long timestamp) {
-      this(
-          agentUrn,
-          state,
-          viable,
-          detail,
-          timestamp,
-          Observation.UNASSIGNED_ID,
-          -1,
-          -1);
+      this(agentUrn, state, viable, detail, timestamp, Observation.UNASSIGNED_ID, -1, -1);
     }
 
     public Status(
@@ -226,7 +218,7 @@ public interface RuntimeAgent {
    * org.integratedmodelling.klab.api.services.RuntimeService#createAgent(KActorsBehavior, String,
    * java.util.Collection<CompilationOptions>, UserScope)}
    */
-  public enum CompilationOptions {
+  enum CompilationOptions {
     /** Include the generated Java code in service-side handles that support it. */
     INCLUDE_JAVA_CODE,
     /** Stop after source generation and validation; do not compile or instantiate the class. */
@@ -238,9 +230,7 @@ public interface RuntimeAgent {
      * agent
      */
     DO_NOT_BIND_SESSION,
-    /**
-     * Compile with debugging enabled. Currently unimplemented.
-     */
+    /** Compile with debugging enabled. Currently unimplemented. */
     COMPILE_FOR_DEBUGGING
   }
 
@@ -333,20 +323,22 @@ public interface RuntimeAgent {
   /**
    * Return the scope selected by the runtime when this agent was created.
    *
-   * <p>For scripts, applications, and test cases this is the dedicated session owned by the
-   * agent. For user behaviors it is the root user scope owning the request. For tasks and ordinary
+   * <p>For scripts, applications, and test cases this is the dedicated session owned by the agent.
+   * For user behaviors it is the root user scope owning the request. For tasks and ordinary
    * behaviors it is the user, session, or context scope under which the creation request was made.
    *
    * @return the service-side creation scope, or {@code null} when unavailable
    */
   org.integratedmodelling.klab.api.scope.Scope getCreationScope();
 
-  /** @return the epoch-millisecond timestamp at which this agent first started, or {@code -1}. */
+  /**
+   * @return the epoch-millisecond timestamp at which this agent first started, or {@code -1}.
+   */
   long getStartedAt();
 
   /**
-   * @return the epoch-millisecond timestamp of the latest message or reactor activity, or
-   *     {@code -1}
+   * @return the epoch-millisecond timestamp of the latest message or reactor activity, or {@code
+   *     -1}
    */
   long getLastActivityAt();
 
@@ -366,8 +358,8 @@ public interface RuntimeAgent {
 
   /**
    * Send text to all console peers currently attached to this agent. Implementations return false
-   * when no console is attached or messaging is unavailable, allowing extensions to fall back to
-   * a local writer.
+   * when no console is attached or messaging is unavailable, allowing extensions to fall back to a
+   * local writer.
    *
    * @param type {@link ConsoleMessageType#STDOUT} or {@link ConsoleMessageType#STDERR}
    * @param text text chunk, including any desired line terminator

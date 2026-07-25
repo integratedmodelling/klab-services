@@ -222,7 +222,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
           switch (doc.getBehaviorType()) {
             case BEHAVIOR, USER -> KnowledgeClass.BEHAVIOR;
             case APP -> KnowledgeClass.APPLICATION;
-            case TRAITS, LIBRARY, COMPONENT -> KnowledgeClass.COMPONENT;
+            case TRAIT, LIBRARY, COMPONENT -> KnowledgeClass.COMPONENT;
             case UNITTEST -> KnowledgeClass.TESTCASE;
             case SCRIPT -> KnowledgeClass.SCRIPT;
             default -> throw new UnsupportedOperationException("unexpected behavior type");

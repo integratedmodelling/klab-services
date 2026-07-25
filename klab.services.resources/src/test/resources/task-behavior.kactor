@@ -1,0 +1,6 @@
+task test.background_task
+    "Run restricted work for an observation."
+    version 1.0
+
+action main:
+    return 0

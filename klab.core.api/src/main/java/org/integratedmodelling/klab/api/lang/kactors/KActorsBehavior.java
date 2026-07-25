@@ -115,7 +115,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      * characterization in the preamble is needed for safety of association. A USER behavior can
      * stand for a {@link org.integratedmodelling.klab.api.identities.Federation} in federated
      * contexts, in which case it must be provided with the same group metadata that specify the
-     * federation.
+     * federation. A runtime may retain only one independently created USER agent at a time.
      */
     USER,
     /**
@@ -124,7 +124,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      * bound or instantiated directly. They may define {@code init} and {@code main}; inherited
      * initialization and main behavior become part of the adopting agent.
      */
-    TRAITS,
+    TRAIT,
 
     /**
      * A library is a reusable collection of callable actions imported by agents. Unlike a trait it
@@ -157,9 +157,10 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
     SCRIPT,
 
     /**
-     * A task is a script that runs in normal asynchronous mode and can be associated to an
-     * observation that is not an agent. It must have a main and can perform bookkeeping, check on a
-     * resource's status, monitor critical online resources, etc.
+     * A task is a restricted behavior that runs in normal asynchronous mode and can be associated
+     * to an observation that is not an agent. It must have a main and can perform post-processing,
+     * documentation, bookkeeping, status checks, and monitoring, but cannot modify the knowledge
+     * graph.
      */
     TASK
   }

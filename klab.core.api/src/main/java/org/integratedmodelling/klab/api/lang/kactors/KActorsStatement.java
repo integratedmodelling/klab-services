@@ -145,8 +145,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
     KActorsValue getValue();
 
     /**
-     * Defined when the return value is supplied through a functional verb; requires a function or
-     * a supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * Defined when the return value is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
      * getValue() and getFunction() must be non-null. See {@link #getValue()} for the emitter exit
      * code case.
      *
@@ -335,6 +335,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /** Get the scope (actor state or frame) */
     Scope getAssignmentScope();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
   }
 
   /** The syntactic counterpart of a <code>fire</code> statement */

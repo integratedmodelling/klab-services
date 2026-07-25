@@ -7,8 +7,6 @@ import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.TernaryImpl;
-import org.integratedmodelling.klab.api.collections.Constant;
-import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ConstantImpl;
@@ -43,15 +41,10 @@ import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
-import org.integratedmodelling.languages.observable.Literal;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
   INSTANCE;
-
-  private static final Pattern KACTORS_LIBRARY_KIND =
-      Pattern.compile(
-          "\\A(?:\\s+|//[^\\r\\n]*(?:\\R|\\z)|/\\*.*?\\*/)*(trait|library)\\b", Pattern.DOTALL);
 
   Map<String, Instance> instanceAnnotations = new HashMap<>();
   Map<String, Class<?>> instanceImplementations = new HashMap<>();
@@ -1332,10 +1325,12 @@ public enum LanguageAdapter {
           case TESTCASE -> KActorsBehavior.Type.UNITTEST;
           case SCRIPT -> KActorsBehavior.Type.SCRIPT;
           case COMPONENT -> KActorsBehavior.Type.COMPONENT;
-          case LIBRARY -> libraryKind(syntax.encode());
+          case LIBRARY -> KActorsBehavior.Type.LIBRARY;
           case APPLICATION -> KActorsBehavior.Type.APP;
           case BEHAVIOR -> KActorsBehavior.Type.BEHAVIOR;
           case USER -> KActorsBehavior.Type.USER;
+          case TASK -> KActorsBehavior.Type.TASK;
+          case TRAIT -> KActorsBehavior.Type.TRAIT;
         });
 
     ret.setAnnotations(
@@ -1403,16 +1398,6 @@ public enum LanguageAdapter {
       statement.setNamespace(namespace);
       statement.setDocumentClass(KlabAsset.KnowledgeClass.BEHAVIOR);
     }
-  }
-
-  private KActorsBehavior.Type libraryKind(String sourceCode) {
-    if (sourceCode != null) {
-      var matcher = KACTORS_LIBRARY_KIND.matcher(sourceCode);
-      if (matcher.find() && "trait".equals(matcher.group(1))) {
-        return KActorsBehavior.Type.TRAITS;
-      }
-    }
-    return KActorsBehavior.Type.LIBRARY;
   }
 
   private KActorsStatement adaptActionStatement(
@@ -1495,6 +1480,7 @@ public enum LanguageAdapter {
         assign.getScope() == ActionStatementSyntax.Assignment.Scope.BLOCK
             ? KActorsStatement.Assignment.Scope.FRAME
             : KActorsStatement.Assignment.Scope.ACTOR);
+    ret.setAdaptedBehaviorUrn(assign.getCastToBehavior());
     if (assign.getValue() != null) {
       ret.setValue(
           adaptKActorsValue(

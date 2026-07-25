@@ -68,6 +68,18 @@ public class AgentCompiler {
     default ResolvedActor resolveActor(String urn, UserScope scope) {
       return null;
     }
+
+    /**
+     * Assess whether a value described by {@code sourceVariable} can be adapted to an instance of
+     * {@code targetBehavior}. Runtime environments may consult component adapters, source runtime
+     * types, or behavior-specific construction contracts.
+     */
+    default List<Notification> validateBehaviorAdaptation(
+        KActorsBehavior targetBehavior,
+        KActorsVisitor.VariableInfo sourceVariable,
+        UserScope scope) {
+      return List.of();
+    }
   }
 
   /** Compile-time view of a Java actor selected by validation. */
@@ -156,6 +168,22 @@ public class AgentCompiler {
           @Override
           public Verb.Type classifyActionCall(
               KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var variable = context.getVariable(verb.getRecipient());
+            if (variable != null && variable.agentUrn() != null) {
+              try {
+                var targetBehavior = resolver.resolveBehavior(variable.agentUrn(), scope);
+                if (targetBehavior != null) {
+                  return targetBehavior.getStatements().stream()
+                      .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
+                      .map(KActorsAction::getActionType)
+                      .filter(Objects::nonNull)
+                      .findFirst()
+                      .orElse(null);
+                }
+              } catch (Throwable ignored) {
+                // Adaptation validation reports target resolution failures.
+              }
+            }
             var imported =
                 context.getBehavior().getImports().stream()
               .filter(
@@ -205,6 +233,63 @@ public class AgentCompiler {
             return List.of(
                 Notification.error(
                     "Cannot resolve imported actor " + imported.getImportedBehavior()));
+          }
+
+          @Override
+          public List<Notification> validateAdaptation(
+              KActorsStatement.Assignment assignment,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            try {
+              var targetBehavior = resolver.resolveBehavior(behaviorUrn, scope);
+              if (targetBehavior == null) {
+                return List.of(
+                    Notification.error(
+                        "Cannot resolve adaptation behavior " + behaviorUrn));
+              }
+              return resolver.validateBehaviorAdaptation(targetBehavior, sourceVariable, scope);
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot validate adaptation to behavior " + behaviorUrn, failure));
+            }
+          }
+
+          @Override
+          public List<Notification> validateVerbCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var variable = context.getVariable(verb.getRecipient());
+            if (variable == null || variable.agentUrn() == null) {
+              return List.of();
+            }
+            try {
+              var targetBehavior = resolver.resolveBehavior(variable.agentUrn(), scope);
+              if (targetBehavior == null) {
+                return List.of(
+                    Notification.error(
+                        "Cannot resolve adapted behavior " + variable.agentUrn()));
+              }
+              boolean actionExists =
+                  targetBehavior.getStatements().stream()
+                      .anyMatch(action -> Objects.equals(action.getUrn(), verb.getMessage()));
+              return actionExists
+                  ? List.of()
+                  : List.of(
+                      Notification.error(
+                          "Behavior "
+                              + variable.agentUrn()
+                              + " has no action "
+                              + verb.getMessage()));
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot validate action "
+                          + verb.getMessage()
+                          + " on adapted behavior "
+                          + variable.agentUrn(),
+                      failure));
+            }
           }
         };
     return new Environment(validator, resolver);
@@ -794,6 +879,15 @@ public class AgentCompiler {
       CodeBlock.Builder code,
       CompilationContext context) {
     CodeBlock value = valueOrCall(assignment.getValue(), assignment.getFunction(), context);
+    if (assignment.getAdaptedBehaviorUrn() != null
+        && !assignment.getAdaptedBehaviorUrn().isBlank()) {
+      value =
+          CodeBlock.of(
+              "adaptToBehavior($L, $S, $L)",
+              value,
+              assignment.getAdaptedBehaviorUrn().trim(),
+              context.scope());
+    }
     if (assignment.getAssignmentScope() == KActorsStatement.Assignment.Scope.ACTOR) {
       code.addStatement("setActorState($S, $L)", assignment.getVariable(), value);
     } else {
