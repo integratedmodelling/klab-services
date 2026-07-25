@@ -131,7 +131,29 @@ public class RuntimeServerController {
       @RequestBody AgentInstantiationRequest request, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
 
-      var scope = authorization.getScope(ContextScope.class);
+      var authorizedScope = authorization.getScope();
+      if (!(authorizedScope instanceof UserScope)) {
+        throw new KlabInternalErrorException(
+            "Agent instantiation requires a user, session, or context scope");
+      }
+      UserScope scope = (UserScope) authorizedScope;
+      if (request.getObservationId() > 0) {
+        if (request.getBehavior().getBehaviorType() != KActorsBehavior.Type.BEHAVIOR
+            && request.getBehavior().getBehaviorType() != KActorsBehavior.Type.TASK) {
+          throw new KlabInternalErrorException(
+              "Only task and behavior agents can be bound to an observation");
+        }
+        if (!(scope instanceof ServiceContextScope contextScope)) {
+          throw new KlabInternalErrorException(
+              "An observation-bound agent requires a context scope");
+        }
+        var observation = contextScope.getObservation(request.getObservationId());
+        if (observation == null) {
+          throw new KlabInternalErrorException(
+              "Cannot find observation " + request.getObservationId() + " for agent binding");
+        }
+        scope = contextScope.within(observation);
+      }
       var options = EnumSet.noneOf(RuntimeAgent.CompilationOptions.class);
       if (request.isCompileOnly()) {
         options.add(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA);

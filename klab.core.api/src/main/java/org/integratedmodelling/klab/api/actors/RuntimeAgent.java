@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -56,7 +57,10 @@ public interface RuntimeAgent {
    * @param state current lifecycle state
    * @param viable whether the agent can still be used
    * @param detail optional status or failure detail
-   * @param timestamp sender-side timestamp
+   * @param timestamp sender-side snapshot timestamp
+   * @param observationId represented observation ID, or {@link Observation#UNASSIGNED_ID}
+   * @param startedAt first-start timestamp, or {@code -1}
+   * @param lastActivityAt latest message or reactor activity timestamp, or {@code -1}
    */
   final class Status implements Serializable {
 
@@ -67,15 +71,41 @@ public interface RuntimeAgent {
     private boolean viable;
     private String detail;
     private long timestamp;
+    private long observationId = Observation.UNASSIGNED_ID;
+    private long startedAt = -1;
+    private long lastActivityAt = -1;
 
     public Status() {}
 
     public Status(String agentUrn, State state, boolean viable, String detail, long timestamp) {
+      this(
+          agentUrn,
+          state,
+          viable,
+          detail,
+          timestamp,
+          Observation.UNASSIGNED_ID,
+          -1,
+          -1);
+    }
+
+    public Status(
+        String agentUrn,
+        State state,
+        boolean viable,
+        String detail,
+        long timestamp,
+        long observationId,
+        long startedAt,
+        long lastActivityAt) {
       this.agentUrn = agentUrn;
       this.state = state;
       this.viable = viable;
       this.detail = detail;
       this.timestamp = timestamp;
+      this.observationId = observationId;
+      this.startedAt = startedAt;
+      this.lastActivityAt = lastActivityAt;
     }
 
     public String agentUrn() {
@@ -98,6 +128,18 @@ public interface RuntimeAgent {
       return timestamp;
     }
 
+    public long observationId() {
+      return observationId;
+    }
+
+    public long startedAt() {
+      return startedAt;
+    }
+
+    public long lastActivityAt() {
+      return lastActivityAt;
+    }
+
     public void setAgentUrn(String agentUrn) {
       this.agentUrn = agentUrn;
     }
@@ -116,6 +158,18 @@ public interface RuntimeAgent {
 
     public void setTimestamp(long timestamp) {
       this.timestamp = timestamp;
+    }
+
+    public void setObservationId(long observationId) {
+      this.observationId = observationId;
+    }
+
+    public void setStartedAt(long startedAt) {
+      this.startedAt = startedAt;
+    }
+
+    public void setLastActivityAt(long lastActivityAt) {
+      this.lastActivityAt = lastActivityAt;
     }
   }
 
@@ -268,6 +322,33 @@ public interface RuntimeAgent {
    * @return
    */
   URL getURL();
+
+  /**
+   * Return the observation represented or monitored by this agent.
+   *
+   * @return the service-side observation, or {@code null} for an unbound agent
+   */
+  Observation getObservation();
+
+  /**
+   * Return the scope selected by the runtime when this agent was created.
+   *
+   * <p>For scripts, applications, and test cases this is the dedicated session owned by the
+   * agent. For user behaviors it is the root user scope owning the request. For tasks and ordinary
+   * behaviors it is the user, session, or context scope under which the creation request was made.
+   *
+   * @return the service-side creation scope, or {@code null} when unavailable
+   */
+  org.integratedmodelling.klab.api.scope.Scope getCreationScope();
+
+  /** @return the epoch-millisecond timestamp at which this agent first started, or {@code -1}. */
+  long getStartedAt();
+
+  /**
+   * @return the epoch-millisecond timestamp of the latest message or reactor activity, or
+   *     {@code -1}
+   */
+  long getLastActivityAt();
 
   /**
    * Send an agent-communication message to a local or remote agent peer identified by URN.

@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.runtime.kactors.actors.ContextActor;
-import org.integratedmodelling.klab.runtime.kactors.TestScope;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 
 /**
@@ -73,7 +72,7 @@ public abstract class TestOutput extends TestCaseBase {
    *
    * @param testScope
    */
-  void action_t1(TestScope testScope /* , ... any parameters */) {
+  void action_t1(TestCaseScope testScope /* , ... any parameters */) {
 
     /* initialize closeables used within an action, in a try-with-resources block */
 //    try (var inspector = new Inspector(testScope, scope)) {

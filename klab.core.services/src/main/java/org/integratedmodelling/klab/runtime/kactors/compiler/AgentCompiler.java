@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Ternary;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -87,6 +88,9 @@ public class AgentCompiler {
     }
   }
 
+  /** Stable pair of runtime-aware compiler extension points. */
+  public record Environment(KActorsVisitor.Validator validator, Resolver resolver) {}
+
   private static final Resolver DEFAULT_RESOLVER = new Resolver() {};
   private static final Map<String, Class<? extends RuntimeAgentBase>> compiledActorClasses =
       new ConcurrentHashMap<>();
@@ -104,6 +108,7 @@ public class AgentCompiler {
   private final IdentityHashMap<KActorsValue, String> expressionFields = new IdentityHashMap<>();
   private final Map<String, KActorsVisitor.ImportInfo> imports = new LinkedHashMap<>();
   private final Map<String, ResolvedActor> resolvedActors = new LinkedHashMap<>();
+  private final Set<Class<?>> requiredRuntimeClasses = new LinkedHashSet<>();
   private final Map<String, KActorsBehavior> inheritedBehaviors = new LinkedHashMap<>();
   private final Map<String, String> inheritedFields = new LinkedHashMap<>();
   private final BehaviorAnalyzer analyzer;
@@ -136,6 +141,73 @@ public class AgentCompiler {
         return new ResolvedActor(descriptor, implementations);
       }
     };
+  }
+
+  /**
+   * Build the compiler environment used by a runtime service. The resolver combines the resources
+   * visible in the supplied scope with the live component registry; the validator uses the same
+   * view to classify imported k.Actors actions and Java verbs.
+   */
+  public static Environment runtimeEnvironment(ComponentRegistry registry, UserScope scope) {
+    Objects.requireNonNull(registry, "registry");
+    var resolver = componentResolver(registry);
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var imported =
+                context.getBehavior().getImports().stream()
+              .filter(
+                  candidate ->
+                      Objects.equals(candidate.getImportedAlias(), verb.getRecipient()))
+                    .findFirst()
+                    .orElse(null);
+            if (imported == null) {
+              return null;
+            }
+            try {
+              var importedBehavior =
+                  resolver.resolveBehavior(imported.getImportedBehavior(), scope);
+              if (importedBehavior != null) {
+                return importedBehavior.getStatements().stream()
+              .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
+                    .map(KActorsAction::getActionType)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+              }
+              var actor = resolver.resolveActor(imported.getImportedBehavior(), scope);
+              var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
+              if (implementation != null && implementation.method != null) {
+                var annotation = implementation.method.getAnnotation(Verb.class);
+                return annotation == null ? Verb.Type.FUNCTION : annotation.executionType();
+              }
+            } catch (Throwable ignored) {
+              // Import validation below reports resolution failures with their source context.
+            }
+            return null;
+          }
+
+          @Override
+          public List<Notification> validateImport(
+              KActorsBehavior.Import imported, KActorsVisitor.KActorsContext context) {
+            try {
+              if (resolver.resolveBehavior(imported.getImportedBehavior(), scope) != null
+                  || resolver.resolveActor(imported.getImportedBehavior(), scope) != null) {
+                return List.of();
+              }
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot resolve imported actor " + imported.getImportedBehavior(), failure));
+            }
+            return List.of(
+                Notification.error(
+                    "Cannot resolve imported actor " + imported.getImportedBehavior()));
+          }
+        };
+    return new Environment(validator, resolver);
   }
 
   public AgentCompiler(String behaviorUrn, UserScope scope) {
@@ -212,10 +284,15 @@ public class AgentCompiler {
 
   private void resolveImportsAndCompileDependencies(Set<String> path) {
     resolvedActors.clear();
+    requiredRuntimeClasses.clear();
     for (var imported : analyzer.getImports()) {
       var actor = resolver.resolveActor(imported.behaviorUrn(), scope);
       if (actor != null) {
         resolvedActors.put(imported.name(), actor);
+        actor.verbs().values().stream()
+            .map(implementation -> implementation == null ? null : implementation.implementation)
+            .filter(Objects::nonNull)
+            .forEach(requiredRuntimeClasses::add);
         continue;
       }
       var importedBehavior = resolver.resolveBehavior(imported.behaviorUrn(), scope);
@@ -228,6 +305,7 @@ public class AgentCompiler {
       if (compiler.analyzer.analyze()) {
         compiler.indexAnalysis();
         compiler.resolveImportsAndCompileDependencies(nextPath);
+        requiredRuntimeClasses.addAll(compiler.requiredRuntimeClasses);
         var javaFile = compiler.generateClass(importedBehavior);
         if (javaFile != null) {
           compiler.sourceCode = javaFile.toString();
@@ -250,6 +328,7 @@ public class AgentCompiler {
       if (compiler.analyzer.analyze()) {
         compiler.indexAnalysis();
         compiler.resolveImportsAndCompileDependencies(nextPath);
+        requiredRuntimeClasses.addAll(compiler.requiredRuntimeClasses);
         var javaFile = compiler.generateClass(inheritedBehavior);
         if (javaFile != null) {
           compiler.sourceCode = javaFile.toString();
@@ -294,6 +373,14 @@ public class AgentCompiler {
   /** The binary name of the primary generated class, available after {@link #compile()}. */
   public String getQualifiedClassName() {
     return qualifiedClassName;
+  }
+
+  /**
+   * Runtime extension classes referenced by generated source, including recursively generated
+   * imported and inherited behaviors.
+   */
+  public Set<Class<?>> getRequiredRuntimeClasses() {
+    return Set.copyOf(requiredRuntimeClasses);
   }
 
   private JavaFile generateClass(KActorsBehavior sourceBehavior) {
@@ -359,7 +446,7 @@ public class AgentCompiler {
     type.addMethod(
         MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
-            .addStatement("this(null, null, $T.of(), new Object[0])", Map.class)
+            .addStatement("this(null, null, null, null, $T.of(), new Object[0])", Map.class)
             .build());
     type.addMethod(
         MethodSpec.constructorBuilder()
@@ -367,10 +454,9 @@ public class AgentCompiler {
             .addParameter(SessionScope.class, "scope")
             .addParameter(ArrayTypeName.of(ClassName.get(Object.class)), "initArguments")
             .varargs(true)
-            .addStatement("this(null, scope, $T.of(), initArguments)", Map.class)
+            .addStatement("this(null, scope, null, scope, $T.of(), initArguments)", Map.class)
             .build());
-
-    var constructor =
+    type.addMethod(
         MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
             .addParameter(KActorsBehavior.class, "behavior")
@@ -381,11 +467,43 @@ public class AgentCompiler {
                 "importedActors")
             .addParameter(ArrayTypeName.of(ClassName.get(Object.class)), "initArguments")
             .varargs(true)
-            .addStatement("super(behavior, scope)");
+            .addStatement("this(behavior, scope, null, scope, importedActors, initArguments)")
+            .build());
+    type.addMethod(
+        MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(KActorsBehavior.class, "behavior")
+            .addParameter(SessionScope.class, "scope")
+            .addParameter(Observation.class, "observation")
+            .addParameter(
+                ParameterizedTypeName.get(
+                    ClassName.get(Map.class), ClassName.get(String.class), ClassName.get(Object.class)),
+                "importedActors")
+            .addParameter(ArrayTypeName.of(ClassName.get(Object.class)), "initArguments")
+            .varargs(true)
+            .addStatement(
+                "this(behavior, scope, observation, scope, importedActors, initArguments)")
+            .build());
+
+    var constructor =
+        MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(KActorsBehavior.class, "behavior")
+            .addParameter(SessionScope.class, "scope")
+            .addParameter(Observation.class, "observation")
+            .addParameter(
+                org.integratedmodelling.klab.api.scope.Scope.class, "creationScope")
+            .addParameter(
+                ParameterizedTypeName.get(
+                    ClassName.get(Map.class), ClassName.get(String.class), ClassName.get(Object.class)),
+                "importedActors")
+            .addParameter(ArrayTypeName.of(ClassName.get(Object.class)), "initArguments")
+            .varargs(true)
+            .addStatement("super(behavior, scope, observation, creationScope)");
 
     for (var entry : inheritedBehaviors.entrySet()) {
       constructor.addStatement(
-          "this.$L = registerInheritedBehavior(new $T(null, scope, importedActors, new Object[0]))",
+          "this.$L = registerInheritedBehavior(new $T(null, scope, observation, creationScope, importedActors, new Object[0]))",
           inheritedFields.get(entry.getKey()),
           generatedClass(entry.getValue().getUrn()));
     }

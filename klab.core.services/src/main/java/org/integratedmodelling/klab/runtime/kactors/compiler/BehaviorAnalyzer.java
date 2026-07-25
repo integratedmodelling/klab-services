@@ -4,7 +4,10 @@ import java.util.*;
 import org.integratedmodelling.klab.api.lang.kactors.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
+import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 
 /**
  * Analyze the behavior and collect information for code generation. The compiler uses a
@@ -55,6 +58,13 @@ public class BehaviorAnalyzer {
   public boolean analyze() {
 
     notifications.clear();
+    agentClass =
+        switch (behavior.getBehaviorType()) {
+          case APP -> ApplicationBase.class;
+          case SCRIPT -> ScriptBase.class;
+          case UNITTEST -> TestCaseBase.class;
+          default -> RuntimeAgentBase.class;
+        };
     var visitor = new KActorsVisitor();
     visitor.visit(behavior, validator);
     notifications.addAll(visitor.getNotifications());

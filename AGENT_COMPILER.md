@@ -112,12 +112,15 @@ the legacy `getCompiledClass(urn)` lookup is populated as well.
 
 - resolves a behavior URN through `ResourcesService`, unless the caller already has the parsed
   behavior;
-- caches successful classes and compilation failures by behavior URN, version, and creation
-  timestamp;
+- accepts the same `KActorsVisitor.Validator` and `AgentCompiler.Resolver` used by direct compiler
+  calls, and uses them for both source-only translation and class compilation;
+- caches successful classes and compilation failures by behavior URN, version, creation timestamp,
+  and compiler-environment identity;
 - submits the primary and recursively generated sources to the JDK `JavaCompiler` in one task;
 - retains bytecode in memory and loads it through a registry-owned class loader;
 - invokes the generated
-  `(KActorsBehavior, SessionScope, Map<String, Object>, Object...)` constructor;
+  `(KActorsBehavior, SessionScope, Observation, Scope, Map<String, Object>, Object...)`
+  constructor, where the separate `Scope` is the exact creation scope;
 - assigns a unique `<scope-id>:agent:<id>` URN and indexes the stopped instance by that URN;
 - returns Java diagnostics as error notifications if class compilation or loading fails.
 
@@ -125,6 +128,34 @@ the legacy `getCompiledClass(urn)` lookup is populated as well.
 `DO_NOT_COMPILE_JAVA` stops after source translation and validation and does not create a class or
 instance. Explicitly stopped agents remove themselves from the instance registry; naturally
 finished finite agents may remain available for inspection until `releaseAgent(urn)` is called.
+
+`AgentCompiler.runtimeEnvironment(componentRegistry, scope)` builds the production pair used by
+`RuntimeService`. Its resolver combines scope-visible k.Actors resources with actors and reflective
+implementations from the live component registry. Its validator uses the same environment to
+validate imports and classify imported k.Actors actions and Java verbs. `RuntimeService` retains a
+stable environment per scope identity so the registry cache can safely distinguish it from
+lenient or caller-supplied environments.
+
+When compilation represents or monitors an observation, `RuntimeService` selects that observation
+before calling the registry. A `BEHAVIOR` or `TASK` may own the focused observation; other behavior
+kinds and `DO_NOT_BIND_OBSERVATION` remain unbound. The runtime owns the actual `Observation`
+object and exposes it through `RuntimeAgent.getObservation()`; serialized handles expose only its
+ID.
+
+Creation scope ownership is selected before compilation. `TASK` and `BEHAVIOR` retain the exact
+authorized user, session, or context scope. A positive observation ID is accepted only for these
+two kinds, requires a `ServiceContextScope`, and is resolved through that context's knowledge graph
+before a child scope is focused on it. `SCRIPT`, `APPLICATION`, and `TESTCASE` instead receive a
+new session traced from the requesting scope's root `ServiceUserScope`. That session is registered
+before construction and released when the root agent scope terminates, including startup failure
+and explicit stop. Source-only translation creates no dedicated session.
+
+`USER` behaviors are moved to that same root `ServiceUserScope`, even when requested from a
+session or context. `COMPONENT` and `TRAITS` are rejected by direct runtime creation; recursive
+compilation and construction through imports or inheritance remain valid.
+
+`RuntimeAgent.getCreationScope()` exposes the selected scope to Java implementations. It is
+available during generated construction and `init`, not merely after messaging is connected.
 
 ## 4. Semantic analysis
 
@@ -225,8 +256,11 @@ available. The inferred lifecycle is currently:
 | `SUPPLIER` | `FINITE` |
 | `EMITTER` | `PERSISTENT` |
 
-`BehaviorAnalyzer.agentClass` currently remains `RuntimeAgentBase.class`. Selecting specialized
-bases such as `ScriptBase`, `TestCaseBase`, or `ApplicationBase` is an open extension point.
+`BehaviorAnalyzer.agentClass` selects `ScriptBase`, `TestCaseBase`, or `ApplicationBase` for
+`SCRIPT`, `UNITTEST`, and `APP` respectively; other compilable types use `RuntimeAgentBase`. Each
+specialized base owns a nested `AgentScope` subtype and overrides `initializeScope()`. Its
+covariant `withId(...)` creates the same specialized type, retaining session and context bindings
+in every derived action scope.
 
 ## 5. Import and actor resolution
 
@@ -316,11 +350,13 @@ The compiler emits:
 - a no-argument constructor;
 - a `(SessionScope, Object... initArguments)` constructor;
 - a full `(KActorsBehavior, SessionScope, Map<String,Object> importedActors,
-  Object... initArguments)` constructor.
+  Object... initArguments)` compatibility constructor;
+- the registry constructor `(KActorsBehavior, SessionScope, Observation, Scope creationScope,
+  Map<String,Object> importedActors, Object... initArguments)`.
 
 The full constructor:
 
-1. calls `super(behavior, scope)`;
+1. calls `super(behavior, scope, observation, creationScope)`;
 2. compiles expression fields with `compileExpression(source)`;
 3. resolves imported actor fields;
 4. invokes `init` according to its effective type.
@@ -597,9 +633,12 @@ All agent traffic has `Message.MessageClass.AgentCommunication`. Its currently s
 | `AgentFailed` | Runtime peer to subscribers; `RuntimeAgent.Status`. |
 | `CustomAgentMessage` | Either direction; `RuntimeAgent.CustomMessage`. |
 
-`RuntimeAgent.Status` carries the agent URN, lifecycle state, viability, optional detail, and
-timestamp. `RuntimeAgent.CustomMessage` carries a mandatory `Constant` discriminator, a
-serializable payload, and the sender-side payload class name used only as a mediation hint.
+`RuntimeAgent.Status` carries the agent URN, lifecycle state, viability, optional detail, snapshot
+timestamp, represented observation ID (`-1` when unbound), first-start timestamp, and latest
+message/reactor-activity timestamp. The latter two are `-1` before the corresponding activity and
+allow clients to calculate idle time without service-local state. `RuntimeAgent.CustomMessage`
+carries a mandatory `Constant` discriminator, a serializable payload, and the sender-side payload
+class name used only as a mediation hint.
 
 `AgentEventBus.INSTANCE` lives in `klab.core.common`, where both clients and services can use it.
 It owns all live transport state so that `AgentImpl` remains a serializable data object. A
@@ -623,6 +662,14 @@ canonical instance URN. The method requires a creating scope that is a connected
 `MessagingChannel`. Missing or disconnected messaging is not an agent-creation failure: it
 returns `false` and adds an info notification to the returned agent. Explicit stop and registry
 release close the runtime subscription.
+
+The REST instantiation controller must preserve the authorized scope subtype. User-scoped IDE
+launches pass the authorized `UserScope`; observation-bound requests resolve the requested ID in a
+`ServiceContextScope` and focus a child scope on it. Request DTOs use `Observation.UNASSIGNED_ID`
+as their default so an omitted ID cannot accidentally select the context root/query sentinel.
+Only positive IDs request observation binding. Agent-owned sessions are created by
+`RuntimeService`, rather than the controller, so direct service callers receive the same ownership
+and cleanup semantics.
 
 ### 11.2 Runtime dispatch and reply handles
 
@@ -694,10 +741,13 @@ when introducing incompatible revisions. Registration is currently process-wide 
 component-unload invalidation hook, so hot replacement of a DTO class requires coordinated
 component lifecycle handling.
 
-This payload registry solves PF4J class identity for message rehydration. It does not yet make the
-generated-source compiler's parent classloader and classpath fully component-aware; generated
-agents that directly reference dynamically loaded implementation classes still require the
-classloader work listed below.
+The compiler also retains every Java implementation `Class` returned by the resolver. The
+in-memory javac classpath includes each implementation's code source, and the generated-class
+loader delegates to the defining classloaders of those classes as well as the runtime thread
+context loader. This preserves PF4J class identity when generated agents directly reference an
+on-demand extension class. Directory classpath entries are exposed explicitly to javac as a
+defensive measure for embedded/test launchers whose standard file manager does not enumerate
+them.
 
 ### 11.4 Interactive console protocol
 
@@ -740,8 +790,8 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 ### 12.1 Compilation and deployment
 
-- Extend cache identity beyond URN, version, and behavior timestamp when validator, worldview,
-  component-set, or component-classloader changes must invalidate a class.
+- Extend cache identity beyond the current validator/resolver object identities when worldview,
+  component-set revision, or component-classloader replacement must invalidate a class.
 - Instantiate and wire recursively generated behavior imports.
 - Detect and report dependency cycles and unresolved imports consistently.
 - Carry initialization arguments into construction. The registry constructor seam is ready, but
@@ -749,7 +799,8 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 ### 12.2 Class and behavior composition
 
-- Select specialized runtime bases for scripts, tests, applications, and other behavior types.
+- Flesh out the specialized script, test-case, and application scopes beyond their current typed
+  lifecycle stubs.
 - Generalize inherited action/state composition beyond the retained delegates currently used for
   `@handle` actions.
 - Decide how imported behavior versions are selected.
@@ -766,9 +817,10 @@ The following items are either explicit TODOs or incomplete integration boundari
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are
   still partially marked TODO in `ComponentRegistry`.
 - Add quantity/unit, geometry, observable, scope, and service-specific parameter mediation.
-- Make the generated-code compiler and cache component-classloader aware. Custom message DTO
-  mediation is PF4J-safe through explicit class registration, but direct generated references are
-  a separate classloading boundary.
+- Add component-unload invalidation for generated classes and registered custom-message DTOs.
+  Compilation and loading already retain resolver-supplied implementation classes and their
+  defining PF4J loaders, so unloading or replacing a component must invalidate those references
+  before the old loader can be collected.
 
 ### 12.4 Generated language semantics
 
@@ -831,8 +883,8 @@ construction into `RuntimeAgentBase.literalValue(...)` or a more specific runtim
 
 The in-memory backend is implemented by `AgentRegistry`. Backend extensions should preserve its
 single-task compilation of all `getGeneratedSources()` entries and atomic result caching. Likely
-extensions are mapping Java diagnostics back to original k.Actors lexical locations and choosing a
-component-aware parent classloader when imported Java actors come from plug-ins.
+extensions are mapping Java diagnostics back to original k.Actors lexical locations and adding
+component lifecycle invalidation when imported Java actors come from plug-ins.
 
 ## 14. Tests and development workflow
 

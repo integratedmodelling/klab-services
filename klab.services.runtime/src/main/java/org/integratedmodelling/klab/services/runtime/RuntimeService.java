@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -60,6 +61,8 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.runtime.AgentRegistry;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -83,6 +86,8 @@ public class RuntimeService extends BaseService
   //  private SystemLauncher systemLauncher;
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
+  private final ConcurrentMap<String, AgentCompiler.Environment> agentCompilerEnvironments =
+      new ConcurrentHashMap<>();
 
   /**
    * We keep identification strategies for each concept encountered. The base one is implemented for
@@ -1273,24 +1278,165 @@ public class RuntimeService extends BaseService
         options == null
             ? java.util.Set.<RuntimeAgent.CompilationOptions>of()
             : java.util.Set.copyOf(options);
+    var creation =
+        selectAgentCreationScope(
+            behavior,
+            suggestedAgentName,
+            scope,
+            requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
+    var creationScope = creation.scope();
+    var ownedSession = creation.ownedSession();
 
     var request = new AgentImpl();
     request.setBehaviorUrn(behavior.getUrn());
     request.setName(suggestedAgentName);
+    var observation = representedObservation(behavior, requestedOptions, creationScope);
+    String scopeIdentity =
+        creationScope instanceof ServiceSideScope serviceScope ? serviceScope.getId() : null;
+    if (scopeIdentity == null || scopeIdentity.isBlank()) {
+      scopeIdentity =
+          creationScope.getIdentity() == null ? null : creationScope.getIdentity().getId();
+    }
+    String compilerEnvironmentKey =
+        scopeIdentity == null || scopeIdentity.isBlank()
+            ? creationScope.getClass().getName()
+                + "@"
+                + System.identityHashCode(creationScope)
+            : creationScope.getClass().getName() + ":" + scopeIdentity;
+    var environment =
+        agentCompilerEnvironments.computeIfAbsent(
+            compilerEnvironmentKey,
+            ignored -> AgentCompiler.runtimeEnvironment(getComponentRegistry(), creationScope));
 
-    var ret =
-        AgentRegistry.INSTANCE.getOrCreateAgent(
-            request,
-            behavior,
-            scope,
-            requestedOptions.toArray(RuntimeAgent.CompilationOptions[]::new));
+    org.integratedmodelling.klab.api.actors.Agent ret;
+    try {
+      ret =
+          AgentRegistry.INSTANCE.getOrCreateAgent(
+              request,
+              behavior,
+              creationScope,
+              observation,
+              environment.validator(),
+              environment.resolver(),
+              requestedOptions.toArray(RuntimeAgent.CompilationOptions[]::new));
+    } catch (Throwable failure) {
+      if (ownedSession != null) {
+        releaseAgentSession(ownedSession);
+      }
+      if (failure instanceof RuntimeException runtimeFailure) {
+        throw runtimeFailure;
+      }
+      if (failure instanceof Error error) {
+        throw error;
+      }
+      throw new KlabInternalErrorException(failure);
+    }
+
+    Runnable releaseOwnedSession = null;
+    if (ownedSession != null) {
+      var released = new AtomicBoolean(false);
+      releaseOwnedSession =
+          () -> {
+            if (released.compareAndSet(false, true) && !releaseAgentSession(ownedSession)) {
+              Logging.INSTANCE.warn(
+                  "Cannot release agent-owned session " + ownedSession.getId());
+            }
+          };
+      var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(ret.getUrn());
+      if (ret.isViable() && runtime instanceof RuntimeAgentBase runtimeAgent) {
+        runtimeAgent.onTermination(releaseOwnedSession);
+      } else {
+        releaseOwnedSession.run();
+      }
+    }
 
     if (!requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)
         && ret.isViable()) {
-      ret.start();
+      if (!ret.start() && releaseOwnedSession != null) {
+        releaseOwnedSession.run();
+      }
     }
 
     return ret;
+  }
+
+  private record AgentCreationScope(UserScope scope, ServiceSessionScope ownedSession) {}
+
+  private AgentCreationScope selectAgentCreationScope(
+      KActorsBehavior behavior,
+      String suggestedAgentName,
+      UserScope requestScope,
+      boolean compileOnly) {
+    Objects.requireNonNull(behavior, "behavior");
+    Objects.requireNonNull(requestScope, "scope");
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.COMPONENT
+        || behavior.getBehaviorType() == KActorsBehavior.Type.TRAITS) {
+      throw new KlabIllegalArgumentException(
+          behavior.getBehaviorType()
+              + " behaviors cannot be created as independent runtime agents");
+    }
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.USER) {
+      return new AgentCreationScope(rootServiceUserScope(requestScope), null);
+    }
+    if (compileOnly
+        || (behavior.getBehaviorType() != KActorsBehavior.Type.SCRIPT
+            && behavior.getBehaviorType() != KActorsBehavior.Type.APP
+            && behavior.getBehaviorType() != KActorsBehavior.Type.UNITTEST)) {
+      return new AgentCreationScope(requestScope, null);
+    }
+
+    ServiceUserScope userScope = rootServiceUserScope(requestScope);
+
+    var session = new ServiceSessionScope(userScope);
+    String userId = userScope.getId();
+    session.setId(
+        (userId == null || userId.isBlank() ? "agent" : userId)
+            + ".agent-"
+            + Utils.Names.shortUUID());
+    session.setName(
+        suggestedAgentName == null || suggestedAgentName.isBlank()
+            ? behavior.getUrn()
+            : suggestedAgentName);
+    session.setHostServiceId(serviceId());
+    session.setStatus(Scope.Status.WAITING);
+    declareSessionScope(session, userScope, behavior);
+    return new AgentCreationScope(session, session);
+  }
+
+  private ServiceUserScope rootServiceUserScope(UserScope requestScope) {
+    ServiceUserScope userScope =
+        requestScope.getType() == Scope.Type.USER && requestScope instanceof ServiceUserScope user
+            ? user
+            : requestScope.getParentScope(Scope.Type.USER, ServiceUserScope.class);
+    if (userScope == null || userScope.getType() != Scope.Type.USER) {
+      throw new KlabInternalErrorException(
+          "Cannot trace a legitimate root service user scope for agent creation");
+    }
+    return userScope;
+  }
+
+  private boolean releaseAgentSession(ServiceSessionScope session) {
+    boolean closed = releaseSession(session);
+    boolean unregistered = getScopeManager().releaseScope(session.getId());
+    return closed && unregistered;
+  }
+
+  private Observation representedObservation(
+      KActorsBehavior behavior,
+      Set<RuntimeAgent.CompilationOptions> options,
+      UserScope scope) {
+    if (options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION)
+        || !(scope instanceof ContextScope contextScope)) {
+      return null;
+    }
+    var observation = contextScope.getContextObservation();
+    if (observation == null) {
+      return null;
+    }
+    return switch (behavior.getBehaviorType()) {
+      case BEHAVIOR, TASK -> observation;
+      default -> null;
+    };
   }
 
   /**

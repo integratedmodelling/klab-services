@@ -5,17 +5,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.junit.jupiter.api.Test;
 
 class AgentRegistryTest {
@@ -69,6 +76,47 @@ class AgentRegistryTest {
     assertNotNull(((AgentImpl) translated).getJavaCode());
     assertEquals(classesBefore, AgentRegistry.INSTANCE.getCompiledBehaviorCount());
     assertEquals(agentsBefore, AgentRegistry.INSTANCE.getRegisteredAgentCount());
+  }
+
+  @Test
+  void customCompilerEnvironmentAndObservationReachTheRuntimeInstance() {
+    var behavior =
+        finiteBehavior("test.registry.environment." + UUID.randomUUID().toString().replace("-", ""));
+    var validations = new AtomicInteger();
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public List<org.integratedmodelling.klab.api.services.runtime.Notification>
+              validateBehavior(
+                  KActorsBehavior source, KActorsVisitor.KActorsContext context) {
+            validations.incrementAndGet();
+            return List.of();
+          }
+        };
+    var resolver = new AgentCompiler.Resolver() {};
+    var observation = mock(Observation.class);
+    var creationScope = mock(UserScope.class);
+    when(observation.getId()).thenReturn(73L);
+    when(observation.getName()).thenReturn("represented agent");
+
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "ignored"),
+            behavior,
+            creationScope,
+            observation,
+            validator,
+            resolver);
+
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    assertTrue(validations.get() > 0);
+    var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
+    assertNotNull(runtime);
+    assertSame(observation, runtime.getObservation());
+    assertSame(creationScope, runtime.getCreationScope());
+    assertEquals(-1, runtime.getStartedAt());
+    assertEquals(-1, runtime.getLastActivityAt());
+    assertTrue(handle.stop());
   }
 
   private static AgentImpl request(String behaviorUrn, String name) {

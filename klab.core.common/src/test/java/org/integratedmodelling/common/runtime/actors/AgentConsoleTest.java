@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -60,6 +61,55 @@ class AgentConsoleTest {
         List.of(
             new AgentConsole.Output(RuntimeAgent.ConsoleMessageType.STDOUT, "ready\n")),
         output);
+  }
+
+  @Test
+  void clientHandleRetainsObservationAndActivityFromStatusMessages() {
+    var agent = new AgentImpl();
+    agent.setUrn("test:agent:status");
+    agent.setViable(true);
+
+    agent.receiveMessage(
+        Message.create(
+            "test:agent:status",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.AgentStatusChanged,
+            new RuntimeAgent.Status(
+                "test:agent:status",
+                RuntimeAgent.State.RUNNING,
+                true,
+                null,
+                1_050L,
+                42L,
+                1_000L,
+                1_040L)));
+
+    assertEquals(42L, agent.getObservationId());
+    assertEquals(1_000L, agent.getStartedAt());
+    assertEquals(1_040L, agent.getLastActivityAt());
+    assertEquals(true, agent.isAlive());
+  }
+
+  @Test
+  void extendedAgentStatusSurvivesJacksonRoundTrip() throws Exception {
+    var status =
+        new RuntimeAgent.Status(
+            "test:agent:status",
+            RuntimeAgent.State.RUNNING,
+            true,
+            null,
+            1_050L,
+            42L,
+            1_000L,
+            1_040L);
+    var mapper = JacksonConfiguration.newObjectMapper();
+
+    var restored =
+        mapper.readValue(mapper.writeValueAsString(status), RuntimeAgent.Status.class);
+
+    assertEquals(42L, restored.observationId());
+    assertEquals(1_000L, restored.startedAt());
+    assertEquals(1_040L, restored.lastActivityAt());
   }
 
   private static final class RecordingAgent implements Agent {

@@ -105,7 +105,9 @@ must be chosen as stable, globally meaningful names when the behavior will be sh
 
 The Java API also reserves `USER` and `TASK` behavior types. The current Xtext grammar does not
 expose source keywords for them; do not invent `user` or `task` declarations until the grammar is
-extended.
+extended. Through the Java API, a `USER` behavior always runs in the root user scope that owns the
+requesting session or context. Components and traits cannot be started through direct runtime
+agent creation; they are instantiated only as imports or incorporated through inheritance.
 
 ### 3.2. Imports
 
@@ -254,8 +256,10 @@ warning instead of loading an arbitrary class named by the message.
 
 Start, stop, status request, status change, and failure are runtime lifecycle messages rather than
 custom constants. Remote handles use these to control a running peer and maintain their local
-view of its state. Correlated `ask`/reply is not implemented yet; a handler can currently respond
-by sending a normal message through its injected `sender` handle.
+view of its state. Status includes the represented observation ID (`-1` when unbound), when the
+agent first started, and the latest message or reactor activity, allowing clients to calculate
+idle time. Correlated `ask`/reply is not implemented yet; a handler can currently respond by
+sending a normal message through its injected `sender` handle.
 
 Messaging is available only when the scope used to create or reconnect the agent has a connected
 messaging channel. Agent creation still succeeds without one: messaging is disabled and the
@@ -710,6 +714,28 @@ it in the requested user/session scope. The returned runtime agent can receive m
 status until it finishes or is explicitly stopped. When the creating scope is connected to
 messaging, the returned handle's URN also identifies its bidirectional message endpoint; otherwise
 the agent runs normally with messaging disabled and an explanatory info notification.
+
+Scope ownership follows the behavior kind:
+
+- a `task` or ordinary `behavior` runs in the exact user, session, or context scope from the
+  request;
+- a `script`, `app`, or `testcase` receives a new private session traced from the requesting
+  user's root scope. The runtime releases that session automatically when the agent finishes,
+  fails during startup, or is explicitly stopped;
+- a `USER` behavior runs in the root user scope that owns the request;
+- a component or trait cannot be run independently.
+
+Only tasks and behaviors may request an observation binding. A positive observation ID requires a
+context-scoped request; the runtime retrieves that observation from the context's knowledge graph
+and fails creation if it does not exist. The running agent exposes both the represented
+observation, when any, and its exact creation scope to Java extensions through the `RuntimeAgent`
+API. A source-only compile creates neither an agent nor a private session.
+
+When called in a focused context, the runtime may bind a `BEHAVIOR` or `TASK` to the focused
+observation. The runtime owns that observation; remote
+handles retain only its numeric ID. `DO_NOT_BIND_OBSERVATION` forces an unbound agent. Calls made
+from a user scope, such as manual runs from the IDE, remain user-scoped and do not require a
+context.
 
 The parser grammar is ahead of parts of the Java compiler, and extension-provided verb catalogs are
 still evolving. When documentation, historical examples, and implementation disagree:

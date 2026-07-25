@@ -2,13 +2,26 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.tools.DiagnosticCollector;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.klab.api.collections.Constant;
@@ -24,6 +37,10 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
+import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class BehaviorAnalyzerTest {
@@ -647,15 +664,163 @@ class BehaviorAnalyzerTest {
             return source;
           }
         };
+    var classPath = compilerClassPath();
+    var standard = compiler.getStandardFileManager(diagnostics, null, null);
+    try {
+      standard.setLocationFromPaths(StandardLocation.CLASS_PATH, classPath);
+    } catch (IOException e) {
+      fail(e);
+    }
+    var fileManager = new DirectoryClasspathFileManager(standard, classPath);
     var task =
         compiler.getTask(
             null,
-            null,
+            fileManager,
             diagnostics,
-            List.of("-proc:none", "-classpath", System.getProperty("java.class.path")),
+            List.of("-proc:none"),
             null,
             List.of(unit));
     assertTrue(task.call(), () -> diagnostics.getDiagnostics().toString() + "\n" + source);
+  }
+
+  @Test
+  void compilerSelectsSpecializedRuntimeBasesByBehaviorType() {
+    assertSpecializedBase(KActorsBehavior.Type.SCRIPT, ScriptBase.class, "extends ScriptBase");
+    assertSpecializedBase(
+        KActorsBehavior.Type.UNITTEST, TestCaseBase.class, "extends TestCaseBase");
+    assertSpecializedBase(
+        KActorsBehavior.Type.APP, ApplicationBase.class, "extends ApplicationBase");
+  }
+
+  private static void assertSpecializedBase(
+      KActorsBehavior.Type type,
+      Class<? extends RuntimeAgentBase> expectedBase,
+      String sourceDeclaration) {
+    var specialized = behavior(action("main", returned(number(0))));
+    specialized.setBehaviorType(type);
+    var analyzer = new BehaviorAnalyzer(specialized);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(expectedBase, analyzer.getAgentClass());
+
+    var compiler = new AgentCompiler(specialized);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains(sourceDeclaration), compiler.getSourceCode());
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  private static List<Path> compilerClassPath() {
+    var entries = new LinkedHashSet<Path>();
+    String configured = System.getProperty("java.class.path");
+    if (configured != null && !configured.isBlank()) {
+      for (var entry : configured.split(Pattern.quote(File.pathSeparator))) {
+        if (!entry.isBlank()) {
+          entries.add(Path.of(entry).toAbsolutePath().normalize());
+        }
+      }
+    }
+    for (var type : List.of(RuntimeAgentBase.class, KActorsBehavior.class)) {
+      try {
+        var source = type.getProtectionDomain().getCodeSource();
+        if (source != null) {
+          entries.add(Path.of(source.getLocation().toURI()).toAbsolutePath().normalize());
+        }
+      } catch (Exception ignored) {
+        // The ordinary test classpath remains usable when a code source is unavailable.
+      }
+    }
+    return List.copyOf(entries);
+  }
+
+  private static final class DirectoryClassFile extends SimpleJavaFileObject {
+
+    private final Path path;
+    private final String binaryName;
+
+    private DirectoryClassFile(Path path, String binaryName) {
+      super(path.toUri(), Kind.CLASS);
+      this.path = path;
+      this.binaryName = binaryName;
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+      return Files.newInputStream(path);
+    }
+  }
+
+  private static final class DirectoryClasspathFileManager
+      extends ForwardingJavaFileManager<StandardJavaFileManager> {
+
+    private final List<Path> directories;
+
+    private DirectoryClasspathFileManager(
+        StandardJavaFileManager delegate, List<Path> classPath) {
+      super(delegate);
+      this.directories = classPath.stream().filter(Files::isDirectory).toList();
+    }
+
+    @Override
+    public Iterable<JavaFileObject> list(
+        JavaFileManager.Location location,
+        String packageName,
+        Set<JavaFileObject.Kind> kinds,
+        boolean recurse)
+        throws IOException {
+      var files = new ArrayList<JavaFileObject>();
+      super.list(location, packageName, kinds, recurse).forEach(files::add);
+      if (location == StandardLocation.CLASS_PATH && kinds.contains(JavaFileObject.Kind.CLASS)) {
+        var listedUris =
+            files.stream().map(JavaFileObject::toUri).collect(java.util.stream.Collectors.toSet());
+        String packagePath = packageName.replace('.', File.separatorChar);
+        for (var root : directories) {
+          var directory = root.resolve(packagePath);
+          if (!Files.isDirectory(directory)) {
+            continue;
+          }
+          try (var paths = recurse ? Files.walk(directory) : Files.list(directory)) {
+            paths
+                .filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".class"))
+                .map(
+                    path -> {
+                      String relative = root.relativize(path).toString();
+                      String binaryName =
+                          relative
+                              .substring(0, relative.length() - ".class".length())
+                              .replace(File.separatorChar, '.');
+                      return (JavaFileObject) new DirectoryClassFile(path, binaryName);
+                    })
+                .filter(file -> listedUris.add(file.toUri()))
+                .forEach(files::add);
+          }
+        }
+      }
+      return files;
+    }
+
+    @Override
+    public String inferBinaryName(JavaFileManager.Location location, JavaFileObject file) {
+      return file instanceof DirectoryClassFile existing
+          ? existing.binaryName
+          : super.inferBinaryName(location, file);
+    }
+
+    @Override
+    public JavaFileObject getJavaFileForOutput(
+        JavaFileManager.Location location,
+        String className,
+        JavaFileObject.Kind kind,
+        javax.tools.FileObject sibling) {
+      return new SimpleJavaFileObject(
+          URI.create("memory:///" + className.replace('.', '/') + kind.extension), kind) {
+        private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        @Override
+        public OutputStream openOutputStream() {
+          return bytes;
+        }
+      };
+    }
   }
 
   private static class ResolvingValidator extends KActorsVisitor.LenientValidator {

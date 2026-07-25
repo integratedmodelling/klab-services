@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -24,7 +25,9 @@ public class AgentImpl implements Agent {
   private String javaCode;
   private String name;
   private String scopeId;
-  private long observationId;
+  private long observationId = Observation.UNASSIGNED_ID;
+  private long startedAt = -1;
+  private long lastActivityAt = -1;
   private transient String localSenderUrn;
   private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
       new CopyOnWriteArrayList<>();
@@ -59,7 +62,14 @@ public class AgentImpl implements Agent {
       }
       return false;
     }
-    return AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStartRequested);
+    boolean accepted =
+        AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStartRequested);
+    if (accepted) {
+      // The service-side start handler is asynchronous. A subsequent status message remains
+      // authoritative and will correct this optimistic transition if startup fails.
+      alive = true;
+    }
+    return accepted;
   }
 
   public void setViable(boolean viable) {
@@ -97,6 +107,22 @@ public class AgentImpl implements Agent {
 
   public void setObservationId(long observationId) {
     this.observationId = observationId;
+  }
+
+  public long getStartedAt() {
+    return startedAt;
+  }
+
+  public void setStartedAt(long startedAt) {
+    this.startedAt = startedAt;
+  }
+
+  public long getLastActivityAt() {
+    return lastActivityAt;
+  }
+
+  public void setLastActivityAt(long lastActivityAt) {
+    this.lastActivityAt = lastActivityAt;
   }
 
   /**
@@ -264,5 +290,8 @@ public class AgentImpl implements Agent {
     }
     this.alive = status.state() == RuntimeAgent.State.RUNNING;
     this.viable = status.viable();
+    this.observationId = status.observationId();
+    this.startedAt = status.startedAt();
+    this.lastActivityAt = status.lastActivityAt();
   }
 }

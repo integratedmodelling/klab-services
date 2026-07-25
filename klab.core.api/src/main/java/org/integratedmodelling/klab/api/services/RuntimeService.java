@@ -211,9 +211,11 @@ public interface RuntimeService extends KlabService {
    * and appropriate to the scope. Based on the scope passed, the agent will be associated with the
    * correct host; if the scope is a {@link ContextScope} and the scope if focused on an agent
    * observation as the contextObservation, the observation will become the host rather than the
-   * full ContextScope. If the scope is a raw {@link UserScope}, the destination of the agent will
-   * depend on whether the behavior is an application/script/testcase (which will run unhosted) or a
-   * behavior (which will represent the user). Normal usage in a scoped context requires using
+   * full ContextScope. Applications, scripts, and test cases always run in a dedicated session
+   * traced from the requesting scope's root user scope; the runtime closes and unregisters that
+   * session when the agent terminates. Tasks and behaviors retain the supplied user, session, or
+   * context scope, while user behaviors run in the root user scope owning the request. Components
+   * and traits cannot be created independently. Normal usage in a scoped context requires using
    * {@link UserScope#run(KActorsBehavior, RuntimeService)} for the session-hosted agents and using
    * binding in k.IM models to associate behaviors to hosts. Direct use of runAgent should only be
    * used for testing and debugging.

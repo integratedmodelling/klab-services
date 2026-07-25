@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.rest;
 
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
  * Sent to the runtime controller to drive the creation of an agent, with options to bind it to an
@@ -13,7 +14,7 @@ public class AgentInstantiationRequest {
   private boolean reportJavaCode;
   private boolean doNotBindSession;
   private boolean doNotBindObservation;
-  private long observationId;
+  private long observationId = Observation.UNASSIGNED_ID;
   private String suggestedName;
 
   public KActorsBehavior getBehavior() {

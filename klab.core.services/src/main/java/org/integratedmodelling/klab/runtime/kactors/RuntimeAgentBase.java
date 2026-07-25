@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -89,11 +90,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private final Object eventEmissionLock = new Object();
   private ContextScope contextScope;
   private SessionScope sessionScope;
+  private final Observation observation;
   private int errors = 0;
   private final AtomicLong nextId = new AtomicLong(0);
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicBoolean failureReported = new AtomicBoolean(false);
   private final AtomicBoolean consoleAttached = new AtomicBoolean(false);
+  private final AtomicLong startedAt = new AtomicLong(-1);
+  private final AtomicLong lastActivityAt = new AtomicLong(-1);
   private final List<RuntimeAgentBase> inheritedBehaviorInstances =
       new CopyOnWriteArrayList<>();
   private String agentUrn;
@@ -180,6 +184,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   public Sinks.EmitResult emitEvent(Event event) {
+    markActivity();
     synchronized (eventEmissionLock) {
       return eventBus.tryEmitNext(event);
     }
@@ -240,11 +245,26 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   // for testing only, remove
   public RuntimeAgentBase() {
-    this(null, null);
+    this(null, null, null);
   }
 
   public RuntimeAgentBase(KActorsBehavior behavior, SessionScope scope) {
+    this(behavior, scope, null);
+  }
+
+  public RuntimeAgentBase(
+      KActorsBehavior behavior, SessionScope scope, Observation observation) {
+    this(behavior, scope, observation, scope);
+  }
+
+  public RuntimeAgentBase(
+      KActorsBehavior behavior,
+      SessionScope scope,
+      Observation observation,
+      org.integratedmodelling.klab.api.scope.Scope creationScope) {
     this.behavior = behavior;
+    this.observation = observation;
+    this.creatingScope = creationScope;
     if (scope instanceof ContextScope) {
       this.contextScope = (ContextScope) scope;
       this.sessionScope =
@@ -288,6 +308,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     };
   }
 
+  protected final SessionScope sessionScope() {
+    return sessionScope;
+  }
+
+  protected final ContextScope contextScope() {
+    return contextScope;
+  }
+
   public RuntimeAgent.Scope rootScope() {
     return rootScope;
   }
@@ -302,6 +330,26 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return null;
   }
 
+  @Override
+  public Observation getObservation() {
+    return observation;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.scope.Scope getCreationScope() {
+    return creatingScope;
+  }
+
+  @Override
+  public long getStartedAt() {
+    return startedAt.get();
+  }
+
+  @Override
+  public long getLastActivityAt() {
+    return lastActivityAt.get();
+  }
+
   /**
    * Connect this runtime instance to all local and remote peers of its serializable agent handle.
    * The transport is intentionally maintained by {@link AgentEventBus}, not by the handle.
@@ -311,7 +359,9 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       org.integratedmodelling.klab.api.scope.Scope creatingScope,
       Consumer<Notification> notificationConsumer) {
     this.agentUrn = agentUrn;
-    this.creatingScope = creatingScope;
+    if (this.creatingScope == null) {
+      this.creatingScope = creatingScope;
+    }
     this.notificationConsumer = notificationConsumer;
     if (!(creatingScope instanceof MessagingChannel messagingChannel)
         || !messagingChannel.isConnected()) {
@@ -368,6 +418,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   @Override
   public boolean send(String recipientAgentUrn, Message message) {
     requireAgentMessage(message);
+    markActivity();
     return agentUrn != null
         && AgentEventBus.INSTANCE.publish(agentUrn, recipientAgentUrn, message);
   }
@@ -379,6 +430,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         || message == null) {
       return false;
     }
+    markActivity();
     creatingScope.send(message);
     return true;
   }
@@ -391,6 +443,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         || agentUrn == null) {
       return false;
     }
+    markActivity();
     return AgentEventBus.INSTANCE.publish(
         agentUrn,
         agentUrn,
@@ -408,6 +461,16 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     rootScope.done(conditions);
   }
 
+  /**
+   * Register cleanup that must run exactly when the root agent scope terminates. If the agent has
+   * already terminated, the cleanup runs immediately.
+   */
+  public void onTermination(Runnable cleanup) {
+    if (cleanup != null) {
+      rootScope.disposeWith(cleanup::run);
+    }
+  }
+
   /** A deliberately small status surface used by generated test CLIs. */
   public String status() {
     if (rootScope == null || rootScope.isDone()) {
@@ -418,6 +481,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   private void receiveMessage(Message message) {
     requireAgentMessage(message);
+    markActivity();
     switch (message.getMessageType()) {
       case AgentStartRequested -> {
         if (!started.get()) {
@@ -608,6 +672,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (agentUrn == null) {
       return;
     }
+    long timestamp = markActivity();
     AgentEventBus.INSTANCE.publish(
         agentUrn,
         type,
@@ -622,7 +687,16 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                 },
             !failureReported.get(),
             detail == null ? null : String.valueOf(detail),
-            System.currentTimeMillis()));
+            timestamp,
+            observation == null ? Observation.UNASSIGNED_ID : observation.getId(),
+            startedAt.get(),
+            lastActivityAt.get()));
+  }
+
+  private long markActivity() {
+    long timestamp = System.currentTimeMillis();
+    lastActivityAt.accumulateAndGet(timestamp, Math::max);
+    return timestamp;
   }
 
   private void notifyAgent(Notification notification) {
@@ -1396,6 +1470,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (!started.compareAndSet(false, true)) {
       return ExitValue.failure(new KlabIllegalStateException("Agent has already been started"));
     }
+    long timestamp = markActivity();
+    startedAt.compareAndSet(-1, timestamp);
     publishStatus(Message.MessageType.AgentStarted, null);
     publishStatus(Message.MessageType.AgentStatusChanged, null);
     try {

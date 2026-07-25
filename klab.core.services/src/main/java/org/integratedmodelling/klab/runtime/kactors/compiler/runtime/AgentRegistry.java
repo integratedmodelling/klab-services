@@ -2,12 +2,18 @@ package org.integratedmodelling.klab.runtime.kactors.compiler.runtime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,17 +26,19 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -50,10 +58,27 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 public enum AgentRegistry {
   INSTANCE;
 
-  private record BehaviorKey(String urn, Version version, long timestamp) {
+  private static final KActorsVisitor.Validator DEFAULT_VALIDATOR =
+      new KActorsVisitor.LenientValidator();
+  private static final AgentCompiler.Resolver DEFAULT_RESOLVER = new AgentCompiler.Resolver() {};
 
-    BehaviorKey(KActorsBehavior behavior) {
-      this(behavior.getUrn(), behavior.getVersion(), behavior.getCreationTimestamp());
+  private record BehaviorKey(
+      String urn,
+      Version version,
+      long timestamp,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver) {
+
+    BehaviorKey(
+        KActorsBehavior behavior,
+        KActorsVisitor.Validator validator,
+        AgentCompiler.Resolver resolver) {
+      this(
+          behavior.getUrn(),
+          behavior.getVersion(),
+          behavior.getCreationTimestamp(),
+          validator,
+          resolver);
     }
   }
 
@@ -80,8 +105,30 @@ public enum AgentRegistry {
    */
   public Agent getOrCreateAgent(
       Agent agent, Scope scope, RuntimeAgent.CompilationOptions... options) {
+    return getOrCreateAgent(
+        agent, scope, null, DEFAULT_VALIDATOR, DEFAULT_RESOLVER, options);
+  }
+
+  public Agent getOrCreateAgent(
+      Agent agent,
+      Scope scope,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver,
+      RuntimeAgent.CompilationOptions... options) {
+    return getOrCreateAgent(agent, scope, null, validator, resolver, options);
+  }
+
+  public Agent getOrCreateAgent(
+      Agent agent,
+      Scope scope,
+      Observation observation,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver,
+      RuntimeAgent.CompilationOptions... options) {
     Objects.requireNonNull(agent, "agent");
     Objects.requireNonNull(scope, "scope");
+    validator = Objects.requireNonNullElse(validator, DEFAULT_VALIDATOR);
+    resolver = Objects.requireNonNullElse(resolver, DEFAULT_RESOLVER);
 
     if (agent.getUrn() != null) {
       var existing = instances.get(agent.getUrn());
@@ -106,7 +153,8 @@ public enum AgentRegistry {
       if (behavior == null) {
         return failedHandle(agent, "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn());
       }
-      return getOrCreateAgent(agent, behavior, scope, options);
+      return getOrCreateAgent(
+          agent, behavior, scope, observation, validator, resolver, options);
     } catch (Throwable failure) {
       return failedHandle(
           agent, "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn(), unwrap(failure));
@@ -122,8 +170,38 @@ public enum AgentRegistry {
       KActorsBehavior behavior,
       Scope scope,
       RuntimeAgent.CompilationOptions... options) {
+    return getOrCreateAgent(
+        agent,
+        behavior,
+        scope,
+        null,
+        DEFAULT_VALIDATOR,
+        DEFAULT_RESOLVER,
+        options);
+  }
+
+  public Agent getOrCreateAgent(
+      Agent agent,
+      KActorsBehavior behavior,
+      Scope scope,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver,
+      RuntimeAgent.CompilationOptions... options) {
+    return getOrCreateAgent(agent, behavior, scope, null, validator, resolver, options);
+  }
+
+  public Agent getOrCreateAgent(
+      Agent agent,
+      KActorsBehavior behavior,
+      Scope scope,
+      Observation observation,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver,
+      RuntimeAgent.CompilationOptions... options) {
     Objects.requireNonNull(agent, "agent");
     Objects.requireNonNull(behavior, "behavior");
+    validator = Objects.requireNonNullElse(validator, DEFAULT_VALIDATOR);
+    resolver = Objects.requireNonNullElse(resolver, DEFAULT_RESOLVER);
 
     if (agent.getUrn() != null) {
       var existing = instances.get(agent.getUrn());
@@ -150,7 +228,7 @@ public enum AgentRegistry {
             ? java.util.Set.<RuntimeAgent.CompilationOptions>of()
             : java.util.Set.copyOf(Arrays.asList(options));
     if (requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)) {
-      var translated = translateBehavior(behavior, scope);
+      var translated = translateBehavior(behavior, scope, validator, resolver);
       var sourceOnly = copyHandle(agent, behavior);
       sourceOnly.getNotifications().addAll(translated.notifications());
       sourceOnly.setViable(translated.source() != null);
@@ -160,10 +238,16 @@ public enum AgentRegistry {
       return sourceOnly;
     }
 
-    var key = new BehaviorKey(behavior);
+    var key = new BehaviorKey(behavior, validator, resolver);
     CompiledBehavior compiled;
     try {
-      compiled = classes.computeIfAbsent(key, ignored -> compileBehavior(behavior, scope));
+      var compilerValidator = validator;
+      var compilerResolver = resolver;
+      compiled =
+          classes.computeIfAbsent(
+              key,
+              ignored ->
+                  compileBehavior(behavior, scope, compilerValidator, compilerResolver));
     } catch (Throwable failure) {
       return failedHandle(
           agent, "Unexpected failure compiling " + behavior.getUrn(), unwrap(failure));
@@ -180,14 +264,15 @@ public enum AgentRegistry {
     }
 
     try {
-      var runtime = instantiate(compiled.agentClass(), behavior, scope);
+      var runtime = instantiate(compiled.agentClass(), behavior, scope, observation);
       String urn = createAgentUrn(scope);
       var managed =
           new ManagedAgent(
               urn,
               behavior.getUrn(),
-              chooseName(agent, behavior),
+              chooseName(agent, behavior, observation),
               runtime,
+              observation,
               compiled.notifications(),
               requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)
                   ? compiled.source()
@@ -216,13 +301,27 @@ public enum AgentRegistry {
     return urn == null ? null : instances.get(urn);
   }
 
+  /** Return the executing runtime peer for service-side inspection and control. */
+  public RuntimeAgent getRuntimeAgent(String urn) {
+    var managed = urn == null ? null : instances.get(urn);
+    return managed == null ? null : managed.runtime;
+  }
+
   /** Return the cached class for the exact behavior revision, or {@code null}. */
   public Class<? extends RuntimeAgentBase> getCompiledClass(KActorsBehavior behavior) {
     if (behavior == null) {
       return null;
     }
-    var compiled = classes.get(new BehaviorKey(behavior));
-    return compiled == null ? null : compiled.agentClass();
+    return classes.entrySet().stream()
+        .filter(
+            entry ->
+                entry.getKey().urn().equals(behavior.getUrn())
+                    && Objects.equals(entry.getKey().version(), behavior.getVersion())
+                    && entry.getKey().timestamp() == behavior.getCreationTimestamp())
+        .map(entry -> entry.getValue().agentClass())
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
   }
 
   public int getCompiledBehaviorCount() {
@@ -246,21 +345,29 @@ public enum AgentRegistry {
     return true;
   }
 
-  private CompiledBehavior compileBehavior(KActorsBehavior behavior, Scope scope) {
+  private CompiledBehavior compileBehavior(
+      KActorsBehavior behavior,
+      Scope scope,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver) {
     var notifications = new ArrayList<Notification>();
     String source = null;
     try {
       var compiler =
           scope instanceof UserScope userScope
-              ? new AgentCompiler(behavior, userScope)
-              : new AgentCompiler(behavior);
+              ? new AgentCompiler(behavior, userScope, validator, resolver)
+              : new AgentCompiler(behavior, null, validator, resolver);
       if (!compiler.compile()) {
         notifications.addAll(compiler.getNotifications());
         return new CompiledBehavior(null, compiler.getSourceCode(), List.copyOf(notifications));
       }
       notifications.addAll(compiler.getNotifications());
       source = compiler.getSourceCode();
-      var loaded = compileJava(compiler.getGeneratedSources(), compiler.getQualifiedClassName());
+      var loaded =
+          compileJava(
+              compiler.getGeneratedSources(),
+              compiler.getQualifiedClassName(),
+              compiler.getRequiredRuntimeClasses());
       if (!RuntimeAgentBase.class.isAssignableFrom(loaded)) {
         notifications.add(
             Notification.error(
@@ -284,16 +391,15 @@ public enum AgentRegistry {
     return new CompiledBehavior(null, source, List.copyOf(notifications));
   }
 
-  private CompiledBehavior translateBehavior(KActorsBehavior behavior, Scope scope) {
-
-    /*
-    FIXME - supply the compiler with a sensible validator and resolver!
-     */
-
+  private CompiledBehavior translateBehavior(
+      KActorsBehavior behavior,
+      Scope scope,
+      KActorsVisitor.Validator validator,
+      AgentCompiler.Resolver resolver) {
     var compiler =
         scope instanceof UserScope userScope
-            ? new AgentCompiler(behavior, userScope)
-            : new AgentCompiler(behavior);
+            ? new AgentCompiler(behavior, userScope, validator, resolver)
+            : new AgentCompiler(behavior, null, validator, resolver);
     try {
       boolean success = compiler.compile();
       return new CompiledBehavior(
@@ -310,16 +416,28 @@ public enum AgentRegistry {
   }
 
   private RuntimeAgentBase instantiate(
-      Class<? extends RuntimeAgentBase> agentClass, KActorsBehavior behavior, Scope scope)
+      Class<? extends RuntimeAgentBase> agentClass,
+      KActorsBehavior behavior,
+      Scope scope,
+      Observation observation)
       throws ReflectiveOperationException {
     var constructor =
         agentClass.getConstructor(
-            KActorsBehavior.class, SessionScope.class, Map.class, Object[].class);
+            KActorsBehavior.class,
+            SessionScope.class,
+            Observation.class,
+            Scope.class,
+            Map.class,
+            Object[].class);
     var sessionScope = scope instanceof SessionScope session ? session : null;
-    return constructor.newInstance(behavior, sessionScope, Map.of(), (Object) new Object[0]);
+    return constructor.newInstance(
+        behavior, sessionScope, observation, scope, Map.of(), (Object) new Object[0]);
   }
 
-  private Class<?> compileJava(Map<String, String> sources, String primaryClassName)
+  private Class<?> compileJava(
+      Map<String, String> sources,
+      String primaryClassName,
+      Collection<Class<?>> requiredRuntimeClasses)
       throws JavaCompilationException, ClassNotFoundException {
     var javaCompiler = ToolProvider.getSystemJavaCompiler();
     if (javaCompiler == null) {
@@ -334,9 +452,12 @@ public enum AgentRegistry {
     }
 
     var diagnostics = new DiagnosticCollector<JavaFileObject>();
+    var compilationClassPath = compilerClassPath(requiredRuntimeClasses);
     try (StandardJavaFileManager standard =
             javaCompiler.getStandardFileManager(diagnostics, null, null);
-        MemoryFileManager files = new MemoryFileManager(standard)) {
+        MemoryFileManager files = new MemoryFileManager(standard, compilationClassPath)) {
+      standard.setLocationFromPaths(
+          StandardLocation.CLASS_PATH, compilationClassPath);
       var units =
           sources.values().stream()
               .map(source -> new SourceFile(binaryName(source), source))
@@ -346,17 +467,95 @@ public enum AgentRegistry {
               null,
               files,
               diagnostics,
-              List.of("-proc:none", "-classpath", System.getProperty("java.class.path")),
+              List.of("-proc:none"),
               null,
               units);
       if (!Boolean.TRUE.equals(task.call())) {
         throw new JavaCompilationException(javaDiagnostics(diagnostics));
       }
-      return files.classLoader(getClass().getClassLoader()).loadClass(primaryClassName);
+      return files
+          .classLoader(runtimeClassLoader(requiredRuntimeClasses))
+          .loadClass(primaryClassName);
     } catch (IOException failure) {
       throw new JavaCompilationException(
           List.of(Notification.error("Cannot close the in-memory Java compiler", failure)));
     }
+  }
+
+  private List<java.nio.file.Path> compilerClassPath(
+      Collection<Class<?>> requiredRuntimeClasses) {
+    var entries = new LinkedHashSet<String>();
+    addClassPath(entries, System.getProperty("java.class.path"));
+    addClassPath(entries, System.getProperty("surefire.test.class.path"));
+    addCodeSource(entries, RuntimeAgentBase.class);
+    addCodeSource(entries, AgentRegistry.class);
+    addCodeSource(entries, KActorsBehavior.class);
+    if (requiredRuntimeClasses != null) {
+      requiredRuntimeClasses.forEach(type -> addCodeSource(entries, type));
+    }
+    return entries.stream()
+        .map(
+            entry -> {
+              try {
+                return Paths.get(entry);
+              } catch (RuntimeException invalidPath) {
+                return null;
+              }
+            })
+        .filter(Objects::nonNull)
+        .toList();
+  }
+
+  private void addClassPath(LinkedHashSet<String> entries, String classPath) {
+    if (classPath == null || classPath.isBlank()) {
+      return;
+    }
+    Arrays.stream(classPath.split(java.util.regex.Pattern.quote(java.io.File.pathSeparator)))
+        .filter(entry -> !entry.isBlank())
+        .forEach(entries::add);
+  }
+
+  private void addCodeSource(LinkedHashSet<String> entries, Class<?> type) {
+    if (type == null
+        || type.getProtectionDomain() == null
+        || type.getProtectionDomain().getCodeSource() == null) {
+      return;
+    }
+    try {
+      entries.add(
+          Paths.get(type.getProtectionDomain().getCodeSource().getLocation().toURI()).toString());
+    } catch (Exception ignored) {
+      // Non-file code sources remain reachable through the defining classloader.
+    }
+  }
+
+  private ClassLoader runtimeClassLoader(Collection<Class<?>> requiredRuntimeClasses) {
+    var delegates = new LinkedHashSet<ClassLoader>();
+    if (requiredRuntimeClasses != null) {
+      requiredRuntimeClasses.stream()
+          .map(Class::getClassLoader)
+          .filter(Objects::nonNull)
+          .forEach(delegates::add);
+    }
+    var contextClassLoader = Thread.currentThread().getContextClassLoader();
+    if (contextClassLoader != null) {
+      delegates.add(contextClassLoader);
+    }
+    var registryClassLoader = getClass().getClassLoader();
+    delegates.remove(registryClassLoader);
+    return new ClassLoader(registryClassLoader) {
+      @Override
+      protected Class<?> findClass(String name) throws ClassNotFoundException {
+        for (var delegate : delegates) {
+          try {
+            return delegate.loadClass(name);
+          } catch (ClassNotFoundException ignored) {
+            // Try the next component/runtime classloader.
+          }
+        }
+        throw new ClassNotFoundException(name);
+      }
+    };
   }
 
   private List<Notification> javaDiagnostics(DiagnosticCollector<JavaFileObject> diagnostics) {
@@ -399,7 +598,7 @@ public enum AgentRegistry {
   private AgentImpl copyHandle(Agent request, KActorsBehavior behavior) {
     var ret = new AgentImpl();
     ret.setBehaviorUrn(behavior.getUrn());
-    ret.setName(chooseName(request, behavior));
+    ret.setName(chooseName(request, behavior, null));
     return ret;
   }
 
@@ -413,7 +612,13 @@ public enum AgentRegistry {
     return ret;
   }
 
-  private String chooseName(Agent request, KActorsBehavior behavior) {
+  private String chooseName(
+      Agent request, KActorsBehavior behavior, Observation observation) {
+    if (observation != null
+        && observation.getName() != null
+        && !observation.getName().isBlank()) {
+      return observation.getName();
+    }
     if (request.getName() != null && !request.getName().isBlank()) {
       return request.getName();
     }
@@ -453,6 +658,7 @@ public enum AgentRegistry {
     private final String behaviorUrn;
     private final String name;
     private final RuntimeAgentBase runtime;
+    private final Observation observation;
     private final List<Notification> notifications;
     private final String javaCode;
     private volatile boolean viable = true;
@@ -462,12 +668,14 @@ public enum AgentRegistry {
         String behaviorUrn,
         String name,
         RuntimeAgentBase runtime,
+        Observation observation,
         List<Notification> notifications,
         String javaCode) {
       this.urn = urn;
       this.behaviorUrn = behaviorUrn;
       this.name = name;
       this.runtime = runtime;
+      this.observation = observation;
       this.notifications = new CopyOnWriteArrayList<>(notifications);
       this.javaCode = javaCode;
     }
@@ -495,6 +703,18 @@ public enum AgentRegistry {
     @Override
     public boolean isAlive() {
       return "running".equals(runtime.status());
+    }
+
+    public long getObservationId() {
+      return observation == null ? Observation.UNASSIGNED_ID : observation.getId();
+    }
+
+    public long getStartedAt() {
+      return runtime.getStartedAt();
+    }
+
+    public long getLastActivityAt() {
+      return runtime.getLastActivityAt();
     }
 
     @Override
@@ -601,13 +821,82 @@ public enum AgentRegistry {
     }
   }
 
+  private static final class ExistingClassFile extends SimpleJavaFileObject {
+
+    private final Path path;
+    private final String binaryName;
+
+    private ExistingClassFile(Path path, String binaryName) {
+      super(path.toUri(), Kind.CLASS);
+      this.path = path;
+      this.binaryName = binaryName;
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+      return Files.newInputStream(path);
+    }
+  }
+
   private static final class MemoryFileManager
       extends ForwardingJavaFileManager<StandardJavaFileManager> {
 
     private final ConcurrentMap<String, ClassFile> classes = new ConcurrentHashMap<>();
+    private final List<Path> classPathDirectories;
 
-    private MemoryFileManager(StandardJavaFileManager delegate) {
+    private MemoryFileManager(StandardJavaFileManager delegate, Collection<Path> classPath) {
       super(delegate);
+      this.classPathDirectories =
+          classPath == null
+              ? List.of()
+              : classPath.stream().filter(Files::isDirectory).toList();
+    }
+
+    @Override
+    public Iterable<JavaFileObject> list(
+        Location location,
+        String packageName,
+        java.util.Set<JavaFileObject.Kind> kinds,
+        boolean recurse)
+        throws IOException {
+      var ret = new ArrayList<JavaFileObject>();
+      super.list(location, packageName, kinds, recurse).forEach(ret::add);
+      if (location == StandardLocation.CLASS_PATH && kinds.contains(JavaFileObject.Kind.CLASS)) {
+        var listedUris =
+            ret.stream()
+                .map(JavaFileObject::toUri)
+                .collect(java.util.stream.Collectors.toCollection(java.util.HashSet::new));
+        String packagePath = packageName.replace('.', java.io.File.separatorChar);
+        for (var root : classPathDirectories) {
+          var directory = root.resolve(packagePath);
+          if (!Files.isDirectory(directory)) {
+            continue;
+          }
+          try (var paths = recurse ? Files.walk(directory) : Files.list(directory)) {
+            paths
+                .filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".class"))
+                .map(
+                    path -> {
+                      String relative = root.relativize(path).toString();
+                      String binaryName =
+                          relative
+                              .substring(0, relative.length() - ".class".length())
+                              .replace(java.io.File.separatorChar, '.');
+                      return (JavaFileObject) new ExistingClassFile(path, binaryName);
+                    })
+                .filter(file -> listedUris.add(file.toUri()))
+                .forEach(ret::add);
+          }
+        }
+      }
+      return ret;
+    }
+
+    @Override
+    public String inferBinaryName(Location location, JavaFileObject file) {
+      return file instanceof ExistingClassFile existing
+          ? existing.binaryName
+          : super.inferBinaryName(location, file);
     }
 
     @Override

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -28,11 +29,37 @@ import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
-import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
+import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
+import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
+
+  @Test
+  void specializedScopesRetainTheirTypeWhenDerivingSubScopes() {
+    var session = mock(org.integratedmodelling.klab.api.scope.SessionScope.class);
+    var script = new StubScript(session);
+    var application = new StubApplication(session);
+    var testCase = new StubTestCase(session);
+
+    assertTrue(script.rootScope() instanceof ScriptBase.ScriptScope);
+    assertTrue(((AgentScope) script.rootScope()).withId(1) instanceof ScriptBase.ScriptScope);
+    assertSame(session, ((AgentScope) script.rootScope()).withId(2).getSession());
+
+    assertTrue(application.rootScope() instanceof ApplicationBase.ApplicationScope);
+    assertTrue(
+        ((AgentScope) application.rootScope()).withId(1)
+            instanceof ApplicationBase.ApplicationScope);
+    assertSame(session, ((AgentScope) application.rootScope()).withId(2).getSession());
+
+    assertTrue(testCase.rootScope() instanceof TestCaseBase.TestCaseScope);
+    assertTrue(
+        ((AgentScope) testCase.rootScope()).withId(1) instanceof TestCaseBase.TestCaseScope);
+    assertSame(session, ((AgentScope) testCase.rootScope()).withId(2).getSession());
+  }
 
   @Test
   void agentMessageContractIncludesLifecycleStatusAndCustomTypes() {
@@ -85,6 +112,23 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void creationScopeIsAvailableDuringTheWholeAgentLifetime() {
+    var creationScope =
+        mock(org.integratedmodelling.klab.api.scope.Scope.class);
+    var agent = new ReactiveRuntimeAgent(creationScope);
+    var cleanups = new AtomicInteger();
+
+    assertSame(creationScope, agent.getCreationScope());
+    agent.onTermination(cleanups::incrementAndGet);
+    agent.rootScope().done();
+    agent.rootScope().done();
+    assertEquals(1, cleanups.get());
+
+    agent.onTermination(cleanups::incrementAndGet);
+    assertEquals(2, cleanups.get(), "late lifecycle cleanup must run immediately");
+  }
+
+  @Test
   void customMessagesInvokeMatchingHandlerWithRestoredPayloadAndSender() throws Exception {
     AgentEventBus.INSTANCE.registerPayloadType(TestPayload.class);
     var outbound =
@@ -130,9 +174,13 @@ class RuntimeAgentBaseTest {
 
     try {
       assertEquals("ready", agent.status());
+      assertEquals(-1, agent.getStartedAt());
+      assertEquals(-1, agent.getLastActivityAt());
       assertSame(RuntimeAgentBase.TASK_RUNNING, agent.run());
       assertTrue(agent.mainReturned.await(1, TimeUnit.SECONDS));
       assertEquals("running", agent.status());
+      assertTrue(agent.getStartedAt() > 0);
+      assertTrue(agent.getLastActivityAt() >= agent.getStartedAt());
 
       thread = agent.agentThread.get();
       assertNotNull(thread);
@@ -486,6 +534,11 @@ class RuntimeAgentBaseTest {
       super(null, null);
     }
 
+    private ReactiveRuntimeAgent(
+        org.integratedmodelling.klab.api.scope.Scope creationScope) {
+      super(null, null, null, creationScope);
+    }
+
     private AgentScope listen(
         AgentScope scope,
         BiConsumer<Event, AgentScope> consumer,
@@ -537,6 +590,57 @@ class RuntimeAgentBaseTest {
     @Override
     public Verb.Type getAgentExecutionMode() {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private static class StubScript extends ScriptBase {
+
+    private StubScript(org.integratedmodelling.klab.api.scope.SessionScope scope) {
+      super(null, scope);
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private static class StubApplication extends ApplicationBase {
+
+    private StubApplication(org.integratedmodelling.klab.api.scope.SessionScope scope) {
+      super(null, scope);
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private static class StubTestCase extends TestCaseBase {
+
+    private StubTestCase(org.integratedmodelling.klab.api.scope.SessionScope scope) {
+      super(null, scope);
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
     }
   }
 }
