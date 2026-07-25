@@ -1,7 +1,10 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
+
+import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -70,7 +73,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  * org.integratedmodelling.klab.api.services.ResourcesService#readBehavior(URL, UserScope)} and
  * compiled/executed by a runtime, in the desired scope, by {@link
  * org.integratedmodelling.klab.api.services.RuntimeService#createAgent(KActorsBehavior, String,
- * boolean, UserScope)}. An {@link org.integratedmodelling.klab.api.actors.Agent} object
+ * Collection, UserScope)}. An {@link org.integratedmodelling.klab.api.actors.Agent} object
  * (serializable in its client version) is the runtime peer of a running agent and can be used to
  * send messages to the agent or inquire about its status. The AMQP pipeline is used by agents to
  * communicate with its connected peers through the {@link
@@ -168,9 +171,11 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
     /**
      * Return whether this behavior type may inherit a behavior of the supplied type. Traits can be
      * inherited by every behavior type. Other inheritance requires equal types, except that USER
-     * and TASK are specializations of BEHAVIOR and may inherit it directly.
+     * and TASK are specializations of BEHAVIOR and may inherit it directly. Nothing except another
+     * LIBRARY can inherit a LIBRARY, which is meant to be imported by other behaviors.
      */
     public boolean canInherit(Type inheritedType) {
+      if (inheritedType == LIBRARY && this != LIBRARY) return false;
       return inheritedType == TRAIT
           || inheritedType == this
           || ((this == USER || this == TASK) && inheritedType == BEHAVIOR);
@@ -194,7 +199,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    * imported behavior as a receiver; actions that are not static must be invoked on an agent
    * created in advance with a <code>new</code> verb.
    */
-  interface Import {
+  interface Import extends Statement {
 
     /**
      * The URN of the imported behavior. This will be resolved transparently through the connected
@@ -256,16 +261,19 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
   List<Import> getImports();
 
   /**
-   * The URNs of the behaviors this behavior inherits from, in order of precedence. The actions
-   * defined in these will be available and can be overridden, generating a warning if the code does
-   * not carry an <code>@override</code> annotation. Any <code>init</code> action provided by an
-   * inherited behavior will be executed before the <code>init</code> action of this behavior.All
-   * inherited state variables are considered protected and they can be changed using <code>set
+   * The behaviors this behavior inherits from, in order of precedence. The actions defined in these
+   * will be available and can be overridden, generating a warning if the code does not carry an
+   * <code>@override</code> annotation. Any <code>init</code> action provided by an inherited
+   * behavior will be executed before the <code>init</code> action of this behavior.All inherited
+   * state variables are considered protected and they can be changed using <code>set
    * </code>; it is illegal to override an inherited state variable.
+   *
+   * <p>The optional alias for the behavior can be used to refer to the super in an overridden
+   * action.
    *
    * @return
    */
-  List<String> getInheritedBehaviors();
+  List<Import> getInheritedBehaviors();
 
   /**
    * Description (docstring). A description in the preamble is mandatory.

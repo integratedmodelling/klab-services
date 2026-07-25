@@ -1343,11 +1343,24 @@ public enum LanguageAdapter {
 
     for (var imp : syntax.getImports()) {
       var imported = new KActorsBehaviorImpl.ImportImpl();
+      imported.setOffsetInDocument(imp.offsetInCode());
+      imported.setLength(imp.lenght());
       imported.setImportedBehavior(imp.source());
       imported.setImportedAlias(imp.alias());
       imported.getImportedComponents().addAll(imp.imports());
       ret.getImports().add(imported);
     }
+
+    for (var inh : syntax.getInherited()) {
+      var imported = new KActorsBehaviorImpl.ImportImpl();
+      imported.setOffsetInDocument(inh.offsetInCode());
+      imported.setLength(inh.lenght());
+      imported.setImportedBehavior(inh.source());
+      imported.setImportedAlias(inh.alias());
+      imported.getImportedComponents().addAll(inh.imports());
+      ret.getInheritedBehaviors().add(imported);
+    }
+
 
     for (var action : syntax.getActions()) {
       ret.getStatements().add(adaptAction(action, ret, name, projectName, notifications));

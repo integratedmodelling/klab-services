@@ -50,7 +50,7 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
   }
 
   @Override
-  public List<String> getInheritedBehaviors() {
+  public List<Import> getInheritedBehaviors() {
     return delegate.getInheritedBehaviors();
   }
 

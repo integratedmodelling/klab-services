@@ -9,17 +9,24 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.StatementImpl;
 
 public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
     implements KActorsBehavior {
 
   @Serial private static final long serialVersionUID = 6651874316547941092L;
 
-  public static class ImportImpl implements Import {
+  public static class ImportImpl extends StatementImpl implements Import {
 
     private String importedBehavior;
     private String importedAlias;
     private List<String> importedComponents = new ArrayList<>();
+
+    public ImportImpl() {}
+
+    public ImportImpl(String urn) {
+      this.importedBehavior = urn;
+    }
 
     @Override
     public String getImportedBehavior() {
@@ -60,7 +67,7 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
   private List<Annotation> annotations = new ArrayList<>();
   private KlabLanguage language = KlabLanguage.K_ACTORS;
   private KlabStatement.Scope scope = KlabStatement.Scope.PRIVATE;
-  private List<String> inheritedBehaviors = new ArrayList<>();
+  private List<Import> inheritedBehaviors = new ArrayList<>();
 
   @Override
   public String getUrn() {
@@ -83,11 +90,11 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
   }
 
   @Override
-  public List<String> getInheritedBehaviors() {
+  public List<Import> getInheritedBehaviors() {
     return inheritedBehaviors;
   }
 
-  public void setInheritedBehaviors(List<String> inheritedBehaviors) {
+  public void setInheritedBehaviors(List<Import> inheritedBehaviors) {
     this.inheritedBehaviors = inheritedBehaviors;
   }
 

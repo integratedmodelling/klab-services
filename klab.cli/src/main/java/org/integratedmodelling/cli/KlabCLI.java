@@ -71,10 +71,9 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
  * org.integratedmodelling.kcli.KlabCLI"</code>
  *
- * <p>TODO revise around the {@link org.integratedmodelling.klab.api.view.modeler.Modeler} and
- * provide CLI-versions of each view instead of making up commands. Should be
- *
- * <p>resources, services, statistics, report, distribution, knowledge, events, debug and context.
+ * <p>TODO throw everything away and reimplement around the {@link
+ * org.integratedmodelling.klab.api.view.modeler.Modeler} and the new CLI infrastructure,
+ * automatically mapping the commands to PicoCLI and JLine.
  */
 public enum KlabCLI {
   INSTANCE;
@@ -971,36 +970,36 @@ public enum KlabCLI {
 
   private void listContext(ContextInfo context, boolean verbose, int index) {
 
-//    INSTANCE
-//        .commandLine
-//        .getOut()
-//        .println(
-//            Ansi.AUTO.string(
-//                "@|green Session "
-//                    + index
-//                    + "|@. "
-//                    + session.getName()
-//                    + " ["
-//                    + session.getId()
-//                    + "]"));
-//    int n = 0;
-//    for (var context : session.getContexts()) {
-      INSTANCE
-          .commandLine
-          .getOut()
-          .println(
-              Ansi.AUTO.string(
-                  "   @|yellow Context "
-                      + index
-//                      + "."
-//                      + (++n)
-                      + "|@. "
-                      + context.getConfiguration().getName()
-                      + " ["
-                      + context.getConfiguration().getId()
-                      + "]"));
-      if (verbose) {}
-//    }
+    //    INSTANCE
+    //        .commandLine
+    //        .getOut()
+    //        .println(
+    //            Ansi.AUTO.string(
+    //                "@|green Session "
+    //                    + index
+    //                    + "|@. "
+    //                    + session.getName()
+    //                    + " ["
+    //                    + session.getId()
+    //                    + "]"));
+    //    int n = 0;
+    //    for (var context : session.getContexts()) {
+    INSTANCE
+        .commandLine
+        .getOut()
+        .println(
+            Ansi.AUTO.string(
+                "   @|yellow Context "
+                    + index
+                    //                      + "."
+                    //                      + (++n)
+                    + "|@. "
+                    + context.getConfiguration().getName()
+                    + " ["
+                    + context.getConfiguration().getId()
+                    + "]"));
+    if (verbose) {}
+    //    }
   }
 
   public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {

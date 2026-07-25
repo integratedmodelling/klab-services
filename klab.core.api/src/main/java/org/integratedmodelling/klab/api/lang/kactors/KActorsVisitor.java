@@ -71,11 +71,12 @@ public class KActorsVisitor {
     }
 
     /**
-     * Validate one behavior named in the current behavior's {@code inherits} clause. Implementations
-     * that can resolve runtime resources should verify both its existence and type compatibility.
+     * Validate one behavior named in the current behavior's {@code inherits} clause.
+     * Implementations that can resolve runtime resources should verify both its existence and type
+     * compatibility.
      */
     default List<Notification> validateInheritance(
-        String inheritedBehaviorUrn, KActorsContext context) {
+        KActorsBehavior.Import inheritedBehaviorStatement, KActorsContext context) {
       return List.of();
     }
 
@@ -415,7 +416,7 @@ public class KActorsVisitor {
 
     for (var inheritedBehavior : safe(behavior.getInheritedBehaviors())) {
       addNotifications(context.validator.validateInheritance(inheritedBehavior, context));
-      registerReferencedTags(inheritedBehavior, context);
+      registerReferencedTags(inheritedBehavior.getImportedBehavior(), context);
     }
 
     for (var action : safe(behavior.getStatements())) {
@@ -691,10 +692,8 @@ public class KActorsVisitor {
       } else {
         var adaptationNotifications =
             safe(
-                context
-                    .validator
-                    .validateAdaptation(
-                        statement, adaptedBehaviorUrn, sourceVariable, context));
+                context.validator.validateAdaptation(
+                    statement, adaptedBehaviorUrn, sourceVariable, context));
         addNotifications(adaptationNotifications);
         if (adaptationNotifications.stream()
             .noneMatch(

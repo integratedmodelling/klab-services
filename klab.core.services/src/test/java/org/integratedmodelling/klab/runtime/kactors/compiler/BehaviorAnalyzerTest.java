@@ -51,8 +51,7 @@ class BehaviorAnalyzerTest {
     named.setArgumentNames(List.of("payload", "sender"));
     var namedParameters = new java.util.LinkedHashMap<String, Object>();
     namedParameters.put("class", Constant.create("NAMED"));
-    named.setAnnotations(
-        List.of(Annotation.of("handle", namedParameters)));
+    named.setAnnotations(List.of(Annotation.of("handle", namedParameters)));
     var unnamedAnnotation = Annotation.of("handle");
     unnamedAnnotation.putUnnamed(Constant.create("UNNAMED"));
     var unnamed = action("unnamedHandler");
@@ -91,7 +90,7 @@ class BehaviorAnalyzerTest {
     inherited.setUrn("traits.handlers");
     inherited.setBehaviorType(KActorsBehavior.Type.TRAIT);
     var child = behavior();
-    child.setInheritedBehaviors(List.of(inherited.getUrn()));
+    child.setInheritedBehaviors((List.of(new KActorsBehaviorImpl.ImportImpl(inherited.getUrn()))));
     var compiler =
         new AgentCompiler(
             child,
@@ -100,8 +99,7 @@ class BehaviorAnalyzerTest {
             new AgentCompiler.Resolver() {
               @Override
               public KActorsBehavior resolveBehavior(
-                  String urn,
-                  org.integratedmodelling.klab.api.scope.UserScope scope) {
+                  String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
                 return inherited.getUrn().equals(urn) ? inherited : null;
               }
             });
@@ -204,7 +202,7 @@ class BehaviorAnalyzerTest {
     local.setTag("inherited");
     var behavior = behavior(action("main", local));
     behavior.setImports(List.of(imported("component.widgets", "widgets")));
-    behavior.setInheritedBehaviors(List.of("traits.base"));
+    behavior.setInheritedBehaviors((List.of(new KActorsBehaviorImpl.ImportImpl("traits.base"))));
     var analyzer =
         new BehaviorAnalyzer(
             behavior,
@@ -438,17 +436,16 @@ class BehaviorAnalyzerTest {
     var compiler = new AgentCompiler(behavior, null, validator, null);
     assertTrue(compiler.compile(), compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("adaptToBehavior("), compiler.getSourceCode());
-    assertTrue(compiler.getSourceCode().contains("\"workers.specialized\""), compiler.getSourceCode());
+    assertTrue(
+        compiler.getSourceCode().contains("\"workers.specialized\""), compiler.getSourceCode());
     assertGeneratedJavaCompiles(compiler.getSourceCode());
   }
 
   @Test
   void behaviorAdaptationIsLocalOnlyAndValidationErrorsDoNotTypeTheVariable() {
-    var actorAssignment =
-        assignment("worker", KActorsStatement.Assignment.Scope.ACTOR, number(1));
+    var actorAssignment = assignment("worker", KActorsStatement.Assignment.Scope.ACTOR, number(1));
     actorAssignment.setAdaptedBehaviorUrn("workers.specialized");
-    var localAssignment =
-        assignment("other", KActorsStatement.Assignment.Scope.FRAME, number(2));
+    var localAssignment = assignment("other", KActorsStatement.Assignment.Scope.FRAME, number(2));
     localAssignment.setAdaptedBehaviorUrn("workers.missing");
     var validator =
         new KActorsVisitor.LenientValidator() {
@@ -462,7 +459,8 @@ class BehaviorAnalyzerTest {
           }
         };
     var analyzer =
-        new BehaviorAnalyzer(behavior(action("init", actorAssignment), action("main", localAssignment)), validator);
+        new BehaviorAnalyzer(
+            behavior(action("init", actorAssignment), action("main", localAssignment)), validator);
 
     assertFalse(analyzer.analyze());
     assertTrue(messages(analyzer).contains("only allowed on local frame assignments"));
@@ -484,7 +482,8 @@ class BehaviorAnalyzerTest {
 
     assertFalse(analyzer.analyze());
     assertTrue(validator.verbValidated);
-    assertTrue(messages(analyzer).contains("Emitter calls cannot be used where a value is required"));
+    assertTrue(
+        messages(analyzer).contains("Emitter calls cannot be used where a value is required"));
     assertEquals(Verb.Type.EMITTER, analyzer.getCalls().getFirst().executionType());
     assertTrue(analyzer.getCalls().getFirst().valueRequired());
   }
@@ -501,8 +500,7 @@ class BehaviorAnalyzerTest {
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertTrue(analyzer.getActions().get("helper").callsEmitters());
     assertTrue(analyzer.getActions().get("main").callsEmitters());
-    assertEquals(
-        Verb.Type.EMITTER, analyzer.getActions().get("main").effectiveExecutionType());
+    assertEquals(Verb.Type.EMITTER, analyzer.getActions().get("main").effectiveExecutionType());
     assertEquals(Verb.Type.EMITTER, analyzer.getAgentExecutionMode());
     assertEquals(BehaviorAnalyzer.Lifecycle.PERSISTENT, analyzer.getLifecycle());
   }
@@ -525,8 +523,7 @@ class BehaviorAnalyzerTest {
 
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertTrue(analyzer.getActions().get("main").callsSuppliers());
-    assertEquals(
-        Verb.Type.SUPPLIER, analyzer.getActions().get("main").effectiveExecutionType());
+    assertEquals(Verb.Type.SUPPLIER, analyzer.getActions().get("main").effectiveExecutionType());
     assertEquals(Verb.Type.SUPPLIER, analyzer.getAgentExecutionMode());
     assertEquals(BehaviorAnalyzer.Lifecycle.FINITE, analyzer.getLifecycle());
   }
@@ -589,9 +586,7 @@ class BehaviorAnalyzerTest {
           @Override
           public Verb.Type classifyActionCall(
               KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
-            return verb == assignedProducer || verb == iterableProducer
-                ? Verb.Type.FUNCTION
-                : null;
+            return verb == assignedProducer || verb == iterableProducer ? Verb.Type.FUNCTION : null;
           }
 
           @Override
@@ -655,8 +650,7 @@ class BehaviorAnalyzerTest {
   @Test
   void compilerEmitsJavaThatCompilesForExpressionsAndLocalState() {
     var assignment =
-        assignment(
-            "answer", KActorsStatement.Assignment.Scope.FRAME, expression("21 * 2"));
+        assignment("answer", KActorsStatement.Assignment.Scope.FRAME, expression("21 * 2"));
     var compiler =
         new AgentCompiler(behavior(action("main", assignment, returned(identifier("answer")))));
 
@@ -699,11 +693,7 @@ class BehaviorAnalyzerTest {
     var source = behavior(action("main", stream));
     source.setImports(List.of(imported("component.behavior", "external")));
     var compiler =
-        new AgentCompiler(
-            source,
-            null,
-            new ResolvingValidator(),
-            new AgentCompiler.Resolver() {});
+        new AgentCompiler(source, null, new ResolvingValidator(), new AgentCompiler.Resolver() {});
 
     assertTrue(compiler.compile(), compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("runEmitter("));
@@ -718,7 +708,8 @@ class BehaviorAnalyzerTest {
     first.setActions(List.of(match(verb("external", "nested"))));
     var second = verb("external", "second");
     second.setActions(
-        List.of(match(assignment("secondValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
+        List.of(
+            match(assignment("secondValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
     var group = new KActorsStatementImpl.GroupImpl();
     group.setStatements(List.of(first, second));
     var after = verb("external", "after");
@@ -758,13 +749,15 @@ class BehaviorAnalyzerTest {
             new KActorsVisitor.LenientValidator(),
             new AgentCompiler.Resolver() {
               @Override
-              public KActorsBehavior resolveBehavior(String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+              public KActorsBehavior resolveBehavior(
+                  String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
                 return "test.dependency".equals(urn) ? dependency : null;
               }
             });
 
     assertTrue(compiler.compile(), compiler.getNotifications().toString());
-    assertEquals(Set.of("test.behavior", "test.dependency"), compiler.getGeneratedSources().keySet());
+    assertEquals(
+        Set.of("test.behavior", "test.dependency"), compiler.getGeneratedSources().keySet());
     assertGeneratedJavaCompiles(compiler.getGeneratedSources().get("test.dependency"));
   }
 
@@ -796,12 +789,7 @@ class BehaviorAnalyzerTest {
     var fileManager = new DirectoryClasspathFileManager(standard, classPath);
     var task =
         compiler.getTask(
-            null,
-            fileManager,
-            diagnostics,
-            List.of("-proc:none"),
-            null,
-            List.of(unit));
+            null, fileManager, diagnostics, List.of("-proc:none"), null, List.of(unit));
     assertTrue(task.call(), () -> diagnostics.getDiagnostics().toString() + "\n" + source);
   }
 
@@ -813,7 +801,7 @@ class BehaviorAnalyzerTest {
     var child = behavior(action("main", returned(number(0))));
     child.setUrn("test.child." + childType.name().toLowerCase());
     child.setBehaviorType(childType);
-    child.setInheritedBehaviors(List.of(inherited.getUrn()));
+    child.setInheritedBehaviors((List.of(new KActorsBehaviorImpl.ImportImpl(inherited.getUrn()))));
     var resolver =
         new AgentCompiler.Resolver() {
           @Override
@@ -823,8 +811,7 @@ class BehaviorAnalyzerTest {
           }
         };
     var environment = AgentCompiler.runtimeEnvironment(resolver, null);
-    return new AgentCompiler(
-        child, null, environment.validator(), environment.resolver());
+    return new AgentCompiler(child, null, environment.validator(), environment.resolver());
   }
 
   @Test
@@ -898,8 +885,7 @@ class BehaviorAnalyzerTest {
 
     private final List<Path> directories;
 
-    private DirectoryClasspathFileManager(
-        StandardJavaFileManager delegate, List<Path> classPath) {
+    private DirectoryClasspathFileManager(StandardJavaFileManager delegate, List<Path> classPath) {
       super(delegate);
       this.directories = classPath.stream().filter(Files::isDirectory).toList();
     }
