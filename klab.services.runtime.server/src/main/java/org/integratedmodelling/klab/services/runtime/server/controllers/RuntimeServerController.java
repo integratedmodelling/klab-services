@@ -44,6 +44,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRe
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
@@ -168,23 +169,12 @@ public class RuntimeServerController {
         options.add(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE);
       }
 
-      return runtimeService
-          .klabService()
-          .createAgent(request.getBehavior(), request.getSuggestedName(), options, scope);
+      var ret =
+          runtimeService
+              .klabService()
+              .createAgent(request.getBehavior(), request.getSuggestedName(), options, scope);
 
-      //      if (agent != null) {
-      //        var ret = new AgentInstantiationResponse();
-      //        ret.setBehaviorUrn(request.getBehavior().getUrn());
-      //        ret.setAgentUrl(
-      //            runtimeService.klabService().getUrl()
-      //                + ServicesAPI.RUNTIME.AGENT
-      //                + "/"
-      //                + agent.getUrn());
-      //        ret.setAlive(agent.isAlive());
-      //        ret.getNotifications().addAll(agent.getNotifications());
-      //        return ret;
-      //      }
-      //      return null;
+      return RuntimeService.adaptAgent(ret);
     }
     throw new KlabInternalErrorException(
         "Unexpected implementation of agent instantiation authorization");

@@ -829,6 +829,7 @@ public enum AgentRegistry {
           new UnsupportedOperationException(
               "Direct serializable agent messaging is not implemented yet"));
     }
+
   }
 
   private static final class SourceFile extends SimpleJavaFileObject {

@@ -1259,6 +1259,31 @@ public class RuntimeService extends BaseService
   }
 
   /**
+   * Util to ensure that the agent is a serializable AgentImpl.
+   *
+   * @param agent
+   * @return
+   */
+  public static AgentImpl adaptAgent(org.integratedmodelling.klab.api.actors.Agent agent) {
+
+    if (agent instanceof AgentImpl agent1) {
+      return agent1;
+    }
+    var ret = new AgentImpl();
+    ret.setBehaviorUrn(agent.getBehaviorUrn());
+    ret.setViable(agent.isViable());
+    ret.setUrn(agent.getUrn());
+    ret.setName(agent.getName());
+    ret.setAlive(agent.isAlive());
+    if (agent instanceof AgentRegistry.ManagedAgent managedAgent) {
+      ret.setJavaCode(managedAgent.getJavaCode());
+      ret.setObservationId(managedAgent.getObservationId());
+    }
+
+    return ret;
+  }
+
+  /**
    * Produce a ClientAgent which can be serialized for JSON transmission. The agent manager will
    * store a ServiceAgent peer.
    *
@@ -1299,9 +1324,7 @@ public class RuntimeService extends BaseService
     }
     String compilerEnvironmentKey =
         scopeIdentity == null || scopeIdentity.isBlank()
-            ? creationScope.getClass().getName()
-                + "@"
-                + System.identityHashCode(creationScope)
+            ? creationScope.getClass().getName() + "@" + System.identityHashCode(creationScope)
             : creationScope.getClass().getName() + ":" + scopeIdentity;
     var environment =
         agentCompilerEnvironments.computeIfAbsent(
@@ -1338,8 +1361,7 @@ public class RuntimeService extends BaseService
       releaseOwnedSession =
           () -> {
             if (released.compareAndSet(false, true) && !releaseAgentSession(ownedSession)) {
-              Logging.INSTANCE.warn(
-                  "Cannot release agent-owned session " + ownedSession.getId());
+              Logging.INSTANCE.warn("Cannot release agent-owned session " + ownedSession.getId());
             }
           };
       var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(ret.getUrn());
@@ -1422,9 +1444,7 @@ public class RuntimeService extends BaseService
   }
 
   private Observation representedObservation(
-      KActorsBehavior behavior,
-      Set<RuntimeAgent.CompilationOptions> options,
-      UserScope scope) {
+      KActorsBehavior behavior, Set<RuntimeAgent.CompilationOptions> options, UserScope scope) {
     if (options.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION)
         || !(scope instanceof ContextScope contextScope)) {
       return null;
