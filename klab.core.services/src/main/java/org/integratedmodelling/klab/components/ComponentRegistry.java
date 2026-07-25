@@ -655,8 +655,8 @@ public class ComponentRegistry {
   }
 
   /**
-   * Return the Java actor descriptors registered under the requested actor URN. The descriptors
-   * are serializable; use {@link #implementation(Extensions.FunctionDescriptor)} for the matching
+   * Return the Java actor descriptors registered under the requested actor URN. The descriptors are
+   * serializable; use {@link #implementation(Extensions.FunctionDescriptor)} for the matching
    * reflective method/class information retained by this registry.
    */
   public List<Extensions.ActorDescriptor> getActorDescriptors(String urn, Version version) {
@@ -934,7 +934,7 @@ public class ComponentRegistry {
       Actor actor, String namespacePrefix, Class<?> cls) {
 
     var ret = new Extensions.ActorDescriptor();
-    ret.urn = actor.name();
+    ret.urn = namespacePrefix + actor.name();
     ret.description = actor.description();
     ret.javaClassName = cls.getName();
 
@@ -1601,7 +1601,7 @@ public class ComponentRegistry {
             Library.class,
             (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
             Actor.class,
-            (annotation, cls) -> registerActor((Actor) annotation, cls, libraries),
+            (annotation, cls) -> registerActor((Actor) annotation, cls, actors),
             ResourceAdapter.class,
             (annotation, cls) ->
                 registerAdapter(
@@ -1633,6 +1633,13 @@ public class ComponentRegistry {
             .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
             .add(service.getSecond());
       }
+      for (var actor : library.actors()) {
+        actorFinder.put(actor.getFirst(), localComponentDescriptor);
+        localComponentDescriptor
+            .actors()
+            .computeIfAbsent(actor.getFirst(), key -> new ArrayList<>())
+            .add(actor.getSecond());
+      }
       // we need these to be findable by URN as well, dio carciofo
       for (var service : library.exporters()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
@@ -1648,13 +1655,6 @@ public class ComponentRegistry {
             .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
             .add(service.getSecond());
       }
-      //      for (var service : library.verbs()) {
-      //        verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
-      //        localComponentDescriptor
-      //            .verbs()
-      //            .computeIfAbsent(service.getFirst().getName(), key -> new ArrayList<>())
-      //            .add(service.getSecond());
-      //      }
     }
   }
 

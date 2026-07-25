@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 
-@Library(name = "actors.core")
+@Library(name = "core")
 public class CoreActorLibrary {
 
   /**
