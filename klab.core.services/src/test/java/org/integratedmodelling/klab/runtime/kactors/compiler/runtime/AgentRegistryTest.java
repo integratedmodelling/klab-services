@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
 
 class AgentRegistryTest {
@@ -79,28 +80,40 @@ class AgentRegistryTest {
   }
 
   @Test
-  void userBehaviorHasAtMostOneRegisteredInstancePerRuntime() {
+  void userBehaviorHasAtMostOneRegisteredInstancePerUserScope() {
     var behavior =
         finiteBehavior("test.registry.user." + UUID.randomUUID().toString().replace("-", ""));
     behavior.setBehaviorType(KActorsBehavior.Type.USER);
+    var firstUser = mock(ServiceUserScope.class);
+    var sameLogicalUser = mock(ServiceUserScope.class);
+    var secondUser = mock(ServiceUserScope.class);
+    when(firstUser.getId()).thenReturn("first-user");
+    when(sameLogicalUser.getId()).thenReturn("first-user");
+    when(secondUser.getId()).thenReturn("second-user");
 
     var first =
         AgentRegistry.INSTANCE.getOrCreateAgent(
-            request(behavior.getUrn(), "first user"), behavior, null);
-    var second =
+            request(behavior.getUrn(), "first user"), behavior, firstUser);
+    var sameUser =
         AgentRegistry.INSTANCE.getOrCreateAgent(
-            request(behavior.getUrn(), "second user"), behavior, null);
+            request(behavior.getUrn(), "same user"), behavior, sameLogicalUser);
+    var otherUser =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "other user"), behavior, secondUser);
 
     assertTrue(first.isViable(), () -> first.getNotifications().toString());
-    assertSame(first, second);
+    assertSame(first, sameUser);
+    assertTrue(otherUser.isViable(), () -> otherUser.getNotifications().toString());
+    assertTrue(!first.getUrn().equals(otherUser.getUrn()));
     assertTrue(first.stop());
 
     var replacement =
         AgentRegistry.INSTANCE.getOrCreateAgent(
-            request(behavior.getUrn(), "replacement user"), behavior, null);
+            request(behavior.getUrn(), "replacement user"), behavior, firstUser);
     assertTrue(replacement.isViable(), () -> replacement.getNotifications().toString());
     assertTrue(!first.getUrn().equals(replacement.getUrn()));
     assertTrue(replacement.stop());
+    assertTrue(otherUser.stop());
   }
 
   @Test

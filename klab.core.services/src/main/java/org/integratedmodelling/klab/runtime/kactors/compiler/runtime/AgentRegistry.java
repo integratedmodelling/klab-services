@@ -94,9 +94,9 @@ public enum AgentRegistry {
 
   private final ConcurrentMap<BehaviorKey, CompiledBehavior> classes = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ManagedAgent> instances = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ManagedAgent> userAgents = new ConcurrentHashMap<>();
   private final AtomicLong nextAgentId = new AtomicLong();
   private final Object userAgentLock = new Object();
-  private volatile ManagedAgent userAgent;
 
   /**
    * Resolve the behavior named by the supplied handle and return a stopped runtime agent.
@@ -239,11 +239,19 @@ public enum AgentRegistry {
       }
       return sourceOnly;
     }
-    if (behavior.getBehaviorType() == KActorsBehavior.Type.USER
-        && !Thread.holdsLock(userAgentLock)) {
+    String userScopeKey =
+        behavior.getBehaviorType() == KActorsBehavior.Type.USER ? userScopeKey(scope) : null;
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.USER && userScopeKey == null) {
+      return failedHandle(
+          agent,
+          "USER behaviors require a legitimate UserScope",
+          new IllegalArgumentException("Agent creation scope is not a UserScope"));
+    }
+    if (userScopeKey != null && !Thread.holdsLock(userAgentLock)) {
       synchronized (userAgentLock) {
-        if (userAgent != null) {
-          return userAgent;
+        var existing = userAgents.get(userScopeKey);
+        if (existing != null) {
+          return existing;
         }
         return getOrCreateAgent(
             agent, behavior, scope, observation, validator, resolver, options);
@@ -288,10 +296,11 @@ public enum AgentRegistry {
               compiled.notifications(),
               requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE)
                   ? compiled.source()
-                  : null);
+                  : null,
+              userScopeKey);
       instances.put(urn, managed);
-      if (behavior.getBehaviorType() == KActorsBehavior.Type.USER) {
-        userAgent = managed;
+      if (userScopeKey != null) {
+        userAgents.put(userScopeKey, managed);
       }
       runtime.initializeMessaging(urn, scope, managed.notifications::add);
       return managed;
@@ -356,8 +365,8 @@ public enum AgentRegistry {
     if (agent == null || agent.isAlive() || !instances.remove(urn, agent)) {
       return false;
     }
-    if (userAgent == agent) {
-      userAgent = null;
+    if (agent.userScopeKey != null) {
+      userAgents.remove(agent.userScopeKey, agent);
     }
     agent.runtime.closeMessaging();
     return true;
@@ -661,6 +670,19 @@ public enum AgentRegistry {
     return scopeId + ":agent:" + nextAgentId.incrementAndGet();
   }
 
+  private String userScopeKey(Scope scope) {
+    if (!(scope instanceof UserScope userScope)) {
+      return null;
+    }
+    if (userScope instanceof ServiceSideScope serviceScope) {
+      String id = serviceScope.getId();
+      if (id != null && !id.isBlank()) {
+        return "id:" + id;
+      }
+    }
+    return "instance:" + System.identityHashCode(userScope);
+  }
+
   private static Throwable unwrap(Throwable failure) {
     if (failure instanceof InvocationTargetException invocation
         && invocation.getTargetException() != null) {
@@ -679,6 +701,7 @@ public enum AgentRegistry {
     private final Observation observation;
     private final List<Notification> notifications;
     private final String javaCode;
+    private final String userScopeKey;
     private volatile boolean viable = true;
 
     private ManagedAgent(
@@ -688,7 +711,8 @@ public enum AgentRegistry {
         RuntimeAgentBase runtime,
         Observation observation,
         List<Notification> notifications,
-        String javaCode) {
+        String javaCode,
+        String userScopeKey) {
       this.urn = urn;
       this.behaviorUrn = behaviorUrn;
       this.name = name;
@@ -696,6 +720,7 @@ public enum AgentRegistry {
       this.observation = observation;
       this.notifications = new CopyOnWriteArrayList<>(notifications);
       this.javaCode = javaCode;
+      this.userScopeKey = userScopeKey;
     }
 
     @Override
@@ -775,8 +800,8 @@ public enum AgentRegistry {
       } finally {
         runtime.closeMessaging();
         instances.remove(urn, this);
-        if (userAgent == this) {
-          userAgent = null;
+        if (userScopeKey != null) {
+          userAgents.remove(userScopeKey, this);
         }
       }
     }

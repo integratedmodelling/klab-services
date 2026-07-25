@@ -1,0 +1,1 @@
+1. Agent#ask pattern still unimplemented; must review API then use messaging system to implement.

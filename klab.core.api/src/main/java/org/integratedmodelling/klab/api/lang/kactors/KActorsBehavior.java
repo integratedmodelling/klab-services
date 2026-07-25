@@ -115,7 +115,8 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      * characterization in the preamble is needed for safety of association. A USER behavior can
      * stand for a {@link org.integratedmodelling.klab.api.identities.Federation} in federated
      * contexts, in which case it must be provided with the same group metadata that specify the
-     * federation. A runtime may retain only one independently created USER agent at a time.
+     * federation. A runtime may retain one independently created USER agent for each root user
+     * scope it serves.
      */
     USER,
     /**

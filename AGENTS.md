@@ -100,7 +100,7 @@ must be chosen as stable, globally meaningful names when the behavior will be sh
 | `component` | A self-contained composable actor created and used from another agent, commonly a UI component                                             | May initialize and run `main`; long-lived while its owner uses it |
 | `script` | A synchronous batch job in a session scope                                                                                               | Expected to finish unless it starts emitter work |
 | `task` | A restricted behavior attached to any observation for post-processing, documentation, or monitoring                                      | Runs in the request context; cannot modify the knowledge graph |
-| `user` | The behavior instrumenting the user that owns the request                                                                                  | Exactly one instance per runtime, bound to the root user scope |
+| `user` | The behavior instrumenting the user that owns the request                                                                                  | Exactly one instance per root user scope |
 | `testcase` | A collection of actions, normally annotated with `@test`, run under a test scope                                                         | Runs explicitly and produces test results |
 | `trait` | An inheritable agent personality contributing state and actions                                                                           | May declare `init` and `main`; both are adopted through inheritance |
 | `library` | A reusable collection of callable actions                                                                                                  | Cannot declare `init` or `main` and is not started independently |
@@ -669,8 +669,9 @@ graph. Every task declares `main`.
 
 A `user` behavior instruments the root `UserScope` owning the request. It can configure or react to
 user-level activity independently of the session or context from which it was requested. A runtime
-retains at most one user-behavior instance; stopping or releasing that instance permits a
-replacement to be created.
+retains at most one user-behavior instance for each root user scope it serves. Different users may
+therefore have independent USER agents; stopping or releasing one permits a replacement for that
+same user to be created.
 
 ### 10.6. Test cases
 
