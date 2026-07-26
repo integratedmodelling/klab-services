@@ -64,6 +64,22 @@ class AgentConsoleTest {
   }
 
   @Test
+  void consoleRetainsOutputReplayedDuringAttachmentUntilListenerIsInstalled() throws Exception {
+    var agent = new ReplayingAgent();
+    var console = new AgentConsole(agent);
+    var output = new ArrayList<AgentConsole.Output>();
+
+    try (var ignored = console.onOutput(output::add)) {
+      assertEquals(
+          List.of(
+              new AgentConsole.Output(RuntimeAgent.ConsoleMessageType.STDOUT, "startup\n")),
+          output);
+    } finally {
+      console.close();
+    }
+  }
+
+  @Test
   void clientHandleRetainsObservationAndActivityFromStatusMessages() {
     var agent = new AgentImpl();
     agent.setUrn("test:agent:status");
@@ -165,6 +181,30 @@ class AgentConsoleTest {
     public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
         T message, Class<? extends R> responseClass) {
       return CompletableFuture.failedFuture(new UnsupportedOperationException());
+    }
+  }
+
+  private static final class ReplayingAgent extends AgentImpl {
+
+    private ReplayingAgent() {
+      setUrn("test:agent:replay");
+      setViable(true);
+    }
+
+    @Override
+    public <T extends Serializable> void tell(T message) {
+      if (message instanceof RuntimeAgent.CustomMessage custom
+          && RuntimeAgent.ConsoleMessageType.CONSOLE_ATTACH
+              .name()
+              .equals(custom.type().getValue())) {
+        receiveMessage(
+            Message.create(
+                getUrn(),
+                Message.MessageClass.AgentCommunication,
+                Message.MessageType.CustomAgentMessage,
+                new RuntimeAgent.CustomMessage(
+                    RuntimeAgent.ConsoleMessageType.STDOUT.constant(), "startup\n")));
+      }
     }
   }
 }

@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * There is one job manager per session at service side. Jobs go away when the session is closed.
+ * There is one job manager per session at service side. Jobs expire when the session is closed.
  */
 public class JobManager {
 

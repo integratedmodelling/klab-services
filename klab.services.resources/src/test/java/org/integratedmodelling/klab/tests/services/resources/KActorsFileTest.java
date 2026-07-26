@@ -248,6 +248,7 @@ class KActorsFileTest {
     assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
     var action = result.requireBehavior().getStatements().getFirst();
     assertEquals("read_line", action.getUrn());
+    assertEquals(List.of("line", "sender"), action.getArgumentNames());
     assertEquals(List.of("stdin"), action.getAnnotations().stream().map(a -> a.getName()).toList());
     var compiler = new AgentCompiler(result.requireBehavior());
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());

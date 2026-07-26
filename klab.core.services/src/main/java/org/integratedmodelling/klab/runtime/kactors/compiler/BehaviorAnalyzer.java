@@ -134,9 +134,12 @@ public class BehaviorAnalyzer {
     }
     var main = actions.get("main");
     if (main != null) {
-      return combine(mode, executionMode(main));
+      mode = combine(mode, executionMode(main));
     }
 
+    // Actor-like behaviors remain available for calls, @handle and @stdin messages after their
+    // startup code returns. Only explicitly finite behavior kinds derive their lifecycle solely
+    // from init/main execution.
     return switch (behavior.getBehaviorType()) {
       case BEHAVIOR, APP, USER, COMPONENT -> Verb.Type.EMITTER;
       default -> mode;

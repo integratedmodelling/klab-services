@@ -46,6 +46,23 @@ import org.junit.jupiter.api.Test;
 class BehaviorAnalyzerTest {
 
   @Test
+  void actionParametersAreVisibleThroughoutTheActionBody() {
+    var echo = action("echo", returned(identifier("payload")));
+    echo.setArgumentNames(List.of("payload"));
+    var analyzer = new BehaviorAnalyzer(behavior(echo));
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertFalse(
+        analyzer.getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification.getMessage().equals("Unknown identifier: payload")));
+    assertTrue(
+        analyzer.getActions().get("echo").parameters().stream()
+            .anyMatch(parameter -> parameter.name().equals("payload")));
+  }
+
+  @Test
   void compilerRegistersNamedAndUnnamedHandleAnnotations() {
     var named = action("namedHandler");
     named.setArgumentNames(List.of("payload", "sender"));
@@ -506,9 +523,28 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void actorLikeBehaviorsRemainAvailableAfterFunctionMainReturns() {
+    for (var type :
+        List.of(
+            KActorsBehavior.Type.BEHAVIOR,
+            KActorsBehavior.Type.APP,
+            KActorsBehavior.Type.USER,
+            KActorsBehavior.Type.COMPONENT)) {
+      var source = behavior(action("main", returned(number(0))));
+      source.setBehaviorType(type);
+      var analyzer = new BehaviorAnalyzer(source);
+
+      assertTrue(analyzer.analyze(), messages(analyzer));
+      assertEquals(Verb.Type.EMITTER, analyzer.getAgentExecutionMode(), type.toString());
+      assertEquals(BehaviorAnalyzer.Lifecycle.PERSISTENT, analyzer.getLifecycle(), type.toString());
+    }
+  }
+
+  @Test
   void supplierCallsKeepExecutionFiniteButAsynchronous() {
     var main = action("main", verb("external", "later"));
     var behavior = behavior(main);
+    behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
     behavior.setImports(List.of(imported("component.behavior", "external")));
     var validator =
         new KActorsVisitor.LenientValidator() {

@@ -39,6 +39,27 @@ import org.junit.jupiter.api.Test;
 class RuntimeAgentBaseTest {
 
   @Test
+  void rootScopeHooksRunExactlyOnceAndAgentsCannotRestart() {
+    var completed = new LifecycleHookAgent();
+
+    assertEquals(0, completed.setupCalls.get());
+    assertEquals(0, completed.disposeCalls.get());
+    assertEquals(0, completed.run().getErrorCode());
+    assertEquals(1, completed.setupCalls.get());
+    assertEquals(1, completed.disposeCalls.get());
+    assertTrue(completed.run().getErrorCode() != 0);
+    assertEquals(1, completed.setupCalls.get());
+    assertEquals(1, completed.disposeCalls.get());
+
+    var stoppedBeforeStart = new LifecycleHookAgent();
+    stoppedBeforeStart.stop();
+    stoppedBeforeStart.stop();
+    assertEquals(0, stoppedBeforeStart.setupCalls.get());
+    assertEquals(1, stoppedBeforeStart.disposeCalls.get());
+    assertTrue(stoppedBeforeStart.run().getErrorCode() != 0);
+  }
+
+  @Test
   void specializedScopesRetainTheirTypeWhenDerivingSubScopes() {
     var session = mock(org.integratedmodelling.klab.api.scope.SessionScope.class);
     var script = new StubScript(session);
@@ -109,6 +130,35 @@ class RuntimeAgentBaseTest {
     assertFalse(agent.initializeMessaging("test:agent:1", null, notifications::add));
     assertEquals(1, notifications.size());
     assertEquals(Notification.Level.Info, notifications.getFirst().getLevel());
+  }
+
+  @Test
+  void startupConsoleOutputIsReplayedWhenTheConsoleAttaches() {
+    var agent = new ConsoleBufferRuntimeAgent();
+    agent.initializeMessaging("test:agent:console-buffer", null, ignored -> {});
+
+    assertFalse(agent.sendToConsole(RuntimeAgent.ConsoleMessageType.STDOUT, "Ready"));
+    assertTrue(agent.published.isEmpty());
+
+    agent.send(
+        Message.create(
+            "client:console:1",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            new RuntimeAgent.CustomMessage(
+                RuntimeAgent.ConsoleMessageType.CONSOLE_ATTACH.constant(), null)),
+        null,
+        null);
+
+    assertEquals(
+        List.of(new ConsoleChunk(RuntimeAgent.ConsoleMessageType.STDOUT, "Ready")),
+        agent.published);
+    assertTrue(agent.sendToConsole(RuntimeAgent.ConsoleMessageType.STDOUT, "After attach"));
+    assertEquals(
+        List.of(
+            new ConsoleChunk(RuntimeAgent.ConsoleMessageType.STDOUT, "Ready"),
+            new ConsoleChunk(RuntimeAgent.ConsoleMessageType.STDOUT, "After attach")),
+        agent.published);
   }
 
   @Test
@@ -456,6 +506,51 @@ class RuntimeAgentBaseTest {
     }
   }
 
+  private static class LifecycleHookAgent extends RuntimeAgentBase {
+
+    private final AtomicInteger setupCalls = new AtomicInteger();
+    private final AtomicInteger disposeCalls = new AtomicInteger();
+
+    private LifecycleHookAgent() {
+      super(null, null);
+    }
+
+    @Override
+    protected AgentScope initializeScope() {
+      return new AgentScope(this) {
+        @Override
+        public void setup() {
+          setupCalls.incrementAndGet();
+        }
+
+        @Override
+        public void dispose() {
+          disposeCalls.incrementAndGet();
+        }
+
+        @Override
+        public org.integratedmodelling.klab.api.scope.SessionScope getSession() {
+          return null;
+        }
+
+        @Override
+        public org.integratedmodelling.klab.api.scope.ContextScope getContext() {
+          return null;
+        }
+      };
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
   private static class MessageHandlingRuntimeAgent extends RuntimeAgentBase {
 
     private final CountDownLatch handled = new CountDownLatch(1);
@@ -503,6 +598,20 @@ class RuntimeAgentBaseTest {
     @Override
     public Verb.Type getAgentExecutionMode() {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private record ConsoleChunk(RuntimeAgent.ConsoleMessageType type, String text) {}
+
+  private static class ConsoleBufferRuntimeAgent extends ReactiveRuntimeAgent {
+
+    private final List<ConsoleChunk> published = new CopyOnWriteArrayList<>();
+
+    @Override
+    protected boolean publishConsoleOutput(
+        RuntimeAgent.ConsoleMessageType type, String text) {
+      published.add(new ConsoleChunk(type, text));
+      return true;
     }
   }
 

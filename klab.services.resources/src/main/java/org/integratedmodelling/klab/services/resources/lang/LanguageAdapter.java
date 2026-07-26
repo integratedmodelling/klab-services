@@ -1381,6 +1381,7 @@ public enum LanguageAdapter {
     setParsingData(action, ret, namespace, projectName);
 
     ret.setUrn(action.getName());
+    ret.setArgumentNames(new ArrayList<>(action.getArgumentNames()));
     for (var statement : action.getStatements()) {
       ret.getCode().add(adaptActionStatement(statement, behavior, ret, notifications));
     }

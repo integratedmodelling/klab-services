@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,6 +85,10 @@ import reactor.core.publisher.Sinks;
 ///
 public abstract class RuntimeAgentBase extends GroovyObjectSupport implements RuntimeAgent {
 
+  private static final int MAX_PENDING_CONSOLE_OUTPUTS = 256;
+
+  private record ConsoleOutput(RuntimeAgent.ConsoleMessageType type, String text) {}
+
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
   protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
@@ -96,6 +101,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicBoolean failureReported = new AtomicBoolean(false);
   private final AtomicBoolean consoleAttached = new AtomicBoolean(false);
+  private final Object consoleOutputLock = new Object();
+  private final ArrayDeque<ConsoleOutput> pendingConsoleOutputs = new ArrayDeque<>();
   private final AtomicLong startedAt = new AtomicLong(-1);
   private final AtomicLong lastActivityAt = new AtomicLong(-1);
   private final List<RuntimeAgentBase> inheritedBehaviorInstances =
@@ -274,6 +281,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       this.sessionScope = scope;
     }
     this.rootScope = initializeScope();
+    this.rootScope.disposeWith(this.rootScope::dispose);
     this.lifecycleSubscription =
         eventBus
             .asFlux()
@@ -381,7 +389,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   /** Disconnect the runtime peer without modifying the serializable agent handle. */
   public void closeMessaging() {
-    consoleAttached.set(false);
+    synchronized (consoleOutputLock) {
+      consoleAttached.set(false);
+      pendingConsoleOutputs.clear();
+    }
     if (agentUrn != null) {
       AgentEventBus.INSTANCE.unsubscribe(agentUrn, this);
     }
@@ -439,11 +450,26 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   public boolean sendToConsole(RuntimeAgent.ConsoleMessageType type, String text) {
     if ((type != RuntimeAgent.ConsoleMessageType.STDOUT
             && type != RuntimeAgent.ConsoleMessageType.STDERR)
-        || !consoleAttached.get()
         || agentUrn == null) {
       return false;
     }
     markActivity();
+    synchronized (consoleOutputLock) {
+      if (!consoleAttached.get()) {
+        if (pendingConsoleOutputs.size() == MAX_PENDING_CONSOLE_OUTPUTS) {
+          pendingConsoleOutputs.removeFirst();
+        }
+        pendingConsoleOutputs.addLast(new ConsoleOutput(type, text));
+        // Retain the existing local fallback while making startup output available to a console
+        // that attaches after main has begun.
+        return false;
+      }
+    }
+    return publishConsoleOutput(type, text);
+  }
+
+  protected boolean publishConsoleOutput(
+      RuntimeAgent.ConsoleMessageType type, String text) {
     return AgentEventBus.INSTANCE.publish(
         agentUrn,
         agentUrn,
@@ -515,11 +541,19 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
     String messageClass = customMessage.type().getValue();
     if (RuntimeAgent.ConsoleMessageType.CONSOLE_ATTACH.name().equals(messageClass)) {
-      consoleAttached.set(true);
+      List<ConsoleOutput> pending;
+      synchronized (consoleOutputLock) {
+        consoleAttached.set(true);
+        pending = List.copyOf(pendingConsoleOutputs);
+        pendingConsoleOutputs.clear();
+      }
+      pending.forEach(output -> publishConsoleOutput(output.type(), output.text()));
       return;
     }
     if (RuntimeAgent.ConsoleMessageType.CONSOLE_DETACH.name().equals(messageClass)) {
-      consoleAttached.set(false);
+      synchronized (consoleOutputLock) {
+        consoleAttached.set(false);
+      }
       return;
     }
     if (RuntimeAgent.ConsoleMessageType.STDIN.name().equals(messageClass)) {
@@ -1484,14 +1518,19 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @return
    */
   public ExitValue run() {
+    if (rootScope == null || rootScope.isDone()) {
+      return ExitValue.failure(
+          new KlabIllegalStateException("Agent has already been stopped and cannot be restarted"));
+    }
     if (!started.compareAndSet(false, true)) {
       return ExitValue.failure(new KlabIllegalStateException("Agent has already been started"));
     }
-    long timestamp = markActivity();
-    startedAt.compareAndSet(-1, timestamp);
-    publishStatus(Message.MessageType.AgentStarted, null);
-    publishStatus(Message.MessageType.AgentStatusChanged, null);
     try {
+      rootScope.setup();
+      long timestamp = markActivity();
+      startedAt.compareAndSet(-1, timestamp);
+      publishStatus(Message.MessageType.AgentStarted, null);
+      publishStatus(Message.MessageType.AgentStatusChanged, null);
       if (getAgentExecutionMode() == Verb.Type.FUNCTION) {
         var result = main(rootScope);
         rootScope.done(result);

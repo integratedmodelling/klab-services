@@ -114,8 +114,8 @@ the legacy `getCompiledClass(urn)` lookup is populated as well.
   behavior;
 - accepts the same `KActorsVisitor.Validator` and `AgentCompiler.Resolver` used by direct compiler
   calls, and uses them for both source-only translation and class compilation;
-- caches successful classes and compilation failures by behavior URN, version, creation timestamp,
-  and compiler-environment identity;
+- caches successful classes and compilation failures by behavior URN, version, maintained
+  last-update timestamp, source SHA-256 fingerprint, and compiler-environment identity;
 - submits the primary and recursively generated sources to the JDK `JavaCompiler` in one task;
 - retains bytecode in memory and loads it through a registry-owned class loader;
 - invokes the generated
@@ -281,6 +281,17 @@ available. The inferred lifecycle is currently:
 specialized base owns a nested `AgentScope` subtype and overrides `initializeScope()`. Its
 covariant `withId(...)` creates the same specialized type, retaining session and context bindings
 in every derived action scope.
+
+The root `RuntimeAgent.Scope` lifecycle is bracketed by two overridable hooks. `setup()` runs once
+immediately before `main`; `dispose()` is registered as root-scope cleanup and runs once after
+normal completion, failure, or explicit stop. A stop before start skips setup but still disposes
+the scope. Derived scopes can use these hooks to install and clean up behavior-specific runtime
+facilities.
+
+Runtime agent instances are non-reentrant. `RuntimeAgentBase.run()` rejects a second invocation and
+also rejects starting a scope that has already terminated. Managed handles accept at most one
+start and one stop; explicit stop removes the instance from `AgentRegistry`, and the old handle
+cannot recreate or restart it.
 
 ## 5. Import and actor resolution
 
@@ -704,6 +715,10 @@ and cleanup semantics.
 failure reports as lifecycle changes occur. Client `AgentImpl` instances subscribe through
 `connect(MessagingChannel)`, request current status after connecting, update their local status
 from reports, and publish remote start, stop, and custom messages through the same bus.
+Runtime-only `addMessageListener(...)` and `addSentMessageListener(...)` hooks expose received and
+successfully published traffic without adding transport state to the serialized handle. The IDE
+debugger uses both hooks to build a per-agent message transcript beginning before the debug start
+request is sent.
 
 At the public API boundary, use `Agent.tell(...)`. To target a language handler, construct the
 custom envelope explicitly:
@@ -797,7 +812,9 @@ ordinary `@handle` actions.
 `RuntimeAgentBase` intercepts attach/detach and output constants before general language dispatch.
 Input implicitly attaches the console and continues to the generated `STDIN` handler. The
 `sendToConsole(...)` API accepts only `STDOUT` and `STDERR`, publishes from and to the canonical
-agent URN, and returns false if messaging or console attachment is unavailable.
+agent URN, and returns false if messaging or console attachment is unavailable. Before the first
+console attaches, it retains a bounded startup backlog while still returning false so local
+fallback output remains available. Attaching replays that backlog in order.
 
 `CoreActorLibrary.Console` uses `sendToConsole(...)` for `print`, `println`, `format`/`printf`,
 `error`, `errorln`, and `errorf`. Output is sent as already formatted text chunks, including line
@@ -807,9 +824,10 @@ terminators where appropriate, so transports and UIs must not add their own newl
 
 The common `AgentConsole` class is deliberately UI-neutral. It adds a runtime-only listener to
 `AgentImpl`, sends attach/detach automatically, exposes `sendLine` and `onOutput`, and can run a
-blocking stream-based terminal. It does not own the agent lifecycle or its AMQP connection.
-JavaFX or other UI peers must marshal output callbacks to their UI thread and close listener
-subscriptions when changing targets.
+blocking stream-based terminal. Output replayed synchronously during attachment is retained in a
+bounded client-side backlog until the first output listener is installed. It does not own the
+agent lifecycle or its AMQP connection. JavaFX or other UI peers must marshal output callbacks to
+their UI thread and close listener subscriptions when changing targets.
 
 ## 12. Known gaps and future work
 

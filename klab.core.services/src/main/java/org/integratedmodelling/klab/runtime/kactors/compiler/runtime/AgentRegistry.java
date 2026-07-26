@@ -10,9 +10,12 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.FileObject;
@@ -66,6 +70,7 @@ public enum AgentRegistry {
       String urn,
       Version version,
       long timestamp,
+      String sourceFingerprint,
       KActorsVisitor.Validator validator,
       AgentCompiler.Resolver resolver) {
 
@@ -76,9 +81,28 @@ public enum AgentRegistry {
       this(
           behavior.getUrn(),
           behavior.getVersion(),
-          behavior.getCreationTimestamp(),
+          revisionTimestamp(behavior),
+          AgentRegistry.sourceFingerprint(behavior),
           validator,
           resolver);
+    }
+  }
+
+  private static long revisionTimestamp(KActorsBehavior behavior) {
+    return behavior.getLastUpdateTimestamp() > 0
+        ? behavior.getLastUpdateTimestamp()
+        : behavior.getCreationTimestamp();
+  }
+
+  private static String sourceFingerprint(KActorsBehavior behavior) {
+    String source = Objects.toString(behavior.getSourceCode(), "");
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256")
+                  .digest(source.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException impossible) {
+      throw new IllegalStateException("SHA-256 is unavailable", impossible);
     }
   }
 
@@ -341,7 +365,8 @@ public enum AgentRegistry {
             entry ->
                 entry.getKey().urn().equals(behavior.getUrn())
                     && Objects.equals(entry.getKey().version(), behavior.getVersion())
-                    && entry.getKey().timestamp() == behavior.getCreationTimestamp())
+                    && entry.getKey().timestamp() == revisionTimestamp(behavior)
+                    && entry.getKey().sourceFingerprint().equals(sourceFingerprint(behavior)))
         .map(entry -> entry.getValue().agentClass())
         .filter(Objects::nonNull)
         .findFirst()
@@ -694,6 +719,12 @@ public enum AgentRegistry {
   /** Service-side handle backed by an instantiated generated agent. */
   public final class ManagedAgent implements Agent {
 
+    private enum Lifecycle {
+      NEW,
+      STARTED,
+      STOPPED
+    }
+
     private final String urn;
     private final String behaviorUrn;
     private final String name;
@@ -702,6 +733,8 @@ public enum AgentRegistry {
     private final List<Notification> notifications;
     private final String javaCode;
     private final String userScopeKey;
+    private final AtomicReference<Lifecycle> lifecycle =
+        new AtomicReference<>(Lifecycle.NEW);
     private volatile boolean viable = true;
 
     private ManagedAgent(
@@ -765,6 +798,11 @@ public enum AgentRegistry {
       if (!viable) {
         return false;
       }
+      if (!lifecycle.compareAndSet(Lifecycle.NEW, Lifecycle.STARTED)) {
+        notifications.add(
+            Notification.warning("Agent instances are single-use and cannot be restarted"));
+        return false;
+      }
       if (arguments != null && arguments.length > 0) {
         notifications.add(
             Notification.warning(
@@ -791,6 +829,11 @@ public enum AgentRegistry {
 
     @Override
     public boolean stop() {
+      if (lifecycle.getAndSet(Lifecycle.STOPPED) == Lifecycle.STOPPED) {
+        notifications.add(
+            Notification.warning("Agent has already been stopped and released"));
+        return false;
+      }
       try {
         runtime.stop();
         return true;

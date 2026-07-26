@@ -303,7 +303,8 @@ An `AgentConsole` attaches when constructed with a connected client-side `Agent`
 standard-error chunks, and `run(...)` provides a blocking terminal loop over ordinary Java input
 and print streams. Closing the console detaches it without stopping or disconnecting the agent.
 If no remote console is attached, the core console verbs fall back to the runtime's local output
-stream.
+stream. A bounded copy of early startup output is also retained and replayed when the first console
+attaches, so output from `main` is not lost while a remote client is being created.
 
 ## 5. Calls, arguments, and event matching
 
@@ -745,6 +746,15 @@ it in the requested user/session scope. The returned runtime agent can receive m
 status until it finishes or is explicitly stopped. When the creating scope is connected to
 messaging, the returned handle's URN also identifies its bidirectional message endpoint; otherwise
 the agent runs normally with messaging disabled and an explanatory info notification.
+
+Runtime agent instances are single-use. An agent may be started once and explicitly stopped once;
+after stopping it is removed from the runtime registry and cannot be restarted. Finite agents that
+complete naturally may remain registered for inspection, but their existing instance still cannot
+run again.
+
+Java scope implementations may override `RuntimeAgent.Scope.setup()` to install facilities
+immediately before execution and `dispose()` to release them when the root agent scope terminates.
+Each hook is called at most once. Stopping an agent before it starts calls only `dispose()`.
 
 Scope ownership follows the behavior kind:
 

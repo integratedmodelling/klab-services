@@ -80,6 +80,50 @@ class AgentRegistryTest {
   }
 
   @Test
+  void changedSourceInvalidatesTheCompiledBehaviorCacheEvenAtTheSameTimestamp() {
+    String urn = "test.registry.revision." + UUID.randomUUID().toString().replace("-", "");
+    var original = finiteBehavior(urn);
+    original.setLastUpdateTimestamp(100L);
+    original.setSourceCode("script " + urn + " action main: return 0");
+    var originalHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(urn, "original"), original, null);
+    var originalClass = AgentRegistry.INSTANCE.getCompiledClass(original);
+
+    var revised = finiteBehavior(urn);
+    revised.setLastUpdateTimestamp(100L);
+    revised.setSourceCode("script " + urn + " action main: return 1");
+    var returned = (KActorsStatementImpl.ReturnImpl) revised.getStatements().getFirst().getCode().getFirst();
+    ((KActorsValueImpl) returned.getValue()).setStatedValue(1);
+    var revisedHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(urn, "revised"), revised, null);
+    var revisedClass = AgentRegistry.INSTANCE.getCompiledClass(revised);
+
+    assertNotNull(originalClass);
+    assertNotNull(revisedClass);
+    assertTrue(originalClass != revisedClass, "changed source must produce a newly loaded class");
+    assertTrue(originalHandle.stop());
+    assertTrue(revisedHandle.stop());
+  }
+
+  @Test
+  void managedAgentsAreSingleUseAndExplicitStopIsTerminal() {
+    var behavior =
+        finiteBehavior("test.registry.singleuse." + UUID.randomUUID().toString().replace("-", ""));
+    var agent =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "single use"), behavior, null);
+
+    assertTrue(agent.start(), () -> agent.getNotifications().toString());
+    assertTrue(!agent.start(), "a completed agent must not restart");
+    assertTrue(agent.stop());
+    assertTrue(!agent.stop(), "stop must be accepted only once");
+    assertTrue(!agent.start(), "an explicitly stopped agent is terminal");
+    assertNull(AgentRegistry.INSTANCE.getAgent(agent.getUrn()));
+  }
+
+  @Test
   void userBehaviorHasAtMostOneRegisteredInstancePerUserScope() {
     var behavior =
         finiteBehavior("test.registry.user." + UUID.randomUUID().toString().replace("-", ""));
@@ -176,7 +220,7 @@ class AgentRegistryTest {
     var behavior = new KActorsBehaviorImpl();
     behavior.setUrn(urn);
     behavior.setDescription("Registry test behavior");
-    behavior.setBehaviorType(KActorsBehavior.Type.BEHAVIOR);
+    behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
     behavior.setStatements(List.of(main));
     return behavior;
   }

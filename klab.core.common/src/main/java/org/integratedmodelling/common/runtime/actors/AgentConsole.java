@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -23,12 +25,16 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  */
 public final class AgentConsole implements AutoCloseable {
 
+  private static final int MAX_PENDING_OUTPUTS = 256;
+
   /** One output chunk received from the remote agent. */
   public record Output(RuntimeAgent.ConsoleMessageType stream, String text) {}
 
   private final Agent agent;
   private final CopyOnWriteArrayList<Consumer<Output>> outputListeners =
       new CopyOnWriteArrayList<>();
+  private final Object outputLock = new Object();
+  private final ArrayDeque<Output> pendingOutputs = new ArrayDeque<>();
   private final AutoCloseable messageSubscription;
   private volatile boolean closed;
 
@@ -51,7 +57,13 @@ public final class AgentConsole implements AutoCloseable {
    */
   public AutoCloseable onOutput(Consumer<Output> listener) {
     Objects.requireNonNull(listener, "listener");
-    outputListeners.add(listener);
+    var pending = new ArrayList<Output>();
+    synchronized (outputLock) {
+      outputListeners.add(listener);
+      pending.addAll(pendingOutputs);
+      pendingOutputs.clear();
+    }
+    pending.forEach(listener);
     return () -> outputListeners.remove(listener);
   }
 
@@ -102,7 +114,10 @@ public final class AgentConsole implements AutoCloseable {
     } catch (Exception ignored) {
       // Closing a local listener must never prevent console teardown.
     }
-    outputListeners.clear();
+    synchronized (outputLock) {
+      outputListeners.clear();
+      pendingOutputs.clear();
+    }
   }
 
   private void receive(Message message) {
@@ -125,6 +140,15 @@ public final class AgentConsole implements AutoCloseable {
     }
     String text = custom.payload() == null ? "" : String.valueOf(custom.payload());
     var output = new Output(stream, text);
+    synchronized (outputLock) {
+      if (outputListeners.isEmpty()) {
+        if (pendingOutputs.size() == MAX_PENDING_OUTPUTS) {
+          pendingOutputs.removeFirst();
+        }
+        pendingOutputs.addLast(output);
+        return;
+      }
+    }
     outputListeners.forEach(listener -> listener.accept(output));
   }
 

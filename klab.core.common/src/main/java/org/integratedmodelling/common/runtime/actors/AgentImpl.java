@@ -31,6 +31,8 @@ public class AgentImpl implements Agent {
   private transient String localSenderUrn;
   private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
       new CopyOnWriteArrayList<>();
+  private transient CopyOnWriteArrayList<Consumer<Message>> sentMessageListeners =
+      new CopyOnWriteArrayList<>();
 
   @Override
   public String getUrn() {
@@ -62,8 +64,7 @@ public class AgentImpl implements Agent {
       }
       return false;
     }
-    boolean accepted =
-        AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStartRequested);
+    boolean accepted = publish(Message.MessageType.AgentStartRequested);
     if (accepted) {
       // The service-side start handler is asynchronous. A subsequent status message remains
       // authoritative and will correct this optimistic transition if startup fails.
@@ -144,8 +145,7 @@ public class AgentImpl implements Agent {
 
   @Override
   public boolean stop() {
-    return urn != null
-        && AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStopRequested);
+    return urn != null && publish(Message.MessageType.AgentStopRequested);
   }
 
   @Override
@@ -175,7 +175,7 @@ public class AgentImpl implements Agent {
       return;
     }
     if (message instanceof Message agentMessage) {
-      AgentEventBus.INSTANCE.publish(messageSenderUrn(), urn, agentMessage);
+      publish(agentMessage);
       return;
     }
     RuntimeAgent.CustomMessage customMessage =
@@ -184,8 +184,7 @@ public class AgentImpl implements Agent {
             : message instanceof Constant constant
                 ? new RuntimeAgent.CustomMessage(constant, null)
                 : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
-    AgentEventBus.INSTANCE.publish(
-        messageSenderUrn(), urn, Message.MessageType.CustomAgentMessage, customMessage);
+    publish(Message.MessageType.CustomAgentMessage, customMessage);
   }
 
   @Override
@@ -231,6 +230,20 @@ public class AgentImpl implements Agent {
     return () -> listeners().remove(listener);
   }
 
+  /**
+   * Observe messages successfully sent by this client-side handle. Listeners are runtime-only and
+   * are never serialized with the handle.
+   *
+   * @return a subscription that removes the listener when closed
+   */
+  public AutoCloseable addSentMessageListener(Consumer<Message> listener) {
+    if (listener == null) {
+      return () -> {};
+    }
+    sentListeners().add(listener);
+    return () -> sentListeners().remove(listener);
+  }
+
   /** Runtime-only origin used by sender handles injected into {@code @handle} actions. */
   public void setLocalSenderUrn(String localSenderUrn) {
     this.localSenderUrn = localSenderUrn;
@@ -238,6 +251,40 @@ public class AgentImpl implements Agent {
 
   private String messageSenderUrn() {
     return localSenderUrn == null ? urn : localSenderUrn;
+  }
+
+  private boolean publish(Object... messageArguments) {
+    String senderUrn = messageSenderUrn();
+    Message message = createSentMessage(senderUrn, messageArguments);
+    boolean published = AgentEventBus.INSTANCE.publish(senderUrn, urn, message);
+    if (published) {
+      for (var listener : sentListeners()) {
+        try {
+          listener.accept(message);
+        } catch (Throwable failure) {
+          notifications.add(
+              Notification.warning("Agent sent-message listener failed: " + failure.getMessage()));
+        }
+      }
+    }
+    return published;
+  }
+
+  private Message createSentMessage(String senderUrn, Object... messageArguments) {
+    if (messageArguments != null
+        && messageArguments.length == 1
+        && messageArguments[0] instanceof Message message) {
+      return Message.create(
+          senderUrn,
+          message.getMessageClass(),
+          message.getMessageType(),
+          message.getPayload(Object.class));
+    }
+    Object[] supplied = messageArguments == null ? new Object[0] : messageArguments;
+    Object[] completed = new Object[supplied.length + 1];
+    completed[0] = Message.MessageClass.AgentCommunication;
+    System.arraycopy(supplied, 0, completed, 1, supplied.length);
+    return Message.create(senderUrn, completed);
   }
 
   void receiveMessage(Message message) {
@@ -278,6 +325,13 @@ public class AgentImpl implements Agent {
       messageListeners = new CopyOnWriteArrayList<>();
     }
     return messageListeners;
+  }
+
+  private CopyOnWriteArrayList<Consumer<Message>> sentListeners() {
+    if (sentMessageListeners == null) {
+      sentMessageListeners = new CopyOnWriteArrayList<>();
+    }
+    return sentMessageListeners;
   }
 
   private void applyStatus(Message message, Boolean aliveDefault) {

@@ -243,6 +243,18 @@ public interface RuntimeAgent {
   interface Scope extends Parameters<String> {
 
     /**
+     * Called exactly once immediately before the owning agent begins execution. Specialized scopes
+     * may override this to install runtime facilities needed by their agent.
+     */
+    default void setup() {}
+
+    /**
+     * Called exactly once when the owning agent terminates or is explicitly stopped. Specialized
+     * scopes may override this to release facilities installed by {@link #setup()}.
+     */
+    default void dispose() {}
+
+    /**
      * A SessionScope is always defined during an agent's lifetime. The scope may be a ContextScope
      * when the agent is part of a digital twin.
      *

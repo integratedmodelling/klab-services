@@ -45,8 +45,7 @@ public enum AgentEventBus {
     private final AMQPChannel amqp;
     private final boolean receivesMessages;
 
-    private Transport(
-        TransportKey key, MessagingChannel parentChannel, boolean receivesMessages) {
+    private Transport(TransportKey key, MessagingChannel parentChannel, boolean receivesMessages) {
       this.key = key;
       this.parentChannel = parentChannel;
       this.receivesMessages = receivesMessages;
@@ -72,8 +71,7 @@ public enum AgentEventBus {
         try {
           subscription.consumer().accept(message);
         } catch (Throwable failure) {
-          Logging.INSTANCE.error(
-              "Error dispatching agent message for " + key.agentUrn(), failure);
+          Logging.INSTANCE.error("Error dispatching agent message for " + key.agentUrn(), failure);
         }
       }
     }
@@ -132,10 +130,7 @@ public enum AgentEventBus {
    * @return true if the parent scope was connected and the agent transport was established
    */
   public boolean subscribe(
-      String agentUrn,
-      Object owner,
-      MessagingChannel parentChannel,
-      Consumer<Message> consumer) {
+      String agentUrn, Object owner, MessagingChannel parentChannel, Consumer<Message> consumer) {
     if (agentUrn == null
         || agentUrn.isBlank()
         || owner == null
@@ -188,9 +183,7 @@ public enum AgentEventBus {
     return removed;
   }
 
-  /**
-   * Publish to the remote peer(s) and local subscribers of the same agent handle.
-   */
+  /** Publish to the remote peer(s) and local subscribers of the same agent handle. */
   public boolean publish(String agentUrn, Object... messageArguments) {
     return publish(agentUrn, agentUrn, messageArguments);
   }
@@ -200,8 +193,7 @@ public enum AgentEventBus {
    * federation selects the destination transport, enabling agent-to-agent communication without a
    * shared all-agent queue.
    */
-  public boolean publish(
-      String senderUrn, String recipientUrn, Object... messageArguments) {
+  public boolean publish(String senderUrn, String recipientUrn, Object... messageArguments) {
     if (senderUrn == null || recipientUrn == null) {
       return false;
     }
@@ -247,9 +239,7 @@ public enum AgentEventBus {
   }
 
   private Message agentMessage(String senderUrn, Object... arguments) {
-    if (arguments != null
-        && arguments.length == 1
-        && arguments[0] instanceof Message message) {
+    if (arguments != null && arguments.length == 1 && arguments[0] instanceof Message message) {
       requireSupportedAgentMessage(message);
       registerPayload(message);
       return Objects.requireNonNull(
@@ -281,8 +271,7 @@ public enum AgentEventBus {
   }
 
   private boolean isAgentMessage(Message message) {
-    return message != null
-        && message.getMessageClass() == Message.MessageClass.AgentCommunication;
+    return message != null && message.getMessageClass() == Message.MessageClass.AgentCommunication;
   }
 
   private void requireSupportedAgentMessage(Message message) {
