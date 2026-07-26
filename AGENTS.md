@@ -237,6 +237,9 @@ action reset(payload):
 ```
 
 The annotation's main unnamed argument, or its named `class` argument, must be a `CONSTANT`.
+Agent handles expose the resolved textual constants through `getHandledMessageClasses()`, allowing
+clients and debugging tools to inspect the agent's custom-message API. The list includes inherited
+handlers after override resolution and excludes reserved runtime handlers such as `@stdin`.
 When a matching custom message arrives:
 
 - the runtime invokes the annotated action asynchronously using its inferred function, supplier,
@@ -250,8 +253,9 @@ When a matching custom message arrives:
 
 Handlers contributed by inherited behaviors remain active and execute against the retained
 inherited behavior instance, preserving its initialized state. A local handler for the same
-constant overrides inherited handlers. If multiple inherited behaviors handle the same constant,
-the first behavior in the inheritance order wins.
+constant overrides inherited handlers. This produces a warning unless the local action is also
+annotated with `@override`, making the replacement explicit. If multiple inherited behaviors
+handle the same constant, the first behavior in the inheritance order wins.
 
 Custom message payloads should normally use portable scalar, list, map, or other types already
 supported by the runtime's Jackson configuration. Component-defined serializable DTOs are also

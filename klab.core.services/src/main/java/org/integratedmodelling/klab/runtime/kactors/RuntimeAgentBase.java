@@ -152,21 +152,32 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     private final String action;
     private final Verb.Type executionType;
     private final List<String> argumentNames;
+    private final boolean customApi;
 
     public AgentMessageHandler(
         String action, Verb.Type executionType, List<String> argumentNames) {
-      this(null, action, executionType, argumentNames);
+      this(action, executionType, argumentNames, true);
+    }
+
+    public AgentMessageHandler(
+        String action,
+        Verb.Type executionType,
+        List<String> argumentNames,
+        boolean customApi) {
+      this(null, action, executionType, argumentNames, customApi);
     }
 
     private AgentMessageHandler(
         RuntimeAgentBase target,
         String action,
         Verb.Type executionType,
-        List<String> argumentNames) {
+        List<String> argumentNames,
+        boolean customApi) {
       this.target = target;
       this.action = action;
       this.executionType = executionType;
       this.argumentNames = argumentNames == null ? List.of() : List.copyOf(argumentNames);
+      this.customApi = customApi;
     }
 
     public String action() {
@@ -182,7 +193,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
 
     private AgentMessageHandler targeting(RuntimeAgentBase target) {
-      return new AgentMessageHandler(target, action, executionType, argumentNames);
+      return new AgentMessageHandler(target, action, executionType, argumentNames, customApi);
     }
   }
 
@@ -583,6 +594,18 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    */
   protected Map<String, AgentMessageHandler> agentMessageHandlers() {
     return Map.of();
+  }
+
+  /**
+   * Return the resolved custom message API implemented through {@code @handle}, including inherited
+   * handlers and excluding reserved runtime handlers such as {@code @stdin}.
+   */
+  public final List<String> getHandledMessageClasses() {
+    return agentMessageHandlers().entrySet().stream()
+        .filter(entry -> entry.getValue().customApi)
+        .map(Map.Entry::getKey)
+        .sorted()
+        .toList();
   }
 
   /**

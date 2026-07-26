@@ -7,7 +7,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The handle to an agent running in a runtime service. This is available at both client and service
- * side. The agent runs a k.Actors {@link
+ * sides, and while it offers advanced functionalities through its action methods, it must remain
+ * serializable across network boundaries. The agent runs a k.Actors {@link
  * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior} and may or may not be tied to a
  * {@link org.integratedmodelling.klab.api.scope.UserScope}, {@link
  * org.integratedmodelling.klab.api.scope.SessionScope} or {@link
@@ -16,11 +17,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}. In all these cases, the reference to
  * the agent is obtained through their respective hosts. Otherwise, a raw behavior may be submitted
  * to the runtime for execution outside of these scopes.
- *
- * <p>Agents may specialize into applications, test cases or script agents that offer a handle to
- * their ongoing execution.
  */
-public interface Agent {
+public interface Agent extends Serializable {
 
   /**
    * The URN of the agent, unique within the runtime service.
@@ -89,6 +87,17 @@ public interface Agent {
    * @return
    */
   List<Notification> getNotifications();
+
+  /**
+   * Textual CONSTANT values accepted by actions annotated with {@code @handle}, including
+   * inherited handlers after runtime override resolution. These values describe the agent's
+   * inspectable custom-message API. Reserved runtime messages such as {@code @stdin} are excluded.
+   *
+   * @return an immutable list, never null
+   */
+  default List<String> getHandledMessageClasses() {
+    return List.of();
+  }
 
   /**
    * Send a message asynchronously.

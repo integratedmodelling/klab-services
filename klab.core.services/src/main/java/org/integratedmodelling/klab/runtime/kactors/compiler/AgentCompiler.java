@@ -25,7 +25,6 @@ import javax.lang.model.element.Modifier;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
-import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -289,6 +288,18 @@ public class AgentCompiler {
           }
 
           @Override
+          public List<String> getHandledMessageClasses(
+              String behaviorUrn, KActorsVisitor.KActorsContext context) {
+            try {
+              return inheritedMessageClasses(
+                  resolver.resolveBehavior(behaviorUrn, scope), resolver, scope, new LinkedHashSet<>());
+            } catch (Throwable ignored) {
+              // Inheritance validation reports resolution failures with source context.
+              return List.of();
+            }
+          }
+
+          @Override
           public List<Notification> validateAdaptation(
               KActorsStatement.Assignment assignment,
               String behaviorUrn,
@@ -349,6 +360,35 @@ public class AgentCompiler {
           }
         };
     return new Environment(validator, resolver);
+  }
+
+  private static List<String> inheritedMessageClasses(
+      KActorsBehavior behavior, Resolver resolver, UserScope scope, Set<String> resolutionPath) {
+    if (behavior == null || !resolutionPath.add(behavior.getUrn())) {
+      return List.of();
+    }
+    var ret = new LinkedHashSet<String>();
+    if (behavior.getInheritedBehaviors() != null) {
+      for (var inherited : behavior.getInheritedBehaviors()) {
+        var inheritedBehavior = resolver.resolveBehavior(inherited.getImportedBehavior(), scope);
+        ret.addAll(inheritedMessageClasses(inheritedBehavior, resolver, scope, resolutionPath));
+      }
+    }
+    if (behavior.getStatements() != null) {
+      for (var action : behavior.getStatements()) {
+        if (action.getAnnotations() == null) {
+          continue;
+        }
+        for (var annotation : action.getAnnotations()) {
+          String messageClass = KActorsVisitor.handledMessageClass(annotation);
+          if (messageClass != null) {
+            ret.add(messageClass);
+          }
+        }
+      }
+    }
+    resolutionPath.remove(behavior.getUrn());
+    return List.copyOf(ret);
   }
 
   public AgentCompiler(String behaviorUrn, UserScope scope) {
@@ -747,7 +787,9 @@ public class AgentCompiler {
           continue;
         }
         String messageClass =
-            standardInput ? RuntimeAgent.ConsoleMessageType.STDIN.name() : messageClass(annotation);
+            standardInput
+                ? RuntimeAgent.ConsoleMessageType.STDIN.name()
+                : KActorsVisitor.handledMessageClass(annotation);
         if (messageClass == null || messageClass.isBlank()) {
           notifications.add(
               Notification.warning(
@@ -755,35 +797,18 @@ public class AgentCompiler {
           continue;
         }
         method.addStatement(
-            "handlers.put($S, new $T($S, $T.$L, $L))",
+            "handlers.put($S, new $T($S, $T.$L, $L, $L))",
             messageClass,
             handlerType,
             action.getUrn(),
             Verb.Type.class,
             action.getActionType().name(),
-            stringList(action.getArgumentNames()));
+            stringList(action.getArgumentNames()),
+            !standardInput);
       }
     }
     method.addStatement("return $T.copyOf(handlers)", Map.class);
     return method.build();
-  }
-
-  private String messageClass(org.integratedmodelling.klab.api.lang.Annotation annotation) {
-    Object declared =
-        annotation.containsKey("class")
-            ? annotation.get("class")
-            : annotation.getUnnamedArguments().isEmpty()
-                ? annotation.get(
-                    org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY)
-                : annotation.getUnnamedArguments().getFirst();
-    if (declared instanceof Constant constant) {
-      return constant.getValue();
-    }
-    if (declared instanceof KActorsValue value && value.getType() == ValueType.CONSTANT) {
-      Object constant = value.getValue(Object.class);
-      return constant instanceof Constant typed ? typed.getValue() : String.valueOf(constant);
-    }
-    return null;
   }
 
   private ClassName generatedClass(String behaviorUrn) {

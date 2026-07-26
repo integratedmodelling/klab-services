@@ -13,8 +13,10 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
@@ -27,6 +29,24 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
 
 class AgentRegistryTest {
+
+  @Test
+  void managedHandleExposesItsResolvedCustomMessageApi() {
+    var behavior =
+        finiteBehavior("test.registry.api." + UUID.randomUUID().toString().replace("-", ""));
+    var annotation = Annotation.of("handle");
+    annotation.putUnnamed(Constant.create("PING"));
+    ((KActorsActionImpl) behavior.getStatements().getFirst())
+        .setAnnotations(List.of(annotation));
+
+    var agent =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "message api"), behavior, null);
+
+    assertTrue(agent.isViable(), () -> agent.getNotifications().toString());
+    assertEquals(List.of("PING"), agent.getHandledMessageClasses());
+    assertTrue(agent.stop());
+  }
 
   @Test
   void compilesLoadsInstantiatesAndIndexesAgents() {

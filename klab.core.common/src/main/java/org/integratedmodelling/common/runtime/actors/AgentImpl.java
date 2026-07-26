@@ -25,6 +25,7 @@ public class AgentImpl implements Agent {
   private String javaCode;
   private String name;
   private String scopeId;
+  private List<String> handledMessageClasses = List.of();
   private long observationId = Observation.UNASSIGNED_ID;
   private long startedAt = -1;
   private long lastActivityAt = -1;
@@ -170,6 +171,16 @@ public class AgentImpl implements Agent {
   }
 
   @Override
+  public List<String> getHandledMessageClasses() {
+    return handledMessageClasses;
+  }
+
+  public void setHandledMessageClasses(List<String> handledMessageClasses) {
+    this.handledMessageClasses =
+        handledMessageClasses == null ? List.of() : List.copyOf(handledMessageClasses);
+  }
+
+  @Override
   public <T extends Serializable> void tell(T message) {
     if (urn == null || message == null) {
       return;
@@ -258,6 +269,7 @@ public class AgentImpl implements Agent {
     Message message = createSentMessage(senderUrn, messageArguments);
     boolean published = AgentEventBus.INSTANCE.publish(senderUrn, urn, message);
     if (published) {
+      markActivity();
       for (var listener : sentListeners()) {
         try {
           listener.accept(message);
@@ -291,6 +303,9 @@ public class AgentImpl implements Agent {
     if (message == null
         || message.getMessageClass() != Message.MessageClass.AgentCommunication) {
       return;
+    }
+    if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
+      markActivity();
     }
     switch (message.getMessageType()) {
       case AgentStarted -> applyStatus(message, true);
@@ -346,6 +361,10 @@ public class AgentImpl implements Agent {
     this.viable = status.viable();
     this.observationId = status.observationId();
     this.startedAt = status.startedAt();
-    this.lastActivityAt = status.lastActivityAt();
+    this.lastActivityAt = Math.max(this.lastActivityAt, status.lastActivityAt());
+  }
+
+  private void markActivity() {
+    this.lastActivityAt = Math.max(this.lastActivityAt, System.currentTimeMillis());
   }
 }

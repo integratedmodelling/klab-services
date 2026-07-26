@@ -2,6 +2,7 @@ package org.integratedmodelling.common.runtime.actors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -107,6 +108,25 @@ class AgentConsoleTest {
   }
 
   @Test
+  void incomingCustomMessageResetsClientIdleTime() {
+    var agent = new AgentImpl();
+    agent.setUrn("test:agent:activity");
+    agent.setViable(true);
+    agent.setLastActivityAt(1L);
+    long receivedAfter = System.currentTimeMillis();
+
+    agent.receiveMessage(
+        Message.create(
+            "test:agent:activity",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            new RuntimeAgent.CustomMessage(
+                RuntimeAgent.ConsoleMessageType.STDOUT.constant(), "activity")));
+
+    assertTrue(agent.getLastActivityAt() >= receivedAfter);
+  }
+
+  @Test
   void extendedAgentStatusSurvivesJacksonRoundTrip() throws Exception {
     var status =
         new RuntimeAgent.Status(
@@ -126,6 +146,18 @@ class AgentConsoleTest {
     assertEquals(42L, restored.observationId());
     assertEquals(1_000L, restored.startedAt());
     assertEquals(1_040L, restored.lastActivityAt());
+  }
+
+  @Test
+  void handledMessageClassesSurviveAgentHandleSerialization() throws Exception {
+    var agent = new AgentImpl();
+    agent.setHandledMessageClasses(List.of("RESET", "TEMPERATURE_CHANGED"));
+    var mapper = JacksonConfiguration.newObjectMapper();
+
+    var restored =
+        mapper.readValue(mapper.writeValueAsString(agent), AgentImpl.class);
+
+    assertEquals(List.of("RESET", "TEMPERATURE_CHANGED"), restored.getHandledMessageClasses());
   }
 
   private static final class RecordingAgent implements Agent {

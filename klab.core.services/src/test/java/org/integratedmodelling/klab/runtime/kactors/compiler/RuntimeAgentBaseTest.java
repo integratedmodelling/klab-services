@@ -191,6 +191,7 @@ class RuntimeAgentBaseTest {
     var mapper = JacksonConfiguration.newObjectMapper();
     var received = mapper.readValue(mapper.writeValueAsString(outbound), Message.class);
     var agent = new MessageHandlingRuntimeAgent();
+    assertEquals(List.of("TEMPERATURE_CHANGED"), agent.getHandledMessageClasses());
 
     agent.send(received, null, null);
 
@@ -571,7 +572,8 @@ class RuntimeAgentBaseTest {
           new AgentMessageHandler(
               "temperatureChanged", Verb.Type.FUNCTION, List.of("payload", "sender")),
           RuntimeAgent.ConsoleMessageType.STDIN.name(),
-          new AgentMessageHandler("readLine", Verb.Type.FUNCTION, List.of("line", "sender")));
+          new AgentMessageHandler(
+              "readLine", Verb.Type.FUNCTION, List.of("line", "sender"), false));
     }
 
     @SuppressWarnings("unused")

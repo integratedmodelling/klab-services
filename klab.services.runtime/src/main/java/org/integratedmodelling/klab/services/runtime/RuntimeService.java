@@ -1275,6 +1275,7 @@ public class RuntimeService extends BaseService
     ret.setUrn(agent.getUrn());
     ret.setName(agent.getName());
     ret.setAlive(agent.isAlive());
+    ret.setHandledMessageClasses(agent.getHandledMessageClasses());
     if (agent instanceof AgentRegistry.ManagedAgent managedAgent) {
       ret.setJavaCode(managedAgent.getJavaCode());
       ret.setObservationId(managedAgent.getObservationId());

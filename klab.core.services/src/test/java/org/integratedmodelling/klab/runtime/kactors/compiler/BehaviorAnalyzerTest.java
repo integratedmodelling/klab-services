@@ -135,6 +135,63 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void inheritedHandleOverridesRequireExplicitAcknowledgement() {
+    var inheritedHandler = action("inheritedHandler");
+    var inheritedHandle = Annotation.of("handle");
+    inheritedHandle.putUnnamed(Constant.create("STATE_CHANGED"));
+    inheritedHandler.setAnnotations(List.of(inheritedHandle));
+    var inherited = behavior(inheritedHandler);
+    inherited.setUrn("traits.state.handlers");
+    inherited.setBehaviorType(KActorsBehavior.Type.TRAIT);
+    var intermediary = behavior();
+    intermediary.setUrn("traits.state.intermediary");
+    intermediary.setBehaviorType(KActorsBehavior.Type.TRAIT);
+    intermediary.setInheritedBehaviors(
+        List.of(new KActorsBehaviorImpl.ImportImpl(inherited.getUrn())));
+
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            if (inherited.getUrn().equals(urn)) {
+              return inherited;
+            }
+            return intermediary.getUrn().equals(urn) ? intermediary : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+
+    var localHandler = action("localHandler");
+    var localHandle = Annotation.of("handle");
+    localHandle.putUnnamed(Constant.create("STATE_CHANGED"));
+    localHandler.setAnnotations(List.of(localHandle));
+    var child = behavior(localHandler);
+    child.setInheritedBehaviors(List.of(new KActorsBehaviorImpl.ImportImpl(intermediary.getUrn())));
+    var analyzer = new BehaviorAnalyzer(child, environment.validator());
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertTrue(
+        analyzer.getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification
+                        .getMessage()
+                        .contains(
+                            "overrides the inherited @handle(STATE_CHANGED) contract; add @override")));
+
+    localHandler.setAnnotations(List.of(localHandle, Annotation.of("override")));
+    var acknowledged = new BehaviorAnalyzer(child, environment.validator());
+
+    assertTrue(acknowledged.analyze(), messages(acknowledged));
+    assertFalse(
+        acknowledged.getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification.getMessage().contains("overrides the inherited @handle")));
+  }
+
+  @Test
   void infersActionTypesAndBuildsCompilerRecords() {
     var function = action("function", returned(number(1)));
 

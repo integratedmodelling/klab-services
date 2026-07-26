@@ -205,7 +205,9 @@ components, or language processors. Its methods are:
 Verb.Type classifyActionCall(Verb verb, KActorsContext context)
 List<Notification> validateBehavior(KActorsBehavior behavior, KActorsContext context)
 List<Notification> validateImport(KActorsBehavior.Import imported, KActorsContext context)
-List<Notification> validateInheritance(String inheritedBehaviorUrn, KActorsContext context)
+List<Notification> validateInheritance(
+    KActorsBehavior.Import inheritedBehavior, KActorsContext context)
+List<String> getHandledMessageClasses(String behaviorUrn, KActorsContext context)
 List<Notification> validateAction(KActorsAction action, KActorsContext context)
 List<Notification> validateAssignment(Assignment assignment, KActorsContext context)
 List<Notification> validateAdaptation(
@@ -232,7 +234,10 @@ The runtime validator resolves every URN in an `inherits` clause and applies
 `KActorsBehavior.Type.canInherit(...)`. A trait is valid for every child type; otherwise parent and
 child types must match, with the additional allowance that USER and TASK may inherit BEHAVIOR.
 Unresolved parents and incompatible types are compilation errors. The same validator is used
-recursively, so the rule also applies throughout the inherited behavior graph.
+recursively, so the rule also applies throughout the inherited behavior graph. Its
+`getHandledMessageClasses(...)` callback returns the custom message classes exposed by that graph.
+When a local `@handle` action replaces one of them, the visitor warns unless the action also carries
+`@override`.
 
 For a local assignment with an adaptation clause, `sourceVariable` describes the value before
 conversion, including its `ValueType`, source behavior identity, or producer call when known. The
@@ -444,7 +449,9 @@ The map key is the constant's string value. Each descriptor records the generate
 effective `Verb.Type`, and declared argument names. The generated map starts with superclass
 handlers, merges retained inherited-behavior delegates in declaration order with `putIfAbsent`,
 then inserts local handlers with `put`. Consequently local handlers override inherited ones and
-the first inherited behavior wins inherited collisions.
+the first inherited behavior wins inherited collisions. Validation requires these local
+replacements to carry `@override`; omission is a warning rather than an error so the generated
+dispatch remains deterministic.
 
 Inherited handlers target the actual inherited behavior instance, not the outer agent. This is
 required to preserve inherited initialization and actor state. The outer agent retains those
@@ -719,6 +726,12 @@ Runtime-only `addMessageListener(...)` and `addSentMessageListener(...)` hooks e
 successfully published traffic without adding transport state to the serialized handle. The IDE
 debugger uses both hooks to build a per-agent message transcript beginning before the debug start
 request is sent.
+
+`Agent.getHandledMessageClasses()` exposes the final, sorted keys contributed by `@handle`
+annotations. Generated handler descriptors distinguish these from reserved handlers such as
+`@stdin`; inherited delegates retain their advertisement marker as handlers are merged. The
+service-side `ManagedAgent` reads the keys from its instantiated runtime and `RuntimeService`
+copies them into the serializable `AgentImpl` returned by the endpoint.
 
 At the public API boundary, use `Agent.tell(...)`. To target a language handler, construct the
 custom envelope explicitly:

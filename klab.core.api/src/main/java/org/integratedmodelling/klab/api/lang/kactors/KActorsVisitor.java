@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.*;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -87,6 +88,16 @@ public class KActorsVisitor {
      * leaves cross-behavior tag validation disabled for that unresolved reference.
      */
     default List<String> getBehaviorTags(String behaviorUrn, KActorsContext context) {
+      return List.of();
+    }
+
+    /**
+     * Return the custom message classes handled by a referenced behavior, including handlers
+     * contributed transitively through inheritance. The visitor uses this information to diagnose
+     * an unacknowledged local override of an inherited {@code @handle} contract.
+     */
+    default List<String> getHandledMessageClasses(
+        String behaviorUrn, KActorsContext context) {
       return List.of();
     }
 
@@ -419,10 +430,38 @@ public class KActorsVisitor {
       registerReferencedTags(inheritedBehavior.getImportedBehavior(), context);
     }
 
+    var inheritedMessageClasses = new LinkedHashSet<String>();
+    for (var inheritedBehavior : safe(behavior.getInheritedBehaviors())) {
+      inheritedMessageClasses.addAll(
+          safe(
+              context.validator.getHandledMessageClasses(
+                  inheritedBehavior.getImportedBehavior(), context)));
+    }
+
     for (var action : safe(behavior.getStatements())) {
       var previous = actionDeclarations.putIfAbsent(action.getUrn(), action);
       if (previous != null) {
         error("Duplicate action: " + action.getUrn(), action);
+      }
+      boolean acknowledgesOverride =
+          safe(action.getAnnotations()).stream()
+              .anyMatch(annotation -> "override".equals(annotation.getName()));
+      if (!acknowledgesOverride) {
+        for (var annotation : safe(action.getAnnotations())) {
+          if (!"handle".equals(annotation.getName())) {
+            continue;
+          }
+          String messageClass = handledMessageClass(annotation);
+          if (messageClass != null && inheritedMessageClasses.contains(messageClass)) {
+            warning(
+                "Action "
+                    + action.getUrn()
+                    + " overrides the inherited @handle("
+                    + messageClass
+                    + ") contract; add @override to acknowledge it",
+                action);
+          }
+        }
       }
     }
 
@@ -437,6 +476,30 @@ public class KActorsVisitor {
         && !actionDeclarations.containsKey("main")) {
       notifications.add(Notification.error("Task behaviors must declare a main action"));
     }
+  }
+
+  /**
+   * Extract the constant identifying a custom agent message from a {@code @handle} annotation.
+   * Both the named {@code class} parameter and the main unnamed/value parameter are supported.
+   */
+  public static String handledMessageClass(Annotation annotation) {
+    if (annotation == null || !"handle".equals(annotation.getName())) {
+      return null;
+    }
+    Object declared =
+        annotation.containsKey("class")
+            ? annotation.get("class")
+            : annotation.getUnnamedArguments().isEmpty()
+                ? annotation.get(Annotation.VALUE_PARAMETER_KEY)
+                : annotation.getUnnamedArguments().getFirst();
+    if (declared instanceof Constant constant) {
+      return constant.getValue();
+    }
+    if (declared instanceof KActorsValue value && value.getType() == ValueType.CONSTANT) {
+      Object constant = value.getValue(Object.class);
+      return constant instanceof Constant typed ? typed.getValue() : String.valueOf(constant);
+    }
+    return null;
   }
 
   private void collectActorFields(KActorsBehavior behavior) {

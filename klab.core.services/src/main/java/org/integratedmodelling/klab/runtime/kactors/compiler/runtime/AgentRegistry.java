@@ -794,6 +794,11 @@ public enum AgentRegistry {
     }
 
     @Override
+    public List<String> getHandledMessageClasses() {
+      return runtime.getHandledMessageClasses();
+    }
+
+    @Override
     public boolean start(Object... arguments) {
       if (!viable) {
         return false;
