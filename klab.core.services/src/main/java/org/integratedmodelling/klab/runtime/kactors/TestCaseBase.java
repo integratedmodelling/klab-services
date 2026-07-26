@@ -14,8 +14,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     private final SessionScope session;
     private final ContextScope context;
 
-    public TestCaseScope(
-        RuntimeAgentBase actor, SessionScope session, ContextScope context) {
+    public TestCaseScope(RuntimeAgentBase actor, SessionScope session, ContextScope context) {
       super(actor);
       this.session = session;
       this.context = context;
@@ -25,6 +24,18 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       super(parent, actionId);
       this.session = parent.session;
       this.context = parent.context;
+    }
+
+    @Override
+    public void setup() {
+      // TODO setup test sequence and counters; instrument action scopes for communication
+      super.setup();
+    }
+
+    @Override
+    public void dispose() {
+      // TODO finish testing and compute statistics
+      super.dispose();
     }
 
     @Override

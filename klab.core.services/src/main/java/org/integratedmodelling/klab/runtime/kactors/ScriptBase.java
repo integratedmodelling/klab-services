@@ -7,14 +7,17 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 
 public abstract class ScriptBase extends RuntimeAgentBase {
 
-  /** Execution scope reserved for script agents. */
+  /**
+   * Execution scope reserved for script agents.
+   *
+   * <p>TODO setup I/O, current directories, result persistence contract and runtime environment
+   */
   public static class ScriptScope extends AgentScope {
 
     private final SessionScope session;
     private final ContextScope context;
 
-    public ScriptScope(
-        RuntimeAgentBase actor, SessionScope session, ContextScope context) {
+    public ScriptScope(RuntimeAgentBase actor, SessionScope session, ContextScope context) {
       super(actor);
       this.session = session;
       this.context = context;

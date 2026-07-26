@@ -39,10 +39,6 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
   public NavigableKlabDocument(T document, NavigableKlabAsset<?> parent) {
     super(document, parent);
-    //		if (parent instanceof NavigableKlabAsset asset && asset.getResource() instanceof IContainer
-    //		container) {
-    //			this.resource = Eclipse.INSTANCE.findFileInContainer(container, getFileName());
-    //		}
   }
 
   public String getFileExtension() {
