@@ -920,6 +920,44 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         this, "No runtime adapter is available for behavior " + behaviorUrn);
   }
 
+  /**
+   * Convert an already behavior-adapted value for use as a condition. Specialized bases may
+   * override this when adapted agents expose a stricter truth contract.
+   */
+  protected boolean adaptToBoolean(Object value, AgentScope scope) {
+    return truthy(value);
+  }
+
+  /**
+   * Convert an already behavior-adapted value for iteration. Specialized bases may override this
+   * when an adapted agent exposes its own iteration contract.
+   */
+  protected Iterable<?> adaptToIterable(Object value, AgentScope scope) {
+    return asIterable(value);
+  }
+
+  /** Internal non-local transfer used to implement a yield from a synchronous switch branch. */
+  /**
+   * Internal control-flow signal used by generated switch expressions. Public visibility is
+   * required because source generation happens in the compiler package while the generated
+   * subclass catches the signal.
+   */
+  public static final class SwitchYield extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    private final Object value;
+
+    public SwitchYield(Object value) {
+      super(null, null, false, false);
+      this.value = value;
+    }
+
+    public Object value() {
+      return value;
+    }
+  }
+
   protected void setActorState(String name, Object value) {
     rootScope.put(name, value);
   }

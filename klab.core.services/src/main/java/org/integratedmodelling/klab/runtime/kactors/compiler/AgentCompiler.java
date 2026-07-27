@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Ternary;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
@@ -79,6 +80,18 @@ public class AgentCompiler {
         KActorsBehavior targetBehavior,
         KActorsVisitor.VariableInfo sourceVariable,
         UserScope scope) {
+      return List.of();
+    }
+
+    /** Assess whether an adapted behavior instance can be consumed as a boolean condition. */
+    default List<Notification> validateBooleanAdaptation(
+        KActorsBehavior targetBehavior, UserScope scope) {
+      return List.of();
+    }
+
+    /** Assess whether an adapted behavior instance can be consumed as an iterable. */
+    default List<Notification> validateIterableAdaptation(
+        KActorsBehavior targetBehavior, UserScope scope) {
       return List.of();
     }
   }
@@ -276,7 +289,7 @@ public class AgentCompiler {
 
           @Override
           public List<Notification> validateAdaptation(
-              KActorsStatement.Assignment assignment,
+              KActorsCodeStatement statement,
               String behaviorUrn,
               KActorsVisitor.VariableInfo sourceVariable,
               KActorsVisitor.KActorsContext context) {
@@ -286,7 +299,7 @@ public class AgentCompiler {
                 return List.of(
                     Notification.error(
                         "Cannot resolve adaptation behavior " + behaviorUrn,
-                        Notification.LexicalContext.of(assignment, context.getBehavior())));
+                        Notification.LexicalContext.of(statement, context.getBehavior())));
               }
               return resolver.validateBehaviorAdaptation(targetBehavior, sourceVariable, scope);
             } catch (Throwable failure) {
@@ -294,8 +307,28 @@ public class AgentCompiler {
                   Notification.error(
                       "Cannot validate adaptation to behavior " + behaviorUrn,
                       failure,
-                      Notification.LexicalContext.of(assignment, context.getBehavior())));
+                      Notification.LexicalContext.of(statement, context.getBehavior())));
             }
+          }
+
+          @Override
+          public List<Notification> validateBooleanAdaptation(
+              KActorsCodeStatement statement,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            return validateAdaptedUse(
+                statement, behaviorUrn, context, true, resolver, scope);
+          }
+
+          @Override
+          public List<Notification> validateIterableAdaptation(
+              KActorsCodeStatement statement,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            return validateAdaptedUse(
+                statement, behaviorUrn, context, false, resolver, scope);
           }
 
           @Override
@@ -381,6 +414,36 @@ public class AgentCompiler {
           }
         };
     return new Environment(validator, resolver);
+  }
+
+  private static List<Notification> validateAdaptedUse(
+      KActorsCodeStatement statement,
+      String behaviorUrn,
+      KActorsVisitor.KActorsContext context,
+      boolean booleanUse,
+      Resolver resolver,
+      UserScope scope) {
+    try {
+      var targetBehavior = resolver.resolveBehavior(behaviorUrn, scope);
+      if (targetBehavior == null) {
+        return List.of(
+            Notification.error(
+                "Cannot resolve adaptation behavior " + behaviorUrn,
+                Notification.LexicalContext.of(statement, context.getBehavior())));
+      }
+      return booleanUse
+          ? resolver.validateBooleanAdaptation(targetBehavior, scope)
+          : resolver.validateIterableAdaptation(targetBehavior, scope);
+    } catch (Throwable failure) {
+      return List.of(
+          Notification.error(
+              "Cannot validate "
+                  + (booleanUse ? "boolean" : "iterable")
+                  + " use of adapted behavior "
+                  + behaviorUrn,
+              failure,
+              Notification.LexicalContext.of(statement, context.getBehavior())));
+    }
   }
 
   private static ResolvedCall resolveCall(
@@ -1012,7 +1075,8 @@ public class AgentCompiler {
       result = "actionResult";
       code.addStatement("var $L = new $T<Object>()", result, CompletableFuture.class);
     }
-    var context = new CompilationContext(type, false, "scope", "frame", result, List.of());
+    var context =
+        new CompilationContext(type, false, false, "scope", "frame", result, List.of());
     emitStatements(action.getCode(), code, context);
     if (type == Verb.Type.FUNCTION && !definitelyReturns(action.getCode())) {
       code.addStatement("return VOID_VALUE");
@@ -1067,7 +1131,14 @@ public class AgentCompiler {
           code.addStatement(
               "$L.doFire($L)",
               context.scope(),
-              valueOrCall(fire.getValue(), fire.getFunction(), context));
+              adaptedValue(
+                  valueSource(
+                      fire.getValue(), fire.getFunction(), fire.getSwitch(), code, context),
+                  fire.getAdaptedBehaviorUrn(),
+                  context));
+      case KActorsStatement.Switch switchStatement ->
+          emitSwitch(switchStatement, code, context, null);
+      case KActorsStatement.Yield yielded -> emitYield(yielded, code, context);
       case KActorsStatement.Return returned -> emitReturn(returned, code, context);
       case KActorsStatement.Fail failed ->
           code.addStatement(
@@ -1091,16 +1162,16 @@ public class AgentCompiler {
 
   private void emitAssignment(
       KActorsStatement.Assignment assignment, CodeBlock.Builder code, CompilationContext context) {
-    CodeBlock value = valueOrCall(assignment.getValue(), assignment.getFunction(), context);
-    if (assignment.getAdaptedBehaviorUrn() != null
-        && !assignment.getAdaptedBehaviorUrn().isBlank()) {
-      value =
-          CodeBlock.of(
-              "adaptToBehavior($L, $S, $L)",
-              value,
-              assignment.getAdaptedBehaviorUrn().trim(),
-              context.scope());
-    }
+    CodeBlock value =
+        adaptedValue(
+            valueSource(
+                assignment.getValue(),
+                assignment.getFunction(),
+                assignment.getSwitch(),
+                code,
+                context),
+            assignment.getAdaptedBehaviorUrn(),
+            context);
     if (assignment.getAssignmentScope() == KActorsStatement.Assignment.Scope.ACTOR) {
       code.addStatement("setActorState($S, $L)", assignment.getVariable(), value);
     } else {
@@ -1110,7 +1181,16 @@ public class AgentCompiler {
 
   private void emitReturn(
       KActorsStatement.Return returned, CodeBlock.Builder code, CompilationContext context) {
-    CodeBlock value = valueOrCall(returned.getValue(), returned.getFunction(), context);
+    CodeBlock value =
+        adaptedValue(
+            valueSource(
+                returned.getValue(),
+                returned.getFunction(),
+                returned.getSwitch(),
+                code,
+                context),
+            returned.getAdaptedBehaviorUrn(),
+            context);
     if (context.reactive()) {
       if (context.actionType() == Verb.Type.SUPPLIER && context.result() != null) {
         code.addStatement("$L.complete($L)", context.result(), value);
@@ -1155,14 +1235,22 @@ public class AgentCompiler {
       CompilationContext context,
       boolean awaitCompletion) {
     code.beginControlFlow(
-        "if (truthy($L))",
-        valueOrCall(conditional.getCondition(), conditional.getFunction(), context));
+        "if ($L)",
+        conditionValue(
+            conditional.getCondition(),
+            conditional.getFunction(),
+            conditional.getAdaptedBehaviorUrn(),
+            context));
     emitStatement(
         conditional.getThenBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     for (var elseIf : conditional.getElseIfs()) {
       code.nextControlFlow(
-          "else if (truthy($L))",
-          valueOrCall(elseIf.getFirst().getFirst(), elseIf.getFirst().getSecond(), context));
+          "else if ($L)",
+          conditionValue(
+              elseIf.getFirst().getFirst(),
+              elseIf.getFirst().getSecond(),
+              elseIf.getFirst().getThird(),
+              context));
       emitStatement(
           elseIf.getSecond(), code, context.withoutCompletionCollectors(), awaitCompletion);
     }
@@ -1180,7 +1268,12 @@ public class AgentCompiler {
       CompilationContext context,
       boolean awaitCompletion) {
     code.beginControlFlow(
-        "while (truthy($L))", valueOrCall(loop.getCondition(), loop.getFunction(), context));
+        "while ($L)",
+        conditionValue(
+            loop.getCondition(),
+            loop.getFunction(),
+            loop.getAdaptedBehaviorUrn(),
+            context));
     emitStatement(loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow();
   }
@@ -1193,7 +1286,12 @@ public class AgentCompiler {
     code.beginControlFlow("do");
     emitStatement(loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow(
-        "while (truthy($L))", valueOrCall(loop.getCondition(), loop.getFunction(), context));
+        "while ($L)",
+        conditionValue(
+            loop.getCondition(),
+            loop.getFunction(),
+            loop.getAdaptedBehaviorUrn(),
+            context));
   }
 
   private void emitFor(
@@ -1202,15 +1300,185 @@ public class AgentCompiler {
       CompilationContext context,
       boolean awaitCompletion) {
     String item = nextName("item");
-    code.beginControlFlow(
-        "for (Object $L : asIterable($L))",
-        item,
-        valueOrCall(loop.getIterable(), loop.getFunction(), context));
+    CodeBlock iterable = valueOrCall(loop.getIterable(), loop.getFunction(), context);
+    iterable =
+        loop.getAdaptedBehaviorUrn() == null || loop.getAdaptedBehaviorUrn().isBlank()
+            ? CodeBlock.of("asIterable($L)", iterable)
+            : CodeBlock.of(
+                "adaptToIterable(adaptToBehavior($L, $S, $L), $L)",
+                iterable,
+                loop.getAdaptedBehaviorUrn().trim(),
+                context.scope(),
+                context.scope());
+    code.beginControlFlow("for (Object $L : $L)", item, iterable);
     if (loop.getVariable() != null && !loop.getVariable().isBlank()) {
       code.addStatement("$L.put($S, $L)", context.frame(), loop.getVariable(), item);
     }
     emitStatement(loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow();
+  }
+
+  private void emitYield(
+      KActorsStatement.Yield yielded, CodeBlock.Builder code, CompilationContext context) {
+    CodeBlock value =
+        adaptedValue(
+            valueSource(
+                yielded.getValue(),
+                yielded.getFunction(),
+                yielded.getSwitch(),
+                code,
+                context),
+            yielded.getAdaptedBehaviorUrn(),
+            context);
+    code.addStatement("throw new $T($L)", RuntimeAgentBase.SwitchYield.class, value);
+  }
+
+  /**
+   * Emit a switch synchronously. When {@code requestedResult} is non-null it receives the yielded
+   * value; branches that match without yielding leave it null.
+   */
+  private String emitSwitch(
+      KActorsStatement.Switch switchStatement,
+      CodeBlock.Builder code,
+      CompilationContext context,
+      String requestedResult) {
+    String target = nextName("switchValue");
+    CodeBlock selector =
+        adaptedValue(
+            valueOrCall(switchStatement.getValue(), switchStatement.getFunction(), context),
+            switchStatement.getAdaptedBehaviorUrn(),
+            context);
+    code.addStatement("Object $L = $L", target, selector);
+
+    boolean functional = switchContainsYield(switchStatement);
+    String result = requestedResult;
+    if (functional) {
+      if (result == null) {
+        result = nextName("switchResult");
+      }
+      code.addStatement("Object $L = null", result);
+      code.beginControlFlow("try");
+    }
+
+    boolean first = true;
+    for (var match : switchStatement.getCases()) {
+      CodeBlock criterion = matchCriterion(match, context);
+      if (first) {
+        code.beginControlFlow(
+            "if (matches($L, $T.$L, $L, $L))",
+            target,
+            ValueType.class,
+            matchType(match).name(),
+            criterion,
+            match.getMatchCriterion() != null && match.getMatchCriterion().isExclusive());
+        first = false;
+      } else {
+        code.nextControlFlow(
+            "else if (matches($L, $T.$L, $L, $L))",
+            target,
+            ValueType.class,
+            matchType(match).name(),
+            criterion,
+            match.getMatchCriterion() != null && match.getMatchCriterion().isExclusive());
+      }
+      String matchFrame = nextName("switchFrame");
+      code.addStatement("var $L = childFrame($L)", matchFrame, context.frame());
+      code.addStatement(
+          "bindMatch($L, $L, $L, $S)",
+          matchFrame,
+          target,
+          stringList(match.getVariables()),
+          match.getCaptureAs());
+      emitStatement(
+          match.getActionOnMatch(),
+          code,
+          context.withFrame(matchFrame).withoutCompletionCollectors().asSynchronous());
+    }
+    if (!first) {
+      code.endControlFlow();
+    }
+
+    if (functional) {
+      code.nextControlFlow("catch ($T yielded)", RuntimeAgentBase.SwitchYield.class);
+      code.addStatement("$L = yielded.value()", result);
+      code.endControlFlow();
+    }
+    return result;
+  }
+
+  private boolean switchContainsYield(KActorsStatement.Switch switchStatement) {
+    return switchStatement.getCases().stream()
+        .map(KActorsStatement.Verb.MatchAction::getActionOnMatch)
+        .anyMatch(this::containsSwitchYield);
+  }
+
+  private boolean containsSwitchYield(KActorsStatement statement) {
+    if (statement == null) {
+      return false;
+    }
+    if (statement instanceof KActorsStatement.Yield) {
+      return true;
+    }
+    if (statement instanceof KActorsStatement.Switch) {
+      return false;
+    }
+    if (statement instanceof KActorsStatement.Group group) {
+      return group.getStatements().stream().anyMatch(this::containsSwitchYield);
+    }
+    if (statement instanceof KActorsStatement.If conditional) {
+      return containsSwitchYield(conditional.getThenBody())
+          || conditional.getElseIfs().stream()
+              .anyMatch(branch -> containsSwitchYield(branch.getSecond()))
+          || containsSwitchYield(conditional.getElseBody());
+    }
+    if (statement instanceof KActorsStatement.While loop) {
+      return containsSwitchYield(loop.getBody());
+    }
+    if (statement instanceof KActorsStatement.Do loop) {
+      return containsSwitchYield(loop.getBody());
+    }
+    if (statement instanceof KActorsStatement.For loop) {
+      return containsSwitchYield(loop.getBody());
+    }
+    return false;
+  }
+
+  private CodeBlock valueSource(
+      KActorsValue value,
+      KActorsStatement.Verb function,
+      KActorsStatement.Switch switchStatement,
+      CodeBlock.Builder code,
+      CompilationContext context) {
+    if (switchStatement != null) {
+      String result = nextName("switchResult");
+      emitSwitch(switchStatement, code, context, result);
+      return CodeBlock.of("$L", result);
+    }
+    return valueOrCall(value, function, context);
+  }
+
+  private CodeBlock adaptedValue(
+      CodeBlock value, String behaviorUrn, CompilationContext context) {
+    return behaviorUrn == null || behaviorUrn.isBlank()
+        ? value
+        : CodeBlock.of(
+            "adaptToBehavior($L, $S, $L)", value, behaviorUrn.trim(), context.scope());
+  }
+
+  private CodeBlock conditionValue(
+      KActorsValue value,
+      KActorsStatement.Verb function,
+      String behaviorUrn,
+      CompilationContext context) {
+    CodeBlock raw = valueOrCall(value, function, context);
+    return behaviorUrn == null || behaviorUrn.isBlank()
+        ? CodeBlock.of("truthy($L)", raw)
+        : CodeBlock.of(
+            "adaptToBoolean(adaptToBehavior($L, $S, $L), $L)",
+            raw,
+            behaviorUrn.trim(),
+            context.scope(),
+            context.scope());
   }
 
   private void emitAssert(
@@ -1244,6 +1512,10 @@ public class AgentCompiler {
       boolean awaitCompletion) {
     var info = calls.get(verb);
     Verb.Type type = info == null ? null : info.executionType();
+    if (context.synchronous() && (type == null || type == Verb.Type.SUPPLIER)) {
+      emitSynchronousValueVerb(verb, code, context);
+      return;
+    }
     if (type == Verb.Type.FUNCTION) {
       code.addStatement("$L", invoke(verb, type, context.scope(), context));
       return;
@@ -1360,6 +1632,52 @@ public class AgentCompiler {
     }
     if (awaitCompletion) {
       awaitCompletions(List.of(completion), code);
+    }
+  }
+
+  private void emitSynchronousValueVerb(
+      KActorsStatement.Verb verb, CodeBlock.Builder code, CompilationContext context) {
+    String supplied = nextName("supplied");
+    code.addStatement("Object $L = $L", supplied, callValue(verb, context));
+    if (verb.getActions() == null || verb.getActions().isEmpty()) {
+      return;
+    }
+    boolean first = true;
+    for (var match : verb.getActions()) {
+      CodeBlock criterion = matchCriterion(match, context);
+      if (first) {
+        code.beginControlFlow(
+            "if (matches($L, $T.$L, $L, $L))",
+            supplied,
+            ValueType.class,
+            matchType(match).name(),
+            criterion,
+            match.getMatchCriterion() != null && match.getMatchCriterion().isExclusive());
+        first = false;
+      } else {
+        code.nextControlFlow(
+            "else if (matches($L, $T.$L, $L, $L))",
+            supplied,
+            ValueType.class,
+            matchType(match).name(),
+            criterion,
+            match.getMatchCriterion() != null && match.getMatchCriterion().isExclusive());
+      }
+      String matchFrame = nextName("matchFrame");
+      code.addStatement("var $L = childFrame($L)", matchFrame, context.frame());
+      code.addStatement(
+          "bindMatch($L, $L, $L, $S)",
+          matchFrame,
+          supplied,
+          stringList(match.getVariables()),
+          match.getCaptureAs());
+      emitStatement(
+          match.getActionOnMatch(),
+          code,
+          context.withFrame(matchFrame).withoutCompletionCollectors().asSynchronous());
+    }
+    if (!first) {
+      code.endControlFlow();
     }
   }
 
@@ -1604,6 +1922,7 @@ public class AgentCompiler {
   private record CompilationContext(
       Verb.Type actionType,
       boolean reactive,
+      boolean synchronous,
       String scope,
       String frame,
       String result,
@@ -1611,23 +1930,31 @@ public class AgentCompiler {
 
     CompilationContext withFrame(String newFrame) {
       return new CompilationContext(
-          actionType, reactive, scope, newFrame, result, completionCollectors);
+          actionType, reactive, synchronous, scope, newFrame, result, completionCollectors);
     }
 
     CompilationContext asReactive(String newScope, String newFrame) {
-      return new CompilationContext(actionType, true, newScope, newFrame, result, List.of());
+      return new CompilationContext(actionType, true, false, newScope, newFrame, result, List.of());
+    }
+
+    CompilationContext asSynchronous() {
+      return synchronous
+          ? this
+          : new CompilationContext(actionType, reactive, true, scope, frame, result, List.of());
     }
 
     CompilationContext withoutCompletionCollectors() {
       return completionCollectors.isEmpty()
           ? this
-          : new CompilationContext(actionType, reactive, scope, frame, result, List.of());
+          : new CompilationContext(
+              actionType, reactive, synchronous, scope, frame, result, List.of());
     }
 
     CompilationContext collectingCompletions(List<String> collector) {
       var collectors = new ArrayList<>(completionCollectors);
       collectors.add(collector);
-      return new CompilationContext(actionType, reactive, scope, frame, result, collectors);
+      return new CompilationContext(
+          actionType, reactive, synchronous, scope, frame, result, collectors);
     }
 
     boolean isCollectingCompletions() {

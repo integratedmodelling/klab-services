@@ -211,7 +211,17 @@ List<String> getHandledMessageClasses(String behaviorUrn, KActorsContext context
 List<Notification> validateAction(KActorsAction action, KActorsContext context)
 List<Notification> validateAssignment(Assignment assignment, KActorsContext context)
 List<Notification> validateAdaptation(
-    Assignment assignment,
+    KActorsCodeStatement statement,
+    String behaviorUrn,
+    VariableInfo sourceVariable,
+    KActorsContext context)
+List<Notification> validateBooleanAdaptation(
+    KActorsCodeStatement statement,
+    String behaviorUrn,
+    VariableInfo sourceVariable,
+    KActorsContext context)
+List<Notification> validateIterableAdaptation(
+    KActorsCodeStatement statement,
     String behaviorUrn,
     VariableInfo sourceVariable,
     KActorsContext context)
@@ -239,13 +249,16 @@ recursively, so the rule also applies throughout the inherited behavior graph. I
 When a local `@handle` action replaces one of them, the visitor warns unless the action also carries
 `@override`.
 
-For a local assignment with an adaptation clause, `sourceVariable` describes the value before
+For any statement with an adaptation clause, `sourceVariable` describes the value before
 conversion, including its `ValueType`, source behavior identity, or producer call when known. The
 runtime compiler environment first resolves the target as a `KActorsBehavior`, then delegates
-adapter compatibility to `AgentCompiler.Resolver.validateBehaviorAdaptation(...)`. Error
-notifications prevent the new variable from acquiring the target agent type. On success its
+adapter compatibility to `AgentCompiler.Resolver.validateBehaviorAdaptation(...)`. Conditions and
+iterables additionally invoke `validateBooleanAdaptation(...)` or
+`validateIterableAdaptation(...)`, which in turn delegate to the corresponding resolver callback.
+Error notifications prevent compilation. On a successful frame assignment its
 `VariableInfo.agentUrn` is the target behavior URN, so subsequent calls are classified and
-validated against that behavior.
+validated against that behavior. The assignment-specific validator overload remains as a
+compatibility bridge for extensions compiled against the earlier API.
 
 ### 4.4 Action type inference
 
@@ -302,11 +315,15 @@ cannot recreate or restart it.
 
 ### 5.1 Resolver contract
 
-`AgentCompiler.Resolver` has two independent methods:
+`AgentCompiler.Resolver` separates resource/component lookup from adaptation policy:
 
 ```java
 KActorsBehavior resolveBehavior(String urn, UserScope scope)
 ResolvedActor resolveActor(String urn, UserScope scope)
+List<Notification> validateBehaviorAdaptation(
+    KActorsBehavior target, VariableInfo source, UserScope scope)
+List<Notification> validateBooleanAdaptation(KActorsBehavior target, UserScope scope)
+List<Notification> validateIterableAdaptation(KActorsBehavior target, UserScope scope)
 ```
 
 The default `resolveBehavior` retrieves through `ResourcesService`; the default `resolveActor`
@@ -468,12 +485,14 @@ delegates and stops and disposes them with its own lifecycle.
 | Frame assignment | Put the evaluated value in the current frame map. |
 | Adapted frame assignment | Evaluate once, call `adaptToBehavior(value, behaviorUrn, scope)`, then put the returned agent/object in the frame. |
 | Actor assignment | Put the value in the root `AgentScope`. |
-| `return` | Return normally, complete a supplier future, or terminate a reactive/emitter scope with an exit value. |
-| `fire` | Call `AgentScope.doFire(value)`. |
+| `return` | Evaluate and optionally adapt the value, then return normally, complete a supplier future, or terminate a reactive/emitter scope with an exit value. |
+| `fire` | Evaluate and optionally adapt the value, then call `AgentScope.doFire(value)`. |
 | Group | Copy the current frame and emit child statements against it. |
-| `if` / `else if` / `else` | Evaluate through `truthy(...)` and emit Java branches. |
-| `while` / `do while` | Emit Java loops using a value or verb condition. |
-| `for` | Convert with `asIterable(...)`, bind the optional loop variable, and emit the body. |
+| `if` / `else if` / `else` | Evaluate through `truthy(...)`, or `adaptToBehavior(...)` followed by `adaptToBoolean(...)`, and emit Java branches. |
+| `while` / `do while` | Emit Java loops using the same boolean adaptation pipeline. |
+| `for` | Convert with `asIterable(...)`, or adapt then call `adaptToIterable(...)`; bind the optional loop variable and emit the body. |
+| `switch` | Evaluate the selector once, optionally adapt it, then run the first matching branch synchronously. |
+| `yield` | Throw the internal `SwitchYield` signal carrying the optionally adapted value; the nearest generated switch catches it. |
 | `break` | Emit Java `break`. |
 | `fail` | Throw `KlabActorException`. |
 | Text | Delegate to `handleText(...)`, currently printing to the action scope writer. |
@@ -481,6 +500,19 @@ delegates and stops and disposes them with its own lifecycle.
 
 Metadata, tags, and annotations are traversed and validated but generally do not yet affect emitted
 Java.
+
+### 7.1 Synchronous switch generation
+
+Switch cases reuse `Verb.MatchAction`, `matches(...)`, and `bindMatch(...)`, but execute in a
+synchronous compilation context. A supplier call made in that context is evaluated with
+`CompletableFuture.join()` before its match actions or the next statement run. Unknown dynamic
+calls also use the value-returning dispatch path so a dynamically resolved supplier can be joined.
+
+The compiler initializes a functional switch result to `null`. A `yield` is compiled as a
+stackless `RuntimeAgentBase.SwitchYield`; the nearest switch catches it and stores its payload.
+This gives non-yielding matched branches the specified null/unknown result and naturally scopes a
+nested switch's yields to that nested switch. An ordinary `return` is emitted unchanged inside
+the `try`, so it continues to return from the generated action rather than from the switch.
 
 ## 8. Reactive calls, matching, and `then`
 
@@ -561,11 +593,14 @@ Frames are `LinkedHashMap<String,Object>` instances:
 - identifier lookup checks the frame, then root actor state;
 - `self` resolves to the generated agent.
 
-Behavior adaptation is deliberately confined to frame assignments. The visitor rejects an `as`
-behavior clause on actor state. Generated code calls the protected
+Behavior adaptation is available at every modelled value boundary: frame assignments,
+`return`, `fire`, switch selectors and yields, conditions, and loop iterables. It remains invalid
+on actor-state assignment. Generated code calls the protected
 `RuntimeAgentBase.adaptToBehavior(...)` hook; its base implementation fails explicitly until a
-specialized runtime or component supplies an adapter. This keeps generated source stable while
-conversion policy, wrapper lifetime, and object identity remain runtime responsibilities.
+specialized runtime or component supplies an adapter. Adapted control-flow values then pass
+through the separately overridable `adaptToBoolean(...)` or `adaptToIterable(...)` hooks. Their
+base implementations retain the normal `truthy(...)` and `asIterable(...)` mediation, while
+runtime extensions can enforce a target behavior's explicit conversion contract.
 
 ## 10. Invocation and parameter matching
 
@@ -651,7 +686,8 @@ The generated source relies most heavily on these protected `RuntimeAgentBase` m
 | --- | --- |
 | `compileExpression`, `evaluateExpression` | Compile immutable expression fields and evaluate in scope/frame. |
 | `bindArguments`, `childFrame`, `resolveIdentifier`, `setActorState` | Maintain action, group, match, and actor state. |
-| `literalValue`, `truthy`, `asIterable` | Mediate values used by expressions and control flow. |
+| `literalValue`, `truthy`, `asIterable` | Mediate ordinary values used by expressions and control flow. |
+| `adaptToBehavior`, `adaptToBoolean`, `adaptToIterable` | Adapt values and enforce their post-adaptation control-flow contract. |
 | `matches`, `bindMatch` | Implement reactive pattern selection and local captures. |
 | `invokeSelfFunction/Supplier/Emitter` | Dispatch generated actions. |
 | `invokeFunction/Supplier/Emitter` | Dispatch imported behaviors or Java actors. |

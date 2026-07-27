@@ -495,18 +495,27 @@ The right side may be a literal, a square-bracket expression, a function, or a s
 variable cannot shadow actor state. Variables introduced by action arguments, loop iteration, and
 match captures are also frame-local.
 
-An `as` clause adapts the evaluated object to a named behavior before storing it:
+An `as` clause adapts the evaluated object to a named behavior before it is consumed:
 
 ```kactors
 specialized <- existing as examples.specialized_worker
 specialized.process(job)
+
+return result as examples.report
+fire event as examples.event
+
+if condition as examples.boolean_adapter process
+for item in source as examples.iterable_adapter process(item)
 ```
 
-Behavior adaptation is legal only on local `<-` assignments. The target behavior must resolve in
-the active runtime environment, and its adapter must accept the original value's type. After
-validation, the assigned variable is treated as an agent implementing the target behavior, so its
-action calls are validated against that behavior. Adaptation does not mutate the original object;
-the runtime adapter decides whether to wrap it, derive a new agent, or reject the conversion.
+Adaptation is supported on local `<-` assignments, `return`, `fire`, and the selector of a
+`switch`, as well as conditions and iterables in `if`/`else if`, `while`, `do`, and `for`.
+The target behavior must resolve in the active runtime environment, and its adapter must accept the
+original value's type. A value adapted for control flow must additionally be convertible to the
+required boolean or iterable contract. After validation, an assigned variable is treated as an
+agent implementing the target behavior, so its action calls are validated against that behavior.
+Adaptation does not mutate the original object; the runtime adapter decides whether to wrap it,
+derive a new agent, or reject the conversion.
 
 ## 8. Control flow and statements
 
@@ -535,13 +544,46 @@ for item in items (
     if [item == stop_value] break
     process(item)
 )
+
+description <- switch status: (
+    READY -> yield "ready"
+    RUNNING -> yield "running"
+    * -> log(status)
+)
 ```
 
 Conditions may be literals, identifiers, expressions, or calls. They must evaluate to boolean.
 `for` iterables may be values, expressions, or calls and must evaluate to an iterable. `break` is
 only valid inside a loop.
 
-### 8.1. `return`, `fire`, and `fail`
+### 8.1. `switch` and `yield`
+
+A `switch` evaluates its selector once and tests its cases in source order using the same match
+criteria as a verb's match actions. The first matching branch runs synchronously. Supplier verbs
+called while executing a branch are joined before execution proceeds, so the switch does not
+install an asynchronous listener and escape its lexical frame.
+
+`yield` supplies the value of the nearest enclosing switch:
+
+```kactors
+result <- switch input: (
+    number as value -> yield [value * 2]
+    empty -> yield unknown
+    exception as error -> fail error
+    * -> console.format("ignored: %s", input)
+)
+```
+
+`yield` is legal only downstream of a switch. If any branch of a switch contains a yield, the
+switch is functional and may be used wherever that syntax position accepts a value. A matching
+branch that completes without yielding gives that switch a null/unknown result; a switch with no
+yield branch is statement-only. A nested switch owns its own yields.
+
+`return` inside a switch retains the ordinary action contract: it returns from a function or
+supplier action, or terminates an emitter with its exit value. It does not merely return from the
+switch.
+
+### 8.2. `return`, `fire`, and `fail`
 
 ```kactors
 return result
@@ -563,7 +605,7 @@ Every `return` has an operand. This is part of the grammar contract as well as t
 by functions and suppliers; emitters interpret the same operand as an exit code when terminating
 their reactive work.
 
-### 8.2. Assertions and test cases
+### 8.3. Assertions and test cases
 
 Assertions are primarily intended for `testcase` behaviors:
 
@@ -583,7 +625,7 @@ An assertion may check that a call or expression succeeds, use `is ok`, or compa
 a value. Several assertions may be comma-separated and may share statement arguments. Assertions
 in non-test behaviors are allowed with a warning and may be omitted from production compilation.
 
-### 8.3. Embedded text
+### 8.4. Embedded text
 
 Text between matching `%%%` markers is an executable text statement, chiefly used by applications:
 

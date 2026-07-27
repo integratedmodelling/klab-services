@@ -27,8 +27,11 @@ import javax.tools.ToolProvider;
 import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
@@ -517,6 +520,151 @@ class BehaviorAnalyzerTest {
     assertTrue(
         compiler.getSourceCode().contains("\"workers.specialized\""), compiler.getSourceCode());
     assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void adaptationsAreValidatedAndCompiledAtEveryControlAndResultBoundary() {
+    var adaptedReturn = returned(number(1));
+    adaptedReturn.setAdaptedBehaviorUrn("adapted.result");
+    var adaptedFire = fired(number(2));
+    adaptedFire.setAdaptedBehaviorUrn("adapted.event");
+
+    var conditional = new KActorsStatementImpl.IfImpl();
+    conditional.setCondition(number(1));
+    conditional.setAdaptedBehaviorUrn("adapted.condition");
+    conditional.setThenBody(assignment("ifValue", KActorsStatement.Assignment.Scope.FRAME, number(1)));
+    conditional.setElseIfs(
+        List.of(
+            Pair.of(
+                Triple.of(number(2), null, "adapted.else.condition"),
+                assignment(
+                    "elseValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
+
+    var whileLoop = new KActorsStatementImpl.WhileImpl();
+    whileLoop.setCondition(number(1));
+    whileLoop.setAdaptedBehaviorUrn("adapted.while.condition");
+    whileLoop.setBody(new KActorsStatementImpl.BreakImpl());
+    var doLoop = new KActorsStatementImpl.DoImpl();
+    doLoop.setCondition(number(1));
+    doLoop.setAdaptedBehaviorUrn("adapted.do.condition");
+    doLoop.setBody(new KActorsStatementImpl.BreakImpl());
+    var forLoop = new KActorsStatementImpl.ForImpl();
+    forLoop.setVariable("item");
+    forLoop.setIterable(list(number(1), number(2)));
+    forLoop.setAdaptedBehaviorUrn("adapted.iterable");
+    forLoop.setBody(
+        assignment("copy", KActorsStatement.Assignment.Scope.FRAME, identifier("item")));
+
+    var genericAdaptations = new ArrayList<String>();
+    var booleanAdaptations = new ArrayList<String>();
+    var iterableAdaptations = new ArrayList<String>();
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public List<Notification> validateAdaptation(
+              KActorsCodeStatement statement,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            genericAdaptations.add(behaviorUrn);
+            return List.of();
+          }
+
+          @Override
+          public List<Notification> validateBooleanAdaptation(
+              KActorsCodeStatement statement,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            booleanAdaptations.add(behaviorUrn);
+            return List.of();
+          }
+
+          @Override
+          public List<Notification> validateIterableAdaptation(
+              KActorsCodeStatement statement,
+              String behaviorUrn,
+              KActorsVisitor.VariableInfo sourceVariable,
+              KActorsVisitor.KActorsContext context) {
+            iterableAdaptations.add(behaviorUrn);
+            return List.of();
+          }
+        };
+    var source =
+        behavior(
+            action(
+                "main",
+                conditional,
+                whileLoop,
+                doLoop,
+                forLoop,
+                adaptedFire,
+                adaptedReturn));
+    var analyzer = new BehaviorAnalyzer(source, validator);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(7, genericAdaptations.size());
+    assertEquals(
+        Set.of(
+            "adapted.condition",
+            "adapted.else.condition",
+            "adapted.while.condition",
+            "adapted.do.condition"),
+        Set.copyOf(booleanAdaptations));
+    assertEquals(List.of("adapted.iterable"), iterableAdaptations);
+
+    var compiler = new AgentCompiler(source, null, validator, null);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("adaptToBehavior("), generated);
+    assertTrue(generated.contains("adaptToBoolean("), generated);
+    assertTrue(generated.contains("adaptToIterable("), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void yieldIsRestrictedToSwitchAndFunctionalSwitchesRequireAYield() {
+    var illegalYield = yielded(number(1));
+    var outside = new BehaviorAnalyzer(behavior(action("main", illegalYield)));
+    assertFalse(outside.analyze());
+    assertTrue(messages(outside).contains("yield can only be used inside a switch"));
+
+    var noYieldSwitch =
+        switched(
+            number(1),
+            switchCase(number(1), assignment("value", KActorsStatement.Assignment.Scope.FRAME, number(2))));
+    var value =
+        new KActorsStatementImpl.AssignmentImpl();
+    value.setVariable("result");
+    value.setAssignmentScope(KActorsStatement.Assignment.Scope.FRAME);
+    value.setSwitch(noYieldSwitch);
+    var functional = new BehaviorAnalyzer(behavior(action("main", value)));
+    assertFalse(functional.analyze());
+    assertTrue(messages(functional).contains("A switch used as a value must have at least one yield"));
+  }
+
+  @Test
+  void compilerEmitsSynchronousSwitchWithYieldAndNullForNonYieldingBranches() {
+    var expression =
+        switched(
+            number(1),
+            switchCase(number(1), yielded(number(42))),
+            switchCase(
+                number(2),
+                assignment("sideEffect", KActorsStatement.Assignment.Scope.FRAME, number(2))));
+    var assignment = new KActorsStatementImpl.AssignmentImpl();
+    assignment.setVariable("result");
+    assignment.setAssignmentScope(KActorsStatement.Assignment.Scope.FRAME);
+    assignment.setSwitch(expression);
+    var compiler =
+        new AgentCompiler(behavior(action("main", assignment, returned(identifier("result")))));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("throw new RuntimeAgentBase.SwitchYield(42)"), generated);
+    assertTrue(generated.contains("catch (RuntimeAgentBase.SwitchYield yielded)"), generated);
+    assertTrue(generated.contains("Object switchResult_"), generated);
+    assertGeneratedJavaCompiles(generated);
   }
 
   @Test
@@ -1224,6 +1372,28 @@ class BehaviorAnalyzerTest {
     return statement;
   }
 
+  private static KActorsStatementImpl.YieldImpl yielded(KActorsValueImpl value) {
+    var statement = new KActorsStatementImpl.YieldImpl();
+    statement.setValue(value);
+    return statement;
+  }
+
+  private static KActorsStatementImpl.SwitchImpl switched(
+      KActorsValueImpl value, KActorsStatement.Verb.MatchAction... cases) {
+    var statement = new KActorsStatementImpl.SwitchImpl();
+    statement.setValue(value);
+    statement.setCases(List.of(cases));
+    return statement;
+  }
+
+  private static KActorsStatementImpl.VerbImpl.MatchActionImpl switchCase(
+      KActorsValueImpl criterion, KActorsStatement action) {
+    var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    match.setMatchCriterion(criterion);
+    match.setActionOnMatch(action);
+    return match;
+  }
+
   private static KActorsStatementImpl.VerbImpl verb(String recipient, String message) {
     var statement = new KActorsStatementImpl.VerbImpl();
     statement.setRecipient(recipient);
@@ -1243,6 +1413,13 @@ class BehaviorAnalyzerTest {
     var value = new KActorsValueImpl();
     value.setType(ValueType.NUMBER);
     value.setStatedValue(number);
+    return value;
+  }
+
+  private static KActorsValueImpl list(KActorsValueImpl... values) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.LIST);
+    value.setStatedValue(List.of(values));
     return value;
   }
 

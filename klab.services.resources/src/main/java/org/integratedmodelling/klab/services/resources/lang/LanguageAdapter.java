@@ -1511,6 +1511,11 @@ public enum LanguageAdapter {
               assign.getValue(), behavior.getUrn(), behavior.getProjectName(), notifications));
     } else if (assign.getFunction() != null) {
       ret.setFunction(adaptVerb(assign.getFunction(), behavior, action, notifications));
+    } else {
+      var switchStatement = reflectedSwitch(assign);
+      if (switchStatement != null) {
+        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
+      }
     }
     return ret;
   }
@@ -1533,6 +1538,7 @@ public enum LanguageAdapter {
         doStatement.getFunction() == null
             ? null
             : adaptVerb(doStatement.getFunction(), behavior, action, notifications));
+    ret.setAdaptedBehaviorUrn(doStatement.getCastToBehavior());
     ret.setBody(adaptActionStatement(doStatement.getStatement(), behavior, action, notifications));
     return ret;
   }
@@ -1556,6 +1562,7 @@ public enum LanguageAdapter {
         forStatement.getFunction() == null
             ? null
             : adaptVerb(forStatement.getFunction(), behavior, action, notifications));
+    ret.setAdaptedBehaviorUrn(forStatement.getCastToBehavior());
     ret.setBody(adaptActionStatement(forStatement.getStatement(), behavior, action, notifications));
     return ret;
   }
@@ -1579,6 +1586,7 @@ public enum LanguageAdapter {
         thenBranch.getFunction() == null
             ? null
             : adaptVerb(thenBranch.getFunction(), behavior, action, notifications));
+    ret.setAdaptedBehaviorUrn(ifStatement.getCastToBehavior());
     ret.setThenBody(
         adaptActionStatement(thenBranch.getStatement(), behavior, action, notifications));
     ret.setElseIfs(
@@ -1615,6 +1623,7 @@ public enum LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.ReturnImpl();
+    ret.setAdaptedBehaviorUrn(returnStatement.getCastToBehavior());
     if (returnStatement.getReturnValue() != null) {
       ret.setValue(
           adaptKActorsValue(
@@ -1624,6 +1633,11 @@ public enum LanguageAdapter {
               notifications));
     } else if (returnStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(returnStatement.getFunction(), behavior, action, notifications));
+    } else {
+      var switchStatement = reflectedSwitch(returnStatement);
+      if (switchStatement != null) {
+        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
+      }
     }
     return ret;
   }
@@ -1634,6 +1648,7 @@ public enum LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.YieldImpl();
+    ret.setAdaptedBehaviorUrn(yieldStatement.getCastToBehavior());
     if (yieldStatement.getReturnValue() != null) {
       ret.setValue(
           adaptKActorsValue(
@@ -1643,6 +1658,11 @@ public enum LanguageAdapter {
               notifications));
     } else if (yieldStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(yieldStatement.getFunction(), behavior, action, notifications));
+    } else {
+      var switchStatement = reflectedSwitch(yieldStatement);
+      if (switchStatement != null) {
+        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
+      }
     }
     return ret;
   }
@@ -1665,6 +1685,7 @@ public enum LanguageAdapter {
         whileStatement.getFunction() == null
             ? null
             : adaptVerb(whileStatement.getFunction(), behavior, action, notifications));
+    ret.setAdaptedBehaviorUrn(reflectedCastToBehavior(whileStatement));
     ret.setBody(
         adaptActionStatement(whileStatement.getStatement(), behavior, action, notifications));
     return ret;
@@ -1686,6 +1707,7 @@ public enum LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.FireImpl();
+    ret.setAdaptedBehaviorUrn(fireStatement.getCastToBehavior());
     if (fireStatement.getFiredValue() != null) {
       ret.setValue(
           adaptKActorsValue(
@@ -1695,6 +1717,11 @@ public enum LanguageAdapter {
               notifications));
     } else if (fireStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(fireStatement.getFunction(), behavior, action, notifications));
+    } else {
+      var switchStatement = reflectedSwitch(fireStatement);
+      if (switchStatement != null) {
+        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
+      }
     }
     return ret;
   }
@@ -1850,9 +1877,34 @@ public enum LanguageAdapter {
           adaptActionStatement(match.getStatement(), behavior, action, notifications));
       m.getVariables().addAll(match.getReactorVariables());
       m.setCaptureAs(match.getCaptureAs());
+      ret.getCases().add(m);
     }
 
     return ret;
+  }
+
+  private String reflectedCastToBehavior(Object statement) {
+    if (statement == null) {
+      return null;
+    }
+    try {
+      Object value = statement.getClass().getMethod("getCastToBehavior").invoke(statement);
+      return value == null ? null : value.toString();
+    } catch (ReflectiveOperationException ignored) {
+      return null;
+    }
+  }
+
+  private ActionStatementSyntax.Switch reflectedSwitch(Object statement) {
+    if (statement == null) {
+      return null;
+    }
+    try {
+      Object value = statement.getClass().getMethod("getSwitchStatement").invoke(statement);
+      return value instanceof ActionStatementSyntax.Switch switchStatement ? switchStatement : null;
+    } catch (ReflectiveOperationException ignored) {
+      return null;
+    }
   }
 
   private Map<String, KActorsValue> adaptArguments(

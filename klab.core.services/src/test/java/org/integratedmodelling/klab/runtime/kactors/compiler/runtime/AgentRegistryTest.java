@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,44 @@ class AgentRegistryTest {
     assertTrue(first.stop());
     assertNull(AgentRegistry.INSTANCE.getAgent(first.getUrn()));
     assertTrue(second.stop());
+  }
+
+  @Test
+  void compiledSwitchYieldsAValueAtRuntime() {
+    String urn = "test.registry.switch." + UUID.randomUUID().toString().replace("-", "");
+    var selector = value(2);
+    var first = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    first.setMatchCriterion(value(1));
+    first.setActionOnMatch(yielded(10));
+    var second = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    second.setMatchCriterion(value(2));
+    second.setActionOnMatch(yielded(20));
+    var switched = new KActorsStatementImpl.SwitchImpl();
+    switched.setValue(selector);
+    switched.setCases(List.of(first, second));
+    var assignment = new KActorsStatementImpl.AssignmentImpl();
+    assignment.setVariable("result");
+    assignment.setAssignmentScope(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.FRAME);
+    assignment.setSwitch(switched);
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    var result = new KActorsValueImpl();
+    result.setType(ValueType.IDENTIFIER);
+    result.setStatedValue("result");
+    returned.setValue(result);
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(assignment, returned));
+    var behavior = finiteBehavior(urn);
+    behavior.setStatements(List.of(main));
+
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(request(urn, "switch execution"), behavior, null);
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
+    assertNotNull(runtime);
+    assertEquals(20, ((RuntimeAgentBase) runtime).run().getReturnValue());
+    assertTrue(handle.stop());
   }
 
   @Test
@@ -321,6 +360,19 @@ class AgentRegistryTest {
     behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
     behavior.setStatements(List.of(main));
     return behavior;
+  }
+
+  private static KActorsValueImpl value(int number) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.INTEGER);
+    value.setStatedValue(number);
+    return value;
+  }
+
+  private static KActorsStatementImpl.YieldImpl yielded(int number) {
+    var yielded = new KActorsStatementImpl.YieldImpl();
+    yielded.setValue(value(number));
+    return yielded;
   }
 
   private static KActorsStatementImpl.VerbImpl verb(String recipient, String message) {

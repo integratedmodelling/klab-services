@@ -31,7 +31,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
     ASSERT_STATEMENT,
     ASSERTION,
     FAIL_STATEMENT,
-    BREAK_STATEMENT
+    BREAK_STATEMENT,
+    SWITCH_STATEMENT,
+    YIELD_STATEMENT
   }
 
   /** The syntactic counterpart of a k.Actors <code>if</code> statement. */
@@ -176,6 +178,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
      */
     Verb getFunction();
 
+    /** A functional switch supplying the returned value, mutually exclusive with value/function. */
+    Switch getSwitch();
+
     /**
      * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
      * This is legal only for frame-local assignments. It is validated at compilation and runtime
@@ -212,6 +217,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     Verb getFunction();
+
+    /** A nested functional switch supplying the yielded value. */
+    Switch getSwitch();
 
     /**
      * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
@@ -422,6 +430,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
      */
     Verb getFunction();
 
+    /** A functional switch supplying the assigned value. */
+    Switch getSwitch();
+
     /** Get the scope (actor state or frame) */
     Scope getAssignmentScope();
 
@@ -456,6 +467,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     Verb getFunction();
+
+    /** A functional switch supplying the fired value. */
+    Switch getSwitch();
 
     /**
      * Get the URN of the behavior that the assigned value should be adapted to before assigning it.

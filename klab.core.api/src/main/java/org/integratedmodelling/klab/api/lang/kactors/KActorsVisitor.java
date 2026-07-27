@@ -143,6 +143,38 @@ public class KActorsVisitor {
       return List.of();
     }
 
+    /**
+     * Validate behavior adaptation in any value-bearing statement. The assignment-specific
+     * overload is retained for compatibility and is called by default for assignments.
+     */
+    default List<Notification> validateAdaptation(
+        KActorsCodeStatement statement,
+        String behaviorUrn,
+        VariableInfo sourceVariable,
+        KActorsContext context) {
+      return statement instanceof KActorsStatement.Assignment assignment
+          ? validateAdaptation(assignment, behaviorUrn, sourceVariable, context)
+          : List.of();
+    }
+
+    /** Validate that the result of a behavior adaptation can be consumed as a condition. */
+    default List<Notification> validateBooleanAdaptation(
+        KActorsCodeStatement statement,
+        String behaviorUrn,
+        VariableInfo sourceVariable,
+        KActorsContext context) {
+      return List.of();
+    }
+
+    /** Validate that the result of a behavior adaptation can be consumed as an iterable. */
+    default List<Notification> validateIterableAdaptation(
+        KActorsCodeStatement statement,
+        String behaviorUrn,
+        VariableInfo sourceVariable,
+        KActorsContext context) {
+      return List.of();
+    }
+
     default List<Notification> validateVerbCall(
         KActorsStatement.Verb verb, KActorsContext context) {
       return List.of();
@@ -590,6 +622,8 @@ public class KActorsVisitor {
       case KActorsStatement.Assignment assignment -> visitAssignment(assignment, context);
       case KActorsStatement.Verb verb -> visitVerb(verb, context);
       case KActorsStatement.Group group -> visitGroup(group, context);
+      case KActorsStatement.Switch switchStatement -> visitSwitch(switchStatement, context);
+      case KActorsStatement.Yield yieldStatement -> visitYield(yieldStatement, context);
       case KActorsStatement.Return returnStatement -> visitReturn(returnStatement, context);
       default -> error("Unsupported statement type: " + statement.getClass().getName(), statement);
     }
@@ -657,7 +691,13 @@ public class KActorsVisitor {
     visitNested(statement.getBody(), context, List.of(), true);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
-    validateBooleanValue(statement.getCondition(), "do condition");
+    validateConditionAdaptation(
+        statement,
+        statement.getCondition(),
+        statement.getFunction(),
+        statement.getAdaptedBehaviorUrn(),
+        "do condition",
+        context);
   }
 
   protected void visitAssert(KActorsStatement.Assert statement, KActorsContext context) {
@@ -683,13 +723,23 @@ public class KActorsVisitor {
   protected void visitFail(KActorsStatement.Fail failStatement, KActorsContext context) {}
 
   protected void visitFire(KActorsStatement.Fire statement, KActorsContext context) {
-    validateAlternative(statement.getValue(), statement.getFunction(), "fire value", statement);
+    validateAlternative(
+        statement.getValue(), statement.getFunction(), statement.getSwitch(), "fire value", statement);
     var accumulator = actionAccumulators.get(context.action);
     if (accumulator != null) {
       accumulator.fires++;
     }
     visitValueIfPresent(statement.getValue(), context);
     visitVerbAsValue(statement.getFunction(), context);
+    visitNested(statement.getSwitch(), context, List.of(), false);
+    validateBehaviorAdaptation(
+        statement,
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        statement.getAdaptedBehaviorUrn(),
+        context,
+        null);
   }
 
   protected void visitIf(KActorsStatement.If statement, KActorsContext context) {
@@ -697,7 +747,13 @@ public class KActorsVisitor {
         statement.getCondition(), statement.getFunction(), "if condition", statement);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
-    validateBooleanValue(statement.getCondition(), "if condition");
+    validateConditionAdaptation(
+        statement,
+        statement.getCondition(),
+        statement.getFunction(),
+        statement.getAdaptedBehaviorUrn(),
+        "if condition",
+        context);
     visitNested(statement.getThenBody(), context, List.of(), false);
     for (var elseIf : safe(statement.getElseIfs())) {
       if (elseIf == null || elseIf.getFirst() == null) {
@@ -708,7 +764,13 @@ public class KActorsVisitor {
           condition.getFirst(), condition.getSecond(), "else-if condition", statement);
       visitValueIfPresent(condition.getFirst(), context);
       visitVerbAsValue(condition.getSecond(), context);
-      validateBooleanValue(condition.getFirst(), "else-if condition");
+      validateConditionAdaptation(
+          statement,
+          condition.getFirst(),
+          condition.getSecond(),
+          condition.getThird(),
+          "else-if condition",
+          context);
       visitNested(elseIf.getSecond(), context, List.of(), false);
     }
     visitNested(statement.getElseBody(), context, List.of(), false);
@@ -719,7 +781,13 @@ public class KActorsVisitor {
         statement.getCondition(), statement.getFunction(), "while condition", statement);
     visitValueIfPresent(statement.getCondition(), context);
     visitVerbAsValue(statement.getFunction(), context);
-    validateBooleanValue(statement.getCondition(), "while condition");
+    validateConditionAdaptation(
+        statement,
+        statement.getCondition(),
+        statement.getFunction(),
+        statement.getAdaptedBehaviorUrn(),
+        "while condition",
+        context);
     visitNested(statement.getBody(), context, List.of(), true);
   }
 
@@ -728,7 +796,19 @@ public class KActorsVisitor {
         statement.getIterable(), statement.getFunction(), "for iterable", statement);
     visitValueIfPresent(statement.getIterable(), context);
     visitVerbAsValue(statement.getFunction(), context);
-    validateIterableValue(statement.getIterable(), statement);
+    String adaptedBehaviorUrn = normalized(statement.getAdaptedBehaviorUrn());
+    if (adaptedBehaviorUrn == null) {
+      validateIterableValue(statement.getIterable(), statement);
+    } else {
+      validateBehaviorAdaptation(
+          statement,
+          statement.getIterable(),
+          statement.getFunction(),
+          null,
+          adaptedBehaviorUrn,
+          context,
+          AdaptedUse.ITERABLE);
+    }
     var loopVariables = new ArrayList<VariableInfo>();
     if (statement.getVariable() != null && !statement.getVariable().isBlank()) {
       loopVariables.add(
@@ -748,7 +828,11 @@ public class KActorsVisitor {
 
   protected void visitAssignment(KActorsStatement.Assignment statement, KActorsContext context) {
     validateAlternative(
-        statement.getValue(), statement.getFunction(), "assignment value", statement);
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        "assignment value",
+        statement);
     if (isImported(statement.getVariable())) {
       error("An assignment cannot override an import alias: " + statement.getVariable(), statement);
     } else if (statement.getAssignmentScope() == KActorsStatement.Assignment.Scope.FRAME
@@ -760,17 +844,27 @@ public class KActorsVisitor {
       error("Unknown actor state variable: " + statement.getVariable(), statement);
     }
     addNotifications(context.validator.validateAssignment(statement, context));
-    var sourceVariable = unadaptedVariableFor(statement, context);
     String adaptedBehaviorUrn = normalized(statement.getAdaptedBehaviorUrn());
     if (adaptedBehaviorUrn != null) {
       if (statement.getAssignmentScope() != KActorsStatement.Assignment.Scope.FRAME) {
         error("Behavior adaptation is only allowed on local frame assignments", statement);
       } else {
+        var sourceVariable =
+            sourceVariableFor(
+                statement,
+                statement.getValue(),
+                statement.getFunction(),
+                statement.getSwitch(),
+                context);
         var adaptationNotifications =
-            safe(
-                context.validator.validateAdaptation(
-                    statement, adaptedBehaviorUrn, sourceVariable, context));
-        addNotifications(adaptationNotifications);
+            validateBehaviorAdaptation(
+                statement,
+                statement.getValue(),
+                statement.getFunction(),
+                statement.getSwitch(),
+                adaptedBehaviorUrn,
+                context,
+                null);
         if (adaptationNotifications.stream()
             .noneMatch(
                 notification ->
@@ -789,6 +883,7 @@ public class KActorsVisitor {
     }
     visitValueIfPresent(statement.getValue(), context);
     visitVerbAsValue(statement.getFunction(), context);
+    visitNested(statement.getSwitch(), context, List.of(), false);
   }
 
   protected void visitVerb(KActorsStatement.Verb statement, KActorsContext context) {
@@ -812,9 +907,69 @@ public class KActorsVisitor {
         accumulator.reactiveReturns++;
       }
     }
-    validateAlternative(statement.getValue(), statement.getFunction(), "return value", statement);
+    validateAlternative(
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        "return value",
+        statement);
     visitValueIfPresent(statement.getValue(), context);
     visitVerbAsValue(statement.getFunction(), context);
+    visitNested(statement.getSwitch(), context, List.of(), false);
+    validateBehaviorAdaptation(
+        statement,
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        statement.getAdaptedBehaviorUrn(),
+        context,
+        null);
+  }
+
+  protected void visitYield(KActorsStatement.Yield statement, KActorsContext context) {
+    if (context.getUpstreamStatement(KActorsStatement.Switch.class) == null) {
+      error("yield can only be used inside a switch", statement);
+    }
+    validateAlternative(
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        "yield value",
+        statement);
+    visitValueIfPresent(statement.getValue(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    visitNested(statement.getSwitch(), context, List.of(), false);
+    validateBehaviorAdaptation(
+        statement,
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        statement.getAdaptedBehaviorUrn(),
+        context,
+        null);
+  }
+
+  protected void visitSwitch(KActorsStatement.Switch statement, KActorsContext context) {
+    validateAlternative(statement.getValue(), statement.getFunction(), "switch value", statement);
+    visitValueIfPresent(statement.getValue(), context);
+    visitVerbAsValue(statement.getFunction(), context);
+    validateBehaviorAdaptation(
+        statement,
+        statement.getValue(),
+        statement.getFunction(),
+        null,
+        statement.getAdaptedBehaviorUrn(),
+        context,
+        null);
+    if (isSwitchValuePosition(context)
+        && safe(statement.getCases()).stream()
+            .map(KActorsStatement.Verb.MatchAction::getActionOnMatch)
+            .noneMatch(this::containsYield)) {
+      error("A switch used as a value must have at least one yield branch", statement);
+    }
+    for (var match : safe(statement.getCases())) {
+      visitNested(match, context, List.of(), false);
+    }
   }
 
   private void visitBlock(List<KActorsStatement> statements, KActorsContext parent) {
@@ -1026,7 +1181,20 @@ public class KActorsVisitor {
         || parent instanceof KActorsStatement.Do
         || parent instanceof KActorsStatement.For
         || parent instanceof KActorsStatement.Return
-        || parent instanceof KActorsStatement.Fire;
+        || parent instanceof KActorsStatement.Fire
+        || parent instanceof KActorsStatement.Yield
+        || parent instanceof KActorsStatement.Switch;
+  }
+
+  private boolean isSwitchValuePosition(KActorsContext context) {
+    if (context.upstream.size() < 2) {
+      return false;
+    }
+    var parent = context.upstream.get(context.upstream.size() - 2);
+    return parent instanceof KActorsStatement.Assignment
+        || parent instanceof KActorsStatement.Return
+        || parent instanceof KActorsStatement.Fire
+        || parent instanceof KActorsStatement.Yield;
   }
 
   private VariableInfo variableFor(KActorsStatement.Assignment assignment) {
@@ -1071,6 +1239,96 @@ public class KActorsVisitor {
         function);
   }
 
+  private VariableInfo sourceVariableFor(
+      KActorsCodeStatement statement,
+      KActorsValue value,
+      KActorsStatement.Verb function,
+      KActorsStatement.Switch switchStatement,
+      KActorsContext context) {
+    if (value != null) {
+      if (context != null && value.getType() == ValueType.IDENTIFIER) {
+        var source = context.knownVariables.get(value.getValue(String.class));
+        if (source != null) {
+          return new VariableInfo(
+              statement,
+              source.name(),
+              source.type(),
+              source.agentUrn(),
+              source.verbUrn(),
+              source.producerCall());
+        }
+      }
+      return new VariableInfo(statement, null, value.getType(), null, null, null);
+    }
+    if (function != null) {
+      return new VariableInfo(
+          statement,
+          null,
+          null,
+          normalizeRecipient(function.getRecipient()),
+          function.getMessage(),
+          function);
+    }
+    return new VariableInfo(statement, null, null, null, null, null);
+  }
+
+  private enum AdaptedUse {
+    BOOLEAN,
+    ITERABLE
+  }
+
+  private void validateConditionAdaptation(
+      KActorsCodeStatement statement,
+      KActorsValue value,
+      KActorsStatement.Verb function,
+      String behaviorUrn,
+      String role,
+      KActorsContext context) {
+    String normalizedUrn = normalized(behaviorUrn);
+    if (normalizedUrn == null) {
+      validateBooleanValue(value, role);
+      return;
+    }
+    validateBehaviorAdaptation(
+        statement, value, function, null, normalizedUrn, context, AdaptedUse.BOOLEAN);
+  }
+
+  private List<Notification> validateBehaviorAdaptation(
+      KActorsCodeStatement statement,
+      KActorsValue value,
+      KActorsStatement.Verb function,
+      KActorsStatement.Switch switchStatement,
+      String behaviorUrn,
+      KActorsContext context,
+      AdaptedUse adaptedUse) {
+    String normalizedUrn = normalized(behaviorUrn);
+    if (normalizedUrn == null) {
+      return List.of();
+    }
+    var source = sourceVariableFor(statement, value, function, switchStatement, context);
+    var notifications =
+        new ArrayList<>(
+            safe(context.validator.validateAdaptation(statement, normalizedUrn, source, context)));
+    boolean valid =
+        notifications.stream()
+            .noneMatch(
+                notification ->
+                    notification.getLevel().severity >= Notification.Level.Error.severity);
+    if (valid && adaptedUse == AdaptedUse.BOOLEAN) {
+      notifications.addAll(
+          safe(
+              context.validator.validateBooleanAdaptation(
+                  statement, normalizedUrn, source, context)));
+    } else if (valid && adaptedUse == AdaptedUse.ITERABLE) {
+      notifications.addAll(
+          safe(
+              context.validator.validateIterableAdaptation(
+                  statement, normalizedUrn, source, context)));
+    }
+    addNotifications(notifications);
+    return List.copyOf(notifications);
+  }
+
   private String normalized(String value) {
     return value == null || value.isBlank() ? null : value.trim();
   }
@@ -1079,6 +1337,21 @@ public class KActorsVisitor {
       Object value, Object function, String role, KActorsCodeStatement statement) {
     if ((value == null) == (function == null)) {
       error("Exactly one " + role + " or functional verb must be supplied", statement);
+    }
+  }
+
+  private void validateAlternative(
+      Object value,
+      Object function,
+      Object switchStatement,
+      String role,
+      KActorsCodeStatement statement) {
+    int supplied =
+        (value == null ? 0 : 1)
+            + (function == null ? 0 : 1)
+            + (switchStatement == null ? 0 : 1);
+    if (supplied != 1) {
+      error("Exactly one " + role + ", functional verb, or switch must be supplied", statement);
     }
   }
 
@@ -1124,6 +1397,28 @@ public class KActorsVisitor {
     return found.get();
   }
 
+  private boolean containsYield(KActorsStatement statement) {
+    if (statement == null) {
+      return false;
+    }
+    if (statement instanceof KActorsStatement.Yield) {
+      return true;
+    }
+    // A nested switch owns its own yields.
+    if (statement instanceof KActorsStatement.Switch) {
+      return false;
+    }
+    var found = new java.util.concurrent.atomic.AtomicBoolean();
+    forEachChild(
+        statement,
+        child -> {
+          if (!found.get() && containsYield(child)) {
+            found.set(true);
+          }
+        });
+    return found.get();
+  }
+
   private void forEachChild(
       KActorsStatement statement, java.util.function.Consumer<KActorsStatement> consumer) {
     switch (statement) {
@@ -1151,9 +1446,26 @@ public class KActorsVisitor {
         consumer.accept(loop.getFunction());
         consumer.accept(loop.getBody());
       }
-      case KActorsStatement.Assignment assignment -> consumer.accept(assignment.getFunction());
-      case KActorsStatement.Fire fire -> consumer.accept(fire.getFunction());
-      case KActorsStatement.Return returned -> consumer.accept(returned.getFunction());
+      case KActorsStatement.Assignment assignment -> {
+        consumer.accept(assignment.getFunction());
+        consumer.accept(assignment.getSwitch());
+      }
+      case KActorsStatement.Fire fire -> {
+        consumer.accept(fire.getFunction());
+        consumer.accept(fire.getSwitch());
+      }
+      case KActorsStatement.Return returned -> {
+        consumer.accept(returned.getFunction());
+        consumer.accept(returned.getSwitch());
+      }
+      case KActorsStatement.Yield yielded -> {
+        consumer.accept(yielded.getFunction());
+        consumer.accept(yielded.getSwitch());
+      }
+      case KActorsStatement.Switch switchStatement -> {
+        consumer.accept(switchStatement.getFunction());
+        safe(switchStatement.getCases()).forEach(consumer);
+      }
       case KActorsStatement.Verb verb -> safe(verb.getActions()).forEach(consumer);
       case KActorsStatement.Verb.MatchAction match -> consumer.accept(match.getActionOnMatch());
       case KActorsStatement.Assert assertion -> safe(assertion.getAssertions()).forEach(consumer);

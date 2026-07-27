@@ -58,6 +58,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
   public static class SwitchImpl extends KActorsStatementImpl implements Switch {
 
+    private Type type = Type.SWITCH_STATEMENT;
     private KActorsValue value;
     private Verb function;
     private List<Verb.MatchAction> cases = new ArrayList<>();
@@ -66,6 +67,11 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public KActorsValue getValue() {
       return this.value;
+    }
+
+    @Override
+    public Type getType() {
+      return type;
     }
 
     @Override
@@ -319,6 +325,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private String variable;
     private KActorsValue value;
     private Verb function;
+    private Switch switchStatement;
 
     private Assignment.Scope assignmentScope;
     private String adaptedBehaviorUrn;
@@ -367,6 +374,15 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Verb getFunction() {
       return function;
+    }
+
+    @Override
+    public Switch getSwitch() {
+      return switchStatement;
+    }
+
+    public void setSwitch(Switch switchStatement) {
+      this.switchStatement = switchStatement;
     }
 
     public void setFunction(Verb function) {
@@ -506,6 +522,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.RETURN_STATEMENT;
     private Verb function;
     private KActorsValue value;
+    private Switch switchStatement;
     private String adaptedBehaviorUrn;
 
     @Override
@@ -520,6 +537,15 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Verb getFunction() {
       return function;
+    }
+
+    @Override
+    public Switch getSwitch() {
+      return switchStatement;
+    }
+
+    public void setSwitch(Switch switchStatement) {
+      this.switchStatement = switchStatement;
     }
 
     @Override
@@ -581,9 +607,10 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
     @Serial private static final long serialVersionUID = -4956873828205184896L;
 
-    private Type type = Type.RETURN_STATEMENT;
+    private Type type = Type.YIELD_STATEMENT;
     private Verb function;
     private KActorsValue value;
+    private Switch switchStatement;
     private String adaptedBehaviorUrn;
 
     @Override
@@ -598,6 +625,15 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Verb getFunction() {
       return function;
+    }
+
+    @Override
+    public Switch getSwitch() {
+      return switchStatement;
+    }
+
+    public void setSwitch(Switch switchStatement) {
+      this.switchStatement = switchStatement;
     }
 
     @Override
@@ -664,6 +700,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.FIRE_VALUE;
     private KActorsValue value;
     private Verb function;
+    private Switch switchStatement;
     private String adaptedBehaviorUrn;
 
     @Override
@@ -678,6 +715,15 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     @Override
     public Verb getFunction() {
       return function;
+    }
+
+    @Override
+    public Switch getSwitch() {
+      return switchStatement;
+    }
+
+    public void setSwitch(Switch switchStatement) {
+      this.switchStatement = switchStatement;
     }
 
     public void setFunction(Verb function) {
