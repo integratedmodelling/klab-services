@@ -383,6 +383,8 @@ public class JacksonConfiguration {
           KActorsStatement.Text.class,
           KActorsStatement.Verb.class,
           KActorsStatement.While.class,
+          KActorsStatement.Yield.class,
+          KActorsStatement.Switch.class,
           KActorsValue.class,
           KimModel.class,
           Activity.class,
