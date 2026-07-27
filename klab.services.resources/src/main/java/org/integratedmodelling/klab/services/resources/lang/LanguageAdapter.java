@@ -9,6 +9,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.ConstantImpl;
 import org.integratedmodelling.klab.api.collections.impl.IdentifierImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -45,6 +46,9 @@ import org.integratedmodelling.languages.api.*;
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
   INSTANCE;
+
+  private static final Pattern STATIC_ACTION_PATTERN =
+      Pattern.compile("^\\s*static\\s+action\\b", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
   Map<String, Instance> instanceAnnotations = new HashMap<>();
   Map<String, Class<?>> instanceImplementations = new HashMap<>();
@@ -1361,7 +1365,6 @@ public enum LanguageAdapter {
       ret.getInheritedBehaviors().add(imported);
     }
 
-
     for (var action : syntax.getActions()) {
       ret.getStatements().add(adaptAction(action, ret, name, projectName, notifications));
     }
@@ -1382,6 +1385,9 @@ public enum LanguageAdapter {
 
     ret.setUrn(action.getName());
     ret.setArgumentNames(new ArrayList<>(action.getArgumentNames()));
+    // ActionSyntax currently exposes the action source but not the grammar's `static` attribute.
+    // Preserve the semantic contract until that syntax-bean accessor is available.
+    ret.setStatic(STATIC_ACTION_PATTERN.matcher(action.encode()).find());
     for (var statement : action.getStatements()) {
       ret.getCode().add(adaptActionStatement(statement, behavior, ret, notifications));
     }
@@ -1448,6 +1454,10 @@ public enum LanguageAdapter {
               adaptBreak(breakStatement, behavior, action, notifications);
           case ActionStatementSyntax.Group groupStatement ->
               adaptGroup(groupStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Switch switchStatement ->
+              adaptSwitch(switchStatement, behavior, action, notifications);
+          case ActionStatementSyntax.Yield yieldStatement ->
+              adaptYield(yieldStatement, behavior, action, notifications);
           default ->
               throw new KlabIllegalArgumentException("unknown action statement type: " + statement);
         };
@@ -1576,17 +1586,18 @@ public enum LanguageAdapter {
             .map(
                 branch ->
                     Pair.of(
-                        Pair.of(
-                            branch.getCondition() == null
+                        Triple.of(
+                            (branch.getCondition() == null
                                 ? null
                                 : adaptKActorsValue(
                                     branch.getCondition(),
                                     behavior.getUrn(),
                                     behavior.getProjectName(),
-                                    notifications),
-                            branch.getFunction() == null
+                                    notifications)),
+                            (branch.getFunction() == null
                                 ? null
                                 : adaptVerb(branch.getFunction(), behavior, action, notifications)),
+                            branch.getCastToBehavior()),
                         adaptActionStatement(
                             branch.getStatement(), behavior, action, notifications)))
             .toList());
@@ -1613,6 +1624,25 @@ public enum LanguageAdapter {
               notifications));
     } else if (returnStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(returnStatement.getFunction(), behavior, action, notifications));
+    }
+    return ret;
+  }
+
+  private KActorsStatement.Yield adaptYield(
+      ActionStatementSyntax.Yield yieldStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
+    var ret = new KActorsStatementImpl.YieldImpl();
+    if (yieldStatement.getReturnValue() != null) {
+      ret.setValue(
+          adaptKActorsValue(
+              yieldStatement.getReturnValue(),
+              behavior.getUrn(),
+              behavior.getProjectName(),
+              notifications));
+    } else if (yieldStatement.getFunction() != null) {
+      ret.setFunction(adaptVerb(yieldStatement.getFunction(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1784,8 +1814,49 @@ public enum LanguageAdapter {
     return ret;
   }
 
+  private KActorsStatement.Switch adaptSwitch(
+      ActionStatementSyntax.Switch verbStatement,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
+
+    var ret = new KActorsStatementImpl.SwitchImpl();
+    ret.setValue(
+        verbStatement.getValue() == null
+            ? null
+            : adaptKActorsValue(
+                verbStatement.getValue(),
+                behavior.getUrn(),
+                behavior.getProjectName(),
+                notifications));
+    ret.setFunction(
+        verbStatement.getFunction() == null
+            ? null
+            : adaptVerb(verbStatement.getFunction(), behavior, action, notifications));
+    ret.setAdaptedBehaviorUrn(verbStatement.getCastToBehavior());
+
+    for (var match : verbStatement.getMatches()) {
+      var m = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+      setParsingData(match, m, behavior.getUrn(), behavior.getProjectName());
+      m.setMatchCriterion(
+          match.getMatchCondition() == null
+              ? null
+              : adaptKActorsValue(
+                  match.getMatchCondition(),
+                  behavior.getUrn(),
+                  behavior.getProjectName(),
+                  notifications));
+      m.setActionOnMatch(
+          adaptActionStatement(match.getStatement(), behavior, action, notifications));
+      m.getVariables().addAll(match.getReactorVariables());
+      m.setCaptureAs(match.getCaptureAs());
+    }
+
+    return ret;
+  }
+
   private Map<String, KActorsValue> adaptArguments(
-      Map<String, ValueSyntax> arguments,
+      Map<String, org.eclipse.xtext.util.Pair<ValueSyntax, String>> arguments,
       String namespace,
       String projectName,
       List<Notification> notifications) {
@@ -1794,7 +1865,9 @@ public enum LanguageAdapter {
             e ->
                 new AbstractMap.SimpleEntry<>(
                     e.getKey(),
-                    adaptKActorsValue(e.getValue(), namespace, projectName, notifications)))
+                    // TODO handle cast behavior
+                    adaptKActorsValue(
+                        e.getValue().getFirst(), namespace, projectName, notifications)))
         .collect(
             Collectors.toMap(
                 Map.Entry::getKey,

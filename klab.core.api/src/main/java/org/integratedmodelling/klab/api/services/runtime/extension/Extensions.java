@@ -139,7 +139,7 @@ public interface Extensions {
     // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
     // each call
     public int methodCall;
-    public boolean staticClass; // TODO remove (not now because it messes up config)
+//    public boolean staticClass; // TODO remove (not now because it messes up config)
     public boolean staticMethod;
     public boolean error;
   }

@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.tools.DiagnosticCollector;
@@ -24,6 +25,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.lang.TernaryImpl;
+import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -36,7 +38,9 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
@@ -513,6 +517,83 @@ class BehaviorAnalyzerTest {
     assertTrue(
         compiler.getSourceCode().contains("\"workers.specialized\""), compiler.getSourceCode());
     assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void importedBehaviorAliasesExposeOnlyStaticActionsAndNewProducesAnInstance() {
+    var utility = action("describe", returned(number(1)));
+    utility.setStatic(true);
+    utility.setActionType(Verb.Type.FUNCTION);
+    var instanceAction = action("work", returned(number(2)));
+    instanceAction.setActionType(Verb.Type.FUNCTION);
+    var importedBehavior = behavior(utility, instanceAction);
+    importedBehavior.setUrn("tools.worker");
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "tools.worker".equals(urn) ? importedBehavior : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+
+    var invalid = behavior(action("main", verb("tools", "describe"), verb("tools", "work")));
+    invalid.setImports(List.of(imported("tools.worker", "tools")));
+    var invalidAnalysis = new BehaviorAnalyzer(invalid, environment.validator());
+
+    assertFalse(invalidAnalysis.analyze());
+    assertEquals(Boolean.TRUE, invalidAnalysis.getCalls().get(0).staticAction());
+    assertEquals(Boolean.FALSE, invalidAnalysis.getCalls().get(1).staticAction());
+    assertTrue(messages(invalidAnalysis).contains("must be invoked on an actor instance"));
+
+    var construct = verb("tools", "new");
+    var worker =
+        assignment("worker", KActorsStatement.Assignment.Scope.FRAME, construct);
+    var valid = behavior(action("main", worker, verb("worker", "work")));
+    valid.setImports(List.of(imported("tools.worker", "tools")));
+    var validAnalysis = new BehaviorAnalyzer(valid, environment.validator());
+
+    assertTrue(validAnalysis.analyze(), messages(validAnalysis));
+    assertEquals(Boolean.TRUE, validAnalysis.getCalls().get(0).staticAction());
+    assertEquals(Boolean.FALSE, validAnalysis.getCalls().get(1).staticAction());
+
+    var compiler = new AgentCompiler(valid, null, environment.validator(), resolver);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("resolveImportedBehavior("));
+    assertTrue(compiler.getGeneratedSources().containsKey("tools.worker"));
+  }
+
+  @Test
+  void javaActorDescriptorsEnforceTheSameAliasStaticityRule() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "java.worker";
+    var utility = javaVerb("utility", true, JavaStaticityActor.class.getMethod("utility"));
+    var work = javaVerb("work", false, JavaStaticityActor.class.getMethod("work"));
+    descriptor.verbs.add(utility.getKey());
+    descriptor.verbs.add(work.getKey());
+    var resolved =
+        new AgentCompiler.ResolvedActor(
+            descriptor,
+            Map.of("utility", utility.getValue(), "work", work.getValue()));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "java.worker".equals(urn) ? resolved : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var source =
+        behavior(action("main", verb("java", "utility"), verb("java", "work")));
+    source.setImports(List.of(imported("java.worker", "java")));
+    var analyzer = new BehaviorAnalyzer(source, environment.validator());
+
+    assertFalse(analyzer.analyze());
+    assertEquals(Boolean.TRUE, analyzer.getCalls().get(0).staticAction());
+    assertEquals(Boolean.FALSE, analyzer.getCalls().get(1).staticAction());
+    assertTrue(messages(analyzer).contains("must be invoked on an actor instance"));
   }
 
   @Test
@@ -1060,6 +1141,31 @@ class BehaviorAnalyzerTest {
     public Verb.Type classifyActionCall(
         KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private static Map.Entry<Extensions.FunctionDescriptor, ComponentRegistry.ServiceImplementation>
+      javaVerb(String name, boolean isStatic, java.lang.reflect.Method method) {
+    var descriptor = new Extensions.FunctionDescriptor();
+    var serviceInfo = new ServiceInfoImpl();
+    serviceInfo.setName("java.worker." + name);
+    descriptor.serviceInfo = serviceInfo;
+    descriptor.staticMethod = isStatic;
+    var implementation = new ComponentRegistry.ServiceImplementation();
+    implementation.implementation = JavaStaticityActor.class;
+    implementation.method = method;
+    return Map.entry(descriptor, implementation);
+  }
+
+  public static class JavaStaticityActor {
+    @Verb(name = "utility", executionType = Verb.Type.FUNCTION)
+    public static Object utility() {
+      return null;
+    }
+
+    @Verb(name = "work", executionType = Verb.Type.FUNCTION)
+    public Object work() {
+      return null;
     }
   }
 

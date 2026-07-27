@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.lang.kactors;
 import java.util.List;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 
 /**
@@ -54,6 +55,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
     Verb getFunction();
 
     /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
+
+    /**
      * The body of the if statement.
      *
      * @return
@@ -62,11 +73,12 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * The conditions and bodies of any <code>else if</code> statement. The condition may be a verb
-     * or a value; only one of them may be non-null.
+     * or a value; only one of them may be non-null. The third element, if not null, is the URN of
+     * the behavior that the assigned value should be adapted to before assigning it.
      *
      * @return
      */
-    List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> getElseIfs();
+    List<Pair<Triple<KActorsValue, Verb, String>, KActorsStatement>> getElseIfs();
 
     /**
      * The body of the <code>else</code> statement if present.
@@ -125,6 +137,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
     Verb getFunction();
 
     /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
+
+    /**
      * The body of the loop
      *
      * @return
@@ -153,6 +175,53 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     Verb getFunction();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
+  }
+
+  /**
+   * Analogous to a `return` statement syntactically, it's used only within the body of a `switch`
+   * statement to make the switch functional and specify its value after calculation. Any branches
+   * that have no yield statement will return null/unknown.
+   */
+  interface Yield extends KActorsStatement {
+
+    /**
+     * The returned value. Exactly one between getValue() and getFunction() must be non-null. In an
+     * emitter's reactive return the value is an exit code; executing the return stops scheduled
+     * emissions and removes listeners without changing the action's emitter type.
+     *
+     * @return
+     */
+    KActorsValue getValue();
+
+    /**
+     * Defined when the return value is supplied through a functional verb; requires a function or a
+     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
+     * getValue() and getFunction() must be non-null. See {@link #getValue()} for the emitter exit
+     * code case.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
   }
 
   /** The syntactic counterpart of a k.Actors <code>do</code> statement. */
@@ -173,6 +242,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     Verb getFunction();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
 
     /**
      * The body of the loop.
@@ -272,6 +351,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
     KActorsValue getIterable();
 
     /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
+
+    /**
      * Defined when the iterable is supplied through a functional verb; requires a function or a
      * supplier and triggers blocking behavior if the verb is a supplier. Only one between
      * getIterable() and getFunction() may be non-null.
@@ -367,6 +456,16 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     Verb getFunction();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
   }
 
   /**
@@ -463,6 +562,50 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     List<MatchAction> getActions();
+  }
+
+  /**
+   * The syntactic counterpart of a verb statement, corresponding to a verb invocation with possible
+   * actions to match to values and execute if the verb is a supplier or an emitter. A verb
+   * statement is a message to an imported agent (or to <code>self</code>), always contains a
+   * recipient and a message selector, and optionally actions to match to returned or fired outputs.
+   * It is an error to assign match actions to a verb statement that is not a supplier or emitter.
+   */
+  interface Switch extends KActorsStatement {
+
+    /**
+     * The value to switch on. Either this or #getFunction() must be non-null.
+     *
+     * @return
+     */
+    KActorsValue getValue();
+
+    /**
+     * The verb whose result value we switch on. Either this or #getValue() must be non-null.
+     *
+     * @return
+     */
+    Verb getFunction();
+
+    /**
+     * Actions with the corresponding pattern to match to the target value. If the value is null,
+     * any values matches. The Yield statement as the statement (or within a group statement),
+     * allowed only in a Switch, make the statement functional; if any switch matches and does not
+     * have a Yield statement,
+     *
+     * @return
+     */
+    List<Verb.MatchAction> getCases();
+
+    /**
+     * Get the URN of the behavior that the assigned value should be adapted to before assigning it.
+     * This is legal only for frame-local assignments. It is validated at compilation and runtime
+     * and enables transforming an agent or other object when the runtime environment supports the
+     * source-to-behavior conversion.
+     *
+     * @return target behavior URN, or {@code null} when no adaptation was requested
+     */
+    String getAdaptedBehaviorUrn();
   }
 
   /**

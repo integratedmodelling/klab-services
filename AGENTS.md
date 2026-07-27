@@ -124,8 +124,20 @@ undeclared receiver are errors unless the receiver is a known actor-valued varia
 actors may be resolved from connected resource services or from installed Java components.
 
 A static action may be called directly on an imported alias. A non-static action requires an actor
-instance, normally created through the runtime's `new` facility. Constructor arguments for Java
-actors and `init` arguments for k.Actors behaviors are matched by the runtime validator.
+instance, normally created through the runtime's `new` facility:
+
+```kactors
+tools.describe                         // static: alias call
+worker <- tools.new(configuration)     // construct an instance
+worker.process(job)                    // non-static: instance call
+```
+
+The same rule applies to parsed k.Actors actions and component-provided Java verbs. For an imported
+k.Actors behavior, `alias.new(...)` is synthetic and passes its arguments to the behavior's
+`init`. For a Java actor, `new` is an explicitly exposed static verb that returns an actor instance;
+descriptor-backed constructor matching remains an extension concern. An actor-valued action
+argument, match capture, loop variable, or method result may also be used as the recipient of a
+non-static call. Calls on `self` may address either kind because `self` is already an instance.
 
 ### 3.3. Inheritance and worldviews
 
@@ -165,6 +177,11 @@ static action describe:
 An action name is a lowercase identifier. Arguments are untyped names and may be supplied
 positionally or by name at call sites. Duplicate action names and duplicate argument names are
 errors.
+
+`static` controls the permitted recipient, not whether Java code happens to use a static generated
+method and not whether the action is a function, supplier, or emitter. Imported aliases represent
+actor specifications: they expose static actions and `new`. Ordinary actions operate on actor
+instances and can use that instance's initialized state.
 
 Annotations precede an action:
 
@@ -713,6 +730,14 @@ ordinary imports and calls. The runtime validator is responsible for:
 - classifying each verb as a function, supplier, or emitter;
 - reporting the Java runtime class used by generated code.
 
+For a Java import, the compiler binds the alias to the implementation `Class`. Runtime reflection
+therefore requires an alias-selected verb to be a Java `static` method. A static `new` verb may
+return an object; subsequent calls use that object as their recipient and may select its
+non-static methods. Calling a non-static Java verb directly on the class alias is rejected during
+analysis and is also refused by runtime method selection. k.Actors imports follow the same source
+contract: static alias calls use a lazily created internal target, while `new` creates a separate
+initialized behavior instance.
+
 This boundary is what lets k.Actors remain small while exposing the full k.LAB runtime and
 third-party libraries.
 
@@ -727,6 +752,7 @@ checks at least the following:
 - libraries do not declare `init` or `main`; traits and components may declare both;
 - calls to `self` name a known local or inherited action;
 - explicit receivers are imported or are visible actor variables;
+- imported aliases call only static actions (apart from the synthetic or exposed `new` verb);
 - function calls do not declare match actions;
 - emitters are not used where one value is required;
 - calls and their arguments satisfy extension-provided validation;

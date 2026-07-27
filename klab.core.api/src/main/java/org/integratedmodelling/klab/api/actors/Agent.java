@@ -36,10 +36,10 @@ public interface Agent extends Serializable {
 
   /**
    * All agents have a name, which may be automatically generated and is not guaranteed to be
-   * unique. If the agent is linked to an {@link
-   * org.integratedmodelling.klab.api.knowledge.observation.Observation} the name is mandatorily the
-   * same as the observation's. A name request is submitted with the instantiation call and may be
-   * honored or not by the runtime.
+   * unique. A nonblank name submitted with the instantiation call is retained. If no name is
+   * requested and the agent is linked to an {@link
+   * org.integratedmodelling.klab.api.knowledge.observation.Observation}, the observation name is
+   * used; otherwise a name is derived from the behavior URN.
    *
    * @return the name of the agent. Never null.
    */

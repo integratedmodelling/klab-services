@@ -666,13 +666,13 @@ public enum AgentRegistry {
 
   private String chooseName(
       Agent request, KActorsBehavior behavior, Observation observation) {
+    if (request.getName() != null && !request.getName().isBlank()) {
+      return request.getName();
+    }
     if (observation != null
         && observation.getName() != null
         && !observation.getName().isBlank()) {
       return observation.getName();
-    }
-    if (request.getName() != null && !request.getName().isBlank()) {
-      return request.getName();
     }
     String urn = behavior.getUrn();
     int separator = Math.max(urn.lastIndexOf('.'), urn.lastIndexOf(':'));

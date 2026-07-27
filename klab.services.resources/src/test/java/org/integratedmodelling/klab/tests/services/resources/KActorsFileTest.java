@@ -58,6 +58,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertBehaviorContract),
         new Case(
+            "/static-actions.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertStaticActionContract),
+        new Case(
             "/simplegroup.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertGroupedBehaviorParses),
@@ -196,6 +200,14 @@ class KActorsFileTest {
     assertEquals(Integer.valueOf(0), returned.as(Integer.class));
     assertEquals("test.user.contract", returned.getNamespace());
     assertEquals("test.project", returned.getProjectName());
+  }
+
+  private void assertStaticActionContract(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var actions = result.requireBehavior().getStatements();
+    assertTrue(actions.get(0).isStatic());
+    assertFalse(actions.get(1).isStatic());
   }
 
   private void assertGroupedBehaviorParses(KActorsTestSupport.Result result) {

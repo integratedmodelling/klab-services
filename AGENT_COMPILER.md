@@ -416,7 +416,10 @@ future. The current `definitelyReturns` analysis recognizes terminal `return`/`f
 groups, and fully covered `if`/`else if`/`else` branches.
 
 Generated action dispatch currently uses reflection in `invokeGeneratedAction`, which searches for
-the private `action_<name>` method through the class hierarchy.
+the private `action_<name>` method through the class hierarchy. The generated Java method remains
+an instance method even when the source action is declared `static`: source staticity controls
+which recipient may invoke the action, while the internal method still needs its owning runtime
+agent and action scope.
 
 ### 6.3 Generated `main` and CLI
 
@@ -619,12 +622,20 @@ parameter matcher.
 ### 10.3 Constructor and `new` matching
 
 `Extensions.ActorDescriptor` and `FunctionDescriptor` can describe Java actors and verbs, while
-`ComponentRegistry.ServiceImplementation` can carry constructors and instances. However, the
-compiler currently binds a resolved Java actor as its implementation `Class`. It does not yet:
+`ComponentRegistry.ServiceImplementation` can carry constructors and instances.
 
-- enforce or invoke a `new` verb for actors with non-static verbs;
-- select and invoke actor constructors;
-- preserve per-instance actor state;
+Imported k.Actors behaviors are recursively compiled and bound through
+`resolveImportedBehavior(...)`. The binding lazily creates one internal target for static alias
+calls. Its synthetic `new` verb creates a distinct generated behavior instance and passes the call
+arguments to `init`; subsequent calls on the returned value may invoke non-static actions.
+
+A resolved Java actor is currently bound as its implementation `Class`. This deliberately permits
+only static methods on the alias. A component may expose a static `@Verb(name = "new")` factory
+that returns an instance; calls on that returned recipient then select non-static Java methods.
+Runtime method selection repeats the static requirement even after validation. The compiler does
+not yet:
+
+- synthesize Java `new` from `ServiceImplementation.constructor`;
 - match named/default arguments from `ServiceInfo`;
 - split compound values such as `Quantity` into separate value/unit parameters;
 - use the validator's selected overload directly at runtime.
@@ -644,7 +655,7 @@ The generated source relies most heavily on these protected `RuntimeAgentBase` m
 | `matches`, `bindMatch` | Implement reactive pattern selection and local captures. |
 | `invokeSelfFunction/Supplier/Emitter` | Dispatch generated actions. |
 | `invokeFunction/Supplier/Emitter` | Dispatch imported behaviors or Java actors. |
-| `resolveImportedActor` | Accept deployment-provided actor bindings. |
+| `resolveImportedActor`, `resolveImportedBehavior` | Accept deployment-provided bindings or construct imported k.Actors instances. |
 | `onEvent`, `runSupplier`, `runEmitter` | Install and run reactive calls. |
 | `completeReaction`, `awaitReactions` | Implement `then` first-value barriers. |
 | `handleText`, `assertValue` | Extension hooks for text/application output and assertions. |
@@ -850,7 +861,6 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 - Extend cache identity beyond the current validator/resolver object identities when worldview,
   component-set revision, or component-classloader replacement must invalidate a class.
-- Instantiate and wire recursively generated behavior imports.
 - Detect and report dependency cycles and unresolved imports consistently.
 - Carry initialization arguments into construction. The registry constructor seam is ready, but
   `Agent.start(Object...)` currently warns when arguments are supplied after construction.
@@ -869,7 +879,8 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 - Make the validator return or record the exact selected actor/verb descriptor, not only its type.
 - Support overload selection from `ServiceInfo` argument prototypes.
-- Implement non-static actor construction and the `new` contract.
+- Synthesize Java construction from `ServiceImplementation.constructor` when no explicit static
+  `new` factory is exposed.
 - Reuse `ServiceImplementation.mainClassInstance`, `constructor`, `wrappingClassInstance`, and
   `method` instead of reducing an actor to an implementation class.
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are

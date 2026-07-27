@@ -635,6 +635,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return inheritedBehavior;
   }
 
+  /** Retain a constructed imported behavior under the same owning-agent lifecycle. */
+  protected final RuntimeAgentBase registerImportedBehavior(RuntimeAgentBase importedBehavior) {
+    return registerInheritedBehavior(importedBehavior);
+  }
+
   private void dispatchAgentMessage(AgentMessageHandler handler, Object[] arguments) {
     RuntimeAgentBase target = handler.target == null ? this : handler.target;
     var actionScope = target.rootScope.withId(target.nextId.incrementAndGet());
@@ -787,6 +792,62 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       }
     }
     return new UnresolvedActor(urn, alias);
+  }
+
+  /**
+   * Bind a compiled k.Actors import. Static actions are dispatched on one lazily constructed
+   * behavior instance, while the synthetic {@code new} verb constructs and returns an independent
+   * instance initialized with the call arguments.
+   */
+  protected Object resolveImportedBehavior(
+      String urn,
+      String alias,
+      Map<String, Object> explicitBindings,
+      ImportedBehaviorFactory factory) {
+    if (explicitBindings != null) {
+      if (explicitBindings.containsKey(alias)) {
+        return explicitBindings.get(alias);
+      }
+      if (explicitBindings.containsKey(urn)) {
+        return explicitBindings.get(urn);
+      }
+    }
+    return new ImportedBehaviorBinding(urn, alias, factory);
+  }
+
+  @FunctionalInterface
+  protected interface ImportedBehaviorFactory {
+    RuntimeAgentBase create(Object[] initArguments);
+  }
+
+  private static final class ImportedBehaviorBinding {
+    private final String urn;
+    private final String alias;
+    private final ImportedBehaviorFactory factory;
+    private volatile RuntimeAgentBase staticTarget;
+
+    private ImportedBehaviorBinding(String urn, String alias, ImportedBehaviorFactory factory) {
+      this.urn = urn;
+      this.alias = alias;
+      this.factory = factory;
+    }
+
+    private RuntimeAgentBase create(Object[] arguments) {
+      return factory.create(arguments == null ? new Object[0] : arguments);
+    }
+
+    private RuntimeAgentBase staticTarget() {
+      var target = staticTarget;
+      if (target == null) {
+        synchronized (this) {
+          target = staticTarget;
+          if (target == null) {
+            staticTarget = target = create(new Object[0]);
+          }
+        }
+      }
+      return target;
+    }
   }
 
   protected record UnresolvedActor(String urn, String alias) {}
@@ -1180,6 +1241,12 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       throw new KlabActorException(
           this,
           "Imported actor '" + unresolved.alias() + "' (" + unresolved.urn() + ") was not bound");
+    }
+    if (actor instanceof ImportedBehaviorBinding importedBehavior) {
+      if ("new".equals(verb)) {
+        return new DynamicInvocation(Verb.Type.FUNCTION, importedBehavior.create(arguments));
+      }
+      actor = importedBehavior.staticTarget();
     }
     if (actor instanceof RuntimeAgentBase runtimeAgent) {
       try {

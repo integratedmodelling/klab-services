@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
@@ -53,6 +54,55 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
 
   public void setSequential(boolean sequential) {
     this.sequential = sequential;
+  }
+
+  public static class SwitchImpl extends KActorsStatementImpl implements Switch {
+
+    private KActorsValue value;
+    private Verb function;
+    private List<Verb.MatchAction> cases = new ArrayList<>();
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public KActorsValue getValue() {
+      return this.value;
+    }
+
+    @Override
+    public Verb getFunction() {
+      return this.function;
+    }
+
+    @Override
+    public List<Verb.MatchAction> getCases() {
+      return this.cases;
+    }
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return this.adaptedBehaviorUrn;
+    }
+
+    public void setValue(KActorsValue value) {
+      this.value = value;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
+
+    public void setCases(List<Verb.MatchAction> cases) {
+      this.cases = cases;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
   }
 
   public static class VerbImpl extends KActorsStatementImpl implements Verb {
@@ -396,6 +446,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private KActorsValue condition;
     private KActorsStatement body;
     private Verb function;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {
@@ -446,6 +506,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.RETURN_STATEMENT;
     private Verb function;
     private KActorsValue value;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {
@@ -507,6 +577,85 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
   }
 
+  public static class YieldImpl extends KActorsStatementImpl implements KActorsStatement.Yield {
+
+    @Serial private static final long serialVersionUID = -4956873828205184896L;
+
+    private Type type = Type.RETURN_STATEMENT;
+    private Verb function;
+    private KActorsValue value;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    @Override
+    public Type getType() {
+      return type;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
+
+    @Override
+    public <T> T format(CodeAppender<T> appender) {
+      return null;
+    }
+
+    @Override
+    public KActorsValue getValue() {
+      return value;
+    }
+
+    public void setValue(KActorsValue value) {
+      this.value = value;
+    }
+  }
+
+  //
+  //  public static class FailImpl extends KActorsStatementImpl implements KActorsStatement.Fail {
+  //
+  //    @Serial private static final long serialVersionUID = -4224842263629289954L;
+  //
+  //    private Type type = Type.FAIL_STATEMENT;
+  //    private String message;
+  //
+  //    @Override
+  //    public Type getType() {
+  //      return this.type;
+  //    }
+  //
+  //    @Override
+  //    public String getMessage() {
+  //      return this.message;
+  //    }
+  //
+  //    public void setType(Type type) {
+  //      this.type = type;
+  //    }
+  //
+  //    public void setMessage(String message) {
+  //      this.message = message;
+  //    }
+  //
+  //    @Override
+  //    public <T> T format(CodeAppender<T> appender) {
+  //      return null;
+  //    }
+  //  }
+
   // case FIRE_VALUE:
   public static class FireImpl extends KActorsStatementImpl implements Fire {
 
@@ -515,6 +664,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private Type type = Type.FIRE_VALUE;
     private KActorsValue value;
     private Verb function;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {
@@ -559,6 +718,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private KActorsValue iterable;
     private Verb function;
     private KActorsStatement body;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {
@@ -621,8 +790,19 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private KActorsValue condition;
     private KActorsStatement thenBody;
     private Verb function;
-    private List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> elseIfs = new ArrayList<>();
+    private List<Pair<Triple<KActorsValue, Verb, String>, KActorsStatement>> elseIfs =
+        new ArrayList<>();
     private KActorsStatement elseBody;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {
@@ -649,7 +829,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     }
 
     @Override
-    public List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> getElseIfs() {
+    public List<Pair<Triple<KActorsValue, Verb, String>, KActorsStatement>> getElseIfs() {
       return this.elseIfs;
     }
 
@@ -670,7 +850,8 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       this.thenBody = thenBody;
     }
 
-    public void setElseIfs(List<Pair<Pair<KActorsValue, Verb>, KActorsStatement>> elseIfs) {
+    public void setElseIfs(
+        List<Pair<Triple<KActorsValue, Verb, String>, KActorsStatement>> elseIfs) {
       this.elseIfs = elseIfs;
     }
 
@@ -725,6 +906,16 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     private KActorsValue condition;
     private KActorsStatement body;
     private Verb function;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
 
     @Override
     public Verb getFunction() {

@@ -221,7 +221,8 @@ public interface RuntimeService extends KlabService {
    * used for testing and debugging.
    *
    * @param behavior the behavior to run
-   * @param suggestedAgentName a name to suggest for the agent; may not be honored
+   * @param suggestedAgentName the agent name to retain when nonblank; when absent, the runtime
+   *     derives one from the represented observation or behavior
    * @param options affect the compilation of the agent; may determine the viability of the returned
    *     agent
    * @param scope the scope in which to run the agent. Must be compatible with the behavior.

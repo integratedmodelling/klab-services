@@ -57,6 +57,18 @@ public class KActorsVisitor {
       return null;
     }
 
+    /**
+     * Establish whether the target action is static. This is independent of execution type:
+     * functions, suppliers, and emitters may each be static or instance actions.
+     *
+     * @return {@code true} for an alias-callable static action, {@code false} for an instance
+     *     action, or {@code null} when the target cannot be resolved
+     */
+    default Boolean classifyActionStaticity(
+        KActorsStatement.Verb verb, KActorsContext context) {
+      return null;
+    }
+
     /** Whether the visitor should warn when a call remains dynamically typed. */
     default boolean warnAboutUnknownActionCall(KActorsStatement.Verb verb, KActorsContext context) {
       return false;
@@ -195,6 +207,7 @@ public class KActorsVisitor {
       Parameters<String> arguments,
       Map<String, VariableInfo> knownVariables,
       Verb.Type executionType,
+      Boolean staticAction,
       boolean valueRequired) {
     public CallInfo {
       knownVariables = Collections.unmodifiableMap(new LinkedHashMap<>(knownVariables));
@@ -865,6 +878,7 @@ public class KActorsVisitor {
       var statement = pending.statement();
       var recipient = normalizeRecipient(statement.getRecipient());
       Verb.Type executionType = null;
+      Boolean staticAction = null;
       if ("self".equals(recipient)) {
         var target = actions.get(statement.getMessage());
         if (target == null) {
@@ -873,6 +887,7 @@ public class KActorsVisitor {
           }
         } else {
           executionType = target.executionType();
+          staticAction = target.statement().isStatic();
           actionAccumulators.get(pending.context().action).localCallees.add(target.name());
         }
       } else if (!isImported(recipient)
@@ -882,6 +897,10 @@ public class KActorsVisitor {
       if (executionType == null) {
         executionType =
             pending.context().validator.classifyActionCall(statement, pending.context());
+      }
+      if (staticAction == null) {
+        staticAction =
+            pending.context().validator.classifyActionStaticity(statement, pending.context());
       }
       var variable = pending.context().knownVariables.get(recipient);
       if (executionType == null) {
@@ -924,6 +943,16 @@ public class KActorsVisitor {
       if (executionType == Verb.Type.EMITTER && pending.valueRequired()) {
         error("Emitter calls cannot be used where a value is required", statement);
       }
+      if (isImported(recipient)
+          && !Objects.equals("new", statement.getMessage())
+          && Boolean.FALSE.equals(staticAction)) {
+        error(
+            "Non-static action "
+                + statement.getMessage()
+                + " must be invoked on an actor instance, not import alias "
+                + recipient,
+            statement);
+      }
       calls.add(
           new CallInfo(
               statement,
@@ -933,6 +962,7 @@ public class KActorsVisitor {
               statement.getArguments(),
               pending.context().knownVariables,
               executionType,
+              staticAction,
               pending.valueRequired()));
     }
   }

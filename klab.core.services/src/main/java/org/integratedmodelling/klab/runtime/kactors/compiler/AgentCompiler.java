@@ -104,6 +104,8 @@ public class AgentCompiler {
   /** Stable pair of runtime-aware compiler extension points. */
   public record Environment(KActorsVisitor.Validator validator, Resolver resolver) {}
 
+  private record ResolvedCall(Verb.Type executionType, Boolean staticAction) {}
+
   private static final Resolver DEFAULT_RESOLVER = new Resolver() {};
   private static final Map<String, Class<? extends RuntimeAgentBase>> compiledActorClasses =
       new ConcurrentHashMap<>();
@@ -121,6 +123,7 @@ public class AgentCompiler {
   private final IdentityHashMap<KActorsValue, String> expressionFields = new IdentityHashMap<>();
   private final Map<String, KActorsVisitor.ImportInfo> imports = new LinkedHashMap<>();
   private final Map<String, ResolvedActor> resolvedActors = new LinkedHashMap<>();
+  private final Map<String, KActorsBehavior> resolvedBehaviors = new LinkedHashMap<>();
   private final Set<Class<?>> requiredRuntimeClasses = new LinkedHashSet<>();
   private final Map<String, KActorsBehavior> inheritedBehaviors = new LinkedHashMap<>();
   private final Map<String, String> inheritedFields = new LinkedHashMap<>();
@@ -177,53 +180,25 @@ public class AgentCompiler {
           @Override
           public Verb.Type classifyActionCall(
               KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
-            var variable = context.getVariable(verb.getRecipient());
-            if (variable != null && variable.agentUrn() != null) {
-              try {
-                var targetBehavior = resolver.resolveBehavior(variable.agentUrn(), scope);
-                if (targetBehavior != null) {
-                  return targetBehavior.getStatements().stream()
-                      .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
-                      .map(KActorsAction::getActionType)
-                      .filter(Objects::nonNull)
-                      .findFirst()
-                      .orElse(null);
-                }
-              } catch (Throwable ignored) {
-                // Adaptation validation reports target resolution failures.
-              }
-            }
-            var imported =
-                context.getBehavior().getImports().stream()
-                    .filter(
-                        candidate ->
-                            Objects.equals(candidate.getImportedAlias(), verb.getRecipient()))
-                    .findFirst()
-                    .orElse(null);
-            if (imported == null) {
-              return null;
-            }
             try {
-              var importedBehavior =
-                  resolver.resolveBehavior(imported.getImportedBehavior(), scope);
-              if (importedBehavior != null) {
-                return importedBehavior.getStatements().stream()
-                    .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
-                    .map(KActorsAction::getActionType)
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-              }
-              var actor = resolver.resolveActor(imported.getImportedBehavior(), scope);
-              var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
-              if (implementation != null && implementation.method != null) {
-                var annotation = implementation.method.getAnnotation(Verb.class);
-                return annotation == null ? Verb.Type.FUNCTION : annotation.executionType();
-              }
+              var resolved = resolveCall(verb, context, resolver, scope);
+              return resolved == null ? null : resolved.executionType();
             } catch (Throwable ignored) {
               // Import validation below reports resolution failures with their source context.
             }
             return null;
+          }
+
+          @Override
+          public Boolean classifyActionStaticity(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            try {
+              var resolved = resolveCall(verb, context, resolver, scope);
+              return resolved == null ? null : resolved.staticAction();
+            } catch (Throwable ignored) {
+              // Resolution diagnostics are produced by import/call validation.
+              return null;
+            }
           }
 
           @Override
@@ -326,16 +301,62 @@ public class AgentCompiler {
           @Override
           public List<Notification> validateVerbCall(
               KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var imported = findImport(context.getBehavior(), verb.getRecipient());
+            if (imported != null) {
+              try {
+                var targetBehavior =
+                    resolver.resolveBehavior(imported.getImportedBehavior(), scope);
+                if (targetBehavior != null) {
+                  if ("new".equals(verb.getMessage())
+                      || targetBehavior.getStatements().stream()
+                          .anyMatch(action -> Objects.equals(action.getUrn(), verb.getMessage()))) {
+                    return List.of();
+                  }
+                  return List.of(
+                      Notification.error(
+                          "Behavior "
+                              + imported.getImportedBehavior()
+                              + " has no action "
+                              + verb.getMessage(),
+                          Notification.LexicalContext.of(verb, context.getBehavior())));
+                }
+                var actor = resolver.resolveActor(imported.getImportedBehavior(), scope);
+                if (actor != null && actor.verbs().containsKey(verb.getMessage())) {
+                  return List.of();
+                }
+                return List.of(
+                    Notification.error(
+                        "Actor "
+                            + imported.getImportedBehavior()
+                            + " has no verb "
+                            + verb.getMessage(),
+                        Notification.LexicalContext.of(verb, context.getBehavior())));
+              } catch (Throwable failure) {
+                return List.of(
+                    Notification.error(
+                        "Cannot validate action "
+                            + verb.getMessage()
+                            + " on imported actor "
+                            + imported.getImportedBehavior(),
+                        failure,
+                        Notification.LexicalContext.of(verb, context.getBehavior())));
+              }
+            }
             var variable = context.getVariable(verb.getRecipient());
             if (variable == null || variable.agentUrn() == null) {
               return List.of();
             }
             try {
-              var targetBehavior = resolver.resolveBehavior(variable.agentUrn(), scope);
+              var producerImport = findImport(context.getBehavior(), variable.agentUrn());
+              var targetUrn =
+                  producerImport == null
+                      ? variable.agentUrn()
+                      : producerImport.getImportedBehavior();
+              var targetBehavior = resolver.resolveBehavior(targetUrn, scope);
               if (targetBehavior == null) {
                 return List.of(
                     Notification.error(
-                        "Cannot resolve adapted behavior " + variable.agentUrn(),
+                        "Cannot resolve actor behavior " + targetUrn,
                         Notification.LexicalContext.of(verb, context.getBehavior())));
               }
               boolean actionExists =
@@ -345,14 +366,14 @@ public class AgentCompiler {
                   ? List.of()
                   : List.of(
                       Notification.error(
-                          "Behavior " + variable.agentUrn() + " has no action " + verb.getMessage(),
+                          "Behavior " + targetUrn + " has no action " + verb.getMessage(),
                           Notification.LexicalContext.of(verb, context.getBehavior())));
             } catch (Throwable failure) {
               return List.of(
                   Notification.error(
                       "Cannot validate action "
                           + verb.getMessage()
-                          + " on adapted behavior "
+                          + " on actor behavior "
                           + variable.agentUrn(),
                       failure,
                       Notification.LexicalContext.of(verb, context.getBehavior())));
@@ -360,6 +381,73 @@ public class AgentCompiler {
           }
         };
     return new Environment(validator, resolver);
+  }
+
+  private static ResolvedCall resolveCall(
+      KActorsStatement.Verb verb,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver,
+      UserScope scope) {
+    String actorUrn = null;
+    var imported = findImport(context.getBehavior(), verb.getRecipient());
+    if (imported != null) {
+      actorUrn = imported.getImportedBehavior();
+    } else {
+      var variable = context.getVariable(verb.getRecipient());
+      if (variable != null && variable.agentUrn() != null) {
+        var producerImport = findImport(context.getBehavior(), variable.agentUrn());
+        actorUrn =
+            producerImport == null
+                ? variable.agentUrn()
+                : producerImport.getImportedBehavior();
+      }
+    }
+    if (actorUrn == null) {
+      return null;
+    }
+    var targetBehavior = resolver.resolveBehavior(actorUrn, scope);
+    if (targetBehavior != null) {
+      if ("new".equals(verb.getMessage()) && imported != null) {
+        return new ResolvedCall(Verb.Type.FUNCTION, true);
+      }
+      return targetBehavior.getStatements().stream()
+          .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
+          .findFirst()
+          .map(action -> new ResolvedCall(action.getActionType(), action.isStatic()))
+          .orElse(null);
+    }
+    var actor = resolver.resolveActor(actorUrn, scope);
+    var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
+    if (implementation == null || implementation.method == null) {
+      return null;
+    }
+    var annotation = implementation.method.getAnnotation(Verb.class);
+    var type = annotation == null ? Verb.Type.FUNCTION : annotation.executionType();
+    var descriptor =
+        actor.descriptor().verbs.stream()
+            .filter(
+                candidate ->
+                    candidate.serviceInfo != null
+                        && Objects.equals(
+                            simpleName(candidate.serviceInfo.getName()), verb.getMessage()))
+            .findFirst()
+            .orElse(null);
+    return new ResolvedCall(type, descriptor == null ? null : descriptor.staticMethod);
+  }
+
+  private static KActorsBehavior.Import findImport(KActorsBehavior behavior, String alias) {
+    if (behavior == null || alias == null) {
+      return null;
+    }
+    return behavior.getImports().stream()
+        .filter(candidate -> Objects.equals(candidate.getImportedAlias(), alias))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private static String simpleName(String name) {
+    int separator = name == null ? -1 : name.lastIndexOf('.');
+    return separator < 0 ? name : name.substring(separator + 1);
   }
 
   private static List<String> inheritedMessageClasses(
@@ -463,6 +551,7 @@ public class AgentCompiler {
 
   private void resolveImportsAndCompileDependencies(Set<String> path) {
     resolvedActors.clear();
+    resolvedBehaviors.clear();
     requiredRuntimeClasses.clear();
     for (var imported : analyzer.getImports()) {
       var actor = resolver.resolveActor(imported.behaviorUrn(), scope);
@@ -478,6 +567,7 @@ public class AgentCompiler {
       if (importedBehavior == null || path.contains(importedBehavior.getUrn())) {
         continue;
       }
+      resolvedBehaviors.put(imported.name(), importedBehavior);
       var nextPath = new LinkedHashSet<>(path);
       nextPath.add(importedBehavior.getUrn());
       var compiler = new AgentCompiler(importedBehavior, scope, validator, resolver);
@@ -729,6 +819,13 @@ public class AgentCompiler {
       Class<?> implementation = resolved == null ? null : resolved.implementationClass();
       if (implementation != null) {
         constructor.addStatement("this.$L = $T.class", field, implementation);
+      } else if (resolvedBehaviors.containsKey(imported.name())) {
+        constructor.addStatement(
+            "this.$L = resolveImportedBehavior($S, $S, importedActors, importedInitArguments -> registerImportedBehavior(new $T(null, scope, observation, creationScope, importedActors, importedInitArguments)))",
+            field,
+            imported.behaviorUrn(),
+            imported.name(),
+            generatedClass(resolvedBehaviors.get(imported.name()).getUrn()));
       } else {
         constructor.addStatement(
             "this.$L = resolveImportedActor($S, $S, importedActors)",

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -365,6 +366,20 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void classAliasesInvokeStaticFactoriesWhileInstancesInvokeNonStaticVerbs() {
+    var agent = new ReactiveRuntimeAgent();
+    var scope = (AgentScope) agent.rootScope();
+
+    assertEquals("static", agent.function(TestActor.class, "kind", scope));
+    assertThrows(
+        org.integratedmodelling.klab.api.exceptions.KlabActorException.class,
+        () -> agent.function(TestActor.class, "instanceValue", scope));
+
+    var instance = agent.function(TestActor.class, "new", scope, "created");
+    assertEquals("created", agent.function(instance, "instanceValue", scope));
+  }
+
+  @Test
   void dynamicVerbBridgeDiscoversFunctionSupplierAndEmitterAtRuntime() throws Exception {
     var agent = new ReactiveRuntimeAgent();
     var root = (AgentScope) agent.rootScope();
@@ -441,6 +456,33 @@ class RuntimeAgentBaseTest {
   }
 
   private static class TestActor {
+
+    private final String value;
+
+    private TestActor(String value) {
+      this.value = value;
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "kind",
+        executionType = Verb.Type.FUNCTION)
+    public static String kind(RuntimeAgent.Scope scope) {
+      return "static";
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "new",
+        executionType = Verb.Type.FUNCTION)
+    public static TestActor create(RuntimeAgent.Scope scope, String value) {
+      return new TestActor(value);
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "instanceValue",
+        executionType = Verb.Type.FUNCTION)
+    public String instanceValue(RuntimeAgent.Scope scope) {
+      return value;
+    }
 
     @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
         name = "sum",

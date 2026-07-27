@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
@@ -56,6 +57,7 @@ class AgentRegistryTest {
     var first = AgentRegistry.INSTANCE.getOrCreateAgent(request, behavior, null);
 
     assertTrue(first.isViable(), () -> first.getNotifications().toString());
+    assertEquals("registry test", first.getName());
     assertNotNull(first.getUrn());
     assertTrue(first.getUrn().startsWith("runtime:agent:"));
     var compiledClass = AgentRegistry.INSTANCE.getCompiledClass(behavior);
@@ -203,7 +205,7 @@ class AgentRegistryTest {
 
     var handle =
         AgentRegistry.INSTANCE.getOrCreateAgent(
-            request(behavior.getUrn(), "ignored"),
+            request(behavior.getUrn(), "requested name"),
             behavior,
             creationScope,
             observation,
@@ -211,6 +213,7 @@ class AgentRegistryTest {
             resolver);
 
     assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    assertEquals("requested name", handle.getName());
     assertTrue(validations.get() > 0);
     var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
     assertNotNull(runtime);
@@ -218,6 +221,81 @@ class AgentRegistryTest {
     assertSame(creationScope, runtime.getCreationScope());
     assertEquals(-1, runtime.getStartedAt());
     assertEquals(-1, runtime.getLastActivityAt());
+    assertTrue(handle.stop());
+  }
+
+  @Test
+  void observationNameIsUsedOnlyWhenNoAgentNameIsRequested() {
+    var behavior =
+        finiteBehavior(
+            "test.registry.observation.name."
+                + UUID.randomUUID().toString().replace("-", ""));
+    var observation = mock(Observation.class);
+    var creationScope = mock(UserScope.class);
+    when(observation.getName()).thenReturn("represented agent");
+
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), null),
+            behavior,
+            creationScope,
+            observation,
+            new KActorsVisitor.LenientValidator(),
+            new AgentCompiler.Resolver() {});
+
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    assertEquals("represented agent", handle.getName());
+    assertTrue(handle.stop());
+  }
+
+  @Test
+  void compiledKActorsImportsSupportStaticAliasesAndConstructedInstances() {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    var importedBehavior = finiteBehavior("test.registry.imported." + suffix);
+    var work = new KActorsActionImpl();
+    work.setUrn("work");
+    work.setCode(
+        List.of(
+            ((KActorsStatementImpl.ReturnImpl)
+                importedBehavior.getStatements().getFirst().getCode().getFirst())));
+    importedBehavior.setStatements(List.of(work));
+
+    var constructorCall = verb("tools", "new");
+    var assignment = new KActorsStatementImpl.AssignmentImpl();
+    assignment.setVariable("worker");
+    assignment.setAssignmentScope(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.FRAME);
+    assignment.setFunction(constructorCall);
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    returned.setFunction(verb("worker", "work"));
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(assignment, returned));
+    var behavior = finiteBehavior("test.registry.importer." + suffix);
+    behavior.setStatements(List.of(main));
+    var imported = new KActorsBehaviorImpl.ImportImpl();
+    imported.setImportedBehavior(importedBehavior.getUrn());
+    imported.setImportedAlias("tools");
+    behavior.setImports(List.of(imported));
+
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(String urn, UserScope scope) {
+            return importedBehavior.getUrn().equals(urn) ? importedBehavior : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "import execution"),
+            behavior,
+            null,
+            environment.validator(),
+            resolver);
+
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    assertTrue(handle.start(), () -> handle.getNotifications().toString());
     assertTrue(handle.stop());
   }
 
@@ -243,5 +321,13 @@ class AgentRegistryTest {
     behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
     behavior.setStatements(List.of(main));
     return behavior;
+  }
+
+  private static KActorsStatementImpl.VerbImpl verb(String recipient, String message) {
+    var verb = new KActorsStatementImpl.VerbImpl();
+    verb.setRecipient(recipient);
+    verb.setMessage(message);
+    verb.setArguments(new KActorsArgumentsImpl());
+    return verb;
   }
 }
