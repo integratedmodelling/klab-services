@@ -387,7 +387,7 @@ class AgentRegistryTest {
     adapterBehavior.setBehaviorType(KActorsBehavior.Type.COMPONENT);
     var adapt = new KActorsActionImpl();
     adapt.setUrn("adapt");
-    adapt.setArgumentNames(List.of("source"));
+    adapt.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     adapt.setAnnotations(List.of(Annotation.of("adapt")));
     var adaptedReturn = new KActorsStatementImpl.ReturnImpl();
     var source = new KActorsValueImpl();

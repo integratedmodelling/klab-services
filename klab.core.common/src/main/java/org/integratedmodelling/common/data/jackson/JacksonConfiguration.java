@@ -369,6 +369,7 @@ public class JacksonConfiguration {
           KActorsBehavior.class,
           KActorsBehavior.Import.class,
           KActorsAction.class,
+          KActorsAction.Argument.class,
           KActorsStatement.Arguments.class,
           KActorsStatement.Assert.class,
           KActorsStatement.Assignment.class,

@@ -14,15 +14,16 @@ public interface KActorsAction extends KActorsStatement {
   /**
    * One formal action argument and its optional source annotation.
    *
-   * <p>The annotation is intentionally retained in its generic language form so parameter
-   * contracts can be extended without changing this interface. The currently recognized contract
-   * is {@code @type}: its unnamed or {@code urn} string identifies an admitted agent behavior,
-   * while its named {@code class} string identifies an admitted Java runtime type.
-   *
-   * @param name formal parameter name
-   * @param annotation optional parameter annotation
+   * <p>The annotation is intentionally retained in its generic language form so parameter contracts
+   * can be extended without changing this interface. The currently recognized contract is
+   * {@code @type}: its unnamed or {@code urn} string identifies an admitted agent behavior, while
+   * its named {@code class} string identifies an admitted Java runtime type.
    */
-  record Argument(String name, Annotation annotation) implements Serializable {}
+  interface Argument extends Serializable {
+    String getName();
+
+    Annotation getAnnotation();
+  }
 
   /**
    * Action name as declared in the code. Always a simple identifier with no prefix from the
@@ -48,16 +49,14 @@ public interface KActorsAction extends KActorsStatement {
    *
    * @return
    */
-  default List<Argument> getArguments() {
-    return getArgumentNames().stream().map(name -> new Argument(name, null)).toList();
-  }
+  List<Argument> getArguments();
 
-  /**
-   * Compatibility view containing only the formal parameter names.
-   *
-   * @return names in declaration order
-   */
-  List<String> getArgumentNames();
+//  /**
+//   * Compatibility view containing only the formal parameter names.
+//   *
+//   * @return names in declaration order
+//   */
+//  List<String> getArgumentNames();
 
   /**
    * A static action can be invoked directly on the imported agent name, intended as the class of
@@ -77,8 +76,8 @@ public interface KActorsAction extends KActorsStatement {
    * </code> function that starts a thread where objects can be fired using the {@link
    * org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope}; a reactive return may stop its
    * scheduled emissions and remove its listeners without changing its emitter type, using the
-   * required return operand as an exit code. A pure
-   * {@link org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type#SUPPLIER} will contain
+   * required return operand as an exit code. A pure {@link
+   * org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type#SUPPLIER} will contain
    * <code>return</code> statements embedded in match actions that will compile into {@link
    * java.util.concurrent.CompletableFuture}s that will remove the correspondent listeners once
    * completed; and a {@link

@@ -57,15 +57,14 @@ class BehaviorAnalyzerTest {
   @Test
   void actionParametersAreVisibleThroughoutTheActionBody() {
     var echo = action("echo", returned(identifier("payload")));
-    echo.setArgumentNames(List.of("payload"));
+    echo.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("payload")));
     var analyzer = new BehaviorAnalyzer(behavior(echo));
 
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertFalse(
         analyzer.getNotifications().stream()
             .anyMatch(
-                notification ->
-                    notification.getMessage().equals("Unknown identifier: payload")));
+                notification -> notification.getMessage().equals("Unknown identifier: payload")));
     assertTrue(
         analyzer.getActions().get("echo").parameters().stream()
             .anyMatch(parameter -> parameter.name().equals("payload")));
@@ -74,7 +73,10 @@ class BehaviorAnalyzerTest {
   @Test
   void compilerRegistersNamedAndUnnamedHandleAnnotations() {
     var named = action("namedHandler");
-    named.setArgumentNames(List.of("payload", "sender"));
+    named.setArguments(
+        List.of(
+            new KActorsActionImpl.ArgumentImpl("payload"),
+            new KActorsActionImpl.ArgumentImpl("sender")));
     var namedParameters = new java.util.LinkedHashMap<String, Object>();
     namedParameters.put("class", Constant.create("NAMED"));
     named.setAnnotations(List.of(Annotation.of("handle", namedParameters)));
@@ -105,9 +107,7 @@ class BehaviorAnalyzerTest {
         compiler.getNotifications().stream()
             .filter(
                 notification ->
-                    notification
-                        .getMessage()
-                        .contains("@handle annotation requires a CONSTANT"))
+                    notification.getMessage().contains("@handle annotation requires a CONSTANT"))
             .findFirst()
             .orElseThrow();
 
@@ -119,7 +119,10 @@ class BehaviorAnalyzerTest {
   @Test
   void compilerRegistersStdinAnnotationAsConsoleInputHandler() {
     var stdin = action("readLine");
-    stdin.setArgumentNames(List.of("line", "sender"));
+    stdin.setArguments(
+        List.of(
+            new KActorsActionImpl.ArgumentImpl("line"),
+            new KActorsActionImpl.ArgumentImpl("sender")));
     stdin.setAnnotations(List.of(Annotation.of("stdin")));
     var compiler = new AgentCompiler(behavior(stdin));
 
@@ -263,7 +266,7 @@ class BehaviorAnalyzerTest {
   @Test
   void adaptActionsMustBeUniqueUnaryFunctionsOrSuppliers() {
     var function = action("convert", returned(identifier("source")));
-    function.setArgumentNames(List.of("source"));
+    function.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     function.setAnnotations(List.of(Annotation.of("adapt")));
     var functionAnalyzer = new BehaviorAnalyzer(behavior(function));
 
@@ -275,7 +278,7 @@ class BehaviorAnalyzerTest {
     var call = verb("external", "later");
     call.setActions(List.of(match));
     var supplier = action("convert_later", call);
-    supplier.setArgumentNames(List.of("source"));
+    supplier.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     supplier.setAnnotations(List.of(Annotation.of("adapt")));
     var supplierBehavior = behavior(supplier);
     supplierBehavior.setImports(List.of(imported("component.behavior", "external")));
@@ -294,7 +297,7 @@ class BehaviorAnalyzerTest {
     assertEquals(Verb.Type.SUPPLIER, supplier.getActionType());
 
     var emitter = action("invalid", fired(identifier("source")));
-    emitter.setArgumentNames(List.of("source"));
+    emitter.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     emitter.setAnnotations(List.of(Annotation.of("adapt")));
     var emitterAnalyzer = new BehaviorAnalyzer(behavior(emitter));
 
@@ -304,10 +307,10 @@ class BehaviorAnalyzerTest {
     assertTrue(messages(emitterAnalyzer).contains("function or supplier"));
 
     var first = action("first", returned(identifier("source")));
-    first.setArgumentNames(List.of("source"));
+    first.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     first.setAnnotations(List.of(Annotation.of("adapt")));
     var second = action("second", returned(identifier("source")));
-    second.setArgumentNames(List.of("source"));
+    second.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("source")));
     second.setAnnotations(List.of(Annotation.of("adapt")));
     var duplicateAnalyzer = new BehaviorAnalyzer(behavior(first, second));
 
@@ -613,13 +616,13 @@ class BehaviorAnalyzerTest {
     var conditional = new KActorsStatementImpl.IfImpl();
     conditional.setCondition(number(1));
     conditional.setAdaptedBehaviorUrn("adapted.condition");
-    conditional.setThenBody(assignment("ifValue", KActorsStatement.Assignment.Scope.FRAME, number(1)));
+    conditional.setThenBody(
+        assignment("ifValue", KActorsStatement.Assignment.Scope.FRAME, number(1)));
     conditional.setElseIfs(
         List.of(
             Pair.of(
                 Triple.of(number(2), null, "adapted.else.condition"),
-                assignment(
-                    "elseValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
+                assignment("elseValue", KActorsStatement.Assignment.Scope.FRAME, number(2)))));
 
     var whileLoop = new KActorsStatementImpl.WhileImpl();
     whileLoop.setCondition(number(1));
@@ -673,14 +676,7 @@ class BehaviorAnalyzerTest {
         };
     var source =
         behavior(
-            action(
-                "main",
-                conditional,
-                whileLoop,
-                doLoop,
-                forLoop,
-                adaptedFire,
-                adaptedReturn));
+            action("main", conditional, whileLoop, doLoop, forLoop, adaptedFire, adaptedReturn));
     var analyzer = new BehaviorAnalyzer(source, validator);
 
     assertTrue(analyzer.analyze(), messages(analyzer));
@@ -713,15 +709,17 @@ class BehaviorAnalyzerTest {
     var noYieldSwitch =
         switched(
             number(1),
-            switchCase(number(1), assignment("value", KActorsStatement.Assignment.Scope.FRAME, number(2))));
-    var value =
-        new KActorsStatementImpl.AssignmentImpl();
+            switchCase(
+                number(1),
+                assignment("value", KActorsStatement.Assignment.Scope.FRAME, number(2))));
+    var value = new KActorsStatementImpl.AssignmentImpl();
     value.setVariable("result");
     value.setAssignmentScope(KActorsStatement.Assignment.Scope.FRAME);
     value.setSwitch(noYieldSwitch);
     var functional = new BehaviorAnalyzer(behavior(action("main", value)));
     assertFalse(functional.analyze());
-    assertTrue(messages(functional).contains("A switch used as a value must have at least one yield"));
+    assertTrue(
+        messages(functional).contains("A switch used as a value must have at least one yield"));
   }
 
   @Test
@@ -777,8 +775,7 @@ class BehaviorAnalyzerTest {
     assertTrue(messages(invalidAnalysis).contains("must be invoked on an actor instance"));
 
     var construct = verb("tools", "new");
-    var worker =
-        assignment("worker", KActorsStatement.Assignment.Scope.FRAME, construct);
+    var worker = assignment("worker", KActorsStatement.Assignment.Scope.FRAME, construct);
     var valid = behavior(action("main", worker, verb("worker", "work")));
     valid.setImports(List.of(imported("tools.worker", "tools")));
     var validAnalysis = new BehaviorAnalyzer(valid, environment.validator());
@@ -803,8 +800,7 @@ class BehaviorAnalyzerTest {
     descriptor.verbs.add(work.getKey());
     var resolved =
         new AgentCompiler.ResolvedActor(
-            descriptor,
-            Map.of("utility", utility.getValue(), "work", work.getValue()));
+            descriptor, Map.of("utility", utility.getValue(), "work", work.getValue()));
     var resolver =
         new AgentCompiler.Resolver() {
           @Override
@@ -814,8 +810,7 @@ class BehaviorAnalyzerTest {
           }
         };
     var environment = AgentCompiler.runtimeEnvironment(resolver, null);
-    var source =
-        behavior(action("main", verb("java", "utility"), verb("java", "work")));
+    var source = behavior(action("main", verb("java", "utility"), verb("java", "work")));
     source.setImports(List.of(imported("java.worker", "java")));
     var analyzer = new BehaviorAnalyzer(source, environment.validator());
 
@@ -862,14 +857,12 @@ class BehaviorAnalyzerTest {
                 workCall));
     source.setImports(List.of(imported("java.factory", "factory")));
     var analyzer =
-        new BehaviorAnalyzer(
-            source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+        new BehaviorAnalyzer(source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
 
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertEquals("java.product", analyzer.getCalls().getFirst().producedAgentUrn());
     assertEquals(
-        "java.product",
-        analyzer.getCalls().get(1).knownVariables().get("worker").agentUrn());
+        "java.product", analyzer.getCalls().get(1).knownVariables().get("worker").agentUrn());
     assertEquals(Boolean.FALSE, analyzer.getCalls().get(1).staticAction());
   }
 
@@ -883,8 +876,7 @@ class BehaviorAnalyzerTest {
     var agents = action("agents");
     agents.setStatic(true);
     agents.setActionType(Verb.Type.FUNCTION);
-    agents.setAnnotations(
-        List.of(Annotation.of("return", "urn", "workers.product")));
+    agents.setAnnotations(List.of(Annotation.of("return", "urn", "workers.product")));
     var stream = action("stream");
     stream.setStatic(true);
     stream.setActionType(Verb.Type.EMITTER);
@@ -896,8 +888,7 @@ class BehaviorAnalyzerTest {
     provider.setUrn("workers.provider");
 
     var localFactory = action("make");
-    localFactory.setAnnotations(
-        List.of(Annotation.of("return", "urn", "workers.product")));
+    localFactory.setAnnotations(List.of(Annotation.of("return", "urn", "workers.product")));
     var assignedCall = verb("assigned", "work");
 
     var loopCall = verb("loopWorker", "work");
@@ -918,9 +909,7 @@ class BehaviorAnalyzerTest {
             action(
                 "main",
                 assignment(
-                    "assigned",
-                    KActorsStatement.Assignment.Scope.FRAME,
-                    verb("self", "make")),
+                    "assigned", KActorsStatement.Assignment.Scope.FRAME, verb("self", "make")),
                 assignedCall,
                 loop,
                 streamCall));
@@ -938,8 +927,7 @@ class BehaviorAnalyzerTest {
           }
         };
     var analyzer =
-        new BehaviorAnalyzer(
-            source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+        new BehaviorAnalyzer(source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
 
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertEquals(
@@ -1041,9 +1029,7 @@ class BehaviorAnalyzerTest {
   void javaVerbArgumentAnnotationsValidateNamedTypesAndAgentBehaviors() throws Exception {
     var descriptor = new Extensions.ActorDescriptor();
     descriptor.urn = "java.worker";
-    var make =
-        javaVerb(
-            "make", true, JavaStaticityActor.class.getMethod("make"));
+    var make = javaVerb("make", true, JavaStaticityActor.class.getMethod("make"));
     var accept =
         javaVerb(
             "accept",
@@ -1054,7 +1040,8 @@ class BehaviorAnalyzerTest {
     var resolved =
         new AgentCompiler.ResolvedActor(
             descriptor, Map.of("make", make.getValue(), "accept", accept.getValue()));
-    var create = assignment("worker", KActorsStatement.Assignment.Scope.FRAME, verb("java", "make"));
+    var create =
+        assignment("worker", KActorsStatement.Assignment.Scope.FRAME, verb("java", "make"));
     var call = verb("java", "accept");
     call.getArguments().put("label", number(5));
     call.getArguments().put("agent", identifier("worker"));
@@ -1081,7 +1068,10 @@ class BehaviorAnalyzerTest {
     dynamicCall.getArguments().put("label", identifier("dynamicLabel"));
     dynamicCall.getArguments().put("agent", identifier("dynamicAgent"));
     var dynamicAction = action("main", dynamicCall);
-    dynamicAction.setArgumentNames(List.of("dynamicLabel", "dynamicAgent"));
+    dynamicAction.setArguments(
+        List.of(
+            new KActorsActionImpl.ArgumentImpl("dynamicLabel"),
+            new KActorsActionImpl.ArgumentImpl("dynamicAgent")));
     var dynamicSource = behavior(dynamicAction);
     dynamicSource.setImports(List.of(imported("java.worker", "java")));
     var dynamicAnalyzer =
@@ -1094,7 +1084,7 @@ class BehaviorAnalyzerTest {
   void kActorsTypeAnnotationsValidateKnownArgumentsAndCompileRuntimeGuards() {
     var type = Annotation.of("type", "class", "boolean");
     var accept = action("accept", returned(identifier("enabled")));
-    accept.setArguments(List.of(new Argument("enabled", type)));
+    accept.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("enabled", type)));
     var acceptedCall = verb("self", "accept");
     acceptedCall.getArguments().putUnnamed(bool(true));
     var acceptedSource = behavior(accept, action("main", acceptedCall));
@@ -1107,16 +1097,12 @@ class BehaviorAnalyzerTest {
           }
         };
     var acceptedEnvironment = AgentCompiler.runtimeEnvironment(acceptedResolver, null);
-    var accepted =
-        new BehaviorAnalyzer(acceptedSource, acceptedEnvironment.validator());
+    var accepted = new BehaviorAnalyzer(acceptedSource, acceptedEnvironment.validator());
 
     assertTrue(accepted.analyze(), messages(accepted));
     var compiler =
         new AgentCompiler(
-            acceptedSource,
-            null,
-            acceptedEnvironment.validator(),
-            acceptedEnvironment.resolver());
+            acceptedSource, null, acceptedEnvironment.validator(), acceptedEnvironment.resolver());
     assertTrue(compiler.compile(), compiler.getNotifications().toString());
     assertTrue(
         compiler.getSourceCode().contains("validateActionArguments(\"accept\""),
@@ -1127,7 +1113,7 @@ class BehaviorAnalyzerTest {
     var rejectedType = Annotation.of("type", "class", "Boolean");
     var rejectedAccept = action("accept", returned(identifier("enabled")));
     rejectedAccept.setArguments(
-        List.of(new Argument("enabled", rejectedType)));
+        List.of(new KActorsActionImpl.ArgumentImpl("enabled", rejectedType)));
     var rejectedCall = verb("self", "accept");
     rejectedCall.getArguments().putUnnamed(number(1));
     var rejectedSource = behavior(rejectedAccept, action("main", rejectedCall));
@@ -1734,10 +1720,7 @@ class BehaviorAnalyzerTest {
       return null;
     }
 
-    @Verb(
-        name = "make",
-        executionType = Verb.Type.FUNCTION,
-        producesAgent = "java.product")
+    @Verb(name = "make", executionType = Verb.Type.FUNCTION, producesAgent = "java.product")
     public static Object make() {
       return new JavaStaticityActor();
     }

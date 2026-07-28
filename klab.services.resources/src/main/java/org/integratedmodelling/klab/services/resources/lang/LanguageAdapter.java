@@ -1414,11 +1414,11 @@ public enum LanguageAdapter {
     setParsingData(action, ret, namespace, projectName);
 
     ret.setUrn(action.getName());
-    ret.setArguments(
+    ret.getArguments().addAll(
         action.getArgumentNames().stream()
             .map(
                 argument ->
-                    new KActorsAction.Argument(
+                    new KActorsActionImpl.ArgumentImpl(
                         argument.getFirst(),
                         argument.getSecond() == null
                             ? null

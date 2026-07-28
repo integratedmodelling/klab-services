@@ -17,8 +17,8 @@ public class NavigableKActorsAction extends NavigableKlabStatement<KActorsAction
   }
 
   @Override
-  public List<String> getArgumentNames() {
-    return delegate.getArgumentNames();
+  public List<Argument> getArguments() {
+    return delegate.getArguments();
   }
 
   @Override

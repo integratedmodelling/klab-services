@@ -7,9 +7,12 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.kactors.compiler.BehaviorAnalyzer;
@@ -33,8 +36,10 @@ class KActorsFileTest {
                 DynamicTest.dynamicTest(
                     testCase.resource(),
                     () ->
-                        testCase.assertions().accept(
-                            support.loadResource(testCase.resource(), testCase.validator()))));
+                        testCase
+                            .assertions()
+                            .accept(
+                                support.loadResource(testCase.resource(), testCase.validator()))));
   }
 
   /** Add a resource, validator and focused assertion function here for each new language case. */
@@ -114,9 +119,7 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertLibraryRejectsLifecycleActions),
         new Case(
-            "/midcomplexity.kactor",
-            midComplexityValidator(),
-            this::assertMidComplexityCompiles));
+            "/midcomplexity.kactor", midComplexityValidator(), this::assertMidComplexityCompiles));
   }
 
   private KActorsVisitor.Validator timerValidator() {
@@ -227,14 +230,15 @@ class KActorsFileTest {
     assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
 
     var action = result.requireBehavior().getStatements().getFirst();
-    assertEquals(List.of("worker", "enabled"), action.getArgumentNames());
-    assertEquals("type", action.getArguments().getFirst().annotation().getName());
+    assertEquals(
+        List.of("worker", "enabled"),
+        action.getArguments().stream().map(KActorsAction.Argument::getName).toList());
+    assertEquals("type", action.getArguments().getFirst().getAnnotation().getName());
     assertEquals(
         "workers.base",
         KActorsVisitor.actionArgumentType(action.getArguments().getFirst()).behaviorUrn());
     assertEquals(
-        "boolean",
-        KActorsVisitor.actionArgumentType(action.getArguments().get(1)).javaClassName());
+        "boolean", KActorsVisitor.actionArgumentType(action.getArguments().get(1)).javaClassName());
   }
 
   private KActorsVisitor.Validator functionalConsoleValidator() {
@@ -318,8 +322,10 @@ class KActorsFileTest {
     assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
     var action = result.requireBehavior().getStatements().getFirst();
     assertEquals("read_line", action.getUrn());
-    assertEquals(List.of("line", "sender"), action.getArgumentNames());
-    assertEquals(List.of("stdin"), action.getAnnotations().stream().map(a -> a.getName()).toList());
+    assertEquals(
+        List.of("line", "sender"),
+        action.getArguments().stream().map(KActorsAction.Argument::getName).toList());
+    assertEquals(List.of("stdin"), action.getAnnotations().stream().map(Annotation::getName).toList());
     var compiler = new AgentCompiler(result.requireBehavior());
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("handlers.put(\"STDIN\""));
@@ -358,22 +364,17 @@ class KActorsFileTest {
         "the action lexical range must begin at its annotation");
   }
 
-  private void assertUnknownSwitchRecipientHasLexicalContext(
-      KActorsTestSupport.Result result) {
+  private void assertUnknownSwitchRecipientHasLexicalContext(KActorsTestSupport.Result result) {
     assertNoParsingOrAdaptationErrors(result);
     assertFalse(result.analysisSuccessful());
     var notification =
         result.requireAnalyzer().getNotifications().stream()
-            .filter(
-                n ->
-                    n.getMessage().contains("recipient")
-                        && n.getMessage().contains("strings"))
+            .filter(n -> n.getMessage().contains("recipient") && n.getMessage().contains("strings"))
             .findFirst()
             .orElseThrow(() -> new AssertionError(result.allNotifications().toString()));
     assertNotNull(notification.getLexicalContext());
     assertTrue(
-        notification.getLexicalContext().getOffsetInDocument() > 0,
-        () -> notification.toString());
+        notification.getLexicalContext().getOffsetInDocument() > 0, () -> notification.toString());
     assertTrue(notification.getLexicalContext().getLength() > 0, () -> notification.toString());
   }
 
@@ -410,13 +411,10 @@ class KActorsFileTest {
             ValueType.ERROR,
             ValueType.ANYVALUE,
             ValueType.ANYTHING),
-        verb.getActions().stream()
-            .map(match -> match.getMatchCriterion().getType())
-            .toList());
+        verb.getActions().stream().map(match -> match.getMatchCriterion().getType()).toList());
 
     var compiler =
-        new AgentCompiler(
-            result.requireBehavior(), null, functionalConsoleValidator(), null);
+        new AgentCompiler(result.requireBehavior(), null, functionalConsoleValidator(), null);
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("catch (RuntimeAgentBase.SwitchYield yielded)"));
   }
@@ -501,19 +499,16 @@ class KActorsFileTest {
     assertNotNull(ifStatement.getElseIfs().getFirst().getFirst().getSecond());
     assertNotNull(
         assertInstanceOf(
-                KActorsStatement.Fire.class,
-                ifStatement.getElseIfs().getFirst().getSecond())
+                KActorsStatement.Fire.class, ifStatement.getElseIfs().getFirst().getSecond())
             .getFunction());
     assertEquals(
-        "no result",
-        assertInstanceOf(KActorsStatement.Fail.class, code.get(5)).getMessage());
+        "no result", assertInstanceOf(KActorsStatement.Fail.class, code.get(5)).getMessage());
 
     var assertion = assertInstanceOf(KActorsStatement.Assert.class, code.get(6));
     assertEquals(2, assertion.getAssertions().size());
     assertEquals(1, assertion.getAssertions().getFirst().getCalls().size());
     assertEquals(
-        Boolean.TRUE,
-        assertion.getAssertions().getFirst().getValue().getValue(Boolean.class));
+        Boolean.TRUE, assertion.getAssertions().getFirst().getValue().getValue(Boolean.class));
     assertEquals(ValueType.EXPRESSION, assertion.getAssertions().get(1).getExpression().getType());
   }
 

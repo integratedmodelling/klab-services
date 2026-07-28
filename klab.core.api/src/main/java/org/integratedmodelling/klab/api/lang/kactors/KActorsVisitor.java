@@ -65,8 +65,7 @@ public class KActorsVisitor {
      * @return {@code true} for an alias-callable static action, {@code false} for an instance
      *     action, or {@code null} when the target cannot be resolved
      */
-    default Boolean classifyActionStaticity(
-        KActorsStatement.Verb verb, KActorsContext context) {
+    default Boolean classifyActionStaticity(KActorsStatement.Verb verb, KActorsContext context) {
       return null;
     }
 
@@ -120,8 +119,7 @@ public class KActorsVisitor {
      * contributed transitively through inheritance. The visitor uses this information to diagnose
      * an unacknowledged local override of an inherited {@code @handle} contract.
      */
-    default List<String> getHandledMessageClasses(
-        String behaviorUrn, KActorsContext context) {
+    default List<String> getHandledMessageClasses(String behaviorUrn, KActorsContext context) {
       return List.of();
     }
 
@@ -156,8 +154,8 @@ public class KActorsVisitor {
     }
 
     /**
-     * Validate behavior adaptation in any value-bearing statement. The assignment-specific
-     * overload is retained for compatibility and is called by default for assignments.
+     * Validate behavior adaptation in any value-bearing statement. The assignment-specific overload
+     * is retained for compatibility and is called by default for assignments.
      */
     default List<Notification> validateAdaptation(
         KActorsCodeStatement statement,
@@ -541,8 +539,8 @@ public class KActorsVisitor {
   }
 
   /**
-   * Extract the constant identifying a custom agent message from a {@code @handle} annotation.
-   * Both the named {@code class} parameter and the main unnamed/value parameter are supported.
+   * Extract the constant identifying a custom agent message from a {@code @handle} annotation. Both
+   * the named {@code class} parameter and the main unnamed/value parameter are supported.
    */
   public static String handledMessageClass(Annotation annotation) {
     if (annotation == null || !"handle".equals(annotation.getName())) {
@@ -651,15 +649,15 @@ public class KActorsVisitor {
     var parameters = new ArrayList<VariableInfo>();
     var names = new HashSet<String>();
     for (var argument : safe(action.getArguments())) {
-      var name = argument.name();
+      var name = argument.getName();
       if (!names.add(name)) {
         error("Duplicate action parameter: " + name, action);
       }
       var type = actionArgumentType(argument);
-      if (argument.annotation() != null) {
-        visitAnnotation(argument.annotation(), context);
+      if (argument.getAnnotation() != null) {
+        visitAnnotation(argument.getAnnotation(), context);
       }
-      if (argument.annotation() != null && "type".equals(argument.annotation().getName())) {
+      if (argument.getAnnotation() != null && "type".equals(argument.getAnnotation().getName())) {
         if (type == null) {
           error(
               "The @type annotation on action parameter "
@@ -673,8 +671,7 @@ public class KActorsVisitor {
                   + name
                   + " cannot declare both urn and class",
               action);
-        } else if (type.javaClassName() != null
-            && !isValidJavaTypeName(type.javaClassName())) {
+        } else if (type.javaClassName() != null && !isValidJavaTypeName(type.javaClassName())) {
           error(
               "The Java class in @type for action parameter "
                   + name
@@ -684,12 +681,7 @@ public class KActorsVisitor {
       }
       var parameter =
           new VariableInfo(
-              action,
-              name,
-              null,
-              type == null ? null : type.behaviorUrn(),
-              null,
-              null);
+              action, name, null, type == null ? null : type.behaviorUrn(), null, null);
       parameters.add(parameter);
       context.knownVariables.put(name, parameter);
     }
@@ -714,11 +706,11 @@ public class KActorsVisitor {
    */
   public static ArgumentType actionArgumentType(KActorsAction.Argument argument) {
     if (argument == null
-        || argument.annotation() == null
-        || !"type".equals(argument.annotation().getName())) {
+        || argument.getAnnotation() == null
+        || !"type".equals(argument.getAnnotation().getName())) {
       return null;
     }
-    var annotation = argument.annotation();
+    var annotation = argument.getAnnotation();
     Object unnamed =
         annotation.getUnnamedArguments().isEmpty()
             ? annotation.get(Annotation.VALUE_PARAMETER_KEY)
@@ -810,8 +802,7 @@ public class KActorsVisitor {
     var localVariables = new ArrayList<VariableInfo>();
     var upstreamVerb = context.getUpstreamStatement(KActorsStatement.Verb.class);
     var verb = upstreamVerb == null ? null : upstreamVerb.getMessage();
-    var producedAgentUrn =
-        upstreamVerb == null ? null : producedAgentUrn(upstreamVerb, context);
+    var producedAgentUrn = upstreamVerb == null ? null : producedAgentUrn(upstreamVerb, context);
     var matchVariables = safe(matchStatement.getVariables());
     for (var name : matchVariables) {
       localVariables.add(
@@ -842,12 +833,7 @@ public class KActorsVisitor {
           if (value != null) {
             localVariables.add(
                 new VariableInfo(
-                    criterion,
-                    value.toString(),
-                    null,
-                    producedAgentUrn,
-                    verb,
-                    upstreamVerb));
+                    criterion, value.toString(), null, producedAgentUrn, verb, upstreamVerb));
           }
         }
       }
@@ -921,7 +907,11 @@ public class KActorsVisitor {
 
   protected void visitFire(KActorsStatement.Fire statement, KActorsContext context) {
     validateAlternative(
-        statement.getValue(), statement.getFunction(), statement.getSwitch(), "fire value", statement);
+        statement.getValue(),
+        statement.getFunction(),
+        statement.getSwitch(),
+        "fire value",
+        statement);
     var accumulator = actionAccumulators.get(context.action);
     if (accumulator != null) {
       accumulator.fires++;
@@ -1392,14 +1382,10 @@ public class KActorsVisitor {
     }
     var adapter = adapters.getFirst();
     if (adapter.parameters().size() != 1) {
-      error(
-          "An @adapt action must declare exactly one source parameter",
-          adapter.statement());
+      error("An @adapt action must declare exactly one source parameter", adapter.statement());
     }
     if (adapter.effectiveExecutionType() == Verb.Type.EMITTER) {
-      error(
-          "An @adapt action must be a function or supplier, not an emitter",
-          adapter.statement());
+      error("An @adapt action must be a function or supplier, not an emitter", adapter.statement());
     }
   }
 
@@ -1513,8 +1499,7 @@ public class KActorsVisitor {
     return new VariableInfo(statement, null, null, null, null, null);
   }
 
-  private String producedAgentUrn(
-      KActorsStatement.Verb verb, KActorsContext context) {
+  private String producedAgentUrn(KActorsStatement.Verb verb, KActorsContext context) {
     if (verb == null) {
       return null;
     }
@@ -1606,9 +1591,7 @@ public class KActorsVisitor {
       String role,
       KActorsCodeStatement statement) {
     int supplied =
-        (value == null ? 0 : 1)
-            + (function == null ? 0 : 1)
-            + (switchStatement == null ? 0 : 1);
+        (value == null ? 0 : 1) + (function == null ? 0 : 1) + (switchStatement == null ? 0 : 1);
     if (supplied != 1) {
       error("Exactly one " + role + ", functional verb, or switch must be supplied", statement);
     }

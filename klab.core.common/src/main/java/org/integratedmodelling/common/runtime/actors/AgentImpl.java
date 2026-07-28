@@ -364,6 +364,11 @@ public class AgentImpl implements Agent {
     this.lastActivityAt = Math.max(this.lastActivityAt, status.lastActivityAt());
   }
 
+  public String toString() {
+    return Character.toString(0x1F464) + " " + name;
+  }
+
+
   private void markActivity() {
     this.lastActivityAt = Math.max(this.lastActivityAt, System.currentTimeMillis());
   }

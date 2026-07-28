@@ -2000,4 +2000,5 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       throw actorFailure(failure);
     }
   }
+
 }

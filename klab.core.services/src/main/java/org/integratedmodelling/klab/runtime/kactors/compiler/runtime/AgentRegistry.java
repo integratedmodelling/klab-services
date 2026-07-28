@@ -779,6 +779,12 @@ public enum AgentRegistry {
     }
 
     @Override
+    public String toString() {
+      return Character.toString(0x1F464) + " " + name;
+    }
+
+
+    @Override
     public String getUrn() {
       return urn;
     }

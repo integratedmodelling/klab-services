@@ -100,10 +100,7 @@ public class AgentCompiler {
     }
 
     private boolean implementsBehavior(
-        KActorsBehavior actual,
-        String requiredBehaviorUrn,
-        UserScope scope,
-        Set<String> visited) {
+        KActorsBehavior actual, String requiredBehaviorUrn, UserScope scope, Set<String> visited) {
       if (actual == null || actual.getUrn() == null || !visited.add(actual.getUrn())) {
         return false;
       }
@@ -262,8 +259,7 @@ public class AgentCompiler {
       @Override
       public List<Object> negotiateParameterMatch(
           List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
-        return registry.negotiateAgentParameters(
-            unmatchedParameterTypes, suppliedParameters);
+        return registry.negotiateAgentParameters(unmatchedParameterTypes, suppliedParameters);
       }
     };
   }
@@ -414,7 +410,10 @@ public class AgentCompiler {
               String behaviorUrn, KActorsVisitor.KActorsContext context) {
             try {
               return inheritedMessageClasses(
-                  resolver.resolveBehavior(behaviorUrn, scope), resolver, scope, new LinkedHashSet<>());
+                  resolver.resolveBehavior(behaviorUrn, scope),
+                  resolver,
+                  scope,
+                  new LinkedHashSet<>());
             } catch (Throwable ignored) {
               // Inheritance validation reports resolution failures with source context.
               return List.of();
@@ -439,18 +438,14 @@ public class AgentCompiler {
                         .anyMatch(
                             action ->
                                 action.statement().getAnnotations().stream()
-                                    .anyMatch(
-                                        annotation -> "adapt".equals(annotation.getName())));
+                                    .anyMatch(annotation -> "adapt".equals(annotation.getName())));
                 if (!hasAdapter) {
                   return List.of(
                       Notification.error(
-                          "Behavior "
-                              + behaviorUrn
-                              + " does not declare an @adapt action",
+                          "Behavior " + behaviorUrn + " does not declare an @adapt action",
                           Notification.LexicalContext.of(statement, context.getBehavior())));
                 }
-                return resolver.validateBehaviorAdaptation(
-                    targetBehavior, sourceVariable, scope);
+                return resolver.validateBehaviorAdaptation(targetBehavior, sourceVariable, scope);
               }
               var targetActor = resolver.resolveActor(behaviorUrn, scope);
               if (targetActor != null) {
@@ -460,9 +455,7 @@ public class AgentCompiler {
                     || targetActor.adapter().method == null) {
                   return List.of(
                       Notification.error(
-                          "Java actor "
-                              + behaviorUrn
-                              + " does not provide a usable @AgentAdapter",
+                          "Java actor " + behaviorUrn + " does not provide a usable @AgentAdapter",
                           Notification.LexicalContext.of(statement, context.getBehavior())));
                 }
                 return List.of();
@@ -486,8 +479,7 @@ public class AgentCompiler {
               String behaviorUrn,
               KActorsVisitor.VariableInfo sourceVariable,
               KActorsVisitor.KActorsContext context) {
-            return validateAdaptedUse(
-                statement, behaviorUrn, context, true, resolver, scope);
+            return validateAdaptedUse(statement, behaviorUrn, context, true, resolver, scope);
           }
 
           @Override
@@ -496,8 +488,7 @@ public class AgentCompiler {
               String behaviorUrn,
               KActorsVisitor.VariableInfo sourceVariable,
               KActorsVisitor.KActorsContext context) {
-            return validateAdaptedUse(
-                statement, behaviorUrn, context, false, resolver, scope);
+            return validateAdaptedUse(statement, behaviorUrn, context, false, resolver, scope);
           }
 
           @Override
@@ -608,11 +599,9 @@ public class AgentCompiler {
               if (resolved.javaMethod() == null) {
                 return List.of();
               }
-              var supplied =
-                  arguments == null ? List.of() : new ArrayList<>(arguments.values());
+              var supplied = arguments == null ? List.of() : new ArrayList<>(arguments.values());
               var constrained =
-                  validateJavaVerbArguments(
-                      verb, arguments, resolved, context, resolver, scope);
+                  validateJavaVerbArguments(verb, arguments, resolved, context, resolver, scope);
               if (!constrained.isEmpty()) {
                 return constrained;
               }
@@ -693,9 +682,7 @@ public class AgentCompiler {
       if (variable != null && variable.agentUrn() != null) {
         var producerImport = findImport(context.getBehavior(), variable.agentUrn());
         actorUrn =
-            producerImport == null
-                ? variable.agentUrn()
-                : producerImport.getImportedBehavior();
+            producerImport == null ? variable.agentUrn() : producerImport.getImportedBehavior();
       }
     }
     if (actorUrn == null) {
@@ -752,7 +739,8 @@ public class AgentCompiler {
       KActorsVisitor.KActorsContext context,
       Resolver resolver,
       UserScope scope) {
-    var formals = action.getArguments() == null ? List.<KActorsAction.Argument>of() : action.getArguments();
+    var formals =
+        action.getArguments() == null ? List.<KActorsAction.Argument>of() : action.getArguments();
     var bound = new Object[formals.size()];
     var notifications = new ArrayList<Notification>();
     if (arguments != null) {
@@ -793,7 +781,7 @@ public class AgentCompiler {
                   verb,
                   context,
                   "Missing required typed argument '"
-                      + formal.name()
+                      + formal.getName()
                       + "' for action "
                       + action.getUrn()));
         }
@@ -812,7 +800,7 @@ public class AgentCompiler {
                   verb,
                   context,
                   "Argument '"
-                      + formal.name()
+                      + formal.getName()
                       + "' for action "
                       + action.getUrn()
                       + " requires an agent implementing "
@@ -831,7 +819,7 @@ public class AgentCompiler {
                   verb,
                   context,
                   "Argument '"
-                      + formal.name()
+                      + formal.getName()
                       + "' for action "
                       + action.getUrn()
                       + " must be "
@@ -847,7 +835,7 @@ public class AgentCompiler {
 
   private static int kActorsArgumentIndex(List<KActorsAction.Argument> arguments, String name) {
     for (int index = 0; index < arguments.size(); index++) {
-      if (Objects.equals(arguments.get(index).name(), name)) {
+      if (Objects.equals(arguments.get(index).getName(), name)) {
         return index;
       }
     }
@@ -857,16 +845,12 @@ public class AgentCompiler {
   private record KnownJavaType(Class<?> type, String name, boolean definitive) {}
 
   private static KnownJavaType knownJavaType(
-      Object supplied,
-      KActorsVisitor.KActorsContext context,
-      Resolver resolver,
-      UserScope scope) {
+      Object supplied, KActorsVisitor.KActorsContext context, Resolver resolver, UserScope scope) {
     Object literal = literalValue(supplied);
     if (literal != UNKNOWN_LITERAL) {
       return literal == null
           ? null
-          : new KnownJavaType(
-              literal.getClass(), literal.getClass().getTypeName(), true);
+          : new KnownJavaType(literal.getClass(), literal.getClass().getTypeName(), true);
     }
     if (!(supplied instanceof KActorsValue value) || value.getType() != ValueType.IDENTIFIER) {
       return null;
@@ -890,13 +874,16 @@ public class AgentCompiler {
     if (variable.statement() instanceof KActorsAction declaringAction) {
       var formal =
           declaringAction.getArguments().stream()
-              .filter(argument -> Objects.equals(argument.name(), variable.name()))
+              .filter(argument -> Objects.equals(argument.getName(), variable.name()))
               .findFirst()
               .orElse(null);
       var declared = KActorsVisitor.actionArgumentType(formal);
       if (declared != null && declared.javaClassName() != null) {
         Class<?> type = loadJavaType(declared.javaClassName(), null);
-        return new KnownJavaType(type, declared.javaClassName(), type != null && java.lang.reflect.Modifier.isFinal(type.getModifiers()));
+        return new KnownJavaType(
+            type,
+            declared.javaClassName(),
+            type != null && java.lang.reflect.Modifier.isFinal(type.getModifiers()));
       }
     }
     return null;
@@ -925,9 +912,7 @@ public class AgentCompiler {
   private static boolean matchesJavaType(KnownJavaType actual, String requiredName) {
     if (!requiredName.contains(".")) {
       String simple =
-          actual.type() == null
-              ? simpleName(actual.name())
-              : actual.type().getSimpleName();
+          actual.type() == null ? simpleName(actual.name()) : actual.type().getSimpleName();
       return simple != null && simple.equalsIgnoreCase(requiredName);
     }
     if (Objects.equals(actual.name(), requiredName)) {
@@ -943,7 +928,9 @@ public class AgentCompiler {
     }
     try {
       ClassLoader loader =
-          relatedType == null ? Thread.currentThread().getContextClassLoader() : relatedType.getClassLoader();
+          relatedType == null
+              ? Thread.currentThread().getContextClassLoader()
+              : relatedType.getClassLoader();
       return Class.forName(name, false, loader);
     } catch (ClassNotFoundException | LinkageError ignored) {
       try {
@@ -1027,7 +1014,8 @@ public class AgentCompiler {
       if (requiredAgent != null) {
         String actualAgent = agentUrnOf(supplied, context);
         if (actualAgent != null
-            && !behaviorIsOrInherits(actualAgent, requiredAgent, resolver, scope, new LinkedHashSet<>())) {
+            && !behaviorIsOrInherits(
+                actualAgent, requiredAgent, resolver, scope, new LinkedHashSet<>())) {
           notifications.add(
               argumentError(
                   verb,
@@ -1090,8 +1078,7 @@ public class AgentCompiler {
         || type == ValueType.URN;
   }
 
-  private static String agentUrnOf(
-      Object supplied, KActorsVisitor.KActorsContext context) {
+  private static String agentUrnOf(Object supplied, KActorsVisitor.KActorsContext context) {
     if (supplied instanceof KActorsValue value && value.getType() == ValueType.IDENTIFIER) {
       var variable = context.getVariable(value.getValue(String.class));
       return variable == null ? null : normalized(variable.agentUrn());
@@ -1121,15 +1108,11 @@ public class AgentCompiler {
   }
 
   private static Notification argumentError(
-      KActorsStatement.Verb verb,
-      KActorsVisitor.KActorsContext context,
-      String message) {
-    return Notification.error(
-        message, Notification.LexicalContext.of(verb, context.getBehavior()));
+      KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context, String message) {
+    return Notification.error(message, Notification.LexicalContext.of(verb, context.getBehavior()));
   }
 
-  private static int argumentIndex(
-      List<JavaArgumentConstraint> constraints, String name) {
+  private static int argumentIndex(List<JavaArgumentConstraint> constraints, String name) {
     for (int index = 0; index < constraints.size(); index++) {
       if (Objects.equals(name, constraints.get(index).name())) {
         return index;
@@ -1142,8 +1125,7 @@ public class AgentCompiler {
       ResolvedCall resolved, KActorsStatement.Arguments arguments) {
     var constraints = javaArgumentConstraints(resolved.javaMethod());
     if (constraints.isEmpty()) {
-      return directArityMatches(
-          resolved.javaMethod(), arguments == null ? 0 : arguments.size());
+      return directArityMatches(resolved.javaMethod(), arguments == null ? 0 : arguments.size());
     }
     int supplied = arguments == null ? 0 : arguments.size();
     long required = constraints.stream().filter(argument -> !argument.optional()).count();
@@ -1511,23 +1493,20 @@ public class AgentCompiler {
       case KActorsStatement.Group group ->
           group.getStatements().forEach(child -> collectAdaptationUrns(child, urns));
       case KActorsStatement.Verb verb ->
-          verb.getActions()
-              .forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
+          verb.getActions().forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
       case KActorsStatement.Verb.MatchAction match ->
           collectAdaptationUrns(match.getActionOnMatch(), urns);
       case KActorsStatement.Switch switched ->
-          switched.getCases()
+          switched
+              .getCases()
               .forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
-      case KActorsStatement.Assignment value ->
-          collectAdaptationUrns(value.getSwitch(), urns);
+      case KActorsStatement.Assignment value -> collectAdaptationUrns(value.getSwitch(), urns);
       case KActorsStatement.Return value -> collectAdaptationUrns(value.getSwitch(), urns);
       case KActorsStatement.Fire value -> collectAdaptationUrns(value.getSwitch(), urns);
       case KActorsStatement.Yield value -> collectAdaptationUrns(value.getSwitch(), urns);
       case KActorsStatement.If conditional -> {
         collectAdaptationUrns(conditional.getThenBody(), urns);
-        conditional
-            .getElseIfs()
-            .forEach(branch -> collectAdaptationUrns(branch.getSecond(), urns));
+        conditional.getElseIfs().forEach(branch -> collectAdaptationUrns(branch.getSecond(), urns));
         collectAdaptationUrns(conditional.getElseBody(), urns);
       }
       case KActorsStatement.While loop -> collectAdaptationUrns(loop.getBody(), urns);
@@ -1844,7 +1823,8 @@ public class AgentCompiler {
             action.getUrn(),
             Verb.Type.class,
             action.getActionType().name(),
-            stringList(action.getArgumentNames()),
+            stringList(
+                action.getArguments().stream().map(KActorsAction.Argument::getName).toList()),
             !standardInput);
       }
     }
@@ -1974,12 +1954,13 @@ public class AgentCompiler {
       code.addStatement(
           "arguments = validateActionArguments($S, $L, $L, $L, arguments)",
           action.getUrn(),
-          stringList(action.getArgumentNames()),
+          stringList(action.getArguments().stream().map(KActorsAction.Argument::getName).toList()),
           nullableStringList(requiredBehaviors),
           nullableStringList(requiredJavaTypes));
     }
     code.addStatement(
-        "var frame = bindArguments($L, arguments)", stringList(action.getArgumentNames()));
+        "var frame = bindArguments($L, arguments)",
+        stringList(action.getArguments().stream().map(KActorsAction.Argument::getName).toList()));
     String result = null;
     if (type == Verb.Type.SUPPLIER) {
       result = "actionResult";
@@ -2051,8 +2032,7 @@ public class AgentCompiler {
               "$L.doFire($L)",
               context.scope(),
               adaptedValue(
-                  valueSource(
-                      fire.getValue(), fire.getFunction(), fire.getSwitch(), code, context),
+                  valueSource(fire.getValue(), fire.getFunction(), fire.getSwitch(), code, context),
                   fire.getAdaptedBehaviorUrn(),
                   context));
       case KActorsStatement.Switch switchStatement ->
@@ -2103,11 +2083,7 @@ public class AgentCompiler {
     CodeBlock value =
         adaptedValue(
             valueSource(
-                returned.getValue(),
-                returned.getFunction(),
-                returned.getSwitch(),
-                code,
-                context),
+                returned.getValue(), returned.getFunction(), returned.getSwitch(), code, context),
             returned.getAdaptedBehaviorUrn(),
             context);
     if (context.terminatesAgentOnReturn()) {
@@ -2196,10 +2172,7 @@ public class AgentCompiler {
     code.beginControlFlow(
         "while ($L)",
         conditionValue(
-            loop.getCondition(),
-            loop.getFunction(),
-            loop.getAdaptedBehaviorUrn(),
-            context));
+            loop.getCondition(), loop.getFunction(), loop.getAdaptedBehaviorUrn(), context));
     emitStatement(loop.getBody(), code, context.withoutCompletionCollectors(), awaitCompletion);
     code.endControlFlow();
   }
@@ -2214,10 +2187,7 @@ public class AgentCompiler {
     code.endControlFlow(
         "while ($L)",
         conditionValue(
-            loop.getCondition(),
-            loop.getFunction(),
-            loop.getAdaptedBehaviorUrn(),
-            context));
+            loop.getCondition(), loop.getFunction(), loop.getAdaptedBehaviorUrn(), context));
   }
 
   private void emitFor(
@@ -2249,11 +2219,7 @@ public class AgentCompiler {
     CodeBlock value =
         adaptedValue(
             valueSource(
-                yielded.getValue(),
-                yielded.getFunction(),
-                yielded.getSwitch(),
-                code,
-                context),
+                yielded.getValue(), yielded.getFunction(), yielded.getSwitch(), code, context),
             yielded.getAdaptedBehaviorUrn(),
             context);
     code.addStatement("throw new $T($L)", RuntimeAgentBase.SwitchYield.class, value);
@@ -2383,12 +2349,10 @@ public class AgentCompiler {
     return valueOrCall(value, function, context);
   }
 
-  private CodeBlock adaptedValue(
-      CodeBlock value, String behaviorUrn, CompilationContext context) {
+  private CodeBlock adaptedValue(CodeBlock value, String behaviorUrn, CompilationContext context) {
     return behaviorUrn == null || behaviorUrn.isBlank()
         ? value
-        : CodeBlock.of(
-            "adaptToBehavior($L, $S, $L)", value, behaviorUrn.trim(), context.scope());
+        : CodeBlock.of("adaptToBehavior($L, $S, $L)", value, behaviorUrn.trim(), context.scope());
   }
 
   private CodeBlock conditionValue(
@@ -2816,16 +2780,15 @@ public class AgentCompiler {
     return MethodSpec.methodBuilder("implementedBehaviorUrns")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PROTECTED)
-        .returns(
-            ParameterizedTypeName.get(
-                ClassName.get(Set.class), ClassName.get(String.class)))
+        .returns(ParameterizedTypeName.get(ClassName.get(Set.class), ClassName.get(String.class)))
         .addStatement("return $L", stringSet(urns))
         .build();
   }
 
-  private void collectImplementedBehaviorUrns(
-      KActorsBehavior sourceBehavior, Set<String> urns) {
-    if (sourceBehavior == null || sourceBehavior.getUrn() == null || !urns.add(sourceBehavior.getUrn())) {
+  private void collectImplementedBehaviorUrns(KActorsBehavior sourceBehavior, Set<String> urns) {
+    if (sourceBehavior == null
+        || sourceBehavior.getUrn() == null
+        || !urns.add(sourceBehavior.getUrn())) {
       return;
     }
     for (var inherited : sourceBehavior.getInheritedBehaviors()) {
@@ -2916,28 +2879,14 @@ public class AgentCompiler {
 
     CompilationContext asReactive(String newScope, String newFrame) {
       return new CompilationContext(
-          actionType,
-          true,
-          false,
-          terminatesAgentOnReturn,
-          newScope,
-          newFrame,
-          result,
-          List.of());
+          actionType, true, false, terminatesAgentOnReturn, newScope, newFrame, result, List.of());
     }
 
     CompilationContext asSynchronous() {
       return synchronous
           ? this
           : new CompilationContext(
-              actionType,
-              reactive,
-              true,
-              terminatesAgentOnReturn,
-              scope,
-              frame,
-              result,
-              List.of());
+              actionType, reactive, true, terminatesAgentOnReturn, scope, frame, result, List.of());
     }
 
     CompilationContext withoutCompletionCollectors() {
