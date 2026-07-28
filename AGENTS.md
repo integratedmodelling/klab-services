@@ -174,9 +174,31 @@ static action describe:
     return "A description"
 ```
 
-An action name is a lowercase identifier. Arguments are untyped names and may be supplied
-positionally or by name at call sites. Duplicate action names and duplicate argument names are
-errors.
+An action name is a lowercase identifier. Arguments are names that may be supplied positionally or
+by name at call sites. Duplicate action names and duplicate argument names are errors. An argument
+may optionally carry one annotation immediately before its name. The standard `@type` annotation
+adds the deliberately small amount of type safety available to k.Actors actions:
+
+```kactors
+action process(
+    @type("examples.worker") worker,
+    @type(urn="examples.options") options,
+    @type(class="String") label,
+    @type(class="java.time.Instant") timestamp):
+    worker.run(options, label)
+```
+
+The unnamed string and `urn` forms require an agent handle implementing that behavior, including a
+behavior derived from it. The `class` form requires a Java runtime type. A single Java identifier
+matches the simple class name without regard to case, so `@type(class="boolean")` accepts a
+`Boolean`; a canonical name is case-sensitive and accepts that class or a subclass/implementation
+assignable to it. `class` must be named explicitly so a Java type cannot be confused with a
+behavior URN.
+
+The analyzer checks these contracts when the argument's behavior or Java type is known, including
+variables produced by typed Java `@Verb` methods. Calls whose values remain dynamic are accepted
+and checked when the generated action executes. Parameter annotations other than `@type` are
+preserved in the semantic model for extension-specific use.
 
 `static` controls the permitted recipient, not whether Java code happens to use a static generated
 method and not whether the action is a function, supplier, or emitter. Imported aliases represent
@@ -231,6 +253,27 @@ finish or must remain alive. Actor-like behaviors, applications, and components 
 persistent; scripts are normally finite unless their effective work is emitter-like. A trait's
 special actions affect the lifecycle of the agent that inherits it rather than starting the trait
 independently. Libraries have no lifecycle entry points.
+
+When an action returns or emits an agent whose behavior is known, declare that contract with either
+equivalent form:
+
+```kactors
+@return("workers.specialized")
+action make_worker:
+    return create_worker
+
+@return(urn="workers.specialized")
+action stream_workers:
+    fire worker
+```
+
+The annotation types a frame assignment produced by the action, a `for` loop variable whose source
+is the action, and a single match variable or `as` capture receiving its output. Subsequent
+instance calls are then checked against `workers.specialized`. With multiple destructured match
+variables the output's behavior cannot identify the type of each tuple member, so those variables
+remain dynamic. An action may have only one `@return`, whose unnamed or `urn` argument must be a
+behavior URN. Without this annotation the result keeps its producer provenance but remains
+dynamically typed.
 
 ### 4.3. Agent messages and `@handle`
 
@@ -393,7 +436,7 @@ Current match syntax includes:
 | `unknown` | Match no-data |
 | `empty` | Match an empty result |
 | `exception as error` | Match an error or exception and optionally capture it |
-| `*` | Match any ordinary value |
+| `*` | Match a truthy value |
 | `#` | Match anything, including values not accepted by `*` |
 
 Names introduced by a match are local to its action-on-match. A value captured with `as` has the
@@ -510,12 +553,27 @@ for item in source as examples.iterable_adapter process(item)
 
 Adaptation is supported on local `<-` assignments, `return`, `fire`, and the selector of a
 `switch`, as well as conditions and iterables in `if`/`else if`, `while`, `do`, and `for`.
-The target behavior must resolve in the active runtime environment, and its adapter must accept the
-original value's type. A value adapted for control flow must additionally be convertible to the
-required boolean or iterable contract. After validation, an assigned variable is treated as an
-agent implementing the target behavior, so its action calls are validated against that behavior.
-Adaptation does not mutate the original object; the runtime adapter decides whether to wrap it,
-derive a new agent, or reject the conversion.
+The target URN may resolve to either a k.Actors behavior or a Java actor extension.
+
+A k.Actors target declares exactly one unary adaptation action:
+
+```kactors
+@adapt
+action from_record(source):
+    return source
+```
+
+The action must be a function or supplier. A supplier is awaited before the `as` expression
+continues; an emitter cannot be an adapter. A Java actor target instead declares one public,
+non-void method annotated with `@AgentAdapter`. It accepts exactly one source parameter, may also
+accept one injected `RuntimeAgent.Scope`, and may be static or instance-based. It returns the
+adapted object directly or as a `CompletableFuture`, which is joined by the runtime.
+
+The selected adapter must accept the original value's runtime type. A value adapted for control
+flow must additionally be convertible to the required boolean or iterable contract. After
+validation, an assigned variable is treated as an agent implementing the target behavior, so its
+action calls are validated against that behavior. Adaptation does not mutate the original object;
+the adapter decides whether to wrap it, derive a new agent, or reject the conversion.
 
 ## 8. Control flow and statements
 
@@ -545,7 +603,7 @@ for item in items (
     process(item)
 )
 
-description <- switch status: (
+description <- switch status (
     READY -> yield "ready"
     RUNNING -> yield "running"
     * -> log(status)
@@ -566,7 +624,7 @@ install an asynchronous listener and escape its lexical frame.
 `yield` supplies the value of the nearest enclosing switch:
 
 ```kactors
-result <- switch input: (
+result <- switch input (
     number as value -> yield [value * 2]
     empty -> yield unknown
     exception as error -> fail error
@@ -598,8 +656,10 @@ fail "The request cannot be completed"
 `return` completes a synchronous function, or completes a supplier with a value when executed
 inside a match action. In an emitter, a reactive return stops scheduled emission and removes
 listeners without changing the action's emitter type; its required operand is available as an exit
-code. `fire` publishes an event without completing an emitter. `fail` aborts with an optional
-message; failure in `init` or `main` terminates the actor.
+code. When an executed `return` belongs to `main`, it also terminates the agent even when the
+behavior is otherwise persistent; a return inside conditional control flow only does so when that
+branch actually runs. `fire` publishes an event without completing an emitter. `fail` aborts with
+an optional message; failure in `init` or `main` terminates the actor.
 
 Every `return` has an operand. This is part of the grammar contract as well as the value returned
 by functions and suppliers; emitters interpret the same operand as an exit code when terminating
@@ -768,9 +828,28 @@ ordinary imports and calls. The runtime validator is responsible for:
 
 - locating the component and actor class;
 - matching call arguments to Java parameters;
+- enforcing names, optionality, literal Java types, and agent-behavior requirements declared
+  through `@Verb.Argument`; values whose runtime type or agent behavior is not yet known remain
+  dynamically validated at execution time;
 - distinguishing static verbs from instance verbs;
 - classifying each verb as a function, supplier, or emitter;
 - reporting the Java runtime class used by generated code.
+
+A Java verb that returns or emits a known agent declares its behavior through
+`@Verb(producesAgent="workers.specialized")`. Component discovery copies this into
+`FunctionDescriptor.behaviorUrn`; analysis then applies the same assignment, loop, and match-capture
+typing used for k.Actors `@return`. The imported alias remains the valid recipient of a static Java
+verb. The produced value acquires the declared behavior type only when `producesAgent` is present;
+otherwise calls on that value remain dynamically resolved.
+
+Directly compatible arguments are matched positionally, with runtime-scope injection, primitive
+numeric coercion, enum conversion, and Java varargs packing. If that match fails, the compiler
+environment may negotiate the target Java parameter types against the supplied values and return
+a complete adapted argument list in declaration order. This is the extension point for compound
+conversions such as satisfying separate numeric and `TimeUnit` parameters from one temporal
+quantity. The default component registry does not yet implement such conversions: analysis emits
+a parameter-mismatch error when the mismatch is statically evident, and runtime invocation fails
+explicitly when it is only discoverable dynamically.
 
 For a Java import, the compiler binds the alias to the implementation `Class`. Runtime reflection
 therefore requires an alias-selected verb to be a Java `static` method. A static `new` verb may
@@ -798,6 +877,7 @@ checks at least the following:
 - function calls do not declare match actions;
 - emitters are not used where one value is required;
 - calls and their arguments satisfy extension-provided validation;
+- `@return` declarations contain one resolvable behavior URN;
 - identifiers in values and expressions are visible in the current lexical scope;
 - assignments obey actor/frame scope and do not overwrite imports or inherited state;
 - conditions are boolean and `for` inputs are iterable;

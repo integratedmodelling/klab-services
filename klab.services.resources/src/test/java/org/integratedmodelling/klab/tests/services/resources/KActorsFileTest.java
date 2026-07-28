@@ -62,6 +62,14 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertStaticActionContract),
         new Case(
+            "/returned-agent.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertReturnedAgentContract),
+        new Case(
+            "/typed-action-parameters.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertTypedActionParameters),
+        new Case(
             "/simplegroup.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertGroupedBehaviorParses),
@@ -89,6 +97,18 @@ class KActorsFileTest {
             "/console-agent.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertConsoleInputHandler),
+        new Case(
+            "/handle-annotation.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertHandleAnnotation),
+        new Case(
+            "/switch-assignment.kactor",
+            functionalConsoleValidator(),
+            this::assertFunctionalSwitchAssignment),
+        new Case(
+            "/unknown-switch-recipient.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertUnknownSwitchRecipientHasLexicalContext),
         new Case(
             "/library-invalid-lifecycle.kactor",
             new KActorsVisitor.LenientValidator(),
@@ -202,12 +222,50 @@ class KActorsFileTest {
     assertEquals("test.project", returned.getProjectName());
   }
 
+  private void assertTypedActionParameters(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var action = result.requireBehavior().getStatements().getFirst();
+    assertEquals(List.of("worker", "enabled"), action.getArgumentNames());
+    assertEquals("type", action.getArguments().getFirst().annotation().getName());
+    assertEquals(
+        "workers.base",
+        KActorsVisitor.actionArgumentType(action.getArguments().getFirst()).behaviorUrn());
+    assertEquals(
+        "boolean",
+        KActorsVisitor.actionArgumentType(action.getArguments().get(1)).javaClassName());
+  }
+
+  private KActorsVisitor.Validator functionalConsoleValidator() {
+    return new KActorsVisitor.LenientValidator() {
+      @Override
+      public Verb.Type classifyActionCall(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        if ("console".equals(verb.getRecipient())) {
+          return Verb.Type.FUNCTION;
+        }
+        return "source".equals(verb.getRecipient()) && "read".equals(verb.getMessage())
+            ? Verb.Type.EMITTER
+            : null;
+      }
+    };
+  }
+
   private void assertStaticActionContract(KActorsTestSupport.Result result) {
     assertNoParsingOrAdaptationErrors(result);
     assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
     var actions = result.requireBehavior().getStatements();
     assertTrue(actions.get(0).isStatic());
     assertFalse(actions.get(1).isStatic());
+  }
+
+  private void assertReturnedAgentContract(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var actions = result.requireBehavior().getStatements();
+    assertEquals("workers.product", KActorsVisitor.returnedBehaviorUrn(actions.get(0)));
+    assertEquals("workers.product", KActorsVisitor.returnedBehaviorUrn(actions.get(1)));
   }
 
   private void assertGroupedBehaviorParses(KActorsTestSupport.Result result) {
@@ -265,6 +323,102 @@ class KActorsFileTest {
     var compiler = new AgentCompiler(result.requireBehavior());
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("handlers.put(\"STDIN\""));
+  }
+
+  private void assertHandleAnnotation(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var action = result.requireBehavior().getStatements().getFirst();
+    var annotation = action.getAnnotations().getFirst();
+    assertEquals("handle", annotation.getName());
+    assertEquals(
+        "SAYHELLO",
+        KActorsVisitor.handledMessageClass(annotation),
+        () ->
+            "annotation="
+                + annotation
+                + ", unnamed="
+                + annotation.getUnnamedArguments()
+                + ", keys="
+                + annotation.getUnnamedKeys());
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("handlers.put(\"SAYHELLO\""));
+    var invalidAction = result.requireBehavior().getStatements().get(1);
+    var source =
+        assertDoesNotThrow(
+            () -> {
+              try (var input = result.source().openStream()) {
+                return new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+              }
+            });
+    assertEquals(
+        source.indexOf("@handle(not_a_constant)"),
+        invalidAction.getOffsetInDocument(),
+        "the action lexical range must begin at its annotation");
+  }
+
+  private void assertUnknownSwitchRecipientHasLexicalContext(
+      KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertFalse(result.analysisSuccessful());
+    var notification =
+        result.requireAnalyzer().getNotifications().stream()
+            .filter(
+                n ->
+                    n.getMessage().contains("recipient")
+                        && n.getMessage().contains("strings"))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError(result.allNotifications().toString()));
+    assertNotNull(notification.getLexicalContext());
+    assertTrue(
+        notification.getLexicalContext().getOffsetInDocument() > 0,
+        () -> notification.toString());
+    assertTrue(notification.getLexicalContext().getLength() > 0, () -> notification.toString());
+  }
+
+  private void assertFunctionalSwitchAssignment(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var code = result.requireAnalyzer().getActions().get("input").statement().getCode();
+    var assignment = assertInstanceOf(KActorsStatement.Assignment.class, code.get(1));
+    assertNull(assignment.getValue());
+    assertNull(assignment.getFunction());
+    var switched = assignment.getSwitch();
+    assertNotNull(switched);
+    assertEquals(ValueType.IDENTIFIER, switched.getValue().getType());
+    assertEquals("message", switched.getValue().getValue(String.class));
+    assertEquals(2, switched.getCases().size());
+    assertEquals(ValueType.STRING, switched.getCases().get(0).getMatchCriterion().getType());
+    assertEquals(ValueType.ANYVALUE, switched.getCases().get(1).getMatchCriterion().getType());
+
+    var verb =
+        assertInstanceOf(
+            KActorsStatement.Verb.class,
+            result
+                .requireAnalyzer()
+                .getActions()
+                .get("match_cases")
+                .statement()
+                .getCode()
+                .getFirst());
+    assertEquals(
+        List.of(
+            ValueType.ANNOTATION,
+            ValueType.EMPTY,
+            ValueType.ERROR,
+            ValueType.ANYVALUE,
+            ValueType.ANYTHING),
+        verb.getActions().stream()
+            .map(match -> match.getMatchCriterion().getType())
+            .toList());
+
+    var compiler =
+        new AgentCompiler(
+            result.requireBehavior(), null, functionalConsoleValidator(), null);
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("catch (RuntimeAgentBase.SwitchYield yielded)"));
   }
 
   private void assertLibraryRejectsLifecycleActions(KActorsTestSupport.Result result) {

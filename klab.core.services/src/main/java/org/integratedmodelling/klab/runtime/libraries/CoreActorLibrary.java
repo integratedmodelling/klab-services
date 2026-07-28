@@ -127,6 +127,11 @@ public class CoreActorLibrary {
   public static class Logger {
 
     // TODO info, warn, error, debug
+    @Verb(name = "info", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    public static void info(RuntimeAgent.Scope scope, Object... messages) {
+
+    }
+
 
     // TODO emitter that catches log entries from the code with pattern
 

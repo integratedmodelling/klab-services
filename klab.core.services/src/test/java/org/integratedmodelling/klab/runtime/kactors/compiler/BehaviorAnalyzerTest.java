@@ -31,6 +31,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction.Argument;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
@@ -88,6 +90,30 @@ class BehaviorAnalyzerTest {
     assertTrue(source.contains("\"namedHandler\", Verb.Type.FUNCTION"), source);
     assertTrue(source.contains("List.of(\"payload\", \"sender\")"), source);
     assertTrue(source.contains("handlers.put(\"UNNAMED\""), source);
+  }
+
+  @Test
+  void invalidHandleAnnotationWarningUsesTheAnnotatedActionLocation() {
+    var invalid = action("invalidHandler");
+    invalid.setOffsetInDocument(47);
+    invalid.setLength(31);
+    invalid.setAnnotations(List.of(Annotation.of("handle")));
+    var compiler = new AgentCompiler(behavior(invalid));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var warning =
+        compiler.getNotifications().stream()
+            .filter(
+                notification ->
+                    notification
+                        .getMessage()
+                        .contains("@handle annotation requires a CONSTANT"))
+            .findFirst()
+            .orElseThrow();
+
+    assertNotNull(warning.getLexicalContext());
+    assertEquals(47, warning.getLexicalContext().getOffsetInDocument());
+    assertEquals(31, warning.getLexicalContext().getLength());
   }
 
   @Test
@@ -232,6 +258,61 @@ class BehaviorAnalyzerTest {
     assertEquals(1, analyzer.getActions().get("emitter").fires());
     assertEquals(1, analyzer.getCalls().size());
     assertEquals("external", analyzer.getCalls().getFirst().agent());
+  }
+
+  @Test
+  void adaptActionsMustBeUniqueUnaryFunctionsOrSuppliers() {
+    var function = action("convert", returned(identifier("source")));
+    function.setArgumentNames(List.of("source"));
+    function.setAnnotations(List.of(Annotation.of("adapt")));
+    var functionAnalyzer = new BehaviorAnalyzer(behavior(function));
+
+    assertTrue(functionAnalyzer.analyze(), messages(functionAnalyzer));
+    assertEquals(Verb.Type.FUNCTION, function.getActionType());
+
+    var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
+    match.setActionOnMatch(returned(identifier("source")));
+    var call = verb("external", "later");
+    call.setActions(List.of(match));
+    var supplier = action("convert_later", call);
+    supplier.setArgumentNames(List.of("source"));
+    supplier.setAnnotations(List.of(Annotation.of("adapt")));
+    var supplierBehavior = behavior(supplier);
+    supplierBehavior.setImports(List.of(imported("component.behavior", "external")));
+    var supplierAnalyzer =
+        new BehaviorAnalyzer(
+            supplierBehavior,
+            new KActorsVisitor.LenientValidator() {
+              @Override
+              public Verb.Type classifyActionCall(
+                  KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+                return Verb.Type.SUPPLIER;
+              }
+            });
+
+    assertTrue(supplierAnalyzer.analyze(), messages(supplierAnalyzer));
+    assertEquals(Verb.Type.SUPPLIER, supplier.getActionType());
+
+    var emitter = action("invalid", fired(identifier("source")));
+    emitter.setArgumentNames(List.of("source"));
+    emitter.setAnnotations(List.of(Annotation.of("adapt")));
+    var emitterAnalyzer = new BehaviorAnalyzer(behavior(emitter));
+
+    var emitterValid = emitterAnalyzer.analyze();
+    assertEquals(Verb.Type.EMITTER, emitter.getActionType());
+    assertFalse(emitterValid);
+    assertTrue(messages(emitterAnalyzer).contains("function or supplier"));
+
+    var first = action("first", returned(identifier("source")));
+    first.setArgumentNames(List.of("source"));
+    first.setAnnotations(List.of(Annotation.of("adapt")));
+    var second = action("second", returned(identifier("source")));
+    second.setArgumentNames(List.of("source"));
+    second.setAnnotations(List.of(Annotation.of("adapt")));
+    var duplicateAnalyzer = new BehaviorAnalyzer(behavior(first, second));
+
+    assertFalse(duplicateAnalyzer.analyze());
+    assertTrue(messages(duplicateAnalyzer).contains("only one @adapt action"));
   }
 
   @Test
@@ -745,6 +826,329 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void javaProducedAgentBehaviorTypesAssignedVariables() throws Exception {
+    var factoryDescriptor = new Extensions.ActorDescriptor();
+    factoryDescriptor.urn = "java.factory";
+    var make = javaVerb("make", true, JavaStaticityActor.class.getMethod("make"));
+    factoryDescriptor.verbs.add(make.getKey());
+    var factory =
+        new AgentCompiler.ResolvedActor(factoryDescriptor, Map.of("make", make.getValue()));
+
+    var productDescriptor = new Extensions.ActorDescriptor();
+    productDescriptor.urn = "java.product";
+    var work = javaVerb("work", false, JavaStaticityActor.class.getMethod("work"));
+    productDescriptor.verbs.add(work.getKey());
+    var product =
+        new AgentCompiler.ResolvedActor(productDescriptor, Map.of("work", work.getValue()));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return switch (urn) {
+              case "java.factory" -> factory;
+              case "java.product" -> product;
+              default -> null;
+            };
+          }
+        };
+    var makeCall = verb("factory", "make");
+    var workCall = verb("worker", "work");
+    var source =
+        behavior(
+            action(
+                "main",
+                assignment("worker", KActorsStatement.Assignment.Scope.FRAME, makeCall),
+                workCall));
+    source.setImports(List.of(imported("java.factory", "factory")));
+    var analyzer =
+        new BehaviorAnalyzer(
+            source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals("java.product", analyzer.getCalls().getFirst().producedAgentUrn());
+    assertEquals(
+        "java.product",
+        analyzer.getCalls().get(1).knownVariables().get("worker").agentUrn());
+    assertEquals(Boolean.FALSE, analyzer.getCalls().get(1).staticAction());
+  }
+
+  @Test
+  void kActorsReturnAnnotationTypesAssignmentLoopAndMatchCaptures() {
+    var productAction = action("work");
+    productAction.setActionType(Verb.Type.FUNCTION);
+    var product = behavior(productAction);
+    product.setUrn("workers.product");
+
+    var agents = action("agents");
+    agents.setStatic(true);
+    agents.setActionType(Verb.Type.FUNCTION);
+    agents.setAnnotations(
+        List.of(Annotation.of("return", "urn", "workers.product")));
+    var stream = action("stream");
+    stream.setStatic(true);
+    stream.setActionType(Verb.Type.EMITTER);
+    var streamReturn = Annotation.of("return");
+    streamReturn.putUnnamed("workers.product");
+    stream.setAnnotations(List.of(streamReturn));
+    assertEquals("workers.product", KActorsVisitor.returnedBehaviorUrn(stream));
+    var provider = behavior(agents, stream);
+    provider.setUrn("workers.provider");
+
+    var localFactory = action("make");
+    localFactory.setAnnotations(
+        List.of(Annotation.of("return", "urn", "workers.product")));
+    var assignedCall = verb("assigned", "work");
+
+    var loopCall = verb("loopWorker", "work");
+    var loop = new KActorsStatementImpl.ForImpl();
+    loop.setVariable("loopWorker");
+    loop.setFunction(verb("provider", "agents"));
+    loop.setBody(loopCall);
+
+    var matchCall = verb("matchedWorker", "work");
+    var match = match(matchCall);
+    match.setVariables(List.of("matchedWorker"));
+    var streamCall = verb("provider", "stream");
+    streamCall.setActions(List.of(match));
+
+    var source =
+        behavior(
+            localFactory,
+            action(
+                "main",
+                assignment(
+                    "assigned",
+                    KActorsStatement.Assignment.Scope.FRAME,
+                    verb("self", "make")),
+                assignedCall,
+                loop,
+                streamCall));
+    source.setImports(List.of(imported("workers.provider", "provider")));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return switch (urn) {
+              case "workers.product" -> product;
+              case "workers.provider" -> provider;
+              default -> null;
+            };
+          }
+        };
+    var analyzer =
+        new BehaviorAnalyzer(
+            source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(
+        "workers.product",
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == streamCall)
+            .findFirst()
+            .orElseThrow()
+            .producedAgentUrn());
+    assertEquals(
+        "workers.product",
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == assignedCall)
+            .findFirst()
+            .orElseThrow()
+            .knownVariables()
+            .get("assigned")
+            .agentUrn());
+    assertEquals(
+        "workers.product",
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == loopCall)
+            .findFirst()
+            .orElseThrow()
+            .knownVariables()
+            .get("loopWorker")
+            .agentUrn());
+    assertEquals(
+        "workers.product",
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == matchCall)
+            .findFirst()
+            .orElseThrow()
+            .knownVariables()
+            .get("matchedWorker")
+            .agentUrn());
+  }
+
+  @Test
+  void javaActorParameterMismatchCanBeNegotiated() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "java.worker";
+    var duration =
+        javaVerb(
+            "duration",
+            true,
+            JavaStaticityActor.class.getMethod(
+                "duration", double.class, java.util.concurrent.TimeUnit.class));
+    descriptor.verbs.add(duration.getKey());
+    var resolved =
+        new AgentCompiler.ResolvedActor(descriptor, Map.of("duration", duration.getValue()));
+    var call = verb("java", "duration");
+    call.getArguments().putUnnamed(number(5));
+    var source = behavior(action("main", call));
+    source.setImports(List.of(imported("java.worker", "java")));
+
+    var rejectingResolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "java.worker".equals(urn) ? resolved : null;
+          }
+        };
+    var rejected =
+        new BehaviorAnalyzer(
+            source, AgentCompiler.runtimeEnvironment(rejectingResolver, null).validator());
+
+    assertFalse(rejected.analyze());
+    assertTrue(messages(rejected).contains("Cannot match parameters for Java verb"));
+    assertTrue(messages(rejected).contains("parameter negotiation did not produce"));
+
+    var negotiatingResolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "java.worker".equals(urn) ? resolved : null;
+          }
+
+          @Override
+          public List<Object> negotiateParameterMatch(
+              List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
+            assertEquals(
+                List.of(double.class, java.util.concurrent.TimeUnit.class),
+                unmatchedParameterTypes);
+            assertEquals(1, suppliedParameters.size());
+            return List.of(5.0, java.util.concurrent.TimeUnit.SECONDS);
+          }
+        };
+    var accepted =
+        new BehaviorAnalyzer(
+            source, AgentCompiler.runtimeEnvironment(negotiatingResolver, null).validator());
+
+    assertTrue(accepted.analyze(), messages(accepted));
+  }
+
+  @Test
+  void javaVerbArgumentAnnotationsValidateNamedTypesAndAgentBehaviors() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "java.worker";
+    var make =
+        javaVerb(
+            "make", true, JavaStaticityActor.class.getMethod("make"));
+    var accept =
+        javaVerb(
+            "accept",
+            true,
+            JavaStaticityActor.class.getMethod("accept", Object.class, Object.class));
+    descriptor.verbs.add(make.getKey());
+    descriptor.verbs.add(accept.getKey());
+    var resolved =
+        new AgentCompiler.ResolvedActor(
+            descriptor, Map.of("make", make.getValue(), "accept", accept.getValue()));
+    var create = assignment("worker", KActorsStatement.Assignment.Scope.FRAME, verb("java", "make"));
+    var call = verb("java", "accept");
+    call.getArguments().put("label", number(5));
+    call.getArguments().put("agent", identifier("worker"));
+    var source = behavior(action("main", create, call));
+    source.setImports(List.of(imported("java.worker", "java")));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "java.worker".equals(urn) ? resolved : null;
+          }
+        };
+    var analyzer =
+        new BehaviorAnalyzer(source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+
+    assertFalse(analyzer.analyze());
+    assertTrue(messages(analyzer).contains("argument 'label'"));
+    assertTrue(messages(analyzer).contains("must be java.lang.String"));
+    assertTrue(messages(analyzer).contains("requires an agent implementing java.required"));
+    assertTrue(messages(analyzer).contains("java.product was supplied"));
+
+    var dynamicCall = verb("java", "accept");
+    dynamicCall.getArguments().put("label", identifier("dynamicLabel"));
+    dynamicCall.getArguments().put("agent", identifier("dynamicAgent"));
+    var dynamicAction = action("main", dynamicCall);
+    dynamicAction.setArgumentNames(List.of("dynamicLabel", "dynamicAgent"));
+    var dynamicSource = behavior(dynamicAction);
+    dynamicSource.setImports(List.of(imported("java.worker", "java")));
+    var dynamicAnalyzer =
+        new BehaviorAnalyzer(
+            dynamicSource, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+    assertTrue(dynamicAnalyzer.analyze(), messages(dynamicAnalyzer));
+  }
+
+  @Test
+  void kActorsTypeAnnotationsValidateKnownArgumentsAndCompileRuntimeGuards() {
+    var type = Annotation.of("type", "class", "boolean");
+    var accept = action("accept", returned(identifier("enabled")));
+    accept.setArguments(List.of(new Argument("enabled", type)));
+    var acceptedCall = verb("self", "accept");
+    acceptedCall.getArguments().putUnnamed(bool(true));
+    var acceptedSource = behavior(accept, action("main", acceptedCall));
+    var acceptedResolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return acceptedSource.getUrn().equals(urn) ? acceptedSource : null;
+          }
+        };
+    var acceptedEnvironment = AgentCompiler.runtimeEnvironment(acceptedResolver, null);
+    var accepted =
+        new BehaviorAnalyzer(acceptedSource, acceptedEnvironment.validator());
+
+    assertTrue(accepted.analyze(), messages(accepted));
+    var compiler =
+        new AgentCompiler(
+            acceptedSource,
+            null,
+            acceptedEnvironment.validator(),
+            acceptedEnvironment.resolver());
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(
+        compiler.getSourceCode().contains("validateActionArguments(\"accept\""),
+        compiler.getSourceCode());
+    assertTrue(compiler.getSourceCode().contains("\"boolean\""), compiler.getSourceCode());
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+
+    var rejectedType = Annotation.of("type", "class", "Boolean");
+    var rejectedAccept = action("accept", returned(identifier("enabled")));
+    rejectedAccept.setArguments(
+        List.of(new Argument("enabled", rejectedType)));
+    var rejectedCall = verb("self", "accept");
+    rejectedCall.getArguments().putUnnamed(number(1));
+    var rejectedSource = behavior(rejectedAccept, action("main", rejectedCall));
+    var rejectedResolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return rejectedSource.getUrn().equals(urn) ? rejectedSource : null;
+          }
+        };
+    var rejected =
+        new BehaviorAnalyzer(
+            rejectedSource, AgentCompiler.runtimeEnvironment(rejectedResolver, null).validator());
+
+    assertFalse(rejected.analyze());
+    assertTrue(messages(rejected).contains("must be Boolean"), messages(rejected));
+    assertTrue(messages(rejected).contains("java.lang.Integer"), messages(rejected));
+  }
+
+  @Test
   void behaviorAdaptationIsLocalOnlyAndValidationErrorsDoNotTypeTheVariable() {
     var actorAssignment = assignment("worker", KActorsStatement.Assignment.Scope.ACTOR, number(1));
     actorAssignment.setAdaptedBehaviorUrn("workers.specialized");
@@ -809,7 +1213,7 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
-  void actorLikeBehaviorsRemainAvailableAfterFunctionMainReturns() {
+  void actorLikeBehaviorsAreClassifiedPersistentDespiteFunctionMain() {
     for (var type :
         List.of(
             KActorsBehavior.Type.BEHAVIOR,
@@ -925,6 +1329,15 @@ class BehaviorAnalyzerTest {
     assertTrue(analyzer.analyze(), messages(analyzer));
     assertSame(assignedProducer, producers.get(assignedCall));
     assertSame(iterableProducer, producers.get(loopCall));
+    assertNull(
+        analyzer.getCalls().stream()
+            .filter(call -> call.statement() == assignedCall)
+            .findFirst()
+            .orElseThrow()
+            .knownVariables()
+            .get("worker")
+            .agentUrn(),
+        "unannotated producer results must remain dynamically typed");
     assertEquals(
         Verb.Type.SUPPLIER,
         analyzer.getCalls().stream()
@@ -1299,6 +1712,11 @@ class BehaviorAnalyzerTest {
     serviceInfo.setName("java.worker." + name);
     descriptor.serviceInfo = serviceInfo;
     descriptor.staticMethod = isStatic;
+    var annotation = method.getAnnotation(Verb.class);
+    descriptor.behaviorUrn =
+        annotation == null || annotation.producesAgent().isBlank()
+            ? null
+            : annotation.producesAgent().trim();
     var implementation = new ComponentRegistry.ServiceImplementation();
     implementation.implementation = JavaStaticityActor.class;
     implementation.method = method;
@@ -1314,6 +1732,30 @@ class BehaviorAnalyzerTest {
     @Verb(name = "work", executionType = Verb.Type.FUNCTION)
     public Object work() {
       return null;
+    }
+
+    @Verb(
+        name = "make",
+        executionType = Verb.Type.FUNCTION,
+        producesAgent = "java.product")
+    public static Object make() {
+      return new JavaStaticityActor();
+    }
+
+    @Verb(name = "duration", executionType = Verb.Type.FUNCTION)
+    public static Object duration(double amount, java.util.concurrent.TimeUnit unit) {
+      return amount + " " + unit;
+    }
+
+    @Verb(name = "accept", executionType = Verb.Type.FUNCTION)
+    public static Object accept(
+        @Verb.Argument(name = "label", description = "Label", type = String.class) Object label,
+        @Verb.Argument(
+                name = "agent",
+                description = "Required agent",
+                requiresAgent = "java.required")
+            Object agent) {
+      return agent;
     }
   }
 
@@ -1413,6 +1855,13 @@ class BehaviorAnalyzerTest {
     var value = new KActorsValueImpl();
     value.setType(ValueType.NUMBER);
     value.setStatedValue(number);
+    return value;
+  }
+
+  private static KActorsValueImpl bool(boolean bool) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.BOOLEAN);
+    value.setStatedValue(bool);
     return value;
   }
 

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.*;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -65,6 +66,17 @@ public class KActorsVisitor {
      *     action, or {@code null} when the target cannot be resolved
      */
     default Boolean classifyActionStaticity(
+        KActorsStatement.Verb verb, KActorsContext context) {
+      return null;
+    }
+
+    /**
+     * Return the behavior URN implemented by an agent produced by this call.
+     *
+     * <p>This is independent of execution type and staticity. Returning {@code null} leaves the
+     * result dynamically typed while retaining its producer-call provenance.
+     */
+    default String classifyActionResultBehavior(
         KActorsStatement.Verb verb, KActorsContext context) {
       return null;
     }
@@ -240,6 +252,7 @@ public class KActorsVisitor {
       Map<String, VariableInfo> knownVariables,
       Verb.Type executionType,
       Boolean staticAction,
+      String producedAgentUrn,
       boolean valueRequired) {
     public CallInfo {
       knownVariables = Collections.unmodifiableMap(new LinkedHashMap<>(knownVariables));
@@ -253,6 +266,9 @@ public class KActorsVisitor {
       String agentUrn,
       String verbUrn,
       KActorsStatement.Verb producerCall) {}
+
+  /** Effective type contract declared by {@code @type} on a k.Actors action parameter. */
+  public record ArgumentType(String behaviorUrn, String javaClassName) {}
 
   public record ExpressionInfo(
       KActorsValue statement, Object expression, Map<String, VariableInfo> knownVariables) {
@@ -431,6 +447,7 @@ public class KActorsVisitor {
     finishActions();
     finishCalls();
     finishCalledActionTypes();
+    validateAdaptActions();
   }
 
   private void reset() {
@@ -547,6 +564,52 @@ public class KActorsVisitor {
     return null;
   }
 
+  /**
+   * Return the behavior URN declared by an action's {@code @return} annotation.
+   *
+   * <p>Both {@code @return(behavior.urn)} and {@code @return(urn=behavior.urn)} are supported.
+   */
+  public static String returnedBehaviorUrn(KActorsAction action) {
+    if (action == null) {
+      return null;
+    }
+    var annotation =
+        safe(action.getAnnotations()).stream()
+            .filter(candidate -> "return".equals(candidate.getName()))
+            .findFirst()
+            .orElse(null);
+    if (annotation == null) {
+      return null;
+    }
+    Object declared =
+        annotation.containsKey("urn")
+            ? annotation.get("urn")
+            : annotation.getUnnamedArguments().isEmpty()
+                ? annotation.get(Annotation.VALUE_PARAMETER_KEY)
+                : annotation.getUnnamedArguments().getFirst();
+    return annotationBehaviorUrn(declared);
+  }
+
+  private static String annotationBehaviorUrn(Object declared) {
+    if (declared == null) {
+      return null;
+    }
+    if (declared instanceof KActorsValue value) {
+      try {
+        declared = value.getValue(Object.class);
+      } catch (RuntimeException ignored) {
+        return null;
+      }
+    }
+    String urn =
+        switch (declared) {
+          case Identifier identifier -> identifier.getValue();
+          case CharSequence text -> text.toString();
+          default -> null;
+        };
+    return urn == null || urn.isBlank() ? null : urn.trim();
+  }
+
   private void collectActorFields(KActorsBehavior behavior) {
     var init = actionDeclarations.get("init");
     if (init == null) {
@@ -572,15 +635,61 @@ public class KActorsVisitor {
   protected void visitAction(KActorsAction action, KActorsContext context) {
     registerTag(action.getTag(), action, "behavior " + visitedBehavior.getUrn());
     addNotifications(context.validator.validateAction(action, context));
+    var returnAnnotations =
+        safe(action.getAnnotations()).stream()
+            .filter(annotation -> "return".equals(annotation.getName()))
+            .toList();
+    if (returnAnnotations.size() > 1) {
+      error("An action can declare only one @return annotation", action);
+    } else if (!returnAnnotations.isEmpty() && returnedBehaviorUrn(action) == null) {
+      error(
+          "The @return annotation must declare a behavior URN as its unnamed or urn parameter",
+          action);
+    }
     visitAnnotations(action.getAnnotations(), context);
     visitMetadataValues(action.getMetadata(), context);
     var parameters = new ArrayList<VariableInfo>();
     var names = new HashSet<String>();
-    for (var name : safe(action.getArgumentNames())) {
+    for (var argument : safe(action.getArguments())) {
+      var name = argument.name();
       if (!names.add(name)) {
         error("Duplicate action parameter: " + name, action);
       }
-      var parameter = new VariableInfo(action, name, null, null, null, null);
+      var type = actionArgumentType(argument);
+      if (argument.annotation() != null) {
+        visitAnnotation(argument.annotation(), context);
+      }
+      if (argument.annotation() != null && "type".equals(argument.annotation().getName())) {
+        if (type == null) {
+          error(
+              "The @type annotation on action parameter "
+                  + name
+                  + " must declare either a behavior URN as its unnamed or urn string parameter, "
+                  + "or a Java class name as its class string parameter",
+              action);
+        } else if (type.behaviorUrn() != null && type.javaClassName() != null) {
+          error(
+              "The @type annotation on action parameter "
+                  + name
+                  + " cannot declare both urn and class",
+              action);
+        } else if (type.javaClassName() != null
+            && !isValidJavaTypeName(type.javaClassName())) {
+          error(
+              "The Java class in @type for action parameter "
+                  + name
+                  + " must be a CamelCase simple name or a canonical class name",
+              action);
+        }
+      }
+      var parameter =
+          new VariableInfo(
+              action,
+              name,
+              null,
+              type == null ? null : type.behaviorUrn(),
+              null,
+              null);
       parameters.add(parameter);
       context.knownVariables.put(name, parameter);
     }
@@ -594,6 +703,73 @@ public class KActorsVisitor {
 
   public void visitAnnotation(Annotation annotation, KActorsContext context) {
     visitValues(annotation, context);
+  }
+
+  /**
+   * Decode the {@code @type} contract attached to a formal k.Actors action parameter.
+   *
+   * <p>An unnamed value and {@code urn=} both denote a behavior URN. Java types are accepted only
+   * through the explicit {@code class=} key so a simple Java name cannot be confused with a
+   * behavior identifier.
+   */
+  public static ArgumentType actionArgumentType(KActorsAction.Argument argument) {
+    if (argument == null
+        || argument.annotation() == null
+        || !"type".equals(argument.annotation().getName())) {
+      return null;
+    }
+    var annotation = argument.annotation();
+    Object unnamed =
+        annotation.getUnnamedArguments().isEmpty()
+            ? annotation.get(Annotation.VALUE_PARAMETER_KEY)
+            : annotation.getUnnamedArguments().getFirst();
+    String behaviorUrn = strictAnnotationString(annotation.get("urn"));
+    if (behaviorUrn == null) {
+      behaviorUrn = strictAnnotationString(unnamed);
+    }
+    String javaClassName = strictAnnotationString(annotation.get("class"));
+    if (behaviorUrn == null && javaClassName == null) {
+      return null;
+    }
+    return new ArgumentType(behaviorUrn, javaClassName);
+  }
+
+  private static String strictAnnotationString(Object declared) {
+    if (declared instanceof KActorsValue value) {
+      if (value.getType() != ValueType.STRING) {
+        return null;
+      }
+      declared = value.getValue(Object.class);
+    }
+    if (!(declared instanceof CharSequence text)) {
+      return null;
+    }
+    String ret = text.toString().trim();
+    return ret.isEmpty() ? null : ret;
+  }
+
+  private static boolean isValidJavaTypeName(String name) {
+    if (name == null || name.isBlank()) {
+      return false;
+    }
+    String[] parts = name.split("\\.");
+    for (int partIndex = 0; partIndex < parts.length; partIndex++) {
+      String part = parts[partIndex];
+      if (part.isEmpty() || !Character.isJavaIdentifierStart(part.charAt(0))) {
+        return false;
+      }
+      for (int i = 1; i < part.length(); i++) {
+        if (!Character.isJavaIdentifierPart(part.charAt(i))) {
+          return false;
+        }
+      }
+      if (parts.length > 1
+          && partIndex == parts.length - 1
+          && !Character.isUpperCase(part.charAt(0))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public final void visitStatement(KActorsStatement statement, KActorsContext context) {
@@ -633,14 +809,29 @@ public class KActorsVisitor {
       KActorsStatement.Verb.MatchAction matchStatement, KActorsContext context) {
     var localVariables = new ArrayList<VariableInfo>();
     var upstreamVerb = context.getUpstreamStatement(KActorsStatement.Verb.class);
-    var agent = upstreamVerb == null ? null : upstreamVerb.getRecipient();
     var verb = upstreamVerb == null ? null : upstreamVerb.getMessage();
-    for (var name : safe(matchStatement.getVariables())) {
-      localVariables.add(new VariableInfo(matchStatement, name, null, agent, verb, null));
+    var producedAgentUrn =
+        upstreamVerb == null ? null : producedAgentUrn(upstreamVerb, context);
+    var matchVariables = safe(matchStatement.getVariables());
+    for (var name : matchVariables) {
+      localVariables.add(
+          new VariableInfo(
+              matchStatement,
+              name,
+              null,
+              matchVariables.size() == 1 ? producedAgentUrn : null,
+              verb,
+              upstreamVerb));
     }
     if (matchStatement.getCaptureAs() != null) {
       localVariables.add(
-          new VariableInfo(matchStatement, matchStatement.getCaptureAs(), null, agent, verb, null));
+          new VariableInfo(
+              matchStatement,
+              matchStatement.getCaptureAs(),
+              null,
+              producedAgentUrn,
+              verb,
+              upstreamVerb));
     }
     var criterion = matchStatement.getMatchCriterion();
     if (criterion != null) {
@@ -650,7 +841,13 @@ public class KActorsVisitor {
         for (var value : values) {
           if (value != null) {
             localVariables.add(
-                new VariableInfo(criterion, value.toString(), null, agent, verb, null));
+                new VariableInfo(
+                    criterion,
+                    value.toString(),
+                    null,
+                    producedAgentUrn,
+                    verb,
+                    upstreamVerb));
           }
         }
       }
@@ -813,7 +1010,14 @@ public class KActorsVisitor {
     if (statement.getVariable() != null && !statement.getVariable().isBlank()) {
       loopVariables.add(
           new VariableInfo(
-              statement, statement.getVariable(), null, null, null, statement.getFunction()));
+              statement,
+              statement.getVariable(),
+              null,
+              statement.getFunction() == null
+                  ? null
+                  : producedAgentUrn(statement.getFunction(), context),
+              statement.getFunction() == null ? null : statement.getFunction().getMessage(),
+              statement.getFunction()));
     }
     visitNested(statement.getBody(), context, loopVariables, true);
   }
@@ -880,6 +1084,8 @@ public class KActorsVisitor {
                   sourceVariable.producerCall()));
         }
       }
+    } else {
+      assignmentVariables.put(statement, unadaptedVariableFor(statement, context));
     }
     visitValueIfPresent(statement.getValue(), context);
     visitVerbAsValue(statement.getFunction(), context);
@@ -1118,6 +1324,7 @@ public class KActorsVisitor {
               pending.context().knownVariables,
               executionType,
               staticAction,
+              producedAgentUrn(statement, pending.context()),
               pending.valueRequired()));
     }
   }
@@ -1163,6 +1370,36 @@ public class KActorsVisitor {
               accumulator.callsUnknownActions);
       completed.statement().setActionType(completed.effectiveExecutionType());
       entry.setValue(completed);
+    }
+  }
+
+  private void validateAdaptActions() {
+    var adapters =
+        actions.values().stream()
+            .filter(
+                action ->
+                    safe(action.statement().getAnnotations()).stream()
+                        .anyMatch(annotation -> "adapt".equals(annotation.getName())))
+            .toList();
+    if (adapters.size() > 1) {
+      for (var adapter : adapters) {
+        error("A behavior can declare only one @adapt action", adapter.statement());
+      }
+      return;
+    }
+    if (adapters.isEmpty()) {
+      return;
+    }
+    var adapter = adapters.getFirst();
+    if (adapter.parameters().size() != 1) {
+      error(
+          "An @adapt action must declare exactly one source parameter",
+          adapter.statement());
+    }
+    if (adapter.effectiveExecutionType() == Verb.Type.EMITTER) {
+      error(
+          "An @adapt action must be a function or supplier, not an emitter",
+          adapter.statement());
     }
   }
 
@@ -1230,11 +1467,15 @@ public class KActorsVisitor {
           null);
     }
     var function = assignment.getFunction();
+    var resultBehaviorUrn = function == null ? null : producedAgentUrn(function, context);
+    if (resultBehaviorUrn == null && function != null && "new".equals(function.getMessage())) {
+      resultBehaviorUrn = normalizeRecipient(function.getRecipient());
+    }
     return new VariableInfo(
         assignment,
         assignment.getVariable(),
         null,
-        function == null ? null : normalizeRecipient(function.getRecipient()),
+        resultBehaviorUrn,
         function == null ? null : function.getMessage(),
         function);
   }
@@ -1265,11 +1506,29 @@ public class KActorsVisitor {
           statement,
           null,
           null,
-          normalizeRecipient(function.getRecipient()),
+          producedAgentUrn(function, context),
           function.getMessage(),
           function);
     }
     return new VariableInfo(statement, null, null, null, null, null);
+  }
+
+  private String producedAgentUrn(
+      KActorsStatement.Verb verb, KActorsContext context) {
+    if (verb == null) {
+      return null;
+    }
+    if ("self".equals(normalizeRecipient(verb.getRecipient()))) {
+      var localAction = actionDeclarations.get(verb.getMessage());
+      var localResult = returnedBehaviorUrn(localAction);
+      if (localResult != null) {
+        return localResult;
+      }
+    }
+    if (context == null) {
+      return null;
+    }
+    return normalized(context.validator.classifyActionResultBehavior(verb, context));
   }
 
   private enum AdaptedUse {

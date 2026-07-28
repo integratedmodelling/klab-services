@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,6 +28,7 @@ import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.data.ValueType;
@@ -107,6 +109,17 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private final AtomicLong lastActivityAt = new AtomicLong(-1);
   private final List<RuntimeAgentBase> inheritedBehaviorInstances =
       new CopyOnWriteArrayList<>();
+  private final Map<String, KActorsBehaviorAdapter> behaviorAdapters =
+      new ConcurrentHashMap<>();
+  private static final ThreadLocal<ExternalBehaviorAdapter> CONSTRUCTION_ADAPTER =
+      new ThreadLocal<>();
+  private static final ThreadLocal<ParameterNegotiator> CONSTRUCTION_PARAMETER_NEGOTIATOR =
+      new ThreadLocal<>();
+  private static final ThreadLocal<BehaviorTypeChecker> CONSTRUCTION_BEHAVIOR_TYPE_CHECKER =
+      new ThreadLocal<>();
+  private ExternalBehaviorAdapter externalBehaviorAdapter = CONSTRUCTION_ADAPTER.get();
+  private ParameterNegotiator parameterNegotiator = CONSTRUCTION_PARAMETER_NEGOTIATOR.get();
+  private BehaviorTypeChecker behaviorTypeChecker = CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.get();
   private String agentUrn;
   private org.integratedmodelling.klab.api.scope.Scope creatingScope;
   private Consumer<Notification> notificationConsumer;
@@ -117,6 +130,79 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private boolean dynamicRootCompleted;
   private Object dynamicMainResult;
   private Throwable dynamicFailure;
+
+  private record KActorsBehaviorAdapter(
+      RuntimeAgentBase target, String action, Verb.Type executionType) {}
+
+  @FunctionalInterface
+  public interface ExternalBehaviorAdapter {
+    Object adapt(String behaviorUrn, Object source, RuntimeAgent.Scope scope);
+  }
+
+  @FunctionalInterface
+  public interface ParameterNegotiator {
+    List<Object> negotiate(
+        List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters);
+  }
+
+  @FunctionalInterface
+  public interface BehaviorTypeChecker {
+    boolean implementsBehavior(String actualBehaviorUrn, String requiredBehaviorUrn);
+  }
+
+  /**
+   * Make a component adapter available while a generated constructor runs its {@code init}
+   * action. The previous construction context is restored so recursively constructed agents and
+   * concurrent compilations remain isolated.
+   */
+  public static <T> T constructWithExternalBehaviorAdapter(
+      ExternalBehaviorAdapter adapter, java.util.concurrent.Callable<T> constructor)
+      throws Exception {
+    return constructWithRuntimeCallbacks(adapter, null, constructor);
+  }
+
+  /** Install all runtime resolver callbacks while a generated constructor executes. */
+  public static <T> T constructWithRuntimeCallbacks(
+      ExternalBehaviorAdapter adapter,
+      ParameterNegotiator negotiator,
+      java.util.concurrent.Callable<T> constructor)
+      throws Exception {
+    return constructWithRuntimeCallbacks(adapter, negotiator, null, constructor);
+  }
+
+  /** Install all runtime resolver callbacks while a generated constructor executes. */
+  public static <T> T constructWithRuntimeCallbacks(
+      ExternalBehaviorAdapter adapter,
+      ParameterNegotiator negotiator,
+      BehaviorTypeChecker typeChecker,
+      java.util.concurrent.Callable<T> constructor)
+      throws Exception {
+    var previous = CONSTRUCTION_ADAPTER.get();
+    var previousNegotiator = CONSTRUCTION_PARAMETER_NEGOTIATOR.get();
+    var previousTypeChecker = CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.get();
+    CONSTRUCTION_ADAPTER.set(adapter);
+    CONSTRUCTION_PARAMETER_NEGOTIATOR.set(negotiator);
+    CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.set(typeChecker);
+    try {
+      return constructor.call();
+    } finally {
+      if (previous == null) {
+        CONSTRUCTION_ADAPTER.remove();
+      } else {
+        CONSTRUCTION_ADAPTER.set(previous);
+      }
+      if (previousNegotiator == null) {
+        CONSTRUCTION_PARAMETER_NEGOTIATOR.remove();
+      } else {
+        CONSTRUCTION_PARAMETER_NEGOTIATOR.set(previousNegotiator);
+      }
+      if (previousTypeChecker == null) {
+        CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.remove();
+      } else {
+        CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.set(previousTypeChecker);
+      }
+    }
+  }
 
   /** The value returned by a void action. */
   public static final Object VOID_VALUE = new Object();
@@ -499,6 +585,18 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   /**
+   * Terminate this agent from an explicitly executed {@code return} in its persistent
+   * {@code main} action.
+   *
+   * <p>The return may execute in a nested control-flow branch or reactive callback, whose current
+   * action scope is not necessarily the root scope. Generated code therefore uses this method
+   * instead of completing only the current child scope.
+   */
+  protected final void terminateAgent(Object returnValue) {
+    rootScope.done(returnValue);
+  }
+
+  /**
    * Register cleanup that must run exactly when the root agent scope terminates. If the agent has
    * already terminated, the cleanup runs immediately.
    */
@@ -630,6 +728,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    */
   protected final RuntimeAgentBase registerInheritedBehavior(RuntimeAgentBase inheritedBehavior) {
     if (inheritedBehavior != null) {
+      if (externalBehaviorAdapter != null) {
+        inheritedBehavior.setExternalBehaviorAdapter(externalBehaviorAdapter);
+      }
+      if (parameterNegotiator != null) {
+        inheritedBehavior.setParameterNegotiator(parameterNegotiator);
+      }
+      if (behaviorTypeChecker != null) {
+        inheritedBehavior.setBehaviorTypeChecker(behaviorTypeChecker);
+      }
       inheritedBehaviorInstances.add(inheritedBehavior);
     }
     return inheritedBehavior;
@@ -638,6 +745,48 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   /** Retain a constructed imported behavior under the same owning-agent lifecycle. */
   protected final RuntimeAgentBase registerImportedBehavior(RuntimeAgentBase importedBehavior) {
     return registerInheritedBehavior(importedBehavior);
+  }
+
+  /**
+   * Install the runtime callback used for component-provided Java actor adapters. The registry sets
+   * this immediately after constructing the generated agent.
+   */
+  public final void setExternalBehaviorAdapter(ExternalBehaviorAdapter adapter) {
+    this.externalBehaviorAdapter = adapter;
+    inheritedBehaviorInstances.forEach(
+        inherited -> inherited.setExternalBehaviorAdapter(adapter));
+  }
+
+  /** Install the resolver callback used when ordinary Java parameter coercion cannot match. */
+  public final void setParameterNegotiator(ParameterNegotiator negotiator) {
+    this.parameterNegotiator = negotiator;
+    inheritedBehaviorInstances.forEach(
+        inherited -> inherited.setParameterNegotiator(negotiator));
+  }
+
+  public final void setBehaviorTypeChecker(BehaviorTypeChecker typeChecker) {
+    this.behaviorTypeChecker = typeChecker;
+    inheritedBehaviorInstances.forEach(
+        inherited -> inherited.setBehaviorTypeChecker(typeChecker));
+  }
+
+  /**
+   * Register an action annotated with {@code @adapt} for one compiled k.Actors behavior.
+   * Supplier actions are joined by {@link #adaptToBehavior(Object, String, AgentScope)}.
+   */
+  protected final void registerBehaviorAdapter(
+      String behaviorUrn,
+      RuntimeAgentBase target,
+      String action,
+      Verb.Type executionType) {
+    if (behaviorUrn == null || target == null || action == null || executionType == null) {
+      return;
+    }
+    if (target != this) {
+      registerImportedBehavior(target);
+    }
+    behaviorAdapters.put(
+        behaviorUrn, new KActorsBehaviorAdapter(target, action, executionType));
   }
 
   private void dispatchAgentMessage(AgentMessageHandler handler, Object[] arguments) {
@@ -886,6 +1035,110 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return ret;
   }
 
+  /**
+   * Enforce the runtime portion of k.Actors {@code @type} parameter contracts.
+   *
+   * <p>Compile-time analysis invokes the same contracts whenever the supplied agent behavior or
+   * Java return type is known. This guard covers calls whose recipient or values are discovered
+   * only at runtime, including externally dispatched actions.
+   */
+  protected Object[] validateActionArguments(
+      String action,
+      List<String> names,
+      List<String> requiredBehaviors,
+      List<String> requiredJavaTypes,
+      Object... arguments) {
+    Object[] supplied = arguments == null ? new Object[0] : arguments;
+    Map<?, ?> named =
+        supplied.length == 1 && supplied[0] instanceof Map<?, ?> map ? map : null;
+    for (int index = 0; index < names.size(); index++) {
+      String requiredBehavior =
+          index < requiredBehaviors.size() ? requiredBehaviors.get(index) : null;
+      String requiredJavaType =
+          index < requiredJavaTypes.size() ? requiredJavaTypes.get(index) : null;
+      if (requiredBehavior == null && requiredJavaType == null) {
+        continue;
+      }
+      Object value =
+          named == null
+              ? (index < supplied.length ? supplied[index] : null)
+              : named.get(names.get(index));
+      if (value == null) {
+        throw new KlabActorException(
+            this,
+            "Argument '" + names.get(index) + "' for action " + action + " cannot be null");
+      }
+      if (requiredBehavior != null && !implementsBehavior(value, requiredBehavior)) {
+        throw new KlabActorException(
+            this,
+            "Argument '"
+                + names.get(index)
+                + "' for action "
+                + action
+                + " requires an agent implementing "
+                + requiredBehavior);
+      }
+      if (requiredJavaType != null && !matchesJavaType(value, requiredJavaType)) {
+        throw new KlabActorException(
+            this,
+            "Argument '"
+                + names.get(index)
+                + "' for action "
+                + action
+                + " requires Java type "
+                + requiredJavaType
+                + ", but received "
+                + value.getClass().getTypeName());
+      }
+    }
+    return supplied;
+  }
+
+  /**
+   * Behavior URNs implemented by this generated runtime object. Generated classes override this so
+   * the information remains available when dependency instances are constructed without their
+   * parsed behavior bean.
+   */
+  protected Set<String> implementedBehaviorUrns() {
+    if (behavior == null || behavior.getUrn() == null) {
+      return Set.of();
+    }
+    return Set.of(behavior.getUrn());
+  }
+
+  private boolean implementsBehavior(Object value, String requiredBehavior) {
+    if (value instanceof RuntimeAgentBase runtimeAgent) {
+      return runtimeAgent.implementedBehaviorUrns().contains(requiredBehavior);
+    }
+    if (value instanceof Agent agent) {
+      String actual = agent.getBehaviorUrn();
+      return Objects.equals(actual, requiredBehavior)
+          || (behaviorTypeChecker != null
+              && behaviorTypeChecker.implementsBehavior(actual, requiredBehavior));
+    }
+    return false;
+  }
+
+  private boolean matchesJavaType(Object value, String requiredType) {
+    Class<?> actual = value.getClass();
+    if (!requiredType.contains(".")) {
+      return actual.getSimpleName().equalsIgnoreCase(requiredType);
+    }
+    if (Objects.equals(actual.getName(), requiredType)) {
+      return true;
+    }
+    try {
+      Class<?> expected = Class.forName(requiredType, false, actual.getClassLoader());
+      return expected.isAssignableFrom(actual);
+    } catch (ClassNotFoundException | LinkageError ignored) {
+      try {
+        return Class.forName(requiredType).isAssignableFrom(actual);
+      } catch (ClassNotFoundException | LinkageError alsoIgnored) {
+        return false;
+      }
+    }
+  }
+
   protected Map<String, Object> childFrame(Map<String, Object> parent) {
     return parent == null ? new LinkedHashMap<>() : new LinkedHashMap<>(parent);
   }
@@ -916,6 +1169,20 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * @return the adapted object
    */
   protected Object adaptToBehavior(Object value, String behaviorUrn, AgentScope scope) {
+    var local = behaviorAdapters.get(behaviorUrn);
+    if (local != null) {
+      return switch (local.executionType()) {
+        case FUNCTION -> local.target().invokeSelfFunction(local.action(), scope, value);
+        case SUPPLIER ->
+            local.target().invokeSelfSupplier(local.action(), scope, value).join();
+        case EMITTER ->
+            throw new KlabActorException(
+                this, "The @adapt action for " + behaviorUrn + " is an emitter");
+      };
+    }
+    if (externalBehaviorAdapter != null) {
+      return externalBehaviorAdapter.adapt(behaviorUrn, value, scope);
+    }
     throw new KlabActorException(
         this, "No runtime adapter is available for behavior " + behaviorUrn);
   }
@@ -1016,7 +1283,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                   || (payload instanceof Collection<?> collection && collection.isEmpty())
                   || (payload instanceof Map<?, ?> map && map.isEmpty())
                   || (payload instanceof CharSequence sequence && sequence.isEmpty());
-          case ERROR -> payload instanceof Throwable || payload instanceof Notification;
+          case ERROR -> isErrorPayload(payload);
+          case ANNOTATION ->
+              criterion != null
+                  && Utils.Annotations.hasOrInheritsAnnotation(payload, criterion.toString());
           case REGEXP ->
               criterion instanceof java.util.regex.Pattern pattern
                   && payload != null
@@ -1027,6 +1297,13 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
           default -> Objects.equals(payload, criterion);
         };
     return exclusive ? !match : match;
+  }
+
+  private boolean isErrorPayload(Object payload) {
+    return payload instanceof Throwable
+        || (payload instanceof Notification notification
+            && notification.getLevel() != null
+            && notification.getLevel().severity >= Notification.Level.Error.severity);
   }
 
   protected void bindMatch(
@@ -1328,18 +1605,24 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       AgentScope scope,
       Object[] arguments)
       throws NoSuchMethodException {
+    String mismatch = null;
     for (Method method : actorClass.getMethods()) {
       var annotation = method.getAnnotation(Verb.class);
       String exposedName =
           annotation == null || annotation.name().isBlank() ? method.getName() : annotation.name();
       if (exposedName.equals(verb)
-          && (!requireStatic || Modifier.isStatic(method.getModifiers()))
-          && canPrepareArguments(method, scope, arguments)) {
-        method.setAccessible(true);
-        return method;
+          && (!requireStatic || Modifier.isStatic(method.getModifiers()))) {
+        try {
+          prepareArguments(method, scope, arguments);
+          method.setAccessible(true);
+          return method;
+        } catch (IllegalArgumentException failure) {
+          mismatch = failure.getMessage();
+        }
       }
     }
-    throw new NoSuchMethodException(actorClass.getName() + "." + verb);
+    throw new NoSuchMethodException(
+        actorClass.getName() + "." + verb + (mismatch == null ? "" : ": " + mismatch));
   }
 
   private Method findMethod(Class<?> type, String name, boolean publicOnly)
@@ -1358,16 +1641,33 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     throw new NoSuchMethodException(type.getName() + "." + name);
   }
 
-  private boolean canPrepareArguments(Method method, AgentScope scope, Object[] arguments) {
+  private Object[] prepareArguments(Method method, AgentScope scope, Object[] supplied) {
     try {
-      prepareArguments(method, scope, arguments);
-      return true;
-    } catch (IllegalArgumentException e) {
-      return false;
+      return prepareArgumentsDirect(method, scope, supplied);
+    } catch (IllegalArgumentException directFailure) {
+      if (parameterNegotiator == null) {
+        throw parameterMismatch(method, supplied, directFailure);
+      }
+      var expected = negotiableParameterTypes(method);
+      var suppliedValues = new ArrayList<Object>(supplied.length);
+      Collections.addAll(suppliedValues, supplied);
+      var negotiated =
+          parameterNegotiator.negotiate(
+              expected, Collections.unmodifiableList(suppliedValues));
+      if (negotiated == null) {
+        throw parameterMismatch(method, supplied, directFailure);
+      }
+      try {
+        return prepareArgumentsDirect(method, scope, negotiated.toArray());
+      } catch (IllegalArgumentException negotiatedFailure) {
+        var mismatch = parameterMismatch(method, supplied, negotiatedFailure);
+        mismatch.addSuppressed(directFailure);
+        throw mismatch;
+      }
     }
   }
 
-  private Object[] prepareArguments(Method method, AgentScope scope, Object[] supplied) {
+  private Object[] prepareArgumentsDirect(Method method, AgentScope scope, Object[] supplied) {
     var parameters = method.getParameterTypes();
     var ret = new Object[parameters.length];
     int source = 0;
@@ -1393,6 +1693,36 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       throw new IllegalArgumentException("Too many arguments for " + method);
     }
     return ret;
+  }
+
+  private List<Class<?>> negotiableParameterTypes(Method method) {
+    var ret = new ArrayList<Class<?>>();
+    for (int index = 0; index < method.getParameterCount(); index++) {
+      var parameter = method.getParameterTypes()[index];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        continue;
+      }
+      ret.add(
+          method.isVarArgs() && index == method.getParameterCount() - 1
+              ? parameter.getComponentType()
+              : parameter);
+    }
+    return List.copyOf(ret);
+  }
+
+  private IllegalArgumentException parameterMismatch(
+      Method method, Object[] supplied, IllegalArgumentException cause) {
+    return new IllegalArgumentException(
+        "Cannot match Java verb parameters for "
+            + method.getDeclaringClass().getName()
+            + "."
+            + method.getName()
+            + ": expected "
+            + negotiableParameterTypes(method).stream().map(Class::getTypeName).toList()
+            + " but received "
+            + supplied.length
+            + " argument(s); parameter negotiation did not produce a compatible match",
+        cause);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

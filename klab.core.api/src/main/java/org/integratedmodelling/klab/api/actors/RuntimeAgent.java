@@ -277,7 +277,9 @@ public interface RuntimeAgent {
      */
     RuntimeAgent getAgent();
 
-    /**
+      org.integratedmodelling.klab.api.scope.Scope getScope();
+
+      /**
      * Call this to fire an event to any subscribers, leaving the agent's code running. Can be
      * called multiple times during the lifetime of the agent, which must be tagged as an emitter to
      * work correctly.

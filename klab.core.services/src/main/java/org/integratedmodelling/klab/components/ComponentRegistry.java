@@ -344,6 +344,10 @@ public class ComponentRegistry {
     for (var descriptor :
         Utils.Json.load(this.catalogFile, Extensions.ComponentDescriptor[].class)) {
 
+      if (descriptor.id().equals(LOCAL_SERVICE_COMPONENT)) {
+        continue;
+      }
+
       for (var adapter : descriptor.adapters()) {
         adapterFinder.put(adapter.getName(), descriptor);
       }
@@ -944,10 +948,171 @@ public class ComponentRegistry {
           && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
         var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
         ret.verbs.add(createFunctionDescriptor(serviceInfo, cls, method));
+      } else if (method.isAnnotationPresent(AgentAdapter.class)) {
+        var serviceInfo = createAgentAdapterPrototype(ret.urn, method);
+        var adapter = createFunctionDescriptor(serviceInfo, cls, method);
+        if (!Modifier.isPublic(method.getModifiers())
+            || method.getReturnType() == void.class
+            || adapterSourceParameterCount(method) != 1
+            || adapterScopeParameterCount(method) > 1) {
+          adapter.error = true;
+          Logging.INSTANCE.error(
+              "Invalid @AgentAdapter method "
+                  + cls.getName()
+                  + "."
+                  + method.getName()
+                  + ": it must be public, return a value, and accept exactly one source value"
+                  + " plus at most one RuntimeAgent.Scope");
+        }
+        if (ret.adapter == null) {
+          ret.adapter = adapter;
+        } else {
+          ret.adapter.error = true;
+          adapter.error = true;
+          Logging.INSTANCE.error("Actor " + ret.urn + " declares more than one @AgentAdapter");
+        }
       }
     }
 
     return ret;
+  }
+
+  private ServiceInfoImpl createAgentAdapterPrototype(String actorUrn, Method method) {
+    var ret = new ServiceInfoImpl();
+    ret.setName(actorUrn + ".@adapter." + method.getName());
+    ret.setDescription("Adapt an object to actor " + actorUrn);
+    ret.setFunctionType(ServiceInfo.FunctionType.VERB);
+    return ret;
+  }
+
+  private int adapterSourceParameterCount(Method method) {
+    int ret = 0;
+    for (var parameter : method.getParameterTypes()) {
+      if (!org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
+          .isAssignableFrom(parameter)) {
+        ret++;
+      }
+    }
+    return ret;
+  }
+
+  private int adapterScopeParameterCount(Method method) {
+    int ret = 0;
+    for (var parameter : method.getParameterTypes()) {
+      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
+          .isAssignableFrom(parameter)) {
+        ret++;
+      }
+    }
+    return ret;
+  }
+
+  /**
+   * Invoke the adapter advertised by a Java actor descriptor. The source argument is matched by
+   * runtime type and an optional {@link
+   * org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope} parameter is injected in any
+   * position. Supplier adapters are joined before returning.
+   */
+  public Object invokeAgentAdapter(
+      Extensions.ActorDescriptor actor,
+      Object source,
+      org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope scope) {
+    if (actor == null || actor.adapter == null || actor.adapter.error) {
+      throw new KlabIllegalStateException(
+          "Actor " + (actor == null ? "<unknown>" : actor.urn) + " has no usable adapter");
+    }
+    var implementation = implementation(actor.adapter);
+    if (implementation == null || implementation.method == null) {
+      throw new KlabIllegalStateException("No implementation is available for actor " + actor.urn);
+    }
+    Method method = implementation.method;
+    Object target = null;
+    if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+      target = implementation.mainClassInstance;
+      if (target == null) {
+        try {
+          target = implementation.implementation.getDeclaredConstructor().newInstance();
+          implementation.mainClassInstance = target;
+        } catch (ReflectiveOperationException failure) {
+          throw new KlabIllegalStateException(
+              new ReflectiveOperationException(
+                  "Cannot instantiate adapter owner " + implementation.implementation.getName(),
+                  failure));
+        }
+      }
+    }
+    var arguments = new Object[method.getParameterCount()];
+    boolean sourceMatched = false;
+    for (int i = 0; i < method.getParameterCount(); i++) {
+      Class<?> parameter = method.getParameterTypes()[i];
+      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
+          .isAssignableFrom(parameter)) {
+        arguments[i] = scope;
+      } else if (!sourceMatched && acceptsAdapterSource(parameter, source)) {
+        arguments[i] = source;
+        sourceMatched = true;
+      } else {
+        throw new KlabIllegalArgumentException(
+            "Cannot match "
+                + (source == null ? "null" : source.getClass().getName())
+                + " to @AgentAdapter parameter "
+                + parameter.getName());
+      }
+    }
+    if (!sourceMatched) {
+      throw new KlabIllegalArgumentException(
+          "@AgentAdapter " + method + " does not accept the source value");
+    }
+    try {
+      Object result = method.invoke(target, arguments);
+      return result instanceof java.util.concurrent.CompletableFuture<?> future
+          ? future.join()
+          : result;
+    } catch (InvocationTargetException failure) {
+      Throwable cause = failure.getTargetException();
+      if (cause instanceof RuntimeException runtimeException) {
+        throw runtimeException;
+      }
+      throw new KlabIllegalStateException(cause);
+    } catch (ReflectiveOperationException failure) {
+      throw new KlabIllegalStateException(
+          new ReflectiveOperationException(
+              "Cannot invoke adapter for actor " + actor.urn, failure));
+    }
+  }
+
+  private boolean acceptsAdapterSource(Class<?> parameter, Object source) {
+    if (source == null) {
+      return !parameter.isPrimitive();
+    }
+    if (parameter.isInstance(source)) {
+      return true;
+    }
+    return parameter.isPrimitive()
+        && switch (parameter.getName()) {
+          case "boolean" -> source instanceof Boolean;
+          case "byte" -> source instanceof Byte;
+          case "short" -> source instanceof Short;
+          case "int" -> source instanceof Integer;
+          case "long" -> source instanceof Long;
+          case "float" -> source instanceof Float;
+          case "double" -> source instanceof Double;
+          case "char" -> source instanceof Character;
+          default -> false;
+        };
+  }
+
+  /**
+   * Negotiate Java verb parameters that cannot be matched positionally. Future component-aware
+   * implementations may split or combine values (for example, a temporal quantity into a numeric
+   * value and {@link java.util.concurrent.TimeUnit}) and return them in declaration order.
+   *
+   * <p>The default implementation deliberately rejects the match. The compiler converts this into
+   * a lexical parameter-mismatch notification and runtime dynamic calls fail explicitly.
+   */
+  public List<Object> negotiateAgentParameters(
+      List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
+    return null;
   }
 
   private Extensions.FunctionDescriptor createFunctionDescriptor(
@@ -963,6 +1128,10 @@ public class ComponentRegistry {
     if (method != null) {
       implementation.method = method;
       ret.methodCall = 3;
+      var verb = method.getAnnotation(Verb.class);
+      if (verb != null && !verb.producesAgent().isBlank()) {
+        ret.behaviorUrn = verb.producesAgent().trim();
+      }
       if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())
           || serviceInfo.isReentrant()) {
         // use a global class instance
@@ -1003,12 +1172,13 @@ public class ComponentRegistry {
                 implementation.implementation.getDeclaredConstructor().newInstance();
           }
         } catch (Exception e) {
-          Logging.INSTANCE.error(
+          // that's actually OK in many situations. TODO/FIXME revise
+          Logging.INSTANCE.warn(
               "Cannot instantiate main class for function library "
                   + implementation(ret).implementation.getCanonicalName()
                   + ": "
                   + e.getMessage());
-          ret.error = true;
+//          ret.error = true;
         }
       }
     } else {
@@ -1614,8 +1784,6 @@ public class ComponentRegistry {
     localComponentDescriptor.libraries().addAll(libraries);
     localComponentDescriptor.adapters().addAll(adapters);
 
-    this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
-
     // update catalog
     for (var library : localComponentDescriptor.libraries()) {
       for (var service : library.services()) {
@@ -1656,6 +1824,8 @@ public class ComponentRegistry {
             .add(service.getSecond());
       }
     }
+
+    this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
   }
 
   /**

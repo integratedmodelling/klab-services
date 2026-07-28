@@ -132,23 +132,30 @@ public interface Extensions {
   }
 
   /**
-   * This descriptor contains everything needed to execute a service, including the service info.
+   * This descriptor contains everything needed (except the independently maintained implementation)
+   * to execute a service, including the service info. It must remain serializable and is used to
+   * build a catalog of available services and verbs, available (for now) in capabilities.
    */
   class FunctionDescriptor {
     public ServiceInfo serviceInfo;
     // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
-    // each call
+    // each call. FIXME this is probably obsolete by now
     public int methodCall;
-//    public boolean staticClass; // TODO remove (not now because it messes up config)
     public boolean staticMethod;
+    public String behaviorUrn;
     public boolean error;
   }
 
   class ActorDescriptor {
+
     public String urn;
     public String version;
     public String description;
     public String javaClassName;
+
     public List<FunctionDescriptor> verbs = new ArrayList<>();
+
+    /** The adapter to implement casts, if any. */
+    public FunctionDescriptor adapter;
   }
 }

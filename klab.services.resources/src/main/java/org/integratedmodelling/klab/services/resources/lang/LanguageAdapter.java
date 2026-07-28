@@ -1,12 +1,17 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.TernaryImpl;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -38,10 +43,15 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.languages.ActionSyntaxImpl;
 import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
+import org.integratedmodelling.languages.SwitchImpl;
 import org.integratedmodelling.languages.api.*;
+import org.integratedmodelling.languages.kActors.Statement;
+import org.integratedmodelling.languages.kActors.SwitchStatement;
+import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
@@ -49,6 +59,8 @@ public enum LanguageAdapter {
 
   private static final Pattern STATIC_ACTION_PATTERN =
       Pattern.compile("^\\s*static\\s+action\\b", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+  private static final Pattern SINGLE_CONSTANT_ANNOTATION_PATTERN =
+      Pattern.compile("^\\s*@?[A-Za-z][A-Za-z0-9_]*\\s*\\(\\s*([A-Z][A-Z0-9_]*)\\s*\\)\\s*$");
 
   Map<String, Instance> instanceAnnotations = new HashMap<>();
   Map<String, Class<?>> instanceImplementations = new HashMap<>();
@@ -113,15 +125,25 @@ public enum LanguageAdapter {
         annotationName != null && annotationName.startsWith("@")
             ? annotationName.substring(1)
             : annotationName);
-    for (int n = 0; n < annotation.getUnnamedParameterCount(); n++) {
-      ret.getUnnamedArguments()
-          .add(
-              adaptValue(annotation.nextUnnamedParameter(), namespace, projectName, documentClass));
+    for (var argument : annotation.getArguments().entrySet()) {
+      var value = adaptValue(argument.getValue(), namespace, projectName, documentClass);
+      if (FunctionCallSyntax.DEFAULT_ARGUMENT_NAME.equals(argument.getKey())
+          || annotation.unnamedParameterIndex(argument.getKey()) >= 0) {
+        ret.putUnnamed(value);
+      } else {
+        ret.put(argument.getKey(), value);
+      }
     }
-    for (String key : annotation.getArguments().keySet()) {
-      ret.put(
-          key,
-          adaptValue(annotation.getArguments().get(key), namespace, projectName, documentClass));
+    /*
+     * FunctionCallSyntax versions predating the single-constant fix omit an annotation argument
+     * such as SAYHELLO from getArguments(), although the parser retains it in encode(). Recover
+     * that unambiguous grammar case here so services remain compatible with those syntax beans.
+     */
+    if (ret.getUnnamedArguments().isEmpty() && annotation.getArguments().isEmpty()) {
+      Matcher matcher = SINGLE_CONSTANT_ANNOTATION_PATTERN.matcher(annotation.encode());
+      if (matcher.matches()) {
+        ret.putUnnamed(Constant.create(matcher.group(1)));
+      }
     }
     return ret;
   }
@@ -498,6 +520,14 @@ public enum LanguageAdapter {
           }
           case NODATA -> {
             yield ValueType.NODATA;
+          }
+          case ANYTHING -> ValueType.ANYTHING;
+          case EVERYTHING -> ValueType.ANYVALUE;
+          case EMPTY -> ValueType.EMPTY;
+          case ERROR -> ValueType.ERROR;
+          case ANNOTATION -> {
+            ret.setStatedValue(valueSyntax.getPod(String.class));
+            yield ValueType.ANNOTATION;
           }
         });
     ret.setDeferred(valueSyntax.isQuoted());
@@ -1384,7 +1414,20 @@ public enum LanguageAdapter {
     setParsingData(action, ret, namespace, projectName);
 
     ret.setUrn(action.getName());
-    ret.setArgumentNames(new ArrayList<>(action.getArgumentNames()));
+    ret.setArguments(
+        action.getArgumentNames().stream()
+            .map(
+                argument ->
+                    new KActorsAction.Argument(
+                        argument.getFirst(),
+                        argument.getSecond() == null
+                            ? null
+                            : adaptAnnotation(
+                                argument.getSecond(),
+                                namespace,
+                                projectName,
+                                KlabAsset.KnowledgeClass.BEHAVIOR)))
+            .toList());
     // ActionSyntax currently exposes the action source but not the grammar's `static` attribute.
     // Preserve the semantic contract until that syntax-bean accessor is available.
     ret.setStatic(STATIC_ACTION_PATTERN.matcher(action.encode()).find());
@@ -1806,6 +1849,7 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
 
     var ret = new KActorsStatementImpl.VerbImpl();
+    setParsingData(verbStatement, ret, behavior.getUrn(), behavior.getProjectName());
     var declaration = verbStatement.getName().split("\\.");
     var reactorName = declaration.length == 1 ? "self" : declaration[0];
     ret.setRecipient(reactorName);
@@ -1848,6 +1892,7 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
 
     var ret = new KActorsStatementImpl.SwitchImpl();
+    setParsingData(verbStatement, ret, behavior.getUrn(), behavior.getProjectName());
     ret.setValue(
         verbStatement.getValue() == null
             ? null
@@ -1901,10 +1946,77 @@ public enum LanguageAdapter {
     }
     try {
       Object value = statement.getClass().getMethod("getSwitchStatement").invoke(statement);
-      return value instanceof ActionStatementSyntax.Switch switchStatement ? switchStatement : null;
+      if (value instanceof ActionStatementSyntax.Switch switchStatement) {
+        return switchStatement;
+      }
     } catch (ReflectiveOperationException ignored) {
+      // Compatibility with syntax-bean versions that parse the embedded switch in the Xtext
+      // model but do not expose it through ActionStatementSyntax yet.
+    }
+
+    var sourceStatement = capturedValue(statement, Statement.class);
+    var parentAction = capturedValue(statement, ActionSyntaxImpl.class);
+    if (sourceStatement == null || parentAction == null) {
       return null;
     }
+
+    SwitchStatement switchDefinition = null;
+    if (sourceStatement.getAssignment() != null) {
+      switchDefinition = sourceStatement.getAssignment().getSwitchStatement();
+    } else if (sourceStatement.getReturn() != null) {
+      switchDefinition = sourceStatement.getReturn().getSwitchStatement();
+    } else if (sourceStatement.getFire() != null) {
+      switchDefinition = sourceStatement.getFire().getSwitchStatement();
+    } else if (sourceStatement.getYieldSwitch() != null) {
+      switchDefinition = sourceStatement.getYieldSwitch().getSwitchStatement();
+    }
+    if (switchDefinition == null) {
+      return null;
+    }
+
+    var parsedSwitch = switchDefinition;
+    return new SwitchImpl(parsedSwitch, parentAction, new BasicObservableValidationScope()) {
+      @Override
+      protected void logWarning(
+          ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+        // The complete behavior syntax has already been validated before adaptation.
+      }
+
+      @Override
+      protected void logError(
+          ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+        // The complete behavior syntax has already been validated before adaptation.
+      }
+
+      @Override
+      public String encode() {
+        return sourceCode(parsedSwitch);
+      }
+    };
+  }
+
+  private <T> T capturedValue(Object object, Class<T> type) {
+    for (Class<?> current = object.getClass();
+        current != null && current != Object.class;
+        current = current.getSuperclass()) {
+      for (Field field : current.getDeclaredFields()) {
+        if (!type.isAssignableFrom(field.getType())) {
+          continue;
+        }
+        try {
+          if (!field.canAccess(object)) {
+            field.setAccessible(true);
+          }
+          Object value = field.get(object);
+          if (type.isInstance(value)) {
+            return type.cast(value);
+          }
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+          // Try any other compatible captured field before giving up.
+        }
+      }
+    }
+    return null;
   }
 
   private Map<String, KActorsValue> adaptArguments(

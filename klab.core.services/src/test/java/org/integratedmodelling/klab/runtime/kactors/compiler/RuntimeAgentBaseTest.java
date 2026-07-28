@@ -27,6 +27,9 @@ import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
@@ -38,6 +41,38 @@ import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
+
+  @Test
+  void sharedMatcherDistinguishesTruthyWildcardCatchAllErrorsAndAnnotations() {
+    var agent = new ReactiveRuntimeAgent();
+
+    assertFalse(agent.match(false, ValueType.ANYVALUE, null));
+    assertFalse(agent.match(0, ValueType.ANYVALUE, null));
+    assertFalse(agent.match("", ValueType.ANYVALUE, null));
+    assertFalse(agent.match(null, ValueType.ANYVALUE, null));
+    assertTrue(agent.match("value", ValueType.ANYVALUE, null));
+    assertTrue(agent.match(null, ValueType.ANYTHING, null));
+    assertTrue(agent.match(new IllegalStateException("failed"), ValueType.ANYTHING, null));
+
+    var annotated = new KActorsBehaviorImpl();
+    annotated.setAnnotations(List.of(AnnotationImpl.create("selected")));
+    assertTrue(agent.match(annotated, ValueType.ANNOTATION, "selected"));
+    assertFalse(agent.match(annotated, ValueType.ANNOTATION, "other"));
+    assertTrue(agent.match(Notification.error("failed"), ValueType.ERROR, null));
+    assertFalse(agent.match(Notification.info("informational"), ValueType.ERROR, null));
+  }
+
+  @Test
+  void actionTypeGuardMatchesSimpleJavaNamesCaseInsensitively() {
+    var agent = new ReactiveRuntimeAgent();
+
+    assertEquals(
+        Boolean.TRUE,
+        agent.validateTyped("accept", List.of("boolean"), Boolean.TRUE)[0]);
+    assertThrows(
+        org.integratedmodelling.klab.api.exceptions.KlabActorException.class,
+        () -> agent.validateTyped("accept", List.of("boolean"), "true"));
+  }
 
   @Test
   void rootScopeHooksRunExactlyOnceAndAgentsCannotRestart() {
@@ -380,6 +415,28 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void reflectiveActorBridgeNegotiatesCompoundArgumentsAfterDirectMatchingFails() {
+    var agent = new ReactiveRuntimeAgent();
+    var scope = (AgentScope) agent.rootScope();
+    var compoundDuration = "2.5 seconds";
+
+    assertThrows(
+        org.integratedmodelling.klab.api.exceptions.KlabActorException.class,
+        () -> agent.function(TestActor.class, "duration", scope, compoundDuration));
+
+    agent.setParameterNegotiator(
+        (unmatchedParameterTypes, suppliedParameters) -> {
+          assertEquals(List.of(double.class, TimeUnit.class), unmatchedParameterTypes);
+          assertEquals(List.of(compoundDuration), suppliedParameters);
+          return List.of(2.5, TimeUnit.SECONDS);
+        });
+
+    assertEquals(
+        "2.5 SECONDS",
+        agent.function(TestActor.class, "duration", scope, compoundDuration));
+  }
+
+  @Test
   void dynamicVerbBridgeDiscoversFunctionSupplierAndEmitterAtRuntime() throws Exception {
     var agent = new ReactiveRuntimeAgent();
     var root = (AgentScope) agent.rootScope();
@@ -489,6 +546,14 @@ class RuntimeAgentBaseTest {
         executionType = Verb.Type.FUNCTION)
     public static long sum(RuntimeAgent.Scope scope, long left, long right) {
       return left + right;
+    }
+
+    @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
+        name = "duration",
+        executionType = Verb.Type.FUNCTION)
+    public static String duration(
+        RuntimeAgent.Scope scope, double amount, TimeUnit unit) {
+      return amount + " " + unit;
     }
 
     @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
@@ -733,6 +798,19 @@ class RuntimeAgentBaseTest {
 
     private void await(CompletableFuture<?>... completions) {
       awaitReactions(completions);
+    }
+
+    private Object[] validateTyped(
+        String action, List<String> javaTypes, Object... arguments) {
+      return validateActionArguments(
+          action, List.of("value"), Arrays.asList((String) null), javaTypes, arguments);
+    }
+
+    private boolean match(
+        Object payload,
+        org.integratedmodelling.klab.api.data.ValueType type,
+        Object criterion) {
+      return matches(payload, type, criterion, false);
     }
 
     @Override

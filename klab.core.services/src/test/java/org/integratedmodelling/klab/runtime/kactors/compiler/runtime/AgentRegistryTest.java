@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.kactors.compiler.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -25,12 +26,53 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
 
 class AgentRegistryTest {
+
+  @Test
+  void executedReturnInPersistentMainTerminatesTheAgentConditionally() throws Exception {
+    var terminating =
+        persistentConditionalReturnBehavior(
+            "test.registry.persistent.return."
+                + UUID.randomUUID().toString().replace("-", ""),
+            true);
+    var continuing =
+        persistentConditionalReturnBehavior(
+            "test.registry.persistent.continue."
+                + UUID.randomUUID().toString().replace("-", ""),
+            false);
+
+    var terminatingHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(terminating.getUrn(), "terminating"), terminating, null);
+    var continuingHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(continuing.getUrn(), "continuing"), continuing, null);
+
+    assertTrue(terminatingHandle.start(), () -> terminatingHandle.getNotifications().toString());
+    assertTrue(continuingHandle.start(), () -> continuingHandle.getNotifications().toString());
+    var terminatingRuntime =
+        (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(terminatingHandle.getUrn());
+    var continuingRuntime =
+        (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(continuingHandle.getUrn());
+    for (int i = 0; i < 100 && terminatingHandle.isAlive(); i++) {
+      Thread.sleep(10);
+    }
+
+    assertEquals("stopped", terminatingRuntime.status());
+    assertFalse(terminatingHandle.isAlive());
+    assertEquals("running", continuingRuntime.status());
+    assertTrue(continuingHandle.isAlive());
+
+    assertTrue(terminatingHandle.stop());
+    assertTrue(continuingHandle.stop());
+  }
 
   @Test
   void managedHandleExposesItsResolvedCustomMessageApi() {
@@ -338,6 +380,138 @@ class AgentRegistryTest {
     assertTrue(handle.stop());
   }
 
+  @Test
+  void compiledKActorsAdapterExecutesForAnAsClause() {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    var adapterBehavior = finiteBehavior("test.registry.adapter." + suffix);
+    adapterBehavior.setBehaviorType(KActorsBehavior.Type.COMPONENT);
+    var adapt = new KActorsActionImpl();
+    adapt.setUrn("adapt");
+    adapt.setArgumentNames(List.of("source"));
+    adapt.setAnnotations(List.of(Annotation.of("adapt")));
+    var adaptedReturn = new KActorsStatementImpl.ReturnImpl();
+    var source = new KActorsValueImpl();
+    source.setType(ValueType.IDENTIFIER);
+    source.setStatedValue("source");
+    adaptedReturn.setValue(source);
+    adapt.setCode(List.of(adaptedReturn));
+    adapterBehavior.setStatements(List.of(adapt));
+
+    var assignment = new KActorsStatementImpl.AssignmentImpl();
+    assignment.setVariable("adapted");
+    assignment.setAssignmentScope(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.FRAME);
+    assignment.setValue(value(42));
+    assignment.setAdaptedBehaviorUrn(adapterBehavior.getUrn());
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    var adapted = new KActorsValueImpl();
+    adapted.setType(ValueType.IDENTIFIER);
+    adapted.setStatedValue("adapted");
+    returned.setValue(adapted);
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(assignment, returned));
+    var behavior = finiteBehavior("test.registry.adapter.caller." + suffix);
+    behavior.setStatements(List.of(main));
+
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(String urn, UserScope scope) {
+            return adapterBehavior.getUrn().equals(urn) ? adapterBehavior : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "adaptation execution"),
+            behavior,
+            null,
+            environment.validator(),
+            resolver);
+
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    var runtime = (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
+    assertNotNull(runtime);
+    assertEquals(42, runtime.run().getReturnValue());
+    assertTrue(handle.stop());
+  }
+
+  @Test
+  void componentAdapterIsAvailableWhileInitIsRunning() throws Exception {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    String targetUrn = "test.registry.java.adapter." + suffix;
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = targetUrn;
+    descriptor.adapter = new Extensions.FunctionDescriptor();
+    var implementation = new ComponentRegistry.ServiceImplementation();
+    implementation.implementation = JavaAdapter.class;
+    implementation.method = JavaAdapter.class.getMethod("adapt", Integer.class);
+    var resolved = new AgentCompiler.ResolvedActor(descriptor, java.util.Map.of(), implementation);
+
+    var adapted = new KActorsStatementImpl.AssignmentImpl();
+    adapted.setVariable("adapted");
+    adapted.setAssignmentScope(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.FRAME);
+    adapted.setValue(value(41));
+    adapted.setAdaptedBehaviorUrn(targetUrn);
+    var state = new KActorsStatementImpl.AssignmentImpl();
+    state.setVariable("result");
+    state.setAssignmentScope(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.ACTOR);
+    var adaptedIdentifier = new KActorsValueImpl();
+    adaptedIdentifier.setType(ValueType.IDENTIFIER);
+    adaptedIdentifier.setStatedValue("adapted");
+    state.setValue(adaptedIdentifier);
+    var init = new KActorsActionImpl();
+    init.setUrn("init");
+    init.setCode(List.of(adapted, state));
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    var result = new KActorsValueImpl();
+    result.setType(ValueType.IDENTIFIER);
+    result.setStatedValue("result");
+    returned.setValue(result);
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(returned));
+    var behavior = finiteBehavior("test.registry.java.adapter.caller." + suffix);
+    behavior.setStatements(List.of(init, main));
+
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(String urn, UserScope scope) {
+            return targetUrn.equals(urn) ? resolved : null;
+          }
+
+          @Override
+          public Object adaptToBehavior(
+              String behaviorUrn, Object source, RuntimeAgent.Scope runtimeScope) {
+            return JavaAdapter.adapt((Integer) source);
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var handle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(behavior.getUrn(), "init adaptation"),
+            behavior,
+            null,
+            environment.validator(),
+            resolver);
+
+    assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+    var runtime = (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
+    assertNotNull(runtime);
+    assertEquals(42, runtime.run().getReturnValue());
+    assertTrue(handle.stop());
+  }
+
+  public static class JavaAdapter {
+    public static Object adapt(Integer source) {
+      return source + 1;
+    }
+  }
+
   private static AgentImpl request(String behaviorUrn, String name) {
     var ret = new AgentImpl();
     ret.setBehaviorUrn(behaviorUrn);
@@ -358,6 +532,27 @@ class AgentRegistryTest {
     behavior.setUrn(urn);
     behavior.setDescription("Registry test behavior");
     behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
+    behavior.setStatements(List.of(main));
+    return behavior;
+  }
+
+  private static KActorsBehaviorImpl persistentConditionalReturnBehavior(
+      String urn, boolean shouldReturn) {
+    var condition = new KActorsValueImpl();
+    condition.setType(ValueType.BOOLEAN);
+    condition.setStatedValue(shouldReturn);
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    returned.setValue(value(7));
+    var conditional = new KActorsStatementImpl.IfImpl();
+    conditional.setCondition(condition);
+    conditional.setThenBody(returned);
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(conditional));
+    var behavior = new KActorsBehaviorImpl();
+    behavior.setUrn(urn);
+    behavior.setDescription("Persistent conditional return test behavior");
+    behavior.setBehaviorType(KActorsBehavior.Type.BEHAVIOR);
     behavior.setStatements(List.of(main));
     return behavior;
   }

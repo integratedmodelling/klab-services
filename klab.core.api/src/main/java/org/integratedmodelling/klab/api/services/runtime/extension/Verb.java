@@ -53,9 +53,9 @@ public @interface Verb {
     SUPPLIER,
     /**
      * An emitter will produce zero or more values at some point after the call by invoking {@link
-     * RuntimeAgent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This verb will
-     * run in its thread and is expected to only exit when {@link RuntimeAgent.Scope#isDone()} returns
-     * true.
+     * RuntimeAgent.Scope#doFire(Object)}. Its scope determines the lifetime of the emitter. This
+     * verb will run in its thread and is expected to only exit when {@link
+     * RuntimeAgent.Scope#isDone()} returns true.
      */
     EMITTER;
   }
@@ -111,11 +111,19 @@ public @interface Verb {
     boolean constant() default false;
 
     /**
-     * Type if there is ambiguity.
+     * Type if there is ambiguity. The {@link #type()} is alternative to {@link #requiresAgent()}.
      *
      * @return
      */
     Class<?> type() default Object.class;
+
+    /**
+     * If true, the parameter should be the handle to an agent whose behavior is the specified URN
+     * or one derived from it. The {@link #type()} is alternative to {@link #requiresAgent()}.
+     *
+     * @return
+     */
+    String requiresAgent() default "";
   }
 
   /**
@@ -158,6 +166,14 @@ public @interface Verb {
    * @return
    */
   Class<?> returns() default Void.class;
+
+  /**
+   * If the verb produces an agent handle, this is the URN of its behavior (if known). This can be
+   * used for validation of k.Actors behaviors and runtime checks when known.
+   *
+   * @return
+   */
+  String producesAgent() default "";
 
   /**
    * The execution mode of this verb. This may not be passed if {@link #fires()} is set, which

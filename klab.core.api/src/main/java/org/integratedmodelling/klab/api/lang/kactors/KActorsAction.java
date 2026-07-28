@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
+import java.io.Serializable;
 import java.util.List;
+import org.integratedmodelling.klab.api.lang.Annotation;
 
 /**
  * Syntactic peer for an action in a behavior.
@@ -8,6 +10,19 @@ import java.util.List;
  * @author Ferd
  */
 public interface KActorsAction extends KActorsStatement {
+
+  /**
+   * One formal action argument and its optional source annotation.
+   *
+   * <p>The annotation is intentionally retained in its generic language form so parameter
+   * contracts can be extended without changing this interface. The currently recognized contract
+   * is {@code @type}: its unnamed or {@code urn} string identifies an admitted agent behavior,
+   * while its named {@code class} string identifies an admitted Java runtime type.
+   *
+   * @param name formal parameter name
+   * @param annotation optional parameter annotation
+   */
+  record Argument(String name, Annotation annotation) implements Serializable {}
 
   /**
    * Action name as declared in the code. Always a simple identifier with no prefix from the
@@ -25,13 +40,22 @@ public interface KActorsAction extends KActorsStatement {
   List<KActorsStatement> getCode();
 
   /**
-   * Any formal argument names declared for the action, to be matched to actual parameters. Action
-   * arguments are simple names without types; when a {@link
+   * Any formal arguments declared for the action, to be matched to actual parameters. A parameter
+   * may carry a source annotation describing its admitted runtime type. When a {@link
    * org.integratedmodelling.klab.api.services.runtime.extension.Verb} annotation specifies actions
    * in Java, the types of the methods will be used for parameter matching, otherwise the order of
    * arguments will simply associate to the names.
    *
    * @return
+   */
+  default List<Argument> getArguments() {
+    return getArgumentNames().stream().map(name -> new Argument(name, null)).toList();
+  }
+
+  /**
+   * Compatibility view containing only the formal parameter names.
+   *
+   * @return names in declaration order
    */
   List<String> getArgumentNames();
 

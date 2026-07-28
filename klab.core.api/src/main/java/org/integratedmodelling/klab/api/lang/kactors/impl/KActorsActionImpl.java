@@ -12,7 +12,7 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
 
   private String urn;
   private List<KActorsStatement> code = new ArrayList<>();
-  private List<String> argumentNames = new ArrayList<>();
+  private List<Argument> arguments = new ArrayList<>();
   private boolean isStatic;
   private org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type actionType;
 
@@ -27,8 +27,13 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
   }
 
   @Override
+  public List<Argument> getArguments() {
+    return this.arguments;
+  }
+
+  @Override
   public List<String> getArgumentNames() {
-    return this.argumentNames;
+    return this.arguments.stream().map(Argument::name).toList();
   }
 
   @Override
@@ -50,7 +55,25 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
   }
 
   public void setArgumentNames(List<String> argumentNames) {
-    this.argumentNames = argumentNames;
+    this.arguments =
+        argumentNames == null
+            ? new ArrayList<>()
+            : new ArrayList<>(
+                argumentNames.stream()
+                    .map(
+                        name ->
+                            new Argument(
+                                name,
+                                this.arguments.stream()
+                                    .filter(argument -> java.util.Objects.equals(argument.name(), name))
+                                    .map(Argument::annotation)
+                                    .findFirst()
+                                    .orElse(null)))
+                    .toList());
+  }
+
+  public void setArguments(List<Argument> arguments) {
+    this.arguments = arguments == null ? new ArrayList<>() : new ArrayList<>(arguments);
   }
 
   public void setStatic(boolean isStatic) {

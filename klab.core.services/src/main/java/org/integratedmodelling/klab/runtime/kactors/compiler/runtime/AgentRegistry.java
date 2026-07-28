@@ -308,7 +308,29 @@ public enum AgentRegistry {
     }
 
     try {
-      var runtime = instantiate(compiled.agentClass(), behavior, scope, observation);
+      var runtimeResolver = resolver;
+      RuntimeAgentBase.ExternalBehaviorAdapter behaviorAdapter =
+          (behaviorUrn, source, runtimeScope) ->
+              runtimeResolver.adaptToBehavior(behaviorUrn, source, runtimeScope);
+      RuntimeAgentBase.ParameterNegotiator parameterNegotiator =
+          runtimeResolver::negotiateParameterMatch;
+      UserScope typeScope =
+          scope instanceof UserScope userScope
+              ? userScope
+              : scope == null
+                  ? null
+                  : scope.getParentScope(Scope.Type.USER, UserScope.class);
+      RuntimeAgentBase.BehaviorTypeChecker behaviorTypeChecker =
+          (actual, required) -> runtimeResolver.implementsBehavior(actual, required, typeScope);
+      var runtime =
+          RuntimeAgentBase.constructWithRuntimeCallbacks(
+              behaviorAdapter,
+              parameterNegotiator,
+              behaviorTypeChecker,
+              () -> instantiate(compiled.agentClass(), behavior, scope, observation));
+      runtime.setExternalBehaviorAdapter(behaviorAdapter);
+      runtime.setParameterNegotiator(parameterNegotiator);
+      runtime.setBehaviorTypeChecker(behaviorTypeChecker);
       String urn = createAgentUrn(scope);
       var managed =
           new ManagedAgent(

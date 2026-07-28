@@ -188,8 +188,8 @@ The visitor exposes immutable records consumed by the analyzer and compiler:
 | --- | --- |
 | `ActionInfo` | Declared action, parameters, direct returns/fires, directly or transitively called execution types, and effective type. |
 | `ImportInfo` | Import declaration, local alias, behavior/actor URN, and optional Java class slot. |
-| `CallInfo` | Exact verb syntax bean, receiver, verb, containing action, arguments, visible variables, classified type, and whether a value is required. |
-| `VariableInfo` | Variable declaration, name, inferred value type, and source actor/verb for matched values. |
+| `CallInfo` | Exact verb syntax bean, receiver, verb, containing action, arguments, visible variables, classified execution/static types, produced-agent behavior URN, and whether a value is required. |
+| `VariableInfo` | Variable declaration, name, inferred value type, produced-agent behavior URN, and producer-call provenance. |
 | `ExpressionInfo` | Expression value and variables visible where it appears. |
 
 `AgentCompiler` indexes calls and expression fields with `IdentityHashMap`. Identity is important:
@@ -203,6 +203,7 @@ components, or language processors. Its methods are:
 
 ```java
 Verb.Type classifyActionCall(Verb verb, KActorsContext context)
+String classifyActionResultBehavior(Verb verb, KActorsContext context)
 List<Notification> validateBehavior(KActorsBehavior behavior, KActorsContext context)
 List<Notification> validateImport(KActorsBehavior.Import imported, KActorsContext context)
 List<Notification> validateInheritance(
@@ -235,10 +236,12 @@ example, an imported action that contains no `fire` itself but calls an emitter 
 as `EMITTER`. The classification affects legal value positions, match actions, containing action
 types, generated invocation methods, and actor lifecycle.
 
-`LenientValidator` accepts all environment-dependent constructs and classifies otherwise unknown
-calls as functions. It is useful for syntax-focused tests, but production compilation should use a
-validator backed by behavior resources, component descriptors, expression services, and argument
-prototypes.
+`classifyActionResultBehavior` returns the behavior URN implemented by an agent produced by a
+call, independently of function/supplier/emitter classification and staticity. A null result keeps
+the value dynamically typed. `LenientValidator` accepts environment-dependent constructs and
+leaves unknown calls and results unclassified. It is useful for syntax-focused tests, but
+production compilation should use a validator backed by behavior resources, component
+descriptors, expression services, and argument prototypes.
 
 The runtime validator resolves every URN in an `inherits` clause and applies
 `KActorsBehavior.Type.canInherit(...)`. A trait is valid for every child type; otherwise parent and
@@ -259,6 +262,14 @@ Error notifications prevent compilation. On a successful frame assignment its
 `VariableInfo.agentUrn` is the target behavior URN, so subsequent calls are classified and
 validated against that behavior. The assignment-specific validator overload remains as a
 compatibility bridge for extensions compiled against the earlier API.
+
+The same variable typing is applied without adaptation when a producer declares its result
+behavior. Parsed actions use `@return("URN")` or `@return(urn="URN")`; Java verbs use
+`@Verb.producesAgent()`, copied into `FunctionDescriptor.behaviorUrn`. The behavior URN propagates
+to frame assignments, function-backed `for` variables, and single match variables or explicit
+match captures. Multiple tuple-destructuring variables remain untyped because one result URN
+cannot describe each member. Calls without a declared result behavior retain their producer call
+for runtime classification.
 
 ### 4.4 Action type inference
 
@@ -320,6 +331,10 @@ cannot recreate or restart it.
 ```java
 KActorsBehavior resolveBehavior(String urn, UserScope scope)
 ResolvedActor resolveActor(String urn, UserScope scope)
+List<Object> negotiateParameterMatch(
+    List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters)
+Object adaptToBehavior(
+    String behaviorUrn, Object source, RuntimeAgent.Scope runtimeScope)
 List<Notification> validateBehaviorAdaptation(
     KActorsBehavior target, VariableInfo source, UserScope scope)
 List<Notification> validateBooleanAdaptation(KActorsBehavior target, UserScope scope)
@@ -327,12 +342,15 @@ List<Notification> validateIterableAdaptation(KActorsBehavior target, UserScope 
 ```
 
 The default `resolveBehavior` retrieves through `ResourcesService`; the default `resolveActor`
-returns `null`. Resolution tries a Java actor first, then a k.Actors behavior.
+returns `null`. Resolution tries a Java actor first, then a k.Actors behavior. The default
+parameter negotiator also returns `null`, explicitly rejecting calls that cannot use the ordinary
+positional matcher.
 
 `ResolvedActor` contains:
 
 - an `Extensions.ActorDescriptor` suitable for validation and serialization;
 - a map from verb names to non-serializable `ComponentRegistry.ServiceImplementation` objects.
+- the `ServiceImplementation` for the descriptor's optional `@AgentAdapter`.
 
 The latter holds the actual implementation class, global instance, constructor, wrapping instance,
 and reflective method.
@@ -344,11 +362,17 @@ and reflective method.
 ```java
 registry.getActorDescriptors(urn, null)
 registry.implementation(functionDescriptor)
+registry.negotiateAgentParameters(unmatchedParameterTypes, suppliedParameters)
+registry.invokeAgentAdapter(actorDescriptor, source, runtimeScope)
 ```
 
 It currently selects the first descriptor returned for the latest compatible component and maps
 each implementation under both its fully qualified service name and its final name segment. The
-first implementation class found becomes `ResolvedActor.implementationClass()`.
+first implementation class found becomes `ResolvedActor.implementationClass()`. Component
+discovery accepts one public, non-void `@AgentAdapter` method per actor. The method has exactly one
+source parameter and at most one injectable `RuntimeAgent.Scope`; it may be static or instance
+based. Runtime matching accepts assignable references and primitive/wrapper pairs. A returned
+`CompletableFuture` is joined before the generated statement continues.
 
 This adapter is a starting point, not final overload resolution. A production validator/resolver
 should agree on the exact actor descriptor and verb overload selected for each call.
@@ -363,6 +387,11 @@ For an imported k.Actors behavior, the compiler:
 4. analyzes it and recursively resolves its imports;
 5. generates its Java source;
 6. merges all dependency sources into `getGeneratedSources()`.
+
+The same recursive compilation is performed for a k.Actors URN referenced only by an `as` clause.
+The dependency must expose one unary `@adapt` action. Generated construction registers that action
+against the target URN; functions are invoked directly and suppliers are joined. Emitters and
+duplicate adapters are rejected during behavior analysis.
 
 The path set prevents infinite recursion, but dependency cycles are currently skipped rather than
 reported or linked through a formal dependency graph.
@@ -427,10 +456,17 @@ private CompletableFuture<Object> action_supplier(AgentScope scope, Object... ar
 private void action_emitter(AgentScope scope, Object... arguments)
 ```
 
-Arguments are bound into a frame map. Supplier actions create an `actionResult` future. If control
-can reach the end, functions return `VOID_VALUE` and suppliers return their still-live result
-future. The current `definitelyReturns` analysis recognizes terminal `return`/`fail`, terminal
-groups, and fully covered `if`/`else if`/`else` branches.
+Arguments are bound into a frame map. Before binding, actions with `@type`-annotated parameters
+invoke `validateActionArguments`. Behavior contracts accept an `Agent` handle or generated runtime
+agent implementing the required behavior; generated classes advertise their own and inherited
+behavior URNs. Java contracts accept a case-insensitive simple class name or a case-sensitive
+canonical class assignable from the incoming value. This runtime guard complements the analyzer
+when a value's type cannot be established statically.
+
+Supplier actions create an `actionResult` future. If control can reach the end, functions return
+`VOID_VALUE` and suppliers return their still-live result future. The current `definitelyReturns`
+analysis recognizes terminal `return`/`fail`, terminal groups, and fully covered
+`if`/`else if`/`else` branches.
 
 Generated action dispatch currently uses reflection in `invokeGeneratedAction`, which searches for
 the private `action_<name>` method through the class hierarchy. The generated Java method remains
@@ -448,6 +484,13 @@ The generated `main(AgentScope)` delegates to the k.Actors `main` action:
 
 `getAgentExecutionMode()` returns the analyzer's inferred mode. `RuntimeAgentBase.run()` executes a
 function directly and starts non-functions on a virtual thread.
+
+Generated code marks every `return` lexically belonging to a persistent `main` action as an agent
+termination point. The marker is preserved through nested control flow and reactive callbacks, so
+the root scope is completed only if execution actually reaches that return; merely containing a
+conditional return does not make the agent finite or stop it after every invocation. Returns in
+other actions complete only their current action scope according to their function, supplier, or
+emitter contract.
 
 Persistent agents receive a minimal CLI with `start`, `stop`, and `status`. Finite agents construct
 the actor with CLI strings as `init` arguments and invoke it once.
@@ -593,14 +636,24 @@ Frames are `LinkedHashMap<String,Object>` instances:
 - identifier lookup checks the frame, then root actor state;
 - `self` resolves to the generated agent.
 
-Behavior adaptation is available at every modelled value boundary: frame assignments,
-`return`, `fire`, switch selectors and yields, conditions, and loop iterables. It remains invalid
-on actor-state assignment. Generated code calls the protected
-`RuntimeAgentBase.adaptToBehavior(...)` hook; its base implementation fails explicitly until a
-specialized runtime or component supplies an adapter. Adapted control-flow values then pass
-through the separately overridable `adaptToBoolean(...)` or `adaptToIterable(...)` hooks. Their
-base implementations retain the normal `truthy(...)` and `asIterable(...)` mediation, while
-runtime extensions can enforce a target behavior's explicit conversion contract.
+Behavior adaptation is available at every modelled value boundary: frame assignments, `return`,
+`fire`, switch selectors and yields, conditions, and loop iterables. It remains invalid on
+actor-state assignment. Generated code calls `RuntimeAgentBase.adaptToBehavior(...)`.
+
+The runtime first checks the generated registry of k.Actors adapters. A function executes on the
+compiled target behavior instance; a supplier returns a future which is joined at this value
+boundary. If no k.Actors adapter is registered, the runtime delegates to the
+`ExternalBehaviorAdapter` installed by `AgentRegistry` from the compiler resolver. The
+component-backed resolver invokes the selected Java `@AgentAdapter` through `ComponentRegistry`.
+`AgentRegistry` also exposes this callback through a thread-local construction context, so an
+`init` action can adapt values before the generated instance has been returned to the registry.
+The context is restored after construction and isolated between threads. Failure to find either
+form is explicit rather than silently returning the source value.
+
+Adapted control-flow values then pass through the separately overridable
+`adaptToBoolean(...)` or `adaptToIterable(...)` hooks. Their base implementations retain the
+normal `truthy(...)` and `asIterable(...)` mediation, while runtime extensions can enforce a
+target behavior's explicit conversion contract.
 
 ## 10. Invocation and parameter matching
 
@@ -608,7 +661,8 @@ runtime extensions can enforce a target behavior's explicit conversion contract.
 
 Generated actions accept positional `Object...` arguments. `bindArguments` maps them to declared
 action parameter names in order. A single `Map` argument is treated as named bindings. Missing
-arguments become `null`; the current binder does not reject extra positional arguments.
+untyped arguments become `null`; a missing or null `@type`-constrained argument fails the action's
+runtime guard. The current binder does not reject extra positional arguments.
 
 The compiler currently serializes `verb.getArguments().values()` into an `Object[]`. This preserves
 the parameter container's value iteration order but does not emit the original named keys or call
@@ -645,6 +699,19 @@ Argument preparation:
 - converts strings to enum constants;
 - converts any non-null value to `String` with `toString()`.
 
+If direct preparation fails, the runtime calls
+`Resolver.negotiateParameterMatch(expectedTypes, suppliedValues)`. The expected list excludes
+injected `RuntimeAgent.Scope` parameters and uses the component type for a varargs parameter. The
+negotiator may split, combine, reorder, or otherwise mediate the supplied values, but must return
+the complete adapted list in Java declaration order. The runtime sends that result through the
+ordinary coercion and scope-injection path again. Returning `null`, or returning an incompatible
+list, fails the invocation with an explicit parameter-mismatch error.
+
+Analysis uses the same resolver seam when a descriptor-backed Java call has a provable arity
+mismatch. A rejected match becomes an error notification at the verb's lexical location. When the
+arity is plausible but runtime argument types are not statically knowable, analysis allows the
+call and runtime matching performs the definitive check.
+
 The execution shape is normalized by the invocation wrapper:
 
 - functions join an accidentally returned future;
@@ -653,6 +720,13 @@ The execution shape is normalized by the invocation wrapper:
 
 This reflection path is intentionally permissive and is not yet the final descriptor-selected
 parameter matcher.
+
+Java actor discovery copies `@Verb.producesAgent()` into
+`Extensions.FunctionDescriptor.behaviorUrn`. The runtime validator records that value in
+`CallInfo.producedAgentUrn`, and the visitor places it in the `VariableInfo.agentUrn` of values
+captured from the call. The original imported alias still selects and validates a static method;
+it is not inferred as the returned object's behavior unless the call is the synthetic `new`
+operation.
 
 ### 10.3 Constructor and `new` matching
 
@@ -672,11 +746,13 @@ not yet:
 
 - synthesize Java `new` from `ServiceImplementation.constructor`;
 - match named/default arguments from `ServiceInfo`;
-- split compound values such as `Quantity` into separate value/unit parameters;
 - use the validator's selected overload directly at runtime.
 
-These should be implemented as one descriptor-driven matching strategy shared by validation,
-construction, and invocation, rather than by adding more independent reflection heuristics.
+The negotiation seam is the extension point for compound values such as a temporal `Quantity`
+satisfying separate numeric and `TimeUnit` parameters. `ComponentRegistry` deliberately rejects
+such conversions for now; future component-aware rules should implement them in
+`negotiateAgentParameters(...)`. Exact overload selection should eventually be shared by
+validation, construction, and invocation rather than relying on independent reflection scans.
 
 ## 11. Relevant runtime and component APIs
 
@@ -703,7 +779,7 @@ The component side exposes:
 | `ComponentRegistry.getActorDescriptors(urn, version)` | Retrieve serializable Java actor descriptions. |
 | `ComponentRegistry.implementation(FunctionDescriptor)` | Retrieve reflective classes, instances, constructors, and methods. |
 | `Extensions.ActorDescriptor` | Actor URN, version, description, Java class name, and verb descriptors. |
-| `Extensions.FunctionDescriptor` | Service prototype and static/call-style information. |
+| `Extensions.FunctionDescriptor` | Service prototype, static/call-style information, and optional produced-agent behavior URN. |
 | `ComponentRegistry.ServiceImplementation` | Non-serializable implementation details retained by the live registry. |
 
 `CoreActorLibrary` contains small examples of all three execution shapes: console functions, timer
@@ -921,7 +997,8 @@ The following items are either explicit TODOs or incomplete integration boundari
   `method` instead of reducing an actor to an implementation class.
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are
   still partially marked TODO in `ComponentRegistry`.
-- Add quantity/unit, geometry, observable, scope, and service-specific parameter mediation.
+- Implement quantity/unit, geometry, observable, and service-specific rules through
+  `ComponentRegistry.negotiateAgentParameters(...)`.
 - Add component-unload invalidation for generated classes and registered custom-message DTOs.
   Compilation and loading already retain resolver-supplied implementation classes and their
   defining PF4J loaders, so unloading or replacing a component must invalidate those references

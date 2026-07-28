@@ -9,6 +9,7 @@ import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterizedTypeName;
 import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils.CLI;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
@@ -72,6 +74,58 @@ public class AgentCompiler {
     }
 
     /**
+     * Negotiate a non-positional match between Java parameter types and supplied k.Actors values.
+     * Implementations may split or combine values and return them in Java declaration order.
+     * Returning {@code null} rejects the match.
+     */
+    default List<Object> negotiateParameterMatch(
+        List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
+      return null;
+    }
+
+    /** Runtime counterpart of agent-parameter behavior conformance validation. */
+    default boolean implementsBehavior(
+        String actualBehaviorUrn, String requiredBehaviorUrn, UserScope scope) {
+      if (actualBehaviorUrn == null || requiredBehaviorUrn == null) {
+        return false;
+      }
+      if (Objects.equals(actualBehaviorUrn, requiredBehaviorUrn)) {
+        return true;
+      }
+      return implementsBehavior(
+          resolveBehavior(actualBehaviorUrn, scope),
+          requiredBehaviorUrn,
+          scope,
+          new LinkedHashSet<>());
+    }
+
+    private boolean implementsBehavior(
+        KActorsBehavior actual,
+        String requiredBehaviorUrn,
+        UserScope scope,
+        Set<String> visited) {
+      if (actual == null || actual.getUrn() == null || !visited.add(actual.getUrn())) {
+        return false;
+      }
+      if (Objects.equals(actual.getUrn(), requiredBehaviorUrn)) {
+        return true;
+      }
+      return actual.getInheritedBehaviors().stream()
+          .map(parent -> resolveBehavior(parent.getImportedBehavior(), scope))
+          .anyMatch(parent -> implementsBehavior(parent, requiredBehaviorUrn, scope, visited));
+    }
+
+    /**
+     * Perform a component-provided adaptation at runtime. Generated agents call this only after a
+     * Java actor descriptor with an adapter has been validated for the requested URN.
+     */
+    default Object adaptToBehavior(
+        String behaviorUrn, Object source, RuntimeAgent.Scope runtimeScope) {
+      throw new UnsupportedOperationException(
+          "No component adapter is available for " + behaviorUrn);
+    }
+
+    /**
      * Assess whether a value described by {@code sourceVariable} can be adapted to an instance of
      * {@code targetBehavior}. Runtime environments may consult component adapters, source runtime
      * types, or behavior-specific construction contracts.
@@ -99,10 +153,17 @@ public class AgentCompiler {
   /** Compile-time view of a Java actor selected by validation. */
   public record ResolvedActor(
       Extensions.ActorDescriptor descriptor,
-      Map<String, ComponentRegistry.ServiceImplementation> verbs) {
+      Map<String, ComponentRegistry.ServiceImplementation> verbs,
+      ComponentRegistry.ServiceImplementation adapter) {
 
     public ResolvedActor {
       verbs = verbs == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(verbs));
+    }
+
+    public ResolvedActor(
+        Extensions.ActorDescriptor descriptor,
+        Map<String, ComponentRegistry.ServiceImplementation> verbs) {
+      this(descriptor, verbs, null);
     }
 
     public Class<?> implementationClass() {
@@ -117,7 +178,21 @@ public class AgentCompiler {
   /** Stable pair of runtime-aware compiler extension points. */
   public record Environment(KActorsVisitor.Validator validator, Resolver resolver) {}
 
-  private record ResolvedCall(Verb.Type executionType, Boolean staticAction) {}
+  private record ResolvedCall(
+      Verb.Type executionType,
+      Boolean staticAction,
+      Method javaMethod,
+      String producedAgentUrn,
+      KActorsAction kActorsAction) {}
+
+  private record JavaArgumentConstraint(
+      String name,
+      boolean optional,
+      boolean observation,
+      boolean actor,
+      boolean constant,
+      Class<?> javaType,
+      String requiredAgentUrn) {}
 
   private static final Resolver DEFAULT_RESOLVER = new Resolver() {};
   private static final Map<String, Class<? extends RuntimeAgentBase>> compiledActorClasses =
@@ -137,6 +212,7 @@ public class AgentCompiler {
   private final Map<String, KActorsVisitor.ImportInfo> imports = new LinkedHashMap<>();
   private final Map<String, ResolvedActor> resolvedActors = new LinkedHashMap<>();
   private final Map<String, KActorsBehavior> resolvedBehaviors = new LinkedHashMap<>();
+  private final Map<String, KActorsBehavior> adaptationBehaviors = new LinkedHashMap<>();
   private final Set<Class<?>> requiredRuntimeClasses = new LinkedHashSet<>();
   private final Map<String, KActorsBehavior> inheritedBehaviors = new LinkedHashMap<>();
   private final Map<String, String> inheritedFields = new LinkedHashMap<>();
@@ -167,7 +243,27 @@ public class AgentCompiler {
                 separator < 0 ? name : name.substring(separator + 1), implementation);
           }
         }
-        return new ResolvedActor(descriptor, implementations);
+        return new ResolvedActor(
+            descriptor,
+            implementations,
+            descriptor.adapter == null ? null : registry.implementation(descriptor.adapter));
+      }
+
+      @Override
+      public Object adaptToBehavior(
+          String behaviorUrn, Object source, RuntimeAgent.Scope runtimeScope) {
+        var descriptors = registry.getActorDescriptors(behaviorUrn, null);
+        if (descriptors.isEmpty()) {
+          throw new IllegalArgumentException("Unknown Java actor " + behaviorUrn);
+        }
+        return registry.invokeAgentAdapter(descriptors.getFirst(), source, runtimeScope);
+      }
+
+      @Override
+      public List<Object> negotiateParameterMatch(
+          List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
+        return registry.negotiateAgentParameters(
+            unmatchedParameterTypes, suppliedParameters);
       }
     };
   }
@@ -211,6 +307,44 @@ public class AgentCompiler {
             } catch (Throwable ignored) {
               // Resolution diagnostics are produced by import/call validation.
               return null;
+            }
+          }
+
+          @Override
+          public String classifyActionResultBehavior(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            try {
+              var resolved = resolveCall(verb, context, resolver, scope);
+              return resolved == null ? null : resolved.producedAgentUrn();
+            } catch (Throwable ignored) {
+              // Import and call validation report resolution failures with lexical context.
+              return null;
+            }
+          }
+
+          @Override
+          public List<Notification> validateAction(
+              KActorsAction action, KActorsVisitor.KActorsContext context) {
+            var returnedBehaviorUrn = KActorsVisitor.returnedBehaviorUrn(action);
+            if (returnedBehaviorUrn == null
+                || Objects.equals(returnedBehaviorUrn, context.getBehavior().getUrn())) {
+              return List.of();
+            }
+            try {
+              if (resolver.resolveBehavior(returnedBehaviorUrn, scope) != null
+                  || resolver.resolveActor(returnedBehaviorUrn, scope) != null) {
+                return List.of();
+              }
+              return List.of(
+                  Notification.error(
+                      "Cannot resolve behavior declared by @return: " + returnedBehaviorUrn,
+                      Notification.LexicalContext.of(action, context.getBehavior())));
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot resolve behavior declared by @return: " + returnedBehaviorUrn,
+                      failure,
+                      Notification.LexicalContext.of(action, context.getBehavior())));
             }
           }
 
@@ -295,13 +429,48 @@ public class AgentCompiler {
               KActorsVisitor.KActorsContext context) {
             try {
               var targetBehavior = resolver.resolveBehavior(behaviorUrn, scope);
-              if (targetBehavior == null) {
-                return List.of(
-                    Notification.error(
-                        "Cannot resolve adaptation behavior " + behaviorUrn,
-                        Notification.LexicalContext.of(statement, context.getBehavior())));
+              if (targetBehavior != null) {
+                var targetAnalyzer = new BehaviorAnalyzer(targetBehavior, this);
+                if (!targetAnalyzer.analyze()) {
+                  return List.copyOf(targetAnalyzer.getNotifications());
+                }
+                boolean hasAdapter =
+                    targetAnalyzer.getActions().values().stream()
+                        .anyMatch(
+                            action ->
+                                action.statement().getAnnotations().stream()
+                                    .anyMatch(
+                                        annotation -> "adapt".equals(annotation.getName())));
+                if (!hasAdapter) {
+                  return List.of(
+                      Notification.error(
+                          "Behavior "
+                              + behaviorUrn
+                              + " does not declare an @adapt action",
+                          Notification.LexicalContext.of(statement, context.getBehavior())));
+                }
+                return resolver.validateBehaviorAdaptation(
+                    targetBehavior, sourceVariable, scope);
               }
-              return resolver.validateBehaviorAdaptation(targetBehavior, sourceVariable, scope);
+              var targetActor = resolver.resolveActor(behaviorUrn, scope);
+              if (targetActor != null) {
+                if (targetActor.descriptor().adapter == null
+                    || targetActor.descriptor().adapter.error
+                    || targetActor.adapter() == null
+                    || targetActor.adapter().method == null) {
+                  return List.of(
+                      Notification.error(
+                          "Java actor "
+                              + behaviorUrn
+                              + " does not provide a usable @AgentAdapter",
+                          Notification.LexicalContext.of(statement, context.getBehavior())));
+                }
+                return List.of();
+              }
+              return List.of(
+                  Notification.error(
+                      "Cannot resolve adaptation behavior or Java actor " + behaviorUrn,
+                      Notification.LexicalContext.of(statement, context.getBehavior())));
             } catch (Throwable failure) {
               return List.of(
                   Notification.error(
@@ -386,21 +555,30 @@ public class AgentCompiler {
                       ? variable.agentUrn()
                       : producerImport.getImportedBehavior();
               var targetBehavior = resolver.resolveBehavior(targetUrn, scope);
-              if (targetBehavior == null) {
-                return List.of(
-                    Notification.error(
-                        "Cannot resolve actor behavior " + targetUrn,
-                        Notification.LexicalContext.of(verb, context.getBehavior())));
+              if (targetBehavior != null) {
+                boolean actionExists =
+                    targetBehavior.getStatements().stream()
+                        .anyMatch(action -> Objects.equals(action.getUrn(), verb.getMessage()));
+                return actionExists
+                    ? List.of()
+                    : List.of(
+                        Notification.error(
+                            "Behavior " + targetUrn + " has no action " + verb.getMessage(),
+                            Notification.LexicalContext.of(verb, context.getBehavior())));
               }
-              boolean actionExists =
-                  targetBehavior.getStatements().stream()
-                      .anyMatch(action -> Objects.equals(action.getUrn(), verb.getMessage()));
-              return actionExists
-                  ? List.of()
-                  : List.of(
-                      Notification.error(
-                          "Behavior " + targetUrn + " has no action " + verb.getMessage(),
-                          Notification.LexicalContext.of(verb, context.getBehavior())));
+              var targetActor = resolver.resolveActor(targetUrn, scope);
+              if (targetActor != null) {
+                return targetActor.verbs().containsKey(verb.getMessage())
+                    ? List.of()
+                    : List.of(
+                        Notification.error(
+                            "Java actor " + targetUrn + " has no verb " + verb.getMessage(),
+                            Notification.LexicalContext.of(verb, context.getBehavior())));
+              }
+              return List.of(
+                  Notification.error(
+                      "Cannot resolve actor behavior " + targetUrn,
+                      Notification.LexicalContext.of(verb, context.getBehavior())));
             } catch (Throwable failure) {
               return List.of(
                   Notification.error(
@@ -408,6 +586,56 @@ public class AgentCompiler {
                           + verb.getMessage()
                           + " on actor behavior "
                           + variable.agentUrn(),
+                      failure,
+                      Notification.LexicalContext.of(verb, context.getBehavior())));
+            }
+          }
+
+          @Override
+          public List<Notification> validateArguments(
+              KActorsStatement.Verb verb,
+              KActorsStatement.Arguments arguments,
+              KActorsVisitor.KActorsContext context) {
+            try {
+              var resolved = resolveCall(verb, context, resolver, scope);
+              if (resolved == null) {
+                return List.of();
+              }
+              if (resolved.kActorsAction() != null) {
+                return validateKActorsActionArguments(
+                    verb, arguments, resolved.kActorsAction(), context, resolver, scope);
+              }
+              if (resolved.javaMethod() == null) {
+                return List.of();
+              }
+              var supplied =
+                  arguments == null ? List.of() : new ArrayList<>(arguments.values());
+              var constrained =
+                  validateJavaVerbArguments(
+                      verb, arguments, resolved, context, resolver, scope);
+              if (!constrained.isEmpty()) {
+                return constrained;
+              }
+              if (annotatedArityMatches(resolved, arguments)) {
+                return List.of();
+              }
+              var expected = negotiableParameterTypes(resolved.javaMethod());
+              var negotiated = resolver.negotiateParameterMatch(expected, supplied);
+              if (negotiated != null
+                  && directArityMatches(resolved.javaMethod(), negotiated.size())) {
+                return List.of();
+              }
+              return List.of(
+                  Notification.error(
+                      parameterMismatchMessage(resolved.javaMethod(), expected, supplied),
+                      Notification.LexicalContext.of(verb, context.getBehavior())));
+            } catch (Throwable failure) {
+              return List.of(
+                  Notification.error(
+                      "Cannot validate parameters for "
+                          + verb.getRecipient()
+                          + "."
+                          + verb.getMessage(),
                       failure,
                       Notification.LexicalContext.of(verb, context.getBehavior())));
             }
@@ -426,10 +654,12 @@ public class AgentCompiler {
     try {
       var targetBehavior = resolver.resolveBehavior(behaviorUrn, scope);
       if (targetBehavior == null) {
-        return List.of(
-            Notification.error(
-                "Cannot resolve adaptation behavior " + behaviorUrn,
-                Notification.LexicalContext.of(statement, context.getBehavior())));
+        return resolver.resolveActor(behaviorUrn, scope) == null
+            ? List.of(
+                Notification.error(
+                    "Cannot resolve adaptation behavior or Java actor " + behaviorUrn,
+                    Notification.LexicalContext.of(statement, context.getBehavior())))
+            : List.of();
       }
       return booleanUse
           ? resolver.validateBooleanAdaptation(targetBehavior, scope)
@@ -452,11 +682,14 @@ public class AgentCompiler {
       Resolver resolver,
       UserScope scope) {
     String actorUrn = null;
-    var imported = findImport(context.getBehavior(), verb.getRecipient());
+    var recipient = verb.getRecipient();
+    var imported = findImport(context.getBehavior(), recipient);
     if (imported != null) {
       actorUrn = imported.getImportedBehavior();
+    } else if (recipient == null || recipient.isBlank() || "self".equals(recipient)) {
+      actorUrn = context.getBehavior().getUrn();
     } else {
-      var variable = context.getVariable(verb.getRecipient());
+      var variable = context.getVariable(recipient);
       if (variable != null && variable.agentUrn() != null) {
         var producerImport = findImport(context.getBehavior(), variable.agentUrn());
         actorUrn =
@@ -471,12 +704,19 @@ public class AgentCompiler {
     var targetBehavior = resolver.resolveBehavior(actorUrn, scope);
     if (targetBehavior != null) {
       if ("new".equals(verb.getMessage()) && imported != null) {
-        return new ResolvedCall(Verb.Type.FUNCTION, true);
+        return new ResolvedCall(Verb.Type.FUNCTION, true, null, actorUrn, null);
       }
       return targetBehavior.getStatements().stream()
           .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
           .findFirst()
-          .map(action -> new ResolvedCall(action.getActionType(), action.isStatic()))
+          .map(
+              action ->
+                  new ResolvedCall(
+                      action.getActionType(),
+                      action.isStatic(),
+                      null,
+                      KActorsVisitor.returnedBehaviorUrn(action),
+                      action))
           .orElse(null);
     }
     var actor = resolver.resolveActor(actorUrn, scope);
@@ -495,7 +735,509 @@ public class AgentCompiler {
                             simpleName(candidate.serviceInfo.getName()), verb.getMessage()))
             .findFirst()
             .orElse(null);
-    return new ResolvedCall(type, descriptor == null ? null : descriptor.staticMethod);
+    return new ResolvedCall(
+        type,
+        descriptor == null ? null : descriptor.staticMethod,
+        implementation.method,
+        descriptor == null || descriptor.behaviorUrn == null || descriptor.behaviorUrn.isBlank()
+            ? null
+            : descriptor.behaviorUrn.trim(),
+        null);
+  }
+
+  private static List<Notification> validateKActorsActionArguments(
+      KActorsStatement.Verb verb,
+      KActorsStatement.Arguments arguments,
+      KActorsAction action,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver,
+      UserScope scope) {
+    var formals = action.getArguments() == null ? List.<KActorsAction.Argument>of() : action.getArguments();
+    var bound = new Object[formals.size()];
+    var notifications = new ArrayList<Notification>();
+    if (arguments != null) {
+      for (var key : arguments.getNamedKeys()) {
+        int index = kActorsArgumentIndex(formals, key);
+        if (index < 0) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Unknown named argument '" + key + "' for action " + action.getUrn()));
+        } else {
+          bound[index] = arguments.get(key);
+        }
+      }
+      int next = 0;
+      for (var value : arguments.getUnnamedArguments()) {
+        while (next < bound.length && bound[next] != null) {
+          next++;
+        }
+        if (next == bound.length) {
+          notifications.add(
+              argumentError(
+                  verb, context, "Too many positional arguments for action " + action.getUrn()));
+          break;
+        }
+        bound[next++] = value;
+      }
+    }
+    for (int index = 0; index < formals.size(); index++) {
+      var formal = formals.get(index);
+      Object supplied = bound[index];
+      var required = KActorsVisitor.actionArgumentType(formal);
+      if (supplied == null) {
+        if (required != null) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Missing required typed argument '"
+                      + formal.name()
+                      + "' for action "
+                      + action.getUrn()));
+        }
+        continue;
+      }
+      if (required == null) {
+        continue;
+      }
+      if (required.behaviorUrn() != null) {
+        String actualAgent = agentUrnOf(supplied, context);
+        if (actualAgent != null
+            && !behaviorIsOrInherits(
+                actualAgent, required.behaviorUrn(), resolver, scope, new LinkedHashSet<>())) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Argument '"
+                      + formal.name()
+                      + "' for action "
+                      + action.getUrn()
+                      + " requires an agent implementing "
+                      + required.behaviorUrn()
+                      + ", but "
+                      + actualAgent
+                      + " was supplied"));
+        }
+      } else if (required.javaClassName() != null) {
+        var actualType = knownJavaType(supplied, context, resolver, scope);
+        if (actualType != null
+            && actualType.definitive()
+            && !matchesJavaType(actualType, required.javaClassName())) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Argument '"
+                      + formal.name()
+                      + "' for action "
+                      + action.getUrn()
+                      + " must be "
+                      + required.javaClassName()
+                      + ", but "
+                      + actualType.name()
+                      + " was supplied"));
+        }
+      }
+    }
+    return List.copyOf(notifications);
+  }
+
+  private static int kActorsArgumentIndex(List<KActorsAction.Argument> arguments, String name) {
+    for (int index = 0; index < arguments.size(); index++) {
+      if (Objects.equals(arguments.get(index).name(), name)) {
+        return index;
+      }
+    }
+    return -1;
+  }
+
+  private record KnownJavaType(Class<?> type, String name, boolean definitive) {}
+
+  private static KnownJavaType knownJavaType(
+      Object supplied,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver,
+      UserScope scope) {
+    Object literal = literalValue(supplied);
+    if (literal != UNKNOWN_LITERAL) {
+      return literal == null
+          ? null
+          : new KnownJavaType(
+              literal.getClass(), literal.getClass().getTypeName(), true);
+    }
+    if (!(supplied instanceof KActorsValue value) || value.getType() != ValueType.IDENTIFIER) {
+      return null;
+    }
+    var variable = context.getVariable(value.getValue(String.class));
+    if (variable == null) {
+      return null;
+    }
+    if (variable.producerCall() != null) {
+      var producer = resolveCall(variable.producerCall(), context, resolver, scope);
+      Class<?> produced = producer == null ? null : declaredJavaReturnType(producer.javaMethod());
+      if (produced != null && produced != Void.class && produced != void.class) {
+        return new KnownJavaType(
+            produced,
+            produced.getTypeName(),
+            produced.isPrimitive()
+                || produced.isEnum()
+                || java.lang.reflect.Modifier.isFinal(produced.getModifiers()));
+      }
+    }
+    if (variable.statement() instanceof KActorsAction declaringAction) {
+      var formal =
+          declaringAction.getArguments().stream()
+              .filter(argument -> Objects.equals(argument.name(), variable.name()))
+              .findFirst()
+              .orElse(null);
+      var declared = KActorsVisitor.actionArgumentType(formal);
+      if (declared != null && declared.javaClassName() != null) {
+        Class<?> type = loadJavaType(declared.javaClassName(), null);
+        return new KnownJavaType(type, declared.javaClassName(), type != null && java.lang.reflect.Modifier.isFinal(type.getModifiers()));
+      }
+    }
+    return null;
+  }
+
+  private static Class<?> declaredJavaReturnType(Method method) {
+    if (method == null) {
+      return null;
+    }
+    var verb = method.getAnnotation(Verb.class);
+    if (verb != null && verb.returns() != Void.class) {
+      return boxed(verb.returns());
+    }
+    if (CompletableFuture.class.isAssignableFrom(method.getReturnType())) {
+      var generic = method.getGenericReturnType();
+      if (generic instanceof java.lang.reflect.ParameterizedType parameterized
+          && parameterized.getActualTypeArguments().length == 1
+          && parameterized.getActualTypeArguments()[0] instanceof Class<?> resultType) {
+        return boxed(resultType);
+      }
+      return null;
+    }
+    return boxed(method.getReturnType());
+  }
+
+  private static boolean matchesJavaType(KnownJavaType actual, String requiredName) {
+    if (!requiredName.contains(".")) {
+      String simple =
+          actual.type() == null
+              ? simpleName(actual.name())
+              : actual.type().getSimpleName();
+      return simple != null && simple.equalsIgnoreCase(requiredName);
+    }
+    if (Objects.equals(actual.name(), requiredName)) {
+      return true;
+    }
+    Class<?> required = loadJavaType(requiredName, actual.type());
+    return required != null && actual.type() != null && required.isAssignableFrom(actual.type());
+  }
+
+  private static Class<?> loadJavaType(String name, Class<?> relatedType) {
+    if (name == null || !name.contains(".")) {
+      return null;
+    }
+    try {
+      ClassLoader loader =
+          relatedType == null ? Thread.currentThread().getContextClassLoader() : relatedType.getClassLoader();
+      return Class.forName(name, false, loader);
+    } catch (ClassNotFoundException | LinkageError ignored) {
+      try {
+        return Class.forName(name);
+      } catch (ClassNotFoundException | LinkageError alsoIgnored) {
+        return null;
+      }
+    }
+  }
+
+  private static List<Notification> validateJavaVerbArguments(
+      KActorsStatement.Verb verb,
+      KActorsStatement.Arguments arguments,
+      ResolvedCall resolved,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver,
+      UserScope scope) {
+    var constraints = javaArgumentConstraints(resolved.javaMethod());
+    if (constraints.isEmpty()) {
+      return List.of();
+    }
+    var bound = new Object[constraints.size()];
+    var notifications = new ArrayList<Notification>();
+    if (arguments != null) {
+      for (var key : arguments.getNamedKeys()) {
+        int index = argumentIndex(constraints, key);
+        if (index < 0) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Unknown named argument '" + key + "' for Java verb " + verb.getMessage()));
+        } else {
+          bound[index] = arguments.get(key);
+        }
+      }
+      int next = 0;
+      for (var value : arguments.getUnnamedArguments()) {
+        while (next < bound.length && bound[next] != null) {
+          next++;
+        }
+        if (next == bound.length) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Too many positional arguments for Java verb " + verb.getMessage()));
+          break;
+        }
+        bound[next++] = value;
+      }
+    }
+    for (int index = 0; index < constraints.size(); index++) {
+      var constraint = constraints.get(index);
+      Object supplied = bound[index];
+      String label =
+          constraint.name() == null || constraint.name().isBlank()
+              ? "argument " + (index + 1)
+              : "argument '" + constraint.name() + "'";
+      if (supplied == null) {
+        if (!constraint.optional()) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  "Missing required " + label + " for Java verb " + verb.getMessage()));
+        }
+        continue;
+      }
+      if (constraint.constant()
+          && supplied instanceof KActorsValue value
+          && !isPodLiteral(value.getType())) {
+        notifications.add(
+            argumentError(
+                verb,
+                context,
+                label + " for Java verb " + verb.getMessage() + " must be a literal value"));
+        continue;
+      }
+      String requiredAgent = normalized(constraint.requiredAgentUrn());
+      if (requiredAgent != null) {
+        String actualAgent = agentUrnOf(supplied, context);
+        if (actualAgent != null
+            && !behaviorIsOrInherits(actualAgent, requiredAgent, resolver, scope, new LinkedHashSet<>())) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  label
+                      + " for Java verb "
+                      + verb.getMessage()
+                      + " requires an agent implementing "
+                      + requiredAgent
+                      + ", but "
+                      + actualAgent
+                      + " was supplied"));
+        }
+        continue;
+      }
+      Object literal = literalValue(supplied);
+      if (literal != UNKNOWN_LITERAL) {
+        Class<?> expected = constraint.javaType();
+        if (expected != null && literal != null && !boxed(expected).isInstance(literal)) {
+          notifications.add(
+              argumentError(
+                  verb,
+                  context,
+                  label
+                      + " for Java verb "
+                      + verb.getMessage()
+                      + " must be "
+                      + boxed(expected).getTypeName()
+                      + ", but a "
+                      + literal.getClass().getTypeName()
+                      + " literal was supplied"));
+        }
+      }
+    }
+    return List.copyOf(notifications);
+  }
+
+  private static final Object UNKNOWN_LITERAL = new Object();
+
+  private static Object literalValue(Object supplied) {
+    if (!(supplied instanceof KActorsValue value)) {
+      return supplied;
+    }
+    if (!isPodLiteral(value.getType())) {
+      return UNKNOWN_LITERAL;
+    }
+    return value.getValue(Object.class);
+  }
+
+  private static boolean isPodLiteral(ValueType type) {
+    return type == ValueType.STRING
+        || type == ValueType.NUMBER
+        || type == ValueType.INTEGER
+        || type == ValueType.DOUBLE
+        || type == ValueType.BOOLEAN
+        || type == ValueType.CONSTANT
+        || type == ValueType.QUANTITY
+        || type == ValueType.DATE
+        || type == ValueType.RANGE
+        || type == ValueType.URN;
+  }
+
+  private static String agentUrnOf(
+      Object supplied, KActorsVisitor.KActorsContext context) {
+    if (supplied instanceof KActorsValue value && value.getType() == ValueType.IDENTIFIER) {
+      var variable = context.getVariable(value.getValue(String.class));
+      return variable == null ? null : normalized(variable.agentUrn());
+    }
+    return null;
+  }
+
+  private static boolean behaviorIsOrInherits(
+      String actualUrn,
+      String requiredUrn,
+      Resolver resolver,
+      UserScope scope,
+      Set<String> visited) {
+    if (Objects.equals(actualUrn, requiredUrn)) {
+      return true;
+    }
+    if (actualUrn == null || !visited.add(actualUrn)) {
+      return false;
+    }
+    var behavior = resolver.resolveBehavior(actualUrn, scope);
+    if (behavior == null || behavior.getInheritedBehaviors() == null) {
+      return false;
+    }
+    return behavior.getInheritedBehaviors().stream()
+        .map(KActorsBehavior.Import::getImportedBehavior)
+        .anyMatch(parent -> behaviorIsOrInherits(parent, requiredUrn, resolver, scope, visited));
+  }
+
+  private static Notification argumentError(
+      KActorsStatement.Verb verb,
+      KActorsVisitor.KActorsContext context,
+      String message) {
+    return Notification.error(
+        message, Notification.LexicalContext.of(verb, context.getBehavior()));
+  }
+
+  private static int argumentIndex(
+      List<JavaArgumentConstraint> constraints, String name) {
+    for (int index = 0; index < constraints.size(); index++) {
+      if (Objects.equals(name, constraints.get(index).name())) {
+        return index;
+      }
+    }
+    return -1;
+  }
+
+  private static boolean annotatedArityMatches(
+      ResolvedCall resolved, KActorsStatement.Arguments arguments) {
+    var constraints = javaArgumentConstraints(resolved.javaMethod());
+    if (constraints.isEmpty()) {
+      return directArityMatches(
+          resolved.javaMethod(), arguments == null ? 0 : arguments.size());
+    }
+    int supplied = arguments == null ? 0 : arguments.size();
+    long required = constraints.stream().filter(argument -> !argument.optional()).count();
+    return supplied >= required && supplied <= constraints.size();
+  }
+
+  private static List<JavaArgumentConstraint> javaArgumentConstraints(Method method) {
+    if (method == null
+        || java.util.Arrays.stream(method.getParameters())
+            .noneMatch(parameter -> parameter.isAnnotationPresent(Verb.Argument.class))) {
+      return List.of();
+    }
+    var ret = new ArrayList<JavaArgumentConstraint>();
+    for (var parameter : method.getParameters()) {
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter.getType())) {
+        continue;
+      }
+      var argument = parameter.getAnnotation(Verb.Argument.class);
+      ret.add(
+          new JavaArgumentConstraint(
+              argument == null || argument.name().isBlank() ? null : argument.name().trim(),
+              argument != null && argument.optional(),
+              argument != null && argument.observation(),
+              argument != null && argument.actor(),
+              argument != null && argument.constant(),
+              argument == null || argument.type() == Object.class
+                  ? parameter.getType()
+                  : argument.type(),
+              argument == null || argument.requiresAgent().isBlank()
+                  ? null
+                  : argument.requiresAgent().trim()));
+    }
+    return List.copyOf(ret);
+  }
+
+  private static Class<?> boxed(Class<?> type) {
+    if (!type.isPrimitive()) {
+      return type;
+    }
+    if (type == boolean.class) return Boolean.class;
+    if (type == byte.class) return Byte.class;
+    if (type == short.class) return Short.class;
+    if (type == int.class) return Integer.class;
+    if (type == long.class) return Long.class;
+    if (type == float.class) return Float.class;
+    if (type == double.class) return Double.class;
+    if (type == char.class) return Character.class;
+    return type;
+  }
+
+  private static String normalized(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
+  }
+
+  private static boolean directArityMatches(Method method, int suppliedCount) {
+    int required = 0;
+    for (int index = 0; index < method.getParameterCount(); index++) {
+      if (RuntimeAgent.Scope.class.isAssignableFrom(method.getParameterTypes()[index])) {
+        continue;
+      }
+      if (method.isVarArgs() && index == method.getParameterCount() - 1) {
+        return suppliedCount >= required;
+      }
+      required++;
+    }
+    return suppliedCount == required;
+  }
+
+  private static List<Class<?>> negotiableParameterTypes(Method method) {
+    var ret = new ArrayList<Class<?>>();
+    for (int index = 0; index < method.getParameterCount(); index++) {
+      var parameter = method.getParameterTypes()[index];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        continue;
+      }
+      ret.add(
+          method.isVarArgs() && index == method.getParameterCount() - 1
+              ? parameter.getComponentType()
+              : parameter);
+    }
+    return List.copyOf(ret);
+  }
+
+  private static String parameterMismatchMessage(
+      Method method, List<Class<?>> expected, List<?> supplied) {
+    return "Cannot match parameters for Java verb "
+        + method.getDeclaringClass().getName()
+        + "."
+        + method.getName()
+        + ": expected "
+        + expected.stream().map(Class::getTypeName).toList()
+        + " but received "
+        + supplied.size()
+        + " argument(s); parameter negotiation did not produce a compatible match";
   }
 
   private static KActorsBehavior.Import findImport(KActorsBehavior behavior, String alias) {
@@ -615,6 +1357,7 @@ public class AgentCompiler {
   private void resolveImportsAndCompileDependencies(Set<String> path) {
     resolvedActors.clear();
     resolvedBehaviors.clear();
+    adaptationBehaviors.clear();
     requiredRuntimeClasses.clear();
     for (var imported : analyzer.getImports()) {
       var actor = resolver.resolveActor(imported.behaviorUrn(), scope);
@@ -694,6 +1437,106 @@ public class AgentCompiler {
       }
       notifications.addAll(compiler.analyzer.getNotifications());
     }
+
+    for (String adaptationUrn : adaptationUrns(behavior)) {
+      var actor = resolver.resolveActor(adaptationUrn, scope);
+      if (actor != null) {
+        if (actor.adapter() != null && actor.adapter().implementation != null) {
+          requiredRuntimeClasses.add(actor.adapter().implementation);
+        }
+        continue;
+      }
+      var targetBehavior = resolver.resolveBehavior(adaptationUrn, scope);
+      if (targetBehavior == null) {
+        continue;
+      }
+      adaptationBehaviors.put(adaptationUrn, targetBehavior);
+      if (Objects.equals(targetBehavior.getUrn(), behavior.getUrn())
+          || dependencySources.containsKey(targetBehavior.getUrn())
+          || path.contains(targetBehavior.getUrn())) {
+        continue;
+      }
+      var nextPath = new LinkedHashSet<>(path);
+      nextPath.add(targetBehavior.getUrn());
+      var compiler = new AgentCompiler(targetBehavior, scope, validator, resolver);
+      if (compiler.analyzer.analyze()) {
+        compiler.indexAnalysis();
+        compiler.resolveImportsAndCompileDependencies(nextPath);
+        requiredRuntimeClasses.addAll(compiler.requiredRuntimeClasses);
+        var javaFile = compiler.generateClass(targetBehavior);
+        if (javaFile != null) {
+          compiler.sourceCode = javaFile.toString();
+          dependencySources.putAll(compiler.dependencySources);
+          dependencySources.put(targetBehavior.getUrn(), compiler.sourceCode);
+          generatedActorSources.put(targetBehavior.getUrn(), compiler.sourceCode);
+        }
+      }
+      notifications.addAll(compiler.analyzer.getNotifications());
+    }
+  }
+
+  private Set<String> adaptationUrns(KActorsBehavior target) {
+    var ret = new LinkedHashSet<String>();
+    if (target != null && target.getStatements() != null) {
+      for (var action : target.getStatements()) {
+        if (action.getCode() != null) {
+          action.getCode().forEach(statement -> collectAdaptationUrns(statement, ret));
+        }
+      }
+    }
+    return ret;
+  }
+
+  private void collectAdaptationUrns(KActorsStatement statement, Set<String> urns) {
+    if (statement == null) {
+      return;
+    }
+    String adapted =
+        switch (statement) {
+          case KActorsStatement.Assignment value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.Return value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.Fire value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.Yield value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.Switch value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.If value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.While value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.Do value -> value.getAdaptedBehaviorUrn();
+          case KActorsStatement.For value -> value.getAdaptedBehaviorUrn();
+          default -> null;
+        };
+    if (adapted != null && !adapted.isBlank()) {
+      urns.add(adapted.trim());
+    }
+    switch (statement) {
+      case KActorsStatement.Group group ->
+          group.getStatements().forEach(child -> collectAdaptationUrns(child, urns));
+      case KActorsStatement.Verb verb ->
+          verb.getActions()
+              .forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
+      case KActorsStatement.Verb.MatchAction match ->
+          collectAdaptationUrns(match.getActionOnMatch(), urns);
+      case KActorsStatement.Switch switched ->
+          switched.getCases()
+              .forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
+      case KActorsStatement.Assignment value ->
+          collectAdaptationUrns(value.getSwitch(), urns);
+      case KActorsStatement.Return value -> collectAdaptationUrns(value.getSwitch(), urns);
+      case KActorsStatement.Fire value -> collectAdaptationUrns(value.getSwitch(), urns);
+      case KActorsStatement.Yield value -> collectAdaptationUrns(value.getSwitch(), urns);
+      case KActorsStatement.If conditional -> {
+        collectAdaptationUrns(conditional.getThenBody(), urns);
+        conditional
+            .getElseIfs()
+            .forEach(branch -> collectAdaptationUrns(branch.getSecond(), urns));
+        collectAdaptationUrns(conditional.getElseBody(), urns);
+      }
+      case KActorsStatement.While loop -> collectAdaptationUrns(loop.getBody(), urns);
+      case KActorsStatement.Do loop -> collectAdaptationUrns(loop.getBody(), urns);
+      case KActorsStatement.For loop -> collectAdaptationUrns(loop.getBody(), urns);
+      default -> {
+        // Leaf statement.
+      }
+    }
   }
 
   public String getSourceCode() {
@@ -755,6 +1598,7 @@ public class AgentCompiler {
     addImportFields(classBuilder);
     addInheritanceFields(classBuilder);
     addConstructors(classBuilder, className);
+    classBuilder.addMethod(compileImplementedBehaviorUrns(sourceBehavior));
     for (var action : sourceBehavior.getStatements()) {
       classBuilder.addMethod(compileAction(action));
     }
@@ -897,6 +1741,28 @@ public class AgentCompiler {
             imported.name());
       }
     }
+    for (var entry : adaptationBehaviors.entrySet()) {
+      var adapterAction = adaptationAction(entry.getValue());
+      if (adapterAction == null || adapterAction.getActionType() == Verb.Type.EMITTER) {
+        continue;
+      }
+      if (Objects.equals(entry.getKey(), behavior.getUrn())) {
+        constructor.addStatement(
+            "registerBehaviorAdapter($S, this, $S, $T.$L)",
+            entry.getKey(),
+            adapterAction.getUrn(),
+            Verb.Type.class,
+            adapterAction.getActionType().name());
+      } else {
+        constructor.addStatement(
+            "registerBehaviorAdapter($S, new $T(null, scope, observation, creationScope, importedActors, new Object[0]), $S, $T.$L)",
+            entry.getKey(),
+            generatedClass(entry.getValue().getUrn()),
+            adapterAction.getUrn(),
+            Verb.Type.class,
+            adapterAction.getActionType().name());
+      }
+    }
     var init = analyzer.getActions().get("init");
     if (init != null) {
       switch (init.effectiveExecutionType()) {
@@ -912,6 +1778,20 @@ public class AgentCompiler {
       }
     }
     type.addMethod(constructor.build());
+  }
+
+  private KActorsAction adaptationAction(KActorsBehavior target) {
+    if (target == null || target.getStatements() == null) {
+      return null;
+    }
+    return target.getStatements().stream()
+        .filter(
+            action ->
+                action.getAnnotations() != null
+                    && action.getAnnotations().stream()
+                        .anyMatch(annotation -> "adapt".equals(annotation.getName())))
+        .findFirst()
+        .orElse(null);
   }
 
   private MethodSpec compileExecutionMode() {
@@ -953,7 +1833,8 @@ public class AgentCompiler {
         if (messageClass == null || messageClass.isBlank()) {
           notifications.add(
               Notification.warning(
-                  "The @handle annotation requires a CONSTANT as its unnamed parameter or 'class' parameter"));
+                  "The @handle annotation requires a CONSTANT as its unnamed parameter or 'class' parameter",
+                  lexicalContext(action, sourceBehavior)));
           continue;
         }
         method.addStatement(
@@ -969,6 +1850,16 @@ public class AgentCompiler {
     }
     method.addStatement("return $T.copyOf(handlers)", Map.class);
     return method.build();
+  }
+
+  private Notification.LexicalContext lexicalContext(
+      KActorsStatement statement, KActorsBehavior sourceBehavior) {
+    var ret = new NotificationImpl.LexicalContextImpl();
+    ret.setOffsetInDocument(statement.getOffsetInDocument());
+    ret.setLength(statement.getLength());
+    ret.setDocumentUrn(sourceBehavior.getUrn());
+    ret.setProjectUrn(sourceBehavior.getProjectName());
+    return ret;
   }
 
   private ClassName generatedClass(String behaviorUrn) {
@@ -1068,6 +1959,25 @@ public class AgentCompiler {
                 Verb.Type.class,
                 type.name());
     var code = CodeBlock.builder();
+    var requiredBehaviors =
+        action.getArguments().stream()
+            .map(KActorsVisitor::actionArgumentType)
+            .map(contract -> contract == null ? null : contract.behaviorUrn())
+            .toList();
+    var requiredJavaTypes =
+        action.getArguments().stream()
+            .map(KActorsVisitor::actionArgumentType)
+            .map(contract -> contract == null ? null : contract.javaClassName())
+            .toList();
+    if (requiredBehaviors.stream().anyMatch(Objects::nonNull)
+        || requiredJavaTypes.stream().anyMatch(Objects::nonNull)) {
+      code.addStatement(
+          "arguments = validateActionArguments($S, $L, $L, $L, arguments)",
+          action.getUrn(),
+          stringList(action.getArgumentNames()),
+          nullableStringList(requiredBehaviors),
+          nullableStringList(requiredJavaTypes));
+    }
     code.addStatement(
         "var frame = bindArguments($L, arguments)", stringList(action.getArgumentNames()));
     String result = null;
@@ -1076,7 +1986,16 @@ public class AgentCompiler {
       code.addStatement("var $L = new $T<Object>()", result, CompletableFuture.class);
     }
     var context =
-        new CompilationContext(type, false, false, "scope", "frame", result, List.of());
+        new CompilationContext(
+            type,
+            false,
+            false,
+            "main".equals(action.getUrn())
+                && analyzer.getLifecycle() == BehaviorAnalyzer.Lifecycle.PERSISTENT,
+            "scope",
+            "frame",
+            result,
+            List.of());
     emitStatements(action.getCode(), code, context);
     if (type == Verb.Type.FUNCTION && !definitelyReturns(action.getCode())) {
       code.addStatement("return VOID_VALUE");
@@ -1191,11 +2110,16 @@ public class AgentCompiler {
                 context),
             returned.getAdaptedBehaviorUrn(),
             context);
+    if (context.terminatesAgentOnReturn()) {
+      code.addStatement("terminateAgent($L)", value);
+    }
     if (context.reactive()) {
       if (context.actionType() == Verb.Type.SUPPLIER && context.result() != null) {
         code.addStatement("$L.complete($L)", context.result(), value);
       }
-      code.addStatement("$L.done($L)", context.scope(), value);
+      if (!context.terminatesAgentOnReturn()) {
+        code.addStatement("$L.done($L)", context.scope(), value);
+      }
       code.addStatement("return");
       return;
     }
@@ -1206,7 +2130,9 @@ public class AgentCompiler {
         code.addStatement("return $L", context.result());
       }
       case EMITTER -> {
-        code.addStatement("$L.done($L)", context.scope(), value);
+        if (!context.terminatesAgentOnReturn()) {
+          code.addStatement("$L.done($L)", context.scope(), value);
+        }
         code.addStatement("return");
       }
     }
@@ -1873,6 +2799,53 @@ public class AgentCompiler {
     return CodeBlock.of("$T.of($L)", List.class, CodeBlock.join(values, ", "));
   }
 
+  private CodeBlock nullableStringList(Collection<String> strings) {
+    if (strings == null || strings.isEmpty()) {
+      return CodeBlock.of("$T.of()", List.class);
+    }
+    var values =
+        strings.stream()
+            .map(value -> value == null ? CodeBlock.of("null") : CodeBlock.of("$S", value))
+            .toList();
+    return CodeBlock.of("$T.asList($L)", java.util.Arrays.class, CodeBlock.join(values, ", "));
+  }
+
+  private MethodSpec compileImplementedBehaviorUrns(KActorsBehavior sourceBehavior) {
+    var urns = new LinkedHashSet<String>();
+    collectImplementedBehaviorUrns(sourceBehavior, urns);
+    return MethodSpec.methodBuilder("implementedBehaviorUrns")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PROTECTED)
+        .returns(
+            ParameterizedTypeName.get(
+                ClassName.get(Set.class), ClassName.get(String.class)))
+        .addStatement("return $L", stringSet(urns))
+        .build();
+  }
+
+  private void collectImplementedBehaviorUrns(
+      KActorsBehavior sourceBehavior, Set<String> urns) {
+    if (sourceBehavior == null || sourceBehavior.getUrn() == null || !urns.add(sourceBehavior.getUrn())) {
+      return;
+    }
+    for (var inherited : sourceBehavior.getInheritedBehaviors()) {
+      try {
+        collectImplementedBehaviorUrns(
+            resolver.resolveBehavior(inherited.getImportedBehavior(), scope), urns);
+      } catch (Throwable ignored) {
+        // Resolution diagnostics are already reported by behavior analysis.
+      }
+    }
+  }
+
+  private CodeBlock stringSet(Collection<String> strings) {
+    if (strings == null || strings.isEmpty()) {
+      return CodeBlock.of("$T.of()", Set.class);
+    }
+    var values = strings.stream().map(value -> CodeBlock.of("$S", value)).toList();
+    return CodeBlock.of("$T.of($L)", Set.class, CodeBlock.join(values, ", "));
+  }
+
   private boolean definitelyReturns(Collection<? extends KActorsStatement> statements) {
     if (statements == null || statements.isEmpty()) {
       return false;
@@ -1923,6 +2896,7 @@ public class AgentCompiler {
       Verb.Type actionType,
       boolean reactive,
       boolean synchronous,
+      boolean terminatesAgentOnReturn,
       String scope,
       String frame,
       String result,
@@ -1930,31 +2904,68 @@ public class AgentCompiler {
 
     CompilationContext withFrame(String newFrame) {
       return new CompilationContext(
-          actionType, reactive, synchronous, scope, newFrame, result, completionCollectors);
+          actionType,
+          reactive,
+          synchronous,
+          terminatesAgentOnReturn,
+          scope,
+          newFrame,
+          result,
+          completionCollectors);
     }
 
     CompilationContext asReactive(String newScope, String newFrame) {
-      return new CompilationContext(actionType, true, false, newScope, newFrame, result, List.of());
+      return new CompilationContext(
+          actionType,
+          true,
+          false,
+          terminatesAgentOnReturn,
+          newScope,
+          newFrame,
+          result,
+          List.of());
     }
 
     CompilationContext asSynchronous() {
       return synchronous
           ? this
-          : new CompilationContext(actionType, reactive, true, scope, frame, result, List.of());
+          : new CompilationContext(
+              actionType,
+              reactive,
+              true,
+              terminatesAgentOnReturn,
+              scope,
+              frame,
+              result,
+              List.of());
     }
 
     CompilationContext withoutCompletionCollectors() {
       return completionCollectors.isEmpty()
           ? this
           : new CompilationContext(
-              actionType, reactive, synchronous, scope, frame, result, List.of());
+              actionType,
+              reactive,
+              synchronous,
+              terminatesAgentOnReturn,
+              scope,
+              frame,
+              result,
+              List.of());
     }
 
     CompilationContext collectingCompletions(List<String> collector) {
       var collectors = new ArrayList<>(completionCollectors);
       collectors.add(collector);
       return new CompilationContext(
-          actionType, reactive, synchronous, scope, frame, result, collectors);
+          actionType,
+          reactive,
+          synchronous,
+          terminatesAgentOnReturn,
+          scope,
+          frame,
+          result,
+          collectors);
     }
 
     boolean isCollectingCompletions() {

@@ -1,0 +1,9 @@
+behavior test.static.actions
+    "Preserve static and instance action declarations."
+    version 1.0
+
+static action describe:
+    return "utility"
+
+action work:
+    return "instance"

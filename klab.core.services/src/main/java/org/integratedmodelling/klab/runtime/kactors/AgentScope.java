@@ -7,6 +7,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import reactor.core.Disposable;
@@ -14,8 +15,8 @@ import reactor.core.publisher.Sinks;
 
 /**
  * The AgentScope provides state during execution and identifies the blocks being run so that events
- * and actions can be properly handled by {@link RuntimeAgentBase}. Each AgentScope must expose a unique ID
- * to track its listeners in the reactor sink.
+ * and actions can be properly handled by {@link RuntimeAgentBase}. Each AgentScope must expose a
+ * unique ID to track its listeners in the reactor sink.
  */
 public abstract class AgentScope extends ParametersImpl<String> implements RuntimeAgent.Scope {
 
@@ -39,6 +40,16 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
   @Override
   public RuntimeAgent getAgent() {
     return actor;
+  }
+
+  /**
+   * The scope in which the agent was created. Can be user, session or context; never service.
+   *
+   * @return
+   */
+  @Override
+  public Scope getScope() {
+    return actor.getCreationScope();
   }
 
   /**
@@ -95,7 +106,8 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
     }
     var result =
         actor.emitEvent(
-            new RuntimeAgentBase.Event(RuntimeAgentBase.EventType.RETURN, actionId, returnedObject));
+            new RuntimeAgentBase.Event(
+                RuntimeAgentBase.EventType.RETURN, actionId, returnedObject));
     if (result != Sinks.EmitResult.OK) {
       Logging.INSTANCE.error("Failed to emit return event: " + result);
     }
@@ -124,11 +136,11 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
       if (exceptionalValue != null) {
         actor.emitEvent(
             new RuntimeAgentBase.Event(
-                    RuntimeAgentBase.EventType.EXCEPTION, actionId, exceptionalValue));
+                RuntimeAgentBase.EventType.EXCEPTION, actionId, exceptionalValue));
       }
       actor.emitEvent(
           new RuntimeAgentBase.Event(
-                  RuntimeAgentBase.EventType.TERMINATION, actionId, terminationValue(conditions)));
+              RuntimeAgentBase.EventType.TERMINATION, actionId, terminationValue(conditions)));
       for (var disposable : disposables) {
         disposable.dispose();
       }

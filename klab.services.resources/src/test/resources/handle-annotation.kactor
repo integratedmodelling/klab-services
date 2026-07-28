@@ -1,0 +1,11 @@
+behavior test.handle.annotation
+    "Preserve unnamed constant parameters and their source location."
+    version 1.0
+
+@handle(SAYHELLO)
+action say_hello(message):
+    return message
+
+@handle(not_a_constant)
+action invalid_handler(message):
+    return message
