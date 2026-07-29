@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
@@ -962,7 +963,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                 recipientUrn,
                 customAgentMessage(type, payload),
                 java.io.Serializable.class,
-                agentTimeout(timeout));
+                Boolean.FALSE.equals(timeout) ? null : agentTimeout(timeout),
+                !Boolean.FALSE.equals(timeout));
     markActivity();
     return future;
   }
@@ -999,7 +1001,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (timeout instanceof Quantity quantity) {
       return Duration.ofMillis(TimeDuration.of(quantity).getMilliseconds());
     }
-    throw new KlabActorException(this, "Agent ask timeout must be a temporal Quantity");
+    throw new KlabActorException(
+        this, "Agent ask timeout must be a temporal Quantity or false through !timeout");
   }
 
   private void handleLifecycleEvent(Event event) {
@@ -1152,7 +1155,38 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (scope != null) {
       evaluationScope = scope.getContext() == null ? scope.getSession() : scope.getContext();
     }
-    return expression.eval(evaluationScope, frame == null ? Map.of() : frame);
+    if (frame == null || frame.isEmpty()) {
+      return expression.eval(evaluationScope, Map.of());
+    }
+    var evaluatedFrame = new LinkedHashMap<String, Object>();
+    frame.forEach((name, value) -> evaluatedFrame.put(name, resolveDeferred(value)));
+    return expression.eval(evaluationScope, evaluatedFrame);
+  }
+
+  /**
+   * Preserve a k.Actors back-ticked value until a consumer evaluates it.
+   *
+   * <p>The supplier is deliberately not memoized: a parameter or variable containing the returned
+   * object behaves like a small lexical closure, and each use recomputes the original value in the
+   * scope and frame captured by generated code.
+   */
+  protected Object defer(Supplier<Object> evaluator) {
+    return new DeferredValue(Objects.requireNonNull(evaluator));
+  }
+
+  /** Evaluate one deferred value, or return an ordinary value unchanged. */
+  protected Object resolveDeferred(Object value) {
+    return value instanceof DeferredValue deferred ? deferred.evaluate() : value;
+  }
+
+  private record DeferredValue(Supplier<Object> evaluator) {
+    private Object evaluate() {
+      return evaluator.get();
+    }
+
+    private DeferredValue map(Function<Object, Object> mapper) {
+      return new DeferredValue(() -> mapper.apply(evaluate()));
+    }
   }
 
   protected Map<String, Object> bindArguments(List<String> names, Object... arguments) {
@@ -1182,8 +1216,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       List<String> requiredJavaTypes,
       Object... arguments) {
     Object[] supplied = arguments == null ? new Object[0] : arguments;
-    Map<?, ?> named =
-        supplied.length == 1 && supplied[0] instanceof Map<?, ?> map ? map : null;
+    Map<String, Object> named = null;
+    if (supplied.length == 1 && supplied[0] instanceof Map<?, ?> map) {
+      named = new LinkedHashMap<>();
+      for (var entry : map.entrySet()) {
+        named.put(String.valueOf(entry.getKey()), entry.getValue());
+      }
+      supplied = new Object[] {named};
+    }
     for (int index = 0; index < names.size(); index++) {
       String requiredBehavior =
           index < requiredBehaviors.size() ? requiredBehaviors.get(index) : null;
@@ -1196,35 +1236,65 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
           named == null
               ? (index < supplied.length ? supplied[index] : null)
               : named.get(names.get(index));
-      if (value == null) {
-        throw new KlabActorException(
-            this,
-            "Argument '" + names.get(index) + "' for action " + action + " cannot be null");
+      if (value instanceof DeferredValue deferred) {
+        var argumentName = names.get(index);
+        value =
+            deferred.map(
+                resolved ->
+                    validateActionArgument(
+                        action,
+                        argumentName,
+                        requiredBehavior,
+                        requiredJavaType,
+                        resolved));
+        if (named == null) {
+          if (index < supplied.length) {
+            supplied[index] = value;
+          }
+        } else {
+          named.put(argumentName, value);
+        }
+        continue;
       }
-      if (requiredBehavior != null && !implementsBehavior(value, requiredBehavior)) {
-        throw new KlabActorException(
-            this,
-            "Argument '"
-                + names.get(index)
-                + "' for action "
-                + action
-                + " requires an agent implementing "
-                + requiredBehavior);
-      }
-      if (requiredJavaType != null && !matchesJavaType(value, requiredJavaType)) {
-        throw new KlabActorException(
-            this,
-            "Argument '"
-                + names.get(index)
-                + "' for action "
-                + action
-                + " requires Java type "
-                + requiredJavaType
-                + ", but received "
-                + value.getClass().getTypeName());
-      }
+      validateActionArgument(
+          action, names.get(index), requiredBehavior, requiredJavaType, value);
     }
     return supplied;
+  }
+
+  private Object validateActionArgument(
+      String action,
+      String argumentName,
+      String requiredBehavior,
+      String requiredJavaType,
+      Object value) {
+    if (value == null) {
+      throw new KlabActorException(
+          this, "Argument '" + argumentName + "' for action " + action + " cannot be null");
+    }
+    if (requiredBehavior != null && !implementsBehavior(value, requiredBehavior)) {
+      throw new KlabActorException(
+          this,
+          "Argument '"
+              + argumentName
+              + "' for action "
+              + action
+              + " requires an agent implementing "
+              + requiredBehavior);
+    }
+    if (requiredJavaType != null && !matchesJavaType(value, requiredJavaType)) {
+      throw new KlabActorException(
+          this,
+          "Argument '"
+              + argumentName
+              + "' for action "
+              + action
+              + " requires Java type "
+              + requiredJavaType
+              + ", but received "
+              + value.getClass().getTypeName());
+    }
+    return value;
   }
 
   /**
@@ -1281,10 +1351,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return this;
     }
     if (frame != null && frame.containsKey(name)) {
-      return frame.get(name);
+      return resolveDeferred(frame.get(name));
     }
     if (rootScope != null && rootScope.containsKey(name)) {
-      return rootScope.get(name);
+      return resolveDeferred(rootScope.get(name));
     }
     throw new KlabActorException(this, "Unresolved k.Actors identifier: " + name);
   }
@@ -1336,9 +1406,9 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return asIterable(value);
   }
 
-  /** Internal non-local transfer used to implement a yield from a synchronous switch branch. */
   /**
-   * Internal control-flow signal used by generated switch expressions. Public visibility is
+   * Internal control-flow signal used by generated functional switches. Reactive match yields
+   * complete their enclosing action directly and do not use this signal. Public visibility is
    * required because source generation happens in the compiler package while the generated
    * subclass catches the signal.
    */
@@ -1385,7 +1455,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
    * same coercion rules as reflective dynamic invocation.
    */
   protected Object adaptJavaArgument(Object value, Class<?> target) {
-    return coerceArgument(value, target);
+    return coerceArgument(resolveDeferred(value), target);
   }
 
   protected boolean truthy(Object value) {
@@ -2012,6 +2082,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private Object coerceArgument(Object value, Class<?> target) {
+    value = resolveDeferred(value);
     if (value == null || target.isInstance(value)) {
       return value;
     }

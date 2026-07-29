@@ -215,9 +215,10 @@ public interface KActorsStatement extends KActorsCodeStatement {
   }
 
   /**
-   * Analogous to a `return` statement syntactically, it's used only within the body of a `switch`
-   * statement to make the switch functional and specify its value after calculation. Any branches
-   * that have no yield statement will return null/unknown.
+   * Analogous to a `return` statement syntactically, it is used within a {@link Switch} branch or a
+   * verb match action. In a switch it supplies the switch value. In a reactor match it supplies the
+   * result of the enclosing k.Actors action, making that action a supplier which may subsequently
+   * be used as an assignment value, call argument, or other functional value.
    */
   interface Yield extends KActorsStatement {
 
@@ -591,9 +592,10 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Actions with the corresponding pattern to match to fired values. If the value is null, any
-     * fired values matches. A verb that resolves to a {@link
+     * fired value matches. A verb that resolves to a {@link
      * org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type#FUNCTION} cannot have
-     * match actions.
+     * match actions. A {@link Yield} in a reactive match supplies the result of the enclosing
+     * k.Actors action.
      *
      * @return
      */
@@ -625,9 +627,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Actions with the corresponding pattern to match to the target value. If the value is null,
-     * any values matches. The Yield statement as the statement (or within a group statement),
-     * allowed only in a Switch, make the statement functional; if any switch matches and does not
-     * have a Yield statement,
+     * any value matches. A Yield statement in a case body (possibly nested in control flow) makes
+     * the switch functional. A matching case that completes without yielding produces
+     * null/unknown.
      *
      * @return
      */

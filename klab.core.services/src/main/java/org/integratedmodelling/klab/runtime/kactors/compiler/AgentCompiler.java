@@ -2414,7 +2414,15 @@ public class AgentCompiler {
                 yielded.getValue(), yielded.getFunction(), yielded.getSwitch(), code, context),
             yielded.getAdaptedBehaviorUrn(),
             context);
-    code.addStatement("throw new $T($L)", RuntimeAgentBase.SwitchYield.class, value);
+    if (context.reactive() && !context.synchronous()) {
+      if (context.actionType() == Verb.Type.SUPPLIER && context.result() != null) {
+        code.addStatement("$L.complete($L)", context.result(), value);
+      }
+      code.addStatement("$L.done($L)", context.scope(), value);
+      code.addStatement("return");
+    } else {
+      code.addStatement("throw new $T($L)", RuntimeAgentBase.SwitchYield.class, value);
+    }
   }
 
   /**
@@ -2721,6 +2729,14 @@ public class AgentCompiler {
       KActorsStatement.Verb verb, CodeBlock.Builder code, CompilationContext context) {
     String supplied = nextName("supplied");
     code.addStatement("Object $L = $L", supplied, callValue(verb, context));
+    emitSynchronousMatches(verb, supplied, code, context);
+  }
+
+  private void emitSynchronousMatches(
+      KActorsStatement.Verb verb,
+      String supplied,
+      CodeBlock.Builder code,
+      CompilationContext context) {
     if (verb.getActions() == null || verb.getActions().isEmpty()) {
       return;
     }
@@ -2856,9 +2872,15 @@ public class AgentCompiler {
             ? CodeBlock.of("this")
             : receiver(verb.getRecipient(), context);
     CodeBlock type =
-        supplied.isEmpty() ? CodeBlock.of("null") : argumentValue(supplied.get(0), context);
+        supplied.isEmpty()
+            ? CodeBlock.of("null")
+            : CodeBlock.of(
+                "resolveDeferred($L)", argumentValue(supplied.get(0), context));
     CodeBlock payload =
-        supplied.size() < 2 ? CodeBlock.of("null") : argumentValue(supplied.get(1), context);
+        supplied.size() < 2
+            ? CodeBlock.of("null")
+            : CodeBlock.of(
+                "resolveDeferred($L)", argumentValue(supplied.get(1), context));
     if ("tell".equals(verb.getMessage())) {
       return CodeBlock.of("tellAgent($L, $L, $L)", recipient, type, payload);
     }
@@ -2869,7 +2891,9 @@ public class AgentCompiler {
         recipient,
         type,
         payload,
-        timeout == null ? CodeBlock.of("null") : argumentValue(timeout, context));
+        timeout == null
+            ? CodeBlock.of("null")
+            : CodeBlock.of("resolveDeferred($L)", argumentValue(timeout, context)));
   }
 
   private CodeBlock invokeJavaObjectMethod(
@@ -2896,7 +2920,7 @@ public class AgentCompiler {
 
   private CodeBlock adaptedJavaArgument(CodeBlock argument, Class<?> expected) {
     if (expected == Object.class) {
-      return argument;
+      return CodeBlock.of("resolveDeferred($L)", argument);
     }
     Class<?> target = boxed(expected);
     return CodeBlock.of(
@@ -2965,6 +2989,13 @@ public class AgentCompiler {
     if (value == null) {
       return CodeBlock.of("null");
     }
+    if (value.isDeferred()) {
+      return CodeBlock.of("defer(() -> $L)", immediateValue(value, context));
+    }
+    return immediateValue(value, context);
+  }
+
+  private CodeBlock immediateValue(KActorsValue value, CompilationContext context) {
     Object raw = rawValue(value);
     return switch (value.getType()) {
       case EXPRESSION ->

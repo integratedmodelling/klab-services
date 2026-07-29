@@ -8,3 +8,7 @@ action ping(message, sender):
     sender.tell(PONG, message)
     response <- sender.ask(ECHO, message :timeout 10.s)
     console.println(response)
+    sender.ask(WAIT, message !timeout):
+        response -> console.println(response)
+    sender.ask(ECHO, message):
+        response -> yield response

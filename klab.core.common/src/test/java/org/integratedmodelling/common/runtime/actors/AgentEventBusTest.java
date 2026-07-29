@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.runtime.actors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,6 +77,18 @@ class AgentEventBusTest {
               String.class,
               Duration.ofMillis(20));
       assertThrows(ExecutionException.class, () -> timeout.get(1, TimeUnit.SECONDS));
+
+      var noTimeout =
+          AgentEventBus.INSTANCE.ask(
+              "agent:sender",
+              "agent:recipient",
+              new RuntimeAgent.CustomMessage(Constant.create("QUESTION"), "ignored"),
+              String.class,
+              null,
+              false);
+      Thread.sleep(50);
+      assertFalse(noTimeout.isDone());
+      noTimeout.cancel(false);
     } finally {
       AgentEventBus.INSTANCE.unsubscribe("agent:sender", senderOwner);
       AgentEventBus.INSTANCE.unsubscribe("agent:recipient", recipientOwner);

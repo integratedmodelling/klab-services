@@ -56,6 +56,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertExpressionAssignment),
         new Case(
+            "/deferred-value.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertDeferredValue),
+        new Case(
             "/statement-verb-operands.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertStatementVerbOperands),
@@ -533,11 +537,32 @@ class KActorsFileTest {
                 ask.getArguments().get("timeout"))
             .getType());
     assertEquals(2, KActorsVisitor.argumentValues(ask.getArguments()).size());
+    var reactiveAsk =
+        assertInstanceOf(KActorsStatement.Verb.class, action.getCode().get(3));
+    assertEquals("ask", reactiveAsk.getMessage());
+    assertEquals(List.of("timeout"), reactiveAsk.getArguments().getMetadataKeys());
+    assertEquals(Boolean.FALSE, reactiveAsk.getArguments().get("timeout"));
+    assertFalse(reactiveAsk.getActions().isEmpty());
+    assertEquals(
+        Verb.Type.SUPPLIER,
+        result.requireAnalyzer().getCalls().stream()
+            .filter(call -> call.statement() == reactiveAsk)
+            .findFirst()
+            .orElseThrow()
+            .executionType());
+    var yieldingAsk =
+        assertInstanceOf(KActorsStatement.Verb.class, action.getCode().get(4));
+    assertInstanceOf(
+        KActorsStatement.Yield.class,
+        yieldingAsk.getActions().getFirst().getActionOnMatch());
+    assertEquals(Verb.Type.SUPPLIER, action.getActionType());
 
     var compiler = new AgentCompiler(result.requireBehavior());
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("tellAgent("));
     assertTrue(compiler.getSourceCode().contains("askAgent("));
+    assertTrue(compiler.getSourceCode().contains("actionResult.complete("));
+    assertTrue(compiler.getSourceCode().contains("false"));
   }
 
   private void assertLibraryRejectsLifecycleActions(KActorsTestSupport.Result result) {
@@ -586,6 +611,24 @@ class KActorsFileTest {
     assertNotNull(assignment.getValue());
     assertEquals(ValueType.EXPRESSION, assignment.getValue().getType());
     assertEquals("21 * 2", assignment.getValue().getValue(String.class));
+    assertFalse(assignment.getValue().isDeferred());
+  }
+
+  private void assertDeferredValue(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var assignment =
+        assertInstanceOf(
+            KActorsStatement.Assignment.class,
+            result.requireAnalyzer().getActions().get("echo").statement().getCode().getFirst());
+    assertEquals(ValueType.IDENTIFIER, assignment.getValue().getType());
+    assertTrue(assignment.getValue().isDeferred());
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(assertDoesNotThrow(compiler::compile), () -> compiler.getNotifications().toString());
+    assertTrue(
+        compiler
+            .getSourceCode()
+            .contains("defer(() -> resolveIdentifier(\"input\", frame))"));
   }
 
   private void assertStatementVerbOperands(KActorsTestSupport.Result result) {

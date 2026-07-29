@@ -535,7 +535,7 @@ delegates and stops and disposes them with its own lifecycle.
 | `while` / `do while` | Emit Java loops using the same boolean adaptation pipeline. |
 | `for` | Convert with `asIterable(...)`, or adapt then call `adaptToIterable(...)`; bind the optional loop variable and emit the body. |
 | `switch` | Evaluate the selector once, optionally adapt it, then run the first matching branch synchronously. |
-| `yield` | Throw the internal `SwitchYield` signal carrying the optionally adapted value; the nearest generated switch catches it. |
+| `yield` | In a switch, throw the internal `SwitchYield` signal for the nearest generated switch to catch. In a reactive verb match, complete the enclosing supplier action result and close the event scope. |
 | `break` | Emit Java `break`. |
 | `fail` | Throw `KlabActorException`. |
 | Text | Delegate to `handleText(...)`, currently printing to the action scope writer. |
@@ -585,6 +585,13 @@ A successful match creates a child frame, binds positional variables and `captur
 the match body in reactive context. `bindMatch` destructures lists and arrays and fills missing
 positions with `null`.
 
+When a reactive match executes `yield`, analysis records a reactive result and classifies the
+enclosing k.Actors action as a supplier (unless `fire` makes it an emitter). Generated code
+completes that action's `CompletableFuture<Object>`, calls `done(value)` on the event scope to
+remove its listener and resources, and returns from the handler. The upstream reactor remains an
+ordinary statement; callers obtain the yielded value by invoking the enclosing action as a
+supplier. A switch nested inside the handler still catches its own `SwitchYield` locally.
+
 Implemented runtime categories include catch-all/truthy, no-data, empty, error, regular expression,
 class/type, list/set membership, and equality. Some corresponding literal criteria are not yet
 fully mediated into runtime objects; see Section 12.
@@ -622,6 +629,7 @@ Value emission currently distinguishes:
 - Java literals for strings, booleans, characters, and numeric primitives;
 - frame/root lookup through `resolveIdentifier`;
 - compiled expression evaluation;
+- closure-like deferred values through `defer(...)` and `resolveDeferred(...)`;
 - `null` for no-data/empty and wildcard match values;
 - `literalValue(type, encoded)` for quantities, ranges, observables, localized strings, ternaries,
   and other non-POD values.
@@ -635,6 +643,38 @@ Frames are `LinkedHashMap<String,Object>` instances:
 - groups and match actions copy it with `childFrame`;
 - identifier lookup checks the frame, then root actor state;
 - `self` resolves to the generated agent.
+
+### 9.1 Deferred values
+
+`LanguageAdapter` copies the parser's back-tick flag into `KActorsValue.isDeferred()`. When that
+flag is set, `AgentCompiler` wraps the normal generated value expression in:
+
+```java
+defer(() -> <ordinary generated evaluation>)
+```
+
+The lambda captures the scope and frame at the source location. `RuntimeAgentBase` retains it as a
+non-memoizing deferred value, so binding it to an action parameter, frame variable, or actor-state
+name does not evaluate it. Each `resolveIdentifier(...)` call forces it independently. Before a
+compiled Groovy expression runs, deferred entries in its input frame are also forced so that the
+expression receives their computed objects rather than runtime wrapper objects.
+
+This implements closure-like lexical behavior: the receiving parameter aliases the computation,
+while its identifiers are resolved from the frame captured at the call site. Repeated references
+to the parameter rerun the computation; results are never cached. The wrapper works for expression
+and ternary-expression semantic values as well as all other `KActorsValue` forms, although
+deferring a POD literal has no useful observable effect. At source level, the current Xtext grammar
+only exposes the prefix through `ExtendedValue`; because standalone `EXPR` is a sibling grammar
+alternative, `` `[a + b] `` requires the small upstream grammar extension described in
+`AGENTS.md`. The current `TernaryExpressionSyntaxImpl` must also populate its condition and branch
+values before parsed deferred ternaries can exercise this runtime path.
+
+k.Actors-to-k.Actors calls transport the wrapper unchanged. A Java invocation is a consumption
+boundary: direct generated calls force deferred arguments in `adaptJavaArgument`, and reflected
+calls force them in the common coercion path. A deferred argument carrying a k.Actors `@type`
+contract is wrapped with the validation operation rather than evaluated at action entry, preserving
+both laziness and runtime type safety. The wrapper is a generated-agent runtime detail, not part of
+the semantic POJO model and not intended for JSON transport.
 
 Behavior adaptation is available at every modelled value boundary: frame assignments, `return`,
 `fire`, switch selectors and yields, conditions, and loop iterables. It remains invalid on
@@ -923,7 +963,11 @@ pending `CompletableFuture` before publishing. A response carries that ID in `in
 delivery completes and removes the pending request before ordinary subscribers see the response.
 The Java API accepts an optional `Duration`, while the generated k.Actors `ask` call passes inline
 `:timeout` metadata to `RuntimeAgentBase.askAgent(...)`. That helper accepts a temporal `Quantity`
-and converts it to a duration. The default timeout is 30 seconds.
+and converts it to a duration. The default timeout is 30 seconds. The negative metadata flag
+`!timeout` is adapted to the Boolean value `false`; `askAgent(...)` passes that state to
+`AgentEventBus.ask(...)` without installing `CompletableFuture.orTimeout`. The pending request is
+then retained until a response arrives or the future is explicitly cancelled. Reactive match use
+does not block the invoking action.
 
 Function and supplier `@handle` actions automatically publish their returned payload as the
 correlated response. Escaping failures publish a failure response and complete the caller's future
@@ -935,7 +979,8 @@ The compiler treats the universal verbs specially:
 - `new` is a function and is resolved against a behavior `init`, Java factory, or public
   constructor;
 - `tell(CONSTANT, payload)` is a function emitted as `tellAgent(...)`;
-- `ask(CONSTANT, payload :timeout quantity)` is a supplier emitted as `askAgent(...)`.
+- `ask(CONSTANT, payload :timeout quantity)` is a supplier emitted as `askAgent(...)`; use
+  `ask(CONSTANT, payload !timeout)` to disable its response deadline.
 
 Inline metadata is excluded from ordinary arity and parameter matching. The visitor validates the
 constant discriminator, payload arity, and timeout form, and prevents actions from redefining
@@ -1061,8 +1106,7 @@ The following items are either explicit TODOs or incomplete integration boundari
 - Preserve named call arguments, defaults, and argument metadata in generated invocations.
 - Mediate non-POD values in `literalValue` instead of returning encoded strings.
 - Compile regular expressions, class/type criteria, semantic observables, annotations, ranges,
-  quantities, localized strings, ternaries, lists, maps, and deferred values to their definitive
-  runtime forms.
+  quantities, localized strings, lists, and maps to their definitive runtime forms.
 - Expand match semantics where semantic or component services are required.
 - Apply statement metadata, tags, and annotations to runtime/application behavior.
 - Implement assertion call chains and richer assertion operators rather than evaluating only the

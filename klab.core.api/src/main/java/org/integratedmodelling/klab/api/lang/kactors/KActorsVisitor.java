@@ -1277,8 +1277,15 @@ public class KActorsVisitor {
   }
 
   protected void visitYield(KActorsStatement.Yield statement, KActorsContext context) {
-    if (context.getUpstreamStatement(KActorsStatement.Switch.class) == null) {
-      error("yield can only be used inside a switch", statement);
+    var owner = functionalYieldOwner(context);
+    if (owner == null) {
+      error("yield can only be used inside a switch or a verb match", statement);
+    } else if (owner instanceof KActorsStatement.Verb) {
+      var accumulator = actionAccumulators.get(context.action);
+      if (accumulator != null) {
+        accumulator.returns++;
+        accumulator.reactiveReturns++;
+      }
     }
     validateAlternative(
         statement.getValue(),
@@ -1561,10 +1568,19 @@ public class KActorsVisitor {
       }
     }
     if ("ask".equals(message)
-        && metadata.contains("timeout")
-        && (!(statement.getArguments().get("timeout") instanceof KActorsValue timeout)
-            || timeout.getType() != ValueType.QUANTITY)) {
-      error("The :timeout metadata for ask must be a temporal Quantity", statement);
+        && metadata.contains("timeout")) {
+      Object timeout = statement.getArguments().get("timeout");
+      boolean disabled = Boolean.FALSE.equals(timeout);
+      if (timeout instanceof KActorsValue value && value.getType() == ValueType.BOOLEAN) {
+        disabled = Boolean.FALSE.equals(value.getValue(Boolean.class));
+      }
+      if (!disabled
+          && (!(timeout instanceof KActorsValue value)
+              || value.getType() != ValueType.QUANTITY)) {
+        error(
+            "The ask timeout must be a temporal :timeout Quantity or disabled with !timeout",
+            statement);
+      }
     }
   }
 
@@ -1817,20 +1833,59 @@ public class KActorsVisitor {
   }
 
   private boolean isValuePosition(KActorsContext context) {
-    if (context.upstream.size() < 2) {
-      return false;
+    return !context.upstream.isEmpty()
+        && context.upstream.getLast() instanceof KActorsStatement.Verb verb
+        && isValuePosition(context, verb);
+  }
+
+  private boolean isValuePosition(
+      KActorsContext context, KActorsStatement.Verb candidate) {
+    int index = context.upstream.lastIndexOf(candidate);
+    return index > 0 && isValueChild(context.upstream.get(index - 1), candidate);
+  }
+
+  private boolean isValueChild(
+      KActorsStatement parent, KActorsStatement.Verb candidate) {
+    return switch (parent) {
+      case KActorsStatement.Assignment assignment -> assignment.getFunction() == candidate;
+      case KActorsStatement.Verb verb ->
+          argumentValues(verb.getArguments()).stream()
+              .anyMatch(
+                  argument ->
+                      argument == candidate
+                          || argument instanceof KActorsStatement.CallArgument executable
+                              && executable.getFunction() == candidate);
+      case KActorsStatement.If conditional -> conditional.getFunction() == candidate;
+      case KActorsStatement.While loop -> loop.getFunction() == candidate;
+      case KActorsStatement.Do loop -> loop.getFunction() == candidate;
+      case KActorsStatement.For loop -> loop.getFunction() == candidate;
+      case KActorsStatement.Return returned -> returned.getFunction() == candidate;
+      case KActorsStatement.Fire fired -> fired.getFunction() == candidate;
+      case KActorsStatement.Yield yielded -> yielded.getFunction() == candidate;
+      case KActorsStatement.Switch switched -> switched.getFunction() == candidate;
+      default -> false;
+    };
+  }
+
+  /**
+   * Find the nearest construct that owns a yield. Match actions are shared by switches and verbs,
+   * so their immediate lexical parent disambiguates the two cases.
+   */
+  private KActorsStatement functionalYieldOwner(KActorsContext context) {
+    for (int i = context.upstream.size() - 2; i >= 0; i--) {
+      var statement = context.upstream.get(i);
+      if (statement instanceof KActorsStatement.Switch) {
+        return statement;
+      }
+      if (statement instanceof KActorsStatement.Verb.MatchAction && i > 0) {
+        var parent = context.upstream.get(i - 1);
+        if (parent instanceof KActorsStatement.Switch
+            || parent instanceof KActorsStatement.Verb) {
+          return parent;
+        }
+      }
     }
-    var parent = context.upstream.get(context.upstream.size() - 2);
-    return parent instanceof KActorsStatement.Assignment
-        || parent instanceof KActorsStatement.Verb
-        || parent instanceof KActorsStatement.If
-        || parent instanceof KActorsStatement.While
-        || parent instanceof KActorsStatement.Do
-        || parent instanceof KActorsStatement.For
-        || parent instanceof KActorsStatement.Return
-        || parent instanceof KActorsStatement.Fire
-        || parent instanceof KActorsStatement.Yield
-        || parent instanceof KActorsStatement.Switch;
+    return null;
   }
 
   private boolean isSwitchValuePosition(KActorsContext context) {
@@ -2087,8 +2142,9 @@ public class KActorsVisitor {
     if (statement instanceof KActorsStatement.Yield) {
       return true;
     }
-    // A nested switch owns its own yields.
-    if (statement instanceof KActorsStatement.Switch) {
+    // Nested switches and matched verbs own their own yields.
+    if (statement instanceof KActorsStatement.Switch
+        || statement instanceof KActorsStatement.Verb) {
       return false;
     }
     var found = new java.util.concurrent.atomic.AtomicBoolean();

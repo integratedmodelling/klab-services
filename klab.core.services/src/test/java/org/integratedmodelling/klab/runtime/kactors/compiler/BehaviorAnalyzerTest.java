@@ -82,8 +82,13 @@ class BehaviorAnalyzerTest {
     ask.getArguments().putUnnamed(identifier("message"));
     ask.getArguments().put("timeout", quantity("10.s"));
     ask.getArguments().getMetadataKeys().add("timeout");
+    var askWithoutTimeout = verb("sender", "ask");
+    askWithoutTimeout.getArguments().putUnnamed(constant("WAIT"));
+    askWithoutTimeout.getArguments().putUnnamed(identifier("message"));
+    askWithoutTimeout.getArguments().put("timeout", Boolean.FALSE);
+    askWithoutTimeout.getArguments().getMetadataKeys().add("timeout");
     var assignment = assignment("answer", KActorsStatement.Assignment.Scope.FRAME, ask);
-    var input = action("input", tell, assignment);
+    var input = action("input", tell, assignment, askWithoutTimeout);
     input.setArguments(
         List.of(
             new KActorsActionImpl.ArgumentImpl("message"),
@@ -113,6 +118,7 @@ class BehaviorAnalyzerTest {
     assertTrue(source.contains("tellAgent("), source);
     assertTrue(source.contains("askAgent("), source);
     assertTrue(source.contains("ValueType.QUANTITY"), source);
+    assertTrue(source.contains("false"), source);
     assertGeneratedJavaCompiles(source);
   }
 
@@ -805,11 +811,12 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
-  void yieldIsRestrictedToSwitchAndFunctionalSwitchesRequireAYield() {
+  void yieldRequiresAFunctionalSwitchOrVerbMatch() {
     var illegalYield = yielded(number(1));
     var outside = new BehaviorAnalyzer(behavior(action("main", illegalYield)));
     assertFalse(outside.analyze());
-    assertTrue(messages(outside).contains("yield can only be used inside a switch"));
+    assertTrue(
+        messages(outside).contains("yield can only be used inside a switch or a verb match"));
 
     var noYieldSwitch =
         switched(
@@ -825,6 +832,68 @@ class BehaviorAnalyzerTest {
     assertFalse(functional.analyze());
     assertTrue(
         messages(functional).contains("A switch used as a value must have at least one yield"));
+  }
+
+  @Test
+  void compilerUsesYieldFromReactorMatchAsTheEnclosingActionResult() {
+    var matchedCall = verb("worker", "fetch");
+    matchedCall.setActions(
+        List.of(
+            switchCase(number(1), yielded(number(42))),
+            switchCase(number(2), yielded(number(24)))));
+    var fetch = action("fetch_value", matchedCall);
+    fetch.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("worker")));
+    var source = behavior(fetch);
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return "fetch".equals(verb.getMessage()) ? Verb.Type.SUPPLIER : null;
+          }
+        };
+    var analyzer = new BehaviorAnalyzer(source, validator);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertFalse(analyzer.getCalls().getFirst().valueRequired());
+    assertEquals(Verb.Type.SUPPLIER, fetch.getActionType());
+
+    var compiler = new AgentCompiler(source, null, validator, null);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("actionResult.complete(42)"), generated);
+    assertTrue(generated.contains(".done(42)"), generated);
+    assertFalse(generated.contains("new RuntimeAgentBase.SwitchYield(42)"), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void nestedSwitchYieldInsideAReactorRemainsOwnedByTheSwitch() {
+    var nestedSwitch =
+        switched(number(1), switchCase(number(1), yielded(number(42))));
+    var matchedCall = verb("worker", "fetch");
+    matchedCall.setActions(List.of(switchCase(number(1), nestedSwitch)));
+    var main = action("main", matchedCall);
+    main.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("worker")));
+    var validator =
+        new KActorsVisitor.LenientValidator() {
+          @Override
+          public Verb.Type classifyActionCall(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return Verb.Type.SUPPLIER;
+          }
+        };
+    var source = behavior(main);
+    var analyzer = new BehaviorAnalyzer(source, validator);
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(Verb.Type.SUPPLIER, main.getActionType());
+
+    var compiler = new AgentCompiler(source, null, validator, null);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("new RuntimeAgentBase.SwitchYield(42)"), generated);
+    assertFalse(generated.contains("actionResult.complete(42)"), generated);
+    assertGeneratedJavaCompiles(generated);
   }
 
   @Test
@@ -1528,6 +1597,28 @@ class BehaviorAnalyzerTest {
     assertTrue(compiler.getSourceCode().contains("Expression expression_0"));
     assertTrue(compiler.getSourceCode().contains("compileExpression(\"21 * 2\")"));
     assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void compilerPreservesBackTickedValuesAsReevaluatableClosures() {
+    var deferred = expression("21 * 2");
+    deferred.setDeferred(true);
+    var compiler =
+        new AgentCompiler(
+            behavior(
+                action(
+                    "main",
+                    assignment(
+                        "answer", KActorsStatement.Assignment.Scope.FRAME, deferred),
+                    returned(identifier("answer")))));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(
+        generated.contains("defer(() -> evaluateExpression(this.expression_0, scope, frame))"),
+        generated);
+    assertTrue(generated.contains("resolveIdentifier(\"answer\", frame)"), generated);
+    assertGeneratedJavaCompiles(generated);
   }
 
   @Test

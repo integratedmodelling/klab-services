@@ -2084,12 +2084,16 @@ public enum LanguageAdapter {
             entry ->
                 new AbstractMap.SimpleEntry<>(
                     entry.getKey(),
-                    adaptArgument(
-                        entry.getValue().getFirst(),
-                        entry.getValue().getSecond(),
-                        behavior,
-                        action,
-                        notifications)))
+                    entry.getKey() != null && entry.getKey().startsWith("+")
+                        ? Boolean.TRUE
+                        : entry.getKey() != null && entry.getKey().startsWith("!")
+                            ? Boolean.FALSE
+                            : adaptArgument(
+                                entry.getValue().getFirst(),
+                                entry.getValue().getSecond(),
+                                behavior,
+                                action,
+                                notifications)))
         .collect(
             Collectors.toMap(
                 Map.Entry::getKey,

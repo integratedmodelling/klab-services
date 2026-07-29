@@ -50,10 +50,13 @@ public interface KActorsValue extends KActorsCodeStatement, Serializable {
   boolean isExclusive();
 
   /**
-   * A value prefixed with ` is deferred and its evaluation should be postponed for as long as
-   * possible when passing as argument in actor calls or construction.
+   * A value prefixed with {@code `} is deferred. Instead of evaluating the value at the call or
+   * assignment site, the runtime preserves a reevaluatable computation. When a parameter or
+   * variable aliases that computation, each use evaluates it again in the lexical scope and frame
+   * captured at its declaration. This is meaningful primarily for computable values such as
+   * expressions and ternary expressions; deferring a literal is legal but has no practical effect.
    *
-   * @return
+   * @return true when evaluation must be deferred
    */
   boolean isDeferred();
 

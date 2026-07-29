@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.integratedmodelling.common.authentication.scope.AMQPChannel;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
@@ -36,6 +37,7 @@ import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -51,6 +53,26 @@ import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
+
+  @Test
+  void deferredValuesAreReevaluatedWheneverAnAliasIsConsumed() {
+    var agent = new ReactiveRuntimeAgent();
+    var evaluations = new AtomicInteger();
+    Object deferred = agent.deferred(evaluations::incrementAndGet);
+    var frame = Map.of("x", deferred);
+
+    assertEquals(1, agent.resolve("x", frame));
+    assertEquals(2, agent.resolve("x", frame));
+
+    Expression expression =
+        (scope, parameters) -> ((Map<?, ?>) parameters[0]).get("x");
+    assertEquals(3, agent.evaluate(expression, frame));
+    assertEquals(4, agent.evaluate(expression, frame));
+
+    Object validated =
+        agent.validateTyped("accept", List.of("integer"), deferred)[0];
+    assertEquals(5, agent.resolveValue(validated));
+  }
 
   @Test
   void sharedMatcherDistinguishesTruthyWildcardCatchAllErrorsAndAnnotations() {
@@ -917,6 +939,22 @@ class RuntimeAgentBaseTest {
         String action, List<String> javaTypes, Object... arguments) {
       return validateActionArguments(
           action, List.of("value"), Arrays.asList((String) null), javaTypes, arguments);
+    }
+
+    private Object deferred(Supplier<Object> evaluator) {
+      return defer(evaluator);
+    }
+
+    private Object resolve(String name, Map<String, Object> frame) {
+      return resolveIdentifier(name, frame);
+    }
+
+    private Object resolveValue(Object value) {
+      return resolveDeferred(value);
+    }
+
+    private Object evaluate(Expression expression, Map<String, Object> frame) {
+      return evaluateExpression(expression, null, frame);
     }
 
     private boolean match(

@@ -232,12 +232,13 @@ action because they are action collections rather than constructed or started ac
 
 ### 4.2. Function, supplier, and emitter actions
 
-Analysis assigns every action one effective execution type (see Section 5 for the meaning of "match" and "reactive":
+Analysis assigns every action one effective execution type (see Section 5 for the meaning of
+"match" and "reactive"):
 
 - A **function** executes synchronously and returns normally. It does not expose reactive match
   actions.
-- A **supplier** eventually completes once. A `return` executed inside a match action supplies its
-  result and removes the listener.
+- A **supplier** eventually completes once. A `return` or `yield` executed inside a match action
+  supplies its result and removes the listener.
 - An **emitter** contains `fire` and may produce zero, one, or many events while its actor remains
   alive. It may use a reactive `return` to stop scheduled emissions and remove its listeners; the
   required return value is available as an exit code.
@@ -336,15 +337,20 @@ Every agent exposes three reserved verbs that cannot be redefined by a behavior:
 worker <- tools.new(configuration)
 worker.tell(RELOAD, configuration)
 result <- worker.ask(LOOKUP, key :timeout 10.s)
+worker.ask(WAIT_FOR_EVENT, key !timeout):
+    response -> process(response)
 ```
 
 `new` follows the construction rules described under imports. `tell` requires a message-class
 constant and one arbitrary serializable payload; it publishes the message and returns immediately.
 `ask` accepts the same two ordinary arguments and is a supplier: it waits for a correlated response
 from the receiver. An optional temporal quantity may be supplied as inline `:timeout` metadata;
-the runtime default is 30 seconds. A matching function or supplier `@handle` action replies with
-its returned value. A handler failure completes the request exceptionally. Emitter handlers do not
-have a single automatic result, but may explicitly reply through their injected `sender` handle.
+the runtime default is 30 seconds. Use the negative metadata flag `!timeout` when no deadline should
+be installed. This is appropriate for the ordinary reactive form shown above: installing the
+supplier listener does not block the action, and the match action simply remains dormant if no
+response arrives. A matching function or supplier `@handle` action replies with its returned value.
+A handler failure completes the request exceptionally. Emitter handlers do not have a single
+automatic result, but may explicitly reply through their injected `sender` handle.
 
 Messaging is available only when the scope used to create or reconnect the agent has a connected
 messaging channel. Agent creation still succeeds without one: messaging is disabled and the
@@ -451,6 +457,27 @@ A function call cannot have match actions. An emitter cannot be used where a sin
 required, such as the right side of an assignment or as a condition. A supplier may be used there;
 execution waits for its single result.
 
+`yield` in a reactor match supplies the result of the enclosing action. Callers may then use that
+action as a supplier in assignments, arguments, and other value positions:
+
+```kactors
+action describe(key):
+    worker.lookup(key): (
+        result -> yield result.description()
+        empty -> yield "No result"
+        exception as error -> fail error
+    )
+
+action report(key):
+    description <- describe(key)
+    console.println(describe(other_key))
+```
+
+The reactor call remains nonblocking: `describe` returns its future immediately, and the matching
+branch completes that future when it yields. A branch that does not yield leaves the action pending
+unless another execution path returns, yields, or fails. The match block itself is not an
+assignment RHS or call argument.
+
 Current match syntax includes:
 
 | Pattern | Meaning |
@@ -524,8 +551,40 @@ Common value forms include:
 | Localized string key | `#WELCOME_MESSAGE` |
 | Current/numbered event or argument value | `$`, `$$`, `$0`, `$1`, ... |
 
-A value prefixed with a backtick is deferred: evaluation is postponed so the receiving action can
-evaluate it in the appropriate actor scope.
+A value prefixed with a backtick is deferred. The runtime passes a reevaluatable computation
+instead of its current result:
+
+```kactors
+action use_twice(x):
+    console.println(x)
+    console.println(x)
+
+action calculate(a, b):
+    // Intended concise syntax once standalone expressions are admitted as ExtendedValue:
+    use_twice(`[a + b])
+```
+
+Here `x` aliases the deferred expression. Each use of `x` evaluates it again using the lexical actor
+scope and frame captured where the back-ticked value was created. The result is not memoized, so
+expressions that inspect changing runtime state may produce a different value on each use. Passing
+the deferred value through a k.Actors parameter or storing it in actor/frame state preserves this
+behavior.
+
+Deferred evaluation is chiefly useful for computable values such as expressions and ternary
+expressions, giving them closure-like behavior. Deferring a literal is legal but only recomputes
+the same literal. An ordinary value without the backtick is evaluated before the call or
+assignment. When a deferred value crosses into a Java method, is used as an identifier, or becomes
+an input binding to another expression, that boundary consumes and evaluates it. Runtime
+`@type` checks are likewise postponed until the deferred argument is first consumed.
+
+The semantic model and compiler also support a deferred standalone expression value. The current
+Xtext grammar, however, places `EXPR` beside rather than inside `ExtendedValue`, and the back-tick
+prefix is presently declared only on `ExtendedValue`. Therefore the concise spelling
+`` `[a + b] `` does not yet parse. In addition, the current language library's
+`TernaryExpressionSyntaxImpl` does not yet populate its three `ValueSyntax` members, so a deferred
+ternary is not presently a usable workaround. Back-ticked literals and identifiers do parse and
+exercise the same preservation path; enabling the intended computable source form requires those
+two small upstream `klab-languages` completions.
 
 Square brackets always delimit an expression, so `[1, 2, 3]` is an expression producing a list,
 whereas `(1, 2, 3)` is the grammar's literal list form.
@@ -652,7 +711,8 @@ criteria as a verb's match actions. The first matching branch runs synchronously
 called while executing a branch are joined before execution proceeds, so the switch does not
 install an asynchronous listener and escape its lexical frame.
 
-`yield` supplies the value of the nearest enclosing switch:
+`yield` supplies the value of the nearest enclosing functional switch, or completes the enclosing
+k.Actors action when executed in a verb match:
 
 ```kactors
 result <- switch input (
@@ -663,10 +723,12 @@ result <- switch input (
 )
 ```
 
-`yield` is legal only downstream of a switch. If any branch of a switch contains a yield, the
-switch is functional and may be used wherever that syntax position accepts a value. A matching
-branch that completes without yielding gives that switch a null/unknown result; a switch with no
-yield branch is statement-only. A nested switch owns its own yields.
+If any branch of a switch contains a yield, the switch is functional and may be used wherever that
+syntax position accepts a value. A matching branch that completes without yielding gives that
+switch a null/unknown result; a switch with no yield branch is statement-only. A nested switch owns
+its own yields. In a verb match, `yield` classifies the enclosing action as a supplier and completes
+its result when that branch runs. Callers - not the reactor match itself - use that action in value
+positions.
 
 `return` inside a switch retains the ordinary action contract: it returns from a function or
 supplier action, or terminates an emitter with its exit value. It does not merely return from the

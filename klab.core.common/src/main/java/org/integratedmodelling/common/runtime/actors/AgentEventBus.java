@@ -238,6 +238,23 @@ public enum AgentEventBus {
       RuntimeAgent.CustomMessage request,
       Class<? extends R> responseClass,
       Duration timeout) {
+    return ask(senderUrn, recipientUrn, request, responseClass, timeout, true);
+  }
+
+  /**
+   * Publish a correlated custom request, optionally without a response deadline.
+   *
+   * @param enforceTimeout false when the request should remain pending until a response or explicit
+   *     cancellation
+   */
+  @SuppressWarnings("unchecked")
+  public <R extends Serializable> CompletableFuture<R> ask(
+      String senderUrn,
+      String recipientUrn,
+      RuntimeAgent.CustomMessage request,
+      Class<? extends R> responseClass,
+      Duration timeout,
+      boolean enforceTimeout) {
     if (request == null || responseClass == null) {
       return CompletableFuture.failedFuture(
           new IllegalArgumentException("An agent request and response class are required"));
@@ -251,11 +268,15 @@ public enum AgentEventBus {
     pendingRequests.put(
         requestId,
         new PendingRequest((Class<? extends Serializable>) responseClass, future));
-    Duration effectiveTimeout =
-        timeout == null || timeout.isZero() || timeout.isNegative() ? DEFAULT_ASK_TIMEOUT : timeout;
-    future
-        .orTimeout(effectiveTimeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS)
-        .whenComplete((ignored, failure) -> pendingRequests.remove(requestId));
+    if (enforceTimeout) {
+      Duration effectiveTimeout =
+          timeout == null || timeout.isZero() || timeout.isNegative()
+              ? DEFAULT_ASK_TIMEOUT
+              : timeout;
+      future.orTimeout(
+          effectiveTimeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+    future.whenComplete((ignored, failure) -> pendingRequests.remove(requestId));
     if (!publish(
         senderUrn, recipientUrn, Message.MessageType.CustomAgentMessage, correlated)) {
       pendingRequests.remove(requestId);
