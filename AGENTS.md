@@ -232,7 +232,7 @@ action because they are action collections rather than constructed or started ac
 
 ### 4.2. Function, supplier, and emitter actions
 
-Analysis assigns every action one effective execution type:
+Analysis assigns every action one effective execution type (see Section 5 for the meaning of "match" and "reactive":
 
 - A **function** executes synchronously and returns normally. It does not expose reactive match
   actions.
@@ -277,7 +277,7 @@ dynamically typed.
 
 ### 4.3. Agent messages and `@handle`
 
-Running agents communicate through their agent URNs. Communication is bidirectional: a remote
+Running agents communicate through messages that can cross network boundaries, keyed by the unique agent URNs. Communication is bidirectional: a remote
 client handle can control and message its service-side peer, agents can message other agents, and
 an agent can send a message to the scope that created it. Agent handles remain ordinary
 serializable beans; reconnecting a deserialized handle uses its URN rather than serialized broker
@@ -327,10 +327,10 @@ Start, stop, status request, status change, and failure are runtime lifecycle me
 custom constants. Remote handles use these to control a running peer and maintain their local
 view of its state. Status includes the represented observation ID (`-1` when unbound), when the
 agent first started, and the latest message or reactor activity, allowing clients to calculate
-idle time. Correlated `ask`/reply is not implemented yet; a handler can currently respond by
-sending a normal message through its injected `sender` handle.
+idle time. Correlated `ask`/reply is based on the handler responding by
+sending a normal message through its injected `sender` handle. The action will automatically encode an ID for the received message so that the receiving sender can recognize it as a response. 
 
-Every agent also exposes three reserved verbs that cannot be redefined by a behavior:
+Every agent exposes three reserved verbs that cannot be redefined by a behavior:
 
 ```kactors
 worker <- tools.new(configuration)
