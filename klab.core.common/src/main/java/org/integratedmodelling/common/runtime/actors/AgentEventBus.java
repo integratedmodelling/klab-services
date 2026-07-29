@@ -1,13 +1,17 @@
 package org.integratedmodelling.common.runtime.actors;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.authentication.scope.AMQPChannel;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -27,6 +31,8 @@ import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
  */
 public enum AgentEventBus {
   INSTANCE;
+
+  private static final Duration DEFAULT_ASK_TIMEOUT = Duration.ofSeconds(30);
 
   private record TransportKey(String federationId, String broker, String agentUrn) {
 
@@ -67,6 +73,7 @@ public enum AgentEventBus {
     }
 
     private void deliverLocal(Message message) {
+      completeResponse(message);
       for (var subscription : subscriptions) {
         try {
           subscription.consumer().accept(message);
@@ -105,6 +112,10 @@ public enum AgentEventBus {
   private final ConcurrentMap<TransportKey, Transport> transports = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Class<? extends Serializable>> payloadTypes =
       new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
+
+  private record PendingRequest(
+      Class<? extends Serializable> responseClass, CompletableFuture<Serializable> future) {}
 
   /**
    * Allow a concrete serializable class to be reconstructed from a custom agent-message payload.
@@ -216,6 +227,44 @@ public enum AgentEventBus {
     return true;
   }
 
+  /**
+   * Publish a correlated custom request and complete with the response payload. Correlation lives
+   * in the portable custom-message envelope so it works identically for local and AMQP peers.
+   */
+  @SuppressWarnings("unchecked")
+  public <R extends Serializable> CompletableFuture<R> ask(
+      String senderUrn,
+      String recipientUrn,
+      RuntimeAgent.CustomMessage request,
+      Class<? extends R> responseClass,
+      Duration timeout) {
+    if (request == null || responseClass == null) {
+      return CompletableFuture.failedFuture(
+          new IllegalArgumentException("An agent request and response class are required"));
+    }
+    String requestId = UUID.randomUUID().toString();
+    var correlated = new RuntimeAgent.CustomMessage(request);
+    correlated.setRequestId(requestId);
+    correlated.setInResponseTo(null);
+    correlated.setFailure(null);
+    var future = new CompletableFuture<Serializable>();
+    pendingRequests.put(
+        requestId,
+        new PendingRequest((Class<? extends Serializable>) responseClass, future));
+    Duration effectiveTimeout =
+        timeout == null || timeout.isZero() || timeout.isNegative() ? DEFAULT_ASK_TIMEOUT : timeout;
+    future
+        .orTimeout(effectiveTimeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS)
+        .whenComplete((ignored, failure) -> pendingRequests.remove(requestId));
+    if (!publish(
+        senderUrn, recipientUrn, Message.MessageType.CustomAgentMessage, correlated)) {
+      pendingRequests.remove(requestId);
+      future.completeExceptionally(
+          new IllegalStateException("Agent messaging is not connected for " + senderUrn));
+    }
+    return (CompletableFuture<R>) (CompletableFuture<?>) future;
+  }
+
   public boolean isSubscribed(String agentUrn, Object owner) {
     if (agentUrn == null || owner == null) {
       return false;
@@ -267,6 +316,40 @@ public enum AgentEventBus {
     var custom = message.getPayload(RuntimeAgent.CustomMessage.class);
     if (custom != null && custom.payload() != null) {
       registerPayloadType((Class<? extends Serializable>) custom.payload().getClass());
+    }
+  }
+
+  private void completeResponse(Message message) {
+    if (message == null || message.getMessageType() != Message.MessageType.CustomAgentMessage) {
+      return;
+    }
+    var custom = message.getPayload(RuntimeAgent.CustomMessage.class);
+    if (custom == null || custom.inResponseTo() == null) {
+      return;
+    }
+    var pending = pendingRequests.remove(custom.inResponseTo());
+    if (pending == null) {
+      return;
+    }
+    if (custom.failure() != null) {
+      pending.future().completeExceptionally(new IllegalStateException(custom.failure()));
+      return;
+    }
+    Object payload = custom.payload();
+    try {
+      Serializable response;
+      if (payload == null) {
+        response = null;
+      } else if (pending.responseClass().isInstance(payload)) {
+        response = (Serializable) payload;
+      } else {
+        response =
+            JacksonConfiguration.newObjectMapper()
+                .convertValue(payload, pending.responseClass());
+      }
+      pending.future().complete(response);
+    } catch (Throwable failure) {
+      pending.future().completeExceptionally(failure);
     }
   }
 

@@ -2,10 +2,12 @@ package org.integratedmodelling.klab.runtime.kactors;
 
 import groovy.lang.GroovyObjectSupport;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,11 +33,14 @@ import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -648,6 +653,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       notifyAgent(Notification.warning("Ignoring an agent message without a custom payload"));
       return;
     }
+    if (customMessage.inResponseTo() != null) {
+      // AgentEventBus consumes correlated responses before dispatching local subscribers. Runtime
+      // peers must not feed the response back through the language handler.
+      return;
+    }
     String messageClass = customMessage.type().getValue();
     if (RuntimeAgent.ConsoleMessageType.CONSOLE_ATTACH.name().equals(messageClass)) {
       List<ConsoleOutput> pending;
@@ -678,12 +688,12 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return;
     }
     Object payload = mediateAgentMessagePayload(customMessage);
-    Agent sender = senderHandle(message.getDispatchId());
+    Agent sender = senderHandle(message.getDispatchId(), customMessage.requestId());
     Object[] arguments =
         handler.argumentNames().stream()
             .map(name -> "sender".equals(name) ? sender : payload)
             .toArray();
-    dispatchAgentMessage(handler, arguments);
+    dispatchAgentMessage(handler, arguments, message, customMessage);
   }
 
   /**
@@ -789,7 +799,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         behaviorUrn, new KActorsBehaviorAdapter(target, action, executionType));
   }
 
-  private void dispatchAgentMessage(AgentMessageHandler handler, Object[] arguments) {
+  private void dispatchAgentMessage(
+      AgentMessageHandler handler,
+      Object[] arguments,
+      Message request,
+      RuntimeAgent.CustomMessage customRequest) {
     RuntimeAgentBase target = handler.target == null ? this : handler.target;
     var actionScope = target.rootScope.withId(target.nextId.incrementAndGet());
     actionScope.disposeWith(
@@ -809,6 +823,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                     Object result =
                         target.invokeSelfFunction(handler.action(), actionScope, arguments);
                     actionScope.done(result);
+                    publishAgentResponse(request, customRequest, result, null);
                   }
                   case SUPPLIER ->
                       target
@@ -817,8 +832,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                               (result, failure) -> {
                                 if (failure == null) {
                                   actionScope.done(result);
+                                  publishAgentResponse(request, customRequest, result, null);
                                 } else {
                                   actionScope.done(failure);
+                                  publishAgentResponse(request, customRequest, null, failure);
                                 }
                               });
                   case EMITTER ->
@@ -826,8 +843,45 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
                 }
               } catch (Throwable failure) {
                 actionScope.done(failure);
+                publishAgentResponse(request, customRequest, null, failure);
               }
             });
+  }
+
+  private void publishAgentResponse(
+      Message request,
+      RuntimeAgent.CustomMessage customRequest,
+      Object result,
+      Throwable failure) {
+    if (request == null
+        || customRequest == null
+        || customRequest.requestId() == null
+        || request.getDispatchId() == null) {
+      return;
+    }
+    java.io.Serializable payload =
+        result == null || result == VOID_VALUE
+            ? null
+            : result instanceof java.io.Serializable serializable ? serializable : null;
+    var response = new RuntimeAgent.CustomMessage(customRequest.type(), payload);
+    response.setInResponseTo(customRequest.requestId());
+    if (failure != null) {
+      Throwable cause =
+          failure instanceof java.util.concurrent.CompletionException completion
+                  && completion.getCause() != null
+              ? completion.getCause()
+              : failure;
+      response.setFailure(
+          cause.getMessage() == null ? cause.getClass().getName() : cause.getMessage());
+    } else if (result != null && result != VOID_VALUE && payload == null) {
+      response.setFailure(
+          "The response payload " + result.getClass().getName() + " is not serializable");
+    }
+    AgentEventBus.INSTANCE.publish(
+        agentUrn,
+        request.getDispatchId(),
+        Message.MessageType.CustomAgentMessage,
+        response);
   }
 
   /**
@@ -862,11 +916,90 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   /** Build a lightweight reply handle whose outgoing messages originate from this agent. */
   protected Agent senderHandle(String senderUrn) {
+    return senderHandle(senderUrn, null);
+  }
+
+  /** Build a reply handle that preserves request correlation when used from an ask handler. */
+  protected Agent senderHandle(String senderUrn, String requestId) {
     var sender = new AgentImpl();
     sender.setUrn(senderUrn);
     sender.setViable(senderUrn != null && !senderUrn.isBlank());
     sender.setLocalSenderUrn(agentUrn);
+    sender.setLocalResponseTo(requestId);
     return sender;
+  }
+
+  /** Send one reserved k.Actors {@code tell} message to an agent handle. */
+  protected Object tellAgent(Object recipient, Object type, Object payload) {
+    String recipientUrn = recipientAgentUrn(recipient);
+    var message = customAgentMessage(type, payload);
+    if (agentUrn != null
+        && AgentEventBus.INSTANCE.publish(
+            agentUrn, recipientUrn, Message.MessageType.CustomAgentMessage, message)) {
+      markActivity();
+      return null;
+    }
+    if (recipient instanceof Agent agent) {
+      agent.tell(message);
+      return null;
+    }
+    throw new KlabActorException(this, "Agent messaging is not connected for " + recipientUrn);
+  }
+
+  /** Send one reserved k.Actors {@code ask} request and return its correlated response future. */
+  protected CompletableFuture<Object> askAgent(
+      Object recipient, Object type, Object payload, Object timeout) {
+    String recipientUrn = recipientAgentUrn(recipient);
+    if (agentUrn == null) {
+      return CompletableFuture.failedFuture(
+          new KlabActorException(this, "The requesting runtime agent has no messaging URN"));
+    }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    CompletableFuture<Object> future =
+        (CompletableFuture)
+            AgentEventBus.INSTANCE.ask(
+                agentUrn,
+                recipientUrn,
+                customAgentMessage(type, payload),
+                java.io.Serializable.class,
+                agentTimeout(timeout));
+    markActivity();
+    return future;
+  }
+
+  private String recipientAgentUrn(Object recipient) {
+    String urn =
+        recipient instanceof Agent agent
+            ? agent.getUrn()
+            : recipient instanceof RuntimeAgentBase runtime ? runtime.agentUrn : null;
+    if (urn == null || urn.isBlank()) {
+      throw new KlabActorException(this, "Reserved agent verbs require a viable agent handle");
+    }
+    return urn;
+  }
+
+  private RuntimeAgent.CustomMessage customAgentMessage(Object type, Object payload) {
+    if (!(type instanceof Constant constant)) {
+      throw new KlabActorException(this, "Agent message type must be a CONSTANT");
+    }
+    if (payload != null && !(payload instanceof java.io.Serializable)) {
+      throw new KlabActorException(
+          this, "Agent message payload " + payload.getClass().getName() + " is not serializable");
+    }
+    return new RuntimeAgent.CustomMessage(constant, (java.io.Serializable) payload);
+  }
+
+  private Duration agentTimeout(Object timeout) {
+    if (timeout == null) {
+      return null;
+    }
+    if (timeout instanceof Duration duration) {
+      return duration;
+    }
+    if (timeout instanceof Quantity quantity) {
+      return Duration.ofMillis(TimeDuration.of(quantity).getMilliseconds());
+    }
+    throw new KlabActorException(this, "Agent ask timeout must be a temporal Quantity");
   }
 
   private void handleLifecycleEvent(Event event) {
@@ -1235,6 +1368,26 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return encoded;
   }
 
+  /** Build a mutable insertion-ordered map for a compiled k.Actors map literal. */
+  protected Map<Object, Object> mutableMap(Object[] keys, Object[] values) {
+    if (keys == null || values == null || keys.length != values.length) {
+      throw new KlabActorException(this, "Invalid compiled map literal");
+    }
+    var ret = new LinkedHashMap<Object, Object>();
+    for (int index = 0; index < keys.length; index++) {
+      ret.put(keys[index], values[index]);
+    }
+    return ret;
+  }
+
+  /**
+   * Adapt one compiled argument to an ordinary Java method parameter. This deliberately shares the
+   * same coercion rules as reflective dynamic invocation.
+   */
+  protected Object adaptJavaArgument(Object value, Class<?> target) {
+    return coerceArgument(value, target);
+  }
+
   protected boolean truthy(Object value) {
     if (value == null) {
       return false;
@@ -1574,6 +1727,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     Class<?> actorClass = actor instanceof Class<?> cls ? cls : actor.getClass();
     Object target = actor instanceof Class<?> ? null : actor;
     try {
+      if (target == null && "new".equals(verb)) {
+        try {
+          Method factory = findActorMethod(actorClass, verb, true, scope, arguments);
+          return invokeDynamically(factory, null, scope, arguments);
+        } catch (NoSuchMethodException noFactory) {
+          return new DynamicInvocation(
+              Verb.Type.FUNCTION, constructActor(actorClass, scope, arguments));
+        }
+      }
       Method method = findActorMethod(actorClass, verb, target == null, scope, arguments);
       return invokeDynamically(method, target, scope, arguments);
     } catch (InvocationTargetException e) {
@@ -1589,13 +1751,103 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     Object[] actualArguments = prepareArguments(method, scope, arguments);
     Object value =
         method.invoke(Modifier.isStatic(method.getModifiers()) ? null : target, actualArguments);
-    Verb.Type type =
-        method.getReturnType() == void.class
-            ? Verb.Type.EMITTER
-            : CompletableFuture.class.isAssignableFrom(method.getReturnType())
-                ? Verb.Type.SUPPLIER
-                : Verb.Type.FUNCTION;
+    Verb.Type type = dynamicMethodType(method);
     return new DynamicInvocation(type, value);
+  }
+
+  private Object constructActor(Class<?> actorClass, AgentScope scope, Object[] arguments)
+      throws ReflectiveOperationException {
+    String mismatch = null;
+    for (Constructor<?> constructor : actorClass.getConstructors()) {
+      try {
+        Object[] actual = prepareConstructorArguments(constructor, scope, arguments);
+        return constructor.newInstance(actual);
+      } catch (IllegalArgumentException failure) {
+        mismatch = failure.getMessage();
+      }
+    }
+    throw new NoSuchMethodException(
+        "No public constructor of "
+            + actorClass.getName()
+            + " accepts the supplied arguments"
+            + (mismatch == null ? "" : ": " + mismatch));
+  }
+
+  private Object[] prepareConstructorArguments(
+      Constructor<?> constructor, AgentScope scope, Object[] supplied) {
+    try {
+      return prepareConstructorArgumentsDirect(constructor, scope, supplied);
+    } catch (IllegalArgumentException directFailure) {
+      if (parameterNegotiator == null) {
+        throw directFailure;
+      }
+      var expected = new ArrayList<Class<?>>();
+      for (int index = 0; index < constructor.getParameterCount(); index++) {
+        Class<?> parameter = constructor.getParameterTypes()[index];
+        if (!RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+          expected.add(
+              constructor.isVarArgs() && index == constructor.getParameterCount() - 1
+                  ? parameter.getComponentType()
+                  : parameter);
+        }
+      }
+      var suppliedValues = new ArrayList<Object>();
+      Collections.addAll(
+          suppliedValues, supplied == null ? new Object[0] : supplied);
+      var actual =
+          parameterNegotiator.negotiate(
+              List.copyOf(expected), Collections.unmodifiableList(suppliedValues));
+      if (actual == null) {
+        throw directFailure;
+      }
+      return prepareConstructorArgumentsDirect(constructor, scope, actual.toArray());
+    }
+  }
+
+  private Object[] prepareConstructorArgumentsDirect(
+      Constructor<?> constructor, AgentScope scope, Object[] suppliedArguments) {
+    Object[] supplied = suppliedArguments == null ? new Object[0] : suppliedArguments;
+    var parameters = constructor.getParameterTypes();
+    var ret = new Object[parameters.length];
+    int source = 0;
+    for (int target = 0; target < parameters.length; target++) {
+      Class<?> parameter = parameters[target];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        ret[target] = scope;
+      } else if (constructor.isVarArgs() && target == parameters.length - 1) {
+        Class<?> component = parameter.getComponentType();
+        Object array = Array.newInstance(component, supplied.length - source);
+        for (int index = source; index < supplied.length; index++) {
+          Array.set(array, index - source, coerceArgument(supplied[index], component));
+        }
+        ret[target] = array;
+        source = supplied.length;
+      } else if (source < supplied.length) {
+        ret[target] = coerceArgument(supplied[source++], parameter);
+      } else {
+        throw new IllegalArgumentException("Not enough constructor arguments");
+      }
+    }
+    if (source != supplied.length) {
+      throw new IllegalArgumentException("Too many constructor arguments");
+    }
+    return ret;
+  }
+
+  private Verb.Type dynamicMethodType(Method method) {
+    var annotation = method.getAnnotation(Verb.class);
+    if (annotation != null) {
+      if (annotation.fires() != Void.class) {
+        return Verb.Type.EMITTER;
+      }
+      if (CompletableFuture.class.isAssignableFrom(method.getReturnType())) {
+        return Verb.Type.SUPPLIER;
+      }
+      return annotation.executionType();
+    }
+    return CompletableFuture.class.isAssignableFrom(method.getReturnType())
+        ? Verb.Type.SUPPLIER
+        : Verb.Type.FUNCTION;
   }
 
   private Method findActorMethod(
@@ -1606,23 +1858,56 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       Object[] arguments)
       throws NoSuchMethodException {
     String mismatch = null;
-    for (Method method : actorClass.getMethods()) {
-      var annotation = method.getAnnotation(Verb.class);
-      String exposedName =
-          annotation == null || annotation.name().isBlank() ? method.getName() : annotation.name();
-      if (exposedName.equals(verb)
-          && (!requireStatic || Modifier.isStatic(method.getModifiers()))) {
-        try {
-          prepareArguments(method, scope, arguments);
-          method.setAccessible(true);
-          return method;
-        } catch (IllegalArgumentException failure) {
-          mismatch = failure.getMessage();
+    String camelName = lowerUnderscoreToCamel(verb);
+    var methodNames = new ArrayList<String>();
+    methodNames.add(verb);
+    if (!Objects.equals(verb, camelName)) {
+      methodNames.add(camelName);
+    }
+    if (arguments.length == 0 && !camelName.isBlank()) {
+      String property = Character.toUpperCase(camelName.charAt(0)) + camelName.substring(1);
+      methodNames.add("get" + property);
+      methodNames.add("is" + property);
+    }
+    for (String methodName : methodNames) {
+      for (Method method : actorClass.getMethods()) {
+        var annotation = method.getAnnotation(Verb.class);
+        String exposedName =
+            annotation == null || annotation.name().isBlank()
+                ? method.getName()
+                : annotation.name();
+        if ((annotation == null ? exposedName.equals(methodName) : exposedName.equals(verb))
+            && method.getDeclaringClass() != Object.class
+            && (!requireStatic || Modifier.isStatic(method.getModifiers()))) {
+          try {
+            prepareArguments(method, scope, arguments);
+            method.setAccessible(true);
+            return method;
+          } catch (IllegalArgumentException failure) {
+            mismatch = failure.getMessage();
+          }
         }
       }
     }
     throw new NoSuchMethodException(
         actorClass.getName() + "." + verb + (mismatch == null ? "" : ": " + mismatch));
+  }
+
+  private String lowerUnderscoreToCamel(String name) {
+    var ret = new StringBuilder(name.length());
+    boolean uppercase = false;
+    for (int index = 0; index < name.length(); index++) {
+      char c = name.charAt(index);
+      if (c == '_') {
+        uppercase = ret.length() > 0;
+      } else if (uppercase) {
+        ret.append(Character.toUpperCase(c));
+        uppercase = false;
+      } else {
+        ret.append(c);
+      }
+    }
+    return ret.toString();
   }
 
   private Method findMethod(Class<?> type, String name, boolean publicOnly)

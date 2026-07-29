@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +50,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 
@@ -894,16 +896,39 @@ public enum AgentRegistry {
 
     @Override
     public <T extends Serializable> void tell(T message) {
-      notifications.add(
-          Notification.warning("Direct serializable agent messaging is not implemented yet"));
+      RuntimeAgent.CustomMessage custom =
+          message instanceof RuntimeAgent.CustomMessage supplied
+              ? new RuntimeAgent.CustomMessage(supplied)
+              : message instanceof org.integratedmodelling.klab.api.collections.Constant constant
+                  ? new RuntimeAgent.CustomMessage(constant, null)
+                  : new RuntimeAgent.CustomMessage(
+                      org.integratedmodelling.klab.api.collections.Constant.create("message"),
+                      message);
+      if (!org.integratedmodelling.common.runtime.actors.AgentEventBus.INSTANCE.publish(
+          urn, urn, Message.MessageType.CustomAgentMessage, custom)) {
+        notifications.add(Notification.warning("Agent messaging is not connected for " + urn));
+      }
     }
 
     @Override
     public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
         T message, Class<? extends R> responseClass) {
-      return CompletableFuture.failedFuture(
-          new UnsupportedOperationException(
-              "Direct serializable agent messaging is not implemented yet"));
+      return ask(message, responseClass, null);
+    }
+
+    @Override
+    public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
+        T message, Class<? extends R> responseClass, Duration timeout) {
+      RuntimeAgent.CustomMessage custom =
+          message instanceof RuntimeAgent.CustomMessage supplied
+              ? new RuntimeAgent.CustomMessage(supplied)
+              : message instanceof org.integratedmodelling.klab.api.collections.Constant constant
+                  ? new RuntimeAgent.CustomMessage(constant, null)
+                  : new RuntimeAgent.CustomMessage(
+                      org.integratedmodelling.klab.api.collections.Constant.create("message"),
+                      message);
+      return org.integratedmodelling.common.runtime.actors.AgentEventBus.INSTANCE.ask(
+          urn, urn, custom, responseClass, timeout);
     }
 
   }

@@ -1,6 +1,9 @@
 package org.integratedmodelling.common.runtime.actors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -15,6 +18,7 @@ import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** The client-side Agent incarnates the service-side agent in the runtime. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AgentImpl implements Agent {
 
   private List<Notification> notifications = new ArrayList<>();
@@ -30,6 +34,7 @@ public class AgentImpl implements Agent {
   private long startedAt = -1;
   private long lastActivityAt = -1;
   private transient String localSenderUrn;
+  private transient String localResponseTo;
   private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
       new CopyOnWriteArrayList<>();
   private transient CopyOnWriteArrayList<Consumer<Message>> sentMessageListeners =
@@ -191,19 +196,37 @@ public class AgentImpl implements Agent {
     }
     RuntimeAgent.CustomMessage customMessage =
         message instanceof RuntimeAgent.CustomMessage custom
-            ? custom
+            ? new RuntimeAgent.CustomMessage(custom)
             : message instanceof Constant constant
                 ? new RuntimeAgent.CustomMessage(constant, null)
                 : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
+    if (localResponseTo != null && customMessage.inResponseTo() == null) {
+      customMessage.setInResponseTo(localResponseTo);
+    }
     publish(Message.MessageType.CustomAgentMessage, customMessage);
   }
 
   @Override
   public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
       T message, Class<? extends R> responseClass) {
-    return CompletableFuture.failedFuture(
-        new UnsupportedOperationException(
-            "Agent request/reply correlation is not implemented yet; use tell() for asynchronous messages"));
+    return ask(message, responseClass, null);
+  }
+
+  @Override
+  public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
+      T message, Class<? extends R> responseClass, Duration timeout) {
+    if (urn == null || message == null || responseClass == null) {
+      return CompletableFuture.failedFuture(
+          new IllegalArgumentException("A connected recipient, request, and response class are required"));
+    }
+    RuntimeAgent.CustomMessage request =
+        message instanceof RuntimeAgent.CustomMessage custom
+            ? new RuntimeAgent.CustomMessage(custom)
+            : message instanceof Constant constant
+                ? new RuntimeAgent.CustomMessage(constant, null)
+                : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
+    return AgentEventBus.INSTANCE.ask(
+        messageSenderUrn(), urn, request, responseClass, timeout);
   }
 
   /**
@@ -256,8 +279,15 @@ public class AgentImpl implements Agent {
   }
 
   /** Runtime-only origin used by sender handles injected into {@code @handle} actions. */
+  @JsonIgnore
   public void setLocalSenderUrn(String localSenderUrn) {
     this.localSenderUrn = localSenderUrn;
+  }
+
+  /** Runtime-only correlation installed on a sender handle injected into a request handler. */
+  @JsonIgnore
+  public void setLocalResponseTo(String localResponseTo) {
+    this.localResponseTo = localResponseTo;
   }
 
   private String messageSenderUrn() {

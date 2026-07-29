@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -110,6 +111,18 @@ class KActorsFileTest {
             "/switch-assignment.kactor",
             functionalConsoleValidator(),
             this::assertFunctionalSwitchAssignment),
+        new Case(
+            "/nested-value-arguments.kactor",
+            functionalConsoleValidator(),
+            this::assertNestedValueArguments),
+        new Case(
+            "/java-object-interop.kactor",
+            functionalConsoleValidator(),
+            this::assertJavaObjectInteroperability),
+        new Case(
+            "/reserved-agent-verbs.kactor",
+            functionalConsoleValidator(),
+            this::assertReservedAgentVerbs),
         new Case(
             "/unknown-switch-recipient.kactor",
             new KActorsVisitor.LenientValidator(),
@@ -350,6 +363,24 @@ class KActorsFileTest {
     var compiler = new AgentCompiler(result.requireBehavior());
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("handlers.put(\"SAYHELLO\""));
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var restored =
+        assertDoesNotThrow(
+            () ->
+                mapper.readValue(
+                    mapper.writeValueAsString(result.requireBehavior()), KActorsBehavior.class));
+    var restoredAnnotation = restored.getStatements().getFirst().getAnnotations().getFirst();
+    assertEquals("SAYHELLO", KActorsVisitor.handledMessageClass(restoredAnnotation));
+    var restoredCompiler = new AgentCompiler(restored);
+    assertTrue(
+        restoredCompiler.compile(), () -> restoredCompiler.getNotifications().toString());
+    assertTrue(restoredCompiler.getSourceCode().contains("handlers.put(\"SAYHELLO\""));
+    var noArgumentHandler = restored.getStatements().get(2);
+    assertEquals(
+        "HEY",
+        KActorsVisitor.handledMessageClass(noArgumentHandler.getAnnotations().getFirst()));
+    assertTrue(noArgumentHandler.getOffsetInDocument() > 0);
+    assertTrue(restoredCompiler.getSourceCode().contains("handlers.put(\"HEY\""));
     var invalidAction = result.requireBehavior().getStatements().get(1);
     var source =
         assertDoesNotThrow(
@@ -417,6 +448,96 @@ class KActorsFileTest {
         new AgentCompiler(result.requireBehavior(), null, functionalConsoleValidator(), null);
     assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
     assertTrue(compiler.getSourceCode().contains("catch (RuntimeAgentBase.SwitchYield yielded)"));
+  }
+
+  private void assertNestedValueArguments(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var calls = result.requireAnalyzer().getActions().get("sayhello").statement().getCode();
+    var format = assertInstanceOf(KActorsStatement.Verb.class, calls.getFirst());
+    var switchArgument =
+        assertInstanceOf(
+            KActorsStatement.CallArgument.class,
+            format.getArguments().getUnnamedArguments().get(1));
+    assertNotNull(switchArgument.getSwitch());
+    assertNull(switchArgument.getFunction());
+
+    var printlnWithVerb = assertInstanceOf(KActorsStatement.Verb.class, calls.get(1));
+    var verbArgument =
+        assertInstanceOf(
+            KActorsStatement.CallArgument.class,
+            printlnWithVerb.getArguments().getUnnamedArguments().getFirst());
+    assertEquals("strings", verbArgument.getFunction().getRecipient());
+    assertEquals("lowercase", verbArgument.getFunction().getMessage());
+
+    var printlnWithExpression = assertInstanceOf(KActorsStatement.Verb.class, calls.get(2));
+    var expressionArgument =
+        assertInstanceOf(
+            org.integratedmodelling.klab.api.lang.kactors.KActorsValue.class,
+            printlnWithExpression.getArguments().getUnnamedArguments().getFirst());
+    assertEquals(ValueType.EXPRESSION, expressionArgument.getType());
+
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("Supplier<Object>"), compiler.getSourceCode());
+    assertTrue(
+        compiler.getSourceCode().contains("invokeDynamicValue("), compiler.getSourceCode());
+    assertTrue(
+        compiler.getSourceCode().contains("evaluateExpression(this.expression_0"),
+        compiler.getSourceCode());
+  }
+
+  private void assertJavaObjectInteroperability(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var input = result.requireAnalyzer().getActions().get("input").statement();
+    var add = assertInstanceOf(KActorsStatement.Verb.class, input.getCode().getFirst());
+    var call =
+        result.requireAnalyzer().getCalls().stream()
+            .filter(candidate -> candidate.statement() == add)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(Verb.Type.FUNCTION, call.executionType());
+    assertNotNull(call.javaMethod());
+    assertEquals("add", call.javaMethod().getName());
+
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    var source = compiler.getSourceCode();
+    assertTrue(source.contains("new ArrayList<>()"), source);
+    assertTrue(source.contains(").add("), source);
+    assertTrue(source.contains(").isEmpty("), source);
+    assertTrue(source.contains(").getAbsolutePath("), source);
+  }
+
+  private void assertReservedAgentVerbs(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+    var action = result.requireBehavior().getStatements().getFirst();
+    var tell = assertInstanceOf(KActorsStatement.Verb.class, action.getCode().getFirst());
+    var assignment =
+        assertInstanceOf(KActorsStatement.Assignment.class, action.getCode().get(1));
+    var ask = assignment.getFunction();
+
+    assertEquals(Verb.Type.FUNCTION, result.requireAnalyzer().getCalls().stream()
+        .filter(call -> call.statement() == tell)
+        .findFirst().orElseThrow().executionType());
+    assertEquals(Verb.Type.SUPPLIER, result.requireAnalyzer().getCalls().stream()
+        .filter(call -> call.statement() == ask)
+        .findFirst().orElseThrow().executionType());
+    assertEquals(List.of("timeout"), ask.getArguments().getMetadataKeys());
+    assertEquals(ValueType.QUANTITY,
+        assertInstanceOf(
+                org.integratedmodelling.klab.api.lang.kactors.KActorsValue.class,
+                ask.getArguments().get("timeout"))
+            .getType());
+    assertEquals(2, KActorsVisitor.argumentValues(ask.getArguments()).size());
+
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("tellAgent("));
+    assertTrue(compiler.getSourceCode().contains("askAgent("));
   }
 
   private void assertLibraryRejectsLifecycleActions(KActorsTestSupport.Result result) {

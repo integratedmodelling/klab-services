@@ -1,0 +1,10 @@
+behavior test.reserved.agent.verbs
+    "Exercise the universal new, tell and ask agent verbs."
+    version 1.0
+    using core.console as console
+
+@handle(PING)
+action ping(message, sender):
+    sender.tell(PONG, message)
+    response <- sender.ask(ECHO, message :timeout 10.s)
+    console.println(response)

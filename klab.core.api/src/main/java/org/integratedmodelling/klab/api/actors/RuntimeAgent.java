@@ -176,6 +176,9 @@ public interface RuntimeAgent {
     private Constant type;
     private Object payload;
     private String payloadClass;
+    private String requestId;
+    private String inResponseTo;
+    private String failure;
 
     public CustomMessage() {}
 
@@ -186,6 +189,15 @@ public interface RuntimeAgent {
       this.type = type;
       this.payload = payload;
       this.payloadClass = payload == null ? null : payload.getClass().getName();
+    }
+
+    public CustomMessage(CustomMessage other) {
+      this.type = other.type;
+      this.payload = other.payload;
+      this.payloadClass = other.payloadClass;
+      this.requestId = other.requestId;
+      this.inResponseTo = other.inResponseTo;
+      this.failure = other.failure;
     }
 
     public Constant type() {
@@ -200,6 +212,21 @@ public interface RuntimeAgent {
       return payloadClass;
     }
 
+    /** Unique request identifier used by {@code ask}; null for ordinary messages. */
+    public String requestId() {
+      return requestId;
+    }
+
+    /** Request identifier completed by this response; null for requests and ordinary messages. */
+    public String inResponseTo() {
+      return inResponseTo;
+    }
+
+    /** Optional remote failure detail for an exceptionally completed request. */
+    public String failure() {
+      return failure;
+    }
+
     public void setType(Constant type) {
       this.type = type;
     }
@@ -210,6 +237,18 @@ public interface RuntimeAgent {
 
     public void setPayloadClass(String payloadClass) {
       this.payloadClass = payloadClass;
+    }
+
+    public void setRequestId(String requestId) {
+      this.requestId = requestId;
+    }
+
+    public void setInResponseTo(String inResponseTo) {
+      this.inResponseTo = inResponseTo;
+    }
+
+    public void setFailure(String failure) {
+      this.failure = failure;
     }
   }
 

@@ -134,10 +134,10 @@ worker.process(job)                    // non-static: instance call
 
 The same rule applies to parsed k.Actors actions and component-provided Java verbs. For an imported
 k.Actors behavior, `alias.new(...)` is synthetic and passes its arguments to the behavior's
-`init`. For a Java actor, `new` is an explicitly exposed static verb that returns an actor instance;
-descriptor-backed constructor matching remains an extension concern. An actor-valued action
-argument, match capture, loop variable, or method result may also be used as the recipient of a
-non-static call. Calls on `self` may address either kind because `self` is already an instance.
+`init`. For a Java actor, resolution first tries a compatible static `@Verb(name="new")` factory
+and then a compatible public constructor. An actor-valued action argument, match capture, loop
+variable, or method result may also be used as the recipient of a non-static call. Calls on `self`
+may address either kind because `self` is already an instance.
 
 ### 3.3. Inheritance and worldviews
 
@@ -330,6 +330,22 @@ agent first started, and the latest message or reactor activity, allowing client
 idle time. Correlated `ask`/reply is not implemented yet; a handler can currently respond by
 sending a normal message through its injected `sender` handle.
 
+Every agent also exposes three reserved verbs that cannot be redefined by a behavior:
+
+```kactors
+worker <- tools.new(configuration)
+worker.tell(RELOAD, configuration)
+result <- worker.ask(LOOKUP, key :timeout 10.s)
+```
+
+`new` follows the construction rules described under imports. `tell` requires a message-class
+constant and one arbitrary serializable payload; it publishes the message and returns immediately.
+`ask` accepts the same two ordinary arguments and is a supplier: it waits for a correlated response
+from the receiver. An optional temporal quantity may be supplied as inline `:timeout` metadata;
+the runtime default is 30 seconds. A matching function or supplier `@handle` action replies with
+its returned value. A handler failure completes the request exceptionally. Emitter handlers do not
+have a single automatic result, but may explicitly reply through their injected `sender` handle.
+
 Messaging is available only when the scope used to create or reconnect the agent has a connected
 messaging channel. Agent creation still succeeds without one: messaging is disabled and the
 returned agent contains an info-level notification explaining why.
@@ -396,6 +412,21 @@ button("Run" :tooltip "Start the computation" +enabled)
 
 Metadata is interpreted by the receiving verb or front end; it is not a substitute for ordinary
 action arguments.
+
+The recipient of a call may also be an ordinary Java object rather than an agent. Public instance
+methods are then available using their lowercase k.Actors spelling. An exact method name is tried
+first, followed by `lower_underscore` to Java `lowerCamelCase` conversion. A zero-argument property
+call also tries the corresponding POJO getter, so `file.absolute_path()` invokes
+`file.getAbsolutePath()` and `value.empty()` may invoke `value.isEmpty()`. Setter-property syntax is
+not synthesized; Java values should normally be treated as immutable unless their public API
+explicitly exposes a mutating method such as `list.add(value)`.
+
+When analysis knows the recipient's Java class—from a literal, an action parameter's
+`@type(class=...)`, or a known Java return type—the compiler selects a compatible public method and
+emits a direct Java call. If the class or overload cannot be established statically, the generated
+code uses the same name and argument conventions through runtime reflection. This lets dynamically
+obtained Java objects remain usable without weakening validation for calls whose types are known.
+Methods inherited only from `Object` are not exposed through this interoperability layer.
 
 ### 5.2. Match actions
 
@@ -861,6 +892,28 @@ initialized behavior instance.
 
 This boundary is what lets k.Actors remain small while exposing the full k.LAB runtime and
 third-party libraries.
+
+Ordinary values returned by those verbs may continue through the Java-object interoperability
+layer described in section 5.1. List, set, and map literals are emitted as mutable Java collections
+(`ArrayList`, `LinkedHashSet`, and `LinkedHashMap` respectively), so their normal public operations
+can be called from k.Actors. This is separate from Java actor resolution: the value does not need an
+actor descriptor, an agent behavior URN, or message dispatch unless it is actually an agent handle.
+
+### 10.9. Core string operations
+
+Import `core.strings as strings` for null-safe, static string functions. The actor exposes
+`lowercase`, `uppercase`, `capitalize`, `labelize`, `trim`, `normalize`, `length`, `isempty`,
+`contains`, `startswith`, `endswith`, `equalsignorecase`, `indexof`, `count`, `matches`, `replace`,
+`substring`, `split`, `tokenize`, `join`, `concat`, `repeat`, and `abbreviate`.
+
+`split` treats its separator literally and preserves empty fields. `tokenize` splits whitespace
+while retaining double-quoted phrases. `matches` is the exception to literal matching and accepts
+a Java regular expression. Every operation is a function and can therefore be nested directly
+inside another call:
+
+```kactors
+console.println(strings.uppercase(strings.trim(message)))
+```
 
 ## 11. Validation checklist
 

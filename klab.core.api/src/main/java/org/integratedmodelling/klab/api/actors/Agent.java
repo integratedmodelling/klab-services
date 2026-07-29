@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.actors;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -120,4 +121,18 @@ public interface Agent extends Serializable {
    */
   <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
       T message, Class<? extends R> responseClass);
+
+  /**
+   * Ask a question and complete exceptionally if no correlated response arrives within the
+   * supplied timeout. Implementations predating correlated messaging may ignore the explicit
+   * timeout by delegating to the two-argument contract.
+   *
+   * @param message serializable request, normally a {@link RuntimeAgent.CustomMessage}
+   * @param responseClass expected response payload class
+   * @param timeout positive timeout; {@code null} selects the implementation default
+   */
+  default <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
+      T message, Class<? extends R> responseClass, Duration timeout) {
+    return ask(message, responseClass);
+  }
 }

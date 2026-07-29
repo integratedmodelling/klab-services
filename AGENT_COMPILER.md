@@ -721,6 +721,36 @@ The execution shape is normalized by the invocation wrapper:
 This reflection path is intentionally permissive and is not yet the final descriptor-selected
 parameter matcher.
 
+### 10.3 Ordinary Java object calls
+
+A verb recipient is not necessarily an agent. The analyzer records a Java class for values whose
+type can be established from a literal, an action argument's `@type(class=...)`, or the selected
+Java method's return type. For a call on such a value it scans public instance methods, excludes
+methods contributed only by `Object`, and resolves names in this order:
+
+1. the exact source verb;
+2. `lower_underscore` converted to Java `lowerCamelCase`;
+3. for a zero-argument call, the POJO `getXyz` or boolean-style `isXyz` getter.
+
+Candidates are filtered by arity and statically known argument compatibility. A unique best method
+is retained in `KActorsVisitor.CallInfo.javaMethod`. `AgentCompiler` then casts the recipient to the
+known declaring type, adapts each runtime argument to the selected parameter type, and emits the
+Java invocation directly. A void method is a synchronous function but is rejected when its result
+is required by an assignment, condition, return, or nested value.
+
+If the recipient type or overload is unknown, compilation deliberately leaves the call dynamic.
+`RuntimeAgentBase` repeats the same exact, underscore-to-camel, and getter lookup rules using public
+reflection, prepares compatible arguments, and invokes the selected method. An ordinary Java
+method is treated as a function; a `CompletableFuture` return makes it a supplier, and an explicit
+`@Verb` execution declaration may identify an emitter. Failure is deferred until execution only
+when no compatible runtime method exists.
+
+Literal collections are generated as mutable implementations rather than immutable factory
+values: lists use `ArrayList`, sets use `LinkedHashSet`, and maps use `LinkedHashMap`. This is what
+permits calls such as `list.add(message)` on a value declared with `def list ()`. Jackson also
+preserves an empty collection stored in an `Object`-typed semantic value as an `ArrayList`, avoiding
+loss of the collection contract during behavior transport.
+
 Java actor discovery copies `@Verb.producesAgent()` into
 `Extensions.FunctionDescriptor.behaviorUrn`. The runtime validator records that value in
 `CallInfo.producedAgentUrn`, and the visitor places it in the `VariableInfo.agentUrn` of values
@@ -728,7 +758,7 @@ captured from the call. The original imported alias still selects and validates 
 it is not inferred as the returned object's behavior unless the call is the synthetic `new`
 operation.
 
-### 10.3 Constructor and `new` matching
+### 10.4 Constructor and `new` matching
 
 `Extensions.ActorDescriptor` and `FunctionDescriptor` can describe Java actors and verbs, while
 `ComponentRegistry.ServiceImplementation` can carry constructors and instances.
@@ -739,12 +769,13 @@ calls. Its synthetic `new` verb creates a distinct generated behavior instance a
 arguments to `init`; subsequent calls on the returned value may invoke non-static actions.
 
 A resolved Java actor is currently bound as its implementation `Class`. This deliberately permits
-only static methods on the alias. A component may expose a static `@Verb(name = "new")` factory
-that returns an instance; calls on that returned recipient then select non-static Java methods.
-Runtime method selection repeats the static requirement even after validation. The compiler does
-not yet:
+only static methods on the alias. Construction first looks for a compatible static
+`@Verb(name = "new")` factory. If none matches, `RuntimeAgentBase` scans the implementation
+class's public constructors, applies the ordinary argument preparation and parameter-negotiation
+rules, and invokes the compatible constructor. Calls on the returned recipient then select
+non-static Java methods. Runtime method selection repeats the static requirement even after
+validation. The compiler does not yet:
 
-- synthesize Java `new` from `ServiceImplementation.constructor`;
 - match named/default arguments from `ServiceInfo`;
 - use the validator's selected overload directly at runtime.
 
@@ -885,8 +916,30 @@ a named virtual thread with a new action scope:
 
 The injected sender handle also stores the receiving agent's URN as its runtime-only source.
 Calling `tell(...)` on it therefore replies to the original sender while preserving the current
-agent as the new message source. This field is deliberately not serialized. Request correlation
-and response-producing handlers are not installed yet, so `ask(...)` remains unsupported.
+agent as the new message source. This field is deliberately not serialized.
+
+`AgentEventBus.ask(...)` adds a UUID request ID to the custom-message envelope and registers a
+pending `CompletableFuture` before publishing. A response carries that ID in `inResponseTo`; local
+delivery completes and removes the pending request before ordinary subscribers see the response.
+The Java API accepts an optional `Duration`, while the generated k.Actors `ask` call passes inline
+`:timeout` metadata to `RuntimeAgentBase.askAgent(...)`. That helper accepts a temporal `Quantity`
+and converts it to a duration. The default timeout is 30 seconds.
+
+Function and supplier `@handle` actions automatically publish their returned payload as the
+correlated response. Escaping failures publish a failure response and complete the caller's future
+exceptionally. Emitter handlers have no automatic single response; they may use the injected
+`sender` handle, which retains the request ID and correlates its next `tell(...)` response.
+
+The compiler treats the universal verbs specially:
+
+- `new` is a function and is resolved against a behavior `init`, Java factory, or public
+  constructor;
+- `tell(CONSTANT, payload)` is a function emitted as `tellAgent(...)`;
+- `ask(CONSTANT, payload :timeout quantity)` is a supplier emitted as `askAgent(...)`.
+
+Inline metadata is excluded from ordinary arity and parameter matching. The visitor validates the
+constant discriminator, payload arity, and timeout form, and prevents actions from redefining
+`new`, `tell`, or `ask`.
 
 `RuntimeAgentBase.sendToScope(Message)` sends through the connected creating scope. It returns
 `false` when no usable scope channel exists, matching the graceful agent-messaging fallback.
@@ -984,17 +1037,16 @@ The following items are either explicit TODOs or incomplete integration boundari
 - Generalize inherited action/state composition beyond the retained delegates currently used for
   `@handle` actions.
 - Decide how imported behavior versions are selected.
-- Complete actor URL, correlated ask/reply, rich failure details, and retained finite-agent
-  event-bus cleanup semantics.
+- Complete actor URL, rich failure details, cancellation propagation for correlated requests, and
+  retained finite-agent event-bus cleanup semantics.
 
 ### 12.3 Java actor resolution
 
 - Make the validator return or record the exact selected actor/verb descriptor, not only its type.
 - Support overload selection from `ServiceInfo` argument prototypes.
-- Synthesize Java construction from `ServiceImplementation.constructor` when no explicit static
-  `new` factory is exposed.
-- Reuse `ServiceImplementation.mainClassInstance`, `constructor`, `wrappingClassInstance`, and
-  `method` instead of reducing an actor to an implementation class.
+- Reuse `ServiceImplementation.mainClassInstance`, an explicitly selected descriptor constructor,
+  `wrappingClassInstance`, and `method` instead of resolving constructor fallback from the
+  implementation class at runtime.
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are
   still partially marked TODO in `ComponentRegistry`.
 - Implement quantity/unit, geometry, observable, and service-specific rules through

@@ -9,6 +9,8 @@ import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterizedTypeName;
 import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,10 +24,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -164,11 +169,28 @@ public class AgentCompiler {
     }
 
     public Class<?> implementationClass() {
-      return verbs.values().stream()
-          .map(implementation -> implementation == null ? null : implementation.implementation)
-          .filter(Objects::nonNull)
-          .findFirst()
-          .orElse(null);
+      var implementationClass =
+          verbs.values().stream()
+              .map(
+                  serviceImplementation ->
+                      serviceImplementation == null
+                          ? null
+                          : serviceImplementation.implementation)
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElse(null);
+      if (implementationClass != null
+          || descriptor == null
+          || descriptor.javaClassName == null
+          || descriptor.javaClassName.isBlank()) {
+        return implementationClass;
+      }
+      try {
+        return Class.forName(
+            descriptor.javaClassName, false, Thread.currentThread().getContextClassLoader());
+      } catch (ClassNotFoundException | LinkageError ignored) {
+        return null;
+      }
     }
   }
 
@@ -180,7 +202,18 @@ public class AgentCompiler {
       Boolean staticAction,
       Method javaMethod,
       String producedAgentUrn,
-      KActorsAction kActorsAction) {}
+      KActorsAction kActorsAction,
+      Class<?> javaActorClass) {
+
+    private ResolvedCall(
+        Verb.Type executionType,
+        Boolean staticAction,
+        Method javaMethod,
+        String producedAgentUrn,
+        KActorsAction kActorsAction) {
+      this(executionType, staticAction, javaMethod, producedAgentUrn, kActorsAction, null);
+    }
+  }
 
   private record JavaArgumentConstraint(
       String name,
@@ -314,6 +347,17 @@ public class AgentCompiler {
               return resolved == null ? null : resolved.producedAgentUrn();
             } catch (Throwable ignored) {
               // Import and call validation report resolution failures with lexical context.
+              return null;
+            }
+          }
+
+          @Override
+          public Class<?> classifyActionResultJavaClass(
+              KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            try {
+              var resolved = resolveCall(verb, context, resolver, scope);
+              return resolved == null ? null : declaredJavaReturnType(resolved.javaMethod());
+            } catch (Throwable ignored) {
               return null;
             }
           }
@@ -514,7 +558,9 @@ public class AgentCompiler {
                           Notification.LexicalContext.of(verb, context.getBehavior())));
                 }
                 var actor = resolver.resolveActor(imported.getImportedBehavior(), scope);
-                if (actor != null && actor.verbs().containsKey(verb.getMessage())) {
+                if (actor != null
+                    && ("new".equals(verb.getMessage())
+                        || actor.verbs().containsKey(verb.getMessage()))) {
                   return List.of();
                 }
                 return List.of(
@@ -596,10 +642,27 @@ public class AgentCompiler {
                 return validateKActorsActionArguments(
                     verb, arguments, resolved.kActorsAction(), context, resolver, scope);
               }
+              if ("new".equals(verb.getMessage())
+                  && resolved.javaMethod() == null
+                  && resolved.javaActorClass() == null) {
+                var supplied = ordinaryArgumentValues(arguments);
+                return supplied.isEmpty()
+                    ? List.of()
+                    : List.of(
+                        Notification.error(
+                            "Behavior "
+                                + resolved.producedAgentUrn()
+                                + " has no init action and new accepts no arguments",
+                            Notification.LexicalContext.of(verb, context.getBehavior())));
+              }
+              if ("new".equals(verb.getMessage()) && resolved.javaActorClass() != null) {
+                return validateJavaConstructorArguments(
+                    verb, arguments, resolved.javaActorClass(), context, resolver);
+              }
               if (resolved.javaMethod() == null) {
                 return List.of();
               }
-              var supplied = arguments == null ? List.of() : new ArrayList<>(arguments.values());
+              var supplied = ordinaryArgumentValues(arguments);
               var constrained =
                   validateJavaVerbArguments(verb, arguments, resolved, context, resolver, scope);
               if (!constrained.isEmpty()) {
@@ -691,7 +754,12 @@ public class AgentCompiler {
     var targetBehavior = resolver.resolveBehavior(actorUrn, scope);
     if (targetBehavior != null) {
       if ("new".equals(verb.getMessage()) && imported != null) {
-        return new ResolvedCall(Verb.Type.FUNCTION, true, null, actorUrn, null);
+        var init =
+            targetBehavior.getStatements().stream()
+                .filter(action -> Objects.equals(action.getUrn(), "init"))
+                .findFirst()
+                .orElse(null);
+        return new ResolvedCall(Verb.Type.FUNCTION, true, null, actorUrn, init);
       }
       return targetBehavior.getStatements().stream()
           .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
@@ -708,6 +776,19 @@ public class AgentCompiler {
     }
     var actor = resolver.resolveActor(actorUrn, scope);
     var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
+    if (actor != null && "new".equals(verb.getMessage()) && imported != null) {
+      if (implementation != null && implementation.method != null) {
+        var annotation = implementation.method.getAnnotation(Verb.class);
+        return new ResolvedCall(
+            annotation == null ? Verb.Type.FUNCTION : annotation.executionType(),
+            java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers()),
+            implementation.method,
+            actorUrn,
+            null);
+      }
+      return new ResolvedCall(
+          Verb.Type.FUNCTION, true, null, actorUrn, null, actor.implementationClass());
+    }
     if (implementation == null || implementation.method == null) {
       return null;
     }
@@ -745,6 +826,9 @@ public class AgentCompiler {
     var notifications = new ArrayList<Notification>();
     if (arguments != null) {
       for (var key : arguments.getNamedKeys()) {
+        if (isMetadataArgument(arguments, key)) {
+          continue;
+        }
         int index = kActorsArgumentIndex(formals, key);
         if (index < 0) {
           notifications.add(
@@ -775,23 +859,21 @@ public class AgentCompiler {
       Object supplied = bound[index];
       var required = KActorsVisitor.actionArgumentType(formal);
       if (supplied == null) {
-        if (required != null) {
-          notifications.add(
-              argumentError(
-                  verb,
-                  context,
-                  "Missing required typed argument '"
-                      + formal.getName()
-                      + "' for action "
-                      + action.getUrn()));
-        }
+        notifications.add(
+            argumentError(
+                verb,
+                context,
+                "Missing required argument '"
+                    + formal.getName()
+                    + "' for action "
+                    + action.getUrn()));
         continue;
       }
       if (required == null) {
         continue;
       }
       if (required.behaviorUrn() != null) {
-        String actualAgent = agentUrnOf(supplied, context);
+        String actualAgent = agentUrnOf(supplied, context, resolver, scope);
         if (actualAgent != null
             && !behaviorIsOrInherits(
                 actualAgent, required.behaviorUrn(), resolver, scope, new LinkedHashSet<>())) {
@@ -846,6 +928,22 @@ public class AgentCompiler {
 
   private static KnownJavaType knownJavaType(
       Object supplied, KActorsVisitor.KActorsContext context, Resolver resolver, UserScope scope) {
+    KActorsStatement.Verb suppliedFunction =
+        supplied instanceof KActorsStatement.CallArgument argument
+            ? argument.getFunction()
+            : supplied instanceof KActorsStatement.Verb verb ? verb : null;
+    if (suppliedFunction != null) {
+      var produced = resolveCall(suppliedFunction, context, resolver, scope);
+      Class<?> returnType = produced == null ? null : declaredJavaReturnType(produced.javaMethod());
+      if (returnType != null && returnType != Void.class && returnType != void.class) {
+        return new KnownJavaType(
+            returnType,
+            returnType.getTypeName(),
+            returnType.isPrimitive()
+                || returnType.isEnum()
+                || java.lang.reflect.Modifier.isFinal(returnType.getModifiers()));
+      }
+    }
     Object literal = literalValue(supplied);
     if (literal != UNKNOWN_LITERAL) {
       return literal == null
@@ -887,6 +985,33 @@ public class AgentCompiler {
       }
     }
     return null;
+  }
+
+  private static List<Notification> validateJavaConstructorArguments(
+      KActorsStatement.Verb verb,
+      KActorsStatement.Arguments arguments,
+      Class<?> actorClass,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver) {
+    var supplied = ordinaryArgumentValues(arguments);
+    for (var constructor : actorClass.getConstructors()) {
+      if (directArityMatches(constructor, supplied.size())) {
+        return List.of();
+      }
+      var expected = negotiableParameterTypes(constructor);
+      var negotiated = resolver.negotiateParameterMatch(expected, supplied);
+      if (negotiated != null && directArityMatches(constructor, negotiated.size())) {
+        return List.of();
+      }
+    }
+    return List.of(
+        Notification.error(
+            "No public constructor of "
+                + actorClass.getName()
+                + " accepts "
+                + supplied.size()
+                + " argument(s)",
+            Notification.LexicalContext.of(verb, context.getBehavior())));
   }
 
   private static Class<?> declaredJavaReturnType(Method method) {
@@ -956,6 +1081,9 @@ public class AgentCompiler {
     var notifications = new ArrayList<Notification>();
     if (arguments != null) {
       for (var key : arguments.getNamedKeys()) {
+        if (isMetadataArgument(arguments, key)) {
+          continue;
+        }
         int index = argumentIndex(constraints, key);
         if (index < 0) {
           notifications.add(
@@ -1012,7 +1140,7 @@ public class AgentCompiler {
       }
       String requiredAgent = normalized(constraint.requiredAgentUrn());
       if (requiredAgent != null) {
-        String actualAgent = agentUrnOf(supplied, context);
+        String actualAgent = agentUrnOf(supplied, context, resolver, scope);
         if (actualAgent != null
             && !behaviorIsOrInherits(
                 actualAgent, requiredAgent, resolver, scope, new LinkedHashSet<>())) {
@@ -1056,6 +1184,11 @@ public class AgentCompiler {
   private static final Object UNKNOWN_LITERAL = new Object();
 
   private static Object literalValue(Object supplied) {
+    if (supplied instanceof KActorsStatement.CallArgument
+        || supplied instanceof KActorsStatement.Verb
+        || supplied instanceof KActorsStatement.Switch) {
+      return UNKNOWN_LITERAL;
+    }
     if (!(supplied instanceof KActorsValue value)) {
       return supplied;
     }
@@ -1078,7 +1211,19 @@ public class AgentCompiler {
         || type == ValueType.URN;
   }
 
-  private static String agentUrnOf(Object supplied, KActorsVisitor.KActorsContext context) {
+  private static String agentUrnOf(
+      Object supplied,
+      KActorsVisitor.KActorsContext context,
+      Resolver resolver,
+      UserScope scope) {
+    KActorsStatement.Verb function =
+        supplied instanceof KActorsStatement.CallArgument argument
+            ? argument.getFunction()
+            : supplied instanceof KActorsStatement.Verb verb ? verb : null;
+    if (function != null) {
+      var resolved = resolveCall(function, context, resolver, scope);
+      return resolved == null ? null : normalized(resolved.producedAgentUrn());
+    }
     if (supplied instanceof KActorsValue value && value.getType() == ValueType.IDENTIFIER) {
       var variable = context.getVariable(value.getValue(String.class));
       return variable == null ? null : normalized(variable.agentUrn());
@@ -1125,9 +1270,9 @@ public class AgentCompiler {
       ResolvedCall resolved, KActorsStatement.Arguments arguments) {
     var constraints = javaArgumentConstraints(resolved.javaMethod());
     if (constraints.isEmpty()) {
-      return directArityMatches(resolved.javaMethod(), arguments == null ? 0 : arguments.size());
+      return directArityMatches(resolved.javaMethod(), ordinaryArgumentValues(arguments).size());
     }
-    int supplied = arguments == null ? 0 : arguments.size();
+    int supplied = ordinaryArgumentValues(arguments).size();
     long required = constraints.stream().filter(argument -> !argument.optional()).count();
     return supplied >= required && supplied <= constraints.size();
   }
@@ -1180,7 +1325,18 @@ public class AgentCompiler {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private static boolean directArityMatches(Method method, int suppliedCount) {
+  private static List<Object> ordinaryArgumentValues(KActorsStatement.Arguments arguments) {
+    return KActorsVisitor.argumentValues(arguments);
+  }
+
+  private static boolean isMetadataArgument(
+      KActorsStatement.Arguments arguments, String key) {
+    return arguments != null
+        && arguments.getMetadataKeys() != null
+        && arguments.getMetadataKeys().contains(key);
+  }
+
+  private static boolean directArityMatches(Executable method, int suppliedCount) {
     int required = 0;
     for (int index = 0; index < method.getParameterCount(); index++) {
       if (RuntimeAgent.Scope.class.isAssignableFrom(method.getParameterTypes()[index])) {
@@ -1194,7 +1350,7 @@ public class AgentCompiler {
     return suppliedCount == required;
   }
 
-  private static List<Class<?>> negotiableParameterTypes(Method method) {
+  private static List<Class<?>> negotiableParameterTypes(Executable method) {
     var ret = new ArrayList<Class<?>>();
     for (int index = 0; index < method.getParameterCount(); index++) {
       var parameter = method.getParameterTypes()[index];
@@ -1492,8 +1648,21 @@ public class AgentCompiler {
     switch (statement) {
       case KActorsStatement.Group group ->
           group.getStatements().forEach(child -> collectAdaptationUrns(child, urns));
-      case KActorsStatement.Verb verb ->
-          verb.getActions().forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
+      case KActorsStatement.Verb verb -> {
+        if (verb.getArguments() != null) {
+          for (var argument : verb.getArguments().values()) {
+            if (argument instanceof KActorsStatement.CallArgument executable) {
+              collectAdaptationUrns(executable.getFunction(), urns);
+              collectAdaptationUrns(executable.getSwitch(), urns);
+              if (executable.getAdaptedBehaviorUrn() != null
+                  && !executable.getAdaptedBehaviorUrn().isBlank()) {
+                urns.add(executable.getAdaptedBehaviorUrn().trim());
+              }
+            }
+          }
+        }
+        verb.getActions().forEach(match -> collectAdaptationUrns(match.getActionOnMatch(), urns));
+      }
       case KActorsStatement.Verb.MatchAction match ->
           collectAdaptationUrns(match.getActionOnMatch(), urns);
       case KActorsStatement.Switch switched ->
@@ -1835,8 +2004,31 @@ public class AgentCompiler {
   private Notification.LexicalContext lexicalContext(
       KActorsStatement statement, KActorsBehavior sourceBehavior) {
     var ret = new NotificationImpl.LexicalContextImpl();
-    ret.setOffsetInDocument(statement.getOffsetInDocument());
-    ret.setLength(statement.getLength());
+    int offset = statement.getOffsetInDocument();
+    int length = statement.getLength();
+    if (offset == 0
+        && length == 0
+        && statement instanceof KActorsAction action
+        && sourceBehavior.getSourceCode() != null) {
+      /*
+       * Older or generic JSON transports may retain the behavior source while dropping statement
+       * parsing coordinates. Recover the narrow @handle/action header so a genuine diagnostic is
+       * still useful instead of being reported at 0,0.
+       */
+      var matcher =
+          Pattern.compile(
+                  "@handle\\s*(?:\\([^\\r\\n]*\\))?\\s*(?:\\R\\s*)*"
+                      + "(?:static\\s+)?action\\s+"
+                      + Pattern.quote(action.getUrn())
+                      + "\\b")
+              .matcher(sourceBehavior.getSourceCode());
+      if (matcher.find()) {
+        offset = matcher.start();
+        length = matcher.end() - matcher.start();
+      }
+    }
+    ret.setOffsetInDocument(offset);
+    ret.setLength(length);
     ret.setDocumentUrn(sourceBehavior.getUrn());
     ret.setProjectUrn(sourceBehavior.getProjectName());
     return ret;
@@ -2604,6 +2796,16 @@ public class AgentCompiler {
 
   private CodeBlock invoke(
       KActorsStatement.Verb verb, Verb.Type type, String scopeName, CompilationContext context) {
+    var callInfo = calls.get(verb);
+    if (isReservedAgentInvocation(verb, callInfo)) {
+      return invokeReservedAgentVerb(verb, context);
+    }
+    if (callInfo != null
+        && callInfo.javaMethod() != null
+        && java.lang.reflect.Modifier.isPublic(
+            callInfo.javaMethod().getDeclaringClass().getModifiers())) {
+      return invokeJavaObjectMethod(verb, callInfo.javaMethod(), context);
+    }
     CodeBlock arguments = arguments(verb, context);
     boolean self = verb.getRecipient() == null || "self".equals(verb.getRecipient());
     String operation =
@@ -2624,6 +2826,83 @@ public class AgentCompiler {
         arguments);
   }
 
+  private boolean isReservedAgentInvocation(
+      KActorsStatement.Verb verb, KActorsVisitor.CallInfo callInfo) {
+    if (verb == null
+        || !Set.of("tell", "ask").contains(verb.getMessage())
+        || callInfo != null && callInfo.javaMethod() != null) {
+      return false;
+    }
+    String recipient =
+        verb.getRecipient() == null || verb.getRecipient().isBlank()
+            ? "self"
+            : verb.getRecipient();
+    if ("self".equals(recipient)) {
+      return true;
+    }
+    var variable = callInfo == null ? null : callInfo.knownVariables().get(recipient);
+    return variable != null
+        && (variable.agentUrn() != null
+            || variable.javaClass() == null
+            || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
+                variable.javaClass()));
+  }
+
+  private CodeBlock invokeReservedAgentVerb(
+      KActorsStatement.Verb verb, CompilationContext context) {
+    var supplied = ordinaryArgumentValues(verb.getArguments());
+    CodeBlock recipient =
+        verb.getRecipient() == null || "self".equals(verb.getRecipient())
+            ? CodeBlock.of("this")
+            : receiver(verb.getRecipient(), context);
+    CodeBlock type =
+        supplied.isEmpty() ? CodeBlock.of("null") : argumentValue(supplied.get(0), context);
+    CodeBlock payload =
+        supplied.size() < 2 ? CodeBlock.of("null") : argumentValue(supplied.get(1), context);
+    if ("tell".equals(verb.getMessage())) {
+      return CodeBlock.of("tellAgent($L, $L, $L)", recipient, type, payload);
+    }
+    Object timeout =
+        verb.getArguments() == null ? null : verb.getArguments().get("timeout");
+    return CodeBlock.of(
+        "askAgent($L, $L, $L, $L)",
+        recipient,
+        type,
+        payload,
+        timeout == null ? CodeBlock.of("null") : argumentValue(timeout, context));
+  }
+
+  private CodeBlock invokeJavaObjectMethod(
+      KActorsStatement.Verb verb, Method method, CompilationContext context) {
+    requiredRuntimeClasses.add(method.getDeclaringClass());
+    var supplied = ordinaryArgumentValues(verb.getArguments());
+    var compiledArguments = new ArrayList<CodeBlock>();
+    var parameterTypes = method.getParameterTypes();
+    for (int index = 0; index < supplied.size(); index++) {
+      Class<?> expected =
+          method.isVarArgs() && index >= parameterTypes.length - 1
+              ? parameterTypes[parameterTypes.length - 1].getComponentType()
+              : parameterTypes[index];
+      compiledArguments.add(
+          adaptedJavaArgument(argumentValue(supplied.get(index), context), expected));
+    }
+    return CodeBlock.of(
+        "(($T) $L).$L($L)",
+        method.getDeclaringClass(),
+        receiver(verb.getRecipient(), context),
+        method.getName(),
+        CodeBlock.join(compiledArguments, ", "));
+  }
+
+  private CodeBlock adaptedJavaArgument(CodeBlock argument, Class<?> expected) {
+    if (expected == Object.class) {
+      return argument;
+    }
+    Class<?> target = boxed(expected);
+    return CodeBlock.of(
+        "(($T) adaptJavaArgument($L, $T.class))", target, argument, target);
+  }
+
   private CodeBlock receiver(String recipient, CompilationContext context) {
     if (imports.containsKey(recipient)) {
       return CodeBlock.of("this.actor_$L", javaIdentifier(recipient));
@@ -2639,18 +2918,47 @@ public class AgentCompiler {
 
   private CodeBlock arguments(KActorsStatement.Verb verb, CompilationContext context) {
     var values = new ArrayList<CodeBlock>();
-    if (verb.getArguments() != null) {
-      verb.getArguments()
-          .values()
-          .forEach(argument -> values.add(argumentValue(argument, context)));
-    }
+    ordinaryArgumentValues(verb.getArguments())
+        .forEach(argument -> values.add(argumentValue(argument, context)));
     return CodeBlock.of("new Object[] {$L}", CodeBlock.join(values, ", "));
   }
 
   private CodeBlock argumentValue(Object argument, CompilationContext context) {
-    return argument instanceof KActorsValue value
-        ? value(value, context)
-        : literal(argument, ValueType.STRING);
+    if (argument instanceof KActorsValue value) {
+      return value(value, context);
+    }
+    if (argument instanceof KActorsStatement.CallArgument executable) {
+      CodeBlock result =
+          executable.getFunction() != null
+              ? callValue(executable.getFunction(), context)
+              : functionalSwitchValue(executable.getSwitch(), context);
+      return adaptedValue(result, executable.getAdaptedBehaviorUrn(), context);
+    }
+    // Compatibility with semantic models that carried the executable statement directly.
+    if (argument instanceof KActorsStatement.Verb function) {
+      return callValue(function, context);
+    }
+    if (argument instanceof KActorsStatement.Switch switchStatement) {
+      return functionalSwitchValue(switchStatement, context);
+    }
+    return literal(argument, ValueType.STRING);
+  }
+
+  private CodeBlock functionalSwitchValue(
+      KActorsStatement.Switch switchStatement, CompilationContext context) {
+    if (switchStatement == null) {
+      return CodeBlock.of("null");
+    }
+    var body = CodeBlock.builder();
+    String result = emitSwitch(switchStatement, body, context.asSynchronous(), null);
+    body.addStatement(
+        "return $L", result == null ? CodeBlock.of("null") : CodeBlock.of("$L", result));
+    // A CodeBlock containing statement markers cannot itself be nested inside the outer invocation
+    // statement. Render this self-contained lambda body first, then insert the resulting Java
+    // source as one literal expression.
+    String bodySource = body.build().toString();
+    return CodeBlock.of(
+        "(($T<Object>) () -> {\n$L}).get()", java.util.function.Supplier.class, bodySource);
   }
 
   private CodeBlock value(KActorsValue value, CompilationContext context) {
@@ -2669,6 +2977,9 @@ public class AgentCompiler {
           CodeBlock.of("resolveIdentifier($S, $L)", String.valueOf(raw), context.frame());
       case TERNARY_EXPRESSION -> ternary(raw, context);
       case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, value.getType());
+      case LIST -> collectionLiteral(raw, context, false);
+      case SET -> collectionLiteral(raw, context, true);
+      case MAP -> mapLiteral(raw, context);
       case NODATA, EMPTY -> CodeBlock.of("null");
       case ANYTHING, ANYVALUE, ANYTRUE -> CodeBlock.of("null");
       default ->
@@ -2678,6 +2989,71 @@ public class AgentCompiler {
               value.getType().name(),
               String.valueOf(raw));
     };
+  }
+
+  private CodeBlock collectionLiteral(
+      Object raw, CompilationContext context, boolean asSet) {
+    if (!(raw instanceof Collection<?> collection)) {
+      return asSet
+          ? CodeBlock.of("new $T<>()", LinkedHashSet.class)
+          : CodeBlock.of("new $T<>()", ArrayList.class);
+    }
+    if (collection.isEmpty()) {
+      return asSet
+          ? CodeBlock.of("new $T<>()", LinkedHashSet.class)
+          : CodeBlock.of("new $T<>()", ArrayList.class);
+    }
+    var elements = collection.stream().map(value -> objectLiteral(value, context)).toList();
+    return CodeBlock.of(
+        "new $T<>($T.asList($L))",
+        asSet ? LinkedHashSet.class : ArrayList.class,
+        java.util.Arrays.class,
+        CodeBlock.join(elements, ", "));
+  }
+
+  private CodeBlock mapLiteral(Object raw, CompilationContext context) {
+    if (!(raw instanceof Map<?, ?> map) || map.isEmpty()) {
+      return CodeBlock.of("new $T<>()", LinkedHashMap.class);
+    }
+    var keys = map.keySet().stream().map(value -> objectLiteral(value, context)).toList();
+    var values = map.values().stream().map(value -> objectLiteral(value, context)).toList();
+    return CodeBlock.of(
+        "mutableMap(new Object[] {$L}, new Object[] {$L})",
+        CodeBlock.join(keys, ", "),
+        CodeBlock.join(values, ", "));
+  }
+
+  private CodeBlock objectLiteral(Object raw, CompilationContext context) {
+    if (raw == null) {
+      return CodeBlock.of("null");
+    }
+    if (raw instanceof KActorsValue value) {
+      return value(value, context);
+    }
+    if (raw instanceof Identifier identifier) {
+      return CodeBlock.of(
+          "resolveIdentifier($S, $L)", identifier.getValue(), context.frame());
+    }
+    if (raw instanceof Constant constant) {
+      return CodeBlock.of("$T.create($S)", Constant.class, constant.getValue());
+    }
+    if (raw instanceof Map<?, ?>) {
+      return mapLiteral(raw, context);
+    }
+    if (raw instanceof Set<?>) {
+      return collectionLiteral(raw, context, true);
+    }
+    if (raw instanceof Collection<?>) {
+      return collectionLiteral(raw, context, false);
+    }
+    if (raw instanceof String
+        || raw instanceof Character
+        || raw instanceof Boolean
+        || raw instanceof Number) {
+      return literal(raw, raw instanceof String ? ValueType.STRING : ValueType.NUMBER);
+    }
+    return CodeBlock.of(
+        "literalValue($T.$L, $S)", ValueType.class, ValueType.STRING.name(), raw.toString());
   }
 
   private CodeBlock ternary(Object raw, CompilationContext context) {

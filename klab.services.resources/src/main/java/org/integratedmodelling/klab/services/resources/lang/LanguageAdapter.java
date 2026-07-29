@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
@@ -125,11 +126,21 @@ public enum LanguageAdapter {
         annotationName != null && annotationName.startsWith("@")
             ? annotationName.substring(1)
             : annotationName);
+    Matcher singleConstantMatcher =
+        SINGLE_CONSTANT_ANNOTATION_PATTERN.matcher(annotation.encode());
+    String singleConstant =
+        singleConstantMatcher.matches() ? singleConstantMatcher.group(1) : null;
     for (var argument : annotation.getArguments().entrySet()) {
       var value = adaptValue(argument.getValue(), namespace, projectName, documentClass);
       if (FunctionCallSyntax.DEFAULT_ARGUMENT_NAME.equals(argument.getKey())
           || annotation.unnamedParameterIndex(argument.getKey()) >= 0) {
-        ret.putUnnamed(value);
+        /*
+         * Newer syntax beans expose the grammar's singleConstant parameter, but the specialized
+         * ParsedLiteral constructor does not mark it as an identifier. In that case adaptValue()
+         * sees a String. The annotation encoding still distinguishes SAYHELLO from "SAYHELLO", so
+         * preserve the lexical constant here without changing legitimate unnamed string values.
+         */
+        ret.putUnnamed(singleConstant == null ? value : Constant.create(singleConstant));
       } else {
         ret.put(argument.getKey(), value);
       }
@@ -139,11 +150,10 @@ public enum LanguageAdapter {
      * such as SAYHELLO from getArguments(), although the parser retains it in encode(). Recover
      * that unambiguous grammar case here so services remain compatible with those syntax beans.
      */
-    if (ret.getUnnamedArguments().isEmpty() && annotation.getArguments().isEmpty()) {
-      Matcher matcher = SINGLE_CONSTANT_ANNOTATION_PATTERN.matcher(annotation.encode());
-      if (matcher.matches()) {
-        ret.putUnnamed(Constant.create(matcher.group(1)));
-      }
+    if (ret.getUnnamedArguments().isEmpty()
+        && annotation.getArguments().isEmpty()
+        && singleConstant != null) {
+      ret.putUnnamed(Constant.create(singleConstant));
     }
     return ret;
   }
@@ -1800,7 +1810,7 @@ public enum LanguageAdapter {
     var ret = new KActorsStatementImpl.AssertImpl();
     var arguments = Parameters.<String>create();
     arguments.putAll(
-        adaptArguments(
+        adaptValueArguments(
             assertion.getArguments(), behavior.getUrn(), behavior.getProjectName(), notifications));
     ret.setArguments(arguments);
     ret.setAssertions(
@@ -1856,13 +1866,28 @@ public enum LanguageAdapter {
     ret.setMessage(declaration[declaration.length - 1]);
 
     // cannot enforce argument mapping at this stage
-    ret.getArguments()
-        .putAll(
-            adaptArguments(
-                verbStatement.getArguments(),
-                behavior.getUrn(),
-                behavior.getProjectName(),
-                notifications));
+    var arguments =
+        adaptArguments(verbStatement.getArguments(), behavior, action, notifications);
+    for (var argument : arguments.entrySet()) {
+      if (argument.getKey() != null
+          && (argument.getKey().startsWith(":")
+              || argument.getKey().startsWith("+")
+              || argument.getKey().startsWith("!"))) {
+        String metadataKey = argument.getKey().substring(1);
+        Object metadataValue =
+            argument.getKey().startsWith("+")
+                ? Boolean.TRUE
+                : argument.getKey().startsWith("!") ? Boolean.FALSE : argument.getValue();
+        ret.getArguments().put(metadataKey, metadataValue);
+        if (ret.getArguments() instanceof KActorsArgumentsImpl implementation) {
+          implementation.getMetadataKeys().add(metadataKey);
+        }
+      } else if (argument.getKey() != null && argument.getKey().startsWith("_")) {
+        ret.getArguments().putUnnamed(argument.getValue());
+      } else {
+        ret.getArguments().put(argument.getKey(), argument.getValue());
+      }
+    }
 
     for (var match : verbStatement.getMatches()) {
       var m = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
@@ -2019,7 +2044,7 @@ public enum LanguageAdapter {
     return null;
   }
 
-  private Map<String, KActorsValue> adaptArguments(
+  private Map<String, KActorsValue> adaptValueArguments(
       Map<String, org.eclipse.xtext.util.Pair<ValueSyntax, String>> arguments,
       String namespace,
       String projectName,
@@ -2038,5 +2063,65 @@ public enum LanguageAdapter {
                 Map.Entry::getValue,
                 (left, right) -> right,
                 LinkedHashMap::new));
+  }
+
+  /**
+   * Adapt call arguments without flattening executable values into parser beans or strings.
+   *
+   * <p>The syntax API historically declared every entry as a {@link ValueSyntax}. Newer grammar
+   * versions also place a {@link ActionStatementSyntax.Verb} or {@link
+   * ActionStatementSyntax.Switch} in the same erased pair. Keep the wildcard boundary here so this
+   * module remains binary-compatible with both syntax APIs while the semantic side always receives
+   * either a {@link KActorsValue} or a serializable {@link KActorsStatement.CallArgument} bean.
+   */
+  private Map<String, Object> adaptArguments(
+      Map<String, ? extends org.eclipse.xtext.util.Pair<?, String>> arguments,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
+    return arguments.entrySet().stream()
+        .map(
+            entry ->
+                new AbstractMap.SimpleEntry<>(
+                    entry.getKey(),
+                    adaptArgument(
+                        entry.getValue().getFirst(),
+                        entry.getValue().getSecond(),
+                        behavior,
+                        action,
+                        notifications)))
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (left, right) -> right,
+                LinkedHashMap::new));
+  }
+
+  private Object adaptArgument(
+      Object syntax,
+      String castToBehavior,
+      KActorsBehavior behavior,
+      KActorsAction action,
+      List<Notification> notifications) {
+    if (syntax instanceof ValueSyntax value) {
+      return adaptKActorsValue(
+          value, behavior.getUrn(), behavior.getProjectName(), notifications);
+    }
+    var ret = new KActorsStatementImpl.CallArgumentImpl();
+    ret.setAdaptedBehaviorUrn(castToBehavior);
+    if (syntax instanceof ActionStatementSyntax.Verb function) {
+      ret.setFunction(adaptVerb(function, behavior, action, notifications));
+      return ret;
+    }
+    if (syntax instanceof ActionStatementSyntax.Switch switchStatement) {
+      ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
+      return ret;
+    }
+    notifications.add(
+        Notification.error(
+            "Unsupported k.Actors call argument "
+                + (syntax == null ? "null" : syntax.getClass().getName())));
+    return ret;
   }
 }

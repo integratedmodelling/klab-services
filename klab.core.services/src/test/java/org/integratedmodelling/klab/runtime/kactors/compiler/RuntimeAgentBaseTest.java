@@ -6,10 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import org.integratedmodelling.common.authentication.scope.AMQPChannel;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
@@ -28,9 +35,12 @@ import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
@@ -234,6 +244,39 @@ class RuntimeAgentBaseTest {
     assertTrue(agent.handled.await(1, TimeUnit.SECONDS));
     assertEquals(new TestPayload("station-a", 12.5), agent.payload.get());
     assertEquals("sender:agent:7", agent.sender.get().getUrn());
+  }
+
+  @Test
+  void askCompletesFromHandleReturnValue() throws Exception {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var requester = new ReactiveRuntimeAgent();
+    var recipient = new RequestReplyRuntimeAgent();
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(requester.initializeMessaging("agent:requester", channel, ignored -> {}));
+      assertTrue(recipient.initializeMessaging("agent:recipient", channel, ignored -> {}));
+
+      assertEquals(
+          "reply:payload",
+          requester
+              .ask(
+                  recipient,
+                  Constant.create("QUESTION"),
+                  "payload",
+                  Duration.ofSeconds(1))
+              .get(1, TimeUnit.SECONDS));
+    } finally {
+      requester.closeMessaging();
+      recipient.closeMessaging();
+    }
   }
 
   @Test
@@ -498,6 +541,40 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void dynamicJavaObjectBridgeSupportsMethodsPropertiesAndSnakeCase() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    var values = new ArrayList<Object>();
+
+    assertEquals(Boolean.TRUE, agent.dynamicValue(values, "add", root, "hello"));
+    assertEquals(List.of("hello"), values);
+    assertEquals(1, agent.dynamicValue(values, "size", root));
+    assertEquals(null, agent.dynamicValue(values, "clear", root));
+    assertTrue(values.isEmpty());
+
+    var bean = new PlainJavaBean("test value");
+    assertEquals("test value", agent.dynamicValue(bean, "display_name", root));
+    assertEquals(
+        "left:right", agent.dynamicValue(bean, "combine_values", root, "left", "right"));
+  }
+
+  @Test
+  void reservedNewPrefersAnnotatedFactoryThenFallsBackToPublicConstructor() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+
+    var factory =
+        (FactoryConstructedActor)
+            agent.function(FactoryConstructedActor.class, "new", root, "value");
+    var constructed =
+        (ConstructorOnlyActor)
+            agent.function(ConstructorOnlyActor.class, "new", root, "value");
+
+    assertEquals("factory:value", factory.value);
+    assertEquals("constructor:value", constructed.value);
+  }
+
+  @Test
   void sequentialBarrierWaitsForEveryReaction() {
     var agent = new ReactiveRuntimeAgent();
     var first = new CompletableFuture<Void>();
@@ -710,6 +787,37 @@ class RuntimeAgentBaseTest {
     }
   }
 
+  private static class RequestReplyRuntimeAgent extends RuntimeAgentBase {
+
+    private RequestReplyRuntimeAgent() {
+      super(null, null);
+    }
+
+    @Override
+    protected Map<String, AgentMessageHandler> agentMessageHandlers() {
+      return Map.of(
+          "QUESTION",
+          new AgentMessageHandler("answer", Verb.Type.FUNCTION, List.of("payload")));
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_answer(AgentScope scope, Object... arguments) {
+      return "reply:" + arguments[0];
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private interface ConnectedScope extends Scope, MessagingChannel {}
+
   private record ConsoleChunk(RuntimeAgent.ConsoleMessageType type, String text) {}
 
   private static class ConsoleBufferRuntimeAgent extends ReactiveRuntimeAgent {
@@ -792,6 +900,11 @@ class RuntimeAgentBaseTest {
       return invokeDynamicValue(actor, verb, scope, arguments);
     }
 
+    private CompletableFuture<Object> ask(
+        Object recipient, Object type, Object payload, Object timeout) {
+      return askAgent(recipient, type, payload, timeout);
+    }
+
     private ExitValue dynamicMainDone(Object result) {
       return awaitDynamicCalls(result);
     }
@@ -821,6 +934,48 @@ class RuntimeAgentBaseTest {
     @Override
     public Verb.Type getAgentExecutionMode() {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private static class PlainJavaBean {
+
+    private final String displayName;
+
+    private PlainJavaBean(String displayName) {
+      this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+      return displayName;
+    }
+
+    public String combineValues(String first, String second) {
+      return first + ":" + second;
+    }
+  }
+
+  public static class FactoryConstructedActor {
+
+    private String value;
+
+    public FactoryConstructedActor(String value) {
+      this.value = "constructor:" + value;
+    }
+
+    @Verb(name = "new")
+    public static FactoryConstructedActor create(String value) {
+      var ret = new FactoryConstructedActor(value);
+      ret.value = "factory:" + value;
+      return ret;
+    }
+  }
+
+  public static class ConstructorOnlyActor {
+
+    private final String value;
+
+    public ConstructorOnlyActor(String value) {
+      this.value = "constructor:" + value;
     }
   }
 

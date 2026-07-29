@@ -18,6 +18,8 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
  */
 public class KActorsVisitor {
 
+  private static final Set<String> RESERVED_AGENT_VERBS = Set.of("new", "tell", "ask");
+
   /** Extension point for checks that require runtime components or language services. */
   public interface Validator {
 
@@ -76,6 +78,16 @@ public class KActorsVisitor {
      * result dynamically typed while retaining its producer-call provenance.
      */
     default String classifyActionResultBehavior(
+        KActorsStatement.Verb verb, KActorsContext context) {
+      return null;
+    }
+
+    /**
+     * Return the Java runtime class produced by this call when it is known from a Java method
+     * signature. This lets subsequent calls on the result be validated and compiled as ordinary
+     * Java object operations without requiring the result to be an agent.
+     */
+    default Class<?> classifyActionResultJavaClass(
         KActorsStatement.Verb verb, KActorsContext context) {
       return null;
     }
@@ -251,9 +263,35 @@ public class KActorsVisitor {
       Verb.Type executionType,
       Boolean staticAction,
       String producedAgentUrn,
-      boolean valueRequired) {
+      boolean valueRequired,
+      java.lang.reflect.Method javaMethod) {
     public CallInfo {
       knownVariables = Collections.unmodifiableMap(new LinkedHashMap<>(knownVariables));
+    }
+
+    public CallInfo(
+        KActorsStatement.Verb statement,
+        String agent,
+        String verb,
+        String action,
+        Parameters<String> arguments,
+        Map<String, VariableInfo> knownVariables,
+        Verb.Type executionType,
+        Boolean staticAction,
+        String producedAgentUrn,
+        boolean valueRequired) {
+      this(
+          statement,
+          agent,
+          verb,
+          action,
+          arguments,
+          knownVariables,
+          executionType,
+          staticAction,
+          producedAgentUrn,
+          valueRequired,
+          null);
     }
   }
 
@@ -263,7 +301,19 @@ public class KActorsVisitor {
       ValueType type,
       String agentUrn,
       String verbUrn,
-      KActorsStatement.Verb producerCall) {}
+      KActorsStatement.Verb producerCall,
+      Class<?> javaClass) {
+
+    public VariableInfo(
+        KActorsCodeStatement statement,
+        String name,
+        ValueType type,
+        String agentUrn,
+        String verbUrn,
+        KActorsStatement.Verb producerCall) {
+      this(statement, name, type, agentUrn, verbUrn, producerCall, null);
+    }
+  }
 
   /** Effective type contract declared by {@code @type} on a k.Actors action parameter. */
   public record ArgumentType(String behaviorUrn, String javaClassName) {}
@@ -552,12 +602,39 @@ public class KActorsVisitor {
             : annotation.getUnnamedArguments().isEmpty()
                 ? annotation.get(Annotation.VALUE_PARAMETER_KEY)
                 : annotation.getUnnamedArguments().getFirst();
+    if (declared == null) {
+      declared =
+          annotation.entrySet().stream()
+              .filter(entry -> String.valueOf(entry.getKey()).matches("_p\\d+"))
+              .sorted(
+                  java.util.Comparator.comparingInt(
+                      entry -> Integer.parseInt(String.valueOf(entry.getKey()).substring(2))))
+              .map(java.util.Map.Entry::getValue)
+              .findFirst()
+              .orElse(null);
+    }
+    return handledMessageConstant(declared);
+  }
+
+  private static String handledMessageConstant(Object declared) {
     if (declared instanceof Constant constant) {
       return constant.getValue();
     }
     if (declared instanceof KActorsValue value && value.getType() == ValueType.CONSTANT) {
       Object constant = value.getValue(Object.class);
-      return constant instanceof Constant typed ? typed.getValue() : String.valueOf(constant);
+      return handledMessageConstant(constant);
+    }
+    if (declared instanceof java.util.Map<?, ?> map) {
+      return handledMessageConstant(map.get("value"));
+    }
+    if (declared instanceof CharSequence text
+        && text.toString().matches("[A-Z][A-Z0-9_]*")) {
+      /*
+       * Compatibility with transports and syntax-bean versions that retain the lexical constant
+       * but erase its small Constant wrapper. Quoted strings never take this route in the normal
+       * adapter; accepting only the grammar's uppercase CONSTANT form keeps the fallback narrow.
+       */
+      return text.toString();
     }
     return null;
   }
@@ -632,6 +709,9 @@ public class KActorsVisitor {
 
   protected void visitAction(KActorsAction action, KActorsContext context) {
     registerTag(action.getTag(), action, "behavior " + visitedBehavior.getUrn());
+    if (RESERVED_AGENT_VERBS.contains(action.getUrn())) {
+      error("The action name '" + action.getUrn() + "' is reserved for all agents", action);
+    }
     addNotifications(context.validator.validateAction(action, context));
     var returnAnnotations =
         safe(action.getAnnotations()).stream()
@@ -681,7 +761,13 @@ public class KActorsVisitor {
       }
       var parameter =
           new VariableInfo(
-              action, name, null, type == null ? null : type.behaviorUrn(), null, null);
+              action,
+              name,
+              null,
+              type == null ? null : type.behaviorUrn(),
+              null,
+              null,
+              type == null ? null : loadDeclaredJavaClass(type.javaClassName()));
       parameters.add(parameter);
       context.knownVariables.put(name, parameter);
     }
@@ -764,6 +850,58 @@ public class KActorsVisitor {
     return true;
   }
 
+  private static Class<?> loadDeclaredJavaClass(String name) {
+    if (name == null || name.isBlank()) {
+      return null;
+    }
+    if (!name.contains(".")) {
+      return switch (name.toLowerCase(Locale.ROOT)) {
+        case "boolean" -> Boolean.class;
+        case "byte" -> Byte.class;
+        case "short" -> Short.class;
+        case "integer", "int" -> Integer.class;
+        case "long" -> Long.class;
+        case "float" -> Float.class;
+        case "double", "number" -> Double.class;
+        case "character", "char" -> Character.class;
+        case "string", "text" -> String.class;
+        case "list", "arraylist" -> ArrayList.class;
+        case "set", "linkedhashset" -> LinkedHashSet.class;
+        case "map", "linkedhashmap" -> LinkedHashMap.class;
+        default -> null;
+      };
+    }
+    try {
+      return Class.forName(name);
+    } catch (ClassNotFoundException ignored) {
+      return null;
+    }
+  }
+
+  private Class<?> javaClassForValue(KActorsValue value) {
+    if (value == null) {
+      return null;
+    }
+    return switch (value.getType()) {
+      case LIST -> ArrayList.class;
+      case SET -> LinkedHashSet.class;
+      case MAP -> LinkedHashMap.class;
+      case STRING, LOCALIZED_KEY -> String.class;
+      case BOOLEAN -> Boolean.class;
+      case INTEGER, NUMBERED_PATTERN -> Integer.class;
+      case DOUBLE -> Double.class;
+      case NUMBER -> {
+        Object raw = valueOf(value);
+        yield raw instanceof Number ? raw.getClass() : Number.class;
+      }
+      case REGEXP -> java.util.regex.Pattern.class;
+      default -> {
+        Object raw = valueOf(value);
+        yield raw == null ? null : raw.getClass();
+      }
+    };
+  }
+
   public final void visitStatement(KActorsStatement statement, KActorsContext context) {
     if (statement == null) {
       return;
@@ -803,6 +941,13 @@ public class KActorsVisitor {
     var upstreamVerb = context.getUpstreamStatement(KActorsStatement.Verb.class);
     var verb = upstreamVerb == null ? null : upstreamVerb.getMessage();
     var producedAgentUrn = upstreamVerb == null ? null : producedAgentUrn(upstreamVerb, context);
+    var producedJavaMethod = resolveJavaObjectMethod(upstreamVerb, context);
+    var producedJavaClass =
+        upstreamVerb == null
+            ? null
+            : producedJavaMethod == null
+                ? context.validator.classifyActionResultJavaClass(upstreamVerb, context)
+                : boxed(producedJavaMethod.getReturnType());
     var matchVariables = safe(matchStatement.getVariables());
     for (var name : matchVariables) {
       localVariables.add(
@@ -812,7 +957,8 @@ public class KActorsVisitor {
               null,
               matchVariables.size() == 1 ? producedAgentUrn : null,
               verb,
-              upstreamVerb));
+              upstreamVerb,
+              matchVariables.size() == 1 ? producedJavaClass : null));
     }
     if (matchStatement.getCaptureAs() != null) {
       localVariables.add(
@@ -822,7 +968,8 @@ public class KActorsVisitor {
               null,
               producedAgentUrn,
               verb,
-              upstreamVerb));
+              upstreamVerb,
+              producedJavaClass));
     }
     var criterion = matchStatement.getMatchCriterion();
     if (criterion != null) {
@@ -833,7 +980,13 @@ public class KActorsVisitor {
           if (value != null) {
             localVariables.add(
                 new VariableInfo(
-                    criterion, value.toString(), null, producedAgentUrn, verb, upstreamVerb));
+                    criterion,
+                    value.toString(),
+                    null,
+                    producedAgentUrn,
+                    verb,
+                    upstreamVerb,
+                    producedJavaClass));
           }
         }
       }
@@ -1007,7 +1160,8 @@ public class KActorsVisitor {
                   ? null
                   : producedAgentUrn(statement.getFunction(), context),
               statement.getFunction() == null ? null : statement.getFunction().getMessage(),
-              statement.getFunction()));
+              statement.getFunction(),
+              javaIterableElementClass(statement.getFunction(), context)));
     }
     visitNested(statement.getBody(), context, loopVariables, true);
   }
@@ -1230,7 +1384,14 @@ public class KActorsVisitor {
       var recipient = normalizeRecipient(statement.getRecipient());
       Verb.Type executionType = null;
       Boolean staticAction = null;
-      if ("self".equals(recipient)) {
+      java.lang.reflect.Method javaMethod = null;
+      boolean reservedAgentCall = isReservedAgentCall(statement, pending.context());
+      if (reservedAgentCall) {
+        executionType =
+            "ask".equals(statement.getMessage()) ? Verb.Type.SUPPLIER : Verb.Type.FUNCTION;
+        staticAction = "new".equals(statement.getMessage());
+        validateReservedAgentCall(statement, pending.context());
+      } else if ("self".equals(recipient)) {
         var target = actions.get(statement.getMessage());
         if (target == null) {
           if (safe(visitedBehavior.getInheritedBehaviors()).isEmpty()) {
@@ -1245,6 +1406,32 @@ public class KActorsVisitor {
           && !pending.context().knownVariables.containsKey(recipient)) {
         error("Undeclared verb recipient: " + recipient, statement);
       }
+      var variable = pending.context().knownVariables.get(recipient);
+      if (executionType == null
+          && variable != null
+          && variable.agentUrn() == null
+          && variable.javaClass() != null) {
+        javaMethod = resolveJavaObjectMethod(statement, pending.context());
+        if (javaMethod != null) {
+          executionType =
+              java.util.concurrent.CompletableFuture.class.isAssignableFrom(
+                      javaMethod.getReturnType())
+                  ? Verb.Type.SUPPLIER
+                  : Verb.Type.FUNCTION;
+          staticAction = false;
+          if (pending.valueRequired()
+              && (javaMethod.getReturnType() == void.class
+                  || javaMethod.getReturnType() == Void.class)) {
+            error(
+                "Java method "
+                    + javaMethod.getDeclaringClass().getSimpleName()
+                    + "."
+                    + javaMethod.getName()
+                    + " does not return a value",
+                statement);
+          }
+        }
+      }
       if (executionType == null) {
         executionType =
             pending.context().validator.classifyActionCall(statement, pending.context());
@@ -1253,7 +1440,6 @@ public class KActorsVisitor {
         staticAction =
             pending.context().validator.classifyActionStaticity(statement, pending.context());
       }
-      var variable = pending.context().knownVariables.get(recipient);
       if (executionType == null) {
         if (variable != null && variable.producerCall() != null) {
           executionType =
@@ -1274,7 +1460,8 @@ public class KActorsVisitor {
               statement);
         }
       }
-      if (executionType != null || (variable != null && variable.agentUrn() != null)) {
+      if (!reservedAgentCall
+          && (executionType != null || (variable != null && variable.agentUrn() != null))) {
         addNotifications(
             pending.context().validator.validateVerbCall(statement, pending.context()));
         addNotifications(
@@ -1315,8 +1502,244 @@ public class KActorsVisitor {
               executionType,
               staticAction,
               producedAgentUrn(statement, pending.context()),
-              pending.valueRequired()));
+              pending.valueRequired(),
+              javaMethod));
     }
+  }
+
+  private boolean isReservedAgentCall(
+      KActorsStatement.Verb statement, KActorsContext context) {
+    if (statement == null || !Set.of("tell", "ask").contains(statement.getMessage())) {
+      return false;
+    }
+    String recipient = normalizeRecipient(statement.getRecipient());
+    if ("self".equals(recipient) || isImported(recipient)) {
+      return true;
+    }
+    var variable = context.knownVariables.get(recipient);
+    if (variable == null) {
+      return false;
+    }
+    if (variable.agentUrn() != null) {
+      return true;
+    }
+    return variable.javaClass() == null
+        || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
+            variable.javaClass());
+  }
+
+  private void validateReservedAgentCall(
+      KActorsStatement.Verb statement, KActorsContext context) {
+    String message = statement.getMessage();
+    String recipient = normalizeRecipient(statement.getRecipient());
+    if (isImported(recipient)) {
+      error(
+          "Reserved agent verb "
+              + message
+              + " requires an agent instance, not import alias "
+              + recipient,
+          statement);
+    }
+    var arguments = argumentValues(statement.getArguments());
+    if (arguments.size() != 2) {
+      error(
+          "Reserved agent verb "
+              + message
+              + " requires exactly a message CONSTANT and one payload",
+          statement);
+    } else if (!(arguments.get(0) instanceof KActorsValue value)
+        || value.getType() != ValueType.CONSTANT) {
+      error("The first argument to reserved agent verb " + message + " must be a CONSTANT", statement);
+    }
+    var metadata =
+        statement.getArguments() == null || statement.getArguments().getMetadataKeys() == null
+            ? List.<String>of()
+            : statement.getArguments().getMetadataKeys();
+    for (String key : metadata) {
+      if (!"ask".equals(message) || !"timeout".equals(key)) {
+        error("Unsupported metadata :" + key + " for reserved agent verb " + message, statement);
+      }
+    }
+    if ("ask".equals(message)
+        && metadata.contains("timeout")
+        && (!(statement.getArguments().get("timeout") instanceof KActorsValue timeout)
+            || timeout.getType() != ValueType.QUANTITY)) {
+      error("The :timeout metadata for ask must be a temporal Quantity", statement);
+    }
+  }
+
+  private java.lang.reflect.Method resolveJavaObjectMethod(
+      KActorsStatement.Verb call, KActorsContext context) {
+    if (call == null || context == null) {
+      return null;
+    }
+    var recipient = context.knownVariables.get(normalizeRecipient(call.getRecipient()));
+    if (recipient == null || recipient.agentUrn() != null || recipient.javaClass() == null) {
+      return null;
+    }
+    return resolveJavaObjectMethod(
+        recipient.javaClass(), call.getMessage(), call.getArguments(), context);
+  }
+
+  private Class<?> javaIterableElementClass(
+      KActorsStatement.Verb producer, KActorsContext context) {
+    var method = resolveJavaObjectMethod(producer, context);
+    if (method == null) {
+      return null;
+    }
+    if (method.getReturnType().isArray()) {
+      return boxed(method.getReturnType().getComponentType());
+    }
+    var generic = method.getGenericReturnType();
+    if (generic instanceof java.lang.reflect.ParameterizedType parameterized
+        && parameterized.getActualTypeArguments().length == 1
+        && parameterized.getActualTypeArguments()[0] instanceof Class<?> elementClass) {
+      return boxed(elementClass);
+    }
+    return null;
+  }
+
+  private java.lang.reflect.Method resolveJavaObjectMethod(
+      Class<?> recipientClass,
+      String requestedName,
+      KActorsStatement.Arguments arguments,
+      KActorsContext context) {
+    if (recipientClass == null || requestedName == null || requestedName.isBlank()) {
+      return null;
+    }
+    var supplied = argumentValues(arguments);
+    String camelName = lowerUnderscoreToCamel(requestedName);
+    var names = new LinkedHashMap<String, Integer>();
+    names.put(requestedName, 40);
+    names.put(camelName, 35);
+    if (supplied.isEmpty()) {
+      String property = Character.toUpperCase(camelName.charAt(0)) + camelName.substring(1);
+      names.put("get" + property, 30);
+      names.put("is" + property, 25);
+    }
+
+    java.lang.reflect.Method best = null;
+    int bestScore = Integer.MIN_VALUE;
+    boolean ambiguous = false;
+    for (var method : recipientClass.getMethods()) {
+      if (!java.lang.reflect.Modifier.isPublic(method.getModifiers())
+          || java.lang.reflect.Modifier.isStatic(method.getModifiers())
+          || method.isBridge()
+          || method.isSynthetic()
+          || method.getDeclaringClass() == Object.class) {
+        continue;
+      }
+      Integer nameScore = names.get(method.getName());
+      if (nameScore == null) {
+        continue;
+      }
+      int score = javaMethodCompatibilityScore(method, supplied, context);
+      if (score < 0) {
+        continue;
+      }
+      score += nameScore;
+      if (score > bestScore) {
+        best = method;
+        bestScore = score;
+        ambiguous = false;
+      } else if (score == bestScore && !method.equals(best)) {
+        ambiguous = true;
+      }
+    }
+    return ambiguous ? null : best;
+  }
+
+  /** Return ordinary call arguments in source order, excluding inline metadata entries. */
+  public static List<Object> argumentValues(KActorsStatement.Arguments arguments) {
+    if (arguments == null) {
+      return List.of();
+    }
+    var metadata =
+        arguments.getMetadataKeys() == null
+            ? Set.<String>of()
+            : new HashSet<>(arguments.getMetadataKeys());
+    return arguments.entrySet().stream()
+        .filter(entry -> !metadata.contains(entry.getKey()))
+        .map(Map.Entry::getValue)
+        .toList();
+  }
+
+  private int javaMethodCompatibilityScore(
+      java.lang.reflect.Method method, List<?> supplied, KActorsContext context) {
+    var parameters = method.getParameterTypes();
+    if ((!method.isVarArgs() && parameters.length != supplied.size())
+        || (method.isVarArgs() && supplied.size() < parameters.length - 1)) {
+      return -1;
+    }
+    int score = method.isVarArgs() ? -1 : 1;
+    for (int index = 0; index < supplied.size(); index++) {
+      Class<?> expected =
+          method.isVarArgs() && index >= parameters.length - 1
+              ? parameters[parameters.length - 1].getComponentType()
+              : parameters[index];
+      Class<?> actual = javaClassForArgument(supplied.get(index), context);
+      if (actual == null) {
+        continue;
+      }
+      Class<?> boxedExpected = boxed(expected);
+      Class<?> boxedActual = boxed(actual);
+      if (boxedExpected.equals(boxedActual)) {
+        score += 4;
+      } else if (boxedExpected.isAssignableFrom(boxedActual)) {
+        score += 2;
+      } else if (Number.class.isAssignableFrom(boxedExpected)
+          && Number.class.isAssignableFrom(boxedActual)) {
+        score += 1;
+      } else if (boxedExpected == String.class) {
+        score += 1;
+      } else {
+        return -1;
+      }
+    }
+    return score;
+  }
+
+  private Class<?> javaClassForArgument(Object argument, KActorsContext context) {
+    if (!(argument instanceof KActorsValue value)) {
+      return argument == null ? null : argument.getClass();
+    }
+    if (value.getType() == ValueType.IDENTIFIER) {
+      var variable = context.knownVariables.get(value.getValue(String.class));
+      return variable == null ? null : variable.javaClass();
+    }
+    return javaClassForValue(value);
+  }
+
+  private static Class<?> boxed(Class<?> type) {
+    if (type == null || !type.isPrimitive()) {
+      return type;
+    }
+    if (type == boolean.class) return Boolean.class;
+    if (type == byte.class) return Byte.class;
+    if (type == short.class) return Short.class;
+    if (type == int.class) return Integer.class;
+    if (type == long.class) return Long.class;
+    if (type == float.class) return Float.class;
+    if (type == double.class) return Double.class;
+    if (type == char.class) return Character.class;
+    return type;
+  }
+
+  private static String lowerUnderscoreToCamel(String name) {
+    var ret = new StringBuilder(name.length());
+    boolean uppercase = false;
+    for (int index = 0; index < name.length(); index++) {
+      char c = name.charAt(index);
+      if (c == '_') {
+        uppercase = ret.length() > 0;
+      } else if (uppercase) {
+        ret.append(Character.toUpperCase(c));
+        uppercase = false;
+      } else {
+        ret.append(c);
+      }
+    }
+    return ret.toString();
   }
 
   private void finishCalledActionTypes() {
@@ -1399,6 +1822,7 @@ public class KActorsVisitor {
     }
     var parent = context.upstream.get(context.upstream.size() - 2);
     return parent instanceof KActorsStatement.Assignment
+        || parent instanceof KActorsStatement.Verb
         || parent instanceof KActorsStatement.If
         || parent instanceof KActorsStatement.While
         || parent instanceof KActorsStatement.Do
@@ -1415,6 +1839,7 @@ public class KActorsVisitor {
     }
     var parent = context.upstream.get(context.upstream.size() - 2);
     return parent instanceof KActorsStatement.Assignment
+        || parent instanceof KActorsStatement.Verb
         || parent instanceof KActorsStatement.Return
         || parent instanceof KActorsStatement.Fire
         || parent instanceof KActorsStatement.Yield;
@@ -1441,7 +1866,8 @@ public class KActorsVisitor {
               source.type(),
               source.agentUrn(),
               source.verbUrn(),
-              source.producerCall());
+              source.producerCall(),
+              source.javaClass());
         }
       }
       return new VariableInfo(
@@ -1450,20 +1876,27 @@ public class KActorsVisitor {
           assignment.getValue().getType(),
           null,
           null,
-          null);
+          null,
+          javaClassForValue(assignment.getValue()));
     }
     var function = assignment.getFunction();
     var resultBehaviorUrn = function == null ? null : producedAgentUrn(function, context);
     if (resultBehaviorUrn == null && function != null && "new".equals(function.getMessage())) {
       resultBehaviorUrn = normalizeRecipient(function.getRecipient());
     }
+    var javaMethod = resolveJavaObjectMethod(function, context);
     return new VariableInfo(
         assignment,
         assignment.getVariable(),
         null,
         resultBehaviorUrn,
         function == null ? null : function.getMessage(),
-        function);
+        function,
+        javaMethod == null
+            ? function == null
+                ? null
+                : context.validator.classifyActionResultJavaClass(function, context)
+            : boxed(javaMethod.getReturnType()));
   }
 
   private VariableInfo sourceVariableFor(
@@ -1482,19 +1915,27 @@ public class KActorsVisitor {
               source.type(),
               source.agentUrn(),
               source.verbUrn(),
-              source.producerCall());
+              source.producerCall(),
+              source.javaClass());
         }
       }
-      return new VariableInfo(statement, null, value.getType(), null, null, null);
+      return new VariableInfo(
+          statement, null, value.getType(), null, null, null, javaClassForValue(value));
     }
     if (function != null) {
+      var javaMethod = resolveJavaObjectMethod(function, context);
       return new VariableInfo(
           statement,
           null,
           null,
           producedAgentUrn(function, context),
           function.getMessage(),
-          function);
+          function,
+          javaMethod == null
+              ? context == null
+                  ? null
+                  : context.validator.classifyActionResultJavaClass(function, context)
+              : boxed(javaMethod.getReturnType()));
     }
     return new VariableInfo(statement, null, null, null, null, null);
   }
@@ -1708,7 +2149,23 @@ public class KActorsVisitor {
         consumer.accept(switchStatement.getFunction());
         safe(switchStatement.getCases()).forEach(consumer);
       }
-      case KActorsStatement.Verb verb -> safe(verb.getActions()).forEach(consumer);
+      case KActorsStatement.Verb verb -> {
+        if (verb.getArguments() != null) {
+          verb.getArguments().values().stream()
+              .filter(KActorsStatement.CallArgument.class::isInstance)
+              .map(KActorsStatement.CallArgument.class::cast)
+              .forEach(
+                  argument -> {
+                    if (argument.getFunction() != null) {
+                      consumer.accept(argument.getFunction());
+                    }
+                    if (argument.getSwitch() != null) {
+                      consumer.accept(argument.getSwitch());
+                    }
+                  });
+        }
+        safe(verb.getActions()).forEach(consumer);
+      }
       case KActorsStatement.Verb.MatchAction match -> consumer.accept(match.getActionOnMatch());
       case KActorsStatement.Assert assertion -> safe(assertion.getAssertions()).forEach(consumer);
       case KActorsStatement.Assert.Assertion assertion ->
@@ -1734,6 +2191,17 @@ public class KActorsVisitor {
   private void visitValues(Object values, KActorsContext context, boolean resolveIdentifiers) {
     if (values instanceof KActorsValue value) {
       visitValue(value, context, resolveIdentifiers);
+    } else if (values instanceof KActorsStatement.CallArgument argument) {
+      int alternatives =
+          (argument.getFunction() == null ? 0 : 1) + (argument.getSwitch() == null ? 0 : 1);
+      KActorsStatement lexical =
+          argument.getFunction() == null ? argument.getSwitch() : argument.getFunction();
+      if (alternatives != 1) {
+        error(
+            "Exactly one functional verb or switch must be supplied as a call argument", lexical);
+      }
+      visitNested(argument.getFunction(), context, List.of(), false);
+      visitNested(argument.getSwitch(), context, List.of(), false);
     } else if (values instanceof Map<?, ?> map) {
       map.values().forEach(value -> visitValues(value, context, resolveIdentifiers));
     } else if (values instanceof Iterable<?> iterable) {

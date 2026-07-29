@@ -1,0 +1,14 @@
+behavior test.nested.value.arguments
+    "Exercise statement-valued call arguments."
+    version 1.0
+    using
+        core.console as console,
+        core.strings as strings
+
+action sayhello(message, sender):
+    console.format("Agent says hello: %s\n", switch message (
+        "hello" -> yield "A nice greeting"
+              * -> yield "An average greeting"
+    ))
+    console.println(strings.lowercase(message))
+    console.println([message])

@@ -56,6 +56,43 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
     this.sequential = sequential;
   }
 
+  /** JavaBean representation of an executable value used as a call argument. */
+  public static class CallArgumentImpl implements CallArgument {
+
+    @Serial private static final long serialVersionUID = -1348266694976002569L;
+
+    private Verb function;
+    private Switch switchStatement;
+    private String adaptedBehaviorUrn;
+
+    @Override
+    public Verb getFunction() {
+      return function;
+    }
+
+    public void setFunction(Verb function) {
+      this.function = function;
+    }
+
+    @Override
+    public Switch getSwitch() {
+      return switchStatement;
+    }
+
+    public void setSwitch(Switch switchStatement) {
+      this.switchStatement = switchStatement;
+    }
+
+    @Override
+    public String getAdaptedBehaviorUrn() {
+      return adaptedBehaviorUrn;
+    }
+
+    public void setAdaptedBehaviorUrn(String adaptedBehaviorUrn) {
+      this.adaptedBehaviorUrn = adaptedBehaviorUrn;
+    }
+  }
+
   public static class SwitchImpl extends KActorsStatementImpl implements Switch {
 
     private Type type = Type.SWITCH_STATEMENT;

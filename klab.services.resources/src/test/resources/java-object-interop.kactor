@@ -1,0 +1,18 @@
+behavior test.java.types
+    "Exercise calls on ordinary Java object values."
+    version 1.0
+    using core.console as console
+
+action init:
+    def list ()
+
+@stdin
+action input(message):
+    list.add(message)
+    console.format("Current message list is %s\n", list)
+
+action string_info(@type(class="String") text):
+    return text.is_empty()
+
+action file_path(@type(class="java.io.File") file):
+    return file.absolute_path()

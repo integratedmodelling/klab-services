@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
+import java.io.Serializable;
 import java.util.List;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -102,6 +103,27 @@ public interface KActorsStatement extends KActorsCodeStatement {
      * @return
      */
     List<String> getMetadataKeys();
+  }
+
+  /**
+   * A statement-valued call argument. Ordinary literal, identifier and expression arguments remain
+   * {@link KActorsValue}s in {@link Arguments}; this bean represents the alternatives that require
+   * executable semantic structure.
+   *
+   * <p>Exactly one of {@link #getFunction()} and {@link #getSwitch()} must be non-null. The
+   * JavaBean implementation is intentionally part of the serialized semantic model so nested calls
+   * and switches survive JSON transport without retaining any Xtext parser objects.
+   */
+  interface CallArgument extends Serializable {
+
+    /** A nested function or supplier call whose result is passed to the outer call. */
+    Verb getFunction();
+
+    /** A functional switch whose yielded result is passed to the outer call. */
+    Switch getSwitch();
+
+    /** Optional behavior adaptation requested with an {@code as URN} clause. */
+    String getAdaptedBehaviorUrn();
   }
 
   /**

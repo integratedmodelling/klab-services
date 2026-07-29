@@ -46,6 +46,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -271,6 +273,9 @@ public class JacksonConfiguration {
     }
 
     private Collection<Object> newCollection(Class<?> type) {
+      if (type == null || type == Object.class) {
+        return new ArrayList<>();
+      }
       if (!Modifier.isInterface(type.getModifiers())
           && !Modifier.isAbstract(type.getModifiers())
           && Modifier.isStatic(type.getModifiers())) {
@@ -370,7 +375,10 @@ public class JacksonConfiguration {
           KActorsBehavior.Import.class,
           KActorsAction.class,
           KActorsAction.Argument.class,
+          KActorsActionImpl.ArgumentImpl.class,
           KActorsStatement.Arguments.class,
+          KActorsStatement.CallArgument.class,
+          KActorsStatementImpl.CallArgumentImpl.class,
           KActorsStatement.Assert.class,
           KActorsStatement.Assignment.class,
           KActorsStatement.Break.class,

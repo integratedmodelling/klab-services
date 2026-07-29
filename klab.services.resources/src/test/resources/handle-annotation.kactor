@@ -9,3 +9,7 @@ action say_hello(message):
 @handle(not_a_constant)
 action invalid_handler(message):
     return message
+
+@handle(HEY)
+action no_argument_handler:
+    return "handled"

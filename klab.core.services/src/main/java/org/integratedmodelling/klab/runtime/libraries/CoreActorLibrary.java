@@ -1,10 +1,13 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -128,13 +131,238 @@ public class CoreActorLibrary {
 
     // TODO info, warn, error, debug
     @Verb(name = "info", executionType = Verb.Type.FUNCTION, returns = Void.class)
-    public static void info(RuntimeAgent.Scope scope, Object... messages) {
-
-    }
-
+    public static void info(RuntimeAgent.Scope scope, Object... messages) {}
 
     // TODO emitter that catches log entries from the code with pattern
 
+  }
+
+  @Actor(
+      name = "strings",
+      description =
+          "Null-safe string conversion, inspection, searching, splitting, joining and formatting functions.")
+  public static class Strings {
+
+    @Verb(name = "lowercase", executionType = Verb.Type.FUNCTION)
+    public static String lowercase(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to convert") String text) {
+      return text == null ? null : text.toLowerCase(Locale.ROOT);
+    }
+
+    @Verb(name = "uppercase", executionType = Verb.Type.FUNCTION)
+    public static String uppercase(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to convert") String text) {
+      return text == null ? null : text.toUpperCase(Locale.ROOT);
+    }
+
+    @Verb(name = "capitalize", executionType = Verb.Type.FUNCTION)
+    public static String capitalize(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text whose first character is capitalized")
+            String text) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.capitalize(text);
+    }
+
+    @Verb(name = "labelize", executionType = Verb.Type.FUNCTION)
+    public static String labelize(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "identifier", description = "Identifier to turn into a label")
+            String identifier) {
+      return identifier == null
+          ? null
+          : org.integratedmodelling.klab.api.utils.Utils.Strings.labelizeIdentifier(identifier);
+    }
+
+    @Verb(name = "trim", executionType = Verb.Type.FUNCTION)
+    public static String trim(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to strip at both ends") String text) {
+      return text == null ? null : text.strip();
+    }
+
+    @Verb(name = "normalize", executionType = Verb.Type.FUNCTION)
+    public static String normalize(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to trim and normalize to single internal spaces")
+            String text) {
+      return text == null
+          ? null
+          : org.integratedmodelling.klab.api.utils.Utils.Strings.replaceWhitespace(
+              text.strip(), " ");
+    }
+
+    @Verb(name = "length", executionType = Verb.Type.FUNCTION)
+    public static int length(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text whose length is returned") String text) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.length(text);
+    }
+
+    @Verb(name = "isempty", executionType = Verb.Type.FUNCTION)
+    public static boolean isEmpty(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to test", optional = true) String text) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.isEmpty(text);
+    }
+
+    @Verb(name = "contains", executionType = Verb.Type.FUNCTION)
+    public static boolean contains(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to search") String text,
+        @Verb.Argument(name = "fragment", description = "Literal fragment to find")
+            String fragment) {
+      return text != null && fragment != null && text.contains(fragment);
+    }
+
+    @Verb(name = "startswith", executionType = Verb.Type.FUNCTION)
+    public static boolean startsWith(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to inspect") String text,
+        @Verb.Argument(name = "prefix", description = "Literal prefix") String prefix) {
+      return text != null && prefix != null && text.startsWith(prefix);
+    }
+
+    @Verb(name = "endswith", executionType = Verb.Type.FUNCTION)
+    public static boolean endsWith(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to inspect") String text,
+        @Verb.Argument(name = "suffix", description = "Literal suffix") String suffix) {
+      return text != null && suffix != null && text.endsWith(suffix);
+    }
+
+    @Verb(name = "equalsignorecase", executionType = Verb.Type.FUNCTION)
+    public static boolean equalsIgnoreCase(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "First text") String text,
+        @Verb.Argument(name = "other", description = "Text to compare") String other) {
+      return text == null ? other == null : other != null && text.equalsIgnoreCase(other);
+    }
+
+    @Verb(name = "indexof", executionType = Verb.Type.FUNCTION)
+    public static int indexOf(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to search") String text,
+        @Verb.Argument(name = "fragment", description = "Literal fragment to find")
+            String fragment) {
+      return text == null || fragment == null ? -1 : text.indexOf(fragment);
+    }
+
+    @Verb(name = "count", executionType = Verb.Type.FUNCTION)
+    public static int count(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to search") String text,
+        @Verb.Argument(name = "fragment", description = "Literal fragment to count")
+            String fragment) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.countMatches(text, fragment);
+    }
+
+    @Verb(name = "matches", executionType = Verb.Type.FUNCTION)
+    public static boolean matches(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to test") String text,
+        @Verb.Argument(name = "regex", description = "Java regular expression") String regex) {
+      return text != null && regex != null && Pattern.matches(regex, text);
+    }
+
+    @Verb(name = "replace", executionType = Verb.Type.FUNCTION)
+    public static String replace(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to modify") String text,
+        @Verb.Argument(name = "target", description = "Literal text to replace") String target,
+        @Verb.Argument(name = "replacement", description = "Replacement text")
+            String replacement) {
+      return text == null || target == null
+          ? text
+          : text.replace(target, replacement == null ? "" : replacement);
+    }
+
+    @Verb(name = "substring", executionType = Verb.Type.FUNCTION)
+    public static String substring(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Source text") String text,
+        @Verb.Argument(name = "start", description = "Inclusive start index") int start,
+        @Verb.Argument(name = "end", description = "Exclusive end index") int end) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.substring(text, start, end);
+    }
+
+    @Verb(name = "split", executionType = Verb.Type.FUNCTION)
+    public static List<String> split(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to split") String text,
+        @Verb.Argument(name = "separator", description = "Literal separator") String separator) {
+      if (text == null) {
+        return List.of();
+      }
+      if (separator == null || separator.isEmpty()) {
+        return text.codePoints().mapToObj(Character::toString).toList();
+      }
+      return List.of(text.split(Pattern.quote(separator), -1));
+    }
+
+    @Verb(name = "tokenize", executionType = Verb.Type.FUNCTION)
+    public static List<String> tokenize(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to split on whitespace while preserving quoted phrases")
+            String text) {
+      return text == null
+          ? List.of()
+          : List.copyOf(org.integratedmodelling.klab.api.utils.Utils.Strings.tokenize(text));
+    }
+
+    @Verb(name = "join", executionType = Verb.Type.FUNCTION)
+    public static String join(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "values", description = "Values to join") Iterable<?> values,
+        @Verb.Argument(name = "separator", description = "Separator placed between values")
+            String separator) {
+      if (values == null) {
+        return "";
+      }
+      var builder = new StringBuilder();
+      for (var value : values) {
+        if (!builder.isEmpty()) {
+          builder.append(separator == null ? "" : separator);
+        }
+        builder.append(String.valueOf(value));
+      }
+      return builder.toString();
+    }
+
+    @Verb(name = "concat", executionType = Verb.Type.FUNCTION)
+    public static String concat(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "values", description = "Values to concatenate") Object... values) {
+      if (values == null) {
+        return "";
+      }
+      var builder = new StringBuilder();
+      for (var value : values) {
+        builder.append(String.valueOf(value));
+      }
+      return builder.toString();
+    }
+
+    @Verb(name = "repeat", executionType = Verb.Type.FUNCTION)
+    public static String repeat(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to repeat") String text,
+        @Verb.Argument(name = "times", description = "Number of repetitions") int times) {
+      return text == null ? null : text.repeat(Math.max(0, times));
+    }
+
+    @Verb(name = "abbreviate", executionType = Verb.Type.FUNCTION)
+    public static String abbreviate(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "text", description = "Text to abbreviate") String text,
+        @Verb.Argument(name = "width", description = "Maximum result width") int width) {
+      return org.integratedmodelling.klab.api.utils.Utils.Strings.abbreviate(text, width);
+    }
   }
 
   /** TODO: timer.at(datetime-string) timer.in(duration-string, quantity) */

@@ -55,6 +55,68 @@ import org.junit.jupiter.api.Test;
 class BehaviorAnalyzerTest {
 
   @Test
+  void reservedAgentVerbsCannotBeRedefined() {
+    var analyzer =
+        new BehaviorAnalyzer(behavior(action("new"), action("tell"), action("ask")));
+
+    assertFalse(analyzer.analyze());
+    for (String reserved : List.of("new", "tell", "ask")) {
+      assertTrue(
+          analyzer.getNotifications().stream()
+              .anyMatch(
+                  notification ->
+                      notification
+                          .getMessage()
+                          .contains("action name '" + reserved + "' is reserved")),
+          messages(analyzer));
+    }
+  }
+
+  @Test
+  void compilerEmitsReservedTellAndAskWithTimeoutMetadata() {
+    var tell = verb("sender", "tell");
+    tell.getArguments().putUnnamed(constant("NOTICE"));
+    tell.getArguments().putUnnamed(identifier("message"));
+    var ask = verb("sender", "ask");
+    ask.getArguments().putUnnamed(constant("QUESTION"));
+    ask.getArguments().putUnnamed(identifier("message"));
+    ask.getArguments().put("timeout", quantity("10.s"));
+    ask.getArguments().getMetadataKeys().add("timeout");
+    var assignment = assignment("answer", KActorsStatement.Assignment.Scope.FRAME, ask);
+    var input = action("input", tell, assignment);
+    input.setArguments(
+        List.of(
+            new KActorsActionImpl.ArgumentImpl("message"),
+            new KActorsActionImpl.ArgumentImpl("sender")));
+    var sourceBehavior = behavior(input);
+    var analyzer = new BehaviorAnalyzer(sourceBehavior);
+    var compiler = new AgentCompiler(sourceBehavior);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var calls = analyzer.getCalls();
+    assertEquals(
+        Verb.Type.FUNCTION,
+        calls.stream()
+            .filter(call -> "tell".equals(call.verb()))
+            .findFirst()
+            .orElseThrow()
+            .executionType());
+    assertEquals(
+        Verb.Type.SUPPLIER,
+        calls.stream()
+            .filter(call -> "ask".equals(call.verb()))
+            .findFirst()
+            .orElseThrow()
+            .executionType());
+    String source = compiler.getSourceCode();
+    assertTrue(source.contains("tellAgent("), source);
+    assertTrue(source.contains("askAgent("), source);
+    assertTrue(source.contains("ValueType.QUANTITY"), source);
+    assertGeneratedJavaCompiles(source);
+  }
+
+  @Test
   void actionParametersAreVisibleThroughoutTheActionBody() {
     var echo = action("echo", returned(identifier("payload")));
     echo.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("payload")));
@@ -84,7 +146,15 @@ class BehaviorAnalyzerTest {
     unnamedAnnotation.putUnnamed(Constant.create("UNNAMED"));
     var unnamed = action("unnamedHandler");
     unnamed.setAnnotations(List.of(unnamedAnnotation));
-    var compiler = new AgentCompiler(behavior(named, unnamed));
+    var erasedUnnamedAnnotation = Annotation.of("handle");
+    erasedUnnamedAnnotation.put("_p1", "ERASED");
+    var erasedUnnamed = action("erasedUnnamedHandler");
+    erasedUnnamed.setAnnotations(List.of(erasedUnnamedAnnotation));
+    var mappedAnnotation = Annotation.of("handle");
+    mappedAnnotation.putUnnamed(Map.of("value", "MAPPED"));
+    var mapped = action("mappedHandler");
+    mapped.setAnnotations(List.of(mappedAnnotation));
+    var compiler = new AgentCompiler(behavior(named, unnamed, erasedUnnamed, mapped));
 
     assertTrue(compiler.compile(), compiler.getNotifications().toString());
     String source = compiler.getSourceCode();
@@ -92,6 +162,8 @@ class BehaviorAnalyzerTest {
     assertTrue(source.contains("\"namedHandler\", Verb.Type.FUNCTION"), source);
     assertTrue(source.contains("List.of(\"payload\", \"sender\")"), source);
     assertTrue(source.contains("handlers.put(\"UNNAMED\""), source);
+    assertTrue(source.contains("handlers.put(\"ERASED\""), source);
+    assertTrue(source.contains("handlers.put(\"MAPPED\""), source);
   }
 
   @Test
@@ -114,6 +186,39 @@ class BehaviorAnalyzerTest {
     assertNotNull(warning.getLexicalContext());
     assertEquals(47, warning.getLexicalContext().getOffsetInDocument());
     assertEquals(31, warning.getLexicalContext().getLength());
+  }
+
+  @Test
+  void invalidHandleAnnotationRecoversLocationFromRetainedSource() {
+    var invalid = action("invalidHandler");
+    invalid.setAnnotations(List.of(Annotation.of("handle")));
+    var behavior = behavior(invalid);
+    behavior.setSourceCode(
+        """
+        behavior test.behavior
+            "test"
+            version 1.0
+
+        @handle(not_a_constant)
+        action invalidHandler:
+            return "no"
+        """);
+    var compiler = new AgentCompiler(behavior);
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var warning =
+        compiler.getNotifications().stream()
+            .filter(
+                notification ->
+                    notification.getMessage().contains("@handle annotation requires a CONSTANT"))
+            .findFirst()
+            .orElseThrow();
+
+    assertNotNull(warning.getLexicalContext());
+    assertEquals(
+        behavior.getSourceCode().indexOf("@handle"),
+        warning.getLexicalContext().getOffsetInDocument());
+    assertTrue(warning.getLexicalContext().getLength() > "@handle".length());
   }
 
   @Test
@@ -743,6 +848,50 @@ class BehaviorAnalyzerTest {
     assertTrue(generated.contains("throw new RuntimeAgentBase.SwitchYield(42)"), generated);
     assertTrue(generated.contains("catch (RuntimeAgentBase.SwitchYield yielded)"), generated);
     assertTrue(generated.contains("Object switchResult_"), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void callArgumentsPreserveAndCompileNestedSwitchesVerbsAndExpressions() {
+    var consume = action("consume", returned(identifier("value")));
+    consume.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("value")));
+    var produce = action("produce", returned(number(7)));
+
+    var switchArgument = new KActorsStatementImpl.CallArgumentImpl();
+    switchArgument.setSwitch(
+        switched(
+            identifier("message"),
+            switchCase(number(1), yielded(number(42))),
+            switchCase(number(2), yielded(number(24)))));
+    var switchCall = verb("self", "consume");
+    switchCall.getArguments().putUnnamed(switchArgument);
+
+    var verbArgument = new KActorsStatementImpl.CallArgumentImpl();
+    verbArgument.setFunction(verb("self", "produce"));
+    var nestedVerbCall = verb("self", "consume");
+    nestedVerbCall.getArguments().putUnnamed(verbArgument);
+
+    var expressionCall = verb("self", "consume");
+    expressionCall.getArguments().putUnnamed(expression("message"));
+    var main = action("main", switchCall, nestedVerbCall, expressionCall);
+    main.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("message")));
+    var source = behavior(consume, produce, main);
+    var analyzer = new BehaviorAnalyzer(source);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertTrue(
+        analyzer.getCalls().stream()
+            .filter(KActorsVisitor.CallInfo::valueRequired)
+            .anyMatch(call -> "produce".equals(call.verb())),
+        "the nested verb must be classified as a value-required call");
+
+    var compiler = new AgentCompiler(source);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("Supplier<Object>"), generated);
+    assertTrue(generated.contains("SwitchYield(42)"), generated);
+    assertTrue(generated.contains("invokeSelfFunction(\"produce\""), generated);
+    assertTrue(generated.contains("evaluateExpression(this.expression_0"), generated);
     assertGeneratedJavaCompiles(generated);
   }
 
@@ -1838,6 +1987,52 @@ class BehaviorAnalyzerTest {
     var value = new KActorsValueImpl();
     value.setType(ValueType.NUMBER);
     value.setStatedValue(number);
+    return value;
+  }
+
+  @Test
+  void importedBehaviorNewMatchesInitArguments() {
+    var init = action("init");
+    init.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("seed")));
+    var importedBehavior = behavior(init, action("work", returned(number(1))));
+    importedBehavior.setUrn("tools.initialized");
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public KActorsBehavior resolveBehavior(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return importedBehavior.getUrn().equals(urn) ? importedBehavior : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var missing = verb("tools", "new");
+    var invalid = behavior(action("main", missing));
+    invalid.setImports(List.of(imported(importedBehavior.getUrn(), "tools")));
+    var invalidAnalyzer = new BehaviorAnalyzer(invalid, environment.validator());
+
+    assertFalse(invalidAnalyzer.analyze());
+    assertTrue(messages(invalidAnalyzer).contains("Missing required argument 'seed'"));
+
+    var construct = verb("tools", "new");
+    construct.getArguments().putUnnamed(number(1));
+    var valid = behavior(action("main", construct));
+    valid.setImports(List.of(imported(importedBehavior.getUrn(), "tools")));
+    var validAnalyzer = new BehaviorAnalyzer(valid, environment.validator());
+
+    assertTrue(validAnalyzer.analyze(), messages(validAnalyzer));
+  }
+
+  private static KActorsValueImpl constant(String constant) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.CONSTANT);
+    value.setStatedValue(Constant.create(constant));
+    return value;
+  }
+
+  private static KActorsValueImpl quantity(String quantity) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.QUANTITY);
+    value.setStatedValue(quantity);
     return value;
   }
 
