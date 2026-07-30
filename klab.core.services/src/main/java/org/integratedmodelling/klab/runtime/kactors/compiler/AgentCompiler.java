@@ -3007,6 +3007,7 @@ public class AgentCompiler {
       case IDENTIFIER ->
           CodeBlock.of("resolveIdentifier($S, $L)", String.valueOf(raw), context.frame());
       case TERNARY_EXPRESSION -> ternary(raw, context);
+      case CONSTANT -> CodeBlock.of("$T.create($S)", Constant.class, String.valueOf(raw));
       case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, value.getType());
       case LIST -> collectionLiteral(raw, context, false);
       case SET -> collectionLiteral(raw, context, true);
@@ -3088,17 +3089,42 @@ public class AgentCompiler {
   }
 
   private CodeBlock ternary(Object raw, CompilationContext context) {
-    if (!(raw instanceof Ternary ternary)
-        || !(ternary.getCondition() instanceof KActorsValue condition)
-        || !(ternary.getTrueCase() instanceof KActorsValue trueCase)
-        || !(ternary.getFalseCase() instanceof KActorsValue falseCase)) {
-      throw new IllegalArgumentException("Invalid k.Actors ternary value");
+    if (!(raw instanceof Ternary ternary)) {
+      throw new IllegalArgumentException(
+          "Invalid k.Actors ternary value: expected Ternary, found " + valueClass(raw));
+    }
+    if (!(ternary.getCondition() instanceof KActorsValue condition)
+        || ternary.getTrueCase() == null
+        || ternary.getFalseCase() == null) {
+      throw new IllegalArgumentException(
+          "Invalid k.Actors ternary components: condition="
+              + valueClass(ternary.getCondition())
+              + ", true="
+              + valueClass(ternary.getTrueCase())
+              + ", false="
+              + valueClass(ternary.getFalseCase()));
     }
     return CodeBlock.of(
         "(truthy($L) ? $L : $L)",
         value(condition, context),
-        value(trueCase, context),
-        value(falseCase, context));
+        ternaryBranch(ternary.getTrueCase(), context),
+        ternaryBranch(ternary.getFalseCase(), context));
+  }
+
+  private String valueClass(Object value) {
+    return value == null ? "null" : value.getClass().getName();
+  }
+
+  private CodeBlock ternaryBranch(Object branch, CompilationContext context) {
+    return switch (branch) {
+      case KActorsValue value -> value(value, context);
+      case KActorsStatement.Verb function -> callValue(function, context);
+      case KActorsStatement.Switch switchStatement ->
+          functionalSwitchValue(switchStatement, context);
+      default ->
+          throw new IllegalArgumentException(
+              "Unsupported k.Actors ternary branch " + branch.getClass().getName());
+    };
   }
 
   private CodeBlock literal(Object value, ValueType type) {

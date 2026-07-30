@@ -627,12 +627,15 @@ or session scope plus the current frame map.
 Value emission currently distinguishes:
 
 - Java literals for strings, booleans, characters, and numeric primitives;
+- `Constant.create(...)` for uppercase constants, including dot-separated constant paths;
 - frame/root lookup through `resolveIdentifier`;
 - compiled expression evaluation;
+- Java conditional expressions for ternaries, whose branches may be values, functional verbs, or
+  functional switches;
 - closure-like deferred values through `defer(...)` and `resolveDeferred(...)`;
 - `null` for no-data/empty and wildcard match values;
-- `literalValue(type, encoded)` for quantities, ranges, observables, localized strings, ternaries,
-  and other non-POD values.
+- `literalValue(type, encoded)` for quantities, ranges, observables, localized strings, and other
+  non-POD values.
 
 `literalValue` currently returns the encoded string. It is a deliberate runtime extension point for
 language-aware mediation.
@@ -663,11 +666,9 @@ This implements closure-like lexical behavior: the receiving parameter aliases t
 while its identifiers are resolved from the frame captured at the call site. Repeated references
 to the parameter rerun the computation; results are never cached. The wrapper works for expression
 and ternary-expression semantic values as well as all other `KActorsValue` forms, although
-deferring a POD literal has no useful observable effect. At source level, the current Xtext grammar
-only exposes the prefix through `ExtendedValue`; because standalone `EXPR` is a sibling grammar
-alternative, `` `[a + b] `` requires the small upstream grammar extension described in
-`AGENTS.md`. The current `TernaryExpressionSyntaxImpl` must also populate its condition and branch
-values before parsed deferred ternaries can exercise this runtime path.
+deferring a POD literal has no useful observable effect. Standalone expressions now propagate the
+grammar's backtick flag through `ValueSyntax` and `LanguageAdapter`, so `` `[a + b] `` reaches this
+path directly.
 
 k.Actors-to-k.Actors calls transport the wrapper unchanged. A Java invocation is a consumption
 boundary: direct generated calls force deferred arguments in `adaptJavaArgument`, and reflected
@@ -675,6 +676,26 @@ calls force them in the common coercion path. A deferred argument carrying a k.A
 contract is wrapped with the validation operation rather than evaluated at action entry, preserving
 both laziness and runtime type safety. The wrapper is a generated-agent runtime detail, not part of
 the semantic POJO model and not intended for JSON transport.
+
+### 9.2 Functional value sources
+
+`Assignment`, `Return`, `Yield`, and `Fire` are ordinary serializable POJOs with three mutually
+exclusive source properties: `value`, `function`, and `switch`. `LanguageAdapter` copies the
+corresponding syntax-bean alternative without retaining parser objects. Actor-state `set` uses the
+same `Assignment` bean and therefore supports functional verbs and switches as well as literal and
+expression values.
+
+`AgentCompiler.valueSource(...)` is the common lowering point. Values use normal value emission,
+verbs use `callValue(...)` (joining suppliers), and switches use `emitFunctionalSwitch(...)`.
+The visitor marks these positions as value-required, rejects emitters, and requires a functional
+switch to contain a reachable `yield`.
+
+`TernaryImpl` remains a JavaBean. Its condition is a `KActorsValue`; each branch is a
+`KActorsValue`, `KActorsStatement.Verb`, or `KActorsStatement.Switch`. The visitor traverses branch
+verbs and switches in a value-required context. The compiler emits a real Java conditional
+expression, so Java evaluates only the selected branch; a switch branch is wrapped in a local
+`Supplier<Object>` solely to provide expression form. Jackson registers the ternary and the
+concrete k.Actors value/verb/switch POJOs so this union survives service transport.
 
 Behavior adaptation is available at every modelled value boundary: frame assignments, `return`,
 `fire`, switch selectors and yields, conditions, and loop iterables. It remains invalid on

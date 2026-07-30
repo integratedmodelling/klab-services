@@ -443,6 +443,8 @@ public class KActorsVisitor {
   private final List<PendingCall> pendingCalls = new ArrayList<>();
   private final Map<KActorsStatement.Assignment, VariableInfo> assignmentVariables =
       new IdentityHashMap<>();
+  private final Set<KActorsStatement> explicitValueStatements =
+      Collections.newSetFromMap(new IdentityHashMap<>());
 
   private record PendingCall(
       KActorsStatement.Verb statement, KActorsContext context, boolean valueRequired) {}
@@ -511,6 +513,7 @@ public class KActorsVisitor {
     actionAccumulators.clear();
     pendingCalls.clear();
     assignmentVariables.clear();
+    explicitValueStatements.clear();
     visitedBehavior = null;
   }
 
@@ -628,7 +631,7 @@ public class KActorsVisitor {
       return handledMessageConstant(map.get("value"));
     }
     if (declared instanceof CharSequence text
-        && text.toString().matches("[A-Z][A-Z0-9_]*")) {
+        && text.toString().matches("[A-Z][A-Z0-9_]*(?:\\.[A-Z][A-Z0-9_]*)*")) {
       /*
        * Compatibility with transports and syntax-bean versions that retain the lexical constant
        * but erase its small Constant wrapper. Quoted strings never take this route in the normal
@@ -1014,9 +1017,14 @@ public class KActorsVisitor {
         error("Unknown identifier: " + identifier, value);
       }
     } else if (value.getType() == ValueType.TERNARY_EXPRESSION
-        && raw instanceof Ternary ternary
-        && ternary.getCondition() instanceof KActorsValue condition) {
-      validateBooleanValue(condition, "ternary condition");
+        && raw instanceof Ternary ternary) {
+      if (ternary.getCondition() instanceof KActorsValue condition) {
+        validateBooleanValue(condition, "ternary condition");
+      } else {
+        error("A ternary condition must be a k.Actors value", value);
+      }
+      validateTernaryBranch(ternary.getTrueCase(), "true", value);
+      validateTernaryBranch(ternary.getFalseCase(), "false", value);
     }
     visitValues(raw, context, resolveIdentifiers);
   }
@@ -1840,6 +1848,9 @@ public class KActorsVisitor {
 
   private boolean isValuePosition(
       KActorsContext context, KActorsStatement.Verb candidate) {
+    if (explicitValueStatements.contains(candidate)) {
+      return true;
+    }
     int index = context.upstream.lastIndexOf(candidate);
     return index > 0 && isValueChild(context.upstream.get(index - 1), candidate);
   }
@@ -1889,6 +1900,10 @@ public class KActorsVisitor {
   }
 
   private boolean isSwitchValuePosition(KActorsContext context) {
+    if (!context.upstream.isEmpty()
+        && explicitValueStatements.contains(context.upstream.getLast())) {
+      return true;
+    }
     if (context.upstream.size() < 2) {
       return false;
     }
@@ -2247,6 +2262,12 @@ public class KActorsVisitor {
   private void visitValues(Object values, KActorsContext context, boolean resolveIdentifiers) {
     if (values instanceof KActorsValue value) {
       visitValue(value, context, resolveIdentifiers);
+    } else if (values instanceof KActorsStatement.Verb function) {
+      explicitValueStatements.add(function);
+      visitNested(function, context, List.of(), false);
+    } else if (values instanceof KActorsStatement.Switch switchStatement) {
+      explicitValueStatements.add(switchStatement);
+      visitNested(switchStatement, context, List.of(), false);
     } else if (values instanceof KActorsStatement.CallArgument argument) {
       int alternatives =
           (argument.getFunction() == null ? 0 : 1) + (argument.getSwitch() == null ? 0 : 1);
@@ -2270,6 +2291,21 @@ public class KActorsVisitor {
       visitValues(ternary.getCondition(), context, resolveIdentifiers);
       visitValues(ternary.getTrueCase(), context, resolveIdentifiers);
       visitValues(ternary.getFalseCase(), context, resolveIdentifiers);
+    }
+  }
+
+  private void validateTernaryBranch(
+      Object branch, String branchName, KActorsCodeStatement statement) {
+    if (branch == null) {
+      error("The " + branchName + " ternary branch must supply a value", statement);
+    } else if (!(branch instanceof KActorsValue)
+        && !(branch instanceof KActorsStatement.Verb)
+        && !(branch instanceof KActorsStatement.Switch)) {
+      error(
+          "The "
+              + branchName
+              + " ternary branch must be a value, functional verb, or functional switch",
+          statement);
     }
   }
 

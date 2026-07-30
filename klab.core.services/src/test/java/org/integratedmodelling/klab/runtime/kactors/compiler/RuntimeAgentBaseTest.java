@@ -85,6 +85,16 @@ class RuntimeAgentBaseTest {
     assertTrue(agent.match("value", ValueType.ANYVALUE, null));
     assertTrue(agent.match(null, ValueType.ANYTHING, null));
     assertTrue(agent.match(new IllegalStateException("failed"), ValueType.ANYTHING, null));
+    assertTrue(
+        agent.match(
+            Constant.create("MESSAGES.HELLO"),
+            ValueType.CONSTANT,
+            Constant.create("MESSAGES.HELLO")));
+    assertFalse(
+        agent.match(
+            Constant.create("MESSAGES.GOODBYE"),
+            ValueType.CONSTANT,
+            Constant.create("MESSAGES.HELLO")));
 
     var annotated = new KActorsBehaviorImpl();
     annotated.setAnnotations(List.of(AnnotationImpl.create("selected")));

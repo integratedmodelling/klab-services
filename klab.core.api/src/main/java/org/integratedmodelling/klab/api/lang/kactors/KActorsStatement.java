@@ -182,9 +182,10 @@ public interface KActorsStatement extends KActorsCodeStatement {
   interface Return extends KActorsStatement {
 
     /**
-     * The returned value. Exactly one between getValue() and getFunction() must be non-null. In an
-     * emitter's reactive return the value is an exit code; executing the return stops scheduled
-     * emissions and removes listeners without changing the action's emitter type.
+     * The returned literal or expression value. Exactly one of {@link #getValue()}, {@link
+     * #getFunction()}, and {@link #getSwitch()} must be non-null. In an emitter's reactive return
+     * the result is an exit code; executing the return stops scheduled emissions and removes
+     * listeners without changing the action's emitter type.
      *
      * @return
      */
@@ -192,9 +193,9 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Defined when the return value is supplied through a functional verb; requires a function or a
-     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
-     * getValue() and getFunction() must be non-null. See {@link #getValue()} for the emitter exit
-     * code case.
+     * supplier and triggers blocking behavior if the verb is a supplier. It is mutually exclusive
+     * with {@link #getValue()} and {@link #getSwitch()}. See {@link #getValue()} for the emitter
+     * exit-code case.
      *
      * @return
      */
@@ -223,9 +224,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
   interface Yield extends KActorsStatement {
 
     /**
-     * The returned value. Exactly one between getValue() and getFunction() must be non-null. In an
-     * emitter's reactive return the value is an exit code; executing the return stops scheduled
-     * emissions and removes listeners without changing the action's emitter type.
+     * The yielded literal or expression value. Exactly one of {@link #getValue()}, {@link
+     * #getFunction()}, and {@link #getSwitch()} must be non-null.
      *
      * @return
      */
@@ -233,9 +233,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Defined when the return value is supplied through a functional verb; requires a function or a
-     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
-     * getValue() and getFunction() must be non-null. See {@link #getValue()} for the emitter exit
-     * code case.
+     * supplier and triggers blocking behavior if the verb is a supplier. It is mutually exclusive
+     * with {@link #getValue()} and {@link #getSwitch()}.
      *
      * @return
      */
@@ -439,7 +438,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
     /**
      * The value to set the variable to, which will be evaluated in the scope of the recipient
      * executing the set statement. Expressions are represented as values of expression type.
-     * Exactly one between getValue() and getFunction() must be non-null.
+     * Exactly one of {@link #getValue()}, {@link #getFunction()}, and {@link #getSwitch()} must be
+     * non-null.
      *
      * @return
      */
@@ -447,7 +447,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Assignment from a verb requires a function or a supplier and triggers blocking behavior if
-     * the verb is a supplier. Exactly one between getValue() and getFunction() must be non-null.
+     * the verb is a supplier. It is mutually exclusive with {@link #getValue()} and {@link
+     * #getSwitch()}.
      *
      * @return
      */
@@ -476,7 +477,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
     /**
      * The value to be fired through the {@link
      * org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope} as an event for the agent's event
-     * bus. Only one between getValue() and getFunction() may be non-null.
+     * bus. Exactly one of {@link #getValue()}, {@link #getFunction()}, and {@link #getSwitch()}
+     * must be non-null.
      *
      * @return
      */
@@ -484,8 +486,8 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     /**
      * Defined when the value is supplied through a functional verb; requires a function or a
-     * supplier and triggers blocking behavior if the verb is a supplier. Only one between
-     * getIterable() and getFunction() may be non-null.
+     * supplier and triggers blocking behavior if the verb is a supplier. It is mutually exclusive
+     * with {@link #getValue()} and {@link #getSwitch()}.
      *
      * @return
      */

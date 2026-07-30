@@ -1517,9 +1517,17 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
           case CLASS, TYPE ->
               criterion instanceof Class<?> cls && payload != null && cls.isInstance(payload);
           case LIST, SET -> criterion instanceof Collection<?> set && set.contains(payload);
+          case CONSTANT ->
+              payload != null
+                  && criterion != null
+                  && Objects.equals(constantText(payload), constantText(criterion));
           default -> Objects.equals(payload, criterion);
         };
     return exclusive ? !match : match;
+  }
+
+  private String constantText(Object value) {
+    return value instanceof Constant constant ? constant.getValue() : String.valueOf(value);
   }
 
   private boolean isErrorPayload(Object payload) {

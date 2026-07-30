@@ -1645,6 +1645,48 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void validatesAndCompilesFunctionalVerbBranchesInTernaries() {
+    var selected =
+        ternary(bool(true), verb("self", "identity"), number(0));
+    var source =
+        behavior(
+            action("identity", returned(number(1))),
+            action("main", returned(selected)));
+    var analyzer = new BehaviorAnalyzer(source, new KActorsVisitor.LenientValidator());
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    var compiler = new AgentCompiler(source);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("? invokeSelfFunction(\"identity\""));
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
+  void rejectsEmitterVerbBranchesInTernaries() {
+    var selected =
+        ternary(bool(true), verb("external", "stream"), number(0));
+    var source = behavior(action("main", returned(selected)));
+    source.setImports(List.of(imported("component.behavior", "external")));
+    var analyzer = new BehaviorAnalyzer(source, new ResolvingValidator());
+
+    assertFalse(analyzer.analyze());
+    assertTrue(
+        messages(analyzer).contains("Emitter calls cannot be used where a value is required"));
+    assertTrue(analyzer.getCalls().stream().anyMatch(call -> call.valueRequired()));
+  }
+
+  @Test
+  void compilerPreservesNamespacedConstantsAsConstantValues() {
+    var compiler = new AgentCompiler(behavior(action("main", returned(constant("MESSAGES.HELLO")))));
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    assertTrue(
+        compiler.getSourceCode().contains("Constant.create(\"MESSAGES.HELLO\")"),
+        compiler.getSourceCode());
+    assertGeneratedJavaCompiles(compiler.getSourceCode());
+  }
+
+  @Test
   void compilerEmitsScopedHandlersForReactiveVerbMatches() {
     var match = new KActorsStatementImpl.VerbImpl.MatchActionImpl();
     match.setVariables(List.of("value"));
@@ -2156,7 +2198,7 @@ class BehaviorAnalyzerTest {
   }
 
   private static KActorsValueImpl ternary(
-      KActorsValueImpl condition, KActorsValueImpl trueCase, KActorsValueImpl falseCase) {
+      KActorsValueImpl condition, Object trueCase, Object falseCase) {
     var ternary = new TernaryImpl();
     ternary.setCondition(condition);
     ternary.setTrueCase(trueCase);

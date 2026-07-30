@@ -13,6 +13,7 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
@@ -48,6 +49,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -395,6 +397,11 @@ public class JacksonConfiguration {
           KActorsStatement.Yield.class,
           KActorsStatement.Switch.class,
           KActorsValue.class,
+          KActorsValueImpl.class,
+          KActorsStatementImpl.VerbImpl.class,
+          KActorsStatementImpl.SwitchImpl.class,
+          Ternary.class,
+          TernaryImpl.class,
           KimModel.class,
           Activity.class,
           Agent.class,

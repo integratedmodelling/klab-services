@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,11 +47,7 @@ import org.integratedmodelling.languages.ActionSyntaxImpl;
 import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
-import org.integratedmodelling.languages.SwitchImpl;
 import org.integratedmodelling.languages.api.*;
-import org.integratedmodelling.languages.kActors.Statement;
-import org.integratedmodelling.languages.kActors.SwitchStatement;
-import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
@@ -61,7 +56,8 @@ public enum LanguageAdapter {
   private static final Pattern STATIC_ACTION_PATTERN =
       Pattern.compile("^\\s*static\\s+action\\b", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
   private static final Pattern SINGLE_CONSTANT_ANNOTATION_PATTERN =
-      Pattern.compile("^\\s*@?[A-Za-z][A-Za-z0-9_]*\\s*\\(\\s*([A-Z][A-Z0-9_]*)\\s*\\)\\s*$");
+      Pattern.compile(
+          "^\\s*@?[A-Za-z][A-Za-z0-9_]*\\s*\\(\\s*([A-Z][A-Z0-9_]*(?:\\.[A-Z][A-Z0-9_]*)*)\\s*\\)\\s*$");
 
   Map<String, Instance> instanceAnnotations = new HashMap<>();
   Map<String, Class<?>> instanceImplementations = new HashMap<>();
@@ -501,10 +497,7 @@ public enum LanguageAdapter {
           }
           case TERNARY_EXPRESSION -> {
             var syntax = valueSyntax.getPod(TernaryExpressionSyntax.class);
-            if (syntax == null
-                || syntax.getCondition() == null
-                || syntax.getTrueCase() == null
-                || syntax.getFalseCase() == null) {
+            if (syntax == null || syntax.getCondition() == null) {
               notifications.add(
                   Notification.error(
                       valueSyntax, "The parser returned an incomplete ternary expression"));
@@ -513,15 +506,33 @@ public enum LanguageAdapter {
               ternary.setCondition(
                   adaptKActorsValue(syntax.getCondition(), namespace, projectName, notifications));
               ternary.setTrueCase(
-                  adaptKActorsValue(syntax.getTrueCase(), namespace, projectName, notifications));
+                  adaptTernaryBranch(
+                      valueSyntax,
+                      syntax.getTrueValue(),
+                      syntax.getTrueVerb(),
+                      syntax.getTrueSwitch(),
+                      namespace,
+                      projectName,
+                      notifications,
+                      "true"));
               ternary.setFalseCase(
-                  adaptKActorsValue(syntax.getFalseCase(), namespace, projectName, notifications));
+                  adaptTernaryBranch(
+                      valueSyntax,
+                      syntax.getFalseValue(),
+                      syntax.getFalseVerb(),
+                      syntax.getFalseSwitch(),
+                      namespace,
+                      projectName,
+                      notifications,
+                      "false"));
               ret.setStatedValue(ternary);
             }
             yield ValueType.TERNARY_EXPRESSION;
           }
           case EXPRESSION -> {
-            ret.setStatedValue(valueSyntax.getPod(String.class));
+            ret.setStatedValue(
+                normalizeDeferredExpression(
+                    valueSyntax.getPod(String.class), valueSyntax.isQuoted()));
             yield ValueType.EXPRESSION;
           }
           case REGULAR_EXPRESSION -> {
@@ -542,6 +553,73 @@ public enum LanguageAdapter {
         });
     ret.setDeferred(valueSyntax.isQuoted());
     return ret;
+  }
+
+  /**
+   * Current language artifacts correctly mark a backtick expression as deferred but may leave the
+   * EXPR terminal's closing bracket in the extracted payload. Remove it only when it is provably an
+   * unmatched delimiter, so a legitimate final index or list bracket remains untouched when the
+   * syntax bean is corrected upstream.
+   */
+  private String normalizeDeferredExpression(String expression, boolean deferred) {
+    if (!deferred || expression == null || !expression.endsWith("]")) {
+      return expression;
+    }
+    int balance = 0;
+    char quote = 0;
+    boolean escaped = false;
+    for (int i = 0; i < expression.length(); i++) {
+      char c = expression.charAt(i);
+      if (quote != 0) {
+        if (escaped) {
+          escaped = false;
+        } else if (c == '\\') {
+          escaped = true;
+        } else if (c == quote) {
+          quote = 0;
+        }
+      } else if (c == '\'' || c == '"') {
+        quote = c;
+      } else if (c == '[') {
+        balance++;
+      } else if (c == ']') {
+        balance--;
+      }
+    }
+    return balance < 0 ? expression.substring(0, expression.length() - 1) : expression;
+  }
+
+  private Object adaptTernaryBranch(
+      ValueSyntax owner,
+      ValueSyntax value,
+      ActionStatementSyntax.Verb function,
+      ActionStatementSyntax.Switch switchStatement,
+      String namespace,
+      String projectName,
+      List<Notification> notifications,
+      String branchName) {
+    int alternatives =
+        (value == null ? 0 : 1)
+            + (function == null ? 0 : 1)
+            + (switchStatement == null ? 0 : 1);
+    if (alternatives != 1) {
+      notifications.add(
+          Notification.error(
+              owner,
+              "Exactly one value, functional verb, or functional switch is required in the "
+                  + branchName
+                  + " ternary branch"));
+      return null;
+    }
+    if (value != null) {
+      return adaptKActorsValue(value, namespace, projectName, notifications);
+    }
+    var behavior = new KActorsBehaviorImpl();
+    behavior.setUrn(namespace);
+    behavior.setProjectName(projectName);
+    return function != null
+        ? adaptVerb(function, behavior, null, notifications)
+        : adaptSwitch(switchStatement, behavior, null, notifications);
   }
 
   /**
@@ -1564,11 +1642,9 @@ public enum LanguageAdapter {
               assign.getValue(), behavior.getUrn(), behavior.getProjectName(), notifications));
     } else if (assign.getFunction() != null) {
       ret.setFunction(adaptVerb(assign.getFunction(), behavior, action, notifications));
-    } else {
-      var switchStatement = reflectedSwitch(assign);
-      if (switchStatement != null) {
-        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
-      }
+    } else if (assign.getSwitchStatement() != null) {
+      ret.setSwitch(
+          adaptSwitch(assign.getSwitchStatement(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1686,11 +1762,9 @@ public enum LanguageAdapter {
               notifications));
     } else if (returnStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(returnStatement.getFunction(), behavior, action, notifications));
-    } else {
-      var switchStatement = reflectedSwitch(returnStatement);
-      if (switchStatement != null) {
-        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
-      }
+    } else if (returnStatement.getSwitchStatement() != null) {
+      ret.setSwitch(
+          adaptSwitch(returnStatement.getSwitchStatement(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1711,11 +1785,9 @@ public enum LanguageAdapter {
               notifications));
     } else if (yieldStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(yieldStatement.getFunction(), behavior, action, notifications));
-    } else {
-      var switchStatement = reflectedSwitch(yieldStatement);
-      if (switchStatement != null) {
-        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
-      }
+    } else if (yieldStatement.getSwitchStatement() != null) {
+      ret.setSwitch(
+          adaptSwitch(yieldStatement.getSwitchStatement(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1770,11 +1842,9 @@ public enum LanguageAdapter {
               notifications));
     } else if (fireStatement.getFunction() != null) {
       ret.setFunction(adaptVerb(fireStatement.getFunction(), behavior, action, notifications));
-    } else {
-      var switchStatement = reflectedSwitch(fireStatement);
-      if (switchStatement != null) {
-        ret.setSwitch(adaptSwitch(switchStatement, behavior, action, notifications));
-      }
+    } else if (fireStatement.getSwitchStatement() != null) {
+      ret.setSwitch(
+          adaptSwitch(fireStatement.getSwitchStatement(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1810,8 +1880,7 @@ public enum LanguageAdapter {
     var ret = new KActorsStatementImpl.AssertImpl();
     var arguments = Parameters.<String>create();
     arguments.putAll(
-        adaptValueArguments(
-            assertion.getArguments(), behavior.getUrn(), behavior.getProjectName(), notifications));
+        adaptArguments(assertion.getArguments(), behavior, action, notifications));
     ret.setArguments(arguments);
     ret.setAssertions(
         assertion.getAssertions().stream()
@@ -1963,106 +2032,6 @@ public enum LanguageAdapter {
     } catch (ReflectiveOperationException ignored) {
       return null;
     }
-  }
-
-  private ActionStatementSyntax.Switch reflectedSwitch(Object statement) {
-    if (statement == null) {
-      return null;
-    }
-    try {
-      Object value = statement.getClass().getMethod("getSwitchStatement").invoke(statement);
-      if (value instanceof ActionStatementSyntax.Switch switchStatement) {
-        return switchStatement;
-      }
-    } catch (ReflectiveOperationException ignored) {
-      // Compatibility with syntax-bean versions that parse the embedded switch in the Xtext
-      // model but do not expose it through ActionStatementSyntax yet.
-    }
-
-    var sourceStatement = capturedValue(statement, Statement.class);
-    var parentAction = capturedValue(statement, ActionSyntaxImpl.class);
-    if (sourceStatement == null || parentAction == null) {
-      return null;
-    }
-
-    SwitchStatement switchDefinition = null;
-    if (sourceStatement.getAssignment() != null) {
-      switchDefinition = sourceStatement.getAssignment().getSwitchStatement();
-    } else if (sourceStatement.getReturn() != null) {
-      switchDefinition = sourceStatement.getReturn().getSwitchStatement();
-    } else if (sourceStatement.getFire() != null) {
-      switchDefinition = sourceStatement.getFire().getSwitchStatement();
-    } else if (sourceStatement.getYieldSwitch() != null) {
-      switchDefinition = sourceStatement.getYieldSwitch().getSwitchStatement();
-    }
-    if (switchDefinition == null) {
-      return null;
-    }
-
-    var parsedSwitch = switchDefinition;
-    return new SwitchImpl(parsedSwitch, parentAction, new BasicObservableValidationScope()) {
-      @Override
-      protected void logWarning(
-          ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-        // The complete behavior syntax has already been validated before adaptation.
-      }
-
-      @Override
-      protected void logError(
-          ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-        // The complete behavior syntax has already been validated before adaptation.
-      }
-
-      @Override
-      public String encode() {
-        return sourceCode(parsedSwitch);
-      }
-    };
-  }
-
-  private <T> T capturedValue(Object object, Class<T> type) {
-    for (Class<?> current = object.getClass();
-        current != null && current != Object.class;
-        current = current.getSuperclass()) {
-      for (Field field : current.getDeclaredFields()) {
-        if (!type.isAssignableFrom(field.getType())) {
-          continue;
-        }
-        try {
-          if (!field.canAccess(object)) {
-            field.setAccessible(true);
-          }
-          Object value = field.get(object);
-          if (type.isInstance(value)) {
-            return type.cast(value);
-          }
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-          // Try any other compatible captured field before giving up.
-        }
-      }
-    }
-    return null;
-  }
-
-  private Map<String, KActorsValue> adaptValueArguments(
-      Map<String, org.eclipse.xtext.util.Pair<ValueSyntax, String>> arguments,
-      String namespace,
-      String projectName,
-      List<Notification> notifications) {
-    return arguments.entrySet().stream()
-        .map(
-            e ->
-                new AbstractMap.SimpleEntry<>(
-                    e.getKey(),
-                    // TODO handle cast behavior
-                    adaptKActorsValue(
-                        e.getValue().getFirst(), namespace, projectName, notifications)))
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (left, right) -> right,
-                LinkedHashMap::new));
   }
 
   /**

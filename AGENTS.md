@@ -541,7 +541,7 @@ Common value forms include:
 | String | `"hello"` |
 | Quantity | `15.s`, `10.km`, `5/m` |
 | Range | `0 to 100` |
-| Constant | `READY` |
+| Constant | `READY`, `MESSAGES.SAY_HELLO` |
 | Identifier | `temperature` |
 | Semantic observable | `{{geography:Elevation in m}}` |
 | Expression | `[temperature > 20]` |
@@ -560,7 +560,6 @@ action use_twice(x):
     console.println(x)
 
 action calculate(a, b):
-    // Intended concise syntax once standalone expressions are admitted as ExtendedValue:
     use_twice(`[a + b])
 ```
 
@@ -577,14 +576,27 @@ assignment. When a deferred value crosses into a Java method, is used as an iden
 an input binding to another expression, that boundary consumes and evaluates it. Runtime
 `@type` checks are likewise postponed until the deferred argument is first consumed.
 
-The semantic model and compiler also support a deferred standalone expression value. The current
-Xtext grammar, however, places `EXPR` beside rather than inside `ExtendedValue`, and the back-tick
-prefix is presently declared only on `ExtendedValue`. Therefore the concise spelling
-`` `[a + b] `` does not yet parse. In addition, the current language library's
-`TernaryExpressionSyntaxImpl` does not yet populate its three `ValueSyntax` members, so a deferred
-ternary is not presently a usable workaround. Back-ticked literals and identifiers do parse and
-exercise the same preservation path; enabling the intended computable source form requires those
-two small upstream `klab-languages` completions.
+Standalone expressions accept the same backtick prefix, so `` `[a + b] `` is the normal concise
+form for a deferred computation. Ternary values retain the deferred flag in the same way.
+
+A ternary keeps the existing restrictions on its condition, but either branch may be a literal or
+expression value, a functional verb, or a functional switch:
+
+```kactors
+description <- concise
+    ? strings.lowercase(message)
+    : switch message (
+        "hello" -> yield "A greeting"
+        # -> yield [message + " (unclassified)"]
+    )
+```
+
+Only the selected branch is evaluated. A supplier branch waits for its one result; an emitter is
+not legal in a ternary because a ternary must produce one value.
+
+Uppercase constants may be dot-separated paths. They remain one constant value rather than a
+property lookup, which is useful for namespacing message APIs such as
+`@handle(MESSAGES.SAY_HELLO)`.
 
 Square brackets always delimit an expression, so `[1, 2, 3]` is an expression producing a list,
 whereas `(1, 2, 3)` is the grammar's literal list form.
@@ -607,26 +619,34 @@ Change known actor state with `set` in later actions:
 
 ```kactors
 action increment:
-    set status RUNNING
+    set status next_status()
+
+action classify(item):
+    set status switch item (
+        true -> yield READY
+        # -> yield UNKNOWN
+    )
 ```
 
 `def` outside `init`, `set` of unknown state, redeclaration of inherited state, and assignment to an
-import alias are invalid.
+import alias are invalid. A `set` source may be a literal or expression value, a functional verb,
+or a functional switch, just like a frame assignment. A supplier is joined before the state is
+updated; an emitter is rejected because it cannot supply one assignment value.
 
 ### 7.2. Frame-local variables
 
 Use `<-` for variables local to the current action or group and its nested groups:
 
 ```kactors
-action report(value):
-    formatted <- console.format("Value: %s", value)
-    doubled <- [value * 2]
+action report(item):
+    formatted <- console.format("Value: %s", item)
+    doubled <- [item * 2]
     console.print(formatted)
 ```
 
-The right side may be a literal, a square-bracket expression, a function, or a supplier. A local
-variable cannot shadow actor state. Variables introduced by action arguments, loop iteration, and
-match captures are also frame-local.
+The right side may be a literal or square-bracket expression, a functional verb (function or
+supplier), or a functional switch. A local variable cannot shadow actor state. Variables
+introduced by action arguments, loop iteration, and match captures are also frame-local.
 
 An `as` clause adapts the evaluated object to a named behavior before it is consumed:
 
@@ -723,6 +743,12 @@ result <- switch input (
 )
 ```
 
+The operand of `yield` may itself be a value or expression, a functional verb, or a nested
+functional switch. The same three alternatives are accepted after `return`, `fire`, and `<-` (and
+after `set` for existing actor state). Exactly one alternative is represented in the semantic POJO.
+Functional supplier calls wait for their result; emitter calls are invalid at these single-value
+boundaries.
+
 If any branch of a switch contains a yield, the switch is functional and may be used wherever that
 syntax position accepts a value. A matching branch that completes without yielding gives that
 switch a null/unknown result; a switch with no yield branch is statement-only. A nested switch owns
@@ -739,9 +765,14 @@ switch.
 ```kactors
 return result
 return compute(input)
+return switch input (
+    READY -> yield "ready"
+    # -> yield "other"
+)
 
 fire event
 fire [buildEvent(self)]
+fire compute_event(input)
 
 fail "The request cannot be completed"
 ```

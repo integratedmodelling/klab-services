@@ -60,6 +60,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             this::assertDeferredValue),
         new Case(
+            "/completed-functional-values.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertCompletedFunctionalValues),
+        new Case(
             "/statement-verb-operands.kactor",
             new KActorsVisitor.LenientValidator(),
             this::assertStatementVerbOperands),
@@ -629,6 +633,105 @@ class KActorsFileTest {
         compiler
             .getSourceCode()
             .contains("defer(() -> resolveIdentifier(\"input\", frame))"));
+  }
+
+  private void assertCompletedFunctionalValues(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var actions = result.requireAnalyzer().getActions();
+    var assignments = actions.get("assign_values").statement().getCode();
+    assertEquals(ValueType.EXPRESSION,
+        assertInstanceOf(KActorsStatement.Assignment.class, assignments.get(0))
+            .getValue().getType());
+    var deferred =
+        assertInstanceOf(KActorsStatement.Assignment.class, assignments.get(1)).getValue();
+    assertEquals(ValueType.EXPRESSION, deferred.getType());
+    assertTrue(deferred.isDeferred());
+    assertEquals("input + 2", deferred.getValue(String.class));
+    assertNotNull(assertInstanceOf(KActorsStatement.Assignment.class, assignments.get(2))
+        .getFunction());
+    assertNotNull(assertInstanceOf(KActorsStatement.Assignment.class, assignments.get(3))
+        .getSwitch());
+
+    var stateAssignments = actions.get("set_values").statement().getCode();
+    assertEquals(KActorsStatement.Assignment.Scope.ACTOR,
+        assertInstanceOf(KActorsStatement.Assignment.class, stateAssignments.get(0))
+            .getAssignmentScope());
+    assertNotNull(assertInstanceOf(KActorsStatement.Assignment.class, stateAssignments.get(0))
+        .getFunction());
+    assertNotNull(assertInstanceOf(KActorsStatement.Assignment.class, stateAssignments.get(1))
+        .getSwitch());
+
+    var fires = actions.get("fire_values").statement().getCode();
+    assertNotNull(assertInstanceOf(KActorsStatement.Fire.class, fires.get(0)).getValue());
+    assertNotNull(assertInstanceOf(KActorsStatement.Fire.class, fires.get(1)).getFunction());
+    assertNotNull(assertInstanceOf(KActorsStatement.Fire.class, fires.get(2)).getSwitch());
+
+    var returned =
+        assertInstanceOf(
+            KActorsStatement.Return.class,
+            actions.get("return_values").statement().getCode().getFirst());
+    assertNotNull(returned.getSwitch());
+    assertNotNull(
+        assertInstanceOf(
+                KActorsStatement.Yield.class,
+                returned.getSwitch().getCases().getFirst().getActionOnMatch())
+            .getFunction());
+    assertNotNull(
+        assertInstanceOf(
+                KActorsStatement.Yield.class,
+                returned.getSwitch().getCases().get(1).getActionOnMatch())
+            .getSwitch());
+
+    var ternaryReturn =
+        assertInstanceOf(
+            KActorsStatement.Return.class,
+            actions.get("ternary_values").statement().getCode().getFirst());
+    var ternary =
+        ternaryReturn
+            .getValue()
+            .getValue(org.integratedmodelling.klab.api.lang.Ternary.class);
+    assertInstanceOf(KActorsStatement.Verb.class, ternary.getTrueCase());
+    assertInstanceOf(KActorsStatement.Switch.class, ternary.getFalseCase());
+
+    var handler = actions.get("dotted_message").statement();
+    assertEquals(
+        "MESSAGES.HELLO",
+        KActorsVisitor.handledMessageClass(handler.getAnnotations().getFirst()));
+
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var restored =
+        assertDoesNotThrow(
+            () ->
+                mapper.readValue(
+                    mapper.writeValueAsString(result.requireBehavior()), KActorsBehavior.class));
+    var restoredReturn =
+        assertInstanceOf(
+            KActorsStatement.Return.class,
+            restored.getStatements().stream()
+                .filter(action -> "ternary_values".equals(action.getUrn()))
+                .findFirst()
+                .orElseThrow()
+                .getCode()
+                .getFirst());
+    var restoredTernary =
+        restoredReturn
+            .getValue()
+            .getValue(org.integratedmodelling.klab.api.lang.Ternary.class);
+    assertInstanceOf(KActorsStatement.Verb.class, restoredTernary.getTrueCase());
+    assertInstanceOf(KActorsStatement.Switch.class, restoredTernary.getFalseCase());
+    assertInstanceOf(
+        org.integratedmodelling.klab.api.lang.kactors.KActorsValue.class,
+        restoredTernary.getCondition());
+
+    var compiler = new AgentCompiler(restored);
+    assertTrue(assertDoesNotThrow(compiler::compile), () -> compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(generated.contains("defer(() -> evaluateExpression("), generated);
+    assertTrue(generated.contains("Constant.create(\"MESSAGES.HELLO\")"), generated);
+    assertTrue(generated.contains("? invokeSelfFunction("), generated);
+    assertTrue(generated.contains(": ((Supplier<Object>) () ->"), generated);
   }
 
   private void assertStatementVerbOperands(KActorsTestSupport.Result result) {
