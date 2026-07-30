@@ -439,7 +439,7 @@ runtime knowledge queries and incidental shared metadata.
 `DataflowCompiler.compile()` now copies the following resolution output into `DataflowImpl`:
 
 - a context-specific name;
-- full `Coverage`;
+- a transport-safe `Geometry` projection of the requested coverage;
 - proportional `resolvedCoverage`;
 - accumulated `ResourceSet` requirements;
 - root actuator computation;
@@ -502,11 +502,22 @@ Three circumscribed issues were corrected:
 
 1. compilation used to iterate each graph root but repeatedly compile the original requested
    observation; it now compiles the actual root node and its geometry;
-2. resolver requirements and full coverage were dropped when constructing `DataflowImpl`; they are
-   now copied along with proportional coverage;
+2. resolver requirements and coverage were dropped when constructing `DataflowImpl`; requirements,
+   a plain `Geometry` projection, and proportional coverage are now copied;
 3. unconditional debug/profane `System.out` output was removed from the graph/compiler.
 
-These fixes are covered by `DataflowCompilerTest`.
+`Coverage` is resolver-local state and must not cross a service boundary. An initial version of fix
+2 assigned the live `CoverageImpl` to `DataflowImpl`. Remote JSON decoding then failed because the
+polymorphic decoder attempted to instantiate that runtime implementation. `DataflowImpl` and
+`EmptyDataflow` now type their coverage property as `Geometry`, matching the `Dataflow` interface,
+and `DataflowCompiler` explicitly calls `coverage.as(Geometry.class)`. The numeric fraction remains
+available separately as `resolvedCoverage`.
+
+This also establishes a broader DTO rule for resolution work: transported DTOs and their nested
+values should be ordinary mutable POJOs with no live resolver/runtime implementation state. Records
+are deliberately avoided in this implementation.
+
+These fixes are covered by `DataflowCompilerTest` and `DataflowCoverageSerializationTest`.
 
 ### 9.4 Incremental resolver output versus context reconstruction
 
@@ -547,13 +558,16 @@ For a remote resolver:
 4. The client job protocol ultimately decodes the result as `Dataflow.class`.
 
 `JacksonConfiguration` registers polymorphic serializers/deserializers for `Dataflow`, `Actuator`,
-`Observation`, `ServiceCall`, `Coverage`-related geometry types, and their nested assets. This JSON
-representation is the current service wire format. It is not the intended durable, editable, or
-resource-level representation of a dataflow.
+`Observation`, `ServiceCall`, `Geometry`, and their nested assets. This JSON representation is the
+current service wire format. Resolver `Coverage` objects are not DTOs and cannot cross this
+boundary; only their plain geometry projection and scalar resolved fraction can. The JSON form is
+not the intended durable, editable, or resource-level representation of a dataflow.
 
-`DataflowSerializationTest` pins name, requirements, and resolver coverage through a JSON
-round-trip. This is only a seed contract; actuator trees, calls, geometries, identifiers,
-notifications, and all subtype variants need broader coverage.
+`DataflowSerializationTest` pins name, requirements, and scalar resolver coverage through a JSON
+round-trip. `DataflowCoverageSerializationTest` additionally pins the non-null geometry projection
+and verifies that no `Coverage` implementation leaks onto the wire. These are only seed contracts;
+actuator trees, calls, geometries, identifiers, notifications, and all subtype variants need
+broader coverage.
 
 ### 10.2 Observation language: architectural role
 
@@ -959,7 +973,11 @@ dependencies, query IDs, and graph merge direction.
 
 - `klab.services.resolver/.../DataflowCompilerTest`
   - proves the actual graph root is compiled rather than the original request;
-  - proves full coverage, proportional coverage, and requirements reach `DataflowImpl`.
+  - proves projected geometry, proportional coverage, and requirements reach `DataflowImpl`.
+- `klab.services.resolver/.../DataflowCoverageSerializationTest`
+  - reproduces the remote-boundary failure caused by transporting `CoverageImpl`;
+  - proves the plain geometry projection survives a polymorphic JSON round-trip and is not a
+    `Coverage` implementation.
 - `klab.core.common/.../DataflowSerializationTest`
   - proves dataflow name, requirements, and proportional resolver coverage survive polymorphic
     Jackson serialization through the `Dataflow` interface.
@@ -967,7 +985,7 @@ dependencies, query IDs, and graph merge direction.
 Focused verification commands:
 
 ```powershell
-.\mvnw.cmd -q -pl klab.services.resolver -am "-Dtest=DataflowCompilerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -q -pl klab.services.resolver -am "-Dtest=DataflowCompilerTest,DataflowCoverageSerializationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 .\mvnw.cmd -q -pl klab.core.common -am "-Dtest=DataflowSerializationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```
 

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -39,6 +40,8 @@ class DataflowCompilerTest {
 
     var coverage = mock(Coverage.class);
     when(coverage.getCoverage()).thenReturn(0.75);
+    var transportGeometry = mock(Geometry.class);
+    when(coverage.as(Geometry.class)).thenReturn(transportGeometry);
     var graph = ResolutionGraph.create(scope);
     var targetCoverage = ResolutionGraph.class.getDeclaredField("targetCoverage");
     targetCoverage.setAccessible(true);
@@ -54,7 +57,7 @@ class DataflowCompilerTest {
     assertEquals(1, dataflow.getComputation().size());
     assertSame(root, dataflow.getComputation().getFirst().getObservation());
     assertEquals(Actuator.Type.REFERENCE, dataflow.getComputation().getFirst().getActuatorType());
-    assertSame(coverage, dataflow.getCoverage());
+    assertSame(transportGeometry, dataflow.getCoverage());
     assertSame(requirements, dataflow.getRequirements());
     assertEquals(
         0.75,

@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.services.runtime.impl;
 import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -12,7 +11,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class EmptyDataflow implements Dataflow {
 
   private List<Notification> notifications = new ArrayList<>();
-  private Coverage coverage = null;
+  private Geometry coverage = null;
   private String name = "Empty Dataflow";
   private List<Actuator> computation = new ArrayList<>();
   private ResourceSet requirements = ResourceSet.empty();
@@ -82,7 +81,7 @@ public class EmptyDataflow implements Dataflow {
     this.notifications = notifications;
   }
 
-  public void setCoverage(Coverage coverage) {
+  public void setCoverage(Geometry coverage) {
     this.coverage = coverage;
   }
 

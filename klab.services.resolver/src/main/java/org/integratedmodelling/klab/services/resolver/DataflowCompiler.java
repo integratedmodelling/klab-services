@@ -73,7 +73,8 @@ public class DataflowCompiler {
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
     ret.setName(observation.getName() + "_" + scope.getId());
-    ret.setCoverage(resolutionGraph.getCoverage());
+    var coverage = resolutionGraph.getCoverage();
+    ret.setCoverage(coverage == null ? null : coverage.as(Geometry.class));
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     ret.setRequirements(resolutionGraph.getDependencies());
     for (var node : resolutionGraph.rootNodes()) {

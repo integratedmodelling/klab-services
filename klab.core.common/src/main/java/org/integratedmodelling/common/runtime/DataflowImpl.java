@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -18,7 +18,7 @@ public class DataflowImpl implements Dataflow {
 
   private boolean empty;
   private ResourceSet requirements;
-  private Coverage coverage;
+  private Geometry coverage;
   private List<Actuator> computation = new ArrayList<>();
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
@@ -36,7 +36,7 @@ public class DataflowImpl implements Dataflow {
   }
 
   @Override
-  public Coverage getCoverage() {
+  public Geometry getCoverage() {
     return this.coverage;
   }
 
@@ -58,7 +58,7 @@ public class DataflowImpl implements Dataflow {
     this.empty = empty;
   }
 
-  public void setCoverage(Coverage coverage) {
+  public void setCoverage(Geometry coverage) {
     this.coverage = coverage;
   }
 
