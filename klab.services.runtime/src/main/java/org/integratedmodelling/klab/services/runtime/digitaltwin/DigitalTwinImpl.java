@@ -395,6 +395,14 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, trivial)) {
                 kgTransaction.store(asset);
+                // KLAB-DEBUG-GUARD: store() is intentionally not treated as a success signal here;
+                // record any asset that is still unassigned before preserving the existing logic.
+                if (asset.getId() == 0) {
+                  Logging.INSTANCE.warn(
+                      "KLAB-DEBUG-GUARD: asset remains unassigned after KG store: class={} id={} "
+                          + "activity={} trivial={}",
+                      asset.getClass().getName(), asset.getId(), activity.getId(), trivial);
+                }
                 stored.add(asset);
               }
             }
@@ -413,6 +421,20 @@ public class DigitalTwinImpl implements DigitalTwin {
                 continue;
               }
               var relationshipData = getRelationshipData(edge);
+              // KLAB-DEBUG-GUARD: links are intentionally still submitted and advertised; expose
+              // unassigned endpoints without changing the existing commit behavior.
+              if (source.getId() == 0 || target.getId() == 0) {
+                Logging.INSTANCE.warn(
+                    "KLAB-DEBUG-GUARD: KG link has unassigned endpoint: source={}({}) target={}({}) "
+                        + "relationship={} activity={} trivial={}",
+                    source.getId(),
+                    source.getClass().getName(),
+                    target.getId(),
+                    target.getClass().getName(),
+                    edge.relationship,
+                    activity.getId(),
+                    trivial);
+              }
               kgTransaction.link(source, target, edge.relationship, relationshipData);
               // Only advertise relationships that were actually persisted. In particular, trivial
               // transactions contain transient activity edges that are intentionally skipped.
@@ -433,7 +455,8 @@ public class DigitalTwinImpl implements DigitalTwin {
           try {
             kgTransaction.close();
             var commit = new CommitImpl();
-            commit.setId(knowledgeGraph.nextKey());
+            var commitId = knowledgeGraph.nextKey();
+            commit.setId(commitId);
             commit.setTimestamp(System.currentTimeMillis());
             commit.setOwner(scope.getUser().getUsername());
             commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
@@ -541,19 +564,19 @@ public class DigitalTwinImpl implements DigitalTwin {
         case Actuator actuator -> !trivial;
         case Activity activity -> {
           var ret = activity.getId() < 0 && !trivial;
-          if (ret
-              && activity.getType() == Activity.Type.RESOLUTION
-              && activity.getMetadata().containsKey(Metadata.IM_RESOLUTION_GRAPH)) {
-            ret =
-                // don't store resolutions that produced nothing, i.e. just the observation is in
-                // the graph
-                activity
-                        .getMetadata()
-                        .get(Metadata.IM_RESOLUTION_GRAPH, GraphModel.KnowledgeGraph.class)
-                        .getNodes()
-                        .size()
-                    > 1;
-          }
+//          if (ret
+//              && activity.getType() == Activity.Type.RESOLUTION
+//              && activity.getMetadata().containsKey(Metadata.IM_RESOLUTION_GRAPH)) {
+//            ret =
+//                // don't store resolutions that produced nothing, i.e. just the observation is in
+//                // the graph
+//                activity
+//                        .getMetadata()
+//                        .get(Metadata.IM_RESOLUTION_GRAPH, GraphModel.KnowledgeGraph.class)
+//                        .getNodes()
+//                        .size()
+//                    > 1;
+//          }
           yield ret;
         }
         case Storage.Shard shard -> shard.getId() < 0;

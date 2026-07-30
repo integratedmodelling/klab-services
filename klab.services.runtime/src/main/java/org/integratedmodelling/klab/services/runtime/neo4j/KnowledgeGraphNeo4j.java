@@ -167,6 +167,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public void store(RuntimeAsset asset, Object... additionalProperties) {
       if (closed) {
+        // KLAB-DEBUG-GUARD: preserve the existing no-op behavior, but expose stores attempted
+        // after an earlier transaction failure.
+        Logging.INSTANCE.warn(
+            "KLAB-DEBUG-GUARD: ignoring store on closed KG transaction: class={} id={}",
+            asset.getClass().getName(),
+            asset.getId());
         return;
       }
       if (asset == RuntimeAsset.CONTEXT_ASSET
@@ -178,14 +184,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       try {
         var id =
             KnowledgeGraphNeo4j.this.store(transaction, asset, contextScope, additionalProperties);
+        // KLAB-DEBUG-GUARD: store() may return without assigning the RuntimeAsset ID; retain the
+        // current behavior while recording both the returned key and object state.
+        if (id == 0 || asset.getId() == 0) {
+          Logging.INSTANCE.warn(
+              "KLAB-DEBUG-GUARD: KG store returned an unassigned asset: returnedId={} assetId={} "
+                  + "class={}",
+              id,
+              asset.getId(),
+              asset.getClass().getName());
+        }
         if (id > 0) {
           stored.add(asset);
           idCache.put(id, asset);
         }
       } catch (Exception e) {
         closed = true;
+        // KLAB-DEBUG-GUARD: this exception is intentionally still swallowed by the current
+        // implementation; make the failure unambiguous in logs.
+        Logging.INSTANCE.error(
+            "KLAB-DEBUG-GUARD: exception while storing RuntimeAsset; KG transaction closed", e);
         // FIXME this doesn't put the error/stack trace in the activity
-        Logging.INSTANCE.error(e);
       }
     }
 
@@ -209,9 +228,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         GraphModel.Relationship relationship,
         Object... additionalProperties) {
       if (closed) {
+        // KLAB-DEBUG-GUARD: preserve the existing no-op behavior, but expose links skipped after
+        // an earlier transaction failure.
+        Logging.INSTANCE.warn(
+            "KLAB-DEBUG-GUARD: ignoring link on closed KG transaction: source={} target={} "
+                + "relationship={}",
+            source.getId(),
+            destination.getId(),
+            relationship);
         return;
       }
       try {
+        // KLAB-DEBUG-GUARD: links with unassigned endpoints are still attempted by design here;
+        // report them without changing submission or commit behavior.
+        if (source.getId() == 0 || destination.getId() == 0) {
+          Logging.INSTANCE.warn(
+              "KLAB-DEBUG-GUARD: attempting KG link with unassigned endpoint: source={} target={} "
+                  + "relationship={}",
+              source.getId(),
+              destination.getId(),
+              relationship);
+        }
         KnowledgeGraphNeo4j.this.link(
             transaction, source, destination, relationship, userScope, additionalProperties);
         if (relationship == GraphModel.Relationship.HAS_CHILD
@@ -220,7 +257,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       } catch (Exception e) {
         closed = true;
-        Logging.INSTANCE.error(e);
+        Logging.INSTANCE.error(
+            "KLAB-DEBUG-GUARD: exception while linking RuntimeAssets; KG transaction closed", e);
       }
     }
 
@@ -535,6 +573,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         var instance = new AgentImpl();
         instance.setName(node.get("name").asString());
+        instance.setId(node.get("id").asLong());
         instance.setEmpty(false);
 
         ret.add((T) instance);
@@ -580,8 +619,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           instance.setHistograms(
               Map.of(
                   0L,
-                  Utils.Json.parseObject(
-                      node.get("histogram").asString(), HistogramImpl.class)));
+                  Utils.Json.parseObject(node.get("histogram").asString(), HistogramImpl.class)));
         }
         //        var instanceUrn = node.get("urn").asString();
         //        if (instanceUrn != null) {
@@ -942,6 +980,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var type = getLabel(asset);
     var props = asParameters(asset, additionalProperties);
     var ret = nextKey();
+    // KLAB-DEBUG-GUARD: retain the current key-generation behavior, but expose the exact point at
+    // which a new node is about to be created with an unassigned ID.
+    if (ret == 0) {
+      Logging.INSTANCE.warn(
+          "KLAB-DEBUG-GUARD: KG store received an unassigned generated key: class={} key={}",
+          asset.getClass().getName(),
+          ret);
+    }
     props.put("id", ret);
     if (asset instanceof Observation || asset instanceof Activity) {
 
@@ -1058,6 +1104,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
       }
+    } else {
+      // KLAB-DEBUG-GUARD: preserve the current no-ID-assignment path when CREATE produces no
+      // record, but identify it before the caller records the asset as stored.
+      Logging.INSTANCE.warn(
+          "KLAB-DEBUG-GUARD: KG CREATE returned no node record: class={} generatedId={} assetId={}",
+          asset.getClass().getName(),
+          ret,
+          asset.getId());
     }
 
     return ret;
@@ -1461,6 +1515,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("id", id, "nextId", ret, "lastActivity", lastActivity),
             userScope);
       }
+    }
+    // KLAB-DEBUG-GUARD: -1 means next-key allocation failed; preserve the existing return value.
+    if (ret == 0) {
+      Logging.INSTANCE.warn("KLAB-DEBUG-GUARD: KG nextKey() returned unassigned key: {}", ret);
     }
     return ret;
   }
