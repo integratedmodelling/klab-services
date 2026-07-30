@@ -107,6 +107,12 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   public void ingest(Observation observation) {
+    if (observation == null || !isAddressableAssetId(observation.getId())) {
+      scope.warn(
+          "Ignoring observation that is not stored in the knowledge graph"
+              + (observation == null ? "" : ": " + observation.getId()));
+      return;
+    }
     Set<Long> focusIds = new HashSet<>();
     focusIds.add(observation.getId());
 
@@ -161,10 +167,29 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private void applyCommit(KnowledgeGraph.Commit commit, Set<Long> focusIds) {
 
     // Validate relationship names before changing local state so malformed commits are atomic.
+    for (var id : commit.getDeletedAssets()) {
+      requireAddressableAssetId(id, commit);
+    }
+    for (var id : commit.getModifiedAssets()) {
+      requireAddressableAssetId(id, commit);
+    }
+    for (var id : commit.getAddedAssets()) {
+      requireAddressableAssetId(id, commit);
+    }
+    for (var id : commit.getAddedObservations()) {
+      requireAddressableAssetId(id, commit);
+    }
+    for (var id : commit.getAddedCohorts()) {
+      requireAddressableAssetId(id, commit);
+    }
     for (var link : commit.getDeletedLinks()) {
+      requireAddressableAssetId(link.getFirst(), commit);
+      requireAddressableAssetId(link.getSecond(), commit);
       GraphModel.Relationship.valueOf(link.getThird());
     }
     for (var link : commit.getAddedLinks()) {
+      requireAddressableAssetId(link.getFirst(), commit);
+      requireAddressableAssetId(link.getSecond(), commit);
       GraphModel.Relationship.valueOf(link.getThird());
     }
 
@@ -215,6 +240,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       long targetId,
       GraphModel.Relationship relationship,
       Map<String, Object> metadata) {
+    if (!isAddressableAssetId(sourceId) || !isAddressableAssetId(targetId)) {
+      return false;
+    }
     if (findRelationship(sourceId, targetId, relationship) != null) {
       return false;
     }
@@ -518,6 +546,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void clear() {}
 
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
+    if (!isAddressableAssetId(id)) {
+      return null;
+    }
     try {
       return runtimeClient.getAsset(id, assetClass, scope);
     } catch (Throwable t) {
@@ -528,6 +559,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass) {
+    if (!isAddressableAssetId(id)) {
+      return null;
+    }
     try {
       return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
     } catch (Throwable e) {
@@ -544,6 +578,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       ContextScope scope,
     GraphModel.Relationship... relationship) {
 
+    if (asset == null || !isAddressableAssetId(asset.getId())) {
+      return List.of();
+    }
     synchronized (graph) {
       // A commit may already have supplied useful links. A failed remote refresh must not hide
       // those links; leaving the adjacency unloaded ensures a later walk will retry.
@@ -591,13 +628,16 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       ContextScope requestScope,
       GraphModel.Relationship... relationships) {
 
+    if (asset == null || !isAddressableAssetId(asset.getId())) {
+      return false;
+    }
     var cachedAsset = assetCache.getIfPresent(asset.getId());
     if (invalidatedAssets.contains(asset.getId())) {
       cachedAsset = retrieveFromGraph(asset.getId(), RuntimeAsset.class, requestScope);
-      if (cachedAsset == null) {
+      if (!isExpectedAsset(cachedAsset, asset.getId())) {
         return false;
       }
-      assetCache.put(cachedAsset.getId(), cachedAsset);
+      assetCache.put(asset.getId(), cachedAsset);
       invalidatedAssets.remove(asset.getId());
     } else if (cachedAsset == null) {
       cachedAsset = asset;
@@ -629,21 +669,37 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       return false;
     }
 
+    var acceptedLinks = new ArrayList<KnowledgeGraph.LinkInfo>();
     var retrievedAssets = new HashMap<Long, RuntimeAsset>();
     retrievedAssets.put(focalAsset.getId(), focalAsset);
     for (var link : remoteLinks) {
+      if (!isAddressableAssetId(link.getSourceId())
+          || !isAddressableAssetId(link.getTargetId())) {
+        requestScope.warn(
+            "Ignoring knowledge graph link with invalid endpoint: "
+                + link.getSourceId()
+                + " -> "
+                + link.getTargetId());
+        continue;
+      }
       for (var id : List.of(link.getSourceId(), link.getTargetId())) {
         if (!retrievedAssets.containsKey(id)) {
           var endpoint = assetCache.getIfPresent(id);
           if (endpoint == null) {
             endpoint = retrieveFromGraph(id, RuntimeAsset.class, requestScope);
           }
-          if (endpoint == null) {
+          if (!isExpectedAsset(endpoint, id)) {
+            requestScope.warn(
+                "Cannot load knowledge graph endpoint "
+                    + id
+                    + ": runtime returned "
+                    + (endpoint == null ? "no asset" : "asset " + endpoint.getId()));
             return false;
           }
           retrievedAssets.put(id, endpoint);
         }
       }
+      acceptedLinks.add(link);
     }
 
     graph.addVertex(focalAsset.getId());
@@ -664,7 +720,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         graph.removeEdge(edge);
       }
     }
-    for (var link : remoteLinks) {
+    for (var link : acceptedLinks) {
       var properties =
           link.getProperties() == null
               ? Map.<String, Object>of()
@@ -675,6 +731,26 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     requested.forEach(
         type -> loadedAdjacencies.add(new Adjacency(focalAsset.getId(), direction, type)));
     return true;
+  }
+
+  private static boolean isAddressableAssetId(long id) {
+    return id > 0
+        || id == RuntimeAsset.CONTEXT_ASSET_ID
+        || id == RuntimeAsset.PROVENANCE_ASSET_ID
+        || id == RuntimeAsset.DATAFLOW_ASSET_ID;
+  }
+
+  private static boolean isExpectedAsset(RuntimeAsset asset, long requestedId) {
+    return asset != null
+        && isAddressableAssetId(asset.getId())
+        && asset.getId() == requestedId;
+  }
+
+  private static void requireAddressableAssetId(long id, KnowledgeGraph.Commit commit) {
+    if (!isAddressableAssetId(id)) {
+      throw new IllegalArgumentException(
+          "Commit " + commit.getId() + " contains invalid asset ID " + id);
+    }
   }
 
   private boolean adjacencyLoaded(

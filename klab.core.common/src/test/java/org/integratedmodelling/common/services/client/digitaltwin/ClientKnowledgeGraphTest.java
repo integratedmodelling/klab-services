@@ -1,13 +1,16 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
@@ -234,6 +237,69 @@ class ClientKnowledgeGraphTest {
 
     assertTrue(graph.getChildAssets(oldParent).isEmpty());
     assertSame(newParent, graph.getAsset(501, scope, RuntimeAsset.class));
+  }
+
+  @Test
+  void rejectsUnassignedAndQueryAssetsBeforeTheyReachTheCacheOrRuntime() {
+    var unresolved = observation(-1, null);
+    var query = observation(0, null);
+
+    graph.ingest(unresolved);
+    graph.ingest(query);
+
+    assertNull(graph.getAsset(-1, scope, RuntimeAsset.class));
+    assertNull(graph.getAsset(0, scope, RuntimeAsset.class));
+    assertTrue(
+        graph
+            .getLinks(
+                unresolved,
+                GraphModel.Relationship.Direction.OUTGOING,
+                scope,
+                GraphModel.Relationship.HAS_CHILD)
+            .isEmpty());
+    assertTrue(
+        graph
+            .getLinks(
+                query,
+                GraphModel.Relationship.Direction.OUTGOING,
+                scope,
+                GraphModel.Relationship.HAS_CHILD)
+            .isEmpty());
+    verifyNoInteractions(runtime);
+  }
+
+  @Test
+  void ignoresRemoteLinksWithUnassignedEndpoints() {
+    stubLinks(
+        RuntimeAsset.CONTEXT_ASSET,
+        List.of(link(RuntimeAsset.CONTEXT_ASSET_ID, -1, GraphModel.Relationship.HAS_CHILD)));
+
+    assertTrue(graph.getChildAssets(RuntimeAsset.CONTEXT_ASSET).isEmpty());
+    verify(runtime, never()).getAsset(eq(-1L), any(), eq(scope));
+  }
+
+  @Test
+  void rejectsAnEndpointWhosePayloadHasADifferentId() {
+    stubLinks(
+        RuntimeAsset.CONTEXT_ASSET,
+        List.of(link(RuntimeAsset.CONTEXT_ASSET_ID, 701, GraphModel.Relationship.HAS_CHILD)));
+    when(runtime.getAsset(701, RuntimeAsset.class, scope)).thenReturn(observation(-1, null));
+
+    assertTrue(graph.getChildAssets(RuntimeAsset.CONTEXT_ASSET).isEmpty());
+    assertNull(graph.getAsset(-1, scope, RuntimeAsset.class));
+  }
+
+  @Test
+  void rejectsMalformedCommitSubsetsBeforeChangingTheGraph() {
+    var commit = commit(4);
+    commit.getAddedObservations().add(-1L);
+    when(runtime.getCommit(4, scope)).thenReturn(commit);
+
+    graph.ingest(observation(801, 4L));
+
+    assertTrue(graph.getCommitQueue().isEmpty());
+    assertNull(graph.getAsset(-1, scope, RuntimeAsset.class));
+    verify(runtime, never()).getAsset(eq(-1L), any(), eq(scope));
   }
 
   private void stubLinks(RuntimeAsset source, Collection<KnowledgeGraph.LinkInfo> links) {
