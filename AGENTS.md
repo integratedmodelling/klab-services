@@ -480,22 +480,22 @@ assignment RHS or call argument. In essence, `switch` and the action call match 
 
 Current match syntax includes:
 
-| Pattern | Meaning |
-| --- | --- |
-| `value -> ...` | Bind the emitted value to `value` |
-| `first, second -> ...` | Destructure sequential values into local names |
-| `true`, `false`, a number, quantity, or uppercase constant | Match that literal/category |
-| `Type as value` | Match a runtime type and optionally capture it |
-| `%regular expression% as text` | Match text with a regular expression and optionally capture it |
-| `{{semantic observable}} as observation` | Match an observation by semantics |
-| `in (one, two, three) as value` | Match membership in a set of values |
-| `[boolean expression] as value` | Match using an expression evaluated in scope |
-| `@annotation as value` | Match an annotated object |
-| `unknown` | Match no-data |
-| `empty` | Match an empty result |
-| `exception as error` | Match an error or exception and optionally capture it |
-| `*` | Match a truthy value |
-| `#` | Match anything, including values not accepted by `*` |
+| Pattern | Meaning                                                                                                                                       |
+| --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `value -> ...` | Bind any emitted value to the `value` variable                                                                                                |
+| `first, second -> ...` | Destructure sequential values into multiple local variables (completed with `unknown` when the number is higher than the arity of the result) |
+| `true`, `false`, a number, quantity, or uppercase constant | Match that literal/category                                                                                                                   |
+| `Type as value` | Match a runtime type and optionally capture it                                                                                                |
+| `%regular expression% as text` | Match text with a regular expression and optionally capture it                                                                                |
+| `{{semantic observable}} as observation` | Match an observation by semantics                                                                                                             |
+| `in (one, two, three) as value` | Match membership in a set of values                                                                                                           |
+| `[boolean expression] as value` | Match using an expression evaluated in scope                                                                                                  |
+| `@annotation as value` | Match an annotated object                                                                                                                     |
+| `unknown` | Match no-data                                                                                                                                 |
+| `empty` | Match an empty result                                                                                                                         |
+| `exception as error` | Match an error or exception and optionally capture it                                                                                         |
+| `*` | Match a truthy value                                                                                                                          |
+| `#` | Match anything, including values not accepted by `*`                                                                                          |
 
 Names introduced by a match are local to its action-on-match. A value captured with `as` has the
 same scope.
@@ -579,7 +579,7 @@ an input binding to another expression, that boundary consumes and evaluates it.
 Standalone expressions accept the same backtick prefix, so `` `[a + b] `` is the normal concise
 form for a deferred computation. Ternary values retain the deferred flag in the same way.
 
-A ternary keeps the existing restrictions on its condition, but either branch may be a literal or
+A ternary expression restricts its condition to expressions, literals and variable identifiers,all of which must evaluate to boolean. Either branch may be a literal or
 expression value, a functional verb, or a functional switch:
 
 ```kactors
@@ -745,7 +745,7 @@ result <- switch input (
 
 The operand of `yield` may itself be a value or expression, a functional verb, or a nested
 functional switch. The same three alternatives are accepted after `return`, `fire`, and `<-` (and
-after `set` for existing actor state). Exactly one alternative is represented in the semantic POJO.
+after `set` for existing actor state). 
 Functional supplier calls wait for their result; emitter calls are invalid at these single-value
 boundaries.
 
@@ -849,23 +849,23 @@ or layout element without changing ordinary variable scope. `#lowercase` is a ta
 
 ### 10.1. Observation behaviors
 
-A `behavior` can be bound to observations created by k.IM models. The behavior then runs with the
-observation as its semantic and runtime context, allowing it to react to scheduled events, inspect
-state, communicate with other observed agents, or trigger new observations.
+A `behavior` can be bound to observations created by k.IM models, as long as the observation has _agent_ semantics. The behavior then runs with the
+observation as its reactive peer, allowing it to react to scheduled events, inspect
+state, communicate with other observed agents, or trigger new observations. Observations that are not agents may be bound to a `task`, which can only monitor or observe events with restrictions that reflect its non-agentic nature.
 
 Binding belongs to k.IM rather than the k.Actors grammar. A typical k.IM model uses a `@bind`
-annotation naming the behavior and may add a selection condition. The technical note's city example
-illustrates this pattern, but consult the current k.IM grammar before copying its older binding
-syntax.
+annotation naming the behavior, and may add a selection condition. The k.LAB technical note's city example
+illustrates this pattern (but consult the current k.IM grammar before copying its older binding
+syntax).
 
-Use observation behaviors when the modeled system changes structurally in response to events, not
+Use observation behaviors when the modeled system contains agents that engender structural change in response to events, not
 merely when a value can be recomputed by an ordinary process model.
 
 ### 10.2. Applications
 
-An `app` is incorporated into a session actor. Its action/group structure describes both behavior
-and, through UI verbs and metadata, a view hierarchy. UI verbs create widgets; their emitted events
-drive match actions; tagged widgets can be enabled, disabled, reset, or updated later.
+An `app` is incorporated into a session actor; a new k.LAB session is instantiated whenever an application is run, so that the environment it acts upon (including any digital twins created or manipulated) remain under its sole ownership. Its action/group structure describes both behavior
+and, through UI verbs and metadata, a view hierarchy. In applications, UI verbs may create widgets to be rendered by a front-end interface; their emitted events
+drive match actions; tagged widgets can be enabled, disabled, reset, or updated under the application agent control.
 
 ```kactors
 web app examples.observer
@@ -884,8 +884,8 @@ action main:
 ```
 
 Exact UI verbs and metadata are supplied by installed components. The group/tag/event pattern is
-part of k.Actors; widget names and styling keys are extension APIs and must be checked against the
-active component version.
+part of k.Actors; widget verbs and styling keys are extension APIs and must be checked against the
+active UI component documentation.
 
 ### 10.3. Components
 
@@ -916,9 +916,9 @@ action main:
 ### 10.5. Tasks and user behaviors
 
 A `task` is observation-scoped like an ordinary behavior, but the observation need not have
-`SemanticType.AGENT`. Tasks run with restricted capabilities: they may post-process results,
+`SemanticType.AGENT` type. Tasks run with restricted capabilities: they may post-process results,
 produce documentation, or monitor resources and observations, but cannot modify the knowledge
-graph. Every task declares `main`.
+graph. Every task can declare `main`.
 
 A `user` behavior instruments the root `UserScope` owning the request. It can configure or react to
 user-level activity independently of the session or context from which it was requested. A runtime
@@ -928,9 +928,9 @@ same user to be created.
 
 ### 10.6. Test cases
 
-A `testcase` groups independently runnable `@test` actions. Use it for runtime services, semantic
+A `testcase` groups independently runnable `@test` actions. It runs in its own session like applications and scripts. Use it for runtime services, semantic
 operations, actors, and application behavior—not only pure functions. Test scopes collect action
-and assertion results for later reporting.
+and assertion results for later reporting. The testcase scaffolding collects results and computes statistics that may be preserved after the testcase has completed. It is used to exercise k.LAB complex observation behaviors against their intended results. A suite of testcases will be made available to cover every k.LAB functionalities, to run at each release cycle.
 
 Keep each test action focused, use descriptive action names, and prefer explicit match branches for
 `empty` and `exception` when testing reactive calls.

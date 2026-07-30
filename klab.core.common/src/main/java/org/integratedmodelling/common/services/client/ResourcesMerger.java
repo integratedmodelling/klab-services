@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -20,6 +23,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -40,112 +44,166 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * A service that merges and prioritizes resource queries from all available services under a scope
- * into a single resource set. It is the default implementation of the {@link ResourcesService} when
- * retrieved through a client scope using {@link Scope#getService(Class)} for any operation that
- * requires merging results from different services. For write/update/delete operations, the client
- * scope will use the default prioritization rules (local first).
+ * into a single {@link ResourceSet} whenever the operation requires merging results from different
+ * services. It is the default implementation of the {@link ResourcesService} when retrieved through
+ * a client scope using {@link Scope#getService(Class)} whenever more than one service is available.
  *
- * <p>TODO not yet implemented or wired in.
+ * <p>Operations that cannot be meaningfully aggregated, including writes and service-management
+ * calls, are forwarded to the first service exposed by the scope. Client scopes order these with
+ * the local service first. Callers that need another specific service should select it directly
+ * from {@link Scope#getServices(Class)}.
  */
 public class ResourcesMerger implements ResourcesService {
 
-  private Scope owningScope;
+  private final Scope owningScope;
 
   public ResourcesMerger(Scope owningScope) {
-    this.owningScope = owningScope;
+    this.owningScope = Objects.requireNonNull(owningScope);
+  }
+
+  private List<ResourcesService> services() {
+    var available = owningScope.getServices(ResourcesService.class);
+    if (available == null) {
+      return List.of();
+    }
+    return available.stream().filter(Objects::nonNull).filter(service -> service != this).toList();
+  }
+
+  private ResourcesService primary() {
+    return services().stream()
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new KlabServiceAccessException(
+                    "No resources service is available in the owning scope"));
+  }
+
+  /**
+   * Run a ResourceSet query against a stable snapshot of all available services. Each invocation is
+   * isolated from failures in the others and all successful responses are prioritized by the
+   * canonical ResourceSet merge utility.
+   */
+  private ResourceSet query(Function<ResourcesService, ResourceSet> operation) {
+    var services = services();
+    var responses = new ArrayList<CompletableFuture<ResourceSet>>(services.size());
+    for (var service : services) {
+      responses.add(
+          CompletableFuture.supplyAsync(() -> operation.apply(service))
+              .exceptionally(
+                  failure ->
+                      ResourceSet.empty(
+                          Notification.warning(
+                              "Resource query failed on "
+                                  + service.getClass().getSimpleName()
+                                  + ": "
+                                  + failureMessage(failure)))));
+    }
+    CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
+    return Utils.Resources.merge(
+        responses.stream().map(CompletableFuture::join).toArray(ResourceSet[]::new));
+  }
+
+  private static String failureMessage(Throwable failure) {
+    var cause = failure;
+    while (cause.getCause() != null) {
+      cause = cause.getCause();
+    }
+    return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
   }
 
   @Override
   public Capabilities capabilities(Scope scope) {
-    return null;
+    return primary().capabilities(scope);
   }
 
   @Override
   public ServiceStatus status() {
-    return null;
+    return primary().status();
   }
 
   @Override
   public URL getUrl() {
-    return null;
+    return primary().getUrl();
   }
 
   @Override
   public String serviceName() {
-    return "";
+    return primary().serviceName();
   }
 
   @Override
   public String serviceId() {
-    return "";
+    return primary().serviceId();
   }
 
   @Override
   public Settings settings() {
-    return null;
+    return primary().settings();
   }
 
   @Override
   public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
-    return null;
+    return primary().set(setting, value, returnType);
   }
 
   @Override
   public Scope serviceScope() {
-    return null;
+    return primary().serviceScope();
   }
 
   @Override
   public boolean shutdown() {
-    return false;
+    return primary().shutdown();
   }
 
   @Override
   public String declareSessionScope(
       SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
-    return "";
+    return primary().declareSessionScope(sessionScope, userScope, behavior);
   }
 
   @Override
   public DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
-    return null;
+    return primary().declareContextScope(contextScope, sessionScope, userScope);
   }
 
   @Override
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-    return null;
+    return primary().getRights(resourceUrn, scope);
   }
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-    return false;
+    return primary().setRights(resourceUrn, resourcePrivileges, scope);
   }
 
   @Override
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    return List.of();
+    return primary().getCredentialInfo(scope);
   }
 
   @Override
   public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-    return null;
+    return primary().addCredentials(host, credentials, scope);
   }
 
   @Override
   public <T extends Serializable> T retrieveAsset(
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
-    return null;
+    return primary().retrieveAsset(urn, locator, assetClass, scope);
   }
 
   @Override
   public boolean loadResources(ResourceSet resourceSet, Scope scope) {
-    return false;
+    return primary().loadResources(resourceSet, scope);
   }
 
   @Override
@@ -155,7 +213,7 @@ public class ResourcesMerger implements ResourcesService {
       String mediaType,
       Parameters<String> parameters,
       Scope scope) {
-    return null;
+    return primary().exportAsset(urn, knowledgeClass, mediaType, parameters, scope);
   }
 
   @Override
@@ -164,146 +222,146 @@ public class ResourcesMerger implements ResourcesService {
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,
       Scope scope) {
-    return null;
+    return primary().importAsset(schema, assetCoordinates, suggestedUrn, scope);
   }
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    return null;
+    return primary().retrieve(urn, assetClass, scope);
   }
 
   @Override
   public List<ResourceSet> delete(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, UserScope scope) {
-    return List.of();
+    return primary().delete(urn, knowledgeClass, scope);
   }
 
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
-    return List.of();
+    return primary().list(assetClass, scope);
   }
 
   @Override
   public ResourceSet resolve(String urn, KlabAsset.KnowledgeClass assetClass, UserScope scope) {
-    return null;
+    return query(service -> service.resolve(urn, assetClass, scope));
   }
 
   @Override
   public <T extends KlabAsset> List<ResourceSet> submit(
       T asset, SubmissionMode submissionMode, UserScope scope) {
-    return List.of();
+    return primary().submit(asset, submissionMode, scope);
   }
 
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    return null;
+    return primary().info(urn, assetClass, infoClass, scope);
   }
 
   @Override
   public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
-    return List.of();
+    return primary().resolveProjects(projects, scope);
   }
 
   @Override
   public ResourceSet resolveModel(String modelName, Scope scope) {
-    return null;
+    return query(service -> service.resolveModel(modelName, scope));
   }
 
   @Override
   public ResourceSet resolve(String urn, Scope scope) {
-    return null;
+    return query(service -> service.resolve(urn, scope));
   }
 
   @Override
   public KimNamespace retrieveNamespace(String urn, Scope scope) {
-    return null;
+    return primary().retrieveNamespace(urn, scope);
   }
 
   @Override
   public KimOntology retrieveOntology(String urn, Scope scope) {
-    return null;
+    return primary().retrieveOntology(urn, scope);
   }
 
   @Override
   public KimObservationStrategyDocument retrieveObservationStrategyDocument(
       String urn, Scope scope) {
-    return null;
+    return primary().retrieveObservationStrategyDocument(urn, scope);
   }
 
   @Override
   public Collection<Workspace> listWorkspaces() {
-    return List.of();
+    return primary().listWorkspaces();
   }
 
   @Override
   public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
-    return null;
+    return primary().retrieveBehavior(urn, scope);
   }
 
   @Override
   public Resource retrieveResource(List<String> urns, Scope scope) {
-    return null;
+    return primary().retrieveResource(urns, scope);
   }
 
   @Override
   public Workspace retrieveWorkspace(String urn, Scope scope) {
-    return null;
+    return primary().retrieveWorkspace(urn, scope);
   }
 
   @Override
   public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
-    return null;
+    return query(service -> service.resolveResourceAdapter(urn, scope));
   }
 
   @Override
   public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
-    return null;
+    return query(service -> service.resolveImportSchema(mediaType, geometry, scope));
   }
 
   @Override
   public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
-    return null;
+    return query(service -> service.resolveExportSchema(mediaType, geometry, scope));
   }
 
   @Override
   public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
-    return null;
+    return query(service -> service.resolveServiceCall(name, version, scope));
   }
 
   @Override
   public ResourceSet resolveResource(String urn, Scope scope) {
-    return null;
+    return query(service -> service.resolveResource(urn, scope));
   }
 
   @Override
   public Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope) {
-    return null;
+    return primary().contextualizeResource(resource, geometry, scope);
   }
 
   @Override
   public ResourceInfo resourceInfo(String urn, Scope scope) {
-    return null;
+    return primary().resourceInfo(urn, scope);
   }
 
   @Override
   public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
-    return false;
+    return primary().setResourceInfo(urn, info, scope);
   }
 
   @Override
   public KimObservable declareObservable(String definition) {
-    return null;
+    return primary().declareObservable(definition);
   }
 
   @Override
   public KimConcept.Descriptor describeConcept(String conceptUrn) {
-    return null;
+    return primary().describeConcept(conceptUrn);
   }
 
   @Override
   public KimConcept declareConcept(String definition) {
-    return null;
+    return primary().declareConcept(definition);
   }
 
   @Override
@@ -314,63 +372,64 @@ public class ResourcesMerger implements ResourcesService {
       Scheduler.Event event,
       Data input,
       Scope scope) {
-    return null;
+    return primary()
+        .contextualize(contextualizedResource, observation, geometry, event, input, scope);
   }
 
   @Override
   public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
-    return null;
+    return primary().retrieveDataflow(urn, scope);
   }
 
   @Override
   public Worldview retrieveWorldview() {
-    return null;
+    return primary().retrieveWorldview();
   }
 
   @Override
   public List<String> dependents(String namespaceId) {
-    return List.of();
+    return primary().dependents(namespaceId);
   }
 
   @Override
   public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
-    return null;
+    return primary().retrieveAdapterInfo(adapterType, scope);
   }
 
   @Override
   public List<String> precursors(String namespaceId) {
-    return List.of();
+    return primary().precursors(namespaceId);
   }
 
   @Override
   public List<ResourceInfo> queryResources(
       String queryString, Scope scope, KlabAsset.KnowledgeClass... resourceTypes) {
-    return List.of();
+    return primary().queryResources(queryString, scope, resourceTypes);
   }
 
   @Override
   public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
-    return null;
+    return primary().importResource(resource, scope);
   }
 
   @Override
   public Project retrieveProject(String projectName, Scope scope) {
-    return null;
+    return primary().retrieveProject(projectName, scope);
   }
 
   @Override
   public ResourceSet resolveModels(Observable observable, ContextScope scope) {
-    return null;
+    return query(service -> service.resolveModels(observable, scope));
   }
 
   @Override
   public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
-    return null;
+    return primary().modelGeometry(modelUrn);
   }
 
   @Override
   public KActorsBehavior readBehavior(URL url, UserScope scope) {
-    return null;
+    return primary().readBehavior(url, scope);
   }
 
   @Override
@@ -380,23 +439,23 @@ public class ResourcesMerger implements ResourcesService {
       File fileLocation,
       ResourcePrivileges rights,
       Scope submittingScope) {
-    return null;
+    return primary().registerResource(urn, knowledgeClass, fileLocation, rights, submittingScope);
   }
 
   @Override
   public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
-    return false;
+    return primary().createWorkspace(workspace, metadata, scope);
   }
 
   @Override
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
-    return null;
+    return primary().createProject(workspaceName, projectName, scope);
   }
 
   @Override
   public ResourceSet updateProject(
       String projectName, Project.Manifest manifest, Metadata metadata, UserScope scope) {
-    return null;
+    return primary().updateProject(projectName, manifest, metadata, scope);
   }
 
   @Override
@@ -405,7 +464,7 @@ public class ResourcesMerger implements ResourcesService {
       String documentUrn,
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
-    return List.of();
+    return primary().createDocument(projectName, documentUrn, documentType, scope);
   }
 
   @Override
@@ -414,13 +473,13 @@ public class ResourcesMerger implements ResourcesService {
       ProjectStorage.ResourceType documentType,
       String content,
       UserScope scope) {
-    return List.of();
+    return primary().updateDocument(projectName, documentType, content, scope);
   }
 
   @Override
   public List<ResourceSet> manageRepository(
       String projectName, RepositoryState.Operation operation, String... arguments) {
-    return List.of();
+    return primary().manageRepository(projectName, operation, arguments);
   }
 
   @Override
@@ -429,42 +488,42 @@ public class ResourcesMerger implements ResourcesService {
       String assetUrn,
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
-    return List.of();
+    return primary().deleteDocument(projectName, assetUrn, documentType, scope);
   }
 
   @Override
   public CompletableFuture<Resource> publishObservation(
       Observation observation, ContextScope scope) {
-    return null;
+    return primary().publishObservation(observation, scope);
   }
 
   @Override
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
-    return List.of();
+    return primary().deleteProject(projectName, scope);
   }
 
   @Override
   public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
-    return List.of();
+    return primary().deleteWorkspace(workspaceName, scope);
   }
 
   @Override
   public Collection<Project> listProjects(Scope scope) {
-    return List.of();
+    return primary().listProjects(scope);
   }
 
   @Override
   public Collection<String> listResourceUrns(Scope scope) {
-    return List.of();
+    return primary().listResourceUrns(scope);
   }
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    return false;
+    return primary().lockProject(urn, scope);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    return false;
+    return primary().unlockProject(urn, scope);
   }
 }

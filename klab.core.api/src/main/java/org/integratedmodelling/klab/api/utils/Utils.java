@@ -745,86 +745,108 @@ public class Utils {
     }
 
     /**
-     * Merge two or more resource sets into a new one. If the same resources are available keep the
-     * one with the most recent version. Behaves well with no arguments or just one.
+     * Merge two or more resource sets into a new one. Duplicate resources are prioritized by
+     * locality, then version, then timestamp. Behaves well with no arguments or just one.
      *
      * @param rSets
      * @return
      */
     public static ResourceSet merge(ResourceSet... rSets) {
 
-      ResourceSet ret = null;
-
-      var resourceSets = Arrays.stream(rSets).filter(Objects::nonNull).toList();
+      var resourceSets =
+          rSets == null
+              ? List.<ResourceSet>of()
+              : Arrays.stream(rSets).filter(Objects::nonNull).toList();
 
       if (resourceSets.isEmpty()) {
-        ret = new ResourceSet();
-        ret.setEmpty(true);
-      } else if (resourceSets.size() == 1) {
-        ret = resourceSets.getFirst();
-      } else {
-
-        ret = new ResourceSet();
-
-        Map<String, ResourceSet.Resource> rsns = new LinkedHashMap<>();
-        Map<String, ResourceSet.Resource> rsbh = new LinkedHashMap<>();
-        Map<String, ResourceSet.Resource> rsrs = new LinkedHashMap<>();
-        Map<String, ResourceSet.Resource> rrsl = new LinkedHashMap<>();
-        Map<String, ResourceSet.Resource> ront = new LinkedHashMap<>();
-        Map<String, ResourceSet.Resource> roob = new LinkedHashMap<>();
-
-        for (ResourceSet set : resourceSets) {
-
-          ret.getServices().putAll(set.getServices());
-
-          if (set.isEmpty()) {
-            continue;
-          }
-
-          collectNewerOrAbsent(set.getResults(), rrsl);
-          collectNewerOrAbsent(set.getNamespaces(), rsns);
-          collectNewerOrAbsent(set.getBehaviors(), rsbh);
-          collectNewerOrAbsent(set.getOntologies(), ront);
-          collectNewerOrAbsent(set.getObservationStrategies(), roob);
-          collectNewerOrAbsent(set.getResources(), rsrs);
-        }
-
-        ret.getNamespaces().addAll(rsns.values());
-        ret.getBehaviors().addAll(rsbh.values());
-        ret.getResources().addAll(rsrs.values());
-        ret.getResults().addAll(rrsl.values());
-        ret.getOntologies().addAll(ront.values());
-        ret.getObservationStrategies().addAll(roob.values());
+        return ResourceSet.empty();
       }
 
+      var ret = new ResourceSet();
+      ret.setEmpty(resourceSets.stream().allMatch(ResourceSet::isEmpty));
+
+      Map<String, ResourceSet.Resource> rsns = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> rsbh = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> rsrs = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> rrsl = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> ront = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> roob = new LinkedHashMap<>();
+      Map<String, ResourceSet.Resource> rprj = new LinkedHashMap<>();
+
+      String workspace = null;
+      boolean conflictingWorkspaces = false;
+      for (ResourceSet set : resourceSets) {
+        if (set.getServices() != null) {
+          ret.getServices().putAll(set.getServices());
+        }
+        if (set.getNotifications() != null) {
+          ret.getNotifications().addAll(set.getNotifications());
+        }
+
+        if (set.getWorkspace() != null) {
+          if (workspace == null) {
+            workspace = set.getWorkspace();
+          } else if (!workspace.equals(set.getWorkspace())) {
+            conflictingWorkspaces = true;
+          }
+        }
+
+        collectPreferred(set.getResults(), rrsl);
+        collectPreferred(set.getNamespaces(), rsns);
+        collectPreferred(set.getBehaviors(), rsbh);
+        collectPreferred(set.getOntologies(), ront);
+        collectPreferred(set.getObservationStrategies(), roob);
+        collectPreferred(set.getResources(), rsrs);
+        collectPreferred(set.getProjects(), rprj);
+      }
+
+      ret.setWorkspace(conflictingWorkspaces ? null : workspace);
+      ret.getNamespaces().addAll(rsns.values());
+      ret.getBehaviors().addAll(rsbh.values());
+      ret.getResources().addAll(rsrs.values());
+      ret.getResults().addAll(rrsl.values());
+      ret.getOntologies().addAll(ront.values());
+      ret.getObservationStrategies().addAll(roob.values());
+      ret.getProjects().addAll(rprj.values());
       return ret;
     }
 
-    private static Map<String, ResourceSet.Resource> collectNewerOrAbsent(
+    private static Map<String, ResourceSet.Resource> collectPreferred(
         Collection<ResourceSet.Resource> resources, Map<String, ResourceSet.Resource> destination) {
+      if (resources == null) {
+        return destination;
+      }
       for (ResourceSet.Resource r : resources) {
-        boolean swap = !destination.containsKey(r.getResourceUrn());
-        if (!swap) {
-          ResourceSet.Resource or = destination.get(r.getResourceUrn());
-          swap = (or.getResourceVersion() == null && r.getResourceVersion() != null);
-          if (!swap && or.getResourceVersion() != null && r.getResourceVersion() != null) {
-            swap = r.getResourceVersion().greater(or.getResourceVersion());
-          }
-          if (!swap && or.getResourceVersion() != null && r.getResourceVersion() != null) {
-            swap = r.getTimestamp() > or.getTimestamp();
-          }
+        if (r == null) {
+          continue;
         }
-        if (swap) {
-          // always choose the local one
-          var r1 = destination.get(r.getResourceUrn());
-          var choice =
-              (r1 != null && r1.isLocal() && r.isLocal())
-                  ? r
-                  : ((r1 != null && r1.isLocal()) ? r1 : r);
-          destination.put(r.getResourceUrn(), choice);
-        }
+        destination.merge(
+            r.getResourceUrn(), r, (existing, candidate) -> preferred(existing, candidate));
       }
       return destination;
+    }
+
+    private static ResourceSet.Resource preferred(
+        ResourceSet.Resource existing, ResourceSet.Resource candidate) {
+      if (existing.isLocal() != candidate.isLocal()) {
+        return candidate.isLocal() ? candidate : existing;
+      }
+
+      var existingVersion = existing.getResourceVersion();
+      var candidateVersion = candidate.getResourceVersion();
+      if (existingVersion == null && candidateVersion != null) {
+        return candidate;
+      }
+      if (existingVersion != null && candidateVersion == null) {
+        return existing;
+      }
+      if (existingVersion != null && candidateVersion.greater(existingVersion)) {
+        return candidate;
+      }
+      if (existingVersion != null && existingVersion.greater(candidateVersion)) {
+        return existing;
+      }
+      return candidate.getTimestamp() > existing.getTimestamp() ? candidate : existing;
     }
 
     /**

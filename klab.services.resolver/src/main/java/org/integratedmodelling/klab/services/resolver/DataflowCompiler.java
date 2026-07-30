@@ -73,19 +73,21 @@ public class DataflowCompiler {
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
     ret.setName(observation.getName() + "_" + scope.getId());
+    ret.setCoverage(resolutionGraph.getCoverage());
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
+    ret.setRequirements(resolutionGraph.getDependencies());
     for (var node : resolutionGraph.rootNodes()) {
       /*
       These MUST be observations. We check for now but it shouldn't happen.
        */
-      if (!(node instanceof Observation)) {
+      if (!(node instanceof Observation rootObservation)) {
         throw new KlabIllegalStateException("Resolution root is not an observation");
       }
       ret.getComputation()
           .addAll(
               compileObservation(
-                  observation,
-                  GeometryRepository.INSTANCE.scale(observation.getGeometry()),
+                  rootObservation,
+                  GeometryRepository.INSTANCE.scale(rootObservation.getGeometry()),
                   null,
                   null));
     }
@@ -204,9 +206,6 @@ public class DataflowCompiler {
         //   so that we can link it to the transformation
       }
     }
-
-    // HERE we must link the actuators depending on the observation
-    System.out.println("VEDIAMO UN PO'RCODIO");
 
     // THEN any APPLY must be added to the actuator
   }

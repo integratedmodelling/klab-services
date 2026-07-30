@@ -92,6 +92,10 @@ public class ResolutionGraph {
     return targetCoverage == null ? 0 : targetCoverage.getCoverage();
   }
 
+  public Coverage getCoverage() {
+    return targetCoverage;
+  }
+
   private ResolutionGraph(Resolvable target, Scale scaleToCover, ResolutionGraph parent) {
 
     if (parent.empty) {
@@ -242,10 +246,6 @@ public class ResolutionGraph {
   public void accept(Resolvable resolvable, Coverage finalCoverage) {
 
     // resolvable is in the graph already
-
-    System.out.println(
-        "ACCEPTING EXISTING RESOLVABLE INTO SAME GRAPH FOR THIS RESOLVABLE - JUST CREATE"
-            + " THE LINK FROM THE TARGET TO THE RESOLVABLE AND SET THE COVERAGE");
   }
 
   public static ResolutionGraph create(ContextScope rootScope) {
