@@ -436,7 +436,7 @@ Methods inherited only from `Object` are not exposed through this interoperabili
 
 ### 5.2. Match actions
 
-Append `:` to a supplier or emitter call to react to its output:
+Append `:` to a supplier or emitter call to define asynchronous reactions to its outputs:
 
 ```kactors
 timer.in(15.s):
@@ -457,7 +457,7 @@ A function call cannot have match actions. An emitter cannot be used where a sin
 required, such as the right side of an assignment or as a condition. A supplier may be used there;
 execution waits for its single result.
 
-`yield` in a reactor match supplies the result of the enclosing action. Callers may then use that
+`yield` in a reactor match supplies the result of the enclosing action, which otherwise defaults to the matched object. Callers may then use that
 action as a supplier in assignments, arguments, and other value positions:
 
 ```kactors
@@ -476,7 +476,7 @@ action report(key):
 The reactor call remains nonblocking: `describe` returns its future immediately, and the matching
 branch completes that future when it yields. A branch that does not yield leaves the action pending
 unless another execution path returns, yields, or fails. The match block itself is not an
-assignment RHS or call argument.
+assignment RHS or call argument. In essence, `switch` and the action call match logic are similar: a `switch` statement specifies a _synchronous_ match to the returned value of the action, one of which must be executed in order for execution to continue; while a action with match reactions specifies _asynchronous_ reactions which may or may not be executed. If the action called is an emitter, the matched code may execute multiple times until the matcher expires due to a `return` or to the agent stopping. 
 
 Current match syntax includes:
 
