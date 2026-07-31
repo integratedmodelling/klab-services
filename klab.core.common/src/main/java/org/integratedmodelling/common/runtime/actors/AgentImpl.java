@@ -34,7 +34,9 @@ public class AgentImpl implements Agent {
   private long startedAt = -1;
   private long lastActivityAt = -1;
   private transient String localSenderUrn;
+  private transient String localSenderName;
   private transient String localResponseTo;
+  private transient MessagingChannel messagingChannel;
   private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
       new CopyOnWriteArrayList<>();
   private transient CopyOnWriteArrayList<Consumer<Message>> sentMessageListeners =
@@ -203,6 +205,7 @@ public class AgentImpl implements Agent {
     if (localResponseTo != null && customMessage.inResponseTo() == null) {
       customMessage.setInResponseTo(localResponseTo);
     }
+    stampSenderName(customMessage);
     publish(Message.MessageType.CustomAgentMessage, customMessage);
   }
 
@@ -215,7 +218,7 @@ public class AgentImpl implements Agent {
   @Override
   public <T extends Serializable, R extends Serializable> CompletableFuture<R> ask(
       T message, Class<? extends R> responseClass, Duration timeout) {
-    if (urn == null || message == null || responseClass == null) {
+    if (urn == null || message == null || responseClass == null || messagingChannel == null) {
       return CompletableFuture.failedFuture(
           new IllegalArgumentException("A connected recipient, request, and response class are required"));
     }
@@ -225,8 +228,16 @@ public class AgentImpl implements Agent {
             : message instanceof Constant constant
                 ? new RuntimeAgent.CustomMessage(constant, null)
                 : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
+    stampSenderName(request);
     return AgentEventBus.INSTANCE.ask(
-        messageSenderUrn(), urn, request, responseClass, timeout);
+        messagingChannel,
+        this,
+        messageSenderUrn(),
+        urn,
+        request,
+        responseClass,
+        timeout,
+        true);
   }
 
   /**
@@ -240,7 +251,9 @@ public class AgentImpl implements Agent {
               "Agent messaging is disabled because its creating scope is not connected"));
       return false;
     }
-    AgentEventBus.INSTANCE.publish(urn, Message.MessageType.AgentStatusRequested);
+    this.messagingChannel = channel;
+    AgentEventBus.INSTANCE.publish(
+        channel, this, urn, urn, Message.MessageType.AgentStatusRequested);
     return true;
   }
 
@@ -248,6 +261,7 @@ public class AgentImpl implements Agent {
     if (urn != null) {
       AgentEventBus.INSTANCE.unsubscribe(urn, this);
     }
+    messagingChannel = null;
   }
 
   /**
@@ -284,20 +298,42 @@ public class AgentImpl implements Agent {
     this.localSenderUrn = localSenderUrn;
   }
 
+  /** Runtime-only display identity paired with {@link #setLocalSenderUrn(String)}. */
+  @JsonIgnore
+  public void setLocalSenderName(String localSenderName) {
+    this.localSenderName = localSenderName;
+  }
+
   /** Runtime-only correlation installed on a sender handle injected into a request handler. */
   @JsonIgnore
   public void setLocalResponseTo(String localResponseTo) {
     this.localResponseTo = localResponseTo;
   }
 
+  /** Runtime-only transport context used by reply handles created inside a service agent. */
+  @JsonIgnore
+  public void setLocalMessagingChannel(MessagingChannel messagingChannel) {
+    this.messagingChannel = messagingChannel;
+  }
+
   private String messageSenderUrn() {
     return localSenderUrn == null ? urn : localSenderUrn;
   }
 
+  private void stampSenderName(RuntimeAgent.CustomMessage message) {
+    if (message != null && (message.senderName() == null || message.senderName().isBlank())) {
+      message.setSenderName(localSenderName == null ? name : localSenderName);
+    }
+  }
+
   private boolean publish(Object... messageArguments) {
+    if (messagingChannel == null) {
+      return false;
+    }
     String senderUrn = messageSenderUrn();
     Message message = createSentMessage(senderUrn, messageArguments);
-    boolean published = AgentEventBus.INSTANCE.publish(senderUrn, urn, message);
+    boolean published =
+        AgentEventBus.INSTANCE.publish(messagingChannel, this, senderUrn, urn, message);
     if (published) {
       markActivity();
       for (var listener : sentListeners()) {
@@ -316,6 +352,9 @@ public class AgentImpl implements Agent {
     if (messageArguments != null
         && messageArguments.length == 1
         && messageArguments[0] instanceof Message message) {
+      if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
+        stampSenderName(message.getPayload(RuntimeAgent.CustomMessage.class));
+      }
       return Message.create(
           senderUrn,
           message.getMessageClass(),
@@ -323,6 +362,11 @@ public class AgentImpl implements Agent {
           message.getPayload(Object.class));
     }
     Object[] supplied = messageArguments == null ? new Object[0] : messageArguments;
+    for (Object argument : supplied) {
+      if (argument instanceof RuntimeAgent.CustomMessage customMessage) {
+        stampSenderName(customMessage);
+      }
+    }
     Object[] completed = new Object[supplied.length + 1];
     completed[0] = Message.MessageClass.AgentCommunication;
     System.arraycopy(supplied, 0, completed, 1, supplied.length);
@@ -337,13 +381,18 @@ public class AgentImpl implements Agent {
     if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
       markActivity();
     }
+    boolean terminal = false;
     switch (message.getMessageType()) {
       case AgentStarted -> applyStatus(message, true);
-      case AgentStopped -> applyStatus(message, false);
+      case AgentStopped -> {
+        applyStatus(message, false);
+        terminal = true;
+      }
       case AgentStatusChanged -> applyStatus(message, null);
       case AgentFailed -> {
         applyStatus(message, false);
         viable = false;
+        terminal = true;
         var status = message.getPayload(RuntimeAgent.Status.class);
         notifications.add(
             Notification.error(
@@ -362,6 +411,9 @@ public class AgentImpl implements Agent {
         notifications.add(
             Notification.warning("Agent message listener failed: " + failure.getMessage()));
       }
+    }
+    if (terminal) {
+      disconnect();
     }
   }
 
@@ -395,7 +447,11 @@ public class AgentImpl implements Agent {
   }
 
   public String toString() {
-    return Character.toString(0x1F464) + " " + name;
+    String label =
+        name == null || name.isBlank()
+            ? urn == null || urn.isBlank() ? "agent" : urn
+            : name;
+    return Character.toString(0x1F464) + " " + label;
   }
 
 

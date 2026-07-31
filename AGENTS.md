@@ -278,7 +278,9 @@ dynamically typed.
 
 ### 4.3. Agent messages and `@handle`
 
-Running agents communicate through messages that can cross network boundaries, keyed by the unique agent URNs. Communication is bidirectional: a remote
+Running agents communicate through messages that can cross network boundaries, keyed by globally
+unique instance URNs. Each URN includes a runtime-incarnation identifier, so restarting a service
+cannot reconnect a new instance to an old endpoint. Communication is bidirectional: a remote
 client handle can control and message its service-side peer, agents can message other agents, and
 an agent can send a message to the scope that created it. Agent handles remain ordinary
 serializable beans; reconnecting a deserialized handle uses its URN rather than serialized broker
@@ -328,10 +330,14 @@ Start, stop, status request, status change, and failure are runtime lifecycle me
 custom constants. Remote handles use these to control a running peer and maintain their local
 view of its state. Status includes the represented observation ID (`-1` when unbound), when the
 agent first started, and the latest message or reactor activity, allowing clients to calculate
-idle time. Correlated `ask`/reply is based on the handler responding by
+idle time. A successful `stop()` call means that the stop request was sent; terminal cleanup is
+confirmed by the following stopped status, after which clients may disconnect the handle.
+Correlated `ask`/reply is based on the handler responding by
 sending a normal message through its injected `sender` handle. The action will automatically encode an ID for the received message so that the receiving sender can recognize it as a response. 
 
-Every agent exposes three reserved verbs that cannot be redefined by a behavior:
+Every behavior implicitly inherits the Java behavior `core.agent`, in the same way that every Java
+class ultimately inherits `Object`. It provides the common agent contract without requiring an
+`inherits` or `using` clause:
 
 ```kactors
 worker <- tools.new(configuration)
@@ -339,6 +345,7 @@ worker.tell(RELOAD, configuration)
 result <- worker.ask(LOOKUP, key :timeout 10.s)
 worker.ask(WAIT_FOR_EVENT, key !timeout):
     response -> process(response)
+console.println(worker.name(), " ", worker.urn())
 ```
 
 `new` follows the construction rules described under imports. `tell` requires a message-class
@@ -351,6 +358,18 @@ supplier listener does not block the action, and the match action simply remains
 response arrives. A matching function or supplier `@handle` action replies with its returned value.
 A handler failure completes the request exceptionally. Emitter handlers do not have a single
 automatic result, but may explicitly reply through their injected `sender` handle.
+
+`name()` returns the agent's display name and `urn()` its runtime-wide instance URN. The same verbs
+work on `self` and on any agent-valued variable. The runtime initializes this identity on the
+generated agent and every retained inherited-behavior delegate before the agent starts.
+
+The `core.agent` verbs are ordinary inherited actions, not reserved names. A behavior may replace
+one by declaring an action with the same name; validation emits the normal inheritance warning
+unless the action carries `@override`. Calls then select the local action. This is intentionally
+also true of message-related verbs, providing a controlled extension point for future policies
+such as authorization-aware stopping. The base `new` implementation is a construction contract:
+calling it on an actor specification invokes the compiler/runtime construction path, while calling
+the unoverridden implementation on an existing instance is invalid.
 
 Messaging is available only when the scope used to create or reconnect the agent has a connected
 messaging channel. Agent creation still succeeds without one: messaging is disabled and the

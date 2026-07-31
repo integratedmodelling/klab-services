@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.logging.Logging;
@@ -84,7 +85,25 @@ public class AMQPChannel {
       String agentUrn,
       org.integratedmodelling.klab.api.services.runtime.Channel channel,
       Consumer<Message> messageConsumer) {
-    return new AMQPChannel(federation, agentUrn, channel, messageConsumer, false, true, false);
+    return new AMQPChannel(
+        federation,
+        agentExchangeId(federation, agentUrn),
+        channel,
+        messageConsumer,
+        false,
+        true,
+        false);
+  }
+
+  /**
+   * Produce a bounded, federation-qualified exchange name without exposing raw scope identifiers
+   * in the broker namespace.
+   */
+  static String agentExchangeId(Federation federation, String agentUrn) {
+    String federationId = federation == null ? "" : String.valueOf(federation.getId());
+    String endpoint = federationId + '\0' + String.valueOf(agentUrn);
+    return "klab.agent."
+        + UUID.nameUUIDFromBytes(endpoint.getBytes(StandardCharsets.UTF_8));
   }
 
   private AMQPChannel(

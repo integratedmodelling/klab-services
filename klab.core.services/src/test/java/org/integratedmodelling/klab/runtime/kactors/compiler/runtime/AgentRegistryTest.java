@@ -7,15 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.integratedmodelling.common.authentication.scope.AMQPChannel;
+import org.integratedmodelling.common.runtime.actors.AgentEventBus;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -26,6 +30,8 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
@@ -34,6 +40,8 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
 
 class AgentRegistryTest {
+
+  private interface ConnectedScope extends Scope, MessagingChannel {}
 
   @Test
   void executedReturnInPersistentMainTerminatesTheAgentConditionally() throws Exception {
@@ -227,6 +235,54 @@ class AgentRegistryTest {
   }
 
   @Test
+  void remoteStopUsesManagedCleanupAndRemovesTheRuntimeSubscription() throws Exception {
+    var behavior =
+        persistentConditionalReturnBehavior(
+            "test.registry.remote.stop." + UUID.randomUUID().toString().replace("-", ""),
+            false);
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(
+              () ->
+                  AMQPChannel.forAgent(
+                      org.mockito.ArgumentMatchers.any(),
+                      org.mockito.ArgumentMatchers.anyString(),
+                      org.mockito.ArgumentMatchers.any(),
+                      org.mockito.ArgumentMatchers.any()))
+          .thenReturn(amqp);
+      var managed =
+          AgentRegistry.INSTANCE.getOrCreateAgent(
+              request(behavior.getUrn(), "remote stop"), behavior, channel);
+      assertTrue(managed.start(), () -> managed.getNotifications().toString());
+      var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(managed.getUrn());
+      assertNotNull(runtime);
+      assertTrue(AgentEventBus.INSTANCE.isSubscribed(managed.getUrn(), runtime));
+
+      var client = new AgentImpl();
+      client.setUrn(managed.getUrn());
+      client.setViable(true);
+      assertTrue(client.connect(channel));
+      assertTrue(client.stop());
+
+      for (int i = 0; i < 100 && AgentRegistry.INSTANCE.getAgent(managed.getUrn()) != null; i++) {
+        Thread.sleep(10);
+      }
+
+      assertNull(AgentRegistry.INSTANCE.getAgent(managed.getUrn()));
+      assertFalse(AgentEventBus.INSTANCE.isSubscribed(managed.getUrn(), runtime));
+      assertFalse(client.isAlive());
+      assertFalse(AgentEventBus.INSTANCE.isSubscribed(managed.getUrn(), client));
+    }
+  }
+
+  @Test
   void userBehaviorHasAtMostOneRegisteredInstancePerUserScope() {
     var behavior =
         finiteBehavior("test.registry.user." + UUID.randomUUID().toString().replace("-", ""));
@@ -298,6 +354,8 @@ class AgentRegistryTest {
     assertTrue(validations.get() > 0);
     var runtime = AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
     assertNotNull(runtime);
+    assertEquals(handle.getUrn(), runtime.getUrn());
+    assertEquals("requested name", runtime.getName());
     assertSame(observation, runtime.getObservation());
     assertSame(creationScope, runtime.getCreationScope());
     assertEquals(-1, runtime.getStartedAt());

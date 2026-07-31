@@ -55,25 +55,49 @@ import org.junit.jupiter.api.Test;
 class BehaviorAnalyzerTest {
 
   @Test
-  void reservedAgentVerbsCannotBeRedefined() {
-    var analyzer =
-        new BehaviorAnalyzer(behavior(action("new"), action("tell"), action("ask")));
+  void baselineValidatorRecognizesImplicitCoreAgentVerbs() {
+    var name = verb("self", "name");
+    var urn = verb("self", "urn");
+    var source = behavior(action("main", name, urn));
+    var analyzer = new BehaviorAnalyzer(source);
 
-    assertFalse(analyzer.analyze());
-    for (String reserved : List.of("new", "tell", "ask")) {
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(2, analyzer.getCalls().size());
+    assertTrue(
+        analyzer.getCalls().stream()
+            .allMatch(call -> call.executionType() == Verb.Type.FUNCTION));
+    assertFalse(messages(analyzer).contains("Unknown self action"));
+  }
+
+  @Test
+  void coreAgentVerbsCanBeOverriddenWithOrdinaryWarnings() {
+    var acknowledged = action("ask");
+    acknowledged.setAnnotations(List.of(Annotation.of("override")));
+    var source = behavior(action("new"), action("tell"), acknowledged);
+    var environment =
+        AgentCompiler.runtimeEnvironment(new AgentCompiler.Resolver() {}, null);
+    var analyzer = new BehaviorAnalyzer(source, environment.validator());
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    for (String overridden : List.of("new", "tell")) {
       assertTrue(
           analyzer.getNotifications().stream()
               .anyMatch(
                   notification ->
                       notification
                           .getMessage()
-                          .contains("action name '" + reserved + "' is reserved")),
+                          .contains("Action " + overridden + " overrides core.agent")),
           messages(analyzer));
     }
+    assertFalse(
+        analyzer.getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification.getMessage().contains("Action ask overrides core.agent")));
   }
 
   @Test
-  void compilerEmitsReservedTellAndAskWithTimeoutMetadata() {
+  void compilerEmitsCoreAgentTellAndAskWithTimeoutMetadata() {
     var tell = verb("sender", "tell");
     tell.getArguments().putUnnamed(constant("NOTICE"));
     tell.getArguments().putUnnamed(identifier("message"));
@@ -94,7 +118,9 @@ class BehaviorAnalyzerTest {
             new KActorsActionImpl.ArgumentImpl("message"),
             new KActorsActionImpl.ArgumentImpl("sender")));
     var sourceBehavior = behavior(input);
-    var analyzer = new BehaviorAnalyzer(sourceBehavior);
+    var environment =
+        AgentCompiler.runtimeEnvironment(new AgentCompiler.Resolver() {}, null);
+    var analyzer = new BehaviorAnalyzer(sourceBehavior, environment.validator());
     var compiler = new AgentCompiler(sourceBehavior);
 
     assertTrue(analyzer.analyze(), messages(analyzer));
@@ -115,8 +141,8 @@ class BehaviorAnalyzerTest {
             .orElseThrow()
             .executionType());
     String source = compiler.getSourceCode();
-    assertTrue(source.contains("tellAgent("), source);
-    assertTrue(source.contains("askAgent("), source);
+    assertTrue(source.contains("invokeFunction(coreAgent("), source);
+    assertTrue(source.contains("invokeSupplier(coreAgent("), source);
     assertTrue(source.contains("ValueType.QUANTITY"), source);
     assertTrue(source.contains("false"), source);
     assertGeneratedJavaCompiles(source);

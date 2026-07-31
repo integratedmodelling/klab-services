@@ -211,6 +211,82 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void connectedPublisherDoesNotReceiveItsOwnLocalLoopback() {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var sender = new AgentImpl();
+    sender.setUrn("agent:loopback");
+    sender.setName("loopback sender");
+    sender.setViable(true);
+    var observer = new AgentImpl();
+    observer.setUrn("agent:loopback");
+    observer.setViable(true);
+    var senderIncoming = new AtomicInteger();
+    var senderOutgoing = new AtomicInteger();
+    var observerIncoming = new AtomicInteger();
+    var observedMessage = new AtomicReference<Message>();
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(sender.connect(channel));
+      assertTrue(observer.connect(channel));
+      sender.addMessageListener(ignored -> senderIncoming.incrementAndGet());
+      sender.addSentMessageListener(ignored -> senderOutgoing.incrementAndGet());
+      observer.addMessageListener(
+          message -> {
+            observerIncoming.incrementAndGet();
+            observedMessage.set(message);
+          });
+
+      sender.tell(new RuntimeAgent.CustomMessage(Constant.create("PING"), "payload"));
+
+      assertEquals(0, senderIncoming.get());
+      assertEquals(1, senderOutgoing.get());
+      assertEquals(1, observerIncoming.get());
+      assertEquals(
+          "loopback sender",
+          observedMessage
+              .get()
+              .getPayload(RuntimeAgent.CustomMessage.class)
+              .senderName());
+    } finally {
+      sender.disconnect();
+      observer.disconnect();
+    }
+  }
+
+  @Test
+  void naturalTerminationClosesTheRuntimeMessagingSubscription() {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var agent = new ReactiveRuntimeAgent();
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(agent.initializeMessaging("agent:natural-stop", channel, ignored -> {}));
+      assertTrue(AgentEventBus.INSTANCE.isSubscribed("agent:natural-stop", agent));
+
+      agent.rootScope().done();
+
+      assertFalse(AgentEventBus.INSTANCE.isSubscribed("agent:natural-stop", agent));
+    } finally {
+      agent.closeMessaging();
+    }
+  }
+
+  @Test
   void startupConsoleOutputIsReplayedWhenTheConsoleAttaches() {
     var agent = new ConsoleBufferRuntimeAgent();
     agent.initializeMessaging("test:agent:console-buffer", null, ignored -> {});
@@ -259,13 +335,16 @@ class RuntimeAgentBaseTest {
   @Test
   void customMessagesInvokeMatchingHandlerWithRestoredPayloadAndSender() throws Exception {
     AgentEventBus.INSTANCE.registerPayloadType(TestPayload.class);
+    var customMessage =
+        new RuntimeAgent.CustomMessage(
+            Constant.create("TEMPERATURE_CHANGED"), new TestPayload("station-a", 12.5));
+    customMessage.setSenderName("weather station");
     var outbound =
         Message.create(
             "sender:agent:7",
             Message.MessageClass.AgentCommunication,
             Message.MessageType.CustomAgentMessage,
-            new RuntimeAgent.CustomMessage(
-                Constant.create("TEMPERATURE_CHANGED"), new TestPayload("station-a", 12.5)));
+            customMessage);
     var mapper = JacksonConfiguration.newObjectMapper();
     var received = mapper.readValue(mapper.writeValueAsString(outbound), Message.class);
     var agent = new MessageHandlingRuntimeAgent();
@@ -276,6 +355,8 @@ class RuntimeAgentBaseTest {
     assertTrue(agent.handled.await(1, TimeUnit.SECONDS));
     assertEquals(new TestPayload("station-a", 12.5), agent.payload.get());
     assertEquals("sender:agent:7", agent.sender.get().getUrn());
+    assertEquals("weather station", agent.sender.get().getName());
+    assertEquals("\uD83D\uDC64 weather station", agent.sender.get().toString());
   }
 
   @Test
@@ -299,8 +380,10 @@ class RuntimeAgentBaseTest {
       assertEquals(
           "reply:payload",
           requester
-              .ask(
-                  recipient,
+              .supplier(
+                  requester.core(recipient),
+                  "ask",
+                  (AgentScope) requester.rootScope(),
                   Constant.create("QUESTION"),
                   "payload",
                   Duration.ofSeconds(1))
@@ -588,6 +671,28 @@ class RuntimeAgentBaseTest {
     assertEquals("test value", agent.dynamicValue(bean, "display_name", root));
     assertEquals(
         "left:right", agent.dynamicValue(bean, "combine_values", root, "left", "right"));
+  }
+
+  @Test
+  void coreAgentBehaviorExposesTheRegisteredRuntimeIdentity() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    agent.initializeIdentity("runtime:agent:test:41", "named runtime");
+    var core = agent.core(agent);
+
+    assertEquals("runtime:agent:test:41", agent.function(core, "urn", root));
+    assertEquals("named runtime", agent.function(core, "name", root));
+    assertEquals("runtime:agent:test:41", agent.getUrn());
+    assertEquals("named runtime", agent.getName());
+  }
+
+  @Test
+  void selfCallsFallThroughRetainedBehaviorDelegates() {
+    var agent = new InheritingRuntimeAgent();
+
+    assertEquals(
+        "inherited:value",
+        agent.callInherited((AgentScope) agent.rootScope(), "value"));
   }
 
   @Test
@@ -913,6 +1018,10 @@ class RuntimeAgentBaseTest {
       return invokeFunction(actor, verb, scope, arguments);
     }
 
+    private Object core(Object recipient) {
+      return coreAgent(recipient);
+    }
+
     private CompletableFuture<Object> supplier(
         Object actor, String verb, AgentScope scope, Object... arguments) {
       return invokeSupplier(actor, verb, scope, arguments);
@@ -930,11 +1039,6 @@ class RuntimeAgentBaseTest {
     private Object dynamicValue(
         Object actor, String verb, AgentScope scope, Object... arguments) {
       return invokeDynamicValue(actor, verb, scope, arguments);
-    }
-
-    private CompletableFuture<Object> ask(
-        Object recipient, Object type, Object payload, Object timeout) {
-      return askAgent(recipient, type, payload, timeout);
     }
 
     private ExitValue dynamicMainDone(Object result) {
@@ -982,6 +1086,25 @@ class RuntimeAgentBaseTest {
     @Override
     public Verb.Type getAgentExecutionMode() {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private static class InheritedActionRuntimeAgent extends ReactiveRuntimeAgent {
+
+    @SuppressWarnings("unused")
+    private Object action_inherited(AgentScope scope, Object... arguments) {
+      return "inherited:" + arguments[0];
+    }
+  }
+
+  private static class InheritingRuntimeAgent extends ReactiveRuntimeAgent {
+
+    private InheritingRuntimeAgent() {
+      registerInheritedBehavior(new InheritedActionRuntimeAgent());
+    }
+
+    private Object callInherited(AgentScope scope, Object... arguments) {
+      return invokeSelfFunction("inherited", scope, arguments);
     }
   }
 

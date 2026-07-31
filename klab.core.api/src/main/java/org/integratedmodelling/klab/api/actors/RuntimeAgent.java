@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
 /**
  * The runtime peer of a k.Actors agent. The agent can be connected to a {@link
@@ -26,6 +27,37 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  * <p>Both client and service-side agents implement this interface.
  */
 public interface RuntimeAgent {
+
+  /** The Java behavior implicitly inherited by every runtime agent. */
+  String CORE_BEHAVIOR_URN = "core.agent";
+
+  /**
+   * Return the execution contract for a verb in the implicit core agent behavior.
+   *
+   * @param verb the k.Actors verb name
+   * @return the verb type, or {@code null} when the verb is not part of the core contract
+   */
+  static Verb.Type getCoreVerbType(String verb) {
+    return switch (verb) {
+      case "new", "tell", "name", "urn" -> Verb.Type.FUNCTION;
+      case "ask" -> Verb.Type.SUPPLIER;
+      default -> null;
+    };
+  }
+
+  /**
+   * The runtime-wide URN assigned to this agent instance.
+   *
+   * @return the URN after registration, otherwise an empty string
+   */
+  String getUrn();
+
+  /**
+   * The non-unique display name selected when the agent was created.
+   *
+   * @return a non-null name
+   */
+  String getName();
 
   enum State {
     READY,
@@ -176,6 +208,7 @@ public interface RuntimeAgent {
     private Constant type;
     private Object payload;
     private String payloadClass;
+    private String senderName;
     private String requestId;
     private String inResponseTo;
     private String failure;
@@ -195,6 +228,7 @@ public interface RuntimeAgent {
       this.type = other.type;
       this.payload = other.payload;
       this.payloadClass = other.payloadClass;
+      this.senderName = other.senderName;
       this.requestId = other.requestId;
       this.inResponseTo = other.inResponseTo;
       this.failure = other.failure;
@@ -210,6 +244,14 @@ public interface RuntimeAgent {
 
     public String payloadClass() {
       return payloadClass;
+    }
+
+    /**
+     * Display name advertised by the sender. Routing and authorization must continue to use the
+     * message dispatch URN; this value is informational.
+     */
+    public String senderName() {
+      return senderName;
     }
 
     /** Unique request identifier used by {@code ask}; null for ordinary messages. */
@@ -237,6 +279,10 @@ public interface RuntimeAgent {
 
     public void setPayloadClass(String payloadClass) {
       this.payloadClass = payloadClass;
+    }
+
+    public void setSenderName(String senderName) {
+      this.senderName = senderName;
     }
 
     public void setRequestId(String requestId) {

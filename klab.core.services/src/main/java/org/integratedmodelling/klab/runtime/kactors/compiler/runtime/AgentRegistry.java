@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -121,6 +122,7 @@ public enum AgentRegistry {
   private final ConcurrentMap<BehaviorKey, CompiledBehavior> classes = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ManagedAgent> instances = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ManagedAgent> userAgents = new ConcurrentHashMap<>();
+  private final String runtimeInstanceId = UUID.randomUUID().toString().replace("-", "");
   private final AtomicLong nextAgentId = new AtomicLong();
   private final Object userAgentLock = new Object();
 
@@ -334,11 +336,13 @@ public enum AgentRegistry {
       runtime.setParameterNegotiator(parameterNegotiator);
       runtime.setBehaviorTypeChecker(behaviorTypeChecker);
       String urn = createAgentUrn(scope);
+      String name = chooseName(agent, behavior, observation);
+      runtime.initializeIdentity(urn, name);
       var managed =
           new ManagedAgent(
               urn,
               behavior.getUrn(),
-              chooseName(agent, behavior, observation),
+              name,
               runtime,
               observation,
               compiled.notifications(),
@@ -346,10 +350,13 @@ public enum AgentRegistry {
                   ? compiled.source()
                   : null,
               userScopeKey);
-      instances.put(urn, managed);
+      if (instances.putIfAbsent(urn, managed) != null) {
+        throw new IllegalStateException("Duplicate runtime agent URN " + urn);
+      }
       if (userScopeKey != null) {
         userAgents.put(userScopeKey, managed);
       }
+      runtime.setManagedStopHandler(managed::stop);
       runtime.initializeMessaging(urn, scope, managed.notifications::add);
       return managed;
     } catch (Throwable failure) {
@@ -403,6 +410,41 @@ public enum AgentRegistry {
 
   public int getRegisteredAgentCount() {
     return instances.size();
+  }
+
+  /** Read-only service-side instance diagnostics. */
+  public record RegisteredAgentStatus(
+      String urn,
+      String behaviorUrn,
+      String name,
+      String state,
+      long observationId,
+      long startedAt,
+      long lastActivityAt,
+      boolean messagingSubscribed) {}
+
+  /** Snapshot all retained and active managed instances in stable URN order. */
+  public List<RegisteredAgentStatus> getRegisteredAgentStatus() {
+    return instances.values().stream()
+        .map(
+            agent ->
+                new RegisteredAgentStatus(
+                    agent.urn,
+                    agent.behaviorUrn,
+                    agent.name,
+                    agent.runtime.status(),
+                    agent.getObservationId(),
+                    agent.getStartedAt(),
+                    agent.getLastActivityAt(),
+                    org.integratedmodelling.common.runtime.actors.AgentEventBus.INSTANCE
+                        .isSubscribed(agent.urn, agent.runtime)))
+        .sorted(java.util.Comparator.comparing(RegisteredAgentStatus::urn))
+        .toList();
+  }
+
+  /** Unique identifier for this service-process incarnation, embedded in every instance URN. */
+  public String getRuntimeInstanceId() {
+    return runtimeInstanceId;
   }
 
   /**
@@ -716,7 +758,11 @@ public enum AgentRegistry {
     } else {
       scopeId = "runtime";
     }
-    return scopeId + ":agent:" + nextAgentId.incrementAndGet();
+    return scopeId
+        + ":agent:"
+        + runtimeInstanceId
+        + ":"
+        + nextAgentId.incrementAndGet();
   }
 
   private String userScopeKey(Scope scope) {
@@ -904,8 +950,8 @@ public enum AgentRegistry {
                   : new RuntimeAgent.CustomMessage(
                       org.integratedmodelling.klab.api.collections.Constant.create("message"),
                       message);
-      if (!org.integratedmodelling.common.runtime.actors.AgentEventBus.INSTANCE.publish(
-          urn, urn, Message.MessageType.CustomAgentMessage, custom)) {
+      if (!runtime.publishAgentMessage(
+          urn, Message.MessageType.CustomAgentMessage, custom)) {
         notifications.add(Notification.warning("Agent messaging is not connected for " + urn));
       }
     }
@@ -927,8 +973,7 @@ public enum AgentRegistry {
                   : new RuntimeAgent.CustomMessage(
                       org.integratedmodelling.klab.api.collections.Constant.create("message"),
                       message);
-      return org.integratedmodelling.common.runtime.actors.AgentEventBus.INSTANCE.ask(
-          urn, urn, custom, responseClass, timeout);
+      return runtime.askAgentMessage(urn, custom, responseClass, timeout, true);
     }
 
   }

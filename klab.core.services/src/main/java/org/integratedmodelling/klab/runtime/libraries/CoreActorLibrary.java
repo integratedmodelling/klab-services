@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -16,9 +17,101 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
+import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 
 @Library(name = "core")
 public class CoreActorLibrary {
+
+  /**
+   * Universal Java behavior inherited implicitly by every k.Actors behavior.
+   *
+   * <p>The compiler binds an instance of this class to the recipient of a self/agent call. This
+   * keeps the base contract in the ordinary Java actor catalog while ensuring that messages are
+   * sent by the calling runtime agent rather than by a detached serialized handle.
+   *
+   * <p>Because the validator runs before compilation, any new verb should be declared in
+   * RuntimeAgent.java explicitly for them to be recognized. TODO we should use the agent descriptor
+   * or reflection once to retrieve them.
+   */
+  @Actor(
+      name = "agent",
+      description =
+          "The universal agent contract. Every k.Actors behavior implicitly inherits these verbs.")
+  public static final class Agent {
+
+    private final Object target;
+
+    public Agent(Object target) {
+      this.target = target;
+    }
+
+    @Verb(
+        name = "new",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Construction contract implemented by behavior and Java actor specifications.")
+    public Object newAgent(RuntimeAgent.Scope scope, Object... arguments) {
+      throw new IllegalStateException(
+          "The core.agent new verb requires a behavior or Java actor specification");
+    }
+
+    @Verb(
+        name = "tell",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description = "Send one custom message to this agent.")
+    public void tell(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "class", description = "Custom message class", constant = true)
+            Constant messageClass,
+        @Verb.Argument(name = "payload", description = "Serializable message payload")
+            Object payload) {
+      runtime(scope).tellAgentValue(target, messageClass, payload);
+    }
+
+    @Verb(
+        name = "ask",
+        executionType = Verb.Type.SUPPLIER,
+        description = "Send a correlated custom message and supply its response.")
+    public CompletableFuture<Object> ask(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "class", description = "Custom message class", constant = true)
+            Constant messageClass,
+        @Verb.Argument(name = "payload", description = "Serializable request payload")
+            Object payload,
+        @Verb.Argument(
+                name = "timeout",
+                description = "Temporal timeout, null for the runtime default, or false to disable",
+                optional = true)
+            Object timeout) {
+      return runtime(scope).askAgentValue(target, messageClass, payload, timeout);
+    }
+
+    @Verb(
+        name = "name",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description = "Return this agent's non-unique display name.")
+    public String name(RuntimeAgent.Scope scope) {
+      return runtime(scope).agentName(target);
+    }
+
+    @Verb(
+        name = "urn",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description = "Return this agent's runtime-wide unique URN.")
+    public String urn(RuntimeAgent.Scope scope) {
+      return runtime(scope).agentUrn(target);
+    }
+
+    private RuntimeAgentBase runtime(RuntimeAgent.Scope scope) {
+      if (scope == null || !(scope.getAgent() instanceof RuntimeAgentBase runtime)) {
+        throw new IllegalStateException("core.agent requires a generated runtime agent scope");
+      }
+      return runtime;
+    }
+  }
 
   /**
    * Static actor class methods map to static actors. They must be declared (although these core
@@ -273,8 +366,7 @@ public class CoreActorLibrary {
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to modify") String text,
         @Verb.Argument(name = "target", description = "Literal text to replace") String target,
-        @Verb.Argument(name = "replacement", description = "Replacement text")
-            String replacement) {
+        @Verb.Argument(name = "replacement", description = "Replacement text") String replacement) {
       return text == null || target == null
           ? text
           : text.replace(target, replacement == null ? "" : replacement);

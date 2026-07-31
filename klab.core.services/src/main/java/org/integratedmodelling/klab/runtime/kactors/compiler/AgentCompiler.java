@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
@@ -53,11 +54,14 @@ import org.integratedmodelling.klab.api.utils.Utils.CLI;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 
 /**
  * Compiles an analyzed {@link KActorsBehavior} into Java source backed by {@link RuntimeAgentBase}.
  */
 public class AgentCompiler {
+
+  public static final String CORE_AGENT_URN = RuntimeAgent.CORE_BEHAVIOR_URN;
 
   /**
    * Resolution boundary for resources and Java actor extensions. The resources-backed behavior
@@ -225,6 +229,7 @@ public class AgentCompiler {
       String requiredAgentUrn) {}
 
   private static final Resolver DEFAULT_RESOLVER = new Resolver() {};
+  private static final ResolvedActor CORE_AGENT = createCoreAgentDescriptor();
   private static final Map<String, Class<? extends RuntimeAgentBase>> compiledActorClasses =
       new ConcurrentHashMap<>();
   private static final Map<String, String> generatedActorSources = new ConcurrentHashMap<>();
@@ -250,6 +255,73 @@ public class AgentCompiler {
   private String sourceCode;
   private String qualifiedClassName;
   private int generatedName;
+
+  private static ResolvedActor createCoreAgentDescriptor() {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = CORE_AGENT_URN;
+    descriptor.description = "Universal agent behavior";
+    descriptor.javaClassName = CoreActorLibrary.Agent.class.getName();
+    var implementations = new LinkedHashMap<String, ComponentRegistry.ServiceImplementation>();
+    for (Method method : CoreActorLibrary.Agent.class.getDeclaredMethods()) {
+      var verb = method.getAnnotation(Verb.class);
+      if (verb == null) {
+        continue;
+      }
+      String name = verb.name().isBlank() ? method.getName() : verb.name();
+      var service = new ServiceInfoImpl();
+      service.setName(CORE_AGENT_URN + "." + name);
+      var function = new Extensions.FunctionDescriptor();
+      function.serviceInfo = service;
+      function.staticMethod = java.lang.reflect.Modifier.isStatic(method.getModifiers());
+      function.behaviorUrn =
+          verb.producesAgent().isBlank() ? null : verb.producesAgent().trim();
+      descriptor.verbs.add(function);
+      var implementation = new ComponentRegistry.ServiceImplementation();
+      implementation.implementation = CoreActorLibrary.Agent.class;
+      implementation.method = method;
+      implementations.put(name, implementation);
+      implementations.put(service.getName(), implementation);
+    }
+    return new ResolvedActor(descriptor, implementations);
+  }
+
+  private static ResolvedActor resolveActor(
+      Resolver resolver, String urn, UserScope scope) {
+    var resolved = resolver.resolveActor(urn, scope);
+    return resolved == null && CORE_AGENT_URN.equals(urn) ? CORE_AGENT : resolved;
+  }
+
+  private static KActorsVisitor.Validator defaultValidator(UserScope scope) {
+    return new KActorsVisitor.LenientValidator() {
+      @Override
+      public Verb.Type classifyActionCall(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        var resolved = resolveCall(verb, context, DEFAULT_RESOLVER, scope);
+        return resolved == null ? null : resolved.executionType();
+      }
+
+      @Override
+      public Boolean classifyActionStaticity(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        var resolved = resolveCall(verb, context, DEFAULT_RESOLVER, scope);
+        return resolved == null ? null : resolved.staticAction();
+      }
+
+      @Override
+      public String classifyActionResultBehavior(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        var resolved = resolveCall(verb, context, DEFAULT_RESOLVER, scope);
+        return resolved == null ? null : resolved.producedAgentUrn();
+      }
+
+      @Override
+      public Class<?> classifyActionResultJavaClass(
+          KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        var resolved = resolveCall(verb, context, DEFAULT_RESOLVER, scope);
+        return resolved == null ? null : declaredJavaReturnType(resolved.javaMethod());
+      }
+    };
+  }
 
   /** Build the Java-extension half of a resolver from a live component registry. */
   public static Resolver componentResolver(ComponentRegistry registry) {
@@ -365,26 +437,46 @@ public class AgentCompiler {
           @Override
           public List<Notification> validateAction(
               KActorsAction action, KActorsVisitor.KActorsContext context) {
+            var ret = new ArrayList<Notification>();
+            boolean acknowledgesOverride =
+                action.getAnnotations() != null
+                    && action.getAnnotations().stream()
+                        .anyMatch(annotation -> "override".equals(annotation.getName()));
+            String inheritedFrom =
+                inheritedActionOwner(
+                    context.getBehavior(), action.getUrn(), resolver, scope);
+            if (!acknowledgesOverride && inheritedFrom != null) {
+              ret.add(
+                  Notification.warning(
+                      "Action "
+                          + action.getUrn()
+                          + " overrides "
+                          + inheritedFrom
+                          + "; add @override to acknowledge it",
+                      Notification.LexicalContext.of(action, context.getBehavior())));
+            }
             var returnedBehaviorUrn = KActorsVisitor.returnedBehaviorUrn(action);
             if (returnedBehaviorUrn == null
                 || Objects.equals(returnedBehaviorUrn, context.getBehavior().getUrn())) {
-              return List.of();
+              return List.copyOf(ret);
             }
             try {
               if (resolver.resolveBehavior(returnedBehaviorUrn, scope) != null
-                  || resolver.resolveActor(returnedBehaviorUrn, scope) != null) {
-                return List.of();
+                  || resolveActor(resolver, returnedBehaviorUrn, scope) != null) {
+                return List.copyOf(ret);
               }
-              return List.of(
+              ret.add(
                   Notification.error(
                       "Cannot resolve behavior declared by @return: " + returnedBehaviorUrn,
                       Notification.LexicalContext.of(action, context.getBehavior())));
+              return List.copyOf(ret);
             } catch (Throwable failure) {
-              return List.of(
+              ret.add(
                   Notification.error(
                       "Cannot resolve behavior declared by @return: " + returnedBehaviorUrn,
                       failure,
                       Notification.LexicalContext.of(action, context.getBehavior())));
+              return List.copyOf(ret);
             }
           }
 
@@ -393,7 +485,7 @@ public class AgentCompiler {
               KActorsBehavior.Import imported, KActorsVisitor.KActorsContext context) {
             try {
               if (resolver.resolveBehavior(imported.getImportedBehavior(), scope) != null
-                  || resolver.resolveActor(imported.getImportedBehavior(), scope) != null) {
+                  || resolveActor(resolver, imported.getImportedBehavior(), scope) != null) {
                 return List.of();
               }
             } catch (Throwable failure) {
@@ -417,6 +509,19 @@ public class AgentCompiler {
             try {
               var inheritedBehavior = resolver.resolveBehavior(inheritedBehaviorUrn, scope);
               if (inheritedBehavior == null) {
+                if (CORE_AGENT_URN.equals(inheritedBehaviorUrn)
+                    && resolveActor(resolver, inheritedBehaviorUrn, scope) != null) {
+                  return List.of();
+                }
+                if (resolveActor(resolver, inheritedBehaviorUrn, scope) != null) {
+                  return List.of(
+                      Notification.error(
+                          "Only the universal Java behavior "
+                              + CORE_AGENT_URN
+                              + " can be inherited directly",
+                          Notification.LexicalContext.of(
+                              inheritedBehaviorStatement, context.getBehavior())));
+                }
                 return List.of(
                     Notification.error(
                         "Cannot resolve inherited behavior " + inheritedBehaviorUrn,
@@ -538,6 +643,10 @@ public class AgentCompiler {
           @Override
           public List<Notification> validateVerbCall(
               KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            var resolvedCore = resolveCall(verb, context, resolver, scope);
+            if (isCoreAgentCall(resolvedCore)) {
+              return validateCoreAgentCall(verb, context);
+            }
             var imported = findImport(context.getBehavior(), verb.getRecipient());
             if (imported != null) {
               try {
@@ -696,6 +805,92 @@ public class AgentCompiler {
     return new Environment(validator, resolver);
   }
 
+  private static String inheritedActionOwner(
+      KActorsBehavior behavior,
+      String actionName,
+      Resolver resolver,
+      UserScope scope) {
+    String explicit =
+        inheritedActionOwner(
+            behavior, actionName, resolver, scope, new LinkedHashSet<>());
+    if (explicit != null) {
+      return explicit;
+    }
+    return CORE_AGENT.verbs().containsKey(actionName) ? CORE_AGENT_URN : null;
+  }
+
+  private static String inheritedActionOwner(
+      KActorsBehavior behavior,
+      String actionName,
+      Resolver resolver,
+      UserScope scope,
+      Set<String> visited) {
+    if (behavior == null || behavior.getUrn() == null || !visited.add(behavior.getUrn())) {
+      return null;
+    }
+    for (var inherited : behavior.getInheritedBehaviors()) {
+      String urn = inherited.getImportedBehavior();
+      var inheritedBehavior = resolver.resolveBehavior(urn, scope);
+      if (inheritedBehavior != null) {
+        if (inheritedBehavior.getStatements().stream()
+            .anyMatch(action -> Objects.equals(action.getUrn(), actionName))) {
+          return urn;
+        }
+        String nested =
+            inheritedActionOwner(
+                inheritedBehavior, actionName, resolver, scope, visited);
+        if (nested != null) {
+          return nested;
+        }
+      } else {
+        var actor = resolveActor(resolver, urn, scope);
+        if (actor != null && actor.verbs().containsKey(actionName)) {
+          return urn;
+        }
+      }
+    }
+    return null;
+  }
+
+  private static boolean isCoreAgentCall(ResolvedCall call) {
+    return call != null
+        && call.javaMethod() != null
+        && call.javaMethod().getDeclaringClass() == CoreActorLibrary.Agent.class;
+  }
+
+  private static List<Notification> validateCoreAgentCall(
+      KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+    var ret = new ArrayList<Notification>();
+    var metadata =
+        verb.getArguments() == null || verb.getArguments().getMetadataKeys() == null
+            ? List.<String>of()
+            : verb.getArguments().getMetadataKeys();
+    for (String key : metadata) {
+      if (!"ask".equals(verb.getMessage()) || !"timeout".equals(key)) {
+        ret.add(
+            Notification.error(
+                "Unsupported metadata :" + key + " for core.agent." + verb.getMessage(),
+                Notification.LexicalContext.of(verb, context.getBehavior())));
+      }
+    }
+    if ("ask".equals(verb.getMessage()) && metadata.contains("timeout")) {
+      Object timeout = verb.getArguments().get("timeout");
+      boolean disabled = Boolean.FALSE.equals(timeout);
+      if (timeout instanceof KActorsValue value && value.getType() == ValueType.BOOLEAN) {
+        disabled = Boolean.FALSE.equals(value.getValue(Boolean.class));
+      }
+      if (!disabled
+          && (!(timeout instanceof KActorsValue value)
+              || value.getType() != ValueType.QUANTITY)) {
+        ret.add(
+            Notification.error(
+                "The ask timeout must be a temporal :timeout Quantity or disabled with !timeout",
+                Notification.LexicalContext.of(verb, context.getBehavior())));
+      }
+    }
+    return List.copyOf(ret);
+  }
+
   private static List<Notification> validateAdaptedUse(
       KActorsCodeStatement statement,
       String behaviorUrn,
@@ -749,6 +944,14 @@ public class AgentCompiler {
       }
     }
     if (actorUrn == null) {
+      var variable = recipient == null ? null : context.getVariable(recipient);
+      if (variable != null
+          && variable.agentUrn() == null
+          && (variable.javaClass() == null
+              || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
+                  variable.javaClass()))) {
+        return resolveJavaActorCall(CORE_AGENT, verb.getMessage());
+      }
       return null;
     }
     var targetBehavior = resolver.resolveBehavior(actorUrn, scope);
@@ -761,20 +964,19 @@ public class AgentCompiler {
                 .orElse(null);
         return new ResolvedCall(Verb.Type.FUNCTION, true, null, actorUrn, init);
       }
-      return targetBehavior.getStatements().stream()
-          .filter(action -> Objects.equals(action.getUrn(), verb.getMessage()))
-          .findFirst()
-          .map(
-              action ->
-                  new ResolvedCall(
-                      action.getActionType(),
-                      action.isStatic(),
-                      null,
-                      KActorsVisitor.returnedBehaviorUrn(action),
-                      action))
-          .orElse(null);
+      var resolved =
+          resolveBehaviorCall(
+              targetBehavior,
+              verb.getMessage(),
+              resolver,
+              scope,
+              new LinkedHashSet<>());
+      if (resolved != null || imported != null) {
+        return resolved;
+      }
+      return resolveJavaActorCall(CORE_AGENT, verb.getMessage());
     }
-    var actor = resolver.resolveActor(actorUrn, scope);
+    var actor = resolveActor(resolver, actorUrn, scope);
     var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
     if (actor != null && "new".equals(verb.getMessage()) && imported != null) {
       if (implementation != null && implementation.method != null) {
@@ -790,6 +992,50 @@ public class AgentCompiler {
           Verb.Type.FUNCTION, true, null, actorUrn, null, actor.implementationClass());
     }
     if (implementation == null || implementation.method == null) {
+      return imported == null ? resolveJavaActorCall(CORE_AGENT, verb.getMessage()) : null;
+    }
+    return resolveJavaActorCall(actor, verb.getMessage());
+  }
+
+  private static ResolvedCall resolveBehaviorCall(
+      KActorsBehavior behavior,
+      String actionName,
+      Resolver resolver,
+      UserScope scope,
+      Set<String> visited) {
+    if (behavior == null || behavior.getUrn() == null || !visited.add(behavior.getUrn())) {
+      return null;
+    }
+    var local =
+        behavior.getStatements().stream()
+            .filter(action -> Objects.equals(action.getUrn(), actionName))
+            .findFirst()
+            .orElse(null);
+    if (local != null) {
+      return new ResolvedCall(
+          local.getActionType(),
+          local.isStatic(),
+          null,
+          KActorsVisitor.returnedBehaviorUrn(local),
+          local);
+    }
+    for (var inherited : behavior.getInheritedBehaviors()) {
+      var inheritedBehavior = resolver.resolveBehavior(inherited.getImportedBehavior(), scope);
+      var resolved =
+          inheritedBehavior == null
+              ? resolveJavaActorCall(
+                  resolveActor(resolver, inherited.getImportedBehavior(), scope), actionName)
+              : resolveBehaviorCall(inheritedBehavior, actionName, resolver, scope, visited);
+      if (resolved != null) {
+        return resolved;
+      }
+    }
+    return null;
+  }
+
+  private static ResolvedCall resolveJavaActorCall(ResolvedActor actor, String actionName) {
+    var implementation = actor == null ? null : actor.verbs().get(actionName);
+    if (implementation == null || implementation.method == null) {
       return null;
     }
     var annotation = implementation.method.getAnnotation(Verb.class);
@@ -800,7 +1046,7 @@ public class AgentCompiler {
                 candidate ->
                     candidate.serviceInfo != null
                         && Objects.equals(
-                            simpleName(candidate.serviceInfo.getName()), verb.getMessage()))
+                            simpleName(candidate.serviceInfo.getName()), actionName))
             .findFirst()
             .orElse(null);
     return new ResolvedCall(
@@ -1428,12 +1674,16 @@ public class AgentCompiler {
             .getService(ResourcesService.class)
             .retrieve(behaviorUrn, KActorsBehavior.class, scope),
         scope,
-        new KActorsVisitor.LenientValidator(),
+        defaultValidator(scope),
         DEFAULT_RESOLVER);
   }
 
   public AgentCompiler(KActorsBehavior behavior, UserScope scope) {
-    this(behavior, scope, new KActorsVisitor.LenientValidator(), DEFAULT_RESOLVER);
+    this(
+        behavior,
+        scope,
+        defaultValidator(scope),
+        DEFAULT_RESOLVER);
   }
 
   public AgentCompiler(
@@ -1450,7 +1700,11 @@ public class AgentCompiler {
 
   /** For source-generation tests that do not have a service scope. */
   public AgentCompiler(KActorsBehavior behavior) {
-    this(behavior, null, new KActorsVisitor.LenientValidator(), DEFAULT_RESOLVER);
+    this(
+        behavior,
+        null,
+        defaultValidator(null),
+        DEFAULT_RESOLVER);
   }
 
   public boolean compile() {
@@ -1533,6 +1787,11 @@ public class AgentCompiler {
     for (var inheritedUrn : behavior.getInheritedBehaviors()) {
       var inheritedBehavior = resolver.resolveBehavior(inheritedUrn.getImportedBehavior(), scope);
       if (inheritedBehavior == null) {
+        if (CORE_AGENT_URN.equals(inheritedUrn.getImportedBehavior())
+            && resolveActor(resolver, CORE_AGENT_URN, scope) != null) {
+          requiredRuntimeClasses.add(CoreActorLibrary.Agent.class);
+          continue;
+        }
         notifications.add(
             Notification.error(
                 "Cannot resolve inherited behavior " + inheritedUrn.getImportedBehavior(),
@@ -2813,8 +3072,8 @@ public class AgentCompiler {
   private CodeBlock invoke(
       KActorsStatement.Verb verb, Verb.Type type, String scopeName, CompilationContext context) {
     var callInfo = calls.get(verb);
-    if (isReservedAgentInvocation(verb, callInfo)) {
-      return invokeReservedAgentVerb(verb, context);
+    if (isCoreAgentInvocation(verb, callInfo)) {
+      return invokeCoreAgentVerb(verb, type, context);
     }
     if (callInfo != null
         && callInfo.javaMethod() != null
@@ -2842,58 +3101,73 @@ public class AgentCompiler {
         arguments);
   }
 
-  private boolean isReservedAgentInvocation(
-      KActorsStatement.Verb verb, KActorsVisitor.CallInfo callInfo) {
-    if (verb == null
-        || !Set.of("tell", "ask").contains(verb.getMessage())
-        || callInfo != null && callInfo.javaMethod() != null) {
+  private boolean isCoreAgentInvocation(
+      KActorsStatement.Verb verb, KActorsVisitor.CallInfo call) {
+    if (verb == null || !CORE_AGENT.verbs().containsKey(verb.getMessage())) {
       return false;
     }
     String recipient =
         verb.getRecipient() == null || verb.getRecipient().isBlank()
             ? "self"
             : verb.getRecipient();
-    if ("self".equals(recipient)) {
-      return true;
+    if (findImport(behavior, recipient) != null) {
+      return false;
     }
-    var variable = callInfo == null ? null : callInfo.knownVariables().get(recipient);
-    return variable != null
-        && (variable.agentUrn() != null
-            || variable.javaClass() == null
-            || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
-                variable.javaClass()));
+    if ("self".equals(recipient)) {
+      return resolveBehaviorCall(
+              behavior, verb.getMessage(), resolver, scope, new LinkedHashSet<>())
+          == null;
+    }
+    var variable = call == null ? null : call.knownVariables().get(recipient);
+    if (variable == null) {
+      return false;
+    }
+    if (variable.agentUrn() != null) {
+      var targetBehavior = resolver.resolveBehavior(variable.agentUrn(), scope);
+      if (targetBehavior != null) {
+        return resolveBehaviorCall(
+                targetBehavior, verb.getMessage(), resolver, scope, new LinkedHashSet<>())
+            == null;
+      }
+      var targetActor = resolveActor(resolver, variable.agentUrn(), scope);
+      return targetActor == null || !targetActor.verbs().containsKey(verb.getMessage());
+    }
+    return variable.javaClass() == null
+        || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
+            variable.javaClass());
   }
 
-  private CodeBlock invokeReservedAgentVerb(
-      KActorsStatement.Verb verb, CompilationContext context) {
-    var supplied = ordinaryArgumentValues(verb.getArguments());
+  private CodeBlock invokeCoreAgentVerb(
+      KActorsStatement.Verb verb, Verb.Type type, CompilationContext context) {
     CodeBlock recipient =
         verb.getRecipient() == null || "self".equals(verb.getRecipient())
             ? CodeBlock.of("this")
             : receiver(verb.getRecipient(), context);
-    CodeBlock type =
-        supplied.isEmpty()
-            ? CodeBlock.of("null")
-            : CodeBlock.of(
-                "resolveDeferred($L)", argumentValue(supplied.get(0), context));
-    CodeBlock payload =
-        supplied.size() < 2
-            ? CodeBlock.of("null")
-            : CodeBlock.of(
-                "resolveDeferred($L)", argumentValue(supplied.get(1), context));
-    if ("tell".equals(verb.getMessage())) {
-      return CodeBlock.of("tellAgent($L, $L, $L)", recipient, type, payload);
+    var supplied = new ArrayList<CodeBlock>();
+    for (Object argument : ordinaryArgumentValues(verb.getArguments())) {
+      supplied.add(CodeBlock.of("resolveDeferred($L)", argumentValue(argument, context)));
     }
-    Object timeout =
-        verb.getArguments() == null ? null : verb.getArguments().get("timeout");
+    if ("ask".equals(verb.getMessage())) {
+      Object timeout =
+          verb.getArguments() == null ? null : verb.getArguments().get("timeout");
+      supplied.add(
+          timeout == null
+              ? CodeBlock.of("null")
+              : CodeBlock.of("resolveDeferred($L)", argumentValue(timeout, context)));
+    }
+    String operation =
+        switch (type) {
+          case FUNCTION -> "invokeFunction";
+          case SUPPLIER -> "invokeSupplier";
+          case EMITTER -> "invokeEmitter";
+        };
     return CodeBlock.of(
-        "askAgent($L, $L, $L, $L)",
+        "$L(coreAgent($L), $S, $L, $L)",
+        operation,
         recipient,
-        type,
-        payload,
-        timeout == null
-            ? CodeBlock.of("null")
-            : CodeBlock.of("resolveDeferred($L)", argumentValue(timeout, context)));
+        verb.getMessage(),
+        context.scope(),
+        CodeBlock.of("new Object[] {$L}", CodeBlock.join(supplied, ", ")));
   }
 
   private CodeBlock invokeJavaObjectMethod(

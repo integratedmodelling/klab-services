@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
 import java.util.*;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -17,8 +18,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
  * information needed by a compiler, infers action execution modes, and reports model-level errors.
  */
 public class KActorsVisitor {
-
-  private static final Set<String> RESERVED_AGENT_VERBS = Set.of("new", "tell", "ask");
 
   /** Extension point for checks that require runtime components or language services. */
   public interface Validator {
@@ -712,9 +711,6 @@ public class KActorsVisitor {
 
   protected void visitAction(KActorsAction action, KActorsContext context) {
     registerTag(action.getTag(), action, "behavior " + visitedBehavior.getUrn());
-    if (RESERVED_AGENT_VERBS.contains(action.getUrn())) {
-      error("The action name '" + action.getUrn() + "' is reserved for all agents", action);
-    }
     addNotifications(context.validator.validateAction(action, context));
     var returnAnnotations =
         safe(action.getAnnotations()).stream()
@@ -1400,17 +1396,15 @@ public class KActorsVisitor {
       Verb.Type executionType = null;
       Boolean staticAction = null;
       java.lang.reflect.Method javaMethod = null;
-      boolean reservedAgentCall = isReservedAgentCall(statement, pending.context());
-      if (reservedAgentCall) {
-        executionType =
-            "ask".equals(statement.getMessage()) ? Verb.Type.SUPPLIER : Verb.Type.FUNCTION;
-        staticAction = "new".equals(statement.getMessage());
-        validateReservedAgentCall(statement, pending.context());
-      } else if ("self".equals(recipient)) {
+      boolean unresolvedSelfAction = false;
+      if ("self".equals(recipient)) {
         var target = actions.get(statement.getMessage());
         if (target == null) {
-          if (safe(visitedBehavior.getInheritedBehaviors()).isEmpty()) {
-            error("Unknown self action: " + statement.getMessage(), statement);
+          unresolvedSelfAction = safe(visitedBehavior.getInheritedBehaviors()).isEmpty();
+          executionType = RuntimeAgent.getCoreVerbType(statement.getMessage());
+          if (executionType != null) {
+            staticAction = false;
+            unresolvedSelfAction = false;
           }
         } else {
           executionType = target.executionType();
@@ -1466,6 +1460,9 @@ public class KActorsVisitor {
         }
       }
       if (executionType == null) {
+        if (unresolvedSelfAction) {
+          error("Unknown self action: " + statement.getMessage(), statement);
+        }
         if (pending.context().action != null) {
           actionAccumulators.get(pending.context().action).callsUnknownActions = true;
         }
@@ -1475,8 +1472,7 @@ public class KActorsVisitor {
               statement);
         }
       }
-      if (!reservedAgentCall
-          && (executionType != null || (variable != null && variable.agentUrn() != null))) {
+      if (executionType != null || (variable != null && variable.agentUrn() != null)) {
         addNotifications(
             pending.context().validator.validateVerbCall(statement, pending.context()));
         addNotifications(
@@ -1519,76 +1515,6 @@ public class KActorsVisitor {
               producedAgentUrn(statement, pending.context()),
               pending.valueRequired(),
               javaMethod));
-    }
-  }
-
-  private boolean isReservedAgentCall(
-      KActorsStatement.Verb statement, KActorsContext context) {
-    if (statement == null || !Set.of("tell", "ask").contains(statement.getMessage())) {
-      return false;
-    }
-    String recipient = normalizeRecipient(statement.getRecipient());
-    if ("self".equals(recipient) || isImported(recipient)) {
-      return true;
-    }
-    var variable = context.knownVariables.get(recipient);
-    if (variable == null) {
-      return false;
-    }
-    if (variable.agentUrn() != null) {
-      return true;
-    }
-    return variable.javaClass() == null
-        || org.integratedmodelling.klab.api.actors.Agent.class.isAssignableFrom(
-            variable.javaClass());
-  }
-
-  private void validateReservedAgentCall(
-      KActorsStatement.Verb statement, KActorsContext context) {
-    String message = statement.getMessage();
-    String recipient = normalizeRecipient(statement.getRecipient());
-    if (isImported(recipient)) {
-      error(
-          "Reserved agent verb "
-              + message
-              + " requires an agent instance, not import alias "
-              + recipient,
-          statement);
-    }
-    var arguments = argumentValues(statement.getArguments());
-    if (arguments.size() != 2) {
-      error(
-          "Reserved agent verb "
-              + message
-              + " requires exactly a message CONSTANT and one payload",
-          statement);
-    } else if (!(arguments.get(0) instanceof KActorsValue value)
-        || value.getType() != ValueType.CONSTANT) {
-      error("The first argument to reserved agent verb " + message + " must be a CONSTANT", statement);
-    }
-    var metadata =
-        statement.getArguments() == null || statement.getArguments().getMetadataKeys() == null
-            ? List.<String>of()
-            : statement.getArguments().getMetadataKeys();
-    for (String key : metadata) {
-      if (!"ask".equals(message) || !"timeout".equals(key)) {
-        error("Unsupported metadata :" + key + " for reserved agent verb " + message, statement);
-      }
-    }
-    if ("ask".equals(message)
-        && metadata.contains("timeout")) {
-      Object timeout = statement.getArguments().get("timeout");
-      boolean disabled = Boolean.FALSE.equals(timeout);
-      if (timeout instanceof KActorsValue value && value.getType() == ValueType.BOOLEAN) {
-        disabled = Boolean.FALSE.equals(value.getValue(Boolean.class));
-      }
-      if (!disabled
-          && (!(timeout instanceof KActorsValue value)
-              || value.getType() != ValueType.QUANTITY)) {
-        error(
-            "The ask timeout must be a temporal :timeout Quantity or disabled with !timeout",
-            statement);
-      }
     }
   }
 

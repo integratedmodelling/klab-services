@@ -1,8 +1,10 @@
 package org.integratedmodelling.common.runtime.actors;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -73,8 +75,15 @@ public enum AgentEventBus {
     }
 
     private void deliverLocal(Message message) {
+      deliverLocal(message, null);
+    }
+
+    private void deliverLocal(Message message, Object excludedOwner) {
       completeResponse(message);
       for (var subscription : subscriptions) {
+        if (subscription.owner() == excludedOwner) {
+          continue;
+        }
         try {
           subscription.consumer().accept(message);
         } catch (Throwable failure) {
@@ -116,6 +125,15 @@ public enum AgentEventBus {
 
   private record PendingRequest(
       Class<? extends Serializable> responseClass, CompletableFuture<Serializable> future) {}
+
+  /** Read-only transport diagnostics for runtime inspection and tests. */
+  public record TransportStatus(
+      String federationId,
+      String brokerIdentity,
+      String agentUrn,
+      boolean online,
+      boolean receiving,
+      int subscribers) {}
 
   /**
    * Allow a concrete serializable class to be reconstructed from a custom agent-message payload.
@@ -205,10 +223,29 @@ public enum AgentEventBus {
    * shared all-agent queue.
    */
   public boolean publish(String senderUrn, String recipientUrn, Object... messageArguments) {
+    return publish(null, null, senderUrn, recipientUrn, messageArguments);
+  }
+
+  /**
+   * Publish using the exact federation of {@code sourceChannel}, excluding the publishing owner
+   * from in-process loopback delivery.
+   *
+   * <p>The explicit channel is required by connected agent peers because an agent URN alone is not
+   * sufficient to choose between transports connected to different federations or brokers.
+   */
+  public boolean publish(
+      MessagingChannel sourceChannel,
+      Object publisher,
+      String senderUrn,
+      String recipientUrn,
+      Object... messageArguments) {
     if (senderUrn == null || recipientUrn == null) {
       return false;
     }
-    var source = findTransport(senderUrn);
+    var source =
+        sourceChannel == null
+            ? findTransport(senderUrn)
+            : transports.get(new TransportKey(sourceChannel.getFederation(), senderUrn));
     if (source == null || !source.isOnline()) {
       return false;
     }
@@ -222,7 +259,7 @@ public enum AgentEventBus {
       return false;
     }
     Message message = agentMessage(senderUrn, messageArguments);
-    target.deliverLocal(message);
+    target.deliverLocal(message, publisher);
     target.amqp.post(message);
     return true;
   }
@@ -238,7 +275,7 @@ public enum AgentEventBus {
       RuntimeAgent.CustomMessage request,
       Class<? extends R> responseClass,
       Duration timeout) {
-    return ask(senderUrn, recipientUrn, request, responseClass, timeout, true);
+    return ask(null, null, senderUrn, recipientUrn, request, responseClass, timeout, true);
   }
 
   /**
@@ -249,6 +286,30 @@ public enum AgentEventBus {
    */
   @SuppressWarnings("unchecked")
   public <R extends Serializable> CompletableFuture<R> ask(
+      String senderUrn,
+      String recipientUrn,
+      RuntimeAgent.CustomMessage request,
+      Class<? extends R> responseClass,
+      Duration timeout,
+      boolean enforceTimeout) {
+    return ask(
+        null,
+        null,
+        senderUrn,
+        recipientUrn,
+        request,
+        responseClass,
+        timeout,
+        enforceTimeout);
+  }
+
+  /**
+   * Send a correlated request through the exact transport owned by {@code sourceChannel}.
+   */
+  @SuppressWarnings("unchecked")
+  public <R extends Serializable> CompletableFuture<R> ask(
+      MessagingChannel sourceChannel,
+      Object publisher,
       String senderUrn,
       String recipientUrn,
       RuntimeAgent.CustomMessage request,
@@ -278,7 +339,12 @@ public enum AgentEventBus {
     }
     future.whenComplete((ignored, failure) -> pendingRequests.remove(requestId));
     if (!publish(
-        senderUrn, recipientUrn, Message.MessageType.CustomAgentMessage, correlated)) {
+        sourceChannel,
+        publisher,
+        senderUrn,
+        recipientUrn,
+        Message.MessageType.CustomAgentMessage,
+        correlated)) {
       pendingRequests.remove(requestId);
       future.completeExceptionally(
           new IllegalStateException("Agent messaging is not connected for " + senderUrn));
@@ -301,11 +367,39 @@ public enum AgentEventBus {
   }
 
   private Transport findTransport(String agentUrn) {
-    return transports.entrySet().stream()
+    var matches =
+        transports.entrySet().stream()
         .filter(entry -> entry.getKey().agentUrn().equals(agentUrn))
         .map(java.util.Map.Entry::getValue)
-        .findFirst()
-        .orElse(null);
+        .toList();
+    if (matches.size() > 1) {
+      Logging.INSTANCE.error(
+          "Agent transport is ambiguous across federations; use a connected handle for "
+              + agentUrn);
+      return null;
+    }
+    return matches.isEmpty() ? null : matches.getFirst();
+  }
+
+  /** Snapshot all live agent transports without exposing their owners or consumers. */
+  public List<TransportStatus> getTransportStatus() {
+    return transports.entrySet().stream()
+        .map(
+            entry ->
+                new TransportStatus(
+                    entry.getKey().federationId(),
+                    UUID.nameUUIDFromBytes(
+                            Objects.toString(entry.getKey().broker(), "")
+                                .getBytes(StandardCharsets.UTF_8))
+                        .toString(),
+                    entry.getKey().agentUrn(),
+                    entry.getValue().isOnline(),
+                    entry.getValue().receivesMessages(),
+                    entry.getValue().subscriptions.size()))
+        .sorted(
+            java.util.Comparator.comparing(TransportStatus::federationId)
+                .thenComparing(TransportStatus::agentUrn))
+        .toList();
   }
 
   private Message agentMessage(String senderUrn, Object... arguments) {

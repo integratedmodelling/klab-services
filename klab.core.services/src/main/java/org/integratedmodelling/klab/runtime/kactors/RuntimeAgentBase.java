@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.computation.GroovyProcessor;
+import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
@@ -127,8 +128,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private ParameterNegotiator parameterNegotiator = CONSTRUCTION_PARAMETER_NEGOTIATOR.get();
   private BehaviorTypeChecker behaviorTypeChecker = CONSTRUCTION_BEHAVIOR_TYPE_CHECKER.get();
   private String agentUrn;
+  private String agentName;
   private org.integratedmodelling.klab.api.scope.Scope creatingScope;
   private Consumer<Notification> notificationConsumer;
+  private volatile Runnable managedStopHandler;
   private final Disposable lifecycleSubscription;
   private final Object dynamicLifecycleLock = new Object();
   private int activeDynamicCalls;
@@ -469,7 +472,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       String agentUrn,
       org.integratedmodelling.klab.api.scope.Scope creatingScope,
       Consumer<Notification> notificationConsumer) {
-    this.agentUrn = agentUrn;
+    initializeIdentity(agentUrn, agentName);
     if (this.creatingScope == null) {
       this.creatingScope = creatingScope;
     }
@@ -490,6 +493,36 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return true;
   }
 
+  /**
+   * Install the registry identity on this runtime and all retained inherited behavior delegates.
+   */
+  public final void initializeIdentity(String agentUrn, String agentName) {
+    this.agentUrn = agentUrn == null ? "" : agentUrn;
+    this.agentName =
+        agentName == null || agentName.isBlank() ? defaultAgentName() : agentName;
+    inheritedBehaviorInstances.forEach(
+        inherited -> inherited.initializeIdentity(this.agentUrn, this.agentName));
+  }
+
+  @Override
+  public final String getUrn() {
+    return agentUrn == null ? "" : agentUrn;
+  }
+
+  @Override
+  public final String getName() {
+    return agentName == null || agentName.isBlank() ? defaultAgentName() : agentName;
+  }
+
+  private String defaultAgentName() {
+    String urn = behavior == null ? null : behavior.getUrn();
+    if (urn == null || urn.isBlank()) {
+      return "agent";
+    }
+    int separator = Math.max(urn.lastIndexOf('.'), urn.lastIndexOf(':'));
+    return separator < 0 ? urn : urn.substring(separator + 1);
+  }
+
   /** Disconnect the runtime peer without modifying the serializable agent handle. */
   public void closeMessaging() {
     synchronized (consoleOutputLock) {
@@ -501,6 +534,55 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
     lifecycleSubscription.dispose();
     inheritedBehaviorInstances.forEach(RuntimeAgentBase::closeMessaging);
+  }
+
+  /**
+   * Install the registry-owned terminal stop operation. Remote stop requests must use this hook so
+   * that terminating the execution scope also removes the managed handle and its transport.
+   */
+  public final void setManagedStopHandler(Runnable managedStopHandler) {
+    this.managedStopHandler = managedStopHandler;
+  }
+
+  /** Publish through this runtime's exact federation transport. */
+  public final boolean publishAgentMessage(String recipientAgentUrn, Object... messageArguments) {
+    if (agentUrn == null
+        || !(creatingScope instanceof MessagingChannel messagingChannel)
+        || !messagingChannel.isConnected()) {
+      return false;
+    }
+    stampSenderName(messageArguments);
+    return AgentEventBus.INSTANCE.publish(
+        messagingChannel,
+        this,
+        agentUrn,
+        recipientAgentUrn,
+        messageArguments);
+  }
+
+  /** Send a correlated request through this runtime's exact federation transport. */
+  public final <R extends java.io.Serializable> CompletableFuture<R> askAgentMessage(
+      String recipientAgentUrn,
+      RuntimeAgent.CustomMessage request,
+      Class<? extends R> responseClass,
+      Duration timeout,
+      boolean enforceTimeout) {
+    if (agentUrn == null
+        || !(creatingScope instanceof MessagingChannel messagingChannel)
+        || !messagingChannel.isConnected()) {
+      return CompletableFuture.failedFuture(
+          new IllegalStateException("Agent messaging is not connected for " + agentUrn));
+    }
+    stampSenderName(request);
+    return AgentEventBus.INSTANCE.ask(
+        messagingChannel,
+        this,
+        agentUrn,
+        recipientAgentUrn,
+        request,
+        responseClass,
+        timeout,
+        enforceTimeout);
   }
 
   /**
@@ -533,8 +615,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   public boolean send(String recipientAgentUrn, Message message) {
     requireAgentMessage(message);
     markActivity();
-    return agentUrn != null
-        && AgentEventBus.INSTANCE.publish(agentUrn, recipientAgentUrn, message);
+    return publishAgentMessage(recipientAgentUrn, message);
   }
 
   @Override
@@ -573,8 +654,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   protected boolean publishConsoleOutput(
       RuntimeAgent.ConsoleMessageType type, String text) {
-    return AgentEventBus.INSTANCE.publish(
-        agentUrn,
+    return publishAgentMessage(
         agentUrn,
         Message.MessageType.CustomAgentMessage,
         new RuntimeAgent.CustomMessage(type.constant(), text));
@@ -635,7 +715,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
           publishStatus(Message.MessageType.AgentStatusChanged, null);
         }
       }
-      case AgentStopRequested -> stop("Stop requested by " + message.getDispatchId());
+      case AgentStopRequested -> {
+        var stopHandler = managedStopHandler;
+        if (stopHandler == null) {
+          stop("Stop requested by " + message.getDispatchId());
+        } else {
+          Thread.ofVirtual().name("kactors-stop-" + agentUrn).start(stopHandler);
+        }
+      }
       case AgentStatusRequested -> publishStatus(Message.MessageType.AgentStatusChanged, null);
       case CustomAgentMessage -> handleCustomAgentMessage(message);
       default -> {
@@ -689,7 +776,9 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return;
     }
     Object payload = mediateAgentMessagePayload(customMessage);
-    Agent sender = senderHandle(message.getDispatchId(), customMessage.requestId());
+    Agent sender =
+        senderHandle(
+            message.getDispatchId(), customMessage.senderName(), customMessage.requestId());
     Object[] arguments =
         handler.argumentNames().stream()
             .map(name -> "sender".equals(name) ? sender : payload)
@@ -878,8 +967,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       response.setFailure(
           "The response payload " + result.getClass().getName() + " is not serializable");
     }
-    AgentEventBus.INSTANCE.publish(
-        agentUrn,
+    publishAgentMessage(
         request.getDispatchId(),
         Message.MessageType.CustomAgentMessage,
         response);
@@ -917,26 +1005,55 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   /** Build a lightweight reply handle whose outgoing messages originate from this agent. */
   protected Agent senderHandle(String senderUrn) {
-    return senderHandle(senderUrn, null);
+    return senderHandle(senderUrn, null, null);
   }
 
   /** Build a reply handle that preserves request correlation when used from an ask handler. */
   protected Agent senderHandle(String senderUrn, String requestId) {
+    return senderHandle(senderUrn, null, requestId);
+  }
+
+  /** Build a named reply handle from the portable identity advertised by a custom message. */
+  protected Agent senderHandle(String senderUrn, String senderName, String requestId) {
     var sender = new AgentImpl();
     sender.setUrn(senderUrn);
+    sender.setName(senderName);
     sender.setViable(senderUrn != null && !senderUrn.isBlank());
     sender.setLocalSenderUrn(agentUrn);
+    sender.setLocalSenderName(agentName);
     sender.setLocalResponseTo(requestId);
+    if (creatingScope instanceof MessagingChannel messagingChannel) {
+      sender.setLocalMessagingChannel(messagingChannel);
+    }
     return sender;
   }
 
-  /** Send one reserved k.Actors {@code tell} message to an agent handle. */
+  private void stampSenderName(Object... messageArguments) {
+    if (messageArguments == null) {
+      return;
+    }
+    for (Object argument : messageArguments) {
+      if (argument instanceof RuntimeAgent.CustomMessage customMessage) {
+        stampSenderName(customMessage);
+      } else if (argument instanceof Message message
+          && message.getMessageType() == Message.MessageType.CustomAgentMessage) {
+        stampSenderName(message.getPayload(RuntimeAgent.CustomMessage.class));
+      }
+    }
+  }
+
+  private void stampSenderName(RuntimeAgent.CustomMessage message) {
+    if (message != null && (message.senderName() == null || message.senderName().isBlank())) {
+      message.setSenderName(agentName);
+    }
+  }
+
+  /** Implement the base {@code core.agent.tell} verb for an agent handle. */
   protected Object tellAgent(Object recipient, Object type, Object payload) {
     String recipientUrn = recipientAgentUrn(recipient);
     var message = customAgentMessage(type, payload);
-    if (agentUrn != null
-        && AgentEventBus.INSTANCE.publish(
-            agentUrn, recipientUrn, Message.MessageType.CustomAgentMessage, message)) {
+    if (publishAgentMessage(
+        recipientUrn, Message.MessageType.CustomAgentMessage, message)) {
       markActivity();
       return null;
     }
@@ -947,7 +1064,12 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     throw new KlabActorException(this, "Agent messaging is not connected for " + recipientUrn);
   }
 
-  /** Send one reserved k.Actors {@code ask} request and return its correlated response future. */
+  /** API used by the implicit {@code core.agent} Java behavior. */
+  public final Object tellAgentValue(Object recipient, Object type, Object payload) {
+    return tellAgent(recipient, type, payload);
+  }
+
+  /** Implement the base {@code core.agent.ask} verb and return its correlated response future. */
   protected CompletableFuture<Object> askAgent(
       Object recipient, Object type, Object payload, Object timeout) {
     String recipientUrn = recipientAgentUrn(recipient);
@@ -958,8 +1080,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     @SuppressWarnings({"unchecked", "rawtypes"})
     CompletableFuture<Object> future =
         (CompletableFuture)
-            AgentEventBus.INSTANCE.ask(
-                agentUrn,
+            askAgentMessage(
                 recipientUrn,
                 customAgentMessage(type, payload),
                 java.io.Serializable.class,
@@ -969,13 +1090,40 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return future;
   }
 
+  /** API used by the implicit {@code core.agent} Java behavior. */
+  public final CompletableFuture<Object> askAgentValue(
+      Object recipient, Object type, Object payload, Object timeout) {
+    return askAgent(recipient, type, payload, timeout);
+  }
+
+  /** Resolve an agent recipient's URN for the implicit base behavior. */
+  public final String agentUrn(Object recipient) {
+    return recipientAgentUrn(recipient);
+  }
+
+  /** Resolve an agent recipient's display name for the implicit base behavior. */
+  public final String agentName(Object recipient) {
+    if (recipient instanceof Agent agent) {
+      return agent.getName() == null || agent.getName().isBlank() ? "agent" : agent.getName();
+    }
+    if (recipient instanceof RuntimeAgent runtime) {
+      return runtime.getName();
+    }
+    throw new KlabActorException(this, "core.agent verbs require a viable agent handle");
+  }
+
+  /** Bind the universal Java behavior to a concrete agent recipient. */
+  protected final Object coreAgent(Object recipient) {
+    return new CoreActorLibrary.Agent(recipient);
+  }
+
   private String recipientAgentUrn(Object recipient) {
     String urn =
         recipient instanceof Agent agent
             ? agent.getUrn()
-            : recipient instanceof RuntimeAgentBase runtime ? runtime.agentUrn : null;
+            : recipient instanceof RuntimeAgent runtime ? runtime.getUrn() : null;
     if (urn == null || urn.isBlank()) {
-      throw new KlabActorException(this, "Reserved agent verbs require a viable agent handle");
+      throw new KlabActorException(this, "core.agent verbs require a viable agent handle");
     }
     return urn;
   }
@@ -1012,6 +1160,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     } else if (event.type() == EventType.TERMINATION) {
       publishStatus(Message.MessageType.AgentStopped, event.payload());
       publishStatus(Message.MessageType.AgentStatusChanged, event.payload());
+      closeMessaging();
     }
   }
 
@@ -1020,7 +1169,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return;
     }
     long timestamp = markActivity();
-    AgentEventBus.INSTANCE.publish(
+    publishAgentMessage(
         agentUrn,
         type,
         new RuntimeAgent.Status(
@@ -1723,13 +1872,32 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   private Object invokeGeneratedAction(String action, AgentScope scope, Object... arguments) {
+    RuntimeAgentBase target = generatedActionTarget(action);
+    if (target == null) {
+      throw actorFailure(new NoSuchMethodException("action_" + action));
+    }
     try {
-      Method method = findMethod(getClass(), "action_" + action, false);
-      return method.invoke(this, scope, arguments);
+      Method method = findMethod(target.getClass(), "action_" + action, false);
+      return method.invoke(target, scope, arguments);
     } catch (InvocationTargetException e) {
       throw actorFailure(e.getTargetException());
     } catch (ReflectiveOperationException e) {
       throw actorFailure(e);
+    }
+  }
+
+  private RuntimeAgentBase generatedActionTarget(String action) {
+    try {
+      findMethod(getClass(), "action_" + action, false);
+      return this;
+    } catch (NoSuchMethodException ignored) {
+      for (var inherited : inheritedBehaviorInstances) {
+        var target = inherited.generatedActionTarget(action);
+        if (target != null) {
+          return target;
+        }
+      }
+      return null;
     }
   }
 

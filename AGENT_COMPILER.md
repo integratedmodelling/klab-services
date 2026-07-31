@@ -121,7 +121,10 @@ the legacy `getCompiledClass(urn)` lookup is populated as well.
 - invokes the generated
   `(KActorsBehavior, SessionScope, Observation, Scope, Map<String, Object>, Object...)`
   constructor, where the separate `Scope` is the exact creation scope;
-- assigns a unique `<scope-id>:agent:<id>` URN and indexes the stopped instance by that URN;
+- assigns a globally unique
+  `<scope-id>:agent:<runtime-incarnation-uuid>:<sequence>` URN and indexes the stopped instance by
+  that URN; the incarnation UUID prevents endpoint reuse after a service restart or across runtime
+  JVMs;
 - returns Java diagnostics as error notifications if class compilation or loading fails.
 
 `INCLUDE_JAVA_CODE` includes generated source in the returned service handle.
@@ -251,6 +254,17 @@ recursively, so the rule also applies throughout the inherited behavior graph. I
 `getHandledMessageClasses(...)` callback returns the custom message classes exposed by that graph.
 When a local `@handle` action replaces one of them, the visitor warns unless the action also carries
 `@override`.
+
+All behavior graphs also have one implicit Java root, `core.agent`, supplied by
+`CoreActorLibrary.Agent`. The compiler maintains a built-in descriptor for it so the contract is
+available even before component-catalog discovery, while the normal component scan also advertises
+it as a Java actor. This creates a hybrid graph: any number of retained k.Actors parent delegates
+may coexist below the Java root. Explicitly writing `inherits core.agent` is accepted but
+redundant; other Java actors remain imports rather than direct parents. Self-call resolution checks
+local actions, retained k.Actors parents in declaration order, and finally `core.agent`.
+`RuntimeAgentBase.invokeGeneratedAction(...)` follows the same delegate order at execution time.
+Local actions matching any inherited action, including the core verbs, produce an ordinary warning
+unless annotated with `@override`.
 
 For any statement with an adaptation clause, `sourceVariable` describes the value before
 conversion, including its `ValueType`, source behavior identity, or producer call when known. The
@@ -905,8 +919,9 @@ It owns all live transport state so that `AgentImpl` remains a serializable data
 transport is keyed by federation ID, broker, and agent URN. Multiple local handles subscribe by
 URN and object identity to one transport; unsubscribing the last owner closes that transport.
 
-`AMQPChannel.forAgent(...)` creates the symmetric agent channel. Agent exchanges are addressed by
-URN, and each receiving peer uses a transient queue. A sender-only transport avoids creating a
+`AMQPChannel.forAgent(...)` creates the symmetric agent channel. Agent exchanges use a bounded hash
+of the federation ID and globally unique instance URN, so two federations sharing a broker cannot
+collide. Each receiving peer uses a transient queue. A sender-only transport avoids creating a
 consumer until a subscription requires one. This avoids routing all agents through a shared queue
 and then filtering high-volume traffic after reception. Both service agents and client handles may
 publish and receive; the asymmetric sender/receiver convention used by ordinary service scopes
@@ -915,13 +930,20 @@ does not restrict agent channels.
 Publications accept separate sender and recipient URNs. The event bus rebuilds the message
 envelope with the selected sender identity before local or AMQP delivery, so a payload cannot
 override its source by supplying a forged dispatch ID. The sender's connected federation selects
-the destination transport.
+the destination transport. Connected handles and runtimes pass their exact messaging channel to
+the event bus; URN-only lookup is retained for compatibility but refuses an ambiguous match across
+federations. The publishing owner is excluded from in-process loopback while other local peers
+still receive the message. This prevents an outgoing client message from also appearing as a
+spurious incoming debugger event.
 
 `AgentRegistry` calls `RuntimeAgentBase.initializeMessaging(...)` only after assigning the
 canonical instance URN. The method requires a creating scope that is a connected
 `MessagingChannel`. Missing or disconnected messaging is not an agent-creation failure: it
 returns `false` and adds an info notification to the returned agent. Explicit stop and registry
-release close the runtime subscription.
+release close the runtime subscription. A remote `AgentStopRequested` is delegated to the owning
+`ManagedAgent`, rather than stopping only its execution scope, so the registry entry, USER
+singleton index, and AMQP subscription are removed together. Natural finite termination closes
+messaging while allowing the stopped registry entry to remain inspectable until release.
 
 The REST instantiation controller must preserve the authorized scope subtype. User-scoped IDE
 launches pass the authorized `UserScope`; observation-bound requests resolve the requested ID in a
@@ -940,7 +962,11 @@ from reports, and publish remote start, stop, and custom messages through the sa
 Runtime-only `addMessageListener(...)` and `addSentMessageListener(...)` hooks expose received and
 successfully published traffic without adding transport state to the serialized handle. The IDE
 debugger uses both hooks to build a per-agent message transcript beginning before the debug start
-request is sent.
+request is sent. `AgentImpl.stop()` acknowledges successful request publication, not completed
+termination; clients must keep the handle connected until an `AgentStopped` report arrives.
+`AgentEventBus.getTransportStatus()` and `AgentRegistry.getRegisteredAgentStatus()` provide
+read-only snapshots for diagnosing endpoint identity, federation, subscriber counts, and retained
+instances.
 
 `Agent.getHandledMessageClasses()` exposes the final, sorted keys contributed by `@handle`
 annotations. Generated handler descriptors distinguish these from reserved handlers such as
@@ -983,7 +1009,8 @@ agent as the new message source. This field is deliberately not serialized.
 pending `CompletableFuture` before publishing. A response carries that ID in `inResponseTo`; local
 delivery completes and removes the pending request before ordinary subscribers see the response.
 The Java API accepts an optional `Duration`, while the generated k.Actors `ask` call passes inline
-`:timeout` metadata to `RuntimeAgentBase.askAgent(...)`. That helper accepts a temporal `Quantity`
+`:timeout` metadata through the `core.agent` wrapper to `RuntimeAgentBase.askAgent(...)`. That
+helper accepts a temporal `Quantity`
 and converts it to a duration. The default timeout is 30 seconds. The negative metadata flag
 `!timeout` is adapted to the Boolean value `false`; `askAgent(...)` passes that state to
 `AgentEventBus.ask(...)` without installing `CompletableFuture.orTimeout`. The pending request is
@@ -995,17 +1022,30 @@ correlated response. Escaping failures publish a failure response and complete t
 exceptionally. Emitter handlers have no automatic single response; they may use the injected
 `sender` handle, which retains the request ID and correlates its next `tell(...)` response.
 
-The compiler treats the universal verbs specially:
+`CoreActorLibrary.Agent` declares the universal verbs as normal `@Verb` methods:
 
 - `new` is a function and is resolved against a behavior `init`, Java factory, or public
   constructor;
-- `tell(CONSTANT, payload)` is a function emitted as `tellAgent(...)`;
-- `ask(CONSTANT, payload :timeout quantity)` is a supplier emitted as `askAgent(...)`; use
-  `ask(CONSTANT, payload !timeout)` to disable its response deadline.
+- `tell(CONSTANT, payload)` is a function delegating to the calling runtime's exact transport;
+- `ask(CONSTANT, payload :timeout quantity)` is a supplier delegating to correlated runtime
+  messaging; use `ask(CONSTANT, payload !timeout)` to disable its response deadline;
+- `name()` and `urn()` expose the selected display name and registered instance identity.
 
-Inline metadata is excluded from ordinary arity and parameter matching. The visitor validates the
-constant discriminator, payload arity, and timeout form, and prevents actions from redefining
-`new`, `tell`, or `ask`.
+Generated calls bind a lightweight `CoreActorLibrary.Agent` wrapper to `self` or the target agent
+handle, then use the ordinary function/supplier invocation machinery. The wrapper deliberately
+delegates messaging through the calling `RuntimeAgentBase`, preserving sender identity and exact
+AMQP transport selection. Inline metadata is excluded from ordinary arity and parameter matching.
+The visitor validates the constant discriminator, payload arity, and timeout form.
+
+These names are no longer compiler-reserved. Local actions take precedence and receive an
+inheritance warning unless `@override` acknowledges the replacement. Behavior-specification
+`new` remains a construction intrinsic; the base Java implementation rejects invocation on an
+already-created instance.
+
+The registry calls `RuntimeAgentBase.initializeIdentity(urn, name)` before messaging is initialized.
+The identity is propagated to retained k.Actors delegates, and the `RuntimeAgent` API exposes it
+through `getUrn()` and `getName()`. This avoids divergence between the managed serializable handle
+and the service-side generated runtime.
 
 `RuntimeAgentBase.sendToScope(Message)` sends through the connected creating scope. It returns
 `false` when no usable scope channel exists, matching the graceful agent-messaging fallback.
@@ -1100,11 +1140,10 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 - Flesh out the specialized script, test-case, and application scopes beyond their current typed
   lifecycle stubs.
-- Generalize inherited action/state composition beyond the retained delegates currently used for
-  `@handle` actions.
+- Generalize inherited state composition beyond the retained delegates; ordinary action calls and
+  `@handle` dispatch already share their declaration-order delegate precedence.
 - Decide how imported behavior versions are selected.
-- Complete actor URL, rich failure details, cancellation propagation for correlated requests, and
-  retained finite-agent event-bus cleanup semantics.
+- Complete actor URL, rich failure details, and cancellation propagation for correlated requests.
 
 ### 12.3 Java actor resolution
 
