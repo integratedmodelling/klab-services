@@ -99,7 +99,7 @@ class BehaviorAnalyzerTest {
   @Test
   void compilerEmitsCoreAgentTellAndAskWithTimeoutMetadata() {
     var tell = verb("sender", "tell");
-    tell.getArguments().putUnnamed(constant("NOTICE"));
+    tell.getArguments().putUnnamed(lexicalConstant("NOTICE"));
     tell.getArguments().putUnnamed(identifier("message"));
     var ask = verb("sender", "ask");
     ask.getArguments().putUnnamed(constant("QUESTION"));
@@ -2185,6 +2185,13 @@ class BehaviorAnalyzerTest {
     var value = new KActorsValueImpl();
     value.setType(ValueType.CONSTANT);
     value.setStatedValue(Constant.create(constant));
+    return value;
+  }
+
+  private static KActorsValueImpl lexicalConstant(String constant) {
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.CONSTANT);
+    value.setStatedValue(constant);
     return value;
   }
 

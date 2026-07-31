@@ -1441,7 +1441,19 @@ public class AgentCompiler {
     if (!isPodLiteral(value.getType())) {
       return UNKNOWN_LITERAL;
     }
-    return value.getValue(Object.class);
+    Object stated = value.getValue(Object.class);
+    /*
+     * The semantic value type is authoritative. Syntax adapters are allowed to retain the lexical
+     * text of a CONSTANT as the stated value, while generated code materializes the corresponding
+     * Constant instance. Static Java-verb validation must inspect the same runtime identity instead
+     * of mistaking that lexical representation for a String argument.
+     */
+    if (value.getType() == ValueType.CONSTANT) {
+      return stated instanceof Constant
+          ? stated
+          : stated == null ? null : Constant.create(String.valueOf(stated));
+    }
+    return stated;
   }
 
   private static boolean isPodLiteral(ValueType type) {
