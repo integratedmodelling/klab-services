@@ -4,10 +4,12 @@ import java.io.PrintStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.List;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -338,6 +340,24 @@ public interface RuntimeAgent {
      * scopes may override this to release facilities installed by {@link #setup()}.
      */
     default void dispose() {}
+
+    /**
+     * Called immediately before the first instruction of a k.Actors action. Argument validation
+     * and lexical-frame binding have already completed.
+     *
+     * @param actionName semantic action name
+     * @param annotations immutable annotations declared on the action
+     */
+    default void beforeAction(String actionName, List<Annotation> annotations) {}
+
+    /**
+     * Called after the last instruction of a k.Actors action, including when an instruction exits
+     * through a return or exception. This is paired with {@link #beforeAction(String, List)}.
+     *
+     * @param actionName semantic action name
+     * @param annotations immutable annotations declared on the action
+     */
+    default void afterAction(String actionName, List<Annotation> annotations) {}
 
     /**
      * A SessionScope is always defined during an agent's lifetime. The scope may be a ContextScope

@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.io.Serial;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -18,9 +19,10 @@ import java.util.function.Function;
  */
 public class ParametersImpl<T> implements Parameters<T> {
 
+  @Serial
   private static final long serialVersionUID = 99901513041971570L;
 
-  private Map<T, Object> delegate;
+  protected Map<T, Object> delegate;
   private List<T> unnamedKeys = new ArrayList<>();
   private Parameters<String> templateVariables = null;
 

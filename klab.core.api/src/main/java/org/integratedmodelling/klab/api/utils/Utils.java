@@ -35,6 +35,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -55,10 +56,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -5866,6 +5864,47 @@ public class Utils {
           ret.add(o);
         }
       }
+    }
+
+    /**
+     * Find the first element that has the type of the defaultElement, including null that will
+     * match a null. If the requested defaultElement is an Enum, the defaultElement will also match
+     * a Constant if it has a value that corresponds to the name of one of its values..
+     *
+     * @param args
+     * @param defaultElement
+     * @return
+     * @param <T>
+     */
+    public static <T> T findElement(Object[] args, T defaultElement) {
+
+      if (args == null) {
+        return defaultElement;
+      }
+
+      for (Object o : args) {
+        if (defaultElement.getClass().isAssignableFrom(o.getClass())) {
+          return (T) o;
+        }
+      }
+
+      if (defaultElement instanceof Enum<?> en) {
+        for (Object o : args) {
+          if (o instanceof Constant constant
+              && Arrays.stream(en.getClass().getEnumConstants())
+                  .map(Enum::name)
+                  .toList()
+                  .contains(constant.getValue())) {
+            for (var val : EnumSet.allOf(en.getDeclaringClass())) {
+              if (val.name().equals(constant.getValue())) {
+                return (T) val;
+              }
+            }
+          }
+        }
+      }
+
+      return defaultElement;
     }
   }
 

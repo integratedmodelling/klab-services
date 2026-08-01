@@ -35,12 +35,14 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
@@ -97,6 +99,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private static final int MAX_PENDING_CONSOLE_OUTPUTS = 256;
 
   private record ConsoleOutput(RuntimeAgent.ConsoleMessageType type, String text) {}
+
+  /** Keeps inline verb metadata separate from the ordinary positional action arguments. */
+  private record VerbMetadata(Metadata metadata) {}
+
+  private record SuppliedArguments(Object[] values, Metadata metadata) {}
 
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
@@ -1878,7 +1885,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
     try {
       Method method = findMethod(target.getClass(), "action_" + action, false);
-      return method.invoke(target, scope, arguments);
+      return method.invoke(target, scope, splitSuppliedArguments(arguments).values());
     } catch (InvocationTargetException e) {
       throw actorFailure(e.getTargetException());
     } catch (ReflectiveOperationException e) {
@@ -1958,14 +1965,20 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
     if (actor instanceof ImportedBehaviorBinding importedBehavior) {
       if ("new".equals(verb)) {
-        return new DynamicInvocation(Verb.Type.FUNCTION, importedBehavior.create(arguments));
+        return new DynamicInvocation(
+            Verb.Type.FUNCTION,
+            importedBehavior.create(splitSuppliedArguments(arguments).values()));
       }
       actor = importedBehavior.staticTarget();
     }
     if (actor instanceof RuntimeAgentBase runtimeAgent) {
       try {
         Method method = findMethod(runtimeAgent.getClass(), "action_" + verb, false);
-        return invokeDynamically(method, runtimeAgent, scope, arguments);
+        return invokeDynamically(
+            method,
+            runtimeAgent,
+            scope,
+            splitSuppliedArguments(arguments).values());
       } catch (ReflectiveOperationException e) {
         throw actorFailure(e);
       }
@@ -2030,41 +2043,55 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       var expected = new ArrayList<Class<?>>();
       for (int index = 0; index < constructor.getParameterCount(); index++) {
         Class<?> parameter = constructor.getParameterTypes()[index];
-        if (!RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        if (!RuntimeAgent.Scope.class.isAssignableFrom(parameter)
+            && !Metadata.class.isAssignableFrom(parameter)) {
           expected.add(
               constructor.isVarArgs() && index == constructor.getParameterCount() - 1
                   ? parameter.getComponentType()
                   : parameter);
         }
       }
+      var split = splitSuppliedArguments(supplied);
       var suppliedValues = new ArrayList<Object>();
-      Collections.addAll(
-          suppliedValues, supplied == null ? new Object[0] : supplied);
+      Collections.addAll(suppliedValues, split.values());
       var actual =
           parameterNegotiator.negotiate(
               List.copyOf(expected), Collections.unmodifiableList(suppliedValues));
       if (actual == null) {
         throw directFailure;
       }
-      return prepareConstructorArgumentsDirect(constructor, scope, actual.toArray());
+      return prepareConstructorArgumentsDirect(
+          constructor, scope, withVerbMetadata(actual.toArray(), split.metadata()));
     }
   }
 
   private Object[] prepareConstructorArgumentsDirect(
       Constructor<?> constructor, AgentScope scope, Object[] suppliedArguments) {
-    Object[] supplied = suppliedArguments == null ? new Object[0] : suppliedArguments;
+    var split = splitSuppliedArguments(suppliedArguments);
+    Object[] supplied = split.values();
+    Metadata metadata = split.metadata();
     var parameters = constructor.getParameterTypes();
     var ret = new Object[parameters.length];
+    boolean hasExplicitMetadata =
+        java.util.Arrays.stream(parameters).anyMatch(Metadata.class::isAssignableFrom);
     int source = 0;
     for (int target = 0; target < parameters.length; target++) {
       Class<?> parameter = parameters[target];
       if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
         ret[target] = scope;
+      } else if (Metadata.class.isAssignableFrom(parameter)) {
+        ret[target] = metadata == null ? Metadata.create() : metadata;
       } else if (constructor.isVarArgs() && target == parameters.length - 1) {
         Class<?> component = parameter.getComponentType();
-        Object array = Array.newInstance(component, supplied.length - source);
+        boolean appendMetadata =
+            !hasExplicitMetadata && component == Object.class && metadata != null;
+        Object array =
+            Array.newInstance(component, supplied.length - source + (appendMetadata ? 1 : 0));
         for (int index = source; index < supplied.length; index++) {
           Array.set(array, index - source, coerceArgument(supplied[index], component));
+        }
+        if (appendMetadata) {
+          Array.set(array, supplied.length - source, metadata);
         }
         ret[target] = array;
         source = supplied.length;
@@ -2110,7 +2137,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (!Objects.equals(verb, camelName)) {
       methodNames.add(camelName);
     }
-    if (arguments.length == 0 && !camelName.isBlank()) {
+    if (splitSuppliedArguments(arguments).values().length == 0 && !camelName.isBlank()) {
       String property = Character.toUpperCase(camelName.charAt(0)) + camelName.substring(1);
       methodNames.add("get" + property);
       methodNames.add("is" + property);
@@ -2179,9 +2206,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       if (parameterNegotiator == null) {
         throw parameterMismatch(method, supplied, directFailure);
       }
+      var split = splitSuppliedArguments(supplied);
       var expected = negotiableParameterTypes(method);
-      var suppliedValues = new ArrayList<Object>(supplied.length);
-      Collections.addAll(suppliedValues, supplied);
+      var suppliedValues = new ArrayList<Object>(split.values().length);
+      Collections.addAll(suppliedValues, split.values());
       var negotiated =
           parameterNegotiator.negotiate(
               expected, Collections.unmodifiableList(suppliedValues));
@@ -2189,7 +2217,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         throw parameterMismatch(method, supplied, directFailure);
       }
       try {
-        return prepareArgumentsDirect(method, scope, negotiated.toArray());
+        return prepareArgumentsDirect(
+            method, scope, withVerbMetadata(negotiated.toArray(), split.metadata()));
       } catch (IllegalArgumentException negotiatedFailure) {
         var mismatch = parameterMismatch(method, supplied, negotiatedFailure);
         mismatch.addSuppressed(directFailure);
@@ -2199,18 +2228,31 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   private Object[] prepareArgumentsDirect(Method method, AgentScope scope, Object[] supplied) {
+    var split = splitSuppliedArguments(supplied);
+    supplied = split.values();
+    Metadata metadata = split.metadata();
     var parameters = method.getParameterTypes();
     var ret = new Object[parameters.length];
+    boolean hasExplicitMetadata =
+        java.util.Arrays.stream(parameters).anyMatch(Metadata.class::isAssignableFrom);
     int source = 0;
     for (int target = 0; target < parameters.length; target++) {
       Class<?> parameter = parameters[target];
       if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
         ret[target] = scope;
+      } else if (Metadata.class.isAssignableFrom(parameter)) {
+        ret[target] = metadata == null ? Metadata.create() : metadata;
       } else if (method.isVarArgs() && target == parameters.length - 1) {
         Class<?> component = parameter.getComponentType();
-        Object array = Array.newInstance(component, supplied.length - source);
+        boolean appendMetadata =
+            !hasExplicitMetadata && component == Object.class && metadata != null;
+        Object array =
+            Array.newInstance(component, supplied.length - source + (appendMetadata ? 1 : 0));
         for (int i = source; i < supplied.length; i++) {
           Array.set(array, i - source, coerceArgument(supplied[i], component));
+        }
+        if (appendMetadata) {
+          Array.set(array, supplied.length - source, metadata);
         }
         ret[target] = array;
         source = supplied.length;
@@ -2233,6 +2275,9 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
         continue;
       }
+      if (Metadata.class.isAssignableFrom(parameter)) {
+        continue;
+      }
       ret.add(
           method.isVarArgs() && index == method.getParameterCount() - 1
               ? parameter.getComponentType()
@@ -2251,9 +2296,33 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
             + ": expected "
             + negotiableParameterTypes(method).stream().map(Class::getTypeName).toList()
             + " but received "
-            + supplied.length
+            + splitSuppliedArguments(supplied).values().length
             + " argument(s); parameter negotiation did not produce a compatible match",
         cause);
+  }
+
+  /**
+   * Attach inline metadata to a generated invocation without making it an ordinary k.Actors
+   * argument. Java verbs receive it through a {@link Metadata} parameter or, when no such
+   * parameter exists, as the last element of an {@code Object...} parameter.
+   */
+  protected Object[] withVerbMetadata(Object[] arguments, Metadata metadata) {
+    Object[] values = arguments == null ? new Object[0] : arguments;
+    if (metadata == null || metadata.isEmpty()) {
+      return values;
+    }
+    Object[] ret = java.util.Arrays.copyOf(values, values.length + 1);
+    ret[values.length] = new VerbMetadata(metadata);
+    return ret;
+  }
+
+  private SuppliedArguments splitSuppliedArguments(Object[] supplied) {
+    Object[] values = supplied == null ? new Object[0] : supplied;
+    if (values.length > 0 && values[values.length - 1] instanceof VerbMetadata metadata) {
+      return new SuppliedArguments(
+          java.util.Arrays.copyOf(values, values.length - 1), metadata.metadata());
+    }
+    return new SuppliedArguments(values, null);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2299,6 +2368,22 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (!success) {
       throw new AssertionError("k.Actors assertion failed: expected " + expected + ", got " + actual);
     }
+  }
+
+  /** Return the immutable semantic annotations declared on a generated action. */
+  protected List<Annotation> actionAnnotations(String actionName) {
+    if (behavior == null || behavior.getStatements() == null || actionName == null) {
+      return List.of();
+    }
+    return behavior.getStatements().stream()
+        .filter(action -> Objects.equals(actionName, action.getUrn()))
+        .findFirst()
+        .map(
+            action ->
+                action.getAnnotations() == null
+                    ? List.<Annotation>of()
+                    : List.copyOf(action.getAnnotations()))
+        .orElseGet(List::of);
   }
 
   /**

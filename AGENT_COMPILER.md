@@ -189,7 +189,7 @@ The visitor exposes immutable records consumed by the analyzer and compiler:
 
 | Record | Purpose |
 | --- | --- |
-| `ActionInfo` | Declared action, parameters, direct returns/fires, directly or transitively called execution types, and effective type. |
+| `ActionInfo` | Declared action, immutable semantic annotations, parameters, direct returns/fires, directly or transitively called execution types, and effective type. |
 | `ImportInfo` | Import declaration, local alias, behavior/actor URN, and optional Java class slot. |
 | `CallInfo` | Exact verb syntax bean, receiver, verb, containing action, arguments, visible variables, classified execution/static types, produced-agent behavior URN, and whether a value is required. |
 | `VariableInfo` | Variable declaration, name, inferred value type, produced-agent behavior URN, and producer-call provenance. |
@@ -330,6 +330,16 @@ immediately before `main`; `dispose()` is registered as root-scope cleanup and r
 normal completion, failure, or explicit stop. A stop before start skips setup but still disposes
 the scope. Derived scopes can use these hooks to install and clean up behavior-specific runtime
 facilities.
+
+Each generated action is similarly bracketed by `RuntimeAgent.Scope.beforeAction(name,
+annotations)` and `afterAction(name, annotations)`. Parameter validation, frame binding, and
+supplier-result allocation precede `beforeAction`; function and emitter instruction bodies are
+enclosed in `try/finally`, so `afterAction` runs for normal completion, explicit returns, and
+exceptions. Supplier actions register `afterAction` on their result future instead, so the hook
+runs after the eventual reactive result or failure rather than merely after listener setup. The
+annotations originate in `ActionInfo` and are resolved from the retained semantic behavior as an
+immutable list. Inherited action methods resolve annotations against their retained inherited
+behavior instance while executing the hooks on the caller's action scope.
 
 Runtime agent instances are non-reentrant. `RuntimeAgentBase.run()` rejects a second invocation and
 also rejects starting a scope that has already terminated. Managed handles accept at most one
@@ -488,6 +498,11 @@ an instance method even when the source action is declared `static`: source stat
 which recipient may invoke the action, while the internal method still needs its owning runtime
 agent and action scope.
 
+Immediately before the generated instruction body, the compiler calls the scope's action-start
+hook. Function and emitter bodies invoke the finish hook from `finally`; supplier result futures
+invoke it from `whenComplete`. Callback code therefore must be lightweight and should not mutate
+the supplied annotation list.
+
 ### 6.3 Generated `main` and CLI
 
 The generated `main(AgentScope)` delegates to the k.Actors `main` action:
@@ -495,6 +510,12 @@ The generated `main(AgentScope)` delegates to the k.Actors `main` action:
 - functions return an `ExitValue` immediately;
 - suppliers attach completion to the root scope and return `TASK_RUNNING`;
 - emitters start and return `TASK_RUNNING`.
+
+For `UNITTEST`, generation uses a specialized sequence. The optional `main` runs first, followed
+by every local `@test` action in semantic declaration order. Function tests complete directly and
+supplier tests are joined before the next test begins. Emitter tests are invoked in order but keep
+the testcase alive under the normal emitter lifecycle; unresolved dynamic calls retain the same
+conservative persistent behavior used by ordinary generated `main` actions.
 
 `getAgentExecutionMode()` returns the analyzer's inferred mode. `RuntimeAgentBase.run()` executes a
 function directly and starts non-functions on a virtual thread.
@@ -555,8 +576,9 @@ delegates and stops and disposes them with its own lifecycle.
 | Text | Delegate to `handleText(...)`, currently printing to the action scope writer. |
 | Assertion | Evaluate an expression or the last call and delegate to `assertValue(...)`. |
 
-Metadata, tags, and annotations are traversed and validated but generally do not yet affect emitted
-Java.
+Statement metadata, tags, and annotations are traversed and validated but generally do not yet
+affect emitted Java. Inline verb metadata is the exception: it is compiled into a `Metadata`
+object and delivered to Java extensions as described in Section 10.2.
 
 ### 7.1 Synchronous switch generation
 
@@ -739,10 +761,10 @@ action parameter names in order. A single `Map` argument is treated as named bin
 untyped arguments become `null`; a missing or null `@type`-constrained argument fails the action's
 runtime guard. The current binder does not reject extra positional arguments.
 
-The compiler currently serializes `verb.getArguments().values()` into an `Object[]`. This preserves
-the parameter container's value iteration order but does not emit the original named keys or call
-metadata. A production validator can diagnose bad calls, but full named/default argument transport
-still needs generation support.
+The compiler currently serializes the ordinary `verb.getArguments().values()` into an `Object[]`.
+This preserves the parameter container's value iteration order but does not emit the original
+named keys. Inline metadata is carried separately and is never bound as a k.Actors action
+parameter. Full named/default argument transport still needs generation support.
 
 ### 10.2 Java actors
 
@@ -766,6 +788,10 @@ Argument preparation:
 
 - injects the current scope into any `RuntimeAgent.Scope` parameter without consuming a source
   argument;
+- collects inline call metadata into one `Metadata` object and injects it into a `Metadata`
+  parameter without consuming a source argument;
+- when there is no explicit `Metadata` parameter and the verb ends in `Object...`, appends that
+  metadata object as the final vararg element;
 - consumes remaining source arguments positionally;
 - packs remaining arguments into a Java varargs array;
 - accepts `null` or already assignable objects;
@@ -774,9 +800,14 @@ Argument preparation:
 - converts strings to enum constants;
 - converts any non-null value to `String` with `toString()`.
 
+Metadata keys are normalized before delivery. The leading marker is removed: `:key value` becomes
+`key -> value`, `+key` becomes `key -> true`, and `!key` becomes `key -> false`. The same rules are
+used by direct generated Java calls and reflective/dynamic calls. `Metadata` parameters are
+excluded from arity checks and parameter negotiation just like injected scope parameters.
+
 If direct preparation fails, the runtime calls
 `Resolver.negotiateParameterMatch(expectedTypes, suppliedValues)`. The expected list excludes
-injected `RuntimeAgent.Scope` parameters and uses the component type for a varargs parameter. The
+injected `RuntimeAgent.Scope` and `Metadata` parameters and uses the component type for a varargs parameter. The
 negotiator may split, combine, reorder, or otherwise mediate the supplied values, but must return
 the complete adapted list in Java declaration order. The runtime sends that result through the
 ordinary coercion and scope-injection path again. Returning `null`, or returning an incompatible
@@ -1163,7 +1194,7 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 ### 12.4 Generated language semantics
 
-- Preserve named call arguments, defaults, and argument metadata in generated invocations.
+- Preserve named call arguments and defaults in generated invocations.
 - Mediate non-POD values in `literalValue` instead of returning encoded strings.
 - Compile regular expressions, class/type criteria, semantic observables, annotations, ranges,
   quantities, localized strings, lists, and maps to their definitive runtime forms.

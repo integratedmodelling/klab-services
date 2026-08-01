@@ -32,10 +32,12 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Identifier;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Ternary;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -1546,6 +1548,9 @@ public class AgentCompiler {
       if (RuntimeAgent.Scope.class.isAssignableFrom(parameter.getType())) {
         continue;
       }
+      if (Metadata.class.isAssignableFrom(parameter.getType())) {
+        continue;
+      }
       var argument = parameter.getAnnotation(Verb.Argument.class);
       ret.add(
           new JavaArgumentConstraint(
@@ -1600,6 +1605,9 @@ public class AgentCompiler {
       if (RuntimeAgent.Scope.class.isAssignableFrom(method.getParameterTypes()[index])) {
         continue;
       }
+      if (Metadata.class.isAssignableFrom(method.getParameterTypes()[index])) {
+        continue;
+      }
       if (method.isVarArgs() && index == method.getParameterCount() - 1) {
         return suppliedCount >= required;
       }
@@ -1613,6 +1621,9 @@ public class AgentCompiler {
     for (int index = 0; index < method.getParameterCount(); index++) {
       var parameter = method.getParameterTypes()[index];
       if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        continue;
+      }
+      if (Metadata.class.isAssignableFrom(parameter)) {
         continue;
       }
       ret.add(
@@ -2021,6 +2032,10 @@ public class AgentCompiler {
     for (var action : sourceBehavior.getStatements()) {
       classBuilder.addMethod(compileAction(action));
     }
+    if (sourceBehavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
+      classBuilder.addMethod(compileDeclaredTests());
+    }
+    classBuilder.addMethod(compileActionAnnotations(sourceBehavior));
     classBuilder.addMethod(compileMessageHandlers(sourceBehavior));
     classBuilder.addMethod(compileMain());
     classBuilder.addMethod(compileExecutionMode());
@@ -2310,6 +2325,9 @@ public class AgentCompiler {
   }
 
   private MethodSpec compileMain() {
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
+      return compileTestCaseMain();
+    }
     var method =
         MethodSpec.methodBuilder("main")
             .addAnnotation(Override.class)
@@ -2357,6 +2375,193 @@ public class AgentCompiler {
     }
     method.endControlFlow();
     return method.build();
+  }
+
+  private MethodSpec compileActionAnnotations(KActorsBehavior sourceBehavior) {
+    var annotationList =
+        ParameterizedTypeName.get(ClassName.get(List.class), ClassName.get(Annotation.class));
+    var method =
+        MethodSpec.methodBuilder("actionAnnotations")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PROTECTED)
+            .returns(annotationList)
+            .addParameter(String.class, "actionName");
+    for (var action : sourceBehavior.getStatements()) {
+      if (action.getAnnotations() == null || action.getAnnotations().isEmpty()) {
+        continue;
+      }
+      var annotations =
+          action.getAnnotations().stream().map(this::compiledAnnotation).toList();
+      method.beginControlFlow("if ($S.equals(actionName))", action.getUrn());
+      method.addStatement("return $T.of($L)", List.class, CodeBlock.join(annotations, ", "));
+      method.endControlFlow();
+    }
+    method.addStatement("return super.actionAnnotations(actionName)");
+    return method.build();
+  }
+
+  private CodeBlock compiledAnnotation(Annotation annotation) {
+    var parameters = new ArrayList<CodeBlock>();
+    for (var entry : annotation.entrySet()) {
+      if ("#name".equals(entry.getKey())) {
+        continue;
+      }
+      parameters.add(CodeBlock.of("$S", entry.getKey()));
+      parameters.add(annotationLiteral(entry.getValue()));
+    }
+    return parameters.isEmpty()
+        ? CodeBlock.of("$T.of($S)", Annotation.class, annotation.getName())
+        : CodeBlock.of(
+            "$T.of($S, $L)",
+            Annotation.class,
+            annotation.getName(),
+            CodeBlock.join(parameters, ", "));
+  }
+
+  private CodeBlock annotationLiteral(Object value) {
+    if (value instanceof KActorsValue actorValue) {
+      Object raw = rawValue(actorValue);
+      return switch (actorValue.getType()) {
+        case CONSTANT -> CodeBlock.of("$T.create($S)", Constant.class, String.valueOf(raw));
+        case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, actorValue.getType());
+        case LIST -> annotationCollection(raw, false);
+        case SET -> annotationCollection(raw, true);
+        case MAP -> annotationMap(raw);
+        case NODATA, EMPTY -> CodeBlock.of("null");
+        default -> literal(raw, actorValue.getType());
+      };
+    }
+    if (value instanceof Constant constant) {
+      return CodeBlock.of("$T.create($S)", Constant.class, constant.getValue());
+    }
+    if (value instanceof Map<?, ?> map) {
+      return annotationMap(map);
+    }
+    if (value instanceof Set<?> set) {
+      return annotationCollection(set, true);
+    }
+    if (value instanceof Collection<?> collection) {
+      return annotationCollection(collection, false);
+    }
+    return literal(value, value instanceof String ? ValueType.STRING : ValueType.NUMBER);
+  }
+
+  private CodeBlock annotationCollection(Object value, boolean set) {
+    if (!(value instanceof Collection<?> collection) || collection.isEmpty()) {
+      return set
+          ? CodeBlock.of("new $T<>()", LinkedHashSet.class)
+          : CodeBlock.of("new $T<>()", ArrayList.class);
+    }
+    var elements = collection.stream().map(this::annotationLiteral).toList();
+    return CodeBlock.of(
+        "new $T<>($T.asList($L))",
+        set ? LinkedHashSet.class : ArrayList.class,
+        java.util.Arrays.class,
+        CodeBlock.join(elements, ", "));
+  }
+
+  private CodeBlock annotationMap(Object value) {
+    if (!(value instanceof Map<?, ?> map) || map.isEmpty()) {
+      return CodeBlock.of("new $T<>()", LinkedHashMap.class);
+    }
+    var keys = new ArrayList<CodeBlock>();
+    var values = new ArrayList<CodeBlock>();
+    for (var entry : map.entrySet()) {
+      keys.add(annotationLiteral(entry.getKey()));
+      values.add(annotationLiteral(entry.getValue()));
+    }
+    return CodeBlock.of(
+        "mutableMap(new Object[] {$L}, new Object[] {$L})",
+        CodeBlock.join(keys, ", "),
+        CodeBlock.join(values, ", "));
+  }
+
+  private MethodSpec compileTestCaseMain() {
+    var method =
+        MethodSpec.methodBuilder("main")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PROTECTED)
+            .returns(RuntimeAgentBase.ExitValue.class)
+            .addParameter(AgentScope.class, "rootScope")
+            .beginControlFlow("try")
+            .addStatement("Object result = VOID_VALUE");
+    var main = analyzer.getActions().get("main");
+    if (main != null) {
+      switch (main.effectiveExecutionType()) {
+        case FUNCTION ->
+            method.addStatement("result = invokeSelfFunction($S, rootScope)", "main");
+        case SUPPLIER ->
+            method.addStatement("result = invokeSelfSupplier($S, rootScope).join()", "main");
+        case EMITTER ->
+            method.addStatement("invokeSelfEmitter($S, rootScope)", "main");
+      }
+    }
+    method.addStatement("result = runDeclaredTests(rootScope)");
+    boolean hasEmitter =
+        analyzer.getActions().values().stream()
+            .filter(
+                action ->
+                    "init".equals(action.name())
+                        || "main".equals(action.name())
+                        || hasAnnotation(action, "test"))
+            .anyMatch(action -> action.effectiveExecutionType() == Verb.Type.EMITTER);
+    boolean hasUnknownCalls =
+        analyzer.getActions().values().stream()
+            .filter(
+                action ->
+                    "main".equals(action.name()) || hasAnnotation(action, "test"))
+            .anyMatch(KActorsVisitor.ActionInfo::callsUnknownActions);
+    if (hasEmitter) {
+      method.addStatement("return TASK_RUNNING");
+    } else if (hasUnknownCalls) {
+      method.addStatement("return awaitDynamicCalls(result)");
+    } else {
+      method.addStatement("return ExitValue.success(result)");
+    }
+    method.nextControlFlow("catch ($T error)", Throwable.class);
+    if (hasUnknownCalls && !hasEmitter) {
+      method.addStatement("return failDynamicCalls(error)");
+    } else {
+      method.addStatement("rootScope.done(error)").addStatement("return ExitValue.failure(error)");
+    }
+    method.endControlFlow();
+    return method.build();
+  }
+
+  private MethodSpec compileDeclaredTests() {
+    var method =
+        MethodSpec.methodBuilder("runDeclaredTests")
+            .addModifiers(Modifier.PRIVATE)
+            .returns(Object.class)
+            .addParameter(AgentScope.class, "rootScope")
+            .addStatement("Object result = VOID_VALUE");
+    for (var action : behavior.getStatements()) {
+      var info = analyzer.getActions().get(action.getUrn());
+      if (info == null
+          || "init".equals(info.name())
+          || "main".equals(info.name())
+          || !hasAnnotation(info, "test")) {
+        continue;
+      }
+      switch (info.effectiveExecutionType()) {
+        case FUNCTION ->
+            method.addStatement("result = invokeSelfFunction($S, rootScope)", info.name());
+        case SUPPLIER ->
+            method.addStatement(
+                "result = invokeSelfSupplier($S, rootScope).join()", info.name());
+        case EMITTER -> {
+          method.addStatement("invokeSelfEmitter($S, rootScope)", info.name());
+          method.addStatement("result = TASK_RUNNING");
+        }
+      }
+    }
+    method.addStatement("return result");
+    return method.build();
+  }
+
+  private boolean hasAnnotation(KActorsVisitor.ActionInfo action, String name) {
+    return action != null
+        && action.annotations().stream().anyMatch(annotation -> name.equals(annotation.getName()));
   }
 
   private MethodSpec compileCliMain(String className) {
@@ -2429,6 +2634,16 @@ public class AgentCompiler {
       result = "actionResult";
       code.addStatement("var $L = new $T<Object>()", result, CompletableFuture.class);
     }
+    code.addStatement(
+        "scope.beforeAction($S, actionAnnotations($S))", action.getUrn(), action.getUrn());
+    if (type == Verb.Type.SUPPLIER) {
+      code.addStatement(
+          "$L.whenComplete((value, error) -> scope.afterAction($S, actionAnnotations($S)))",
+          result,
+          action.getUrn(),
+          action.getUrn());
+    }
+    code.beginControlFlow("try");
     var context =
         new CompilationContext(
             type,
@@ -2446,6 +2661,16 @@ public class AgentCompiler {
     } else if (type == Verb.Type.SUPPLIER && !definitelyReturns(action.getCode())) {
       code.addStatement("return $L", result);
     }
+    if (type == Verb.Type.SUPPLIER) {
+      code.nextControlFlow("catch ($T error)", Throwable.class);
+      code.addStatement("$L.completeExceptionally(error)", result);
+      code.addStatement("return $L", result);
+    } else {
+      code.nextControlFlow("finally");
+      code.addStatement(
+          "scope.afterAction($S, actionAnnotations($S))", action.getUrn(), action.getUrn());
+    }
+    code.endControlFlow();
     method.addCode(code.build());
     return method.build();
   }
@@ -3188,13 +3413,29 @@ public class AgentCompiler {
     var supplied = ordinaryArgumentValues(verb.getArguments());
     var compiledArguments = new ArrayList<CodeBlock>();
     var parameterTypes = method.getParameterTypes();
-    for (int index = 0; index < supplied.size(); index++) {
-      Class<?> expected =
-          method.isVarArgs() && index >= parameterTypes.length - 1
-              ? parameterTypes[parameterTypes.length - 1].getComponentType()
-              : parameterTypes[index];
-      compiledArguments.add(
-          adaptedJavaArgument(argumentValue(supplied.get(index), context), expected));
+    boolean hasExplicitMetadata =
+        java.util.Arrays.stream(parameterTypes)
+            .anyMatch(Metadata.class::isAssignableFrom);
+    int source = 0;
+    for (int target = 0; target < parameterTypes.length; target++) {
+      Class<?> parameter = parameterTypes[target];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)) {
+        compiledArguments.add(CodeBlock.of("$L", context.scope()));
+      } else if (Metadata.class.isAssignableFrom(parameter)) {
+        compiledArguments.add(verbMetadata(verb, context));
+      } else if (method.isVarArgs() && target == parameterTypes.length - 1) {
+        Class<?> component = parameter.getComponentType();
+        while (source < supplied.size()) {
+          compiledArguments.add(
+              adaptedJavaArgument(argumentValue(supplied.get(source++), context), component));
+        }
+        if (!hasExplicitMetadata && component == Object.class && hasVerbMetadata(verb)) {
+          compiledArguments.add(verbMetadata(verb, context));
+        }
+      } else if (source < supplied.size()) {
+        compiledArguments.add(
+            adaptedJavaArgument(argumentValue(supplied.get(source++), context), parameter));
+      }
     }
     return CodeBlock.of(
         "(($T) $L).$L($L)",
@@ -3230,7 +3471,49 @@ public class AgentCompiler {
     var values = new ArrayList<CodeBlock>();
     ordinaryArgumentValues(verb.getArguments())
         .forEach(argument -> values.add(argumentValue(argument, context)));
-    return CodeBlock.of("new Object[] {$L}", CodeBlock.join(values, ", "));
+    CodeBlock arguments =
+        CodeBlock.of("new Object[] {$L}", CodeBlock.join(values, ", "));
+    return hasVerbMetadata(verb)
+        ? CodeBlock.of("withVerbMetadata($L, $L)", arguments, verbMetadata(verb, context))
+        : arguments;
+  }
+
+  private boolean hasVerbMetadata(KActorsStatement.Verb verb) {
+    return verb != null
+        && verb.getArguments() != null
+        && verb.getArguments().getMetadataKeys() != null
+        && !verb.getArguments().getMetadataKeys().isEmpty();
+  }
+
+  private CodeBlock verbMetadata(KActorsStatement.Verb verb, CompilationContext context) {
+    var entries = new ArrayList<CodeBlock>();
+    if (hasVerbMetadata(verb)) {
+      for (String storedKey : verb.getArguments().getMetadataKeys()) {
+        if (storedKey == null || storedKey.isBlank()) {
+          continue;
+        }
+        String key = storedKey.trim();
+        char prefix = key.charAt(0);
+        boolean prefixed = prefix == ':' || prefix == '+' || prefix == '!';
+        String normalizedKey = prefixed ? key.substring(1) : key;
+        if (normalizedKey.isBlank()) {
+          continue;
+        }
+        Object value = verb.getArguments().get(storedKey);
+        if (value == null && prefixed) {
+          value = verb.getArguments().get(normalizedKey);
+        }
+        CodeBlock compiledValue =
+            prefix == '+'
+                ? CodeBlock.of("true")
+                : prefix == '!'
+                    ? CodeBlock.of("false")
+                    : CodeBlock.of("resolveDeferred($L)", argumentValue(value, context));
+        entries.add(CodeBlock.of("$S", normalizedKey));
+        entries.add(compiledValue);
+      }
+    }
+    return CodeBlock.of("$T.create($L)", Metadata.class, CodeBlock.join(entries, ", "));
   }
 
   private CodeBlock argumentValue(Object argument, CompilationContext context) {

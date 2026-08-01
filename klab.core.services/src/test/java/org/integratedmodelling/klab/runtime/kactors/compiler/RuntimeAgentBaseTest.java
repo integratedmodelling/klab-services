@@ -35,6 +35,7 @@ import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -674,6 +675,24 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void javaVerbsReceiveInlineMetadataWithoutLosingOrdinaryArguments() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    Metadata metadata =
+        Metadata.create("label", "test", "enabled", true, "disabled", false);
+    Object[] arguments = agent.withMetadata(new Object[] {"payload"}, metadata);
+
+    assertEquals(
+        "payload:test:true:false",
+        agent.function(TestActor.class, "metadata", root, arguments));
+
+    Object[] received =
+        (Object[]) agent.function(TestActor.class, "metadataVarargs", root, arguments);
+    assertEquals("payload", received[0]);
+    assertSame(metadata, received[1]);
+  }
+
+  @Test
   void coreAgentBehaviorExposesTheRegisteredRuntimeIdentity() {
     var agent = new ReactiveRuntimeAgent();
     var root = (AgentScope) agent.rootScope();
@@ -768,6 +787,22 @@ class RuntimeAgentBaseTest {
     public static String duration(
         RuntimeAgent.Scope scope, double amount, TimeUnit unit) {
       return amount + " " + unit;
+    }
+
+    @Verb(name = "metadata", executionType = Verb.Type.FUNCTION)
+    public static String metadata(RuntimeAgent.Scope scope, String value, Metadata metadata) {
+      return value
+          + ":"
+          + metadata.get("label")
+          + ":"
+          + metadata.get("enabled")
+          + ":"
+          + metadata.get("disabled");
+    }
+
+    @Verb(name = "metadataVarargs", executionType = Verb.Type.FUNCTION)
+    public static Object[] metadataVarargs(RuntimeAgent.Scope scope, Object... values) {
+      return values;
     }
 
     @org.integratedmodelling.klab.api.services.runtime.extension.Verb(
@@ -1065,6 +1100,10 @@ class RuntimeAgentBaseTest {
 
     private Object resolveValue(Object value) {
       return resolveDeferred(value);
+    }
+
+    private Object[] withMetadata(Object[] arguments, Metadata metadata) {
+      return withVerbMetadata(arguments, metadata);
     }
 
     private Object evaluate(Expression expression, Map<String, Object> frame) {

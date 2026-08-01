@@ -29,6 +29,7 @@ import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
@@ -1270,6 +1271,45 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void javaVerbMetadataIsNormalizedAndDoesNotCountTowardArity() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "java.worker";
+    var metadataVerb =
+        javaVerb(
+            "metadata",
+            true,
+            JavaStaticityActor.class.getMethod("metadata", Object.class, Metadata.class));
+    descriptor.verbs.add(metadataVerb.getKey());
+    var resolved =
+        new AgentCompiler.ResolvedActor(
+            descriptor, Map.of("metadata", metadataVerb.getValue()));
+    var call = verb("java", "metadata");
+    call.getArguments().putUnnamed(number(7));
+    call.getArguments().put("+enabled", Boolean.TRUE);
+    call.getArguments().put("!disabled", Boolean.FALSE);
+    call.getArguments().put(":label", number(9));
+    call.getArguments().getMetadataKeys().addAll(List.of("+enabled", "!disabled", ":label"));
+    var source = behavior(action("main", call));
+    source.setImports(List.of(imported("java.worker", "java")));
+    var resolver =
+        new AgentCompiler.Resolver() {
+          @Override
+          public AgentCompiler.ResolvedActor resolveActor(
+              String urn, org.integratedmodelling.klab.api.scope.UserScope scope) {
+            return "java.worker".equals(urn) ? resolved : null;
+          }
+        };
+    var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+    var compiler = new AgentCompiler(source, null, environment.validator(), resolver);
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(generated.contains("Metadata.create(\"enabled\", true"), generated);
+    assertTrue(generated.contains("\"disabled\", false"), generated);
+    assertTrue(generated.contains("\"label\", resolveDeferred(9)"), generated);
+  }
+
+  @Test
   void javaVerbArgumentAnnotationsValidateNamedTypesAndAgentBehaviors() throws Exception {
     var descriptor = new Extensions.ActorDescriptor();
     descriptor.urn = "java.worker";
@@ -1852,6 +1892,65 @@ class BehaviorAnalyzerTest {
         KActorsBehavior.Type.APP, ApplicationBase.class, "extends ApplicationBase");
   }
 
+  @Test
+  void actionAnnotationsDriveBoundaryHooksAndOrderedTestcaseExecution() {
+    var init =
+        action(
+            "init",
+            assignment("initialized", KActorsStatement.Assignment.Scope.ACTOR, number(1)));
+    var main =
+        action(
+            "main", assignment("started", KActorsStatement.Assignment.Scope.FRAME, number(1)));
+    var helper =
+        action(
+            "helper", assignment("ignored", KActorsStatement.Assignment.Scope.FRAME, number(0)));
+    var first =
+        action(
+            "first_test", assignment("first", KActorsStatement.Assignment.Scope.FRAME, number(1)));
+    first.setAnnotations(
+        List.of(Annotation.of("test"), Annotation.of("instrument", "value", "first")));
+    var second =
+        action(
+            "second_test",
+            assignment("second", KActorsStatement.Assignment.Scope.FRAME, number(2)));
+    second.setAnnotations(List.of(Annotation.of("test")));
+    var source = behavior(init, main, helper, first, second);
+    source.setBehaviorType(KActorsBehavior.Type.UNITTEST);
+    var analyzer = new BehaviorAnalyzer(source);
+
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(
+        List.of("test", "instrument"),
+        analyzer.getActions().get("first_test").annotations().stream()
+            .map(Annotation::getName)
+            .toList());
+    assertEquals(Verb.Type.FUNCTION, analyzer.getAgentExecutionMode());
+
+    var compiler = new AgentCompiler(source);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    String generated = compiler.getSourceCode();
+    assertTrue(
+        generated.contains(
+            "scope.beforeAction(\"first_test\", actionAnnotations(\"first_test\"));"),
+        generated);
+    assertTrue(
+        generated.contains(
+            "scope.afterAction(\"first_test\", actionAnnotations(\"first_test\"));"),
+        generated);
+    assertTrue(generated.contains("finally"), generated);
+    int tests = generated.indexOf("private Object runDeclaredTests");
+    int firstInvocation = generated.indexOf("invokeSelfFunction(\"first_test\"", tests);
+    int secondInvocation = generated.indexOf("invokeSelfFunction(\"second_test\"", tests);
+    int mainInvocation = generated.indexOf("invokeSelfFunction(\"main\", rootScope)");
+    int testSequenceInvocation = generated.indexOf("runDeclaredTests(rootScope)", mainInvocation);
+    assertTrue(tests >= 0 && firstInvocation > tests && secondInvocation > firstInvocation, generated);
+    assertTrue(mainInvocation >= 0 && testSequenceInvocation > mainInvocation, generated);
+    assertFalse(
+        generated.substring(tests, firstInvocation).contains("invokeSelfFunction(\"helper\""),
+        generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
   private static void assertSpecializedBase(
       KActorsBehavior.Type type,
       Class<? extends RuntimeAgentBase> expectedBase,
@@ -2047,6 +2146,11 @@ class BehaviorAnalyzerTest {
                 requiresAgent = "java.required")
             Object agent) {
       return agent;
+    }
+
+    @Verb(name = "metadata", executionType = Verb.Type.FUNCTION)
+    public static Object metadata(Object value, Metadata metadata) {
+      return value;
     }
   }
 

@@ -218,6 +218,7 @@ public class KActorsVisitor {
   public record ActionInfo(
       KActorsAction statement,
       String name,
+      List<Annotation> annotations,
       Verb.Type executionType,
       List<VariableInfo> parameters,
       int returns,
@@ -225,6 +226,7 @@ public class KActorsVisitor {
       Set<Verb.Type> calledActionTypes,
       boolean callsUnknownActions) {
     public ActionInfo {
+      annotations = List.copyOf(annotations);
       parameters = List.copyOf(parameters);
       calledActionTypes = Set.copyOf(calledActionTypes);
     }
@@ -775,7 +777,15 @@ public class KActorsVisitor {
     actions.put(
         action.getUrn(),
         new ActionInfo(
-            action, action.getUrn(), Verb.Type.FUNCTION, parameters, 0, 0, Set.of(), false));
+            action,
+            action.getUrn(),
+            safe(action.getAnnotations()),
+            Verb.Type.FUNCTION,
+            parameters,
+            0,
+            0,
+            Set.of(),
+            false));
   }
 
   public void visitAnnotation(Annotation annotation, KActorsContext context) {
@@ -1380,6 +1390,7 @@ public class KActorsVisitor {
           new ActionInfo(
               old.statement(),
               old.name(),
+              old.annotations(),
               type,
               old.parameters(),
               accumulator.returns,
@@ -1725,6 +1736,7 @@ public class KActorsVisitor {
           new ActionInfo(
               action.statement(),
               action.name(),
+              action.annotations(),
               action.executionType(),
               action.parameters(),
               action.returns(),

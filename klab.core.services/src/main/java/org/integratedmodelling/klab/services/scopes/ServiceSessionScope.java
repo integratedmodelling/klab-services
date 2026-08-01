@@ -3,15 +3,22 @@ package org.integratedmodelling.klab.services.scopes;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 /**
@@ -63,9 +70,33 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     this.data.putAll(other.data);
   }
 
+  /**
+   * The service-exclusive context creation should not come from a client but directly from a
+   * session - normally handled by an agent. No queues or messaging system are established as we
+   * don't expect to have a client to communicate with. The REST API retraces these steps with
+   * communication handling, but does not use this function.
+   *
+   * @param configuration the configuration options for the digital twin. Only federated users can
+   *     submit a pre-chosen ID or a URL with one.
+   * @return
+   */
   @Override
   public ContextScope createContext(DigitalTwin.Configuration configuration) {
-    throw new KlabIllegalStateException("Contexts at service side are created through the API");
+
+    var userScope = getParentScope(Type.USER, ServiceUserScope.class);
+    var identity = (UserIdentity) userScope.getIdentity();
+
+    var ret = new ServiceContextScope(this, configuration, getUser()).withIdentity(identity);
+    var runtimeService = getService(RuntimeService.class);
+    for (var service : getServices(KlabService.class)) {
+      ret.addService(service);
+    }
+
+    ret.setHostServiceId(runtimeService.serviceId());
+    ret.setId(configuration.getId());
+    runtimeService.declareContextScope(ret, this, userScope);
+
+    return ret;
   }
 
   @Override

@@ -127,6 +127,21 @@ public class BehaviorAnalyzer {
   }
 
   private Verb.Type inferAgentExecutionMode() {
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
+      return actions.values().stream()
+              .filter(
+                  action ->
+                      "init".equals(action.name())
+                          || "main".equals(action.name())
+                          || action.annotations().stream()
+                              .anyMatch(annotation -> "test".equals(annotation.getName())))
+              .anyMatch(
+                  action ->
+                      action.effectiveExecutionType() == Verb.Type.EMITTER
+                          || action.callsUnknownActions())
+          ? Verb.Type.EMITTER
+          : Verb.Type.FUNCTION;
+    }
     var mode = Verb.Type.FUNCTION;
     var init = actions.get("init");
     if (init != null) {
