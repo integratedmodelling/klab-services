@@ -1757,16 +1757,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   protected Object invokeFunction(
       Object actor, String verb, AgentScope scope, Object... arguments) {
-    try {
     Object ret = invokeActor(actor, verb, scope, arguments);
     if (ret instanceof CompletableFuture<?> future) {
       return future.join();
     }
     return ret;
-    } catch (Throwable e) {
-      System.out.println("HOSTIA");
-      throw e;
-    }
   }
 
   @SuppressWarnings("unchecked")

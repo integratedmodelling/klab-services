@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -220,6 +221,7 @@ public class CoreActorLibrary {
   public static class Context {
 
     private final ContextScope context;
+    private org.integratedmodelling.klab.api.provenance.Agent provenanceAgent;
 
     public Context() {
       this.context = null;
@@ -279,6 +281,11 @@ public class CoreActorLibrary {
 
       var runtimeService = context.getService(RuntimeService.class);
 
+      if (this.provenanceAgent == null) {
+        this.provenanceAgent =
+            context.getDigitalTwin().getKnowledgeGraph().requireAgent(scope.getAgent().getName());
+      }
+
       var builder = Observation.builder(context);
       var metadata = Utils.Collections.findElement(arguments, Metadata.create());
       var definition = Utils.Collections.findElement(arguments, Map.class, metadata);
@@ -300,16 +307,30 @@ public class CoreActorLibrary {
       }
 
       // definition MUST remain last
-      var target = builder.observable(semantics).identity(urn).geometry(geometry).definition(definition).build();
+      var target =
+          builder
+              .observable(semantics)
+              .identity(urn)
+              .geometry(geometry)
+              .definition(definition)
+              .build();
 
-      var submissionScope = context;
+      var submissionScope =
+          context.withResolutionConstraints(
+              ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenanceAgent));
+
       if (metadata.get("within") instanceof Observation contextObservation) {
         submissionScope = submissionScope.within(contextObservation);
       } else if (metadata.get("source") instanceof Observation sourceObservation
-          && metadata.get("target") instanceof Observation targetObservation)
-        if (metadata.get("namespace") instanceof String namespace) {
-          submissionScope = submissionScope.between(sourceObservation, targetObservation);
-        }
+          && metadata.get("target") instanceof Observation targetObservation) {
+        submissionScope = submissionScope.between(sourceObservation, targetObservation);
+      }
+
+      if (metadata.get("namespace") instanceof String namespace) {
+        submissionScope =
+            submissionScope.withResolutionConstraints(
+                ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace, namespace));
+      }
 
       return runtimeService.submit(target, submissionScope);
     }
