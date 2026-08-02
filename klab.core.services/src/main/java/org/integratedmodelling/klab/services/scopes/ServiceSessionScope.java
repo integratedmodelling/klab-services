@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -19,6 +20,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 /**
@@ -85,16 +87,41 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     var userScope = getParentScope(Type.USER, ServiceUserScope.class);
     var identity = (UserIdentity) userScope.getIdentity();
+    var validatedConfiguration = configuration.validate(this);
 
-    var ret = new ServiceContextScope(this, configuration, getUser()).withIdentity(identity);
+    var ret =
+        new ServiceContextScope(this, validatedConfiguration, getUser()).withIdentity(identity);
     var runtimeService = getService(RuntimeService.class);
-    for (var service : getServices(KlabService.class)) {
-      ret.addService(service);
-    }
 
     ret.setHostServiceId(runtimeService.serviceId());
-    ret.setId(configuration.getId());
-    runtimeService.declareContextScope(ret, this, userScope);
+    ret.setId(validatedConfiguration.getId());
+
+    var declaredConfiguration = runtimeService.declareContextScope(ret, this, userScope);
+    if (declaredConfiguration == null || declaredConfiguration.isEmpty()) {
+      ret.setEmpty(true);
+      if (declaredConfiguration != null && declaredConfiguration != validatedConfiguration) {
+        validatedConfiguration
+            .getNotifications()
+            .addAll(declaredConfiguration.getNotifications());
+      }
+      return ret;
+    }
+
+    if (declaredConfiguration.getId() == null) {
+      throw new KlabInternalErrorException(
+          "Runtime returned a context configuration without an ID");
+    }
+
+    if (declaredConfiguration != validatedConfiguration) {
+      validatedConfiguration.defineFromExisting(declaredConfiguration);
+    }
+    ret.setId(declaredConfiguration.getId());
+
+    // A remote runtime registered its own scope instance. Register and instrument this service's
+    // peer as well so that subsequent local and incoming operations see the same logical context.
+    if (!runtimeService.serviceId().equals(service.serviceId())) {
+      service.declareContextScope(ret, this, userScope);
+    }
 
     return ret;
   }

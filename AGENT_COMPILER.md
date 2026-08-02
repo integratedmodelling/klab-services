@@ -677,11 +677,15 @@ Value emission currently distinguishes:
   functional switches;
 - closure-like deferred values through `defer(...)` and `resolveDeferred(...)`;
 - `null` for no-data/empty and wildcard match values;
-- `literalValue(type, encoded)` for quantities, ranges, observables, localized strings, and other
-  non-POD values.
+- compiler-embedded, typed JSON for semantic observables, reconstructed through
+  `observableLiteral(...)` as complete `KimObservable` objects;
+- `literalValue(type, encoded)` for quantities, ranges, localized strings, and other non-POD
+  values.
 
 `literalValue` currently returns the encoded string. It is a deliberate runtime extension point for
-language-aware mediation.
+language-aware mediation. Observable reconstruction is deliberately separate: the compiler uses
+the k.LAB Jackson configuration and the runtime caches each reconstructed literal per agent. The
+same typed emission is applied recursively to observables stored in list, set, and map literals.
 
 Frames are `LinkedHashMap<String,Object>` instances:
 
@@ -1215,7 +1219,7 @@ The following items are either explicit TODOs or incomplete integration boundari
   implementation class at runtime.
 - Complete component verb descriptors: argument, return, fire, and execution-type metadata are
   still partially marked TODO in `ComponentRegistry`.
-- Implement quantity/unit, geometry, observable, and service-specific rules through
+- Implement quantity/unit, geometry, and service-specific rules through
   `ComponentRegistry.negotiateAgentParameters(...)`.
 - Add component-unload invalidation for generated classes and registered custom-message DTOs.
   Compilation and loading already retain resolver-supplied implementation classes and their
@@ -1225,9 +1229,10 @@ The following items are either explicit TODOs or incomplete integration boundari
 ### 12.4 Generated language semantics
 
 - Preserve named call arguments and defaults in generated invocations.
-- Mediate non-POD values in `literalValue` instead of returning encoded strings.
-- Compile regular expressions, class/type criteria, semantic observables, annotations, ranges,
-  quantities, localized strings, lists, and maps to their definitive runtime forms.
+- Mediate the remaining non-POD values in `literalValue` instead of returning encoded strings.
+- Compile regular expressions, class/type criteria, annotations, ranges, quantities, and localized
+  strings to their definitive runtime forms. Semantic observables and mutable list/set/map literals
+  already retain their runtime types.
 - Expand match semantics where semantic or component services are required.
 - Apply statement metadata, tags, and annotations to runtime/application behavior.
 - Implement assertion call chains and richer assertion operators rather than evaluating only the

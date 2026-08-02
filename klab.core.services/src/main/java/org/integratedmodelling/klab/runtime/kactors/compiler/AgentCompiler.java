@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.utils.Utils;
@@ -45,6 +46,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -1744,7 +1746,7 @@ public class AgentCompiler {
     }
 
     JavaFile classFile = generateClass(behavior);
-    if (classFile == null) {
+    if (classFile == null || Utils.Notifications.hasErrors(notifications)) {
       return false;
     }
     sourceCode = classFile.toString();
@@ -3581,6 +3583,7 @@ public class AgentCompiler {
       case TERNARY_EXPRESSION -> ternary(raw, context);
       case CONSTANT -> CodeBlock.of("$T.create($S)", Constant.class, String.valueOf(raw));
       case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, value.getType());
+      case OBSERVABLE -> observableLiteral(raw);
       case LIST -> collectionLiteral(raw, context, false);
       case SET -> collectionLiteral(raw, context, true);
       case MAP -> mapLiteral(raw, context);
@@ -3641,6 +3644,9 @@ public class AgentCompiler {
     if (raw instanceof Constant constant) {
       return CodeBlock.of("$T.create($S)", Constant.class, constant.getValue());
     }
+    if (raw instanceof KimObservable) {
+      return observableLiteral(raw);
+    }
     if (raw instanceof Map<?, ?>) {
       return mapLiteral(raw, context);
     }
@@ -3658,6 +3664,28 @@ public class AgentCompiler {
     }
     return CodeBlock.of(
         "literalValue($T.$L, $S)", ValueType.class, ValueType.STRING.name(), raw.toString());
+  }
+
+  private CodeBlock observableLiteral(Object raw) {
+    if (!(raw instanceof KimObservable observable)) {
+      notifications.add(
+          Notification.error(
+              "Invalid observable literal: expected KimObservable, found "
+                  + (raw == null ? "null" : raw.getClass().getName())));
+      return CodeBlock.of("null");
+    }
+    try {
+      String serialized =
+          JacksonConfiguration.newObjectMapper()
+              .writerFor(KimObservable.class)
+              .writeValueAsString(observable);
+      return CodeBlock.of("observableLiteral($S)", serialized);
+    } catch (Exception error) {
+      notifications.add(
+          Notification.error(
+              "Cannot preserve observable literal " + observable.getUrn() + ": " + error));
+      return CodeBlock.of("null");
+    }
   }
 
   private CodeBlock ternary(Object raw, CompilationContext context) {

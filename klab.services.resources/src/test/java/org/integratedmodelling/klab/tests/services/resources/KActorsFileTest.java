@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.tests.services.resources;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.kactors.compiler.BehaviorAnalyzer;
@@ -123,6 +125,10 @@ class KActorsFileTest {
             "/nested-value-arguments.kactor",
             functionalConsoleValidator(),
             this::assertNestedValueArguments),
+        new Case(
+            "/semantic-literal-values.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertSemanticLiteralValues),
         new Case(
             "/java-object-interop.kactor",
             functionalConsoleValidator(),
@@ -492,6 +498,31 @@ class KActorsFileTest {
         compiler.getSourceCode().contains("invokeDynamicValue("), compiler.getSourceCode());
     assertTrue(
         compiler.getSourceCode().contains("evaluateExpression(this.expression_0"),
+        compiler.getSourceCode());
+  }
+
+  private void assertSemanticLiteralValues(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var main = result.requireAnalyzer().getActions().get("main").statement();
+    var returned = assertInstanceOf(KActorsStatement.Return.class, main.getCode().getFirst());
+    var value = returned.getValue();
+    assertEquals(ValueType.MAP, value.getType());
+    var map = assertInstanceOf(Map.class, value.getValue(Object.class));
+    var direct = map.get("direct");
+    var nested = assertInstanceOf(List.class, map.get("nested"));
+    var nestedMap = assertInstanceOf(Map.class, nested.get(1));
+    assertInstanceOf(KimObservable.class, direct);
+    assertInstanceOf(KimObservable.class, nested.getFirst());
+    assertInstanceOf(KimObservable.class, nestedMap.get("value"));
+    assertEquals("earth:Region", ((KimObservable) direct).getUrn());
+
+    var compiler = new AgentCompiler(result.requireBehavior());
+    assertTrue(compiler.compile(), () -> compiler.getNotifications().toString());
+    assertTrue(compiler.getSourceCode().contains("observableLiteral("), compiler.getSourceCode());
+    assertFalse(
+        compiler.getSourceCode().contains("literalValue(ValueType.OBSERVABLE"),
         compiler.getSourceCode());
   }
 

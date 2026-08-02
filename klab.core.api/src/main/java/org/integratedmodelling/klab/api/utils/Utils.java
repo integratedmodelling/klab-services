@@ -5932,7 +5932,7 @@ public class Utils {
 
       for (Object o : args) {
         if (tClass.isAssignableFrom(o.getClass())
-            && !Arrays.stream(ignored).filter(Objects::isNull).toList().contains(o)) {
+            && !Arrays.stream(ignored).filter(Objects::nonNull).toList().contains(o)) {
           return (T) o;
         }
       }

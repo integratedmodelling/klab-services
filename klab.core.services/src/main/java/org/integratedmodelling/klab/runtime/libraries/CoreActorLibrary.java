@@ -247,7 +247,6 @@ public class CoreActorLibrary {
             DigitalTwin.Configuration.builder()
                 .name(Utils.Collections.findElement(args, "Unnamed context"))
                 .persistence(Utils.Collections.findElement(args, Persistence.ONE_OFF))
-                .id(Utils.Names.shortUUID())
                 .serviceId(aScope.getService(RuntimeService.class).serviceId())
                 .serverUrl(aScope.getService(RuntimeService.class).getUrl())
                 .owner(sessionScope.getUser().getUsername())
@@ -301,7 +300,7 @@ public class CoreActorLibrary {
       }
 
       // definition MUST remain last
-      builder.observable(semantics).identity(urn).geometry(geometry).definition(definition).build();
+      var target = builder.observable(semantics).identity(urn).geometry(geometry).definition(definition).build();
 
       var submissionScope = context;
       if (metadata.get("within") instanceof Observation contextObservation) {
@@ -312,7 +311,7 @@ public class CoreActorLibrary {
           submissionScope = submissionScope.between(sourceObservation, targetObservation);
         }
 
-      return runtimeService.submit(builder.build(), submissionScope);
+      return runtimeService.submit(target, submissionScope);
     }
   }
 

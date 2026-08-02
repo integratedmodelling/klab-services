@@ -307,8 +307,8 @@ public class RuntimeServerController {
   public @ResponseBody DigitalTwin.Configuration getDigitalTwinConfiguration(
       @PathVariable(name = "id") String scopeId, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      var sessionScope = authorization.getScope(SessionScope.class);
-      return runtimeService.klabService().getConfiguration(scopeId, sessionScope);
+      var userScope = authorization.getScope(UserScope.class);
+      return runtimeService.klabService().getConfiguration(scopeId, userScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

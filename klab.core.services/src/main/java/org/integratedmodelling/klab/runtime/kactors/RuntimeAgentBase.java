@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import groovy.lang.GroovyObjectSupport;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -46,6 +47,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -97,6 +99,7 @@ import reactor.core.publisher.Sinks;
 public abstract class RuntimeAgentBase extends GroovyObjectSupport implements RuntimeAgent {
 
   private static final int MAX_PENDING_CONSOLE_OUTPUTS = 256;
+  private static final ObjectMapper KLAB_OBJECT_MAPPER = JacksonConfiguration.newObjectMapper();
 
   private record ConsoleOutput(RuntimeAgent.ConsoleMessageType type, String text) {}
 
@@ -118,6 +121,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private final AtomicBoolean failureReported = new AtomicBoolean(false);
   private final AtomicBoolean consoleAttached = new AtomicBoolean(false);
   private final Object consoleOutputLock = new Object();
+  private final Map<String, KimObservable> observableLiterals = new ConcurrentHashMap<>();
   private final ArrayDeque<ConsoleOutput> pendingConsoleOutputs = new ArrayDeque<>();
   private final AtomicLong startedAt = new AtomicLong(-1);
   private final AtomicLong lastActivityAt = new AtomicLong(-1);
@@ -1596,9 +1600,32 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   protected Object literalValue(ValueType type, String encoded) {
-    // Extension point for observables, quantities, ranges, ternaries, localized strings and other
-    // non-POD literals whose definitive runtime mediation belongs to language/runtime services.
+    // Extension point for quantities, ranges, localized strings and other non-POD literals whose
+    // definitive runtime mediation belongs to language/runtime services. Semantic observables use
+    // observableLiteral(...) so their KimObservable model is not reduced to text.
     return encoded;
+  }
+
+  /**
+   * Reconstruct a compiler-embedded semantic literal without degrading it to its textual URN.
+   * Values are cached per agent so repeated evaluation of the same source literal retains stable
+   * object identity as well as its complete {@link KimObservable} semantic model. This method is
+   * deliberately protected: the polymorphic JSON is produced from the already-adapted source bean
+   * by {@code AgentCompiler} and must not become a general deserialization endpoint.
+   */
+  protected KimObservable observableLiteral(String serialized) {
+    if (serialized == null || serialized.isBlank()) {
+      throw new KlabActorException(this, "Missing serialized observable literal");
+    }
+    return observableLiterals.computeIfAbsent(
+        serialized,
+        key -> {
+          try {
+            return KLAB_OBJECT_MAPPER.readValue(key, KimObservable.class);
+          } catch (Exception error) {
+            throw new KlabActorException(this, error);
+          }
+        });
   }
 
   /** Build a mutable insertion-ordered map for a compiled k.Actors map literal. */
@@ -1730,11 +1757,16 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   protected Object invokeFunction(
       Object actor, String verb, AgentScope scope, Object... arguments) {
+    try {
     Object ret = invokeActor(actor, verb, scope, arguments);
     if (ret instanceof CompletableFuture<?> future) {
       return future.join();
     }
     return ret;
+    } catch (Throwable e) {
+      System.out.println("HOSTIA");
+      throw e;
+    }
   }
 
   @SuppressWarnings("unchecked")

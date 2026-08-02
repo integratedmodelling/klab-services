@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.authentication.scope.AMQPChannel;
@@ -29,6 +30,8 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -166,6 +169,67 @@ class AgentRegistryTest {
     assertNotNull(runtime);
     assertEquals(20, ((RuntimeAgentBase) runtime).run().getReturnValue());
     assertTrue(handle.stop());
+  }
+
+  @Test
+  void compiledSemanticLiteralsRemainKimObservablesAtEveryValueDepth() {
+    var observable = new KimObservableImpl();
+    observable.setUrn("earth:Region");
+    observable.setNamespace("test.semantic.literals");
+    observable.setUnit("m");
+
+    var directValue = new KActorsValueImpl();
+    directValue.setType(ValueType.OBSERVABLE);
+    directValue.setStatedValue(observable);
+    var directBehavior =
+        behaviorReturning(
+            "test.registry.observable.direct."
+                + UUID.randomUUID().toString().replace("-", ""),
+            directValue);
+    var directHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(directBehavior.getUrn(), "direct observable"), directBehavior, null);
+
+    assertTrue(directHandle.isViable(), () -> directHandle.getNotifications().toString());
+    var directRuntime =
+        (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(directHandle.getUrn());
+    var directResult = directRuntime.run().getReturnValue();
+    assertTrue(directResult instanceof KimObservable);
+    assertEquals("earth:Region", ((KimObservable) directResult).getUrn());
+    assertEquals("test.semantic.literals", ((KimObservable) directResult).getNamespace());
+    assertEquals("m", ((KimObservable) directResult).getUnit());
+    assertTrue(directHandle.stop());
+
+    var compositeValue = new KActorsValueImpl();
+    compositeValue.setType(ValueType.MAP);
+    compositeValue.setStatedValue(
+        Map.of(
+            "direct", observable,
+            "list", List.of(observable),
+            "map", Map.of("nested", observable)));
+    var compositeBehavior =
+        behaviorReturning(
+            "test.registry.observable.composite."
+                + UUID.randomUUID().toString().replace("-", ""),
+            compositeValue);
+    var compositeHandle =
+        AgentRegistry.INSTANCE.getOrCreateAgent(
+            request(compositeBehavior.getUrn(), "nested observables"), compositeBehavior, null);
+
+    assertTrue(compositeHandle.isViable(), () -> compositeHandle.getNotifications().toString());
+    var compositeRuntime =
+        (RuntimeAgentBase) AgentRegistry.INSTANCE.getRuntimeAgent(compositeHandle.getUrn());
+    var compositeResult = (Map<?, ?>) compositeRuntime.run().getReturnValue();
+    var direct = compositeResult.get("direct");
+    var inList = ((List<?>) compositeResult.get("list")).getFirst();
+    var inMap = ((Map<?, ?>) compositeResult.get("map")).get("nested");
+    assertTrue(direct instanceof KimObservable);
+    assertTrue(inList instanceof KimObservable);
+    assertTrue(inMap instanceof KimObservable);
+    assertEquals("earth:Region", ((KimObservable) inMap).getUrn());
+    assertSame(direct, inList);
+    assertSame(direct, inMap);
+    assertTrue(compositeHandle.stop());
   }
 
   @Test
@@ -590,6 +654,17 @@ class AgentRegistryTest {
     behavior.setUrn(urn);
     behavior.setDescription("Registry test behavior");
     behavior.setBehaviorType(KActorsBehavior.Type.SCRIPT);
+    behavior.setStatements(List.of(main));
+    return behavior;
+  }
+
+  private static KActorsBehaviorImpl behaviorReturning(String urn, KActorsValueImpl value) {
+    var returned = new KActorsStatementImpl.ReturnImpl();
+    returned.setValue(value);
+    var main = new KActorsActionImpl();
+    main.setUrn("main");
+    main.setCode(List.of(returned));
+    var behavior = finiteBehavior(urn);
     behavior.setStatements(List.of(main));
     return behavior;
   }

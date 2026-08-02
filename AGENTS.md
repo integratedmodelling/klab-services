@@ -574,6 +574,10 @@ Common value forms include:
 | Localized string key | `#WELCOME_MESSAGE` |
 | Current/numbered event or argument value | `$`, `$$`, `$0`, `$1`, ... |
 
+A semantic literal is passed to actions as a `KimObservable`, not as its textual URN. This remains
+true when the literal is nested inside a list or map, so Java extensions can safely inspect its
+semantics, unit, namespace, and other model fields.
+
 A value prefixed with a backtick is deferred. The runtime passes a reevaluatable computation
 instead of its current result:
 

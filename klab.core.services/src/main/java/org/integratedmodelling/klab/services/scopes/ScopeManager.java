@@ -562,22 +562,6 @@ public class ScopeManager {
           return null;
         }
 
-        var sessionId = scopeId.split("\\.")[0];
-        var sessionScope = getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId);
-        if (sessionScope == null) {
-          // TODO handle isEmpty() and notifications upstream
-          Logging.INSTANCE.warn(
-              "Cannot reconstruct context scope "
-                  + scopeId
-                  + ": session "
-                  + sessionId
-                  + " is unavailable in service "
-                  + serviceId()
-                  + " for "
-                  + describeAuthorization(authorization));
-          return null;
-        }
-
         // we need the original service to retrieve the configuration
         var originalService =
             userScope
@@ -593,7 +577,29 @@ public class ScopeManager {
                   + " in service "
                   + serviceId());
           var configuration = originalService.getConfiguration(scopeId, userScope);
-          if (configuration != null) {
+          if (configuration != null && scopeId.equals(configuration.getId())) {
+            /*
+             * The host runtime has confirmed that this authenticated user can access the context.
+             * This is the authority needed to accept a noncanonical parent session, such as the
+             * private session created for an application, script or test-case agent.
+             */
+            var sessionId = scopeId.split("\\.")[0];
+            var sessionScope =
+                getOrCreateSessionScope(
+                    sessionId, authorization, userScope, runtimeId, true);
+            if (sessionScope == null) {
+              Logging.INSTANCE.warn(
+                  "Cannot reconstruct context scope "
+                      + scopeId
+                      + ": runtime-verified session "
+                      + sessionId
+                      + " is unavailable in service "
+                      + serviceId()
+                      + " for "
+                      + describeAuthorization(authorization));
+              return null;
+            }
+
             ret = new ServiceContextScope(sessionScope, configuration, userScope.getUser());
             for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
@@ -614,11 +620,21 @@ public class ScopeManager {
                     + " in service "
                     + serviceId());
             return (T) ret;
-          } else {
+          } else if (configuration == null) {
             Logging.INSTANCE.warn(
                 "Runtime "
                     + runtimeId
                     + " returned no configuration for context "
+                    + scopeId
+                    + " in service "
+                    + serviceId());
+          } else {
+            Logging.INSTANCE.warn(
+                "Runtime "
+                    + runtimeId
+                    + " returned configuration "
+                    + configuration.getId()
+                    + " while reconstructing context "
                     + scopeId
                     + " in service "
                     + serviceId());
@@ -658,6 +674,15 @@ public class ScopeManager {
       EngineAuthorization authorization,
       ServiceUserScope userScope,
       String runtimeId) {
+    return getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId, false);
+  }
+
+  private ServiceSessionScope getOrCreateSessionScope(
+      String sessionId,
+      EngineAuthorization authorization,
+      ServiceUserScope userScope,
+      String runtimeId,
+      boolean verifiedByHostRuntime) {
 
     var ret = getScope(sessionId, ServiceSessionScope.class);
     if (ret != null) {
@@ -666,10 +691,10 @@ public class ScopeManager {
 
     var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var acceptedSessionId =
-        federation == null
+        federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? userScope.getUser().getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
-    if (sessionId.equals(acceptedSessionId)) {
+    if (sessionId.equals(acceptedSessionId) || verifiedByHostRuntime) {
       ret = new ServiceSessionScope(userScope);
       ret.setStatus(Scope.Status.WAITING);
       ret.setId(sessionId);
@@ -688,7 +713,11 @@ public class ScopeManager {
       }
       service.declareSessionScope(ret, userScope, null);
       Logging.INSTANCE.info(
-          "Created reconstructed session scope "
+          "Created "
+              + (verifiedByHostRuntime && !sessionId.equals(acceptedSessionId)
+                  ? "runtime-verified "
+                  : "")
+              + "reconstructed session scope "
               + describeScope(ret)
               + " for "
               + describeAuthorization(authorization)

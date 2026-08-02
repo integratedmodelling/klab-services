@@ -19,6 +19,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.*;
@@ -405,6 +406,12 @@ public class RuntimeService extends BaseService
 
       if (serviceContextScope.getConfiguration() instanceof ConfigurationImpl configurationImpl) {
         configurationImpl.setServiceId(serviceId());
+        if (configurationImpl.getOwner() == null) {
+          configurationImpl.setOwner(userScope.getUser().getUsername());
+        }
+        if (configurationImpl.getAccessRights() == null) {
+          configurationImpl.setAccessRights(ResourcePrivileges.create(userScope));
+        }
       }
 
       serviceContextScope.setId(scopeId);
@@ -1413,8 +1420,8 @@ public class RuntimeService extends BaseService
     var session = new ServiceSessionScope(userScope);
     String userId = userScope.getId();
     session.setId(
-        (userId == null || userId.isBlank() ? "agent" : userId)
-            + ".agent-"
+        (userId == null || userId.isBlank() ? "agent" : userId.replace('.', '_'))
+            + "_agent-"
             + Utils.Names.shortUUID());
     session.setName(
         suggestedAgentName == null || suggestedAgentName.isBlank()
@@ -1944,7 +1951,25 @@ public class RuntimeService extends BaseService
   @Override
   public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
     var contextScope = getScopeManager().getScope(scopeId, ContextScope.class);
-    return contextScope == null ? null : contextScope.getConfiguration();
+    if (contextScope == null || scope == null) {
+      return null;
+    }
+
+    var configuration = contextScope.getConfiguration();
+    var requestingUser = scope.getUser();
+    var owner = configuration.getOwner();
+    var accessRights = configuration.getAccessRights();
+    if ((owner != null && owner.equals(requestingUser.getUsername()))
+        || (accessRights != null && accessRights.checkAuthorization(scope))) {
+      return configuration;
+    }
+
+    Logging.INSTANCE.warn(
+        "User "
+            + requestingUser.getUsername()
+            + " is not authorized to retrieve configuration for context "
+            + scopeId);
+    return null;
   }
 
   private ContextScope reconstructContext(
