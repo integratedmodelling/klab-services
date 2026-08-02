@@ -560,21 +560,27 @@ public class KActorsVisitor {
       boolean acknowledgesOverride =
           safe(action.getAnnotations()).stream()
               .anyMatch(annotation -> "override".equals(annotation.getName()));
-      if (!acknowledgesOverride) {
-        for (var annotation : safe(action.getAnnotations())) {
-          if (!"handle".equals(annotation.getName())) {
-            continue;
-          }
-          String messageClass = handledMessageClass(annotation);
-          if (messageClass != null && inheritedMessageClasses.contains(messageClass)) {
-            warning(
-                "Action "
-                    + action.getUrn()
-                    + " overrides the inherited @handle("
-                    + messageClass
-                    + ") contract; add @override to acknowledge it",
-                action);
-          }
+      for (var annotation : safe(action.getAnnotations())) {
+        if (!"handle".equals(annotation.getName())) {
+          continue;
+        }
+        String messageClass = handledMessageClass(annotation);
+        if (RuntimeAgent.isReservedMessageClass(messageClass)) {
+          error(
+              "Message class "
+                  + messageClass
+                  + " is reserved by the agent runtime and cannot be declared with @handle",
+              action);
+        } else if (!acknowledgesOverride
+            && messageClass != null
+            && inheritedMessageClasses.contains(messageClass)) {
+          warning(
+              "Action "
+                  + action.getUrn()
+                  + " overrides the inherited @handle("
+                  + messageClass
+                  + ") contract; add @override to acknowledge it",
+              action);
         }
       }
     }
@@ -1017,11 +1023,7 @@ public class KActorsVisitor {
         addNotifications(context.validator.validateExpression(descriptor, context));
       }
     } else if (resolveIdentifiers && value.getType() == ValueType.IDENTIFIER && raw != null) {
-      var identifier = raw.toString();
-      if (!context.knownVariables.containsKey(identifier)
-          && !BUILT_IN_IDENTIFIERS.contains(identifier)) {
-        error("Unknown identifier: " + identifier, value);
-      }
+      validateIdentifier(raw.toString(), context, value);
     } else if (value.getType() == ValueType.TERNARY_EXPRESSION
         && raw instanceof Ternary ternary) {
       if (ternary.getCondition() instanceof KActorsValue condition) {
@@ -1032,7 +1034,7 @@ public class KActorsVisitor {
       validateTernaryBranch(ternary.getTrueCase(), "true", value);
       validateTernaryBranch(ternary.getFalseCase(), "false", value);
     }
-    visitValues(raw, context, resolveIdentifiers);
+    visitValues(raw, context, resolveIdentifiers, value);
   }
 
   protected void visitDo(KActorsStatement.Do statement, KActorsContext context) {
@@ -2198,8 +2200,18 @@ public class KActorsVisitor {
   }
 
   private void visitValues(Object values, KActorsContext context, boolean resolveIdentifiers) {
+    visitValues(values, context, resolveIdentifiers, null);
+  }
+
+  private void visitValues(
+      Object values,
+      KActorsContext context,
+      boolean resolveIdentifiers,
+      KActorsCodeStatement lexicalOwner) {
     if (values instanceof KActorsValue value) {
       visitValue(value, context, resolveIdentifiers);
+    } else if (resolveIdentifiers && values instanceof Identifier identifier) {
+      validateIdentifier(identifier.getValue(), context, lexicalOwner);
     } else if (values instanceof KActorsStatement.Verb function) {
       explicitValueStatements.add(function);
       visitNested(function, context, List.of(), false);
@@ -2218,17 +2230,32 @@ public class KActorsVisitor {
       visitNested(argument.getFunction(), context, List.of(), false);
       visitNested(argument.getSwitch(), context, List.of(), false);
     } else if (values instanceof Map<?, ?> map) {
-      map.values().forEach(value -> visitValues(value, context, resolveIdentifiers));
+      map.values()
+          .forEach(value -> visitValues(value, context, resolveIdentifiers, lexicalOwner));
     } else if (values instanceof Iterable<?> iterable) {
-      iterable.forEach(value -> visitValues(value, context, resolveIdentifiers));
+      iterable.forEach(value -> visitValues(value, context, resolveIdentifiers, lexicalOwner));
     } else if (values instanceof Object[] array) {
       for (var value : array) {
-        visitValues(value, context, resolveIdentifiers);
+        visitValues(value, context, resolveIdentifiers, lexicalOwner);
       }
     } else if (values instanceof Ternary ternary) {
-      visitValues(ternary.getCondition(), context, resolveIdentifiers);
-      visitValues(ternary.getTrueCase(), context, resolveIdentifiers);
-      visitValues(ternary.getFalseCase(), context, resolveIdentifiers);
+      visitValues(ternary.getCondition(), context, resolveIdentifiers, lexicalOwner);
+      visitValues(ternary.getTrueCase(), context, resolveIdentifiers, lexicalOwner);
+      visitValues(ternary.getFalseCase(), context, resolveIdentifiers, lexicalOwner);
+    }
+  }
+
+  private void validateIdentifier(
+      String identifier, KActorsContext context, KActorsCodeStatement lexicalOwner) {
+    if (identifier == null
+        || context.knownVariables.containsKey(identifier)
+        || BUILT_IN_IDENTIFIERS.contains(identifier)) {
+      return;
+    }
+    if (lexicalOwner == null) {
+      notifications.add(Notification.error("Unknown identifier: " + identifier));
+    } else {
+      error("Unknown identifier: " + identifier, lexicalOwner);
     }
   }
 

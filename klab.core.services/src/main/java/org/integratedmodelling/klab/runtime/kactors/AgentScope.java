@@ -15,13 +15,16 @@ import reactor.core.publisher.Sinks;
 
 /**
  * The AgentScope provides state during execution and identifies the blocks being run so that events
- * and actions can be properly handled by {@link RuntimeAgentBase}. Each AgentScope must expose a
- * unique ID to track its listeners in the reactor sink.
+ * and actions can be properly handled by {@link RuntimeAgentBase}. Scopes for separate reactive
+ * call channels expose unique IDs so their listeners can be tracked in the reactor sink. A scope
+ * derived only to isolate an action invocation retains its caller's ID so values still reach the
+ * caller's listeners.
  */
 public abstract class AgentScope extends ParametersImpl<String> implements RuntimeAgent.Scope {
 
   private final RuntimeAgentBase actor;
   private final long actionId;
+  private String currentAction;
   private final CopyOnWriteArrayList<AgentScope> children = new CopyOnWriteArrayList<>();
   private final CopyOnWriteArrayList<Disposable> disposables = new CopyOnWriteArrayList<>();
   private final AtomicBoolean done = new AtomicBoolean(false);
@@ -34,6 +37,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
   public AgentScope(AgentScope parent, long actionId) {
     this.actor = parent.actor;
     this.actionId = actionId;
+    this.currentAction = parent.currentAction;
     parent.children.add(this);
   }
 
@@ -53,13 +57,30 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
   }
 
   /**
-   * Each action has an id that is unique within the actor and is used in filtering events that
-   * pertain to the action. The 0 value is reserved for the root scope.
+   * Each reactive call channel has an ID that is unique within the actor and is used in filtering
+   * events that pertain to the call. Invocation-local action scopes share their caller's channel
+   * ID. The 0 value is reserved for the root channel.
    *
    * @return
    */
   public long actionId() {
     return actionId;
+  }
+
+  @Override
+  public String getCurrentAction() {
+    return currentAction;
+  }
+
+  /**
+   * Derive an invocation-local scope for a k.Actors action while retaining the event correlation
+   * ID of the calling scope. Retaining the ID is essential: values fired or returned by the action
+   * must reach listeners installed for the call that invoked it.
+   */
+  AgentScope forAction(String actionName) {
+    var ret = withId(actionId);
+    ret.currentAction = actionName;
+    return ret;
   }
 
   @Override

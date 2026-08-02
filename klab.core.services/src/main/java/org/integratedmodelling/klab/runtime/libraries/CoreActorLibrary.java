@@ -1,36 +1,41 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.geotools.process.vector.TransformProcess;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeInstantImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 
 @Library(name = "core")
 public class CoreActorLibrary {
@@ -232,7 +237,7 @@ public class CoreActorLibrary {
      * @param agentScope
      * @return
      */
-    @Verb(name = "new", executionType = Verb.Type.FUNCTION)
+    @Verb(name = "new", executionType = Verb.Type.FUNCTION, description = "Create a new context")
     public static Context createContext(AgentScope agentScope, Object... args) {
 
       var aScope = agentScope.getAgent().getCreationScope();
@@ -253,27 +258,97 @@ public class CoreActorLibrary {
                         + TimeInstant.create())
                 .accessRights(ResourcePrivileges.create(sessionScope));
 
-        return new Context(sessionScope.createContext(builder.build()));
+        var context = sessionScope.createContext(builder.build());
+
+        // register for disposal if we're running a test
+        if (agentScope instanceof TestCaseBase.TestCaseScope testScope) {
+          testScope.registerContext(context);
+        }
+
+        return new Context(context);
       }
 
       throw new KlabIllegalStateException("Context creation is only supported in a session scope");
     }
 
-    @Verb(name="submit", description="Submit an observation to the digital twin")
+    @Verb(
+        name = "submit",
+        description =
+            """
+            Submit an observation to the digital twin""")
     public CompletableFuture<Observation> submit(AgentScope scope, Object... arguments) {
-      Observation observation = null;
-      if (observation == null) {
-        return CompletableFuture.failedFuture(
-            new KlabIllegalArgumentException("Observation cannot be null"));
+
+      var runtimeService = context.getService(RuntimeService.class);
+
+      var builder = Observation.builder(context);
+      var metadata = Utils.Collections.findElement(arguments, Metadata.create());
+      var definition = Utils.Collections.findElement(arguments, Map.class, metadata);
+      var observable = Utils.Collections.findElement(arguments, KimObservable.class);
+      var concept = Utils.Collections.findElement(arguments, KimConcept.class);
+      var urn = Utils.Collections.findElement(arguments, Urn.class);
+      var geometry = Utils.Collections.findElement(arguments, Geometry.class);
+
+      String semanticDef =
+          concept == null ? (observable == null ? null : observable.getUrn()) : concept.getUrn();
+      Observable semantics = null;
+      if (semanticDef != null) {
+        semantics =
+            scope
+                .getAgent()
+                .getCreationScope()
+                .getService(Reasoner.class)
+                .resolveObservable(semanticDef);
       }
-      return context.getService(RuntimeService.class).submit(observation, context);
+
+      // definition MUST remain last
+      builder.observable(semantics).identity(urn).geometry(geometry).definition(definition).build();
+
+      var submissionScope = context;
+      if (metadata.get("within") instanceof Observation contextObservation) {
+        submissionScope = submissionScope.within(contextObservation);
+      } else if (metadata.get("source") instanceof Observation sourceObservation
+          && metadata.get("target") instanceof Observation targetObservation)
+        if (metadata.get("namespace") instanceof String namespace) {
+          submissionScope = submissionScope.between(sourceObservation, targetObservation);
+        }
+
+      return runtimeService.submit(builder.build(), submissionScope);
+    }
+  }
+
+  @Actor(name = "inspector", description = "Observation lifecycle inspector")
+  public static class Inspector {
+
+    @Verb(
+        name = "viable",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            """
+                        Check if an observation is viable; report through the log or the test case if run in a test.
+                        Recognize if the call is downstream of an assertion in a test and fill in an assertion slot if so.
+                        Returns true if the observation is viable, false otherwise, so it can be used in a conditional as
+                        well as an assert.
+
+                        The basic test is that the observation is not empty and has been resolved successfully if it
+                        is a dependent. This can be extended or modified through metadata options.
+
+                        Enabled metadata:
+
+                        * `+nodata` fail for a quality if all the values are no-data
+                        * `!nodata` fail for a quality if any of the values are no-data
+                        * `!resolved` fail for a substantial if its resolution was empty
+
+                        """)
+    public static boolean checkViable(RuntimeAgent.Scope scope, Object... arguments) {
+      return true;
     }
   }
 
   @Actor(name = "log", description = "Logging actor")
   public static class Logger {
 
-    @Verb(name = "info", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(name = "info", executionType = Verb.Type.FUNCTION)
     public static void info(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
@@ -283,33 +358,33 @@ public class CoreActorLibrary {
       }
     }
 
-    @Verb(name = "error", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(name = "error", executionType = Verb.Type.FUNCTION)
     public static void error(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
-        uscope.info(messages);
+        uscope.error(messages);
       } else {
-        Logging.INSTANCE.info(messages);
+        Logging.INSTANCE.error(messages);
       }
     }
 
-    @Verb(name = "warning", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(name = "warning", executionType = Verb.Type.FUNCTION)
     public static void warning(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
-        uscope.info(messages);
+        uscope.warn(messages);
       } else {
-        Logging.INSTANCE.info(messages);
+        Logging.INSTANCE.warn(messages);
       }
     }
 
-    @Verb(name = "debug", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(name = "debug", executionType = Verb.Type.FUNCTION)
     public static void debug(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
-        uscope.info(messages);
+        uscope.debug(messages);
       } else {
-        Logging.INSTANCE.info(messages);
+        Logging.INSTANCE.debug(messages);
       }
     }
 

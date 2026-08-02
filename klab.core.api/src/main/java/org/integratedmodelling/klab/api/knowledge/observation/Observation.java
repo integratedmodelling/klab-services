@@ -29,8 +29,11 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -63,10 +66,10 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   long UNASSIGNED_ID = -1;
 
   /**
-   * An observation whose ID is 0 is either a query submitted to the runtime or a query result. Query
-   * results are views of existing knowledge and are never stored in the knowledge graph. A quality
-   * query with complete coverage returns the original resolved observation instead, with its
-   * positive ID.
+   * An observation whose ID is 0 is either a query submitted to the runtime or a query result.
+   * Query results are views of existing knowledge and are never stored in the knowledge graph. A
+   * quality query with complete coverage returns the original resolved observation instead, with
+   * its positive ID.
    *
    * <p>Collective query results report the observations that contributed knowledge of the requested
    * geometry in metadata. Their geometry may include areas where the contributing collective
@@ -122,6 +125,8 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      */
     Builder identity(String namespace, String name);
 
+    Builder definition(Map<?, ?> definition);
+
     /**
      * Mandatory for substantials, causes an illegal state exception on dependents. Use this or the
      * other but not both.
@@ -147,6 +152,23 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      * @return
      */
     Builder metadata(Map<String, Object> metadata);
+
+    /**
+     * Observable. Null-safe. Used internally and only on a naïve builder: the normal use * of the
+     * builder is through submit().
+     *
+     * @param observable
+     * @return
+     */
+    Builder observable(Observable observable);
+
+    /**
+     * Build the unresolved observation. Used internally and only on a naïve builder: the normal use
+     * of the builder is through submit().
+     *
+     * @return
+     */
+    Observation build();
 
     /**
      * Submit the observation for resolution. The returned future will complete when the observation
@@ -359,8 +381,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    */
   class NaiveBuilder extends ObservationBuilderImpl {
 
+    NaiveBuilder(ContextScope scope) {
+      super((Observable)null, scope);
+    }
+
     public NaiveBuilder(Observable observable, ContextScope contextScope) {
       super(observable, contextScope);
+    }
+
+    public NaiveBuilder(Map<?, ?> definition, ContextScope contextScope) {
+      super(definition, contextScope);
     }
 
     public NaiveBuilder(Data data, ContextScope scope) {
@@ -384,6 +414,10 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     public Observation register() {
       throw new KlabIllegalStateException("The naive builder cannot register observations.");
     }
+  }
+
+  static Builder builder(ContextScope scope) {
+    return new NaiveBuilder(scope);
   }
 
   static Role classifyRole(Observation observation) {

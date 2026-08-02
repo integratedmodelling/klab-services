@@ -1,9 +1,12 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
+import java.util.*;
 import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 
 public abstract class TestCaseBase extends RuntimeAgentBase {
@@ -13,6 +16,8 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
 
     private final SessionScope session;
     private final ContextScope context;
+    // container to register contexts created during a test. Managed by the context agent.
+    private Map<String, Set<ContextScope>> contexts = new HashMap<>();
 
     public TestCaseScope(RuntimeAgentBase actor, SessionScope session, ContextScope context) {
       super(actor);
@@ -30,6 +35,26 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     public void setup() {
       // TODO setup test sequence and counters; instrument action scopes for communication
       super.setup();
+    }
+
+    public void registerContext(ContextScope context) {
+      contexts.computeIfAbsent(getCurrentAction(), k -> new HashSet<>()).add(context);
+    }
+
+    @Override
+    public void beforeAction(String actionName, List<Annotation> annotations) {
+      super.beforeAction(actionName, annotations);
+    }
+
+    @Override
+    public void afterAction(String actionName, List<Annotation> annotations) {
+      var contexts = this.contexts.get(getCurrentAction());
+      if (contexts != null) {
+        contexts.stream()
+            .filter(c -> c.getConfiguration().getPersistence() == Persistence.ONE_OFF)
+            .forEach(ContextScope::close);
+      }
+      super.afterAction(actionName, annotations);
     }
 
     @Override
@@ -77,6 +102,11 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
   @Override
   protected AgentScope initializeScope() {
     return new TestCaseScope(this, sessionScope(), contextScope());
+  }
+
+  @Override
+  protected void assertValue(Object actual, Object expected) {
+    super.assertValue(actual, expected);
   }
 
   public void runTest(Consumer<TestCaseScope> test) {

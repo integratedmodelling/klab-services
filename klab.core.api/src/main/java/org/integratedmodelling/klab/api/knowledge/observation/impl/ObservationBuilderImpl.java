@@ -26,7 +26,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public abstract class ObservationBuilderImpl implements Observation.Builder {
 
   private Observable observable;
-  private final ContextScope scope;
+  private ContextScope scope;
   private Urn identity;
   private Geometry geometry;
   private Object defaultValue;
@@ -41,6 +41,11 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   public ObservationBuilderImpl(Observable observable, ContextScope contextScope) {
     this.scope = contextScope;
     this.observable = observable;
+  }
+
+  public ObservationBuilderImpl(Map<?, ?> definition, ContextScope contextScope) {
+    this.scope = contextScope;
+    defineFromMap(definition, null);
   }
 
   /**
@@ -67,6 +72,8 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     }
     metadata.putAll(data.metadata());
   }
+
+  protected ObservationBuilderImpl() {}
 
   public ObservationBuilderImpl query() {
     this.query = true;
@@ -102,6 +109,15 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   }
 
   @Override
+  public Observation.Builder definition(Map<?, ?> definition) {
+    if (definition == null) {
+      return this;
+    }
+    defineFromMap(definition, null);
+    return this;
+  }
+
+  @Override
   public Observation.Builder identity(Urn urn) {
     this.identity = urn;
     if (urn != null) {
@@ -116,6 +132,62 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     return this;
   }
 
+  private void defineFromMap(Map<?, ?> definition, String urn) {
+
+    if (urn == null) {
+      // must have either `urn` or `namespace` + `name`
+      if (definition.containsKey("namespace") && definition.containsKey("name")) {
+        identity =
+            Urn.of(
+                definition.get("namespace").toString() + ":" + definition.get("name").toString());
+      } else if (!definition.containsKey("urn")) {
+        identity = Urn.of(definition.get("urn").toString());
+      } else {
+        notifications.add(
+            Notification.error("Observation must have either `urn` or `namespace` + `name`"));
+      }
+    }
+
+    if (definition.containsKey("semantics")) {
+      observable =
+          scope
+              .getService(Reasoner.class)
+              .resolveObservable(definition.get("semantics").toString());
+      if (observable == null) {
+        notifications.add(
+            Notification.error(
+                "Invalid semantics in observation definition: " + definition.get("semantics")));
+      }
+    }
+    if (definition.containsKey("space") || definition.containsKey("time")) {
+      geometry = defineGeometry(definition);
+    }
+
+    if (definition.containsKey("geometry") && definition.get("geometry") instanceof Map<?, ?>) {
+      geometry = defineGeometry((Map<?, ?>) definition.get("geometry"));
+    }
+
+    if (definition.containsKey("contextualization")
+        && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
+      // TODO must be either collective or quality. Geometry is supplied externally and it's
+      //  illegal here.
+      if (geometry != null) {
+        notifications.add(
+            Notification.error(
+                "Geometry cannot be supplied when contextualization data are given. Observation: "
+                    + urn));
+      } else {
+        contextualizationData = defineContextualization(contextualization, scope);
+      }
+    }
+
+    for (var key : definition.keySet()) {
+      if (!knownKeys.contains(key.toString())) {
+        metadata.put(key.toString(), definition.get(key));
+      }
+    }
+  }
+
   private void defineFromSymbol(KimSymbolDefinition symbol) {
 
     // must be an "observation" class
@@ -127,54 +199,16 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
         // tell the clients that this has been defined as an observer
         metadata.put(Metadata.IM_OBSERVER_TAG, true);
       }
-
       identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
-
-      //      name = symbol.getName();
-      if (definition.containsKey("semantics")) {
-        observable =
-            scope
-                .getService(Reasoner.class)
-                .resolveObservable(definition.get("semantics").toString());
-        if (observable == null) {
-          notifications.add(
-              Notification.error(
-                  "Invalid semantics in observation definition: " + definition.get("semantics")));
-        }
-      }
-      if (definition.containsKey("space") || definition.containsKey("time")) {
-        geometry = defineGeometry(definition);
-      }
-
-      if (definition.containsKey("geometry") && definition.get("geometry") instanceof Map<?, ?>) {
-        geometry = defineGeometry((Map<?, ?>) definition.get("geometry"));
-      }
-
-      if (definition.containsKey("contextualization")
-          && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
-        // TODO must be either collective or quality. Geometry is supplied externally and it's
-        //  illegal here.
-        if (geometry != null) {
-          notifications.add(
-              Notification.error(
-                  "Geometry cannot be supplied when contextualization data are given. Observation: "
-                      + symbol.getUrn()));
-        } else {
-          contextualizationData = defineContextualization(contextualization, scope);
-        }
-      }
-
-      for (var key : definition.keySet()) {
-        if (!knownKeys.contains(key.toString())) {
-          metadata.put(key.toString(), definition.get(key));
-        }
-      }
+      defineFromMap(definition, symbol.getUrn());
     }
   }
 
   @Override
   public Observation.Builder geometry(Geometry geometry) {
-    this.geometry = geometry;
+    if (geometry != null) {
+      this.geometry = geometry;
+    }
     return this;
   }
 
@@ -186,8 +220,10 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
 
   @Override
   public Observation.Builder identity(String namespace, String name) {
-    this.identity = Urn.of(namespace + ":" + name);
-    this.name = name;
+    if (namespace != null && name != null) {
+      this.identity = Urn.of(namespace + ":" + name);
+      this.name = name;
+    }
     return this;
   }
 
@@ -197,7 +233,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     return this;
   }
 
-  protected ObservationImpl build() {
+  public ObservationImpl build() {
 
     ObservationImpl ret = new ObservationImpl();
     ret.setGeometry(geometry);
@@ -335,5 +371,11 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       geometryBuilder = timeBuilder.build();
     }
     return geometryBuilder.build();
+  }
+
+  @Override
+  public Observation.Builder observable(Observable observable) {
+    this.observable = observable;
+    return this;
   }
 }

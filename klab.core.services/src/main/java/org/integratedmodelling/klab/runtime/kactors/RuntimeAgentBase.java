@@ -777,6 +777,12 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       // Output is consumed by client consoles sharing this agent endpoint.
       return;
     }
+    if (RuntimeAgent.isReservedMessageClass(messageClass)
+        && !RuntimeAgent.ConsoleMessageType.STDIN.name().equals(messageClass)) {
+      // Test lifecycle and other runtime protocol messages are consumed by connected clients.
+      // They must never fall through to language-defined handlers.
+      return;
+    }
     var handler = agentMessageHandlers().get(messageClass);
     if (handler == null) {
       emitEvent(new Event(EventType.EXTERNAL, 0, customMessage));
@@ -808,6 +814,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   public final List<String> getHandledMessageClasses() {
     return agentMessageHandlers().entrySet().stream()
         .filter(entry -> entry.getValue().customApi)
+        .filter(entry -> !RuntimeAgent.isReservedMessageClass(entry.getKey()))
         .map(Map.Entry::getKey)
         .sorted()
         .toList();
@@ -1885,7 +1892,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     }
     try {
       Method method = findMethod(target.getClass(), "action_" + action, false);
-      return method.invoke(target, scope, splitSuppliedArguments(arguments).values());
+      AgentScope actionScope = scope.forAction(action);
+      return method.invoke(target, actionScope, splitSuppliedArguments(arguments).values());
     } catch (InvocationTargetException e) {
       throw actorFailure(e.getTargetException());
     } catch (ReflectiveOperationException e) {

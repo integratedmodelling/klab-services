@@ -303,6 +303,10 @@ The annotation's main unnamed argument, or its named `class` argument, must be a
 Agent handles expose the resolved textual constants through `getHandledMessageClasses()`, allowing
 clients and debugging tools to inspect the agent's custom-message API. The list includes inherited
 handlers after override resolution and excludes reserved runtime handlers such as `@stdin`.
+Runtime protocol constants cannot be claimed with `@handle`, even when `@override` is also present.
+Besides the console constants, the test runtime reserves `INT.TEST_STARTED`, `INT.TEST_FINISHED`,
+`INT.TESTCASE_STARTED`, and `INT.TESTCASE_FINISHED` for reporting test-case lifecycle to clients.
+Use `RuntimeAgent.TestMessageType` when producing or inspecting these messages from Java.
 When a matching custom message arrives:
 
 - the runtime invokes the annotated action asynchronously using its inferred function, supplier,
@@ -1079,7 +1083,10 @@ runs after arguments have been validated and bound but before the first action i
 second runs from a `finally` block after the last instruction, including exceptional and early
 return paths. For supplier actions it runs when the supplier future completes, after its eventual
 reactive result or failure. The annotation list is immutable and contains the semantic annotations
-declared on that action.
+declared on that action. Each invocation receives its own derived scope; `getCurrentAction()`
+returns the stable semantic action name on that scope and returns null on the lifecycle root scope.
+Implementations can therefore keep per-action records directly in the scope without sibling or
+concurrent actions overwriting one another.
 
 Scope ownership follows the behavior kind:
 

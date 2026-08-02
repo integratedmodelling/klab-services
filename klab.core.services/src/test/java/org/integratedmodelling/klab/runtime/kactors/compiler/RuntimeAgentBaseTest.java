@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -162,6 +163,28 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void eachGeneratedActionReceivesAnInvocationLocalScopeWithItsCurrentAction() {
+    var agent = new ActionScopeAgent();
+
+    assertEquals("inner-result", agent.callOuter());
+    assertNull(agent.rootScope().getCurrentAction());
+    assertNotNull(agent.outerScope.get());
+    assertNotNull(agent.innerScope.get());
+    assertFalse(agent.outerScope.get() == agent.rootScope());
+    assertFalse(agent.innerScope.get() == agent.outerScope.get());
+    assertEquals("outer", agent.outerScope.get().getCurrentAction());
+    assertEquals("inner", agent.innerScope.get().getCurrentAction());
+    assertEquals(agent.outerScope.get().actionId(), agent.innerScope.get().actionId());
+
+    var session = mock(org.integratedmodelling.klab.api.scope.SessionScope.class);
+    var testCase = new StubTestCase(session);
+    var testScope = testCase.callProbe();
+    assertTrue(testScope instanceof TestCaseBase.TestCaseScope);
+    assertFalse(testScope == testCase.rootScope());
+    assertEquals("probe", testScope.getCurrentAction());
+  }
+
+  @Test
   void agentMessageContractIncludesLifecycleStatusAndCustomTypes() {
     var types = Arrays.asList(Message.MessageClass.AgentCommunication.messageTypes);
 
@@ -187,6 +210,12 @@ class RuntimeAgentBaseTest {
     assertEquals(
         "temperature_changed",
         message.getPayload(RuntimeAgent.CustomMessage.class).type().getValue());
+
+    for (var type : RuntimeAgent.TestMessageType.values()) {
+      assertTrue(type.messageClass().startsWith("INT."));
+      assertEquals(type.messageClass(), type.constant().getValue());
+      assertTrue(RuntimeAgent.isReservedMessageClass(type.messageClass()));
+    }
   }
 
   @Test
@@ -411,6 +440,23 @@ class RuntimeAgentBaseTest {
     assertTrue(agent.inputHandled.await(1, TimeUnit.SECONDS));
     assertEquals("inspect status", agent.input.get());
     assertEquals("client:console:1", agent.inputSender.get().getUrn());
+  }
+
+  @Test
+  void testcaseLifecycleMessagesCannotReachLanguageHandlers() throws Exception {
+    var agent = new MessageHandlingRuntimeAgent();
+    var lifecycle =
+        Message.create(
+            "runtime:testcase:1",
+            Message.MessageClass.AgentCommunication,
+            Message.MessageType.CustomAgentMessage,
+            new RuntimeAgent.CustomMessage(
+                RuntimeAgent.TestMessageType.TEST_STARTED.constant(), "test-one"));
+
+    agent.send(lifecycle, null, null);
+
+    assertFalse(agent.reservedHandled.await(100, TimeUnit.MILLISECONDS));
+    assertEquals(List.of("TEMPERATURE_CHANGED"), agent.getHandledMessageClasses());
   }
 
   @Test
@@ -912,6 +958,7 @@ class RuntimeAgentBaseTest {
 
     private final CountDownLatch handled = new CountDownLatch(1);
     private final CountDownLatch inputHandled = new CountDownLatch(1);
+    private final CountDownLatch reservedHandled = new CountDownLatch(1);
     private final AtomicReference<TestPayload> payload = new AtomicReference<>();
     private final AtomicReference<Agent> sender = new AtomicReference<>();
     private final AtomicReference<String> input = new AtomicReference<>();
@@ -929,7 +976,9 @@ class RuntimeAgentBaseTest {
               "temperatureChanged", Verb.Type.FUNCTION, List.of("payload", "sender")),
           RuntimeAgent.ConsoleMessageType.STDIN.name(),
           new AgentMessageHandler(
-              "readLine", Verb.Type.FUNCTION, List.of("line", "sender"), false));
+              "readLine", Verb.Type.FUNCTION, List.of("line", "sender"), false),
+          RuntimeAgent.TestMessageType.TEST_STARTED.messageClass(),
+          new AgentMessageHandler("reserved", Verb.Type.FUNCTION, List.of("payload")));
     }
 
     @SuppressWarnings("unused")
@@ -945,6 +994,12 @@ class RuntimeAgentBaseTest {
       input.set((String) arguments[0]);
       inputSender.set((Agent) arguments[1]);
       inputHandled.countDown();
+      return VOID_VALUE;
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_reserved(AgentScope scope, Object... arguments) {
+      reservedHandled.countDown();
       return VOID_VALUE;
     }
 
@@ -1128,6 +1183,42 @@ class RuntimeAgentBaseTest {
     }
   }
 
+  private static class ActionScopeAgent extends RuntimeAgentBase {
+
+    private final AtomicReference<AgentScope> outerScope = new AtomicReference<>();
+    private final AtomicReference<AgentScope> innerScope = new AtomicReference<>();
+
+    private ActionScopeAgent() {
+      super(null, null);
+    }
+
+    private Object callOuter() {
+      return invokeSelfFunction("outer", (AgentScope) rootScope());
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_outer(AgentScope scope, Object... arguments) {
+      outerScope.set(scope);
+      return invokeSelfFunction("inner", scope);
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_inner(AgentScope scope, Object... arguments) {
+      innerScope.set(scope);
+      return "inner-result";
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
   private static class InheritedActionRuntimeAgent extends ReactiveRuntimeAgent {
 
     @SuppressWarnings("unused")
@@ -1227,6 +1318,15 @@ class RuntimeAgentBaseTest {
 
     private StubTestCase(org.integratedmodelling.klab.api.scope.SessionScope scope) {
       super(null, scope);
+    }
+
+    private AgentScope callProbe() {
+      return (AgentScope) invokeSelfFunction("probe", (AgentScope) rootScope());
+    }
+
+    @SuppressWarnings("unused")
+    private Object action_probe(AgentScope scope, Object... arguments) {
+      return scope;
     }
 
     @Override

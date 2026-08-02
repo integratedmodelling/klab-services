@@ -2,13 +2,14 @@ package org.integratedmodelling.klab.api.scope;
 
 import java.util.Arrays;
 
-/** The type of persistence associated to an asset. */
+/** The type of persistence associated to an asset. Used in DigitalTwin configuration so far. */
 public enum Persistence {
   /**
-   * Asset disappears when it's out of scope or garbage collected. Data do not survive a runtime
-   * shutdown.
+   * Asset disappears when it's out of scope or garbage collected. Test cases automatically remove
+   * any contexts that were created with this persistence, which is their default. Data never
+   * survive a runtime shutdown.
    */
-  ONE_OFF("Delete at editor closed", false, false),
+  ONE_OFF("Delete when containing scope ends, such as in test cases", false, false),
   /** Asset is deleted after being idle for a set timeout. Data survive a runtime shutdown. */
   IDLE_TIMEOUT("Delete after set timeout", false, true),
   /**

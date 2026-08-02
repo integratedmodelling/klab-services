@@ -5873,22 +5873,28 @@ public class Utils {
      *
      * @param args
      * @param defaultElement
+     * @param ignored elements that should be ignored if found matching. Can use to ignore arguments
+     *     of subclasses of the defaultElement that have already matched.
      * @return
      * @param <T>
      */
-    public static <T> T findElement(Object[] args, T defaultElement) {
+    public static <T> T findElement(Object[] args, T defaultElement, Object... ignored) {
 
       if (args == null) {
         return defaultElement;
       }
 
+      var classToMatch = defaultElement.getClass();
+
       for (Object o : args) {
-        if (defaultElement.getClass().isAssignableFrom(o.getClass())) {
+        if (classToMatch.isAssignableFrom(o.getClass())
+            && !Arrays.stream(ignored).filter(Objects::isNull).toList().contains(o)) {
           return (T) o;
         }
       }
 
       if (defaultElement instanceof Enum<?> en) {
+
         for (Object o : args) {
           if (o instanceof Constant constant
               && Arrays.stream(en.getClass().getEnumConstants())
@@ -5905,6 +5911,32 @@ public class Utils {
       }
 
       return defaultElement;
+    }
+
+    /**
+     * Find the first element that has the type defaultElement. Does not do the smart thing with
+     * enums, but does ignore the passed objects.
+     *
+     * @param args
+     * @param tClass
+     * @param ignored elements that should be ignored if found matching. Can use to ignore arguments
+     *     of subclasses of the defaultElement that have already matched.
+     * @return
+     * @param <T>
+     */
+    public static <T> T findElement(Object[] args, Class<T> tClass, Object... ignored) {
+
+      if (args == null) {
+        return null;
+      }
+
+      for (Object o : args) {
+        if (tClass.isAssignableFrom(o.getClass())
+            && !Arrays.stream(ignored).filter(Objects::isNull).toList().contains(o)) {
+          return (T) o;
+        }
+      }
+      return null;
     }
   }
 

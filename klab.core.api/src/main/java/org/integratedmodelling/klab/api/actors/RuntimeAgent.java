@@ -85,6 +85,54 @@ public interface RuntimeAgent {
   }
 
   /**
+   * Reserved custom-message discriminators used to report test-case execution to connected
+   * clients. These messages are emitted by the test runtime and cannot be handled or overridden by
+   * k.Actors actions.
+   */
+  enum TestMessageType {
+    TEST_STARTED("INT.TEST_STARTED"),
+    TEST_FINISHED("INT.TEST_FINISHED"),
+    TESTCASE_STARTED("INT.TESTCASE_STARTED"),
+    TESTCASE_FINISHED("INT.TESTCASE_FINISHED");
+
+    private final String messageClass;
+
+    TestMessageType(String messageClass) {
+      this.messageClass = messageClass;
+    }
+
+    public String messageClass() {
+      return messageClass;
+    }
+
+    public Constant constant() {
+      return Constant.create(messageClass);
+    }
+  }
+
+  /**
+   * Return whether a custom-message discriminator belongs to the runtime protocol and therefore
+   * cannot be declared through {@code @handle}. The dedicated {@code @stdin} annotation remains
+   * the only language-level hook for the reserved {@link ConsoleMessageType#STDIN} message.
+   */
+  static boolean isReservedMessageClass(String messageClass) {
+    if (messageClass == null || messageClass.isBlank()) {
+      return false;
+    }
+    try {
+      ConsoleMessageType.valueOf(messageClass);
+      return true;
+    } catch (IllegalArgumentException ignored) {
+      for (var type : TestMessageType.values()) {
+        if (type.messageClass().equals(messageClass)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  /**
    * Serializable lifecycle snapshot exchanged between all peers of an agent handle.
    *
    * @param agentUrn runtime-wide agent identity
@@ -328,6 +376,20 @@ public interface RuntimeAgent {
    * the scope to interact with the agent.
    */
   interface Scope extends Parameters<String> {
+
+    /**
+     * The k.Actors action executing in this scope.
+     *
+     * <p>Each invocation of a k.Actors-defined action receives a derived scope, so this value is
+     * stable for the lifetime of that invocation even when other actions execute concurrently.
+     * The root scope returns {@code null} because it represents the agent lifecycle rather than a
+     * particular action.
+     *
+     * @return the semantic action name, or {@code null} for the root scope
+     */
+    default String getCurrentAction() {
+      return null;
+    }
 
     /**
      * Called exactly once immediately before the owning agent begins execution. Specialized scopes

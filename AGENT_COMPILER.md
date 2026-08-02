@@ -339,7 +339,14 @@ exceptions. Supplier actions register `afterAction` on their result future inste
 runs after the eventual reactive result or failure rather than merely after listener setup. The
 annotations originate in `ActionInfo` and are resolved from the retained semantic behavior as an
 immutable list. Inherited action methods resolve annotations against their retained inherited
-behavior instance while executing the hooks on the caller's action scope.
+behavior instance.
+
+Immediately before reflective dispatch, `RuntimeAgentBase` derives a distinct `AgentScope` for
+every k.Actors action invocation. `Scope.getCurrentAction()` is therefore stable for that
+invocation, including when sibling actions execute concurrently, and the root scope reports no
+current action. The derived scope retains the caller's event-correlation ID: a nested supplier or
+emitter must still publish into the channel on which its caller installed match listeners. This
+separates action-local bookkeeping without breaking `fire`, `return`, or reactor routing.
 
 Runtime agent instances are non-reentrant. `RuntimeAgentBase.run()` rejects a second invocation and
 also rejects starting a scope that has already terminated. Managed handles accept at most one
@@ -1005,6 +1012,12 @@ annotations. Generated handler descriptors distinguish these from reserved handl
 service-side `ManagedAgent` reads the keys from its instantiated runtime and `RuntimeService`
 copies them into the serializable `AgentImpl` returned by the endpoint.
 
+`RuntimeAgent.isReservedMessageClass(...)` is the shared validation, compilation, runtime-dispatch,
+and API-advertisement boundary. An explicit `@handle` for a reserved discriminator is an error and
+cannot be enabled with `@override`; compiler generation also omits it defensively, and runtime
+dispatch will not invoke a manually installed descriptor. `@stdin` is the deliberate language
+entry point for reserved console input.
+
 At the public API boundary, use `Agent.tell(...)`. To target a language handler, construct the
 custom envelope explicitly:
 
@@ -1154,6 +1167,23 @@ blocking stream-based terminal. Output replayed synchronously during attachment 
 bounded client-side backlog until the first output listener is installed. It does not own the
 agent lifecycle or its AMQP connection. JavaFX or other UI peers must marshal output callbacks to
 their UI thread and close listener subscriptions when changing targets.
+
+### 11.5 Test lifecycle protocol
+
+Test-case reporting uses four path-qualified `RuntimeAgent.TestMessageType` discriminators on the
+same `CustomAgentMessage` transport:
+
+| Constant | Purpose |
+| --- | --- |
+| `INT.TESTCASE_STARTED` | Report the beginning of the complete testcase agent run. |
+| `INT.TEST_STARTED` | Report the beginning of one `@test` action. |
+| `INT.TEST_FINISHED` | Report completion of one `@test` action. |
+| `INT.TESTCASE_FINISHED` | Report completion of the complete testcase agent run. |
+
+The `INT.` namespace keeps runtime protocol names distinct from application constants now that
+path-qualified constants are legal message classes. These four messages are client-facing runtime
+events: they are intercepted before language dispatch, excluded from the advertised custom API,
+and cannot be overridden by k.Actors code.
 
 ## 12. Known gaps and future work
 

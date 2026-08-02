@@ -1681,7 +1681,7 @@ public class AgentCompiler {
         }
         for (var annotation : action.getAnnotations()) {
           String messageClass = KActorsVisitor.handledMessageClass(annotation);
-          if (messageClass != null) {
+          if (messageClass != null && !RuntimeAgent.isReservedMessageClass(messageClass)) {
             ret.add(messageClass);
           }
         }
@@ -2269,6 +2269,9 @@ public class AgentCompiler {
               Notification.warning(
                   "The @handle annotation requires a CONSTANT as its unnamed parameter or 'class' parameter",
                   lexicalContext(action, sourceBehavior)));
+          continue;
+        }
+        if (!standardInput && RuntimeAgent.isReservedMessageClass(messageClass)) {
           continue;
         }
         method.addStatement(

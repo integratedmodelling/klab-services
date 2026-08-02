@@ -26,7 +26,9 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
+import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -269,6 +271,47 @@ class BehaviorAnalyzerTest {
     assertTrue(source.contains("handlers.put(\"STDIN\""), source);
     assertTrue(source.contains("\"readLine\", Verb.Type.FUNCTION"), source);
     assertTrue(source.contains("List.of(\"line\", \"sender\")"), source);
+  }
+
+  @Test
+  void testcaseLifecycleMessageClassesAreReservedEvenWithOverride() {
+    var reservedClasses =
+        List.of(
+            RuntimeAgent.TestMessageType.TEST_STARTED.messageClass(),
+            RuntimeAgent.TestMessageType.TEST_FINISHED.messageClass(),
+            RuntimeAgent.TestMessageType.TESTCASE_STARTED.messageClass(),
+            RuntimeAgent.TestMessageType.TESTCASE_FINISHED.messageClass(),
+            RuntimeAgent.ConsoleMessageType.STDIN.name());
+    var actions = new ArrayList<KActorsActionImpl>();
+    for (int index = 0; index < reservedClasses.size(); index++) {
+      var handler = action("reserved_" + index);
+      var annotation = Annotation.of("handle");
+      annotation.putUnnamed(Constant.create(reservedClasses.get(index)));
+      handler.setAnnotations(
+          index == 0
+              ? List.of(annotation, Annotation.of("override"))
+              : List.of(annotation));
+      actions.add(handler);
+    }
+    var analyzer = new BehaviorAnalyzer(behavior(actions.toArray(KActorsActionImpl[]::new)));
+
+    assertFalse(analyzer.analyze());
+    for (var messageClass : reservedClasses) {
+      assertTrue(RuntimeAgent.isReservedMessageClass(messageClass));
+      assertTrue(
+          analyzer.getNotifications().stream()
+              .anyMatch(
+                  notification ->
+                      notification
+                          .getMessage()
+                          .equals(
+                              "Message class "
+                                  + messageClass
+                                  + " is reserved by the agent runtime and cannot be declared with @handle")),
+          messageClass + ": " + messages(analyzer));
+    }
+    assertFalse(RuntimeAgent.isReservedMessageClass("TEST_STARTED"));
+    assertFalse(RuntimeAgent.isReservedMessageClass("APPLICATION_MESSAGE"));
   }
 
   @Test
@@ -1268,6 +1311,62 @@ class BehaviorAnalyzerTest {
             source, AgentCompiler.runtimeEnvironment(negotiatingResolver, null).validator());
 
     assertTrue(accepted.analyze(), messages(accepted));
+  }
+
+  @Test
+  void validatesIdentifiersNestedInListAndMapValues() {
+    var invalidList = new KActorsValueImpl();
+    invalidList.setType(ValueType.LIST);
+    invalidList.setStatedValue(List.of(Identifier.create("missing_list")));
+    invalidList.setOffsetInDocument(101);
+    invalidList.setLength(20);
+    var invalidMap = new KActorsValueImpl();
+    invalidMap.setType(ValueType.MAP);
+    invalidMap.setStatedValue(Map.of("value", Identifier.create("missing_map")));
+    invalidMap.setOffsetInDocument(202);
+    invalidMap.setLength(30);
+    var invalid =
+        new BehaviorAnalyzer(
+            behavior(
+                action(
+                    "main",
+                    assignment("items", KActorsStatement.Assignment.Scope.FRAME, invalidList),
+                    assignment("mapping", KActorsStatement.Assignment.Scope.FRAME, invalidMap))));
+
+    assertFalse(invalid.analyze());
+    var listError =
+        invalid.getNotifications().stream()
+            .filter(notification -> notification.getMessage().equals("Unknown identifier: missing_list"))
+            .findFirst()
+            .orElseThrow();
+    var mapError =
+        invalid.getNotifications().stream()
+            .filter(notification -> notification.getMessage().equals("Unknown identifier: missing_map"))
+            .findFirst()
+            .orElseThrow();
+    assertNotNull(listError.getLexicalContext());
+    assertEquals(101, listError.getLexicalContext().getOffsetInDocument());
+    assertEquals(20, listError.getLexicalContext().getLength());
+    assertNotNull(mapError.getLexicalContext());
+    assertEquals(202, mapError.getLexicalContext().getOffsetInDocument());
+    assertEquals(30, mapError.getLexicalContext().getLength());
+
+    var validList = new KActorsValueImpl();
+    validList.setType(ValueType.LIST);
+    validList.setStatedValue(List.of(Identifier.create("defined"), Identifier.create("self")));
+    var validMap = new KActorsValueImpl();
+    validMap.setType(ValueType.MAP);
+    validMap.setStatedValue(Map.of("value", Identifier.create("defined")));
+    var valid =
+        new BehaviorAnalyzer(
+            behavior(
+                action(
+                    "main",
+                    assignment("defined", KActorsStatement.Assignment.Scope.FRAME, number(1)),
+                    assignment("items", KActorsStatement.Assignment.Scope.FRAME, validList),
+                    assignment("mapping", KActorsStatement.Assignment.Scope.FRAME, validMap))));
+
+    assertTrue(valid.analyze(), messages(valid));
   }
 
   @Test
