@@ -46,6 +46,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -122,6 +123,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   private final AtomicBoolean consoleAttached = new AtomicBoolean(false);
   private final Object consoleOutputLock = new Object();
   private final Map<String, KimObservable> observableLiterals = new ConcurrentHashMap<>();
+  private final Map<String, KActorsStatement.Assert.Assertion> assertionLiterals =
+      new ConcurrentHashMap<>();
   private final ArrayDeque<ConsoleOutput> pendingConsoleOutputs = new ArrayDeque<>();
   private final AtomicLong startedAt = new AtomicLong(-1);
   private final AtomicLong lastActivityAt = new AtomicLong(-1);
@@ -1628,6 +1631,23 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         });
   }
 
+  /** Reconstruct the complete semantic assertion bean embedded by the agent compiler. */
+  protected KActorsStatement.Assert.Assertion assertionLiteral(String serialized) {
+    if (serialized == null || serialized.isBlank()) {
+      throw new KlabActorException(this, "Missing serialized assertion");
+    }
+    return assertionLiterals.computeIfAbsent(
+        serialized,
+        key -> {
+          try {
+            return KLAB_OBJECT_MAPPER.readValue(
+                key, KActorsStatement.Assert.Assertion.class);
+          } catch (Exception error) {
+            throw new KlabActorException(this, error);
+          }
+        });
+  }
+
   /** Build a mutable insertion-ordered map for a compiled k.Actors map literal. */
   protected Map<Object, Object> mutableMap(Object[] keys, Object[] values) {
     if (keys == null || values == null || keys.length != values.length) {
@@ -2404,6 +2424,35 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       throw new AssertionError("k.Actors assertion failed: expected " + expected + ", got " + actual);
     }
   }
+
+  /**
+   * Evaluate a compiled assertion inside the runtime so outcomes and evaluation failures can be
+   * reported together with the complete semantic assertion bean.
+   */
+  protected void assertValue(
+      Supplier<Object> actual,
+      Supplier<Object> expected,
+      KActorsStatement.Assert.Assertion assertion,
+      AgentScope scope) {
+    try {
+      assertValue(actual.get(), expected == null ? null : expected.get());
+    } catch (RuntimeException | Error failure) {
+      try {
+        assertionEvaluated(scope, assertion, false, failure);
+      } catch (RuntimeException | Error callbackFailure) {
+        failure.addSuppressed(callbackFailure);
+      }
+      throw failure;
+    }
+    assertionEvaluated(scope, assertion, true, null);
+  }
+
+  /** Hook specialized runtime scopes use to collect assertion results. */
+  protected void assertionEvaluated(
+      AgentScope scope,
+      KActorsStatement.Assert.Assertion assertion,
+      boolean success,
+      Throwable exception) {}
 
   /** Return the immutable semantic annotations declared on a generated action. */
   protected List<Annotation> actionAnnotations(String actionName) {

@@ -3093,7 +3093,27 @@ public class AgentCompiler {
     }
     CodeBlock expected =
         assertion.getValue() == null ? CodeBlock.of("null") : value(assertion.getValue(), context);
-    code.addStatement("assertValue($L, $L)", actual, expected);
+    CodeBlock expectedSupplier =
+        assertion.getValue() == null ? CodeBlock.of("null") : CodeBlock.of("() -> $L", expected);
+    code.addStatement(
+        "assertValue(() -> $L, $L, $L, $L)",
+        actual,
+        expectedSupplier,
+        assertionLiteral(assertion),
+        context.scope());
+  }
+
+  private CodeBlock assertionLiteral(KActorsStatement.Assert.Assertion assertion) {
+    try {
+      String serialized =
+          JacksonConfiguration.newObjectMapper()
+              .writerFor(KActorsStatement.Assert.Assertion.class)
+              .writeValueAsString(assertion);
+      return CodeBlock.of("assertionLiteral($S)", serialized);
+    } catch (Exception error) {
+      notifications.add(Notification.error("Cannot preserve assertion semantics: " + error));
+      return CodeBlock.of("null");
+    }
   }
 
   private void emitVerb(

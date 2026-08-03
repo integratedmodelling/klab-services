@@ -382,6 +382,7 @@ public class JacksonConfiguration {
           KActorsStatement.CallArgument.class,
           KActorsStatementImpl.CallArgumentImpl.class,
           KActorsStatement.Assert.class,
+          KActorsStatement.Assert.Assertion.class,
           KActorsStatement.Assignment.class,
           KActorsStatement.Break.class,
           KActorsStatement.Do.class,

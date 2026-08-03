@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.services.UserServiceScope;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.junit.jupiter.api.Test;
 
@@ -67,8 +66,8 @@ class ScopeManagerTest {
 
     assertNotNull(context);
     assertEquals(contextId, context.getId());
-    assertEquals("test_user_agent-1", ((UserServiceScope)context.getParentScope()).getId());
     var parentSession = (SessionScope) context.getParentScope();
+    assertEquals("test_user_agent-1", parentSession.getId());
     verify(fixture.runtime).getConfiguration(contextId, fixture.userScope);
     verify(fixture.ownerService)
         .declareSessionScope(parentSession, fixture.userScope, null);
@@ -101,8 +100,8 @@ class ScopeManagerTest {
         new EngineAuthorization(null, "test.user", "token", java.util.Map.of(), List.of(), List.of());
 
     when(user.getUsername()).thenReturn("test.user");
-    when(user.getGroups())
-        .thenReturn(localFederation ? Set.of(localFederationGroup()) : Set.of());
+    var groups = localFederation ? Set.of(localFederationGroup()) : Set.<Group>of();
+    when(user.getGroups()).thenReturn(groups);
     when(ownerService.serviceId()).thenReturn("resolver-id");
     when(runtime.serviceId()).thenReturn("runtime-id");
     when(runtime.status()).thenReturn(runtimeStatus);

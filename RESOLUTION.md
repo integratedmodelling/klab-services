@@ -569,6 +569,14 @@ and verifies that no `Coverage` implementation leaks onto the wire. These are on
 actuator trees, calls, geometries, identifiers, notifications, and all subtype variants need
 broader coverage.
 
+Scope propagation also depends on one runtime invariant: all child `ServiceContextScope` instances
+share one observation cache, but a cache miss must load through the child that made the request.
+The cache therefore stores values only and does not retain a loader bound to the scope constructor.
+This matters when identity adjustment creates a copy before the digital twin is instrumented. The
+runtime now creates and assigns the digital twin before publishing the root scope in `ScopeManager`;
+remote creation still declares the server-side scope first, applies the returned configuration to
+the client peer, and then instruments/registers that peer in its owning service.
+
 ### 10.2 Observation language: architectural role
 
 References to k.DL as the dataflow language are obsolete. Dataflows are represented in the

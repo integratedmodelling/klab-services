@@ -415,7 +415,6 @@ public class RuntimeService extends BaseService
       }
 
       serviceContextScope.setId(scopeId);
-      getScopeManager().registerScope(serviceContextScope);
 
       /*
        * this may take a while and it's done within a response. We should either spawn a thread (but then wait for the
@@ -424,6 +423,7 @@ public class RuntimeService extends BaseService
       serviceContextScope.setDigitalTwin(
           new DigitalTwinImpl(
               this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
+      getScopeManager().registerScope(serviceContextScope);
 
       return serviceContextScope.getConfiguration();
     }

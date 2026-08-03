@@ -1,8 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.cache.Cache;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +20,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -86,7 +86,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   private int splits = -1;
 
-  LoadingCache<Long, Observation> observationCache;
+  Cache<Long, Observation> observationCache;
   private DigitalTwin.Transaction currentTransaction;
 
   public ServiceContextScope(ServiceContextScope parent) {
@@ -135,26 +135,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // TODO use the configuration to override the sharding strategy
     this.shardingStrategy = Data.ShardingStrategy.neutral();
     this.observationCache =
-        CacheBuilder.newBuilder()
-            .maximumSize(MAX_CACHED_OBSERVATIONS)
-            .build(
-                new CacheLoader<Long, Observation>() {
-                  @Override
-                  public Observation load(Long key) throws Exception {
-                    var ret =
-                        digitalTwin
-                            .getKnowledgeGraph()
-                            .getAsset(key, ServiceContextScope.this, Observation.class);
-                    if (ret == null) {
-                      Logging.INSTANCE.error(
-                          "CATXO null observation retrieved for key "
-                              + key
-                              + " in service "
-                              + KlabService.Type.classify(service));
-                    }
-                    return ret;
-                  }
-                });
+        CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build();
   }
 
   @Override
@@ -212,10 +193,26 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     try {
-      return observationCache.get(id);
+      return observationCache.get(id, () -> loadObservation(id));
     } catch (ExecutionException e) {
       throw new KlabInternalErrorException(e);
     }
+  }
+
+  private Observation loadObservation(long id) {
+    if (digitalTwin == null) {
+      throw new KlabIllegalStateException(
+          "Cannot retrieve observation " + id + " before the context digital twin is initialized");
+    }
+    var ret = digitalTwin.getKnowledgeGraph().getAsset(id, this, Observation.class);
+    if (ret == null) {
+      Logging.INSTANCE.error(
+          "CATXO null observation retrieved for key "
+              + id
+              + " in service "
+              + KlabService.Type.classify(service));
+    }
+    return ret;
   }
 
   @Override

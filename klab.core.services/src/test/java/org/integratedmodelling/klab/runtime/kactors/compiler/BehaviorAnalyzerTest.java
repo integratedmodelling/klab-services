@@ -2050,6 +2050,29 @@ class BehaviorAnalyzerTest {
     assertGeneratedJavaCompiles(generated);
   }
 
+  @Test
+  void compiledAssertionsReportUsingDeferredEvaluationAndTheFullSemanticBean() {
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+    assertion.setTag("temperature-check");
+    assertion.setExpression(bool(true));
+    assertion.setValue(bool(true));
+    var statement = new KActorsStatementImpl.AssertImpl();
+    statement.setAssertions(List.of(assertion));
+    var test = action("checks_temperature", statement);
+    test.setAnnotations(List.of(Annotation.of("test")));
+    var source = behavior(test);
+    source.setBehaviorType(KActorsBehavior.Type.UNITTEST);
+
+    var compiler = new AgentCompiler(source);
+
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(generated.contains("assertValue(() -> true, () -> true"), generated);
+    assertTrue(generated.contains("assertionLiteral("), generated);
+    assertTrue(generated.contains("temperature-check"), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
   private static void assertSpecializedBase(
       KActorsBehavior.Type type,
       Class<? extends RuntimeAgentBase> expectedBase,

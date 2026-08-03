@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -63,6 +64,16 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       super.dispose();
     }
 
+    /**
+     * Called after every assertion evaluation, before a failed assertion is propagated.
+     *
+     * @param assertion the complete semantic assertion bean
+     * @param success whether evaluation and comparison succeeded
+     * @param exception the evaluation/comparison failure, or {@code null} on success
+     */
+    public void assertionEvaluated(
+        KActorsStatement.Assert.Assertion assertion, boolean success, Throwable exception) {}
+
     @Override
     public SessionScope getSession() {
       return session;
@@ -107,6 +118,17 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
   @Override
   protected void assertValue(Object actual, Object expected) {
     super.assertValue(actual, expected);
+  }
+
+  @Override
+  protected void assertionEvaluated(
+      AgentScope scope,
+      KActorsStatement.Assert.Assertion assertion,
+      boolean success,
+      Throwable exception) {
+    if (rootScope() instanceof TestCaseScope testCaseScope) {
+      testCaseScope.assertionEvaluated(assertion, success, exception);
+    }
   }
 
   public void runTest(Consumer<TestCaseScope> test) {

@@ -89,8 +89,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     var identity = (UserIdentity) userScope.getIdentity();
     var validatedConfiguration = configuration.validate(this);
 
-    var ret =
-        new ServiceContextScope(this, validatedConfiguration, getUser()).withIdentity(identity);
+    var ret = new ServiceContextScope(this, validatedConfiguration, identity);
     var runtimeService = getService(RuntimeService.class);
 
     ret.setHostServiceId(runtimeService.serviceId());

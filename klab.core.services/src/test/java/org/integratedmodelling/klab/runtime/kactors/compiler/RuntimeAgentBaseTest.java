@@ -41,7 +41,9 @@ import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -55,6 +57,53 @@ import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
+
+  @Test
+  void testcaseScopeReceivesAssertionOutcomeSemanticBeanAndEvaluationException() throws Exception {
+    var agent = new AssertionReportingTestAgent();
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+    assertion.setTag("complete-semantic-assertion");
+    var serialized =
+        JacksonConfiguration.newObjectMapper()
+            .writerFor(KActorsStatement.Assert.Assertion.class)
+            .writeValueAsString(assertion);
+    var semanticAssertion = agent.semanticAssertion(serialized);
+
+    agent.evaluate(() -> 42, () -> 42, semanticAssertion);
+
+    assertEquals(1, agent.evaluations.size());
+    assertSame(semanticAssertion, agent.evaluations.getFirst().assertion());
+    assertEquals("complete-semantic-assertion", semanticAssertion.getTag());
+    assertTrue(agent.evaluations.getFirst().success());
+    assertNull(agent.evaluations.getFirst().exception());
+
+    var mismatch =
+        assertThrows(
+            AssertionError.class,
+            () -> agent.evaluate(() -> 42, () -> 43, semanticAssertion));
+    assertEquals(2, agent.evaluations.size());
+    assertSame(semanticAssertion, agent.evaluations.getLast().assertion());
+    assertFalse(agent.evaluations.getLast().success());
+    assertSame(mismatch, agent.evaluations.getLast().exception());
+
+    var failure = new IllegalStateException("evaluation failed");
+    assertSame(
+        failure,
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                agent.evaluate(
+                    () -> {
+                      throw failure;
+                    },
+                    null,
+                    semanticAssertion)));
+
+    assertEquals(3, agent.evaluations.size());
+    assertSame(semanticAssertion, agent.evaluations.getLast().assertion());
+    assertFalse(agent.evaluations.getLast().success());
+    assertSame(failure, agent.evaluations.getLast().exception());
+  }
 
   @Test
   void deferredValuesAreReevaluatedWheneverAnAliasIsConsumed() {
@@ -1180,6 +1229,52 @@ class RuntimeAgentBaseTest {
     @Override
     public Verb.Type getAgentExecutionMode() {
       return Verb.Type.EMITTER;
+    }
+  }
+
+  private record AssertionEvaluation(
+      KActorsStatement.Assert.Assertion assertion, boolean success, Throwable exception) {}
+
+  private static class AssertionReportingTestAgent extends TestCaseBase {
+
+    private final List<AssertionEvaluation> evaluations = new ArrayList<>();
+
+    private AssertionReportingTestAgent() {
+      super(null, null);
+    }
+
+    private void evaluate(
+        Supplier<Object> actual,
+        Supplier<Object> expected,
+        KActorsStatement.Assert.Assertion assertion) {
+      assertValue(actual, expected, assertion, ((AgentScope) rootScope()).withId(17));
+    }
+
+    private KActorsStatement.Assert.Assertion semanticAssertion(String serialized) {
+      return assertionLiteral(serialized);
+    }
+
+    @Override
+    protected AgentScope initializeScope() {
+      return new TestCaseScope(this, null, null) {
+        @Override
+        public void assertionEvaluated(
+            KActorsStatement.Assert.Assertion assertion,
+            boolean success,
+            Throwable exception) {
+          evaluations.add(new AssertionEvaluation(assertion, success, exception));
+        }
+      };
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
     }
   }
 
