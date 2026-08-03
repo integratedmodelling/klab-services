@@ -66,11 +66,13 @@ class DomainObjectMessageSerializationTest {
     agent.setUrn("runtime:test:1");
     agent.setStartDeferred(true);
     agent.setMessagingConnected(true);
+    agent.setScopeId("runtime:test-session");
 
     var mapper = JacksonConfiguration.newObjectMapper();
     var restored = mapper.readValue(mapper.writeValueAsString(agent), AgentImpl.class);
 
     assertTrue(restored.isStartDeferred());
     assertTrue(restored.isMessagingConnected());
+    assertEquals("runtime:test-session", restored.getScopeId());
   }
 }

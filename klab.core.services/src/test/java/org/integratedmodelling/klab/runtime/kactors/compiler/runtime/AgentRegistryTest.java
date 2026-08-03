@@ -46,26 +46,6 @@ class AgentRegistryTest {
 
   private interface ConnectedScope extends Scope, MessagingChannel {}
 
-  private interface ConnectedUserScope extends UserScope, MessagingChannel {}
-
-  @Test
-  void agentMessagingUsesConnectedUserParentWhenExecutionScopeIsOffline() {
-    var executionScope = mock(Scope.class);
-    var userScope = mock(ConnectedUserScope.class);
-    when(userScope.isConnected()).thenReturn(true);
-    when(executionScope.getParentScope(Scope.Type.USER, UserScope.class)).thenReturn(userScope);
-
-    assertSame(userScope, AgentRegistry.messagingScope(executionScope));
-  }
-
-  @Test
-  void agentMessagingKeepsConnectedExecutionScope() {
-    var executionScope = mock(ConnectedScope.class);
-    when(executionScope.isConnected()).thenReturn(true);
-
-    assertSame(executionScope, AgentRegistry.messagingScope(executionScope));
-  }
-
   @Test
   void executedReturnInPersistentMainTerminatesTheAgentConditionally() throws Exception {
     var terminating =

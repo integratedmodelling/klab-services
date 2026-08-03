@@ -96,15 +96,21 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     this.amqpChannel =
         new AMQPChannel(
             federation,
-            switch (this) {
-              case ContextScope ignored1 -> ownId;
-              case SessionScope ignored -> null; // don't connect sessions
-              default -> federation.getId();
-            },
+            scopeExchangeId(this, federation, ownId),
             this,
             this.receiver ? this::messageHandler : null);
 
     return setupQueues(queues);
+  }
+
+  /**
+   * Contexts and explicitly instrumented sessions own a scope-specific exchange. User channels
+   * continue to use the federation exchange.
+   */
+  static String scopeExchangeId(Object channel, Federation federation, String ownId) {
+    return channel instanceof ContextScope || channel instanceof SessionScope
+        ? ownId
+        : federation.getId();
   }
 
   private void messageHandler(Message message) {

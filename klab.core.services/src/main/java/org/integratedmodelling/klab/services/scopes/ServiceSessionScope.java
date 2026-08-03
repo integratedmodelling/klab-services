@@ -132,8 +132,12 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
   @Override
   public void close() {
-    for (var context : getActiveContexts()) {
-      context.close();
+    try {
+      for (var context : getActiveContexts()) {
+        context.close();
+      }
+    } finally {
+      closeMessaging();
     }
   }
 

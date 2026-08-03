@@ -39,6 +39,7 @@ public class AgentImpl implements Agent {
   private transient String localSenderName;
   private transient String localResponseTo;
   private transient MessagingChannel messagingChannel;
+  private transient AutoCloseable ownedMessagingPeer;
   private transient CopyOnWriteArrayList<Consumer<Message>> messageListeners =
       new CopyOnWriteArrayList<>();
   private transient CopyOnWriteArrayList<Consumer<Message>> sentMessageListeners =
@@ -278,11 +279,38 @@ public class AgentImpl implements Agent {
     return true;
   }
 
+  /** Attach a transport peer whose local resources belong exclusively to this handle. */
+  public boolean connectOwned(MessagingChannel channel, AutoCloseable ownedPeer) {
+    this.ownedMessagingPeer = ownedPeer;
+    if (!connect(channel)) {
+      if (this.ownedMessagingPeer == ownedPeer) {
+        this.ownedMessagingPeer = null;
+        closeOwnedPeer(ownedPeer);
+      }
+      return false;
+    }
+    return true;
+  }
+
   public void disconnect() {
     if (urn != null) {
       AgentEventBus.INSTANCE.unsubscribe(urn, this);
     }
     messagingChannel = null;
+    var ownedPeer = ownedMessagingPeer;
+    ownedMessagingPeer = null;
+    closeOwnedPeer(ownedPeer);
+  }
+
+  private void closeOwnedPeer(AutoCloseable ownedPeer) {
+    if (ownedPeer != null) {
+      try {
+        ownedPeer.close();
+      } catch (Exception failure) {
+        notifications.add(
+            Notification.warning("Cannot close the agent messaging peer: " + failure.getMessage()));
+      }
+    }
   }
 
   /**

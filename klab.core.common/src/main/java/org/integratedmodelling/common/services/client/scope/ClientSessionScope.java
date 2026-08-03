@@ -108,14 +108,19 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
 
   @Override
   public void close() {
-    ClientScopeManager.INSTANCE.unregister(this);
-    closeMessaging();
+    closePeer();
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
       runtime.releaseSession(this);
     } else {
       throw new KlabInternalErrorException("Session scope: no runtime service available");
     }
+  }
+
+  /** Close only this client peer when the corresponding server-owned session owns its lifecycle. */
+  public void closePeer() {
+    ClientScopeManager.INSTANCE.unregister(this);
+    closeMessaging();
   }
 
   @Override

@@ -123,9 +123,7 @@ public class AMQPChannel {
     this.durableExchange = durableExchange;
     this.autoDeleteExchange = autoDeleteExchange;
     this.deleteExchangeOnClose = deleteExchangeOnClose;
-    if (exchangeId == null
-        || channel == null
-        || (klabChannel instanceof Scope scope && scope.getType() == Scope.Type.SESSION)) {
+    if (exchangeId == null || channel == null) {
       this.online = false;
       //      Utils.DebugFile.println(
       //          "NO CHANNEL FOR "

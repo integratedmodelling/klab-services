@@ -129,7 +129,11 @@ public class RuntimeServerController {
       })
   @PostMapping(ServicesAPI.RUNTIME.INSTANTIATE_AGENT)
   public @ResponseBody Agent instantiateAgent(
-      @RequestBody AgentInstantiationRequest request, Principal principal) {
+      @RequestBody AgentInstantiationRequest request,
+      Principal principal,
+      HttpServletResponse response,
+      @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
+          Collection<Message.Queue> queuesHeader) {
     if (principal instanceof EngineAuthorization authorization) {
 
       var authorizedScope = authorization.getScope();
@@ -182,6 +186,21 @@ public class RuntimeServerController {
           request.isDoNotStart()
               && clientAgent.isMessagingConnected()
               && clientAgent.getStartedAt() < 0);
+      if (clientAgent.isMessagingConnected() && clientAgent.getScopeId() != null) {
+        var agentSession =
+            runtimeService
+                .klabService()
+                .getScopeManager()
+                .getScope(clientAgent.getScopeId(), ServiceSessionScope.class);
+        if (agentSession != null) {
+          var implementedQueues =
+              agentSession.setupQueues(
+                  queuesHeader == null ? agentSession.defaultQueues() : queuesHeader);
+          response.setHeader(
+              ServicesAPI.MESSAGING_QUEUES_HEADER,
+              Utils.Strings.join(implementedQueues, ", "));
+        }
+      }
       return clientAgent;
     }
     throw new KlabInternalErrorException(

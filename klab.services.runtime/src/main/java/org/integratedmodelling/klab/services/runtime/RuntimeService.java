@@ -1289,6 +1289,7 @@ public class RuntimeService extends BaseService
       ret.setStartedAt(managedAgent.getStartedAt());
       ret.setLastActivityAt(managedAgent.getLastActivityAt());
       ret.setMessagingConnected(managedAgent.isMessagingConnected());
+      ret.setScopeId(managedAgent.getScopeId());
     }
 
     return ret;
@@ -1434,7 +1435,21 @@ public class RuntimeService extends BaseService
     session.setHostServiceId(serviceId());
     session.setStatus(Scope.Status.WAITING);
     declareSessionScope(session, userScope, behavior);
+    instrumentAgentSession(session, userScope);
     return new AgentCreationScope(session, session);
+  }
+
+  /**
+   * Agent-owned sessions are monitored by default. Keeping the instrumentation here, where these
+   * sessions are exclusively created, allows a future compilation option to select an
+   * uninstrumented batch execution without changing ordinary session creation.
+   */
+  private void instrumentAgentSession(ServiceSessionScope session, ServiceUserScope userScope) {
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+    if (federation == null || federation.getBroker() == null || federation.getBroker().isBlank()) {
+      return;
+    }
+    session.setupMessaging(federation, session.getId(), session.defaultQueues());
   }
 
   private ServiceUserScope rootServiceUserScope(UserScope requestScope) {

@@ -14,6 +14,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.actors.Agent;
@@ -37,6 +38,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -123,8 +125,26 @@ public class RuntimeClient extends BaseServiceClient
     var agent =
         client
             .withScope(scope)
+            .withHeader(
+                ServicesAPI.MESSAGING_QUEUES_HEADER,
+                Utils.Strings.join(scope.defaultQueues(), ", "))
             .post(ServicesAPI.RUNTIME.INSTANTIATE_AGENT, request, AgentImpl.class);
-    if (agent != null && agent.getUrn() != null && scope instanceof MessagingChannel channel) {
+    boolean usesAgentSession =
+        !requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)
+            && (behavior.getBehaviorType() == KActorsBehavior.Type.SCRIPT
+                || behavior.getBehaviorType() == KActorsBehavior.Type.APP
+                || behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST);
+    if (agent != null && agent.getUrn() != null && usesAgentSession) {
+      if (agent.isMessagingConnected() && agent.getScopeId() != null) {
+        connectAgentSession(agent, scope);
+      } else {
+        agent
+            .getNotifications()
+            .add(
+                Notification.info(
+                    "Agent messaging is disabled because its dedicated session is not connected"));
+      }
+    } else if (agent != null && agent.getUrn() != null && scope instanceof MessagingChannel channel) {
       agent.connect(channel);
     } else if (agent != null && agent.getUrn() != null) {
       agent
@@ -134,6 +154,31 @@ public class RuntimeClient extends BaseServiceClient
                   "Agent messaging is disabled because its creating scope is not connected"));
     }
     return agent;
+  }
+
+  private void connectAgentSession(AgentImpl agent, UserScope requestScope) {
+    ClientUserScope userScope =
+        requestScope.getType() == Scope.Type.USER && requestScope instanceof ClientUserScope clientUser
+            ? clientUser
+            : requestScope.getParentScope(Scope.Type.USER, ClientUserScope.class);
+    var federation = Klab.INSTANCE.getFederationData(requestScope.getUser());
+    if (userScope == null || federation == null) {
+      agent
+          .getNotifications()
+          .add(
+              Notification.info(
+                  "Agent messaging is disabled because no client federation is available"));
+      return;
+    }
+
+    var agentSession =
+        new ClientSessionScope(userScope, agent.getName(), this).withId(agent.getScopeId());
+    var queues =
+        getQueuesFromHeader(
+            agentSession, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+    agentSession.setupMessaging(federation, agent.getScopeId(), queues);
+    ClientScopeManager.INSTANCE.register(agentSession);
+    agent.connectOwned(agentSession, agentSession::closePeer);
   }
 
   @Override

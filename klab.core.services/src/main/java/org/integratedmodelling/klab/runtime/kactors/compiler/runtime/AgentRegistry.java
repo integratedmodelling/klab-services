@@ -50,7 +50,6 @@ import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
@@ -344,6 +343,7 @@ public enum AgentRegistry {
               urn,
               behavior.getUrn(),
               name,
+              scopeId(scope),
               runtime,
               observation,
               compiled.notifications(),
@@ -359,7 +359,7 @@ public enum AgentRegistry {
       }
       runtime.setManagedStopHandler(managed::stop);
       managed.messagingConnected =
-          runtime.initializeMessaging(urn, messagingScope(scope), managed.notifications::add);
+          runtime.initializeMessaging(urn, scope, managed.notifications::add);
       return managed;
     } catch (Throwable failure) {
       var failed = copyHandle(agent, behavior);
@@ -375,23 +375,6 @@ public enum AgentRegistry {
       }
       return failed;
     }
-  }
-
-  /**
-   * Agent execution may be isolated in an owned session, but session scopes intentionally do not
-   * open AMQP channels. Route the agent transport through the connected user scope in that case.
-   */
-  static Scope messagingScope(Scope executionScope) {
-    if (executionScope instanceof MessagingChannel channel && channel.isConnected()) {
-      return executionScope;
-    }
-    var userScope =
-        executionScope == null
-            ? null
-            : executionScope.getParentScope(Scope.Type.USER, UserScope.class);
-    return userScope instanceof MessagingChannel channel && channel.isConnected()
-        ? userScope
-        : executionScope;
   }
 
   /** Return the registered handle, or {@code null} if the URN is not active/retained. */
@@ -765,23 +748,25 @@ public enum AgentRegistry {
   }
 
   private String createAgentUrn(Scope scope) {
-    String scopeId;
-    if (scope instanceof ServiceSideScope serviceScope
-        && serviceScope.getId() != null
-        && !serviceScope.getId().isBlank()) {
-      scopeId = serviceScope.getId();
-    } else if (scope instanceof SessionScope sessionScope
-        && sessionScope.getId() != null
-        && !sessionScope.getId().isBlank()) {
-      scopeId = sessionScope.getId();
-    } else {
-      scopeId = "runtime";
-    }
+    String scopeId = scopeId(scope);
     return scopeId
         + ":agent:"
         + runtimeInstanceId
         + ":"
         + nextAgentId.incrementAndGet();
+  }
+
+  private String scopeId(Scope scope) {
+    if (scope instanceof ServiceSideScope serviceScope
+        && serviceScope.getId() != null
+        && !serviceScope.getId().isBlank()) {
+      return serviceScope.getId();
+    } else if (scope instanceof SessionScope sessionScope
+        && sessionScope.getId() != null
+        && !sessionScope.getId().isBlank()) {
+      return sessionScope.getId();
+    }
+    return "runtime";
   }
 
   private String userScopeKey(Scope scope) {
@@ -817,6 +802,7 @@ public enum AgentRegistry {
     private final String urn;
     private final String behaviorUrn;
     private final String name;
+    private final String scopeId;
     private final RuntimeAgentBase runtime;
     private final Observation observation;
     private final List<Notification> notifications;
@@ -831,6 +817,7 @@ public enum AgentRegistry {
         String urn,
         String behaviorUrn,
         String name,
+        String scopeId,
         RuntimeAgentBase runtime,
         Observation observation,
         List<Notification> notifications,
@@ -839,6 +826,7 @@ public enum AgentRegistry {
       this.urn = urn;
       this.behaviorUrn = behaviorUrn;
       this.name = name;
+      this.scopeId = scopeId;
       this.runtime = runtime;
       this.observation = observation;
       this.notifications = new CopyOnWriteArrayList<>(notifications);
@@ -848,6 +836,10 @@ public enum AgentRegistry {
 
     public boolean isMessagingConnected() {
       return messagingConnected;
+    }
+
+    public String getScopeId() {
+      return scopeId;
     }
 
     @Override
