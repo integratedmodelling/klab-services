@@ -2643,10 +2643,13 @@ public class AgentCompiler {
         "scope.beforeAction($S, actionAnnotations($S))", action.getUrn(), action.getUrn());
     if (type == Verb.Type.SUPPLIER) {
       code.addStatement(
-          "$L.whenComplete((value, error) -> scope.afterAction($S, actionAnnotations($S)))",
+          "$L.whenComplete((value, error) -> scope.afterAction($S, actionAnnotations($S), error))",
           result,
           action.getUrn(),
           action.getUrn());
+    }
+    if (type != Verb.Type.SUPPLIER) {
+      code.addStatement("$T actionError = null", Throwable.class);
     }
     code.beginControlFlow("try");
     var context =
@@ -2671,9 +2674,14 @@ public class AgentCompiler {
       code.addStatement("$L.completeExceptionally(error)", result);
       code.addStatement("return $L", result);
     } else {
+      code.nextControlFlow("catch ($T | $T error)", RuntimeException.class, Error.class);
+      code.addStatement("actionError = error");
+      code.addStatement("throw error");
       code.nextControlFlow("finally");
       code.addStatement(
-          "scope.afterAction($S, actionAnnotations($S))", action.getUrn(), action.getUrn());
+          "scope.afterAction($S, actionAnnotations($S), actionError)",
+          action.getUrn(),
+          action.getUrn());
     }
     code.endControlFlow();
     method.addCode(code.build());

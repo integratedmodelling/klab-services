@@ -33,6 +33,8 @@ public class AgentImpl implements Agent {
   private long observationId = Observation.UNASSIGNED_ID;
   private long startedAt = -1;
   private long lastActivityAt = -1;
+  private boolean startDeferred;
+  private boolean messagingConnected;
   private transient String localSenderUrn;
   private transient String localSenderName;
   private transient String localResponseTo;
@@ -72,11 +74,12 @@ public class AgentImpl implements Agent {
       }
       return false;
     }
+    // Mark the optimistic state before publishing so a terminal status received during a very
+    // short run cannot be overwritten after publish() returns.
+    alive = true;
     boolean accepted = publish(Message.MessageType.AgentStartRequested);
-    if (accepted) {
-      // The service-side start handler is asynchronous. A subsequent status message remains
-      // authoritative and will correct this optimistic transition if startup fails.
-      alive = true;
+    if (!accepted) {
+      alive = false;
     }
     return accepted;
   }
@@ -132,6 +135,24 @@ public class AgentImpl implements Agent {
 
   public void setLastActivityAt(long lastActivityAt) {
     this.lastActivityAt = lastActivityAt;
+  }
+
+  /** True when the service confirms that this single-use instance is waiting for {@link #start}. */
+  public boolean isStartDeferred() {
+    return startDeferred;
+  }
+
+  public void setStartDeferred(boolean startDeferred) {
+    this.startDeferred = startDeferred;
+  }
+
+  /** True when the service-side runtime confirms that its agent transport is connected. */
+  public boolean isMessagingConnected() {
+    return messagingConnected;
+  }
+
+  public void setMessagingConnected(boolean messagingConnected) {
+    this.messagingConnected = messagingConnected;
   }
 
   /**

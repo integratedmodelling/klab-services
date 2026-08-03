@@ -1179,11 +1179,21 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       failureReported.set(true);
       publishStatus(Message.MessageType.AgentFailed, event.payload());
     } else if (event.type() == EventType.TERMINATION) {
+      beforeTermination(event.payload());
       publishStatus(Message.MessageType.AgentStopped, event.payload());
       publishStatus(Message.MessageType.AgentStatusChanged, event.payload());
       closeMessaging();
     }
   }
+
+  /**
+   * Give specialized agents a chance to publish their final domain messages while messaging is
+   * still connected. Scope disposables run after the termination event has been emitted, so they
+   * are too late for transport-visible finalization.
+   *
+   * @param detail the value or failure that terminated the root scope
+   */
+  protected void beforeTermination(Object detail) {}
 
   private void publishStatus(Message.MessageType type, Object detail) {
     if (agentUrn == null) {

@@ -4,8 +4,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -32,8 +30,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
@@ -43,7 +41,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.languages.ActionSyntaxImpl;
 import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.QuantityLiteral;
 import org.integratedmodelling.languages.RangeLiteral;
@@ -122,10 +119,8 @@ public enum LanguageAdapter {
         annotationName != null && annotationName.startsWith("@")
             ? annotationName.substring(1)
             : annotationName);
-    Matcher singleConstantMatcher =
-        SINGLE_CONSTANT_ANNOTATION_PATTERN.matcher(annotation.encode());
-    String singleConstant =
-        singleConstantMatcher.matches() ? singleConstantMatcher.group(1) : null;
+    Matcher singleConstantMatcher = SINGLE_CONSTANT_ANNOTATION_PATTERN.matcher(annotation.encode());
+    String singleConstant = singleConstantMatcher.matches() ? singleConstantMatcher.group(1) : null;
     for (var argument : annotation.getArguments().entrySet()) {
       var value = adaptValue(argument.getValue(), namespace, projectName, documentClass);
       if (FunctionCallSyntax.DEFAULT_ARGUMENT_NAME.equals(argument.getKey())
@@ -599,9 +594,7 @@ public enum LanguageAdapter {
       List<Notification> notifications,
       String branchName) {
     int alternatives =
-        (value == null ? 0 : 1)
-            + (function == null ? 0 : 1)
-            + (switchStatement == null ? 0 : 1);
+        (value == null ? 0 : 1) + (function == null ? 0 : 1) + (switchStatement == null ? 0 : 1);
     if (alternatives != 1) {
       notifications.add(
           Notification.error(
@@ -1502,20 +1495,21 @@ public enum LanguageAdapter {
     setParsingData(action, ret, namespace, projectName);
 
     ret.setUrn(action.getName());
-    ret.getArguments().addAll(
-        action.getArgumentNames().stream()
-            .map(
-                argument ->
-                    new KActorsActionImpl.ArgumentImpl(
-                        argument.getFirst(),
-                        argument.getSecond() == null
-                            ? null
-                            : adaptAnnotation(
-                                argument.getSecond(),
-                                namespace,
-                                projectName,
-                                KlabAsset.KnowledgeClass.BEHAVIOR)))
-            .toList());
+    ret.getArguments()
+        .addAll(
+            action.getArgumentNames().stream()
+                .map(
+                    argument ->
+                        new KActorsActionImpl.ArgumentImpl(
+                            argument.getFirst(),
+                            argument.getSecond() == null
+                                ? null
+                                : adaptAnnotation(
+                                    argument.getSecond(),
+                                    namespace,
+                                    projectName,
+                                    KlabAsset.KnowledgeClass.BEHAVIOR)))
+                .toList());
     // ActionSyntax currently exposes the action source but not the grammar's `static` attribute.
     // Preserve the semantic contract until that syntax-bean accessor is available.
     ret.setStatic(STATIC_ACTION_PATTERN.matcher(action.encode()).find());
@@ -1643,8 +1637,7 @@ public enum LanguageAdapter {
     } else if (assign.getFunction() != null) {
       ret.setFunction(adaptVerb(assign.getFunction(), behavior, action, notifications));
     } else if (assign.getSwitchStatement() != null) {
-      ret.setSwitch(
-          adaptSwitch(assign.getSwitchStatement(), behavior, action, notifications));
+      ret.setSwitch(adaptSwitch(assign.getSwitchStatement(), behavior, action, notifications));
     }
     return ret;
   }
@@ -1879,8 +1872,7 @@ public enum LanguageAdapter {
       List<Notification> notifications) {
     var ret = new KActorsStatementImpl.AssertImpl();
     var arguments = Parameters.<String>create();
-    arguments.putAll(
-        adaptArguments(assertion.getArguments(), behavior, action, notifications));
+    arguments.putAll(adaptArguments(assertion.getArguments(), behavior, action, notifications));
     ret.setArguments(arguments);
     ret.setAssertions(
         assertion.getAssertions().stream()
@@ -1914,6 +1906,7 @@ public enum LanguageAdapter {
                     ok.setStatedValue(Boolean.TRUE);
                     adapted.setValue(ok);
                   }
+                  adapted.setSourceCode(syntax.encode());
                   return adapted;
                 })
             .map(KActorsStatement.Assert.Assertion.class::cast)
@@ -1935,8 +1928,7 @@ public enum LanguageAdapter {
     ret.setMessage(declaration[declaration.length - 1]);
 
     // cannot enforce argument mapping at this stage
-    var arguments =
-        adaptArguments(verbStatement.getArguments(), behavior, action, notifications);
+    var arguments = adaptArguments(verbStatement.getArguments(), behavior, action, notifications);
     for (var argument : arguments.entrySet()) {
       if (argument.getKey() != null
           && (argument.getKey().startsWith(":")
@@ -2078,8 +2070,7 @@ public enum LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     if (syntax instanceof ValueSyntax value) {
-      return adaptKActorsValue(
-          value, behavior.getUrn(), behavior.getProjectName(), notifications);
+      return adaptKActorsValue(value, behavior.getUrn(), behavior.getProjectName(), notifications);
     }
     var ret = new KActorsStatementImpl.CallArgumentImpl();
     ret.setAdaptedBehaviorUrn(castToBehavior);

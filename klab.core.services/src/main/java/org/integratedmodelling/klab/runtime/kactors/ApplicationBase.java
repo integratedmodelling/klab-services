@@ -13,8 +13,7 @@ public abstract class ApplicationBase extends RuntimeAgentBase {
     private final SessionScope session;
     private final ContextScope context;
 
-    public ApplicationScope(
-        RuntimeAgentBase actor, SessionScope session, ContextScope context) {
+    public ApplicationScope(RuntimeAgentBase actor, SessionScope session, ContextScope context) {
       super(actor);
       this.session = session;
       this.context = context;
@@ -39,6 +38,14 @@ public abstract class ApplicationBase extends RuntimeAgentBase {
     @Override
     public ApplicationScope withId(long actionId) {
       return new ApplicationScope(this, actionId);
+    }
+
+    @Override
+    public void dispose() {
+      if (session != null) {
+        session.close();
+      }
+      super.dispose();
     }
   }
 

@@ -36,6 +36,7 @@ class AgentInstantiationRequestSerializationTest {
     var request = new AgentInstantiationRequest();
     request.setBehavior(navigableBehavior);
     request.setCompileOnly(true);
+    request.setDoNotStart(true);
     request.setObservationId(42L);
     request.setSuggestedName("test-agent");
 
@@ -55,6 +56,7 @@ class AgentInstantiationRequestSerializationTest {
         "message",
         restored.getBehavior().getStatements().getFirst().getArguments().getFirst().getName());
     assertTrue(restored.isCompileOnly());
+    assertTrue(restored.isDoNotStart());
     assertEquals(42L, restored.getObservationId());
     assertEquals("test-agent", restored.getSuggestedName());
   }

@@ -101,7 +101,7 @@ public interface RuntimeAgent {
       this.messageClass = messageClass;
     }
 
-    public String messageClass() {
+    public final String messageClass() {
       return messageClass;
     }
 
@@ -358,6 +358,8 @@ public interface RuntimeAgent {
     INCLUDE_JAVA_CODE,
     /** Stop after source generation and validation; do not compile or instantiate the class. */
     DO_NOT_COMPILE_JAVA,
+    /** Create and connect the agent but leave it stopped until the caller invokes {@link Agent#start}. */
+    DO_NOT_START,
     /** Do not bind the agent to any observation even if one is present in the scope. */
     DO_NOT_BIND_OBSERVATION,
     /**
@@ -420,6 +422,15 @@ public interface RuntimeAgent {
      * @param annotations immutable annotations declared on the action
      */
     default void afterAction(String actionName, List<Annotation> annotations) {}
+
+    /**
+     * Called when an action ends, including its terminal failure when one escaped the action body.
+     * Existing scopes overriding the two-argument hook remain source-compatible.
+     */
+    default void afterAction(
+        String actionName, List<Annotation> annotations, Throwable failure) {
+      afterAction(actionName, annotations);
+    }
 
     /**
      * A SessionScope is always defined during an agent's lifetime. The scope may be a ContextScope

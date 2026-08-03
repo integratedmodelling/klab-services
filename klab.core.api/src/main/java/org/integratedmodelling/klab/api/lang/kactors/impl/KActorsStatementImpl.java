@@ -275,6 +275,7 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       private List<Verb> verbs;
       private KActorsValue expression;
       private KActorsValue value;
+      private String sourceCode;
 
       @Override
       public Type getType() {
@@ -289,6 +290,23 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
       @Override
       public KActorsValue getExpression() {
         return expression;
+      }
+
+      public List<Verb> getVerbs() {
+        return verbs;
+      }
+
+      public void setVerbs(List<Verb> verbs) {
+        this.verbs = verbs;
+      }
+
+      @Override
+      public String getSourceCode() {
+        return sourceCode;
+      }
+
+      public void setSourceCode(String sourceCode) {
+        this.sourceCode = sourceCode;
       }
 
       @Override

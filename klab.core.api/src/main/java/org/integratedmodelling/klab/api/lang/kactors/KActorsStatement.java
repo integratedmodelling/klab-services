@@ -332,6 +332,14 @@ public interface KActorsStatement extends KActorsCodeStatement {
       KActorsValue getExpression();
 
       /**
+       * Assertions preserve their source code so that test case reports can be written with full
+       * documentation.
+       *
+       * @return
+       */
+      String getSourceCode();
+
+      /**
        * Call chain whose final result will be compared with the value.
        *
        * @return
@@ -630,8 +638,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
     /**
      * Actions with the corresponding pattern to match to the target value. If the value is null,
      * any value matches. A Yield statement in a case body (possibly nested in control flow) makes
-     * the switch functional. A matching case that completes without yielding produces
-     * null/unknown.
+     * the switch functional. A matching case that completes without yielding produces null/unknown.
      *
      * @return
      */

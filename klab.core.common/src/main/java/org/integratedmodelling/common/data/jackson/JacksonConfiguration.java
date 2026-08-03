@@ -17,11 +17,7 @@ import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
-import org.integratedmodelling.klab.api.collections.Constant;
-import org.integratedmodelling.klab.api.collections.Identifier;
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.collections.*;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -444,6 +440,7 @@ public class JacksonConfiguration {
           ServiceInfo.Argument.class,
           KlabService.ServiceStatus.class,
           Urn.class,
+          DomainObject.class,
           ExpressionCode.class,
           Federation.class,
           Scheduler.Event.class,

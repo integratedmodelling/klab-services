@@ -36,6 +36,7 @@ import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.Constant;
+import org.integratedmodelling.klab.api.collections.DomainObject;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -103,6 +104,43 @@ class RuntimeAgentBaseTest {
     assertSame(semanticAssertion, agent.evaluations.getLast().assertion());
     assertFalse(agent.evaluations.getLast().success());
     assertSame(failure, agent.evaluations.getLast().exception());
+  }
+
+  @Test
+  void testcaseReportTracksOnlyAnnotatedTestsAndAssociatesTheirAssertions() {
+    var session = mock(org.integratedmodelling.klab.api.scope.SessionScope.class);
+    var testCase = new StubTestCase(session);
+    var rootScope = (AgentScope) testCase.rootScope();
+    var helperScope = (TestCaseBase.TestCaseScope) rootScope.withId(1);
+    helperScope.beforeAction("helper", List.of());
+    helperScope.afterAction("helper", List.of());
+    assertTrue(testCase.report().getChildren().isEmpty());
+
+    var testAnnotation = AnnotationImpl.create("test", "name", "Checks values");
+    var testScope = (TestCaseBase.TestCaseScope) rootScope.withId(2);
+    testScope.beforeAction("checks_values", List.of(testAnnotation));
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+    assertion.setSourceCode("actual == expected");
+    testCase.record(testScope, assertion, false, new AssertionError("different"));
+    testScope.afterAction("checks_values", List.of(testAnnotation));
+
+    assertEquals(1, testCase.report().getChildren().size());
+    DomainObject test = testCase.report().getChildren().getFirst();
+    assertEquals("test", test.type());
+    assertEquals("checks_values", test.urn());
+    assertEquals("Checks values", test.name());
+    assertFalse(test.get("outcome", true));
+    assertEquals(1L, test.get("assertionsFailed", Long.class));
+    assertEquals("actual == expected", test.getChildren().getFirst().urn());
+    assertNotNull(test.getChildren().getFirst().get("stacktrace"));
+
+    var throwingScope = (TestCaseBase.TestCaseScope) rootScope.withId(3);
+    throwingScope.beforeAction("throws_error", List.of(testAnnotation));
+    throwingScope.afterAction(
+        "throws_error", List.of(testAnnotation), new IllegalStateException("broken test"));
+    DomainObject throwingTest = testCase.report().getChildren().getLast();
+    assertFalse(throwingTest.get("outcome", true));
+    assertTrue(throwingTest.get("stacktrace", String.class).contains("broken test"));
   }
 
   @Test
@@ -1232,6 +1270,101 @@ class RuntimeAgentBaseTest {
     }
   }
 
+  @Test
+  void terminalStatusDuringStartPublicationRemainsAuthoritative() {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var client = new AgentImpl();
+    client.setUrn("agent:short-test");
+    client.setViable(true);
+    var runtime = new AgentImpl();
+    runtime.setUrn("agent:short-test");
+    runtime.setViable(true);
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(client.connect(channel));
+      assertTrue(runtime.connect(channel));
+      runtime.addMessageListener(
+          message -> {
+            if (message.getMessageType() == Message.MessageType.AgentStartRequested) {
+              runtime.tell(
+                  Message.create(
+                      runtime.getUrn(),
+                      Message.MessageClass.AgentCommunication,
+                      Message.MessageType.AgentStopped,
+                      new RuntimeAgent.Status(
+                          runtime.getUrn(),
+                          RuntimeAgent.State.STOPPED,
+                          true,
+                          null,
+                          System.currentTimeMillis())));
+            }
+          });
+
+      assertTrue(client.start());
+      assertFalse(client.isAlive());
+    } finally {
+      client.disconnect();
+      runtime.disconnect();
+    }
+  }
+
+  @Test
+  void deferredTestStartDeliversLifecycleReportBeforeTerminalStatus() {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var runtime = new LifecycleReportingTestAgent();
+    var client = new AgentImpl();
+    client.setUrn("agent:reported-test");
+    client.setViable(true);
+    var lifecycle = new CopyOnWriteArrayList<RuntimeAgent.TestMessageType>();
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(
+          runtime.initializeMessaging("agent:reported-test", channel, ignored -> {}));
+      assertTrue(client.connect(channel));
+      client.addMessageListener(
+          message -> {
+            if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
+              var custom = message.getPayload(RuntimeAgent.CustomMessage.class);
+              for (var type : RuntimeAgent.TestMessageType.values()) {
+                if (type.messageClass().equals(custom.type().getValue())) {
+                  lifecycle.add(type);
+                }
+              }
+            }
+          });
+
+      assertTrue(client.start());
+
+      assertEquals(
+          List.of(
+              RuntimeAgent.TestMessageType.TESTCASE_STARTED,
+              RuntimeAgent.TestMessageType.TEST_STARTED,
+              RuntimeAgent.TestMessageType.TEST_FINISHED,
+              RuntimeAgent.TestMessageType.TESTCASE_FINISHED),
+          lifecycle);
+      assertFalse(client.isAlive());
+    } finally {
+      client.disconnect();
+      runtime.closeMessaging();
+    }
+  }
+
   private record AssertionEvaluation(
       KActorsStatement.Assert.Assertion assertion, boolean success, Throwable exception) {}
 
@@ -1247,7 +1380,7 @@ class RuntimeAgentBaseTest {
         Supplier<Object> actual,
         Supplier<Object> expected,
         KActorsStatement.Assert.Assertion assertion) {
-      assertValue(actual, expected, assertion, ((AgentScope) rootScope()).withId(17));
+      assertValue(actual, expected, assertion, (AgentScope) rootScope());
     }
 
     private KActorsStatement.Assert.Assertion semanticAssertion(String serialized) {
@@ -1419,6 +1552,18 @@ class RuntimeAgentBaseTest {
       return (AgentScope) invokeSelfFunction("probe", (AgentScope) rootScope());
     }
 
+    private DomainObject report() {
+      return report;
+    }
+
+    private void record(
+        AgentScope scope,
+        KActorsStatement.Assert.Assertion assertion,
+        boolean success,
+        Throwable failure) {
+      assertionEvaluated(scope, assertion, success, failure);
+    }
+
     @SuppressWarnings("unused")
     private Object action_probe(AgentScope scope, Object... arguments) {
       return scope;
@@ -1426,6 +1571,30 @@ class RuntimeAgentBaseTest {
 
     @Override
     protected ExitValue main(AgentScope rootScope) {
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private static class LifecycleReportingTestAgent extends TestCaseBase {
+
+    private LifecycleReportingTestAgent() {
+      super(null, null);
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      var annotation = AnnotationImpl.create("test", "name", "Lifecycle test");
+      var testScope = (TestCaseScope) rootScope.withId(1);
+      testScope.beforeAction("lifecycle_test", List.of(annotation));
+      var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+      assertion.setSourceCode("true");
+      testScope.assertionEvaluated(assertion, true, null);
+      testScope.afterAction("lifecycle_test", List.of(annotation));
       return NORMAL_EXIT;
     }
 

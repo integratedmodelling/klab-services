@@ -12,6 +12,7 @@ public class AgentInstantiationRequest {
   private KActorsBehavior behavior;
   private boolean compileOnly;
   private boolean reportJavaCode;
+  private boolean doNotStart;
   private boolean doNotBindSession;
   private boolean doNotBindObservation;
   private long observationId = Observation.UNASSIGNED_ID;
@@ -71,5 +72,13 @@ public class AgentInstantiationRequest {
 
   public void setReportJavaCode(boolean reportJavaCode) {
     this.reportJavaCode = reportJavaCode;
+  }
+
+  public boolean isDoNotStart() {
+    return doNotStart;
+  }
+
+  public void setDoNotStart(boolean doNotStart) {
+    this.doNotStart = doNotStart;
   }
 }

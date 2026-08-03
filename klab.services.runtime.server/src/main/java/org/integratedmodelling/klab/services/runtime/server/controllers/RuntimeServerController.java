@@ -165,6 +165,9 @@ public class RuntimeServerController {
       if (request.isDoNotBindSession()) {
         options.add(RuntimeAgent.CompilationOptions.DO_NOT_BIND_SESSION);
       }
+      if (request.isDoNotStart()) {
+        options.add(RuntimeAgent.CompilationOptions.DO_NOT_START);
+      }
       if (request.isReportJavaCode()) {
         options.add(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE);
       }
@@ -174,7 +177,12 @@ public class RuntimeServerController {
               .klabService()
               .createAgent(request.getBehavior(), request.getSuggestedName(), options, scope);
 
-      return RuntimeService.adaptAgent(ret);
+      var clientAgent = RuntimeService.adaptAgent(ret);
+      clientAgent.setStartDeferred(
+          request.isDoNotStart()
+              && clientAgent.isMessagingConnected()
+              && clientAgent.getStartedAt() < 0);
+      return clientAgent;
     }
     throw new KlabInternalErrorException(
         "Unexpected implementation of agent instantiation authorization");

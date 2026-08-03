@@ -1,14 +1,12 @@
 package org.integratedmodelling.klab.api.collections;
 
-import org.integratedmodelling.klab.api.collections.impl.DomainObjectImpl;
-import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.klab.api.collections.impl.DomainObjectImpl;
+import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+import org.integratedmodelling.klab.api.data.Version;
 
 /**
  * A simple domain object with properties and tree structure. Provides convenience methods for
@@ -16,30 +14,37 @@ import java.util.Map;
  */
 public interface DomainObject extends Parameters<String> {
 
+  String TYPE = "type";
+  String NAME = "name";
+  String DESCRIPTION = "description";
+  String URN = "urn";
+  String VERSION = "version";
+  String LABEL = "label";
+
   List<DomainObject> getChildren();
 
   default String name() {
-    return get("name", String.class);
+    return get(NAME, String.class);
   }
 
   default String description() {
-    return get("description", String.class);
+    return get(DESCRIPTION, String.class);
   }
 
   default String label() {
-    return get("label", String.class);
+    return get(LABEL, String.class);
   }
 
   default String urn() {
-    return get("urn", String.class);
+    return get(URN, String.class);
   }
 
   default String type() {
-    return get("type", String.class);
+    return get(TYPE, String.class);
   }
 
   default Version version() {
-    return get("version", Version.class);
+    return get(VERSION, Version.class);
   }
 
   /**

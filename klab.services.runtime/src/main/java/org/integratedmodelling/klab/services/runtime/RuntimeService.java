@@ -1286,6 +1286,9 @@ public class RuntimeService extends BaseService
     if (agent instanceof AgentRegistry.ManagedAgent managedAgent) {
       ret.setJavaCode(managedAgent.getJavaCode());
       ret.setObservationId(managedAgent.getObservationId());
+      ret.setStartedAt(managedAgent.getStartedAt());
+      ret.setLastActivityAt(managedAgent.getLastActivityAt());
+      ret.setMessagingConnected(managedAgent.isMessagingConnected());
     }
 
     return ret;
@@ -1381,6 +1384,7 @@ public class RuntimeService extends BaseService
     }
 
     if (!requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA)
+        && !requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_START)
         && ret.isViable()) {
       if (!ret.start() && releaseOwnedSession != null) {
         releaseOwnedSession.run();

@@ -50,6 +50,7 @@ import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
@@ -357,7 +358,8 @@ public enum AgentRegistry {
         userAgents.put(userScopeKey, managed);
       }
       runtime.setManagedStopHandler(managed::stop);
-      runtime.initializeMessaging(urn, scope, managed.notifications::add);
+      managed.messagingConnected =
+          runtime.initializeMessaging(urn, messagingScope(scope), managed.notifications::add);
       return managed;
     } catch (Throwable failure) {
       var failed = copyHandle(agent, behavior);
@@ -373,6 +375,23 @@ public enum AgentRegistry {
       }
       return failed;
     }
+  }
+
+  /**
+   * Agent execution may be isolated in an owned session, but session scopes intentionally do not
+   * open AMQP channels. Route the agent transport through the connected user scope in that case.
+   */
+  static Scope messagingScope(Scope executionScope) {
+    if (executionScope instanceof MessagingChannel channel && channel.isConnected()) {
+      return executionScope;
+    }
+    var userScope =
+        executionScope == null
+            ? null
+            : executionScope.getParentScope(Scope.Type.USER, UserScope.class);
+    return userScope instanceof MessagingChannel channel && channel.isConnected()
+        ? userScope
+        : executionScope;
   }
 
   /** Return the registered handle, or {@code null} if the URN is not active/retained. */
@@ -806,6 +825,7 @@ public enum AgentRegistry {
     private final AtomicReference<Lifecycle> lifecycle =
         new AtomicReference<>(Lifecycle.NEW);
     private volatile boolean viable = true;
+    private volatile boolean messagingConnected;
 
     private ManagedAgent(
         String urn,
@@ -824,6 +844,10 @@ public enum AgentRegistry {
       this.notifications = new CopyOnWriteArrayList<>(notifications);
       this.javaCode = javaCode;
       this.userScopeKey = userScopeKey;
+    }
+
+    public boolean isMessagingConnected() {
+      return messagingConnected;
     }
 
     @Override

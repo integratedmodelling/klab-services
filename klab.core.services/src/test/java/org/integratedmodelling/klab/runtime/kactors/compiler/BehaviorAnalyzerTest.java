@@ -2034,7 +2034,7 @@ class BehaviorAnalyzerTest {
         generated);
     assertTrue(
         generated.contains(
-            "scope.afterAction(\"first_test\", actionAnnotations(\"first_test\"));"),
+            "scope.afterAction(\"first_test\", actionAnnotations(\"first_test\"), actionError);"),
         generated);
     assertTrue(generated.contains("finally"), generated);
     int tests = generated.indexOf("private Object runDeclaredTests");

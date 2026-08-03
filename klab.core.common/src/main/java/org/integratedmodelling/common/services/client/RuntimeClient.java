@@ -107,6 +107,8 @@ public class RuntimeClient extends BaseServiceClient
         requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
     request.setReportJavaCode(
         requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE));
+    request.setDoNotStart(
+        requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_START));
     request.setDoNotBindObservation(
         requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION));
     request.setDoNotBindSession(
