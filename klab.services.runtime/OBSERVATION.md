@@ -67,10 +67,11 @@ The ID and the empty flag describe different aspects of state:
 | Resolved | `id > 0` | Existing knowledge-graph observation. Submitting it is a no-op. |
 | Failed | `isEmpty() == true` | The operation failed or found no query result. Notifications explain why. |
 
-An ID-0 query result is intentionally distinguishable from a persisted observation. A completely
-covered quality query returns its original positive-ID observation; a partial quality query and all
-collective query results remain ID 0. `getResolvedCoverage()` and the query metadata describe the
-covered fraction.
+An ID-0 query result is intentionally distinguishable from a persisted observation. Detached
+queries are limited to enumerable collective substantials: subjects, agents, events, and
+relationships. Their results remain ID 0, and `getResolvedCoverage()` plus the query metadata
+describe the covered fraction. Qualities are never detached query views: contextual lookup either
+returns the existing positive-ID quality, which is complete by definition, or finds nothing.
 
 The principal query metadata keys are:
 
@@ -101,7 +102,10 @@ dataflow is stored:
 A cohort is not the same asset as a collective observation. A cohort accumulates the results of
 collective observations. Only collective observations linked by `CONTRIBUTED_TO` participate in a
 collective query; individually inserted substantials do not imply that their surrounding geometry
-was collectively observed.
+was collectively observed. A cohort for an occurrent substantial—an event or a functional
+relationship—also accumulates the outer temporal union of its collective observations. Temporal
+bounds are deliberately removed from continuant cohorts; their presence is decided by URN or the
+resolver's applicable identification strategy.
 
 ## Submission and query preflight
 
@@ -110,16 +114,15 @@ terminal cases without opening a transaction:
 
 1. A positive-ID or empty observation is returned unchanged.
 2. An ID-0 observation is executed as a read-only query.
-3. A normal quality or collective submission is preflighted with the same query mechanism.
-4. If existing coverage satisfies the resolver's completion margin, the existing quality or
-   collective query view is returned immediately.
+3. A normal quality submission performs a direct contextual lookup by semantics. Any match is
+   returned immediately because a stored contextual quality is complete by definition.
+4. An enumerable collective submission is preflighted through the detached query mechanism. If
+   existing coverage satisfies the resolver's completion margin, the query view is returned.
 5. Otherwise the normal observation cycle continues. Registration assigns a negative ID; identity
    lookup may still return an existing individual substantial.
 
-Queries are supported only for qualities and collective substantials:
+Detached queries are supported only for collective subjects, agents, events, and relationships:
 
-- A quality query requires `scope.getContextObservation()`. It finds the matching child quality and
-  intersects its geometry with the request.
 - A collective query finds the cohort and unions the geometries of matching collective observations
   linked through `CONTRIBUTED_TO`. The union preserves areas in which a collective observation found
   no instances.
@@ -147,8 +150,9 @@ Failure in a child transaction is intended to fail the transaction tree.
 
 ## Resolution and coverage
 
-`ResolverService.resolve()` delegates to `ResolutionCompiler`, which performs the following for
-each quality or collective target:
+`ResolverService.resolve()` delegates to `ResolutionCompiler`. For a quality, it first performs a
+direct contextual lookup and emits a complete reference when the quality exists. For an enumerable
+collective target it performs the following geometry-aware steps:
 
 1. Query the runtime for existing coverage in the requested scale.
 2. Treat coverage below the configured empty margin as no coverage.
@@ -158,9 +162,9 @@ each quality or collective target:
 5. If a geometric complement cannot be represented by one `Scale`, retain the reference but resolve
    the full requested scale rather than risk under-resolution.
 
-For partial qualities, the reference should be the positive-ID source observation. Collective
-references remain ID-0 query views because they summarize multiple contributing observations and
-their union geometry.
+Collective references remain ID-0 query views because they summarize multiple contributing
+observations and their union geometry. Partial quality coverage is not inferred from observation
+geometry; a stored quality is an indivisible complete contextual result.
 
 Resolution produces a `ResolutionGraph`, then `DataflowCompiler` serializes it into actuators:
 
@@ -250,7 +254,7 @@ The query, resolution, reference-binding, initial-failure, and child-completion 
 coherent cycle. The following gaps cannot be closed safely without choosing domain semantics or
 extending the storage and event architecture.
 
-### Partial quality storage and execution geometry
+### Partial quality storage and execution geometry (historical design note)
 
 `DataflowCompiler` records missing geometry in `Actuator.getCoverage()`, and runtime compilation
 records it on `CONTEXTUALIZED_BY`. Execution cannot yet apply that geometry correctly:
@@ -258,7 +262,9 @@ records it on `CONTEXTUALIZED_BY`. Execution cannot yet apply that geometry corr
 no execution-geometry parameter and native scanners are constructed for an observation's storage
 geometry. Geometry remapping is also explicitly unsupported in the current storage implementation.
 
-This cannot be solved by merely passing a smaller geometry to an executor. The existing quality is
+The current lookup contract intentionally avoids this path: an existing contextual quality is
+complete by definition. If partial quality extension is reintroduced, it cannot be solved by merely
+passing a smaller geometry to an executor. The existing quality is
 available as a reference input, while the submitted root normally becomes a new provisional
 observation with its own storage. Nothing defines how existing values and newly computed values
 become one returned quality. The system must choose and implement one policy end to end:
@@ -269,8 +275,7 @@ become one returned quality. The system must choose and implement one policy end
 
 That decision determines observation identity, shard ownership, scanner delegation, histogram
 aggregation, commit behavior, and the geometry passed through the scheduler. Until it is made,
-partial resolution plans are compiled correctly and preserve their references, but partial-quality
-value composition is not fully executable.
+the resolver deliberately does not construct partial-quality plans.
 
 ### Semantic post-processing and event scheduling
 
@@ -292,16 +297,16 @@ relationships, reactive observations, and restart behavior.
 The intended contract for callers is:
 
 - positive-ID input: return it unchanged;
-- ID-0 query: return an existing positive quality, an ID-0 query view, or an empty result;
+- ID-0 query for an enumerable collective: return an ID-0 query view or an empty result;
+- contextual quality lookup: return its existing positive-ID observation or continue resolution;
 - normal successful submission: return a positive-ID contextualized observation after the root
   transaction commits;
 - any resolution, compilation, initial execution, or required child-submission failure: return an
   empty observation carrying explanatory notifications and fail the transaction tree.
 
-The positive-ID, query, zero-coverage, and full-coverage branches implement this contract. Partial
-quality resolution reaches the correct plan and preserves exact references, but complete value
-composition awaits the storage policy above. Advanced semantic and reactive contextualization
-retains the listed limitations.
+The positive-ID, direct-quality, query, zero-coverage, and full-coverage branches implement this
+contract. Partial-quality value composition awaits the storage policy above. Advanced semantic and
+reactive contextualization retains the listed limitations.
 
 ## Code map
 

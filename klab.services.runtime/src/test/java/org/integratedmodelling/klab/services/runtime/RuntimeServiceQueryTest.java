@@ -1,11 +1,15 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.EnumSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -62,4 +66,14 @@ class RuntimeServiceQueryTest {
 
     assertEquals(2, shape.getJTSGeometry().getNumGeometries());
   }
+
+  @Test
+  void detachedQueriesAreLimitedToEnumerableSubstantials() {
+    assertFalse(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.QUALITY)));
+    assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.SUBJECT)));
+    assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.AGENT)));
+    assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.EVENT)));
+    assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.RELATIONSHIP)));
+  }
+
 }

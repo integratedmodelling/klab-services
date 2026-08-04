@@ -102,6 +102,10 @@ class KActorsFileTest {
             new KActorsVisitor.LenientValidator(),
             result -> assertBehaviorType(result, KActorsBehavior.Type.TASK)),
         new Case(
+            "/parallel-testcase.kactor",
+            new KActorsVisitor.LenientValidator(),
+            this::assertParallelTestcaseProperty),
+        new Case(
             "/user-behavior.kactor",
             new KActorsVisitor.LenientValidator(),
             result -> assertBehaviorType(result, KActorsBehavior.Type.USER)),
@@ -224,6 +228,15 @@ class KActorsFileTest {
     assertEquals("test.project", firstCall.getProjectName());
     assertEquals(KlabAsset.KnowledgeClass.BEHAVIOR, firstCall.getDocumentClass());
     assertTrue(firstCall.getLength() > 0);
+  }
+
+  private void assertParallelTestcaseProperty(KActorsTestSupport.Result result) {
+    assertNoParsingOrAdaptationErrors(result);
+    assertTrue(result.analysisSuccessful(), () -> result.allNotifications().toString());
+
+    var behavior = result.requireBehavior();
+    assertEquals(KActorsBehavior.Type.UNITTEST, behavior.getBehaviorType());
+    assertEquals(Boolean.TRUE, behavior.getProperties().get("parallel"));
   }
 
   private void assertBehaviorContract(KActorsTestSupport.Result result) {

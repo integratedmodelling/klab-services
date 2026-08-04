@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.lang.kactors;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -274,6 +274,16 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
    * @return
    */
   List<Import> getInheritedBehaviors();
+
+  /**
+   * A behavior can be given freely named properties in its preamble. Properties are conventions
+   * interpreted by the applicable runtime. For example, a testcase with the boolean property
+   * {@code parallel=true} runs its {@code @test} actions concurrently.
+   *
+   * @return the mutable, serialization-safe property set; never {@code null} in standard
+   *     implementations
+   */
+  Parameters<String> getProperties();
 
   /**
    * Description (docstring). A description in the preamble is mandatory.

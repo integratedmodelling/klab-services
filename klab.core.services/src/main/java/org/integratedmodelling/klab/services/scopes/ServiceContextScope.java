@@ -784,7 +784,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           query.where(
               "id", KnowledgeGraph.Query.Operator.EQUALS, querySourceIds.getFirst());
     } else if (!observation.getObservable().getSemantics().isCollective()
-        && SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())) {
+        && SemanticType.isEnumerableSubstantial(
+            observation.getObservable().getSemantics().getType())) {
       query =
           query.where(
               "urn",
@@ -808,7 +809,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   private boolean isSameInstance(Observation observation, Observation o) {
     return !observation.getObservable().getSemantics().isCollective()
-        && SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+        && SemanticType.isEnumerableSubstantial(
+            observation.getObservable().getSemantics().getType())
         && observation
             .getUrn()
             .equals(getId() + ":" + ObservationImpl.INDIVIDUALS_CATALOG_NAME + ":" + o.getUrn());

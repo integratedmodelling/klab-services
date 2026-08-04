@@ -209,6 +209,24 @@ public enum SemanticType {
     return type.contains(SUBJECT) || type.contains(AGENT) || type.contains(EVENT);
   }
 
+  /**
+   * Return true for substantial observations whose instances can be enumerated in a cohort.
+   * Relationships are included even though the legacy {@link #isSubstantial(Set)} classification
+   * does not include them.
+   */
+  public static boolean isEnumerableSubstantial(Set<SemanticType> type) {
+    return type.contains(SUBJECT)
+        || type.contains(AGENT)
+        || type.contains(EVENT)
+        || type.contains(RELATIONSHIP);
+  }
+
+  /** Events and functional relationships are the substantial types whose identity is temporal. */
+  public static boolean isOccurrentSubstantial(Set<SemanticType> type) {
+    return type.contains(EVENT)
+        || (type.contains(RELATIONSHIP) && type.contains(FUNCTIONAL));
+  }
+
   public static boolean isDependent(Set<SemanticType> type) {
     return type.contains(QUALITY) || type.contains(PROCESS);
   }

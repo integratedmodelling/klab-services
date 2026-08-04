@@ -372,7 +372,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
             .query(Observation.class, this)
             .source(contextObservation == null ? this : contextObservation)
             .along(GraphModel.Relationship.HAS_CHILD);
-    if (SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())) {
+    if (SemanticType.isEnumerableSubstantial(
+        observation.getObservable().getSemantics().getType())) {
       query =
           query.where(
               "urn",

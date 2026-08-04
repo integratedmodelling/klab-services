@@ -2051,6 +2051,39 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void testcaseParallelPropertyIsRuntimeDrivenAndRequiresABoolean() {
+    var first = action("first_test", returned(number(1)));
+    first.setAnnotations(List.of(Annotation.of("test")));
+    var second = action("second_test", returned(number(2)));
+    second.setAnnotations(List.of(Annotation.of("test")));
+    var source = behavior(first, second);
+    source.setBehaviorType(KActorsBehavior.Type.UNITTEST);
+    source.getProperties().put("parallel", true);
+
+    var compiler = new AgentCompiler(source);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(
+        generated.contains(
+            "return runTests(() -> invokeSelfFunction(\"first_test\", rootScope), () -> invokeSelfFunction(\"second_test\", rootScope))"),
+        generated);
+    assertTrue(generated.contains("boolean runTestsInParallel()"), generated);
+    assertTrue(generated.contains("return true;"), generated);
+    assertGeneratedJavaCompiles(generated);
+
+    source.getProperties().put("parallel", "yes");
+    var analyzer = new BehaviorAnalyzer(source);
+    assertFalse(analyzer.analyze());
+    assertTrue(
+        analyzer.getNotifications().stream()
+            .anyMatch(
+                notification ->
+                    notification.getMessage().contains("parallel")
+                        && notification.getMessage().contains("boolean")),
+        messages(analyzer));
+  }
+
+  @Test
   void compiledAssertionsReportUsingDeferredEvaluationAndTheFullSemanticBean() {
     var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
     assertion.setTag("temperature-check");

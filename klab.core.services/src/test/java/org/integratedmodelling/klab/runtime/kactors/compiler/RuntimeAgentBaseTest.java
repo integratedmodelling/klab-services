@@ -111,6 +111,51 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void testcaseRunnerIsSequentialByDefaultAndParallelWhenRequested() {
+    var sequential = new TestExecutionAgent(false);
+    var order = new ArrayList<String>();
+
+    assertEquals(
+        "second",
+        sequential.execute(
+            () -> {
+              order.add("first");
+              return "first";
+            },
+            () -> {
+              order.add("second");
+              return "second";
+            }));
+    assertEquals(List.of("first", "second"), order);
+
+    var parallel = new TestExecutionAgent(true);
+    var bothStarted = new CountDownLatch(2);
+    var completed = new CopyOnWriteArrayList<String>();
+    parallel.execute(
+        concurrentTest("first", bothStarted, completed),
+        concurrentTest("second", bothStarted, completed));
+
+    assertEquals(0, bothStarted.getCount(), "both tests must start before either can finish");
+    assertEquals(2, completed.size());
+    assertTrue(completed.containsAll(List.of("first", "second")));
+  }
+
+  private static Supplier<Object> concurrentTest(
+      String name, CountDownLatch bothStarted, List<String> completed) {
+    return () -> {
+      bothStarted.countDown();
+      try {
+        assertTrue(bothStarted.await(2, TimeUnit.SECONDS));
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new AssertionError(e);
+      }
+      completed.add(name);
+      return name;
+    };
+  }
+
+  @Test
   void testcaseReportTracksOnlyAnnotatedTestsAndAssociatesTheirAssertions() {
     var session = mock(org.integratedmodelling.klab.api.scope.SessionScope.class);
     var testCase = new StubTestCase(session);
@@ -1642,6 +1687,34 @@ class RuntimeAgentBaseTest {
       assertion.setSourceCode("true");
       testScope.assertionEvaluated(assertion, true, null);
       testScope.afterAction("lifecycle_test", List.of(annotation));
+      return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private static class TestExecutionAgent extends TestCaseBase {
+
+    private TestExecutionAgent(boolean parallel) {
+      super(testBehavior(parallel), null);
+    }
+
+    private static KActorsBehaviorImpl testBehavior(boolean parallel) {
+      var behavior = new KActorsBehaviorImpl();
+      behavior.getProperties().put("parallel", parallel);
+      return behavior;
+    }
+
+    @SafeVarargs
+    private final Object execute(Supplier<Object>... tests) {
+      return runTests(tests);
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
       return NORMAL_EXIT;
     }
 

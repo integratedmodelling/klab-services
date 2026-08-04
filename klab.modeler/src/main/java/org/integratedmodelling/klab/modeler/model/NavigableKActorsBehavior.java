@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.modeler.model;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
@@ -52,6 +53,11 @@ public class NavigableKActorsBehavior extends NavigableKlabDocument<KActorsActio
   @Override
   public List<Import> getInheritedBehaviors() {
     return delegate.getInheritedBehaviors();
+  }
+
+  @Override
+  public Parameters<String> getProperties() {
+    return delegate.getProperties();
   }
 
   @Override

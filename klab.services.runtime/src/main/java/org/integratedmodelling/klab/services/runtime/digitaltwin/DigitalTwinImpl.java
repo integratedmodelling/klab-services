@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -268,21 +269,37 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       var cohortObservable = cohort.getObservable().getSemantics();
       var currentGeometry = cohortGeometries.get(cohortObservable);
-      Scale newGeometry = null;
-      if (currentGeometry == null && !cohort.getGeometry().isUniversal()) {
-        currentGeometry = GeometryRepository.INSTANCE.scale(cohort.getGeometry());
-      }
-
-      if (currentGeometry == null || currentGeometry.isUniversal()) {
-        newGeometry = GeometryRepository.INSTANCE.scale(observedGeometry);
-      } else {
-        newGeometry =
-            GeometryRepository.INSTANCE.outerUnion(
-                GeometryRepository.INSTANCE.scale(observedGeometry), currentGeometry);
-      }
+      var newGeometry =
+          mergeCohortGeometry(
+              cohortObservable.getType(),
+              currentGeometry == null ? cohort.getGeometry() : currentGeometry,
+              observedGeometry);
 
       this.cohortGeometries.put(cohortObservable, newGeometry);
       applyCohortGeometry(cohort, newGeometry);
+    }
+
+    static Scale mergeCohortGeometry(
+        Set<SemanticType> semanticTypes, Geometry currentGeometry, Geometry observedGeometry) {
+      var current =
+          currentGeometry == null || currentGeometry.isUniversal()
+              ? null
+              : GeometryRepository.INSTANCE.scale(currentGeometry);
+      var observed = GeometryRepository.INSTANCE.scale(observedGeometry);
+      if (!SemanticType.isOccurrentSubstantial(semanticTypes)) {
+        current = withoutTime(current);
+        observed = withoutTime(observed);
+      }
+      if (current == null || current.isUniversal()) {
+        return observed;
+      }
+      return GeometryRepository.INSTANCE.outerUnion(observed, current);
+    }
+
+    private static Scale withoutTime(Scale scale) {
+      return scale != null && scale.getTime() != null
+          ? scale.without(Geometry.Dimension.Type.TIME)
+          : scale;
     }
 
     /**

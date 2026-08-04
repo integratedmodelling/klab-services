@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.DomainObject;
 import org.integratedmodelling.klab.api.data.Version;
@@ -23,7 +27,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
 
     private final SessionScope session;
     private final ContextScope context;
-    private Set<ContextScope> contexts = new HashSet<>();
+    private Set<ContextScope> contexts = ConcurrentHashMap.newKeySet();
     private DomainObject data;
 
     public TestCaseScope(RuntimeAgentBase actor, SessionScope session, ContextScope context) {
@@ -42,8 +46,11 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
 
     @Override
     public void setup() {
-      getAgent().report.put("start", System.currentTimeMillis());
-      updateStatistics(getAgent().report);
+      synchronized (getAgent().report) {
+        getAgent().report.put("start", System.currentTimeMillis());
+        getAgent().report.put("parallel", getAgent().runTestsInParallel());
+        updateStatistics(getAgent().report);
+      }
       getAgent()
           .publishAgentMessage(
               getAgent().getUrn(),
@@ -71,22 +78,24 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
         super.beforeAction(actionName, annotations);
         return;
       }
-      contexts = new HashSet<>();
+      contexts = ConcurrentHashMap.newKeySet();
       data = DomainObject.create();
-      getAgent().report.getChildren().add(data);
-      data.put(DomainObject.TYPE, "test");
-      data.put(DomainObject.URN, actionName);
-      data.put("start", System.currentTimeMillis());
-      data.put(
-          DomainObject.NAME,
-          testAnnotation.get().get("name") == null
-              ? actionName
-              : testAnnotation.get().get("name", String.class));
-      if (testAnnotation.get().get("description") != null) {
+      synchronized (getAgent().report) {
+        getAgent().report.getChildren().add(data);
+        data.put(DomainObject.TYPE, "test");
+        data.put(DomainObject.URN, actionName);
+        data.put("start", System.currentTimeMillis());
         data.put(
-            DomainObject.DESCRIPTION, testAnnotation.get().get("description", String.class));
+            DomainObject.NAME,
+            testAnnotation.get().get("name") == null
+                ? actionName
+                : testAnnotation.get().get("name", String.class));
+        if (testAnnotation.get().get("description") != null) {
+          data.put(
+              DomainObject.DESCRIPTION, testAnnotation.get().get("description", String.class));
+        }
+        updateStatistics(getAgent().report);
       }
-      updateStatistics(getAgent().report);
       publish(TestMessageType.TEST_STARTED, data);
 
       super.beforeAction(actionName, annotations);
@@ -110,7 +119,6 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
         super.afterAction(actionName, annotations);
         return;
       }
-      data.put("end", System.currentTimeMillis());
       var completionFailure = failure;
       for (var testContext : contexts) {
         if (testContext.getConfiguration().getPersistence() == Persistence.ONE_OFF) {
@@ -125,11 +133,14 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
           }
         }
       }
-      if (completionFailure != null) {
-        data.put("stacktrace", Utils.Exceptions.stackTrace(completionFailure));
+      synchronized (getAgent().report) {
+        data.put("end", System.currentTimeMillis());
+        if (completionFailure != null) {
+          data.put("stacktrace", Utils.Exceptions.stackTrace(completionFailure));
+        }
+        updateTestOutcome(data, completionFailure);
+        updateStatistics(getAgent().report);
       }
-      updateTestOutcome(data, completionFailure);
-      updateStatistics(getAgent().report);
       publish(TestMessageType.TEST_FINISHED, data);
 
       super.afterAction(actionName, annotations);
@@ -157,7 +168,9 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       // TODO fish "success" and "fail" metadata from assertion (probably attached to the statement(s) in it), add
       //  the relevant one (depending on outcome) as description
       assertionData.put("end", System.currentTimeMillis());
-      data.getChildren().add(assertionData);
+      synchronized (getAgent().report) {
+        data.getChildren().add(assertionData);
+      }
     }
 
     private void publish(TestMessageType type, DomainObject payload) {
@@ -220,14 +233,75 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
 
   protected SessionScope scope;
   protected DomainObject report;
+  private final boolean parallelTests;
 
-  protected void runTests() {
-    // Specialized test discovery/reporting will be implemented here.
+  /**
+   * Run the generated {@code @test} actions in declaration order, or concurrently when the
+   * testcase declares the boolean {@code parallel} property.
+   *
+   * <p>Parallel tests use one virtual thread per action. The method waits until every finite test
+   * has completed before returning and only then propagates failures, so one failed test cannot
+   * prevent the remaining parallel tests from running. Emitter tests only start their emitter and
+   * leave testcase termination to the normal agent lifecycle.
+   */
+  @SafeVarargs
+  protected final Object runTests(Supplier<Object>... tests) {
+    Object result = VOID_VALUE;
+    if (!runTestsInParallel()) {
+      for (var test : tests) {
+        result = test.get();
+      }
+      return result;
+    }
+
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      var futures =
+          Arrays.stream(tests)
+              .map(test -> CompletableFuture.supplyAsync(test, executor))
+              .toList();
+      CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+          .handle((ignored, failure) -> null)
+          .join();
+
+      Throwable failure = null;
+      for (var future : futures) {
+        try {
+          result = future.join();
+        } catch (CompletionException exception) {
+          var cause = exception.getCause() == null ? exception : exception.getCause();
+          if (failure == null) {
+            failure = cause;
+          } else if (failure != cause) {
+            failure.addSuppressed(cause);
+          }
+        }
+      }
+      if (failure instanceof RuntimeException runtimeException) {
+        throw runtimeException;
+      }
+      if (failure instanceof Error error) {
+        throw error;
+      }
+      if (failure != null) {
+        throw new CompletionException(failure);
+      }
+      return result;
+    }
+  }
+
+  /**
+   * Whether generated test actions should run concurrently. Generated testcase classes override
+   * this with the compile-time property so their convenience constructors retain the behavior;
+   * the instance property remains the fallback for manually constructed subclasses.
+   */
+  protected boolean runTestsInParallel() {
+    return parallelTests;
   }
 
   public TestCaseBase(KActorsBehavior behavior, SessionScope scope) {
     super(behavior, scope);
     this.scope = scope;
+    this.parallelTests = runsTestsInParallel(behavior);
     this.report = initializeReport(behavior);
   }
 
@@ -249,6 +323,8 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
             : scope.getService(RuntimeService.class).serviceName(),
         "version",
         behavior == null ? null : behavior.getVersion(),
+        "parallel",
+        parallelTests,
         "klab-version",
         Version.CURRENT);
   }
@@ -260,13 +336,23 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       org.integratedmodelling.klab.api.scope.Scope creationScope) {
     super(behavior, scope, observation, creationScope);
     this.scope = scope;
+    this.parallelTests = runsTestsInParallel(behavior);
     this.report = initializeReport(behavior);
+  }
+
+  private static boolean runsTestsInParallel(KActorsBehavior behavior) {
+    if (behavior == null || behavior.getProperties() == null) {
+      return false;
+    }
+    return Boolean.TRUE.equals(behavior.getProperties().get("parallel"));
   }
 
   @Override
   protected void beforeTermination(Object detail) {
-    report.put("end", System.currentTimeMillis());
-    TestCaseScope.updateStatistics(report);
+    synchronized (report) {
+      report.put("end", System.currentTimeMillis());
+      TestCaseScope.updateStatistics(report);
+    }
     publishAgentMessage(
         getUrn(),
         Message.MessageType.CustomAgentMessage,

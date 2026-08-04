@@ -518,11 +518,16 @@ The generated `main(AgentScope)` delegates to the k.Actors `main` action:
 - suppliers attach completion to the root scope and return `TASK_RUNNING`;
 - emitters start and return `TASK_RUNNING`.
 
-For `UNITTEST`, generation uses a specialized sequence. The optional `main` runs first, followed
-by every local `@test` action in semantic declaration order. Function tests complete directly and
-supplier tests are joined before the next test begins. Emitter tests are invoked in order but keep
-the testcase alive under the normal emitter lifecycle; unresolved dynamic calls retain the same
-conservative persistent behavior used by ordinary generated `main` actions.
+For `UNITTEST`, generation uses a specialized sequence. The optional `main` runs first, then the
+generated `runDeclaredTests(rootScope)` passes every local `@test` action, in semantic declaration
+order, to `TestCaseBase.runTests(...)`. With no `parallel` property (or with `false`), function tests
+complete directly and supplier tests are joined before the next test begins. With the boolean
+property `parallel=true`, the runner launches one virtual thread per test and waits for all finite
+tests; failures are aggregated and propagated only after every launched test has completed.
+Emitter tests start their emitter and keep the testcase alive under the normal emitter lifecycle;
+unresolved dynamic calls retain the same conservative persistent behavior used by ordinary
+generated `main` actions. Test report-tree mutation is serialized while action scopes remain
+independent, so concurrent tests cannot corrupt reporting state.
 
 `getAgentExecutionMode()` returns the analyzer's inferred mode. `RuntimeAgentBase.run()` executes a
 function directly and starts non-functions on a virtual thread.

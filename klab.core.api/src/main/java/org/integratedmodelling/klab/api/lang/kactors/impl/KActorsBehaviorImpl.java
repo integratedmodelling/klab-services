@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kactors.impl;
 
 import java.io.Serial;
 import java.util.*;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
@@ -68,6 +69,7 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
   private KlabLanguage language = KlabLanguage.K_ACTORS;
   private KlabStatement.Scope scope = KlabStatement.Scope.PRIVATE;
   private List<Import> inheritedBehaviors = new ArrayList<>();
+  private Parameters<String> properties = Parameters.create();
 
   @Override
   public String getUrn() {
@@ -179,5 +181,14 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction>
 
   public void setScope(KlabStatement.Scope scope) {
     this.scope = scope;
+  }
+
+  @Override
+  public Parameters<String> getProperties() {
+    return properties;
+  }
+
+  public void setProperties(Parameters<String> properties) {
+    this.properties = properties;
   }
 }

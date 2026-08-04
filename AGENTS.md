@@ -76,6 +76,7 @@ The general shape of a file is:
     version <version>
     [worldview <worldview>]
     [inherits <parent.one> [, <parent.two>]]
+    [with properties {<name>: <value> [, <name>: <value>] }]
     [using
         <behavior.or.extension> as <alias>[,
         <another.behavior> as <alias>]]
@@ -84,7 +85,8 @@ The general shape of a file is:
 ```
 
 `version` is required by the grammar. A nonblank description is required by semantic validation.
-`using`, `worldview`, and `inherits` are optional and may occur in any order in the preamble.
+`using`, `worldview`, `inherits`, and `with properties` are optional and may occur in any order in
+the preamble. Properties are freely named values interpreted by runtime conventions.
 
 Behavior URNs are dot-separated lowercase paths. They identify behaviors to resource services and
 must be chosen as stable, globally meaningful names when the behavior will be shared.
@@ -101,7 +103,7 @@ must be chosen as stable, globally meaningful names when the behavior will be sh
 | `script` | A synchronous batch job in a session scope                                                                                               | Expected to finish unless it starts emitter work |
 | `task` | A restricted behavior attached to any observation for post-processing, documentation, or monitoring                                      | Runs in the request context; cannot modify the knowledge graph |
 | `user` | The behavior instrumenting the user that owns the request                                                                                  | Exactly one instance per root user scope |
-| `testcase` | A collection of actions annotated with `@test`, run under a test scope                                                                          | Runs its tests in declaration order and produces test results |
+| `testcase` | A collection of actions annotated with `@test`, run under a test scope                                                                          | Runs tests in declaration order by default, or concurrently with the `parallel` property, and produces test results |
 | `trait` | An inheritable agent personality contributing state and actions                                                                           | May declare `init` and `main`; both are adopted through inheritance |
 | `library` | A reusable collection of callable actions                                                                                                  | Cannot declare `init` or `main` and is not started independently |
 
@@ -959,7 +961,16 @@ same user to be created.
 
 ### 10.6. Test cases
 
-A `testcase` groups `@test` actions. It runs in its own session like applications and scripts. After inherited and local initialization and the optional `main` action have run, every local action annotated with `@test` runs automatically in source declaration order. Supplier tests are joined before the next test starts. Use testcases for runtime services, semantic
+A `testcase` groups `@test` actions. It runs in its own session like applications and scripts. After
+inherited and local initialization and the optional `main` action have run, every local action
+annotated with `@test` runs automatically in source declaration order. Supplier tests are joined
+before the next test starts. Set `with properties {parallel: true}` in the preamble to launch all
+`@test` actions concurrently on separate virtual threads instead; the testcase waits for every
+finite test before completing and propagates failures only after all launched tests finish. The
+tests deliberately share their agent and its state, while retaining independent action scopes and
+report entries, so this mode can expose races and exercise runtime concurrency. An absent or false
+`parallel` property preserves sequential execution, and a non-boolean value is a validation error.
+Use testcases for runtime services, semantic
 operations, actors, and application behavior—not only pure functions. Test scopes collect action
 and assertion results for later reporting. The testcase scaffolding collects results and computes statistics that may be preserved after the testcase has completed. It is used to exercise k.LAB complex observation behaviors against their intended results. A suite of testcases will be made available to cover every k.LAB functionalities, to run at each release cycle.
 

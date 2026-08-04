@@ -502,6 +502,9 @@ public class RuntimeService extends BaseService
      */
     var existing = queryForSubmission(submitted, scope);
     if (existing != null && !existing.isEmpty()) {
+      if (submitted.getObservable().is(SemanticType.QUALITY)) {
+        return CompletableFuture.completedFuture(existing);
+      }
       var requested =
           submitted.getGeometry() == null && scope.getContextObservation() != null
               ? scope.getContextObservation().getGeometry()
@@ -686,35 +689,36 @@ public class RuntimeService extends BaseService
               "Resolution of " + observation,
               submissionScope);
 
-      var cohort = getCohortFor(observation.getObservable(), submissionScope, true);
+      var cohortSemantics =
+          observation.getObservable().getSemantics().isCollective()
+              ? observation.getObservable().getSemantics().singular()
+              : observation.getObservable();
+      var cohort = getCohortFor(cohortSemantics, submissionScope, true);
 
-      submissionScope
-          .getCurrentTransaction()
-          .link(
-              scope.getContextObservation() == null
-                  ? (cohort == null ? RuntimeAsset.CONTEXT_ASSET : cohort)
-                  : scope.getContextObservation(),
-              observation,
-              (scope.getContextObservation() == null && cohort != null)
-                  ? GraphModel.Relationship.HAS_MEMBER
-                  : GraphModel.Relationship.HAS_CHILD);
+      var transaction = submissionScope.getCurrentTransaction();
+      var collective = observation.getObservable().getSemantics().isCollective();
+      if (cohort == null || collective || scope.getContextObservation() != null) {
+        transaction.link(
+            scope.getContextObservation() == null
+                ? RuntimeAsset.CONTEXT_ASSET
+                : scope.getContextObservation(),
+            observation,
+            GraphModel.Relationship.HAS_CHILD);
+      }
 
-      if (cohort != null && observation.getObservable().getSemantics().isCollective()) {
+      if (cohort != null && collective) {
+        transaction.link(observation, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
         /* include the observation's geometry in the cohort's, flagging any changes. We don't do this
         with individually created instances as those are not "observed"  in the proper sense and their
         inclusion will be delegated to the identification strategy.
          */
-        submissionScope
-            .getCurrentTransaction()
-            .checkCohortGeometry(cohort, observation.getGeometry());
+        transaction.checkCohortGeometry(cohort, observation.getGeometry());
       }
 
       if (cohort != null
-          && scope.getContextObservation() != null
+          && !collective
           && observation.getObservable().is(SemanticType.COUNTABLE)) {
-        submissionScope
-            .getCurrentTransaction()
-            .link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+        transaction.link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
       }
 
       submissionScope
@@ -869,115 +873,32 @@ public class RuntimeService extends BaseService
     }
 
     var semantics = query.getObservable().getSemantics();
-    if (query.getObservable().is(SemanticType.QUALITY)) {
-      return queryQuality(query, serviceScope);
-    }
-    if (SemanticType.isSubstantial(semantics.getType()) && semantics.isCollective()) {
+    if (SemanticType.isEnumerableSubstantial(semantics.getType()) && semantics.isCollective()) {
       return queryCollective(query, serviceScope);
     }
 
     return Observation.empty(
         Notification.error(
-            "Observation queries are only supported for qualities and collective substantials"));
+            "Observation queries are only supported for collective subjects, agents, events, and relationships"));
   }
 
   private Observation queryForSubmission(Observation submitted, ContextScope scope) {
     var observable = submitted.getObservable();
-    if (observable == null
-        || !(observable.is(SemanticType.QUALITY)
-            || (SemanticType.isSubstantial(observable.getSemantics().getType())
-                && observable.getSemantics().isCollective()))) {
+    if (observable == null) {
+      return null;
+    }
+    if (observable.is(SemanticType.QUALITY)) {
+      var existing =
+          scope.getContextObservation() == null ? null : scope.getObservation(submitted);
+      return existing != null && existing.getId() > 0 ? existing : null;
+    }
+    if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
+        && observable.getSemantics().isCollective())) {
       return null;
     }
     var builder = new Observation.NaiveBuilder(observable, scope);
     builder.geometry(submitted.getGeometry()).query();
     return query(builder.make(), scope);
-  }
-
-  private Observation queryQuality(Observation query, ServiceContextScope scope) {
-
-    var context = scope.getContextObservation();
-    if (context == null) {
-      return Observation.empty(
-          Notification.error("Cannot query a quality without a context observation"));
-    }
-
-    var requestedGeometry =
-        sanitizeQueryGeometry(
-            query.getGeometry() == null ? context.getGeometry() : query.getGeometry());
-    if (requestedGeometry == null || requestedGeometry.isEmpty()) {
-      return Observation.empty(
-          Notification.error("Cannot query a quality without a valid requested geometry"));
-    }
-
-    var source = findQualitySource(query, context, scope);
-    if (source == null || source.getGeometry() == null) {
-      return Observation.empty(
-          Notification.info("No source observation exists for " + query.getObservable().getUrn()));
-    }
-
-    var actualGeometry = intersection(requestedGeometry, source.getGeometry());
-    if (actualGeometry == null || actualGeometry.isEmpty() || actualGeometry.size() == 0) {
-      return Observation.empty(
-          Notification.info(
-              "No source observation covers the requested geometry for "
-                  + query.getObservable().getUrn()));
-    }
-
-    var coverage = coverage(requestedGeometry, actualGeometry);
-    if (coverage <= 0.0) {
-      return Observation.empty(
-          Notification.info(
-              "No source observation covers the requested geometry for "
-                  + query.getObservable().getUrn()));
-    }
-    if (coverage >= 1.0 - 1.0e-9) {
-      return source;
-    }
-
-    var result = queryResult(source, actualGeometry, requestedGeometry, coverage);
-    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(source.getId()));
-    result
-        .getNotifications()
-        .add(
-            Notification.warning(
-                "Query result covers "
-                    + String.format(Locale.ROOT, "%.2f%%", coverage * 100.0)
-                    + " of the requested geometry"));
-    return result;
-  }
-
-  private Observation findQualitySource(
-      Observation query, Observation context, ServiceContextScope scope) {
-
-    var observableUrn = query.getObservable().getUrn();
-    var transaction = scope.getCurrentTransaction();
-    if (transaction != null) {
-      var local =
-          transaction.outgoing(context).stream()
-              .filter(link -> link.type() == GraphModel.Relationship.HAS_CHILD)
-              .map(KnowledgeGraph.Link::target)
-              .filter(Observation.class::isInstance)
-              .map(Observation.class::cast)
-              .filter(o -> o.getId() > 0)
-              .filter(o -> observableUrn.equals(o.getObservable().getUrn()))
-              .findFirst()
-              .orElse(null);
-      if (local != null) {
-        return local;
-      }
-    }
-
-    var result =
-        scope
-            .getDigitalTwin()
-            .getKnowledgeGraph()
-            .query(Observation.class, scope)
-            .source(context)
-            .along(GraphModel.Relationship.HAS_CHILD)
-            .where("observable", KnowledgeGraph.Query.Operator.EQUALS, observableUrn)
-            .run(scope);
-    return result.isEmpty() ? null : result.getFirst();
   }
 
   private Observation queryCollective(Observation query, ServiceContextScope scope) {
@@ -1227,7 +1148,7 @@ public class RuntimeService extends BaseService
     }
 
     var mayExistInCohort =
-        SemanticType.isSubstantial(observation.getObservable().getSemantics().getType())
+        SemanticType.isEnumerableSubstantial(observation.getObservable().getSemantics().getType())
             && !observation.getObservable().getSemantics().isCollective();
 
     if (observation instanceof ObservationImpl observationImpl

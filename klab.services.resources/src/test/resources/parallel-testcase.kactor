@@ -1,0 +1,12 @@
+testcase test.parallel
+    "Verify concurrent testcase execution."
+    version 1.0
+    with properties {parallel: true}
+
+@test
+action first:
+    return 1
+
+@test
+action second:
+    return 2

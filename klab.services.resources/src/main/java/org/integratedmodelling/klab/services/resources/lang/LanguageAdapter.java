@@ -1435,6 +1435,11 @@ public enum LanguageAdapter {
             : Version.create(syntax.getVersion()));
     ret.setPlatform(KActorsBehavior.Platform.ANY);
     ret.setDescription(syntax.getDocstring());
+    ret.getProperties()
+        .putAll(
+            (Map<? extends String, ?>)
+                adaptValue(
+                    syntax.getProperties(), name, projectName, KlabAsset.KnowledgeClass.BEHAVIOR));
     ret.setBehaviorType(
         switch (syntax.getType()) {
           case TESTCASE -> KActorsBehavior.Type.UNITTEST;
@@ -1591,7 +1596,7 @@ public enum LanguageAdapter {
     var implementation = (KActorsStatementImpl) ret;
     implementation.setSequential(statement.isSequential());
     implementation.setTag(statement.getTag());
-    var metadata = Metadata.create();
+    final var metadata = Metadata.create();
     statement
         .getTrailingMetadata()
         .forEach(

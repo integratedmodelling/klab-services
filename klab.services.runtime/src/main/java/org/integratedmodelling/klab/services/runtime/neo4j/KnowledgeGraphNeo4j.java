@@ -38,6 +38,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -767,8 +768,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
     } else if (asset instanceof Cohort cohort) {
       var space = getCohortSpatialExtent(asset.getId(), scope);
-      // TODO time! Should be in cohort's start/end
-      return space == null ? Geometry.EMPTY : Scale.create(space).as(Geometry.class);
+      var stored =
+          cohort.getGeometry() == null || cohort.getGeometry().isUniversal()
+              ? null
+              : GeometryRepository.INSTANCE.scale(cohort.getGeometry());
+      List<Extent<?>> extents =
+          stored == null ? new ArrayList<>() : new ArrayList<>(stored.getExtents());
+      extents.removeIf(
+          extent ->
+              (extent.getType() == Geometry.Dimension.Type.SPACE && space != null)
+                  || (extent.getType() == Geometry.Dimension.Type.TIME
+                      && !SemanticType.isOccurrentSubstantial(
+                          cohort.getObservable().getSemantics().getType())));
+      if (space != null) {
+        extents.add(space);
+      }
+      return extents.isEmpty() ? Geometry.EMPTY : Scale.create(extents).as(Geometry.class);
     }
     return null;
   }

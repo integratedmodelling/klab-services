@@ -2043,6 +2043,7 @@ public class AgentCompiler {
     }
     if (sourceBehavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
       classBuilder.addMethod(compileDeclaredTests());
+      classBuilder.addMethod(compileParallelTestExecution());
     }
     classBuilder.addMethod(compileActionAnnotations(sourceBehavior));
     classBuilder.addMethod(compileMessageHandlers(sourceBehavior));
@@ -2545,8 +2546,8 @@ public class AgentCompiler {
         MethodSpec.methodBuilder("runDeclaredTests")
             .addModifiers(Modifier.PRIVATE)
             .returns(Object.class)
-            .addParameter(AgentScope.class, "rootScope")
-            .addStatement("Object result = VOID_VALUE");
+            .addParameter(AgentScope.class, "rootScope");
+    var tests = new ArrayList<CodeBlock>();
     for (var action : behavior.getStatements()) {
       var info = analyzer.getActions().get(action.getUrn());
       if (info == null
@@ -2557,18 +2558,30 @@ public class AgentCompiler {
       }
       switch (info.effectiveExecutionType()) {
         case FUNCTION ->
-            method.addStatement("result = invokeSelfFunction($S, rootScope)", info.name());
+            tests.add(CodeBlock.of("() -> invokeSelfFunction($S, rootScope)", info.name()));
         case SUPPLIER ->
-            method.addStatement(
-                "result = invokeSelfSupplier($S, rootScope).join()", info.name());
-        case EMITTER -> {
-          method.addStatement("invokeSelfEmitter($S, rootScope)", info.name());
-          method.addStatement("result = TASK_RUNNING");
-        }
+            tests.add(CodeBlock.of("() -> invokeSelfSupplier($S, rootScope).join()", info.name()));
+        case EMITTER ->
+            tests.add(
+                CodeBlock.of(
+                    "() -> { invokeSelfEmitter($S, rootScope); return TASK_RUNNING; }",
+                    info.name()));
       }
     }
-    method.addStatement("return result");
+    method.addStatement("return runTests($L)", CodeBlock.join(tests, ", "));
     return method.build();
+  }
+
+  private MethodSpec compileParallelTestExecution() {
+    boolean parallel =
+        behavior.getProperties() != null
+            && Boolean.TRUE.equals(behavior.getProperties().get("parallel"));
+    return MethodSpec.methodBuilder("runTestsInParallel")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PROTECTED)
+        .returns(boolean.class)
+        .addStatement("return $L", parallel)
+        .build();
   }
 
   private boolean hasAnnotation(KActorsVisitor.ActionInfo action, String name) {

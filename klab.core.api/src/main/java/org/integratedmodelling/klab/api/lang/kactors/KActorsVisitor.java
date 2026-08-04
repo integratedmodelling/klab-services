@@ -523,6 +523,12 @@ public class KActorsVisitor {
     if (behavior.getDescription() == null || behavior.getDescription().isBlank()) {
       error("Behavior description is mandatory", behavior);
     }
+    if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST
+        && behavior.getProperties() != null
+        && behavior.getProperties().containsKey("parallel")
+        && !(behavior.getProperties().get("parallel") instanceof Boolean)) {
+      error("The testcase 'parallel' property must have a boolean value", behavior);
+    }
 
     var aliases = new HashSet<String>();
     for (var imported : safe(behavior.getImports())) {

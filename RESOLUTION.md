@@ -186,12 +186,16 @@ scope)`.
 
 Before model resolution, `query(...)` asks the runtime for existing knowledge only for:
 
-- qualities; and
-- collective substantial observables.
+- contextual qualities, using direct positive-ID lookup; and
+- enumerable collective substantials: subjects, agents, events, and relationships.
 
 Other semantics receive a synthetic zero-coverage `QueryMatch` without a runtime call.
 
-The query is:
+For a quality, the compiler builds a probe with the requested observable and scale, then calls
+`scope.getObservation(probe)`. A match is treated as complete by definition and becomes the
+positive-ID reference. Quality presence is not estimated by intersecting geometries.
+
+For an enumerable collective, the detached query is:
 
 ```text
 scope.observation(observable)
@@ -211,10 +215,8 @@ The result is normalized into:
 - requested and covered scales;
 - a `Coverage` measured by unioning the covered scale into a zero-initialized requested scale.
 
-For a quality query returning ID `0`, the compiler asks `scope.getObservation(result)` for the
-positive-ID source and references that source when available. A collective query view may remain
-an ID-0 reference; `ResolutionGraph` assigns it a synthetic negative key for the duration of graph
-compilation.
+A collective query view may remain an ID-0 reference; `ResolutionGraph` assigns it a synthetic
+negative key for the duration of graph compilation.
 
 Complete existing coverage creates a reference-only child graph and stops semantic resolution.
 
@@ -869,10 +871,12 @@ Use controlled fake `Reasoner`, `ResourcesService`, and `RuntimeService` impleme
 
 - no geometry;
 - dependent without context;
-- complete runtime quality reference;
-- partial quality coverage with representable complement;
-- partial coverage with non-representable complement;
+- complete direct contextual quality reference;
+- absent contextual quality proceeding to semantic resolution;
 - collective ID-0 query view with multiple contributors;
+- rejection of detached quality and non-enumerable ID-0 queries;
+- temporal union across collective events and functional relationships;
+- absence of temporal cohort bounds for continuant substantials;
 - one complete strategy;
 - several incomplete model contributions whose union completes;
 - optional versus mandatory dependencies;
@@ -944,7 +948,8 @@ Run `RuntimeService.submit(...)` against an in-memory/test digital twin:
 - explicitly submitted values survive export, resource persistence, reload, and replay.
 
 Existing `RuntimeServiceQueryTest` is the starting point for query identity, coverage, and
-contributor geometry.
+contributor geometry. `ResolutionCompilerQueryTest` protects direct quality reuse and
+`CohortGeometryTest` protects the occurrent/continuant temporal-boundary distinction.
 
 ### 13.5 Layer 5: concurrency and reentrancy
 

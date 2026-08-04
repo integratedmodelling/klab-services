@@ -29,7 +29,7 @@ import org.jgrapht.graph.DefaultEdge;
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
 
-  private record QueryMatch(
+  record QueryMatch(
       Observation result,
       Observation reference,
       Scale requestedScale,
@@ -436,11 +436,25 @@ public class ResolutionCompiler {
   }
 
   /** Query the runtime without changing its state and normalize the result for resolution. */
-  private QueryMatch query(Observable observable, Scale requestedScale, ContextScope scope) {
+  QueryMatch query(Observable observable, Scale requestedScale, ContextScope scope) {
 
-    if (!(observable.is(SemanticType.QUALITY)
-        || (SemanticType.isSubstantial(observable.getSemantics().getType())
-            && observable.getSemantics().isCollective()))) {
+    if (observable.is(SemanticType.QUALITY)) {
+      var probe = new Observation.NaiveBuilder(observable, scope);
+      probe.geometry(requestedScale.as(Geometry.class));
+      var existing = scope.getObservation(probe.make());
+      return existing == null || existing.isEmpty() || existing.getId() <= 0
+          ? new QueryMatch(
+              existing, null, requestedScale, null, Coverage.create(requestedScale, 0.0))
+          : new QueryMatch(
+              existing,
+              existing,
+              requestedScale,
+              requestedScale,
+              Coverage.create(requestedScale, 1.0));
+    }
+
+    if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
+        && observable.getSemantics().isCollective())) {
       return new QueryMatch(
           null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
     }
@@ -459,14 +473,7 @@ public class ResolutionCompiler {
 
     var coveredScale = GeometryRepository.INSTANCE.scale(result.getGeometry(), scope);
     var coverage = Coverage.create(requestedScale, 0.0).merge(coveredScale, LogicalConnector.UNION);
-    Observation reference = result;
-    if (observable.is(SemanticType.QUALITY) && result.getId() == Observation.QUERY_ID) {
-      var source = scope.getObservation(result);
-      if (source != null && source.getId() > 0) {
-        reference = source;
-      }
-    }
-    return new QueryMatch(result, reference, requestedScale, coveredScale, coverage);
+    return new QueryMatch(result, result, requestedScale, coveredScale, coverage);
   }
 
   private Scale missingScale(Scale requested, Scale covered) {

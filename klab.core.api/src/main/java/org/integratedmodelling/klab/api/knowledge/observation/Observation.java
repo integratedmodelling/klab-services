@@ -67,9 +67,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
   /**
    * An observation whose ID is 0 is either a query submitted to the runtime or a query result.
-   * Query results are views of existing knowledge and are never stored in the knowledge graph. A
-   * quality query with complete coverage returns the original resolved observation instead, with
-   * its positive ID.
+   * Query results are views of existing enumerable substantial knowledge and are never stored in
+   * the knowledge graph. Qualities are looked up directly within their context and are not
+   * represented by ID-0 query observations.
    *
    * <p>Collective query results report the observations that contributed knowledge of the requested
    * geometry in metadata. Their geometry may include areas where the contributing collective
