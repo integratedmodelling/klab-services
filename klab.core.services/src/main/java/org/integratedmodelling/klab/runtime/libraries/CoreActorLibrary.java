@@ -732,7 +732,7 @@ public class CoreActorLibrary {
       return future;
     }
 
-    @Verb(name = "tick", fires = TimeInstant.class)
+    @Verb(name = "tick", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
     public static void tick(RuntimeAgent.Scope scope, Quantity quantity) {
 
       Objects.requireNonNull(quantity, "quantity");
@@ -776,7 +776,7 @@ public class CoreActorLibrary {
       };
     }
 
-    @Verb(name = "random", fires = TimeInstant.class)
+    @Verb(name = "random", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
     public static void random(RuntimeAgent.Scope scope, Quantity quantity) {
 
       Objects.requireNonNull(quantity, "quantity");
