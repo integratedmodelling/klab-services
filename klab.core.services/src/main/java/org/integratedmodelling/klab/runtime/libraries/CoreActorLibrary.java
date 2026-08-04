@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -18,6 +19,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
@@ -90,11 +92,10 @@ public class CoreActorLibrary {
       runtime(scope).tellAgentValue(target, messageClass, payload);
     }
 
+    @Verb(name = "duration", executionType = Verb.Type.FUNCTION, returns = TimeDuration.class)
     public static TimeDuration duration(Quantity time) {
-      var unit = time.getUnit();
-      var value = time.getValue().doubleValue();
-
-      return null; // TimePeriod.create(time);
+      Objects.requireNonNull(time, "quantity");
+      return TimeDuration.of(time);
     }
 
     @Verb(
@@ -279,6 +280,30 @@ public class CoreActorLibrary {
       }
 
       throw new KlabIllegalStateException("Context creation is only supported in a session scope");
+    }
+
+    @Verb(
+        name = "query",
+        description =
+            """
+                    Query a runtime asset from the knowledge graph, following a specified relationship in a
+                    specified direction. If the relationship is not specified, HAS_CHILD is assumed. If a source
+                    is not specified, the root of the context is assumed. Normally only a source OR a target may 
+                    be specified; specifying both is an error unless the target is a relationship.
+                    
+                    Parameters accepted:
+                    
+                    * <semantics> forces the returned type to an Observation implementing that semantics
+                    
+                    Options accepted:
+                    
+                    * `:source <asset>` uses the specified asset as the source of the query
+                    * `:target <asset>` uses the specified asset as the target of the query
+                    * `+all` return a list of all matching objects (default is only zero or the first match); 
+                    
+                    """)
+    public Object query(AgentScope scope, Object... arguments) {
+      return null;
     }
 
     @Verb(
@@ -764,18 +789,6 @@ public class CoreActorLibrary {
       timer.cancel();
     }
 
-    private static TimeUnit extractTimeUnit(Quantity quantity) {
-      return switch (quantity.getUnit()) {
-        case "ms" -> TimeUnit.MILLISECONDS;
-        case "s", "sec" -> TimeUnit.SECONDS;
-        case "d" -> TimeUnit.DAYS;
-        case "min" -> TimeUnit.MINUTES;
-        case "h", "hr" -> TimeUnit.HOURS;
-        default ->
-            throw new KlabIllegalArgumentException("Invalid time unit for quantity: " + quantity);
-      };
-    }
-
     @Verb(name = "random", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
     public static void random(RuntimeAgent.Scope scope, Quantity quantity) {
 
@@ -833,5 +846,17 @@ public class CoreActorLibrary {
       return ThreadLocalRandom.current()
           .nextLong(minimumDelayMilliseconds, maximumDelayMilliseconds);
     }
+  }
+
+  private static TimeUnit extractTimeUnit(Quantity quantity) {
+    return switch (quantity.getUnit()) {
+      case "ms" -> TimeUnit.MILLISECONDS;
+      case "s", "sec" -> TimeUnit.SECONDS;
+      case "d" -> TimeUnit.DAYS;
+      case "min" -> TimeUnit.MINUTES;
+      case "h", "hr" -> TimeUnit.HOURS;
+      default ->
+          throw new KlabIllegalArgumentException("Invalid time unit for quantity: " + quantity);
+    };
   }
 }

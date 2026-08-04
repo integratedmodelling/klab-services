@@ -7,6 +7,8 @@ import java.util.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -48,6 +50,12 @@ public class KlabScopeController {
    */
   public boolean setupUserScope(
       ServiceUserScope userScope, UserScopeNotification request, KlabService ownerService) {
+    if (request.isLocalFederation()) {
+      userScope
+          .getUser()
+          .getData()
+          .put(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.local());
+    }
     for (var serviceInfo : request.getServices()) {
       var service =
           Objects.equals(ownerService.serviceId(), serviceInfo.getId())

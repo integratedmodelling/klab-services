@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -100,6 +101,7 @@ class ScopeManagerTest {
         new EngineAuthorization(null, "test.user", "token", java.util.Map.of(), List.of(), List.of());
 
     when(user.getUsername()).thenReturn("test.user");
+    when(user.getData()).thenReturn(Parameters.create());
     var groups = localFederation ? Set.of(localFederationGroup()) : Set.<Group>of();
     when(user.getGroups()).thenReturn(groups);
     when(ownerService.serviceId()).thenReturn("resolver-id");

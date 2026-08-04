@@ -34,7 +34,6 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
@@ -295,6 +294,9 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     // TODO mixed aux info
     request.setEmailAddress(userScope.getUser().getEmailAddress());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+    request.setLocalFederation(
+        federation != null && Federation.LOCAL_FEDERATION_ID.equals(federation.getId()));
 
     var services =
         serviceMonitor == null
@@ -402,13 +404,19 @@ public class EngineImpl implements Engine, PropertyHolder {
     this.federationData =
         authData.getFirst().getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
 
-    if (federationData == null || federationData.getBroker() == null) {
-      var id = federationData == null ? null : federationData.getId();
-      if (id == null) {
-        id = Federation.LOCAL_FEDERATION_ID;
-      }
-      federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
+    if (federationData == null
+        || federationData.getBroker() == null
+        || federationData.getBroker().isBlank()) {
+      federationData = Federation.local();
     }
+
+    // The synthetic local federation is part of the user's effective execution identity. Scope
+    // creation and agent instrumentation happen after authentication and must not depend on the
+    // later UI callback that announces an operational Runtime.
+    authData
+        .getFirst()
+        .getData()
+        .put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
 
     /* federation must be already established at this point */
     this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this);

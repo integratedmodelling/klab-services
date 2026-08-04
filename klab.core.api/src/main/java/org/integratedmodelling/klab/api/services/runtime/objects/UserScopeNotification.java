@@ -67,6 +67,7 @@ public class UserScopeNotification {
 
   private List<ServiceInfo> services = new ArrayList<>();
   private String emailAddress;
+  private boolean localFederation;
 
   public List<ServiceInfo> getServices() {
     return services;
@@ -84,6 +85,14 @@ public class UserScopeNotification {
     this.emailAddress = emailAddress;
   }
 
+  public boolean isLocalFederation() {
+    return localFederation;
+  }
+
+  public void setLocalFederation(boolean localFederation) {
+    this.localFederation = localFederation;
+  }
+
   public UserScopeNotification copy() {
     return copy(service -> true);
   }
@@ -95,6 +104,7 @@ public class UserScopeNotification {
   private UserScopeNotification copy(Predicate<ServiceInfo> filter) {
     var ret = new UserScopeNotification();
     ret.setEmailAddress(emailAddress);
+    ret.setLocalFederation(localFederation);
     for (var service : services) {
       if (filter.test(service)) {
         ret.getServices().add(service.copy());

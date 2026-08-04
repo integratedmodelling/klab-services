@@ -49,6 +49,9 @@ public enum Klab {
             ? null
             : /*localRuntimeService.capabilities(null).isBroker() ? */ Federation
                 .local() /* : null*//* : null*/;
+    if (user != null && localFederation != null) {
+      user.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, localFederation);
+    }
     return localFederation;
   }
 
@@ -251,6 +254,18 @@ public enum Klab {
   }
 
   public Federation getFederationData(UserIdentity identity) {
+
+    if (identity == null) {
+      return localFederation;
+    }
+
+    if (identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
+      var federation =
+          identity.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+      if (federation != null) {
+        return federation;
+      }
+    }
 
     var federations =
         identity.getGroups().stream()
