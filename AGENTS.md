@@ -578,6 +578,10 @@ A semantic literal is passed to actions as a `KimObservable`, not as its textual
 true when the literal is nested inside a list or map, so Java extensions can safely inspect its
 semantics, unit, namespace, and other model fields.
 
+A quantity literal is likewise passed as a `Quantity` retaining its numeric value, unit, and
+currency. Java varargs verbs may accept zero or more values after their fixed parameters; omitted
+varargs do not create a synthetic argument during parameter negotiation.
+
 A value prefixed with a backtick is deferred. The runtime passes a reevaluatable computation
 instead of its current result:
 

@@ -6,11 +6,13 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -18,6 +20,8 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -25,11 +29,13 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
@@ -82,6 +88,13 @@ public class CoreActorLibrary {
         @Verb.Argument(name = "payload", description = "Serializable message payload")
             Object payload) {
       runtime(scope).tellAgentValue(target, messageClass, payload);
+    }
+
+    public static TimeDuration duration(Quantity time) {
+      var unit = time.getUnit();
+      var value = time.getValue().doubleValue();
+
+      return null; // TimePeriod.create(time);
     }
 
     @Verb(
@@ -347,13 +360,21 @@ public class CoreActorLibrary {
         returns = Boolean.class,
         description =
             """
-                        Check if an observation is viable; report through the log or the test case if run in a test.
+                        Check if an asset is viable; report through the log or the test case if run in a test.
                         Recognize if the call is downstream of an assertion in a test and fill in an assertion slot if so.
-                        Returns true if the observation is viable, false otherwise, so it can be used in a conditional as
+                        Returns true if the asset is viable, false otherwise, so it can be used in a conditional as
                         well as an assert.
 
-                        The basic test is that the observation is not empty and has been resolved successfully if it
-                        is a dependent. This can be extended or modified through metadata options.
+                        The asset types supported are observations, contexts and their components, activities,
+                        actuators and other RuntimeAsset types. The meaning of "viable" by default is not empty and
+                        properly resolved, but can be made stricter or more lenient through options.
+
+                        For observations, the basic test is not empty, geometry is not null/empty, and has been resolved
+                        successfully if it is a dependent. This can be extended or modified through metadata options.
+
+                        For activities, the outcome must be successful.
+
+                        Any null passed makes the asset not viable.
 
                         Enabled metadata:
 
@@ -363,6 +384,12 @@ public class CoreActorLibrary {
 
                         """)
     public static boolean checkViable(RuntimeAgent.Scope scope, Object... arguments) {
+      // null args is not viable
+      if (arguments == null
+          || arguments.length == 0
+          || Arrays.stream(arguments).noneMatch(Objects::nonNull)) {
+        return false;
+      }
       return true;
     }
   }
@@ -652,13 +679,12 @@ public class CoreActorLibrary {
      * @param time
      * @param object
      * @return
-     * @param <T>
      */
     @Verb(name = "at", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> at(
-        RuntimeAgent.Scope scope, TimeInstant time, T object) {
-
+    public static CompletableFuture<Object> at(
+        RuntimeAgent.Scope scope, TimeInstant time, Object object) {
       Objects.requireNonNull(time, "time");
+
       return completeAfter(time.getMilliseconds() - System.currentTimeMillis(), object);
     }
 
@@ -667,30 +693,38 @@ public class CoreActorLibrary {
      * must be dereferenced when supplied.
      *
      * @param time
-     * @param object
+     * @param optionalObject
      * @return
-     * @param <T>
      */
     @Verb(name = "in", executionType = Verb.Type.SUPPLIER)
-    public static <T> CompletableFuture<T> in(
-        RuntimeAgent.Scope scope, TimeDuration time, T object) {
+    public static CompletableFuture<Object> in(
+        RuntimeAgent.Scope scope, Quantity time, Object... optionalObject) {
 
-      Objects.requireNonNull(time, "time");
-      return completeAfter(time.getMilliseconds(), object);
+      Objects.requireNonNull(time, "quantity");
+      TimeUnit unit = extractTimeUnit(time);
+      long amount = time.getValue().longValue();
+      var millis = unit.toMillis(amount);
+
+      if (optionalObject == null || optionalObject.length == 0) {
+        return completeAfter(millis, null);
+      }
+
+      return completeAfter(millis, optionalObject[0]);
     }
 
-    private static <T> CompletableFuture<T> completeAfter(long delayMilliseconds, T object) {
+    private static CompletableFuture<Object> completeAfter(long delayMilliseconds, Object object) {
+
       if (delayMilliseconds <= 0) {
         return CompletableFuture.completedFuture(object);
       }
 
-      var future = new CompletableFuture<T>();
+      var future = new CompletableFuture<Object>();
       var timer = new java.util.Timer(true);
       var task =
           new TimerTask() {
             @Override
             public void run() {
-              future.complete(object);
+              future.complete(object == null ? TimeInstant.create() : object);
             }
           };
       timer.schedule(task, delayMilliseconds);
@@ -699,7 +733,12 @@ public class CoreActorLibrary {
     }
 
     @Verb(name = "tick", fires = TimeInstant.class)
-    public static void tick(RuntimeAgent.Scope scope, TimeUnit unit, long amount) {
+    public static void tick(RuntimeAgent.Scope scope, Quantity quantity) {
+
+      Objects.requireNonNull(quantity, "quantity");
+
+      TimeUnit unit = extractTimeUnit(quantity);
+      long amount = quantity.getValue().longValue();
 
       var timer = new java.util.Timer();
       TimerTask task =
@@ -725,8 +764,25 @@ public class CoreActorLibrary {
       timer.cancel();
     }
 
+    private static TimeUnit extractTimeUnit(Quantity quantity) {
+      return switch (quantity.getUnit()) {
+        case "ms" -> TimeUnit.MILLISECONDS;
+        case "s", "sec" -> TimeUnit.SECONDS;
+        case "d" -> TimeUnit.DAYS;
+        case "min" -> TimeUnit.MINUTES;
+        case "h", "hr" -> TimeUnit.HOURS;
+        default ->
+            throw new KlabIllegalArgumentException("Invalid time unit for quantity: " + quantity);
+      };
+    }
+
     @Verb(name = "random", fires = TimeInstant.class)
-    public static void random(RuntimeAgent.Scope scope, TimeUnit unit, long amount) {
+    public static void random(RuntimeAgent.Scope scope, Quantity quantity) {
+
+      Objects.requireNonNull(quantity, "quantity");
+
+      TimeUnit unit = extractTimeUnit(quantity);
+      long amount = quantity.getValue().longValue();
 
       var timer = new java.util.Timer();
       scheduleRandomTick(scope, timer, unit.toMillis(amount));

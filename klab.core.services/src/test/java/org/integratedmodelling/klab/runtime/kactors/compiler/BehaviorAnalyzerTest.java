@@ -146,7 +146,7 @@ class BehaviorAnalyzerTest {
     String source = compiler.getSourceCode();
     assertTrue(source.contains("invokeFunction(coreAgent("), source);
     assertTrue(source.contains("invokeSupplier(coreAgent("), source);
-    assertTrue(source.contains("ValueType.QUANTITY"), source);
+    assertTrue(source.contains("quantityLiteral("), source);
     assertTrue(source.contains("false"), source);
     assertGeneratedJavaCompiles(source);
   }

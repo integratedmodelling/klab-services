@@ -39,6 +39,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.Ternary;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -784,7 +785,8 @@ public class AgentCompiler {
               if (annotatedArityMatches(resolved, arguments)) {
                 return List.of();
               }
-              var expected = negotiableParameterTypes(resolved.javaMethod());
+              var expected =
+                  negotiableParameterTypes(resolved.javaMethod(), supplied.size());
               var negotiated = resolver.negotiateParameterMatch(expected, supplied);
               if (negotiated != null
                   && directArityMatches(resolved.javaMethod(), negotiated.size())) {
@@ -1248,7 +1250,7 @@ public class AgentCompiler {
       if (directArityMatches(constructor, supplied.size())) {
         return List.of();
       }
-      var expected = negotiableParameterTypes(constructor);
+      var expected = negotiableParameterTypes(constructor, supplied.size());
       var negotiated = resolver.negotiateParameterMatch(expected, supplied);
       if (negotiated != null && directArityMatches(constructor, negotiated.size())) {
         return List.of();
@@ -1618,7 +1620,8 @@ public class AgentCompiler {
     return suppliedCount == required;
   }
 
-  private static List<Class<?>> negotiableParameterTypes(Executable method) {
+  private static List<Class<?>> negotiableParameterTypes(
+      Executable method, int suppliedCount) {
     var ret = new ArrayList<Class<?>>();
     for (int index = 0; index < method.getParameterCount(); index++) {
       var parameter = method.getParameterTypes()[index];
@@ -1628,10 +1631,14 @@ public class AgentCompiler {
       if (Metadata.class.isAssignableFrom(parameter)) {
         continue;
       }
-      ret.add(
-          method.isVarArgs() && index == method.getParameterCount() - 1
-              ? parameter.getComponentType()
-              : parameter);
+      if (method.isVarArgs() && index == method.getParameterCount() - 1) {
+        Class<?> component = parameter.getComponentType();
+        while (ret.size() < suppliedCount) {
+          ret.add(component);
+        }
+      } else {
+        ret.add(parameter);
+      }
     }
     return List.copyOf(ret);
   }
@@ -3611,6 +3618,7 @@ public class AgentCompiler {
       case TERNARY_EXPRESSION -> ternary(raw, context);
       case CONSTANT -> CodeBlock.of("$T.create($S)", Constant.class, String.valueOf(raw));
       case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, value.getType());
+      case QUANTITY -> quantityLiteral(raw);
       case OBSERVABLE -> observableLiteral(raw);
       case LIST -> collectionLiteral(raw, context, false);
       case SET -> collectionLiteral(raw, context, true);
@@ -3672,6 +3680,9 @@ public class AgentCompiler {
     if (raw instanceof Constant constant) {
       return CodeBlock.of("$T.create($S)", Constant.class, constant.getValue());
     }
+    if (raw instanceof Quantity) {
+      return quantityLiteral(raw);
+    }
     if (raw instanceof KimObservable) {
       return observableLiteral(raw);
     }
@@ -3714,6 +3725,28 @@ public class AgentCompiler {
               "Cannot preserve observable literal " + observable.getUrn() + ": " + error));
       return CodeBlock.of("null");
     }
+  }
+
+  private CodeBlock quantityLiteral(Object raw) {
+    if (raw instanceof Quantity quantity) {
+      if (quantity.getValue() == null) {
+        notifications.add(Notification.error("Invalid quantity literal: missing numeric value"));
+        return CodeBlock.of("null");
+      }
+      return CodeBlock.of(
+          "quantityLiteral($L, $S, $S)",
+          literal(quantity.getValue(), ValueType.NUMBER),
+          quantity.getUnit(),
+          quantity.getCurrency());
+    }
+    if (raw instanceof String encoded) {
+      return CodeBlock.of("quantityLiteral($S)", encoded);
+    }
+    notifications.add(
+        Notification.error(
+            "Invalid quantity literal: expected Quantity, found "
+                + (raw == null ? "null" : raw.getClass().getName())));
+    return CodeBlock.of("null");
   }
 
   private CodeBlock ternary(Object raw, CompilationContext context) {

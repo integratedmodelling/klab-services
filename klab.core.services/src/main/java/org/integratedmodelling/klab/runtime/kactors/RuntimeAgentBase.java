@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
@@ -1613,10 +1614,31 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   protected Object literalValue(ValueType type, String encoded) {
-    // Extension point for quantities, ranges, localized strings and other non-POD literals whose
-    // definitive runtime mediation belongs to language/runtime services. Semantic observables use
-    // observableLiteral(...) so their KimObservable model is not reduced to text.
+    // Extension point for ranges, localized strings and other non-POD literals whose definitive
+    // runtime mediation belongs to language/runtime services. Quantities and semantic observables
+    // use typed hooks so their models are not reduced to text.
     return encoded;
+  }
+
+  /** Reconstruct a source quantity without relying on environment-specific parsing. */
+  protected Quantity quantityLiteral(Number value, String unit, String currency) {
+    if (value == null) {
+      throw new KlabActorException(this, "Missing numeric value in quantity literal");
+    }
+    var ret = new QuantityImpl();
+    ret.setValue(value);
+    ret.setUnit(unit);
+    ret.setCurrency(currency);
+    return ret;
+  }
+
+  /** Compatibility path for semantic models that still store a quantity as source text. */
+  protected Quantity quantityLiteral(String encoded) {
+    Quantity quantity = encoded == null ? null : QuantityImpl.parse(encoded);
+    if (quantity == null) {
+      throw new KlabActorException(this, "Invalid quantity literal: " + encoded);
+    }
+    return quantity;
   }
 
   /**
@@ -2105,18 +2127,22 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       if (parameterNegotiator == null) {
         throw directFailure;
       }
+      var split = splitSuppliedArguments(supplied);
       var expected = new ArrayList<Class<?>>();
       for (int index = 0; index < constructor.getParameterCount(); index++) {
         Class<?> parameter = constructor.getParameterTypes()[index];
         if (!RuntimeAgent.Scope.class.isAssignableFrom(parameter)
             && !Metadata.class.isAssignableFrom(parameter)) {
-          expected.add(
-              constructor.isVarArgs() && index == constructor.getParameterCount() - 1
-                  ? parameter.getComponentType()
-                  : parameter);
+          if (constructor.isVarArgs() && index == constructor.getParameterCount() - 1) {
+            Class<?> component = parameter.getComponentType();
+            while (expected.size() < split.values().length) {
+              expected.add(component);
+            }
+          } else {
+            expected.add(parameter);
+          }
         }
       }
-      var split = splitSuppliedArguments(supplied);
       var suppliedValues = new ArrayList<Object>();
       Collections.addAll(suppliedValues, split.values());
       var actual =
@@ -2272,7 +2298,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         throw parameterMismatch(method, supplied, directFailure);
       }
       var split = splitSuppliedArguments(supplied);
-      var expected = negotiableParameterTypes(method);
+      var expected = negotiableParameterTypes(method, split.values().length);
       var suppliedValues = new ArrayList<Object>(split.values().length);
       Collections.addAll(suppliedValues, split.values());
       var negotiated =
@@ -2333,7 +2359,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return ret;
   }
 
-  private List<Class<?>> negotiableParameterTypes(Method method) {
+  private List<Class<?>> negotiableParameterTypes(Method method, int suppliedCount) {
     var ret = new ArrayList<Class<?>>();
     for (int index = 0; index < method.getParameterCount(); index++) {
       var parameter = method.getParameterTypes()[index];
@@ -2343,10 +2369,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       if (Metadata.class.isAssignableFrom(parameter)) {
         continue;
       }
-      ret.add(
-          method.isVarArgs() && index == method.getParameterCount() - 1
-              ? parameter.getComponentType()
-              : parameter);
+      if (method.isVarArgs() && index == method.getParameterCount() - 1) {
+        Class<?> component = parameter.getComponentType();
+        while (ret.size() < suppliedCount) {
+          ret.add(component);
+        }
+      } else {
+        ret.add(parameter);
+      }
     }
     return List.copyOf(ret);
   }
@@ -2359,11 +2389,27 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
             + "."
             + method.getName()
             + ": expected "
-            + negotiableParameterTypes(method).stream().map(Class::getTypeName).toList()
+            + negotiableParameterSignature(method)
             + " but received "
             + splitSuppliedArguments(supplied).values().length
             + " argument(s); parameter negotiation did not produce a compatible match",
         cause);
+  }
+
+  private List<String> negotiableParameterSignature(Method method) {
+    var ret = new ArrayList<String>();
+    for (int index = 0; index < method.getParameterCount(); index++) {
+      var parameter = method.getParameterTypes()[index];
+      if (RuntimeAgent.Scope.class.isAssignableFrom(parameter)
+          || Metadata.class.isAssignableFrom(parameter)) {
+        continue;
+      }
+      ret.add(
+          method.isVarArgs() && index == method.getParameterCount() - 1
+              ? parameter.getComponentType().getTypeName() + "..."
+              : parameter.getTypeName());
+    }
+    return List.copyOf(ret);
   }
 
   /**

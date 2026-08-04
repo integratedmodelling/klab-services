@@ -624,6 +624,8 @@ class KActorsFileTest {
     assertTrue(assertDoesNotThrow(compiler::compile), () -> compiler.getNotifications().toString());
     assertNotNull(compiler.getSourceCode());
     assertTrue(compiler.getSourceCode().contains("awaitReactions("));
+    assertTrue(
+        compiler.getSourceCode().contains("quantityLiteral("), compiler.getSourceCode());
   }
 
   private void assertEmitterReactiveReturnIsAnExitCode(KActorsTestSupport.Result result) {

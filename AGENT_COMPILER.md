@@ -679,13 +679,14 @@ Value emission currently distinguishes:
 - `null` for no-data/empty and wildcard match values;
 - compiler-embedded, typed JSON for semantic observables, reconstructed through
   `observableLiteral(...)` as complete `KimObservable` objects;
-- `literalValue(type, encoded)` for quantities, ranges, localized strings, and other non-POD
-  values.
+- typed `Quantity` construction preserving the parsed number, unit, and currency;
+- `literalValue(type, encoded)` for ranges, localized strings, and other non-POD values.
 
 `literalValue` currently returns the encoded string. It is a deliberate runtime extension point for
-language-aware mediation. Observable reconstruction is deliberately separate: the compiler uses
-the k.LAB Jackson configuration and the runtime caches each reconstructed literal per agent. The
-same typed emission is applied recursively to observables stored in list, set, and map literals.
+language-aware mediation. Observable and quantity reconstruction are deliberately separate. The
+compiler uses the k.LAB Jackson configuration for observables and the runtime caches each
+reconstructed observable per agent. The same typed emission is applied recursively to observables
+and quantities stored in list, set, and map literals.
 
 Frames are `LinkedHashMap<String,Object>` instances:
 
@@ -818,11 +819,12 @@ excluded from arity checks and parameter negotiation just like injected scope pa
 
 If direct preparation fails, the runtime calls
 `Resolver.negotiateParameterMatch(expectedTypes, suppliedValues)`. The expected list excludes
-injected `RuntimeAgent.Scope` and `Metadata` parameters and uses the component type for a varargs parameter. The
-negotiator may split, combine, reorder, or otherwise mediate the supplied values, but must return
-the complete adapted list in Java declaration order. The runtime sends that result through the
-ordinary coercion and scope-injection path again. Returning `null`, or returning an incompatible
-list, fails the invocation with an explicit parameter-mismatch error.
+injected `RuntimeAgent.Scope` and `Metadata` parameters. A varargs component type is repeated only
+for the number of trailing values actually supplied, including zero occurrences when the varargs
+array is empty. The negotiator may split, combine, reorder, or otherwise mediate the supplied
+values, but must return the complete adapted list in Java declaration order. The runtime sends that
+result through the ordinary coercion and scope-injection path again. Returning `null`, or returning
+an incompatible list, fails the invocation with an explicit parameter-mismatch error.
 
 Analysis uses the same resolver seam when a descriptor-backed Java call has a provable arity
 mismatch. A rejected match becomes an error notification at the verb's lexical location. When the
@@ -1230,9 +1232,9 @@ The following items are either explicit TODOs or incomplete integration boundari
 
 - Preserve named call arguments and defaults in generated invocations.
 - Mediate the remaining non-POD values in `literalValue` instead of returning encoded strings.
-- Compile regular expressions, class/type criteria, annotations, ranges, quantities, and localized
-  strings to their definitive runtime forms. Semantic observables and mutable list/set/map literals
-  already retain their runtime types.
+- Compile regular expressions, class/type criteria, annotations, ranges, and localized strings to
+  their definitive runtime forms. Quantities, semantic observables, and mutable list/set/map
+  literals already retain their runtime types.
 - Expand match semantics where semantic or component services are required.
 - Apply statement metadata, tags, and annotations to runtime/application behavior.
 - Implement assertion call chains and richer assertion operators rather than evaluating only the

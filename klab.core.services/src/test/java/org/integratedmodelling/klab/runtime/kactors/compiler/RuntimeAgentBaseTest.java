@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.integratedmodelling.common.authentication.scope.AMQPChannel;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.runtime.actors.AgentEventBus;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.klab.api.actors.Agent;
@@ -41,7 +42,9 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
@@ -55,6 +58,7 @@ import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
+import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 import org.junit.jupiter.api.Test;
 
 class RuntimeAgentBaseTest {
@@ -823,6 +827,49 @@ class RuntimeAgentBaseTest {
         (Object[]) agent.function(TestActor.class, "metadataVarargs", root, arguments);
     assertEquals("payload", received[0]);
     assertSame(metadata, received[1]);
+  }
+
+  @Test
+  void javaVerbVarargsAcceptZeroOrMoreValuesAndNegotiateOnlySuppliedSlots() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    var quantity = new QuantityImpl();
+    quantity.setValue(0);
+    quantity.setUnit("s");
+
+    assertTrue(
+        agent.supplier(CoreActorLibrary.Timer.class, "in", root, quantity).join()
+            instanceof TimeInstant);
+    assertEquals(
+        "payload",
+        agent.supplier(CoreActorLibrary.Timer.class, "in", root, quantity, "payload").join());
+
+    var negotiatedSignatures = new ArrayList<List<Class<?>>>();
+    agent.setParameterNegotiator(
+        (expected, supplied) -> {
+          negotiatedSignatures.add(expected);
+          var ret = new ArrayList<Object>(supplied);
+          if (!ret.isEmpty() && ret.getFirst() instanceof String encoded) {
+            ret.set(0, QuantityImpl.parse(encoded));
+          }
+          return ret;
+        });
+
+    assertTrue(
+        agent.supplier(CoreActorLibrary.Timer.class, "in", root, "0.s").join()
+            instanceof TimeInstant);
+    assertEquals(
+        "negotiated payload",
+        agent
+            .supplier(
+                CoreActorLibrary.Timer.class,
+                "in",
+                root,
+                "0.s",
+                "negotiated payload")
+            .join());
+    assertEquals(List.of(Quantity.class), negotiatedSignatures.get(0));
+    assertEquals(List.of(Quantity.class, Object.class), negotiatedSignatures.get(1));
   }
 
   @Test

@@ -109,8 +109,7 @@ public class RuntimeClient extends BaseServiceClient
         requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_COMPILE_JAVA));
     request.setReportJavaCode(
         requestedOptions.contains(RuntimeAgent.CompilationOptions.INCLUDE_JAVA_CODE));
-    request.setDoNotStart(
-        requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_START));
+    request.setDoNotStart(requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_START));
     request.setDoNotBindObservation(
         requestedOptions.contains(RuntimeAgent.CompilationOptions.DO_NOT_BIND_OBSERVATION));
     request.setDoNotBindSession(
@@ -144,7 +143,9 @@ public class RuntimeClient extends BaseServiceClient
                 Notification.info(
                     "Agent messaging is disabled because its dedicated session is not connected"));
       }
-    } else if (agent != null && agent.getUrn() != null && scope instanceof MessagingChannel channel) {
+    } else if (agent != null
+        && agent.getUrn() != null
+        && scope instanceof MessagingChannel channel) {
       agent.connect(channel);
     } else if (agent != null && agent.getUrn() != null) {
       agent
@@ -158,7 +159,8 @@ public class RuntimeClient extends BaseServiceClient
 
   private void connectAgentSession(AgentImpl agent, UserScope requestScope) {
     ClientUserScope userScope =
-        requestScope.getType() == Scope.Type.USER && requestScope instanceof ClientUserScope clientUser
+        requestScope.getType() == Scope.Type.USER
+                && requestScope instanceof ClientUserScope clientUser
             ? clientUser
             : requestScope.getParentScope(Scope.Type.USER, ClientUserScope.class);
     var federation = Klab.INSTANCE.getFederationData(requestScope.getUser());

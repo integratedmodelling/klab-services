@@ -294,7 +294,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     }
   }
 
-  public void runTest(Consumer<TestCaseScope> test) {
-    // TODO
-  }
+//  public void runTest(Consumer<TestCaseScope> test) {
+//    // TODO
+//  }
 }
