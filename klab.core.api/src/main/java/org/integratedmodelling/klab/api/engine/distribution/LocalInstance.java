@@ -38,6 +38,9 @@ public interface LocalInstance {
    */
   Status getStatus();
 
+  /** Return true if the process represented by this instance is currently alive. */
+  boolean isAlive();
+
   boolean forceRestart(Option... options);
 
   /**

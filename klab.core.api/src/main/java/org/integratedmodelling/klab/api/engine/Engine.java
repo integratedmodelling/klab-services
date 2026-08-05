@@ -180,8 +180,8 @@ public interface Engine /*extends KlabService*/ {
   int stopLocalServices();
 
   /**
-   * Return true only when every locally managed k.LAB and auxiliary process is stopped. Starting,
-   * waiting, running, and stopping instances all return false.
+   * Return true only when no locally managed k.LAB or auxiliary process is alive. The check is
+   * based on process liveness rather than potentially stale lifecycle labels.
    */
   boolean areLocalServicesStopped();
 

@@ -187,9 +187,7 @@ public class ServiceMonitor {
 
   public boolean areLocalProcessesStopped() {
     return serviceInstances.values().stream()
-        .allMatch(
-            instance ->
-                instance == null || instance.getStatus() == LocalInstance.Status.STOPPED);
+        .allMatch(instance -> instance == null || !instance.isAlive());
   }
 
   @SuppressWarnings("unchecked")

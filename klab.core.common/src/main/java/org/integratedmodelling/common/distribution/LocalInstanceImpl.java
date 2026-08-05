@@ -162,6 +162,14 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     return status.get();
   }
 
+  @Override
+  public synchronized boolean isAlive() {
+    if (process != null && process.isAlive()) {
+      return true;
+    }
+    return pid != null && ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+  }
+
   /**
    * Set the stream handler to use for the launched process. If not set, a default {@link
    * PumpStreamHandler} will be used.
