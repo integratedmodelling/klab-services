@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.engine;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -40,6 +41,8 @@ import org.integratedmodelling.klab.rest.ServiceReference;
  */
 public class ServiceMonitor {
 
+  private final AtomicBoolean processShutdownMonitorRunning = new AtomicBoolean();
+
   private final Map<BaseServiceClient, KlabService.ServiceStatus> clients =
       Collections.synchronizedMap(new LinkedHashMap<>());
   private final List<BiConsumer<KlabService, KlabService.ServiceStatus>> serviceConsumers =
@@ -48,6 +51,7 @@ public class ServiceMonitor {
       Collections.synchronizedList(new ArrayList<>());
   private EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
   private final Map<KlabService.Type, LocalInstance> serviceInstances = new ConcurrentHashMap<>();
+  private Boolean lastLocalProcessesStopped;
   private final Settings settings;
   private boolean handleAMQPService = false;
   private boolean handleLanguageServer = false;
@@ -430,6 +434,12 @@ public class ServiceMonitor {
               .equals(status.getActiveAuxiliaryServices());
     }
 
+    var localProcessesStopped = areLocalProcessesStopped();
+    if (!Objects.equals(lastLocalProcessesStopped, localProcessesStopped)) {
+      ret = true;
+    }
+    lastLocalProcessesStopped = localProcessesStopped;
+
     this.lastRecordedStatus = status;
 
     return ret;
@@ -475,7 +485,16 @@ public class ServiceMonitor {
   private void refreshLocalClientStatuses() {
     for (var client : clientSnapshot()) {
       if (client.isLocal()) {
-        refreshClientStatus(client);
+        try {
+          refreshClientStatus(client);
+        } catch (Throwable throwable) {
+          // A local client that cannot be reached after shutdown must not keep the engine in a
+          // permanent transitional state through its last cached status. Discovery will add it
+          // again if it becomes reachable later.
+          clients.remove(client);
+          Logging.INSTANCE.warn(
+              "Removing unreachable local service from the active service catalog", throwable);
+        }
       }
     }
   }
@@ -611,6 +630,7 @@ public class ServiceMonitor {
               }
               refreshLocalClientStatuses();
               recomputeEngineStatus();
+              recomputeWhenProcessesHaveStopped();
             });
 
     return services.size();
@@ -774,6 +794,34 @@ public class ServiceMonitor {
     if (settings.get(Setting.STOP_AUXILIARY_SERVICES, Boolean.class)) {
       stopRuntimeAuxiliaryServices();
     }
+    recomputeWhenProcessesHaveStopped();
+  }
+
+  /**
+   * Process termination is asynchronous. Publish one final status after the wrappers confirm that
+   * the processes have actually exited, so controls depending on the stopped state are refreshed.
+   */
+  private void recomputeWhenProcessesHaveStopped() {
+    if (!processShutdownMonitorRunning.compareAndSet(false, true)) {
+      return;
+    }
+    Thread.ofVirtual()
+        .name("klab-local-process-shutdown-monitor")
+        .start(
+            () -> {
+              try {
+                var deadline = System.currentTimeMillis() + 30_000;
+                while (!areLocalProcessesStopped() && System.currentTimeMillis() < deadline) {
+                  Thread.sleep(100);
+                }
+                refreshLocalClientStatuses();
+                recomputeEngineStatus();
+              } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+              } finally {
+                processShutdownMonitorRunning.set(false);
+              }
+            });
   }
 
   public Map<KlabService.Type, KlabService> startLocalServices(

@@ -160,6 +160,32 @@ class StackImplTest {
     assertFalse(instance.isAlive());
   }
 
+  @Test
+  void rejectsReusedPidWhenProcessStartInstantDoesNotMatch() throws IOException {
+    var product = mock(Distribution.Product.class);
+    when(product.getLocalPath()).thenReturn(temporaryDirectory.toFile());
+    when(product.getType()).thenReturn(Distribution.Product.Type.CLI);
+    var settings = mock(Settings.class);
+    var runDirectory = temporaryDirectory.resolve("run");
+    when(settings.get(Setting.RUN_DIRECTORY, File.class)).thenReturn(runDirectory.toFile());
+    Files.createDirectories(runDirectory);
+    var pidFile = runDirectory.resolve(Distribution.Product.Type.CLI.getId() + ".pid");
+    Files.writeString(
+        pidFile,
+        ProcessHandle.current().pid()
+            + ":"
+            + Distribution.Product.Type.CLI.getId()
+            + ":0");
+
+    var instance =
+        new TestLocalInstance(
+            product, settings, Stack.Tag.of(Version.create(VERSION), RELEASE, BUILD, true, false));
+
+    assertEquals(LocalInstance.Status.STOPPED, instance.getStatus());
+    assertFalse(instance.isAlive());
+    assertFalse(Files.exists(pidFile));
+  }
+
   private Settings settings(Path local) {
     var settings = mock(Settings.class);
     when(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class))

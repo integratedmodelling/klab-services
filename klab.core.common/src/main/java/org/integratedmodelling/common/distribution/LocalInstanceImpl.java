@@ -43,6 +43,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
   protected OutputStream outputStream;
   protected InputStream inputStream;
   protected Long pid;
+  protected Long processStartMillis;
   protected final Map<String, String> environmentOverrides = new ConcurrentHashMap<>();
 
   /**
@@ -86,38 +87,37 @@ public abstract class LocalInstanceImpl implements LocalInstance {
           String[] parts = content.split(":");
           long savedPid = Long.parseLong(parts[0]);
           String savedType = parts.length > 1 ? parts[1] : null;
+          Long savedStartMillis = parts.length > 2 ? Long.parseLong(parts[2]) : null;
 
-          if (isProcessRunning(savedPid)) {
-            if (savedType == null || savedType.equals(product.getType().getId())) {
-              this.pid = savedPid;
-              //              this.process = new ExternalProcess(savedPid);
-              this.status.set(Status.RUNNING);
-              monitorAlreadyRunningProcess(savedPid);
-              Logging.INSTANCE.info(
-                  "Connected to already running " + product.getType().getId() + " with PID " + pid);
-              return;
-            } else {
-              Logging.INSTANCE.warn(
-                  "Found PID file for "
-                      + product.getType().getId()
-                      + ", but it contains type "
-                      + savedType
-                      + ". Releasing lock.");
-              Files.deleteIfExists(pidFile.toPath());
-            }
+          if (isPersistedProcess(savedPid, savedType, savedStartMillis)) {
+            this.pid = savedPid;
+            this.processStartMillis = savedStartMillis;
+            this.status.set(Status.RUNNING);
+            monitorAlreadyRunningProcess(savedPid);
+            Logging.INSTANCE.info(
+                "Connected to already running " + product.getType().getId() + " with PID " + pid);
+            return;
           } else {
             Logging.INSTANCE.warn(
-                "Found stale PID file for "
+                "Found stale or unverifiable PID file for "
                     + product.getType().getId()
                     + ", process "
-                    + savedPid
-                    + " is not running");
+                    + savedPid);
             Files.deleteIfExists(pidFile.toPath());
           }
         }
       } catch (IOException | NumberFormatException e) {
         Logging.INSTANCE.error(
             "Error reading PID file for " + product.getType().getId() + ": " + e.getMessage());
+        try {
+          Files.deleteIfExists(pidFile.toPath());
+        } catch (IOException deletionError) {
+          Logging.INSTANCE.error(
+              "Error deleting invalid PID file for "
+                  + product.getType().getId()
+                  + ": "
+                  + deletionError.getMessage());
+        }
       }
     }
     this.status.set(Status.STOPPED);
@@ -137,8 +137,22 @@ public abstract class LocalInstanceImpl implements LocalInstance {
             });
   }
 
-  private boolean isProcessRunning(long pid) {
-    return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+  private boolean isPersistedProcess(long savedPid, String savedType, Long savedStartMillis) {
+    if (!product.getType().getId().equals(savedType) || savedStartMillis == null) {
+      return false;
+    }
+    return isSameProcess(savedPid, savedStartMillis);
+  }
+
+  private boolean isSameProcess(long expectedPid, Long expectedStartMillis) {
+    if (expectedStartMillis == null || expectedStartMillis < 0) {
+      return false;
+    }
+    return ProcessHandle.of(expectedPid)
+        .filter(ProcessHandle::isAlive)
+        .flatMap(handle -> handle.info().startInstant())
+        .map(start -> start.toEpochMilli() == expectedStartMillis)
+        .orElse(false);
   }
 
   @Override
@@ -167,7 +181,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     if (process != null && process.isAlive()) {
       return true;
     }
-    return pid != null && ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+    return pid != null && isSameProcess(pid, processStartMillis);
   }
 
   /**
@@ -282,7 +296,13 @@ public abstract class LocalInstanceImpl implements LocalInstance {
 
   private void persistState(long pid) {
     try {
-      String data = pid + ":" + product.getType().getId();
+      var startMillis =
+          ProcessHandle.of(pid)
+              .flatMap(handle -> handle.info().startInstant())
+              .map(start -> start.toEpochMilli())
+              .orElse(-1L);
+      this.processStartMillis = startMillis;
+      String data = pid + ":" + product.getType().getId() + ":" + startMillis;
       Files.writeString(pidFile.toPath(), data, StandardCharsets.UTF_8);
     } catch (IOException e) {
       Logging.INSTANCE.error("Failed to save PID file: " + e.getMessage());
@@ -296,6 +316,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
       Logging.INSTANCE.error("Failed to delete PID file: " + e.getMessage());
     }
     this.pid = null;
+    this.processStartMillis = null;
     this.inputStream = null;
     this.outputStream = null;
   }
@@ -319,7 +340,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
     if (pid != null) {
       var stoppedPid = pid;
       var processHandle = ProcessHandle.of(stoppedPid);
-      if (processHandle.isPresent() && processHandle.get().isAlive()) {
+      if (processHandle.isPresent() && isSameProcess(stoppedPid, processStartMillis)) {
         stopRequested.set(true);
         status.set(Status.WAITING);
         monitorAlreadyRunningProcess(stoppedPid);

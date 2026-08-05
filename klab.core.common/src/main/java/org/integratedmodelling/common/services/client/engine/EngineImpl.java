@@ -111,8 +111,10 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public int stopLocalServices() {
     var ret = serviceMonitor.stopLocalServices();
+    // The language server is tied to the selected stack and must never survive a stack switch.
+    // The monitor applies STOP_AUXILIARY_SERVICES to the database and broker internally.
+    serviceMonitor.stopApplicationAuxiliaryServices();
     if (settings.get(Setting.EXIT_WHEN_STOPPING_SERVICES, Boolean.class)) {
-      serviceMonitor.stopApplicationAuxiliaryServices();
       Executors.newScheduledThreadPool(1).schedule(() -> System.exit(0), 2, TimeUnit.SECONDS);
     }
     return ret;
