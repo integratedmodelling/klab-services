@@ -15,6 +15,10 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.html.renderer.NodeRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.data.MutableDataSet;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.output.StringOutput;
@@ -3056,7 +3060,29 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
-  public static class Markdown {}
+  public static class Markdown {
+
+    /**
+     * Render markdown text using the specified renderer.
+     *
+     * @param markdownText
+     * @param renderer
+     * @return the rendered text
+     */
+    public static String render(String markdownText, NodeRenderer renderer) {
+      var options = new MutableDataSet();
+      var parser = Parser.builder(options).build();
+      var document = parser.parse(markdownText);
+
+      var rendererBuilder = HtmlRenderer.builder(options);
+      if (renderer != null) {
+        rendererBuilder.nodeRendererFactory(ignored -> renderer);
+      }
+
+      return rendererBuilder.build().render(document);
+    }
+
+  }
 
   public static class Names extends org.integratedmodelling.klab.api.utils.Utils.Names {
 
