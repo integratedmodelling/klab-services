@@ -58,31 +58,55 @@ public class Downloader {
 
   /** Start downloading and block until success or failure. */
   public boolean download() {
-    ProgressListener progressListener = new ProgressListener();
-    try (OutputStream os = new FileOutputStream(file);
-        InputStream is = url.openStream()) {
-      DownloadCountingOutputStream dcount = new DownloadCountingOutputStream(os);
-      dcount.setListener(progressListener);
-      String contentLength = url.openConnection().getHeaderField("Content-Length");
-      if (contentLength == null) {
-        dcount.close();
-        throw new KlabIOException("Content lenght is null");
-      }
-      this.totalLength = Integer.parseInt(contentLength);
-      IOUtils.copy(is, dcount);
-      if (checksum != null) {
-        String md5 = DigestUtils.md5Hex(new FileInputStream(file));
-        if (!md5.equals(checksum)) {
-          throw new KlabIOException(
-              "Invalid checksum for file [" + file + "], retry " + (this.retries + 1));
+    Exception lastFailure = null;
+    for (this.retries = 0; this.retries <= this.maxRetries; this.retries++) {
+      try {
+        downloadOnce();
+        finish();
+        return true;
+      } catch (Exception e) {
+        lastFailure = e;
+        if (file.exists()) {
+          file.delete();
+        }
+        if (scope != null && this.retries < this.maxRetries) {
+          scope.warn("Retrying download after: " + e.getMessage());
         }
       }
-      finish();
-      return true;
-    } catch (Exception e) {
-      fail(e);
     }
-    return false;
+    this.retries = 0;
+    if (scope != null && lastFailure != null) {
+      scope.error(lastFailure.getMessage());
+    }
+    if (lastFailure == null) {
+      throw new KlabIOException("Download failed");
+    }
+    throw new KlabIOException(lastFailure);
+  }
+
+  private void downloadOnce() throws IOException {
+    var parent = file.getParentFile();
+    if (parent != null) {
+      parent.mkdirs();
+    }
+    var connection = url.openConnection();
+    this.totalLength = connection.getContentLengthLong();
+    try (InputStream is = connection.getInputStream();
+        OutputStream os = new FileOutputStream(file);
+        DownloadCountingOutputStream dcount = new DownloadCountingOutputStream(os)) {
+      if (handler != null) {
+        dcount.setListener(new ProgressListener());
+      }
+      IOUtils.copy(is, dcount);
+    }
+    if (checksum != null) {
+      try (var input = new FileInputStream(file)) {
+        String md5 = DigestUtils.md5Hex(input);
+        if (!md5.equalsIgnoreCase(checksum)) {
+          throw new KlabIOException("Invalid checksum for file [" + file + "]");
+        }
+      }
+    }
   }
 
   protected void finish() {
@@ -91,12 +115,16 @@ public class Downloader {
 
   protected void fail(Exception e) {
     if (this.retries < this.maxRetries) {
-      scope.error("Retry: " + e);
+      if (scope != null) {
+        scope.error("Retry: " + e);
+      }
       this.retries++;
       download();
     } else {
       this.retries = 0;
-      scope.error(e.getMessage());
+      if (scope != null) {
+        scope.error(e.getMessage());
+      }
       throw new KlabIOException(e);
     }
   }

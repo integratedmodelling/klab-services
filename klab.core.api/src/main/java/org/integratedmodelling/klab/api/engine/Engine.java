@@ -180,6 +180,12 @@ public interface Engine /*extends KlabService*/ {
   int stopLocalServices();
 
   /**
+   * Return true only when every locally managed k.LAB and auxiliary process is stopped. Starting,
+   * waiting, running, and stopping instances all return false.
+   */
+  boolean areLocalServicesStopped();
+
+  /**
    * Start all available local services and return them categorized by type. The services are added
    * to the available for the scopes.
    *

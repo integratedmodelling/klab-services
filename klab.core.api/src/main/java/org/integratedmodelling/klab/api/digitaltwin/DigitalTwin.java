@@ -137,6 +137,15 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     boolean isEmpty();
 
+    /**
+     * If a behavior URN is provided, the context will resolve it to a k.Actors behavior, validate
+     * it agains the context, and instantiate the agent and install its handle in the ContextScope,
+     * so that it will be notified of all DT events that reach the scope.
+     *
+     * @return
+     */
+    String getBehaviorUrn();
+
     @Deprecated
     boolean isCreateWhenAbsent();
 

@@ -185,6 +185,13 @@ public class ServiceMonitor {
         : null;
   }
 
+  public boolean areLocalProcessesStopped() {
+    return serviceInstances.values().stream()
+        .allMatch(
+            instance ->
+                instance == null || instance.getStatus() == LocalInstance.Status.STOPPED);
+  }
+
   @SuppressWarnings("unchecked")
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
 

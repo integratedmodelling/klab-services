@@ -50,23 +50,32 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
             distributionName,
             Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class)));
 
-    /* This overrides existing distribution tags with their local counterpart, which is what we want */
+    /* Merge local and remote representations by physical identity. Availability and orphan state
+     * are observations about a tag, not part of its identity. */
     for (var localDistribution : localDistributions) {
-      var orphan = localDistribution.getTags().stream().noneMatch(ret::containsKey);
       localDistribution
           .getTags()
           .forEach(
               tag -> {
-                var actualTag = tag;
-                if (orphan) {
-                  // TODO flag the tag as orphaned
-                  actualTag = Stack.Tag.of(tag.version(), tag.release(), tag.build(), true, true);
-                }
+                var remoteTag =
+                    ret.keySet().stream().filter(candidate -> sameTag(candidate, tag)).findFirst();
+                remoteTag.ifPresent(ret::remove);
+                var actualTag =
+                    Stack.Tag.of(
+                        tag.version(), tag.release(), tag.build(), true, remoteTag.isEmpty());
                 ret.put(actualTag, localDistribution);
               });
     }
 
     return ret;
+  }
+
+  static boolean sameTag(Stack.Tag first, Stack.Tag second) {
+    return first != null
+        && second != null
+        && Objects.equals(first.version(), second.version())
+        && Objects.equals(first.release(), second.release())
+        && Objects.equals(first.build(), second.build());
   }
 
   static DistributionImpl developmentDistribution(String distributionName) {
@@ -666,14 +675,34 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   @Override
   public boolean verify(Stack.Tag tag) {
+    return verify(tag, null);
+  }
+
+  @Override
+  public boolean verify(Stack.Tag tag, Verification monitor) {
     var build = findBuild(tag);
     if (build != null) {
+      var totalFiles =
+          build.getProducts().stream().mapToInt(product -> product.getFiles().size()).sum();
+      if (monitor != null) {
+        monitor.notifyVerification(totalFiles);
+      }
+      int fileIndex = 0;
       for (var product : build.getProducts()) {
         if (product.getLocalPath() == null || !product.getLocalPath().exists()) {
           return false;
         }
         for (var file : product.getFiles()) {
-          if (!fileMatches(new File(product.getLocalPath(), file.name()), file)) {
+          var localFile = new File(product.getLocalPath(), file.name());
+          var index = ++fileIndex;
+          if (monitor != null) {
+            monitor.notifyFileVerifying(localFile, file, index);
+          }
+          var valid = fileMatches(localFile, file);
+          if (monitor != null) {
+            monitor.notifyFileVerified(localFile, file, index, valid);
+          }
+          if (!valid) {
             return false;
           }
         }

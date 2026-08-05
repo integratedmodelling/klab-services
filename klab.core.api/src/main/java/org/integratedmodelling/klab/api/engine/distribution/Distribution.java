@@ -623,6 +623,16 @@ public interface Distribution {
     void notifyProductSynchronized(Product product);
   }
 
+  /** Progress callbacks for local distribution integrity verification. */
+  interface Verification {
+
+    void notifyVerification(int totalFiles);
+
+    void notifyFileVerifying(File file, FileData fileData, int index);
+
+    void notifyFileVerified(File file, FileData fileData, int index, boolean valid);
+  }
+
   String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
   String DISTRIBUTION_NAME_PROPERTY = "klab.distribution.name";
   String DISTRIBUTION_DATE_PROPERTY = "klab.distribution.date";
@@ -711,4 +721,14 @@ public interface Distribution {
    * @return
    */
   boolean verify(Stack.Tag tag);
+
+  /**
+   * Verify the consistency of a locally available tag and report each file before hashing it. The
+   * callback receives the file metadata and its one-based position in the build.
+   *
+   * @param tag tag to verify
+   * @param monitor optional progress monitor
+   * @return true when every declared product file is present and valid
+   */
+  boolean verify(Stack.Tag tag, Verification monitor);
 }

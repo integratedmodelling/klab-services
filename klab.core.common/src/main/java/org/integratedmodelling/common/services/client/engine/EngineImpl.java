@@ -119,6 +119,11 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
+  public boolean areLocalServicesStopped() {
+    return serviceMonitor == null || serviceMonitor.areLocalProcessesStopped();
+  }
+
+  @Override
   public Stack getSoftwareStack() {
     return softwareStack;
   }

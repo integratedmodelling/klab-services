@@ -31,6 +31,7 @@ public class ConfigurationBuilder {
   private String owner;
   private Observation observer;
   private boolean empty;
+  private String behaviorUrn;
 
   public ConfigurationBuilder() {}
 
@@ -48,6 +49,7 @@ public class ConfigurationBuilder {
     this.serviceId = configuration.getServiceId();
     this.observer = configuration.getObserver();
     this.empty = configuration.isEmpty();
+    this.behaviorUrn = configuration.getBehaviorUrn();
   }
 
   /**
@@ -94,6 +96,10 @@ public class ConfigurationBuilder {
               break;
             case "persistence":
               this.persistence = Persistence.valueOf(parts[1]);
+              break;
+            case "behavior":
+              this.behaviorUrn = parts[1];
+              break;
           }
         }
       }
@@ -117,6 +123,11 @@ public class ConfigurationBuilder {
 
   public ConfigurationBuilder owner(String owner) {
     this.owner = owner;
+    return this;
+  }
+
+  public ConfigurationBuilder behaviorUrn(String behaviorUrn) {
+    this.behaviorUrn = behaviorUrn;
     return this;
   }
 
@@ -187,6 +198,7 @@ public class ConfigurationBuilder {
         this.description,
         this.owner,
         this.empty,
-        this.observer);
+        this.observer,
+        this.behaviorUrn);
   }
 }

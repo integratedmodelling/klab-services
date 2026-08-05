@@ -94,12 +94,18 @@ public interface Stack {
    */
   boolean verify(Tag distributionTag);
 
+  /** Verify a tag while reporting progress before and after each file is checked. */
+  boolean verify(Tag distributionTag, Distribution.Verification monitor);
+
   /**
    * Return all the known tags for this stack, latest first. Based on settings
    *
    * @return
    */
   List<Tag> tags();
+
+  /** Refresh the local and network tag catalog. */
+  void refresh();
 
   /**
    * Retrieve the build corresponding to the passed tag. Products may be unavailable.
@@ -150,6 +156,15 @@ public interface Stack {
    * @return
    */
   boolean synchronize(Tag tag, Distribution.Synchronization sync);
+
+  /**
+   * Remove a locally available binary tag from disk. Source ({@link Version#HEAD}) tags cannot be
+   * deleted.
+   */
+  boolean delete(Tag tag);
+
+  /** Resolve symbolic tags such as {@link Tag#LATEST_STABLE} to a physical tag. */
+  Tag resolve(Tag tag);
 
   /**
    * Retrieve the available stack with the passed name, or null. The stack's tags will reveal what

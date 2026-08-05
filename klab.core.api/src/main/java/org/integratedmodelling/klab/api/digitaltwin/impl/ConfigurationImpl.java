@@ -35,6 +35,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
   private String owner;
   private boolean empty;
+  private String behaviorUrn;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -54,7 +55,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       String description,
       String owner,
       boolean empty,
-      Observation observer) {
+      Observation observer,
+      String behaviorUrn) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -70,6 +72,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.owner = owner;
     this.empty = empty;
     this.observer = observer;
+    this.behaviorUrn = behaviorUrn;
   }
 
   @Override
@@ -118,6 +121,15 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   public void setEmpty(boolean empty) {
     this.empty = empty;
+  }
+
+  @Override
+  public String getBehaviorUrn() {
+    return behaviorUrn;
+  }
+
+  public void setBehaviorUrn(String behaviorUrn) {
+    this.behaviorUrn = behaviorUrn;
   }
 
   @Override
@@ -202,22 +214,6 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   public void setBehavior(String behavior) {
     this.behavior = behavior;
   }
-
-  //  public long getCreationTime() {
-  //    return creationTime;
-  //  }
-  //
-  //  public void setCreationTime(long creationTime) {
-  //    this.creationTime = creationTime;
-  //  }
-  //
-  //  public long getIdleTimeMs() {
-  //    return idleTimeMs;
-  //  }
-  //
-  //  public void setIdleTimeMs(long idleTimeMs) {
-  //    this.idleTimeMs = idleTimeMs;
-  //  }
 
   @Override
   public URL getServiceUrl() {

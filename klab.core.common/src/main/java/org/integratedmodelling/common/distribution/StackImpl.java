@@ -25,6 +25,7 @@ public class StackImpl implements Stack {
   private final String name;
   private final Settings settings;
   private final Map<Tag, DistributionImpl> tags = new TreeMap<>();
+  private final Map<Tag, DistributionImpl> synchronizationSources = new HashMap<>();
 
   /**
    * Pass settings to determine whether the stack accepts development distributions, where the
@@ -35,52 +36,41 @@ public class StackImpl implements Stack {
   public StackImpl(String name, Settings settings) {
     this.name = name;
     this.settings = settings;
-    this.tags.putAll(DistributionImpl.distributions(name, settings));
-    // still needs to use a scan to establish update status for the locals distributions
+    refreshTags();
   }
 
-  private void refreshTags(DistributionImpl... distributions) {
+  private synchronized void refreshTags() {
+    tags.clear();
+    synchronizationSources.clear();
+    tags.putAll(DistributionImpl.distributions(name, settings));
 
-    if (distributions != null) {
-      for (var distribution : distributions) {
-        var dFile =
-            new File(
-                settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), distribution.getName());
-        if (dFile.exists() && dFile.isDirectory()) {
-          var updated =
-              new DistributionImpl(
-                  distribution.getName(),
-                  distribution.getVersion(),
-                  Utils.URLs.newURL(dFile),
-                  Utils.URLs.newURL(new File(dFile, distribution.getVersion().toString())));
-          var updatedTags = updated.getTags();
-          if (updatedTags.isEmpty()) {
-            continue;
-          }
-          List<Tag> tagsToRemove = new ArrayList<>();
-
-          // this pain is needed for now - comparison succeeds but tag isn't swapped
-          for (var tag : tags.keySet()) {
-            if (tags.get(tag) == distribution) {
-              tagsToRemove.add(tag);
-            }
-          }
-          tagsToRemove.forEach(tags::remove);
-          for (var tag : updatedTags) {
-            tags.put(tag, updated);
-          }
-        }
+    var remoteDistributions =
+        DistributionImpl.distributions(
+            name,
+            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
+    for (var distribution : remoteDistributions) {
+      for (var remoteTag : distribution.getTags()) {
+        tags.keySet().stream()
+            .filter(tag -> DistributionImpl.sameTag(tag, remoteTag))
+            .findFirst()
+            .ifPresent(tag -> synchronizationSources.put(tag, distribution));
       }
     }
   }
 
   @Override
-  public List<Tag> tags() {
+  public synchronized List<Tag> tags() {
     return tags.keySet().stream().toList().reversed();
   }
 
   @Override
-  public Distribution.Product product(Distribution.Product.Type productType, Tag chosenRelease) {
+  public void refresh() {
+    refreshTags();
+  }
+
+  @Override
+  public synchronized Distribution.Product product(
+      Distribution.Product.Type productType, Tag chosenRelease) {
     var tag = disambiguateTag(chosenRelease);
     if (tag == null) {
       return null;
@@ -93,7 +83,7 @@ public class StackImpl implements Stack {
   }
 
   @Override
-  public Distribution.Build build(Tag chosenRelease) {
+  public synchronized Distribution.Build build(Tag chosenRelease) {
     var tag = disambiguateTag(chosenRelease);
     if (tag == null) {
       return null;
@@ -106,12 +96,12 @@ public class StackImpl implements Stack {
   }
 
   @Override
-  public Status status(Tag tag) {
+  public synchronized Status status(Tag tag) {
     tag = disambiguateTag(tag);
     if (tag == null) {
       return Status.ABSENT;
     }
-    var distribution = tags.get(tag);
+    var distribution = synchronizationSources.getOrDefault(tag, tags.get(tag));
     if (distribution == null) {
       return Status.ABSENT;
     }
@@ -166,7 +156,7 @@ public class StackImpl implements Stack {
   }
 
   @Override
-  public boolean synchronize(Tag tag, Distribution.Synchronization sync) {
+  public synchronized boolean synchronize(Tag tag, Distribution.Synchronization sync) {
 
     tag = disambiguateTag(tag);
     if (tag == null) {
@@ -177,11 +167,11 @@ public class StackImpl implements Stack {
       return true;
     }
 
-    var distribution = tags.get(tag);
+    var distribution = synchronizationSources.getOrDefault(tag, tags.get(tag));
     if (distribution != null
         && distribution.synchronize(
             settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), tag, sync)) {
-      refreshTags(distribution);
+      refreshTags();
       return true;
     }
     return false;
@@ -205,12 +195,18 @@ public class StackImpl implements Stack {
   }
 
   @Override
-  public boolean verify(Tag distributionTag) {
+  public synchronized boolean verify(Tag distributionTag) {
+    return verify(distributionTag, null);
+  }
+
+  @Override
+  public synchronized boolean verify(
+      Tag distributionTag, Distribution.Verification monitor) {
     var tag = disambiguateTag(distributionTag);
     if (tag != null) {
       var distribution = tags.get(tag);
       if (distribution != null) {
-        return distribution.verify(tag);
+        return distribution.verify(tag, monitor);
       }
     }
     return false;
@@ -232,7 +228,97 @@ public class StackImpl implements Stack {
     } else if (tag == Tag.LATEST_DEVELOP) {
       return tags().stream().findFirst().orElse(null);
     }
-    return tag;
+    return tags.keySet().stream()
+        .filter(candidate -> DistributionImpl.sameTag(candidate, tag))
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Override
+  public synchronized Tag resolve(Tag tag) {
+    return disambiguateTag(tag);
+  }
+
+  @Override
+  public synchronized boolean delete(Tag requestedTag) {
+    var tag = disambiguateTag(requestedTag);
+    if (tag == null || tag.version() == Version.HEAD || !tag.availableLocally()) {
+      return false;
+    }
+
+    var distributionRoot =
+        settings
+            .get(Setting.DISTRIBUTION_DIRECTORY, File.class)
+            .toPath()
+            .toAbsolutePath()
+            .normalize();
+    var stackRoot = distributionRoot.resolve(name).normalize();
+    var versionRoot = stackRoot.resolve(tag.version().toString()).normalize();
+    var releaseRoot = versionRoot.resolve(tag.release()).normalize();
+    var buildRoot = releaseRoot.resolve(tag.build()).normalize();
+    if (!buildRoot.startsWith(stackRoot) || !Files.isDirectory(buildRoot)) {
+      return false;
+    }
+
+    try {
+      org.apache.commons.io.FileUtils.deleteDirectory(buildRoot.toFile());
+      removeMetadataEntry(
+          releaseRoot.resolve(Distribution.RELEASE_PROPERTIES_FILE).toFile(),
+          Distribution.RELEASE_BUILDS_PROPERTY,
+          tag.build());
+      if (listBuildDirectories(releaseRoot.toFile()).isEmpty()) {
+        org.apache.commons.io.FileUtils.deleteDirectory(releaseRoot.toFile());
+        removeMetadataEntry(
+            versionRoot.resolve(Distribution.VERSION_PROPERTIES_FILE).toFile(),
+            Distribution.VERSION_RELEASES_PROPERTY,
+            tag.release());
+      }
+      if (listReleaseDirectories(versionRoot.toFile()).isEmpty()) {
+        org.apache.commons.io.FileUtils.deleteDirectory(versionRoot.toFile());
+        removeMetadataEntry(
+            stackRoot.resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE).toFile(),
+            Distribution.DISTRIBUTION_VERSIONS_PROPERTY,
+            tag.version().toString());
+      }
+      refreshTags();
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  private void removeMetadataEntry(File file, String property, String value) throws IOException {
+    if (!file.isFile()) {
+      return;
+    }
+    var properties = new Properties();
+    try (var input = Files.newInputStream(file.toPath())) {
+      properties.load(input);
+    }
+    var values =
+        Arrays.stream(properties.getProperty(property, "").split(","))
+            .map(String::trim)
+            .filter(entry -> !entry.isBlank() && !entry.equals(value))
+            .toList();
+    properties.setProperty(property, String.join(",", values));
+    try (var output = Files.newOutputStream(file.toPath())) {
+      properties.store(output, null);
+    }
+  }
+
+  private List<File> listBuildDirectories(File releaseDirectory) {
+    return listDirectoriesExcluding(releaseDirectory, Set.of());
+  }
+
+  private List<File> listReleaseDirectories(File versionDirectory) {
+    return listDirectoriesExcluding(versionDirectory, Set.of());
+  }
+
+  private List<File> listDirectoriesExcluding(File directory, Set<String> excluded) {
+    var children =
+        directory.listFiles(
+            file -> file.isDirectory() && !excluded.contains(file.getName()));
+    return children == null ? List.of() : Arrays.asList(children);
   }
 
   public static void main(String[] args) {
