@@ -209,6 +209,9 @@ public interface Engine /*extends KlabService*/ {
    */
   boolean startAuxiliaryServices(KlabService.Type... types);
 
+  /** Stop the requested locally managed auxiliary services. */
+  boolean stopAuxiliaryServices(KlabService.Type... types);
+
   /**
    * To facilitate implementations, we expose the boot and shutdown as explicitly called phases.
    * Booting the engine should start with authentication. Messages should be sent to listeners after

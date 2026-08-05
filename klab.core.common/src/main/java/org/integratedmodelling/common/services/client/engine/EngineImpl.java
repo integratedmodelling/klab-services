@@ -168,6 +168,22 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
+  public boolean stopAuxiliaryServices(KlabService.Type... types) {
+    if (serviceMonitor == null || types == null) {
+      return false;
+    }
+    for (var type : types) {
+      if (type == KlabService.Type.LANGUAGE_SERVER) {
+        serviceMonitor.stopLanguageServer();
+      } else {
+        throw new UnsupportedOperationException(
+            "Targeted auxiliary shutdown is not supported for " + type);
+      }
+    }
+    return true;
+  }
+
+  @Override
   public Stack.Tag getDistributionTag() {
     return distributionTag;
   }
