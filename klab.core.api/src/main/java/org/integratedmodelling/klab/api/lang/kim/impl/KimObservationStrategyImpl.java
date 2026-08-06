@@ -69,9 +69,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
   }
 
   @Override
-  public void visit(Visitor visitor) {}
-
-  @Override
   public String getUrn() {
     return this.urn;
   }

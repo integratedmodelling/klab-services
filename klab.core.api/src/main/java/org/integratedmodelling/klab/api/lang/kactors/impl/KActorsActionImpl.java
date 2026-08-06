@@ -120,9 +120,6 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
   }
 
   @Override
-  public void visit(Visitor visitor) {}
-
-  @Override
   public void setActionType(
       org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type actionType) {
     this.actionType = actionType;

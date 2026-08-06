@@ -4,6 +4,7 @@ import org.integratedmodelling.common.view.AbstractUIPanelController;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -37,52 +38,22 @@ public class DocumentEditorControllerImpl
     var reasoner = getController().engine().getOwner().getService(Reasoner.class);
 
     List<ResourceSet> changes =
-        switch (getPayload()) {
-          case KimOntology ontology -> {
-            List<ResourceSet> ret = new ArrayList<>();
-            for (var resourceSet :
-                service.updateDocument(
-                    ontology.getProjectName(),
-                    ProjectStorage.ResourceType.ONTOLOGY,
-                    newContents,
-                    getController().user())) {
-              ret.add(resourceSet);
-            }
-            yield ret;
-          }
-          case KimNamespace namespace ->
-              // TODO this can have consequences
-              service.updateDocument(
-                  namespace.getProjectName(),
-                  ProjectStorage.ResourceType.MODEL_NAMESPACE,
-                  newContents,
-                  getController().user());
-          case KimObservationStrategyDocument strategyDocument -> {
-            List<ResourceSet> ret = new ArrayList<>();
-            for (var resourceSet :
-                service.updateDocument(
-                    strategyDocument.getProjectName(),
-                    ProjectStorage.ResourceType.STRATEGY,
-                    newContents,
-                    getController().user())) {
-              ret.add(resourceSet);
-            }
-            yield ret;
-          }
-          case KActorsBehavior behavior ->
-              service.updateDocument(
-                  behavior.getProjectName(),
-                  ProjectStorage.ResourceType.BEHAVIOR,
-                  newContents,
-                  getController().user());
-          default -> Collections.emptyList();
-        };
+        getPayload() instanceof KlabDocumentImpl<?> document
+            ? submitUpdate(service, document, newContents)
+            : Collections.emptyList();
 
     var container = getPayload().root();
 
     for (var change : changes) {
       getController().dispatch(this, UIEvent.WorkspaceModified, change);
     }
+  }
+
+  private List<ResourceSet> submitUpdate(
+      ResourcesService service, KlabDocumentImpl<?> document, String newContents) {
+    document.setSourceCode(newContents);
+    return service.submit(
+        document, ResourcesService.SubmissionMode.UPDATE, getController().user());
   }
 
   @Override

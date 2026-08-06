@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -363,7 +364,14 @@ public enum ResourceTransport {
       // TODO use all services!
       // TODO only search if not searched before or services have changed
       var result =
-          scope.getService(ResourcesService.class).resolveExportSchema(mediaType, geometry, scope);
+          scope instanceof UserScope userScope
+              ? scope
+                  .getService(ResourcesService.class)
+                  .resolve(
+                      "export-schema:" + mediaType,
+                      KlabAsset.KnowledgeClass.INFORMATION,
+                      userScope)
+              : ResourceSet.empty();
       if (!result.isEmpty() && service.loadResources(result, scope)) {
         // do it again
         serviceCapabilities = service.capabilities(scope);

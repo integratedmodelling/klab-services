@@ -56,11 +56,6 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
         this.name = name;
     }
 
-    @Override
-    public void visit(Visitor visitor) {
-
-    }
-
     public boolean isDefaulted() {
         return defaulted;
     }

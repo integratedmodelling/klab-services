@@ -34,29 +34,30 @@ class ResourcesMergerTest {
     var localService = mock(ResourcesService.class);
     var remoteService = mock(ResourcesService.class);
     var failingService = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
     var bothQueriesStarted = new CountDownLatch(2);
 
-    when(localService.resolve(eq("urn"), any(Scope.class)))
+    when(localService.resolve(eq("urn"), eq(KnowledgeClass.MODEL), any(UserScope.class)))
         .thenAnswer(
             invocation -> {
               bothQueriesStarted.countDown();
               assertTrue(bothQueriesStarted.await(2, TimeUnit.SECONDS));
               return result("urn", "local", true, "1.0.0", 1);
             });
-    when(remoteService.resolve(eq("urn"), any(Scope.class)))
+    when(remoteService.resolve(eq("urn"), eq(KnowledgeClass.MODEL), any(UserScope.class)))
         .thenAnswer(
             invocation -> {
               bothQueriesStarted.countDown();
               assertTrue(bothQueriesStarted.await(2, TimeUnit.SECONDS));
               return result("urn", "remote", false, "2.0.0", 2);
             });
-    when(failingService.resolve(eq("urn"), any(Scope.class)))
+    when(failingService.resolve(eq("urn"), eq(KnowledgeClass.MODEL), any(UserScope.class)))
         .thenThrow(new IllegalStateException("temporarily unavailable"));
     doReturn(List.of(localService, remoteService, failingService))
         .when(scope)
         .getServices(ResourcesService.class);
 
-    var merged = new ResourcesMerger(scope).resolve("urn", scope);
+    var merged = new ResourcesMerger(scope).resolve("urn", KnowledgeClass.MODEL, userScope);
 
     assertEquals(1, merged.getResults().size());
     assertEquals("local", merged.getResults().iterator().next().getServiceId());

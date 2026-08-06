@@ -3,12 +3,15 @@ package org.integratedmodelling.cli.views;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Map;
 
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -111,7 +114,9 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     @Override
     public void run() {
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-      var info = service.resourceInfo(urn, KlabCLI.INSTANCE.user());
+      var info =
+          service.info(
+              urn, KnowledgeClass.RESOURCE, ResourceInfo.class, KlabCLI.INSTANCE.user());
       System.out.println(Utils.Json.printAsJson(info));
     }
   }
@@ -259,7 +264,9 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     public void listResources() {
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-      for (var urn : service.listResourceUrns(KlabCLI.INSTANCE.engine().getOwner())) {
+      for (var urn :
+          service.query(
+              Map.of(), KnowledgeClass.RESOURCE, String.class, KlabCLI.INSTANCE.user())) {
         System.out.println("   " + urn);
       }
     }
@@ -359,7 +366,10 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-      for (var project : service.listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
+      for (var project :
+          service.list(
+              org.integratedmodelling.klab.api.knowledge.organization.Project.class,
+              KlabCLI.INSTANCE.user())) {
         out.println("   " + project.getUrn());
         if (verbose) {
 
@@ -503,7 +513,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       @Override
       public void run() {
         var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-        service.deleteProject(project, KlabCLI.INSTANCE.user());
+        service.delete(project, KnowledgeClass.PROJECT, KlabCLI.INSTANCE.user());
       }
     }
   }
@@ -636,7 +646,10 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       @Override
       public void run() {
         var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-        for (var workspace : service.listWorkspaces()) {
+        for (var workspace :
+            service.list(
+                org.integratedmodelling.klab.api.knowledge.organization.Workspace.class,
+                KlabCLI.INSTANCE.user())) {
           System.out.println("   " + workspace.getUrn());
           if (verbose) {
             for (var project : workspace.getProjects()) {
@@ -667,7 +680,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       @Override
       public void run() {
         var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-        service.deleteWorkspace(workspace, KlabCLI.INSTANCE.user());
+        service.delete(workspace, KnowledgeClass.WORKSPACE, KlabCLI.INSTANCE.user());
       }
     }
   }

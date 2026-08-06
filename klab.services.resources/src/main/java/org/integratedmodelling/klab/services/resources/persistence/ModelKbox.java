@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -28,6 +29,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -312,7 +314,9 @@ public class ModelKbox extends ObservableKbox {
     for (long l : oids) {
       ModelReference model = retrieveModel(l, context);
       if (model != null) {
-        Coverage coverage = resourceService.modelGeometry(model.getName());
+        Coverage coverage =
+            resourceService.info(
+                model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
         if (coverage != null && !coverage.checkConstraints(scale)) {
           resourceService
               .serviceScope()
@@ -785,7 +789,12 @@ public class ModelKbox extends ObservableKbox {
   private Collection<ModelReference> getModelDescriptors(KimModel model, Scope monitor) {
 
     List<ModelReference> ret = new ArrayList<>();
-    Scale scale = GeometryRepository.INSTANCE.scale(resourceService.modelGeometry(model.getUrn()));
+    Coverage coverage =
+        monitor instanceof UserScope userScope
+            ? resourceService.info(
+                model.getUrn(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, userScope)
+            : null;
+    Scale scale = coverage == null ? null : GeometryRepository.INSTANCE.scale(coverage);
 
     Shape spaceExtent = null;
     Time timeExtent = null;
@@ -798,8 +807,14 @@ public class ModelKbox extends ObservableKbox {
     boolean isTemporal = false;
     String enumeratedSpaceDomain = null;
     String enumeratedSpaceLocation = null;
-    Project project = resourceService.retrieveProject(model.getProjectName(), scope);
-    KimNamespace namespace = resourceService.retrieveNamespace(model.getNamespace(), scope);
+    Project project =
+        monitor instanceof UserScope userScope
+            ? resourceService.retrieve(model.getProjectName(), Project.class, userScope)
+            : null;
+    KimNamespace namespace =
+        monitor instanceof UserScope userScope
+            ? resourceService.retrieve(model.getNamespace(), KimNamespace.class, userScope)
+            : null;
 
     if (scale != null) {
 

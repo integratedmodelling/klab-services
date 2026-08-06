@@ -106,22 +106,24 @@ public class ComponentIOLibrary {
               properties.get("artifactId", String.class),
               properties.get("version", String.class));
 
-      if (ret != null && ret.getFirst() != null && service instanceof ResourcesService resourcesService) {
+      if (ret != null && ret.getFirst() != null && service instanceof ResourcesService) {
 
         var component = ret.getFirst();
-        // TODO record the rights in the ResourcesKBox
-        var info =
-            resourcesService.registerResource(
-                component.id(),
-                KlabAsset.KnowledgeClass.COMPONENT,
-                component.sourceArchive(),
-                component.usageRights(),
-                scope);
-        var result =
-            ResourceSet.of(
-                info,
-                component.version() != null ? component.version() : Version.ANY_VERSION,
-                service);
+        var result = new ResourceSet();
+        result.setEmpty(false);
+        result
+            .getResults()
+            .add(
+                new ResourceSet.Resource(
+                    service.serviceId(),
+                    component.id(),
+                    null,
+                    component.version() != null
+                        ? component.version()
+                        : Version.ANY_VERSION,
+                    KlabAsset.KnowledgeClass.COMPONENT,
+                    System.currentTimeMillis(),
+                    false));
         result
             .getNotifications()
             .add(
@@ -130,6 +132,11 @@ public class ComponentIOLibrary {
                         + component.id()
                         + " successful with version "
                         + component.version()));
+        result
+            .getNotifications()
+            .add(
+                Notification.warning(
+                    "TO BE IMPLEMENTED: register imported component ownership and privileges through submit"));
         return result;
       }
       if (ret == null) {

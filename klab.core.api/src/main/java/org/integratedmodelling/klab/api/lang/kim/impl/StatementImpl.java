@@ -73,6 +73,4 @@ public class StatementImpl implements Statement {
     this.notifications = notifications;
   }
 
-  @Override
-  public void visit(Visitor visitor) {}
 }

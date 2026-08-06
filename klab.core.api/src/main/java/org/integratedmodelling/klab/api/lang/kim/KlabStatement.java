@@ -61,26 +61,6 @@ public interface KlabStatement extends Statement, KlabAsset {
     T output();
   }
 
-  /** Visitor allows traversing all concept declarations and references. */
-  interface KlabStatementVisitor extends Statement.Visitor {
-
-    //		void visitAuthority(String authority, String term);
-    //
-    //		void visitDeclaration(KimConcept declaration);
-    //
-    //		void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent);
-    //
-    //		void visitNamespace(KimNamespace kimNamespace);
-    //
-    //		void visitModel(KimModel kimNamespace);
-    //
-    ////		void visitObserver(KimInstance kimNamespace);
-    //
-    //		void visitConceptStatement(KimConceptStatement kimNamespace);
-
-    void visitMetadata(Metadata metadata);
-  }
-
   /**
    * Scope is relevant to models and namespaces, where it affects resolution of models.
    *
@@ -145,11 +125,5 @@ public interface KlabStatement extends Statement, KlabAsset {
    * @param <T>
    */
   <T> T format(CodeAppender<T> appender);
-
-  //	/**
-  //	 *
-  //	 * @param visitor
-  //	 */
-  //	void visit(KlabStatementVisitor visitor);
 
 }

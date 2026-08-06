@@ -12,6 +12,12 @@ public interface ServicesAPI {
 
   String API_BASE = "/api/v1";
 
+  /** Retrieve a typed information projection from any k.LAB service. */
+  String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
+
+  /** Query typed information projections from any k.LAB service. */
+  String QUERY = API_BASE + "/query/{knowledgeClass}";
+
   // legacy - hub is same architecture as before
   String HUB_API_BASE = "/api/v2";
 
@@ -448,10 +454,6 @@ public interface ServicesAPI {
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
 
-    String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
-
-    String QUERY = API_BASE + "/query/{knowledgeClass}/{urn}";
-
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
 
@@ -502,7 +504,7 @@ public interface ServicesAPI {
     /** Set/get the access rights for the passed resource URN */
     String RESOURCE_INFO = "/resourceInfo/{urn}";
 
-    String READ_BEHAVIOR = "/readBehavior";
+    String PARSE_ASSET = "/parseAsset";
 
     /** create a new workspace, posting metadata */
     String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";

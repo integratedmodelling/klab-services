@@ -307,6 +307,35 @@ public interface KlabService extends Service {
   ServiceStatus status();
 
   /**
+   * Retrieve a typed information projection for an object known to this service. Implementations
+   * must support their service-specific contract and may additionally expose common projections
+   * such as component, adapter and service descriptors. {@link
+   * org.integratedmodelling.klab.api.collections.DomainObject} is the portable fallback projection.
+   *
+   * @param urn identifier of the object to inspect
+   * @param objectClass classification of the object
+   * @param infoClass requested projection class
+   * @param scope requesting user; null is only valid for public information
+   */
+  <T> T info(
+      String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope);
+
+  /**
+   * Query objects known to this service and return one typed projection for each match. An empty
+   * query selects every visible object in the selected class.
+   *
+   * @param query service- and object-class-specific query parameters
+   * @param objectClass classification of the queried objects
+   * @param infoClass requested projection class
+   * @param scope requesting user; null is only valid for public information
+   */
+  <T> List<T> query(
+      Map<String, Object> query,
+      KlabAsset.KnowledgeClass objectClass,
+      Class<T> infoClass,
+      UserScope scope);
+
+  /**
    * Get the URL to this service. If this is null, the service cannot be used except through direct
    * injection. If it's a local URL, it can only be used locally. All these properties will be
    * reflected in the service scope. Otherwise, this could be a full-fledged service or a client for

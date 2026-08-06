@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -513,7 +514,15 @@ public class ResolutionCompiler {
         new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
 
     var resources = scope.getService(ResourcesService.class);
-    ResourceSet models = resources.resolveModels(observable, scope);
+    ResourceSet models =
+        resources
+            .query(
+                Map.of("observable", observable),
+                KlabAsset.KnowledgeClass.MODEL,
+                ResourceSet.class,
+                scope)
+            .stream()
+            .reduce(ResourceSet.empty(), Utils.Resources::merge);
     // FIXME the notifications from the resourceset must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);

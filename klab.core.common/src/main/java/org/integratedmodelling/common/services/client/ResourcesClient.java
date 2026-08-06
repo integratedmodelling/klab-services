@@ -96,6 +96,11 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
+    // TODO RESOURCES-CRUD Utils.Http.Client currently discards DELETE response bodies. Preserve the
+    // server-side changesets when typed DELETE support is added to the HTTP client.
+    client
+        .withScope(scope)
+        .delete(ServicesAPI.RESOURCES.DELETE, "urn", urn, "knowledgeClass", knowledgeClass);
     return List.of();
   }
 
@@ -132,25 +137,6 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    if (assetClass == KnowledgeClass.INFORMATION) {
-      urn = urn == null ? "info" : urn; // doesn't matter
-      urn = urn + "@" + infoClass.getCanonicalName();
-    }
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.INFO, infoClass, "urn", urn, "knowledgeClass", assetClass);
-  }
-
-  @Override
-  public <T> List<T> query(
-      Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    return client
-        .withScope(scope)
-        .getCollection(ServicesAPI.RESOURCES.QUERY, infoClass, "knowledgeClass", assetClass);
-  }
-
-  @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
 
     // ensure caches are used
@@ -173,163 +159,13 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
-    return List.of();
-  }
-
-  @Override
-  public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public ResourceSet resolveModel(String modelName, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public KimNamespace retrieveNamespace(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_NAMESPACE, KimNamespace.class, "urn", urn);
-  }
-
-  @Override
-  public KimOntology retrieveOntology(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY, KimOntology.class, "urn", urn);
-  }
-
-  @Override
-  public List<ResourceInfo> queryResources(
-      String queryString, Scope scope, KnowledgeClass... resourceTypes) {
     return client
         .withScope(scope)
         .getCollection(
-            ServicesAPI.RESOURCES.QUERY_RESOURCES,
-            ResourceInfo.class,
-            "query",
-            queryString,
-            "resourceTypes",
-            Utils.Strings.join(Arrays.asList(resourceTypes), ","));
-  }
-
-  @Override
-  public KimObservationStrategyDocument retrieveObservationStrategyDocument(
-      String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT,
-            KimObservationStrategyDocument.class,
-            "urn",
-            urn);
-  }
-
-  @Override
-  public Collection<Workspace> listWorkspaces() {
-    return client.getCollection(ServicesAPI.RESOURCES.LIST_WORKSPACES, Workspace.class);
-  }
-
-  @Override
-  public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_BEHAVIOR, KActorsBehavior.class, "urn", urn);
-  }
-
-  @Override
-  public Resource retrieveResource(List<String> urns, Scope scope) {
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, urns, Resource.class);
-  }
-
-  @Override
-  public Workspace retrieveWorkspace(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_WORKSPACE, Workspace.class, "urn", urn);
-  }
-
-  @Override
-  public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_ADAPTER, ResourceSet.class, "urn", urn);
-  }
-
-  @Override
-  public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL,
-            ResourceSet.class,
-            "name",
-            name,
-            "version",
-            (version == null ? null : version.toString()));
-  }
-
-  @Override
-  public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
-            ResourceSet.class,
-            "mediaType",
-            mediaType,
-            "geometry",
-            (geometry == null ? null : geometry.encode()));
-  }
-
-  @Override
-  public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
-            ResourceSet.class,
-            "mediaType",
-            mediaType,
-            "geometry",
-            (geometry == null ? null : geometry.encode()));
-  }
-
-  @Override
-  public ResourceSet resolveResource(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RESOLVE_RESOURCE, urn, ResourceSet.class);
-  }
-
-  @Override
-  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
-    ResolutionRequest request = new ResolutionRequest();
-    request.setObservable(observable);
-    request.setResolutionConstraints(scope.getResolutionConstraints());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      request
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  scope.getContextObservation()));
-    }
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
-  }
-
-  @Override
-  public ResourceSet resolve(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_URN, ResourceSet.class, "urn", urn);
+            ServicesAPI.RESOURCES.LIST,
+            assetClass,
+            "knowledgeClass",
+            KnowledgeClass.classify(assetClass));
   }
 
   @Override
@@ -385,11 +221,6 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
         ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE, KimObservable.class, "definition", definition);
   }
 
-  @Override
-  public KimConcept.Descriptor describeConcept(String conceptUrn) {
-    return null;
-  }
-
   public KimConcept resolveConceptInternal(String definition) {
     return client.get(
         ServicesAPI.RESOURCES.RETRIEVE_CONCEPT, KimConcept.class, "definition", definition);
@@ -418,40 +249,6 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public Worldview retrieveWorldview() {
-    return client.get(ServicesAPI.RESOURCES.RETRIEVE_WORLDVIEW, Worldview.class);
-  }
-
-  @Override
-  public List<String> dependents(String namespaceId) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO,
-            AdapterDescriptor.class,
-            "urn",
-            adapterType);
-  }
-
-  @Override
-  public List<String> precursors(String namespaceId) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
   public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
     return client
         .withScope(scope)
@@ -459,105 +256,17 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public ResourceInfo resourceInfo(String urn, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOURCE_INFO, ResourceInfo.class, "urn", urn);
-  }
-
-  @Override
-  public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RESOURCES.RESOURCE_INFO, info, Boolean.class, "urn", urn);
-  }
-
-  @Override
-  public Project retrieveProject(String projectName, Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_PROJECT, Project.class, "projectName", projectName);
-  }
-
-  @Override
-  public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public KActorsBehavior readBehavior(URL url, UserScope scope) {
+  public <T extends KlabDocument<?>> T parseAsset(
+      URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
     return client
         .withScope(scope)
-        .post(ServicesAPI.RESOURCES.READ_BEHAVIOR, content, KActorsBehavior.class);
-  }
-
-  @Override
-  public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
-    return client
-        .withScope(scope)
         .post(
-            ServicesAPI.RESOURCES.CREATE_WORKSPACE,
-            metadata,
-            Boolean.class,
-            "workspaceName",
-            workspace);
-  }
-
-  @Override
-  public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
-    return client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.CREATE_PROJECT,
-            ResourceSet.class,
-            "workspaceName",
-            workspaceName,
-            "projectName",
-            projectName);
-  }
-
-  @Override
-  public ResourceSet updateProject(
-      String projectName, Project.Manifest manifest, Metadata metadata, UserScope scope) {
-    return null;
-  }
-
-  @Override
-  public List<ResourceSet> createDocument(
-      String projectName,
-      String documentUrn,
-      ProjectStorage.ResourceType documentType,
-      UserScope scope) {
-    return client.getCollection(
-        ServicesAPI.RESOURCES.CREATE_DOCUMENT,
-        ResourceSet.class,
-        "projectName",
-        projectName,
-        "documentType",
-        documentType,
-        "urn",
-        documentUrn);
-  }
-
-  @Override
-  public List<ResourceSet> updateDocument(
-      String projectName,
-      ProjectStorage.ResourceType documentType,
-      String content,
-      UserScope scope) {
-    var ret =
-        client.postCollection(
-            ServicesAPI.RESOURCES.UPDATE_DOCUMENT,
+            ServicesAPI.RESOURCES.PARSE_ASSET,
             content,
-            ResourceSet.class,
-            "projectName",
-            projectName,
-            "documentType",
-            documentType);
-    invalidateCaches();
-    return ret;
+            assetClass,
+            "assetClass",
+            assetClass.getCanonicalName());
   }
 
   @Override
@@ -580,60 +289,8 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public ResourceInfo registerResource(
-      String urn,
-      KnowledgeClass knowledgeClass,
-      File file,
-      ResourcePrivileges rights,
-      Scope submittingScope) {
-    throw new KlabIllegalStateException(
-        "resources service: registerResource() should not be called by clients");
-  }
-
-  @Override
-  public List<ResourceSet> deleteDocument(
-      String projectName,
-      String assetUrn,
-      ProjectStorage.ResourceType documentType,
-      UserScope scope) {
-    return client
-        .withScope(scope)
-        .getCollection(
-            ServicesAPI.RESOURCES.REMOVE_DOCUMENT,
-            ResourceSet.class,
-            "urn",
-            assetUrn,
-            "projectName",
-            projectName,
-            "documentType",
-            documentType.name());
-  }
-
-  @Override
   public CompletableFuture<Resource> publishObservation(
       Observation observation, ContextScope scope) {
-    return null;
-  }
-
-  @Override
-  public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
-    return client
-        .withScope(scope)
-        .getCollection(ServicesAPI.RESOURCES.REMOVE_PROJECT, ResourceSet.class, "urn", projectName);
-  }
-
-  @Override
-  public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
-    return null;
-  }
-
-  @Override
-  public Collection<Project> listProjects(Scope scope) {
-    return client.getCollection(ServicesAPI.RESOURCES.LIST_PROJECTS, Project.class);
-  }
-
-  @Override
-  public Collection<String> listResourceUrns(Scope scope) {
     return null;
   }
 

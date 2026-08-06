@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -690,12 +691,30 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().modelGeometry(modelUrn);
   }
 
-  @PostMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
-  public @ResponseBody KActorsBehavior readBehavior(
-      @RequestBody String input, Principal principal) {
+  @PostMapping(ServicesAPI.RESOURCES.PARSE_ASSET)
+  public @ResponseBody KlabDocument<?> parseAsset(
+      @RequestBody String input,
+      @RequestParam(name = "assetClass") String assetClass,
+      Principal principal) {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
-    return resourcesServer.klabService().getWorkspaceManager().readBehavior(input);
+    return resourcesServer
+        .klabService()
+        .getWorkspaceManager()
+        .parseAsset(input, loadDocumentClass(assetClass));
+  }
+
+  private static Class<? extends KlabDocument<?>> loadDocumentClass(String className) {
+    return switch (className) {
+      case "org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior" -> KActorsBehavior.class;
+      case "org.integratedmodelling.klab.api.lang.kim.KimOntology" -> KimOntology.class;
+      case "org.integratedmodelling.klab.api.lang.kim.KimNamespace" -> KimNamespace.class;
+      case "org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument" ->
+          KimObservationStrategyDocument.class;
+      default ->
+          throw new KlabIllegalArgumentException(
+              "Unsupported standalone document class " + className);
+    };
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RIGHTS)

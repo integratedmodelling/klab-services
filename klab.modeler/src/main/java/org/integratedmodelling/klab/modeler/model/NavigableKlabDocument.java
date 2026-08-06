@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -175,21 +176,9 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     if (statement.getOffsetInDocument() >= offset
         && offset < (statement.getOffsetInDocument() + statement.getLength())) {
       path.add(statement);
-      statement.visit(
-          new Statement.Visitor() {
-
-            boolean stop = false;
-
-            @Override
-            public void visitAnnotation(Annotation annotation, Context context) {}
-
-            @Override
-            public void visitStatement(Statement statement, Context context) {
-              if (!stop) {
-                stop = getStatementAt(offset, statement, path);
-              }
-            }
-          });
+      for (var child : nestedStatements(statement)) {
+        if (getStatementAt(offset, child, path)) break;
+      }
       return true;
     }
 
@@ -200,6 +189,42 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
      */
 
     return false;
+  }
+
+  private List<? extends Statement> nestedStatements(Statement statement) {
+    var ret = new ArrayList<Statement>();
+    switch (statement) {
+      case KimModel model -> {
+        ret.addAll(model.getObservables());
+        ret.addAll(model.getDependencies());
+        ret.addAll(model.getContextualization());
+      }
+      case KimObservable observable -> {
+        if (observable.getSemantics() != null) ret.add(observable.getSemantics());
+      }
+      case KimConcept concept -> {
+        add(ret, concept.getObservable(), concept.getParent(), concept.getInherent(), concept.getGoal());
+        add(ret, concept.getCausant(), concept.getCaused(), concept.getCompresent());
+        add(ret, concept.getCooccurrent(), concept.getAdjacent(), concept.getComparisonConcept());
+        add(ret, concept.getRelationshipSource(), concept.getRelationshipTarget());
+        ret.addAll(concept.getTraits());
+        ret.addAll(concept.getRoles());
+        ret.addAll(concept.getOperands());
+      }
+      case KimConceptStatement concept -> ret.addAll(concept.getChildren());
+      case Contextualizable contextualizable -> {
+        add(ret, contextualizable.getTarget(), contextualizable.getLookupTable(), contextualizable.getCondition());
+      }
+      case KimLookupTable table -> add(ret, table.getTable());
+      default -> {}
+    }
+    return ret;
+  }
+
+  private void add(List<Statement> statements, Statement... additions) {
+    if (additions != null) {
+      for (var statement : additions) if (statement != null) statements.add(statement);
+    }
   }
 
   public NavigableProject project() {

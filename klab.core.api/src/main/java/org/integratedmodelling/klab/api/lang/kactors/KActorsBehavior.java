@@ -70,7 +70,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  *
  * <p>Differently from other {@link KlabDocument}s, k.Actors are not necessarily bound to a project;
  * they are parsed from k.Actor source code using the {@link
- * org.integratedmodelling.klab.api.services.ResourcesService#readBehavior(URL, UserScope)} and
+ * org.integratedmodelling.klab.api.services.ResourcesService#parseAsset(URL, Class, UserScope)} and
  * compiled/executed by a runtime, in the desired scope, by {@link
  * org.integratedmodelling.klab.api.services.RuntimeService#createAgent(KActorsBehavior, String,
  * Collection, UserScope)}. An {@link org.integratedmodelling.klab.api.actors.Agent} object

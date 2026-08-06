@@ -318,19 +318,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  @Override
   public KimNamespace retrieveNamespace(String urn, Scope scope) {
     return this.workspaceManager.getNamespace(urn);
     // TODO check scope for authorization
   }
 
-  @Override
   public KimOntology retrieveOntology(String urn, Scope scope) {
     return this.workspaceManager.getOntology(urn);
     // TODO check scope for authorization
   }
 
-  @Override
   public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
     return this.workspaceManager.getBehavior(urn);
     // TODO check scope for authorization
@@ -342,7 +339,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     // TODO check scope for authorization
   }
 
-  @Override
   public Resource retrieveResource(List<String> urns, Scope scope) {
     if (urns.size() > 1) {
       // TODO find or cache a merged resource for these URNs with validation and shit
@@ -386,13 +382,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public Workspace retrieveWorkspace(String urn, Scope scope) {
     // TODO check permissions in scope, possibly filter the workspace's projects
     return this.workspaceManager.getWorkspace(urn);
   }
 
-  @Override
   public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
     var version = Version.splitVersion(urn);
     var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
@@ -413,13 +407,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
     // TODO
     return null;
   }
 
-  @Override
   public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
     ResourceSet ret = new ResourceSet();
     boolean empty = true;
@@ -449,7 +441,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
 
     ResourceSet ret = new ResourceSet();
@@ -480,7 +471,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceSet resolveResource(String urn, Scope scope) {
     return resolveResourceUrn(urn, scope);
   }
@@ -639,25 +629,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return Data.empty(Notification.error("Encoding failed"));
   }
 
-  @Override
   public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
 
-  @Override
   public List<String> dependents(String namespaceId) {
     return workspaceManager.dependents(namespaceId);
   }
 
-  @Override
   public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
     var adapter = Version.splitVersion(adapterType);
     var ad = getComponentRegistry().getAdapter(adapter.getFirst(), adapter.getSecond(), scope);
     return ad == null ? null : ad.getAdapterInfo();
   }
 
-  @Override
   public List<String> precursors(String namespaceId) {
     return null;
   }
@@ -707,7 +693,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return collectProject(project, CRUDOperation.CREATE, workspaceName, scope);
   }
 
-  @Override
   public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
     /*
      * We just create the descriptor. Project URNs are unique anyway, so the workspace is a purely
@@ -737,7 +722,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  @Override
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
 
     var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
@@ -804,13 +788,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceSet updateProject(
       String projectName, Manifest manifest, Metadata metadata, UserScope scope) {
     return null;
   }
 
-  @Override
   public List<ResourceSet> createDocument(
       String projectName,
       String documentUrn,
@@ -819,7 +801,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return this.workspaceManager.createDocument(projectName, documentType, documentUrn, scope);
   }
 
-  @Override
   public List<ResourceSet> updateDocument(
       String projectName,
       ProjectStorage.ResourceType documentType,
@@ -835,7 +816,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     observables.invalidateAll();
   }
 
-  @Override
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
 
     //    updateLock.writeLock().lock();
@@ -870,23 +850,27 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         ResourceSet.empty(Notification.info("Project " + projectName + " was not deleted")));
   }
 
-  @Override
   public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
     Workspace workspace = workspaceManager.getWorkspace(workspaceName);
+    if (workspace == null) {
+      return List.of(
+          ResourceSet.empty(Notification.info("Workspace " + workspaceName + " was not deleted")));
+    }
+    List<ResourceSet> changes = new ArrayList<>();
     for (Project project : workspace.getProjects()) {
-      deleteProject(project.getUrn(), scope);
+      changes.addAll(deleteProject(project.getUrn(), scope));
     }
     invalidateCaches();
-    //        try {
-    //            updateLock.writeLock().lock();
-    ////            this.localWorkspaces.remove(workspaceName);
-    //        } finally {
-    //            updateLock.writeLock().unlock();
-    //        }\
-    return null;
+    // TODO RESOURCES-CRUD WorkspaceManager needs an atomic removeWorkspace operation that updates
+    // its in-memory index, persisted configuration and ResourceInfo catalog. Until then report the
+    // partial project deletion explicitly instead of claiming the workspace itself was removed.
+    changes.add(
+        ResourceSet.empty(
+            Notification.error(
+                "TO BE IMPLEMENTED: removal of workspace descriptor " + workspaceName)));
+    return changes;
   }
 
-  @Override
   public Collection<Workspace> listWorkspaces() {
     return this.workspaceManager.getWorkspaces();
   }
@@ -946,62 +930,36 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    if (Project.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveProject(urn, scope);
-    } else if (Workspace.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveWorkspace(urn, scope);
-    } else if (Resource.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveResource(List.of(urn), scope);
+    // TODO RESOURCES-CRUD enforce the asset's ResourcePrivileges for every branch.
+    if (Resource.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(retrieveResource(urn, scope));
     } else if (KimObservable.class.isAssignableFrom(assetClass)) {
       return (T) resolveObservableInternal(urn);
     } else if (KimConcept.class.isAssignableFrom(assetClass)) {
       return (T) resolveConceptInternal(urn);
-    } /*else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
-        return (T) retrieveAdapterInfo(urn);
-      }*/ else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveBehavior(urn, scope);
-    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveBehavior(urn, scope);
-    } else if (KimModel.class.isAssignableFrom(assetClass)) {
-      var namespace = retrieveNamespace(Utils.Paths.getLeading(urn, '.'), scope);
-      return namespace == null
-          ? null
-          : (T)
-              namespace.getStatements().stream()
-                  .filter(s -> s instanceof KimModel && s.getUrn().equals(urn))
-                  .map(s -> (KimModel) s)
-                  .findFirst()
-                  .orElse(null);
-    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveNamespace(urn, scope);
-    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveOntology(urn, scope);
-    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
-      return (T) retrieveObservationStrategyDocument(urn, scope);
-    } else if (KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
-      var namespace = retrieveNamespace(Utils.Paths.getLeading(urn, '.'), scope);
-      return namespace == null
-          ? null
-          : (T)
-              namespace.getStatements().stream()
-                  .filter(s -> s instanceof KimSymbolDefinition && s.getUrn().equals(urn))
-                  .map(s -> (KimModel) s)
-                  .findFirst()
-                  .orElse(null);
     } else if (Worldview.class.isAssignableFrom(assetClass)) {
       var ret = retrieveWorldview();
-      if (ret.getUrn().equals(urn)) {
-        return (T) ret;
+      if (ret != null && ret.getUrn().equals(urn)) {
+        return assetClass.cast(ret);
       }
     }
-    // TODO continue
-    throw new KlabIllegalStateException(
-        "Cannot retrieve " + assetClass.getSimpleName() + " " + urn);
+    return workspaceManager.retrieve(urn, assetClass);
   }
 
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
-    return List.of();
+    // TODO RESOURCES-CRUD filter every result using the requesting scope and ResourcePrivileges.
+    if (Resource.class.isAssignableFrom(assetClass)) {
+      return resourcesKbox.listResourcesUrns().stream()
+          .map(urn -> retrieve(urn, assetClass, scope))
+          .filter(Objects::nonNull)
+          .toList();
+    }
+    if (Worldview.class.isAssignableFrom(assetClass)) {
+      var worldview = retrieveWorldview();
+      return worldview == null ? List.of() : List.of(assetClass.cast(worldview));
+    }
+    return workspaceManager.list(assetClass);
   }
 
   @Override
@@ -1028,8 +986,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
   }
 
-  // TODO see logic in the aspecific resolve() and revise API to use this after classification of
-  // the urn
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
 
@@ -1082,15 +1038,55 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             }
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
           }
-          case OBSERVATION_STRATEGY_DOCUMENT -> null;
-          case COMPONENT -> null;
-          case MODEL -> resolveModel(urn, scope);
+          case OBSERVATION_STRATEGY_DOCUMENT -> {
+            var strategies = workspaceManager.getStrategyDocument(urn);
+            if (strategies != null) {
+              desiredResource =
+                  new ResourceSet.Resource(
+                      serviceId(),
+                      strategies.getUrn(),
+                      strategies.getProjectName(),
+                      strategies.getVersion(),
+                      KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT,
+                      strategies.getLastUpdateTimestamp(),
+                      false);
+            }
+            yield desiredResource == null ? null : ResourceSet.of(desiredResource);
+          }
+          case COMPONENT -> resolveResourceAdapter(urn, scope);
+          case MODEL -> resolveModelAsset(urn, scope);
           case RESOURCE -> resolveResourceUrn(urn, scope);
-          case WORKSPACE -> null;
-          case PROJECT -> null;
+          case WORKSPACE -> {
+            var workspace = workspaceManager.getWorkspace(urn);
+            if (workspace == null) {
+              yield null;
+            }
+            var resolved = new ResourceSet();
+            for (var project : workspace.getProjects()) {
+              resolved =
+                  Utils.Resources.merge(
+                      resolved, resolveProjectAsset(project.getUrn(), workspace.getUrn(), scope));
+            }
+            yield resolved;
+          }
+          case PROJECT ->
+              resolveProjectAsset(urn, workspaceManager.getWorkspaceForProject(urn), scope);
           case OBSERVATION_STRATEGY -> null;
           case CONCEPT_STATEMENT -> null;
           case WORLDVIEW -> resolveWorldview(urn, scope);
+          case SERVICE_IMPLEMENTATION -> {
+            var version = Version.splitVersion(urn);
+            yield resolveServiceCall(version.getFirst(), version.getSecond(), scope);
+          }
+          case INFORMATION -> {
+            if (urn.startsWith("export-schema:")) {
+              yield resolveExportSchema(urn.substring("export-schema:".length()), null, scope);
+            }
+            if (urn.startsWith("import-schema:")) {
+              yield resolveImportSchema(urn.substring("import-schema:".length()), null, scope);
+            }
+            yield null;
+          }
           default -> null;
         };
 
@@ -1120,46 +1116,198 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public <T extends KlabAsset> List<ResourceSet> submit(
       T asset, SubmissionMode submissionMode, UserScope scope) {
+    if (asset == null || asset.getUrn() == null || asset.getUrn().isBlank()) {
+      throw new KlabIllegalArgumentException("Submitted assets must have a nonblank URN");
+    }
     switch (asset) {
       case Resource resource:
+        // TODO RESOURCES-CRUD distinguish REPLACE, UPDATE, MERGE and ADD in resource ingestion.
         return List.of(ingestResource(resource, scope));
-      //      case Workspace workspace:
-      //        return List.of(ingestProject(project, scope));
-      //      case Project project:
-      //        return List.of(ingestProject(project, scope));
-      //      case KlabDocument<?> document:
-      //        return List.of(ingestDocument(document, scope));
+      case Workspace workspace:
+        if (workspaceManager.getWorkspace(workspace.getUrn()) != null) {
+          if (submissionMode == SubmissionMode.ADD) {
+            return List.of();
+          }
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "TO BE IMPLEMENTED: updating workspace " + workspace.getUrn())));
+        }
+        return createWorkspace(workspace.getUrn(), workspace.getMetadata(), scope)
+            ? List.of(workspaceChange(workspace.getUrn(), CRUDOperation.CREATE))
+            : List.of(
+                ResourceSet.empty(
+                    Notification.error("Cannot create workspace " + workspace.getUrn())));
+      case Project project:
+        var coordinates = project.getUrn().split("/", 2);
+        if (coordinates.length != 2) {
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "A submitted project URN must be workspace/project: " + project.getUrn())));
+        }
+        var existingProject = workspaceManager.getProject(coordinates[1]);
+        if (existingProject != null) {
+          if (submissionMode == SubmissionMode.ADD) {
+            return List.of();
+          }
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "TO BE IMPLEMENTED: project updates through submit require manifest and history support")));
+        }
+        return List.of(createProject(coordinates[0], coordinates[1], scope));
+      case KlabDocument<?> document:
+        var knowledgeClass = KlabAsset.classify(document);
+        if (submissionMode == SubmissionMode.MERGE) {
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "TO BE IMPLEMENTED: document merge for " + document.getUrn())));
+        }
+        if (document.getProjectName() == null || document.getSourceCode() == null) {
+          throw new KlabIllegalArgumentException(
+              "Submitted documents must provide projectName and sourceCode");
+        }
+        if (document instanceof KActorsBehavior) {
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "TO BE IMPLEMENTED: WorkspaceManager cannot update k.Actors documents yet")));
+        }
+        var existingDocument =
+            retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
+        if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
+          return List.of();
+        }
+        // UPDATE currently replaces the source in file storage. Version history is pending storage
+        // support and is called out explicitly in docs/RESOURCES.md.
+        return updateDocument(
+            document.getProjectName(), knowledgeClass.getResourceType(), document.getSourceCode(), scope);
       default:
-        return List.of(ResourceSet.empty(Notification.error("Cannot submit " + asset)));
+        return List.of(
+            ResourceSet.empty(
+                Notification.error(
+                    "TO BE IMPLEMENTED: submit " + KlabAsset.classify(asset) + " " + asset.getUrn())));
     }
-    //    return List.of();
+  }
+
+  private ResourceSet resolveModelAsset(String urn, Scope scope) {
+    var model = workspaceManager.retrieve(urn, KimModel.class);
+    if (model == null) {
+      return null;
+    }
+    var resolved = resolve(model.getNamespace(), KnowledgeClass.NAMESPACE, (UserScope) scope);
+    var namespace = workspaceManager.getNamespace(model.getNamespace());
+    resolved
+        .getResults()
+        .add(
+            new ResourceSet.Resource(
+                serviceId(),
+                model.getUrn(),
+                model.getProjectName(),
+                namespace == null ? Version.EMPTY_VERSION : namespace.getVersion(),
+                KnowledgeClass.MODEL,
+                namespace == null ? 0L : namespace.getLastUpdateTimestamp(),
+                false));
+    return resolved;
+  }
+
+  private ResourceSet resolveProjectAsset(String urn, String workspace, Scope scope) {
+    var project = workspaceManager.getProject(urn);
+    if (project == null) {
+      return null;
+    }
+    return Utils.Resources.merge(
+        collectProject(project, CRUDOperation.READ, workspace, scope).toArray(ResourceSet[]::new));
+  }
+
+  private ResourceSet workspaceChange(String workspaceUrn, CRUDOperation operation) {
+    var result = new ResourceSet();
+    result.setWorkspace(workspaceUrn);
+    result.setEmpty(false);
+    result
+        .getResults()
+        .add(
+            new ResourceSet.Resource(
+                operation,
+                serviceId(),
+                workspaceUrn,
+                null,
+                Version.EMPTY_VERSION,
+                KnowledgeClass.WORKSPACE,
+                System.currentTimeMillis(),
+                false));
+    return result;
   }
 
   @Override
   public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-
-    if (infoClass.isAssignableFrom(KlabAsset.class)
+    if (isCommonInformationClass(assetClass, infoClass)) {
+      return super.info(urn, assetClass, infoClass, scope);
+    }
+    if (KlabAsset.class.isAssignableFrom(infoClass)
         && KnowledgeClass.classify((Class<? extends KlabAsset>) infoClass) == assetClass) {
       return (T) retrieve(urn, (Class<? extends KlabAsset>) infoClass, scope);
+    } else if (infoClass == String.class) {
+      var asset = retrieve(urn, assetClass.getAssetClass(), scope);
+      return asset == null ? null : (T) asset.getUrn();
+    } else if (infoClass.isAssignableFrom(ResourceInfo.class)) {
+      return (T) resourceInfo(urn, scope);
     } else if (assetClass == KnowledgeClass.INFORMATION) {
-      if (infoClass.isAssignableFrom(LanguageDescriptor.class)) {
+      if (LanguageDescriptor.class.isAssignableFrom(infoClass)) {
         return (T) workspaceManager.getLanguageDescriptor();
-      } else if (infoClass.isAssignableFrom(AdapterDescriptor.class)) {
-        // TODO
-        var adapter = getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
-        if (adapter != null) {
-          return (T) retrieveAdapterInfo(urn, scope);
-        }
-      } // TODO more info objects
+      }
+    } else if (assetClass == KnowledgeClass.MODEL && Coverage.class.isAssignableFrom(infoClass)) {
+      // TODO RESOURCES-CRUD implement model coverage computation in WorkspaceManager/ModelKbox.
+      return null;
     }
     throw new KlabIllegalArgumentException("Cannot retrieve info for " + assetClass + " " + urn);
   }
 
   @Override
   public <T> List<T> query(Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass,
-                           UserScope scope) {
-    // TODO diocan
-    return List.of();
+                            UserScope scope) {
+    var parameters = query == null ? Map.<String, Object>of() : query;
+    if (isCommonInformationClass(assetClass, infoClass)
+        && (assetClass == KnowledgeClass.COMPONENT
+            || assetClass == KnowledgeClass.INFORMATION
+            || assetClass == KnowledgeClass.SERVICE_IMPLEMENTATION)) {
+      return super.query(parameters, assetClass, infoClass, scope);
+    }
+    if (parameters.isEmpty()) {
+      if (KlabAsset.class.isAssignableFrom(infoClass)) {
+        return (List<T>) list((Class<? extends KlabAsset>) infoClass, scope);
+      }
+      return list(assetClass.getAssetClass(), scope).stream()
+          .map(asset -> info(asset.getUrn(), assetClass, infoClass, scope))
+          .filter(Objects::nonNull)
+          .toList();
+    }
+
+    if (assetClass == KnowledgeClass.MODEL
+        && ResourceSet.class.isAssignableFrom(infoClass)
+        && parameters.get("observable") instanceof Observable observable
+        && scope instanceof ContextScope contextScope) {
+      return (List<T>) List.of(resolveModels(observable, contextScope));
+    }
+
+    var unsupported =
+        parameters.keySet().stream().filter(key -> !Set.of("urn", "query").contains(key)).toList();
+    if (!unsupported.isEmpty()) {
+      throw new KlabIllegalArgumentException(
+          "TO BE IMPLEMENTED: query parameters " + unsupported + " for " + assetClass);
+    }
+
+    var pattern = Objects.toString(parameters.getOrDefault("urn", parameters.get("query")), "");
+    if (ResourceInfo.class.isAssignableFrom(infoClass)) {
+      return (List<T>) queryResources(pattern, scope, assetClass);
+    }
+    return list(assetClass.getAssetClass(), scope).stream()
+        .filter(asset -> asset.getUrn().matches(pattern))
+        .map(asset -> info(asset.getUrn(), assetClass, infoClass, scope))
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   @Override
@@ -1167,7 +1315,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workspaceManager.getConfiguration().getServiceId();
   }
 
-  @Override
   public KimConcept.Descriptor describeConcept(String conceptUrn) {
     return workspaceManager.describeConcept(conceptUrn);
   }
@@ -1234,7 +1381,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return definition;
   }
 
-  @Override
   public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
 
     ResourceSet ret = new ResourceSet();
@@ -1387,7 +1533,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceSet resolveModel(String modelName, Scope scope) {
     // TODO Auto-generated method stub
     return null;
@@ -1399,7 +1544,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workspaceManager.manageRepository(projectName, operation, arguments);
   }
 
-  @Override
   public ResourceInfo registerResource(
       String urn,
       KnowledgeClass knowledgeClass,
@@ -1425,7 +1569,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ResourceInfo.offline();
   }
 
-  @Override
   public List<ResourceSet> deleteDocument(
       String projectName,
       String assetUrn,
@@ -1441,7 +1584,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return null;
   }
 
-  @Override
   public ResourceSet resolveModels(Observable observable, ContextScope scope) {
 
     if (!checkSemanticServices(scope)) {
@@ -1543,7 +1685,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  @Override
   public List<ResourceInfo> queryResources(
       String queryPattern, Scope scope, KnowledgeClass... resourceTypes) {
 
@@ -1577,7 +1718,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public ResourceInfo resourceInfo(String urn, Scope scope) {
 
     ResourceInfo ret = resourcesKbox.getStatus(urn, null);
@@ -1593,37 +1733,33 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ret;
   }
 
-  @Override
   public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
     // TODO check access permissions etc
     return resourcesKbox.putStatus(info);
   }
 
-  @Override
   public Project retrieveProject(String projectName, Scope scope) {
     // TODO check scope
     return workspaceManager.getProject(projectName);
   }
 
-  @Override
   public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public KActorsBehavior readBehavior(URL url, UserScope scope) {
+  public <T extends KlabDocument<?>> T parseAsset(
+      URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
-    return workspaceManager.readBehavior(content);
+    return workspaceManager.parseAsset(content, assetClass);
   }
 
-  @Override
   public Collection<Project> listProjects(Scope scope) {
     // FIXME filter by scope access
     return workspaceManager.getProjects();
   }
 
-  @Override
   public Collection<String> listResourceUrns(Scope scope) {
     return resourcesKbox.listResourcesUrns();
   }
@@ -1669,7 +1805,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workspaceManager.unlockProject(urn, token);
   }
 
-  @Override
   public ResourceSet resolve(String urn, Scope scope) {
 
     ResourceSet ret = new ResourceSet();

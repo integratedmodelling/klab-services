@@ -17,31 +17,6 @@ import java.util.List;
 public interface Statement extends Serializable {
 
   /**
-   * Each main type of statement exposes a visit() method that takes a specialized visitor
-   * descending from this tag interface.
-   *
-   * TODO/FIXME this is underdeveloped and should have specialized versions for different languages,
-   *  not necessarily descending from a main interface
-   *
-   * @author Ferd
-   */
-  interface Visitor {
-
-    // TODO
-    interface Context {}
-
-    void visitAnnotation(Annotation annotation, Context context);
-
-    /**
-     * If the statement contains any other statements, visit each one. Order is not guaranteed to be
-     * the one of definition.
-     *
-     * @param statement
-     */
-    void visitStatement(Statement statement, Context context);
-  }
-
-  /**
    * If this comes from a document, return the offset in the source code. Otherwise return -1. The
    * way to access the containing document is not specified in the API and is up to the
    * implementation.
@@ -81,10 +56,4 @@ public interface Statement extends Serializable {
    */
   Collection<Notification> getNotifications();
 
-  /**
-   * To be specialized downstream.
-   *
-   * @param visitor
-   */
-  public void visit(Visitor visitor);
 }

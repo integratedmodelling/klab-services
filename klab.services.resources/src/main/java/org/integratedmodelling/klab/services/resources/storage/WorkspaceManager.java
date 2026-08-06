@@ -8,6 +8,7 @@ import com.google.inject.Injector;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -32,6 +33,8 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -145,6 +148,68 @@ public class WorkspaceManager {
 
   public Project getProject(String projectName) {
     return projects.get(projectName);
+  }
+
+  /**
+   * Retrieve a workspace-managed asset through the generic resources-service contract. Resource
+   * assets are deliberately excluded because they are owned by the resource catalog, not the
+   * workspace indexes.
+   */
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass) {
+    KlabAsset asset = null;
+    if (Workspace.class.isAssignableFrom(assetClass)) {
+      asset = getWorkspace(urn);
+    } else if (Project.class.isAssignableFrom(assetClass)) {
+      asset = getProject(urn);
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      asset = getNamespace(urn);
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      asset = getOntology(urn);
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      asset = getStrategyDocument(urn);
+    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      asset = getBehavior(urn);
+    } else if (KimModel.class.isAssignableFrom(assetClass)
+        || KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
+      var namespace = getNamespace(Utils.Paths.getLeading(urn, '.'));
+      if (namespace != null) {
+        asset =
+            namespace.getStatements().stream()
+                .filter(assetClass::isInstance)
+                .filter(statement -> urn.equals(statement.getUrn()))
+                .findFirst()
+                .orElse(null);
+      }
+    }
+    return asset == null ? null : assetClass.cast(asset);
+  }
+
+  /** Return all workspace-managed assets assignable to the requested API class. */
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass) {
+    Collection<? extends KlabAsset> assets;
+    if (Workspace.class.isAssignableFrom(assetClass)) {
+      assets = getWorkspaces();
+    } else if (Project.class.isAssignableFrom(assetClass)) {
+      assets = getProjects();
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      assets = getNamespaces();
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      assets = getOntologies(false);
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      assets = getStrategyDocuments();
+    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      assets = getBehaviors();
+    } else if (KimModel.class.isAssignableFrom(assetClass)
+        || KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
+      assets =
+          getNamespaces().stream()
+              .flatMap(namespace -> namespace.getStatements().stream())
+              .filter(assetClass::isInstance)
+              .toList();
+    } else {
+      return List.of();
+    }
+    return assets.stream().filter(assetClass::isInstance).map(assetClass::cast).toList();
   }
 
   private <T extends KlabAsset> T updateStatus(T container) {
@@ -2534,10 +2599,12 @@ public class WorkspaceManager {
   }
 
   public KActorsBehavior getBehavior(String urn) {
-    return null; // TODO _ontologyMap.get(urn);
+    getBehaviors();
+    return updateStatus(_behaviorMap.get(urn));
   }
 
   public KimObservationStrategyDocument getStrategyDocument(String urn) {
+    getStrategyDocuments();
     return _observationStrategyDocumentMap.get(urn);
   }
 
@@ -2629,7 +2696,57 @@ public class WorkspaceManager {
     return null;
   }
 
-  public KActorsBehavior readBehavior(String input) {
+  public <T extends KlabDocument<?>> T parseAsset(String input, Class<T> assetClass) {
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+    if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(readBehavior(input));
+    }
+
+    var suffix =
+        KimOntology.class.isAssignableFrom(assetClass)
+            ? ".kwv"
+            : KimNamespace.class.isAssignableFrom(assetClass)
+                ? ".kim"
+                : KimObservationStrategyDocument.class.isAssignableFrom(assetClass)
+                    ? ".obs"
+                    : null;
+    if (suffix == null) {
+      throw new KlabIllegalArgumentException(
+          "Unsupported standalone document class " + assetClass.getCanonicalName());
+    }
+
+    java.nio.file.Path temporaryFile = null;
+    try {
+      temporaryFile = Files.createTempFile("klab-parse-", suffix);
+      Files.writeString(temporaryFile, input, StandardCharsets.UTF_8);
+      var url = temporaryFile.toUri().toURL();
+      KlabDocument<?> parsed =
+          KimOntology.class.isAssignableFrom(assetClass)
+              ? loadOntology(url, "no.project")
+              : KimNamespace.class.isAssignableFrom(assetClass)
+                  ? loadNamespace(url, "no.project")
+                  : loadStrategy(url, "no.project");
+      return parsed == null ? null : assetClass.cast(parsed);
+    } catch (IOException e) {
+      throw new KlabIOException(e);
+    } finally {
+      if (temporaryFile != null) {
+        try {
+          Files.deleteIfExists(temporaryFile);
+        } catch (IOException e) {
+          Logging.INSTANCE.warn("Cannot remove temporary parsed document " + temporaryFile);
+        }
+      }
+    }
+  }
+
+  private KActorsBehavior readBehavior(String input) {
+
+    if (input == null || input.isBlank()) {
+      return null;
+    }
 
     var errors = new AtomicBoolean(false);
     var notams = new ArrayList<Notification>();
@@ -2637,10 +2754,6 @@ public class WorkspaceManager {
     InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     var parsed = behaviorParser.parse(inputStream, notams);
     KActorsBehavior ret = null;
-
-    if (input == null || input.isBlank()) {
-      return null;
-    }
 
     if (!notams.isEmpty()) {
 
