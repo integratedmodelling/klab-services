@@ -42,10 +42,7 @@ public class KimOntologyVisitor extends KimObservableVisitor {
     for (var vocabularyImport : safe(ontology.getVocabularyImports())) {
       if (vocabularyImport != null) {
         reference(
-            vocabularyImport.getFirst(),
-            KlabAsset.KnowledgeClass.RESOURCE,
-            ontology,
-            context);
+            vocabularyImport.getFirst(), KlabAsset.KnowledgeClass.RESOURCE, ontology, context);
       }
     }
     visitConcept(ontology.getDomain(), context);

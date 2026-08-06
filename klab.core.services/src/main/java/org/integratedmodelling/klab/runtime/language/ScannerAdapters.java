@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.runtime.language;
 
+import java.util.List;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-
-import java.util.List;
 
 public class ScannerAdapters {
 
@@ -74,17 +73,17 @@ public class ScannerAdapters {
       return null;
     }
 
-      @Override
-      public long getTimestamp() {
+    @Override
+    public long getTimestamp() {
       return 0;
-      }
+    }
 
-      @Override
-      public String getUrn() {
+    @Override
+    public String getUrn() {
       return "";
-      }
+    }
 
-      @Override
+    @Override
     public long getId() {
       return 0;
     }

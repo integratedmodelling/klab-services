@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -242,7 +241,8 @@ public class KimObservableVisitor {
     if (contextualizable == null || !enter(contextualizable)) {
       return;
     }
-    var contextualizableContext = context.node == contextualizable ? context : child(context, contextualizable);
+    var contextualizableContext =
+        context.node == contextualizable ? context : child(context, contextualizable);
     statements.add(contextualizable);
     addNotifications(validator.validateStatement(contextualizable, contextualizableContext));
     for (var annotation : safe(contextualizable.getAnnotations())) {
@@ -340,10 +340,7 @@ public class KimObservableVisitor {
   protected final void visitConceptStatementContents(
       KimConceptStatement statement, Context context) {
     reference(
-        statement.getUpperConceptDefined(),
-        KlabAsset.KnowledgeClass.CONCEPT,
-        statement,
-        context);
+        statement.getUpperConceptDefined(), KlabAsset.KnowledgeClass.CONCEPT, statement, context);
     visitConcept(statement.getDeclaredParent(), context);
     visitConcept(statement.getDeclaredInherent(), context);
     for (var concept : safe(statement.getQualitiesAffected())) visitConcept(concept, context);
@@ -423,7 +420,8 @@ public class KimObservableVisitor {
   }
 
   protected final void addNotifications(Collection<Notification> diagnostics) {
-    if (diagnostics != null) diagnostics.stream().filter(Objects::nonNull).forEach(notifications::add);
+    if (diagnostics != null)
+      diagnostics.stream().filter(Objects::nonNull).forEach(notifications::add);
   }
 
   protected final void reset() {

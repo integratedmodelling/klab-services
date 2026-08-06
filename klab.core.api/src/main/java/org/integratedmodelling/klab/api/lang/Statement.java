@@ -1,18 +1,16 @@
 package org.integratedmodelling.klab.api.lang;
 
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * All statements in k.LAB-supported languages are serializables. The resource service maintains the
  * catalog of available projects and resources, managing the transfer of pre-parsed projects with
  * their behaviors and namespaces to the semantic and resolver services.
  *
- * @author mario
+ * @author Ferd
  */
 public interface Statement extends Serializable {
 
@@ -55,5 +53,4 @@ public interface Statement extends Serializable {
    * @return
    */
   Collection<Notification> getNotifications();
-
 }

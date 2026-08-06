@@ -40,8 +40,10 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
     var context = beginDocument(namespace);
     addNotifications(namespaceValidator.validateNamespace(namespace, context));
     if (namespace.getImports() != null) {
-      namespace.getImports().keySet().forEach(
-          urn -> reference(urn, KlabAsset.KnowledgeClass.NAMESPACE, namespace, context));
+      namespace
+          .getImports()
+          .keySet()
+          .forEach(urn -> reference(urn, KlabAsset.KnowledgeClass.NAMESPACE, namespace, context));
     }
     for (var statement : safe(namespace.getStatements())) {
       visitStatement(statement, context);
@@ -67,10 +69,7 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
     }
     for (var urn : safe(model.getResourceUrns())) {
       reference(
-          urn == null ? null : urn.toString(),
-          KlabAsset.KnowledgeClass.RESOURCE,
-          model,
-          context);
+          urn == null ? null : urn.toString(), KlabAsset.KnowledgeClass.RESOURCE, model, context);
     }
   }
 

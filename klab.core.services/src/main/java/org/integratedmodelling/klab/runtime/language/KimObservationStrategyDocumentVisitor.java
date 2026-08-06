@@ -13,8 +13,7 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
       return List.of();
     }
 
-    default List<Notification> validateStrategy(
-        KimObservationStrategy strategy, Context context) {
+    default List<Notification> validateStrategy(KimObservationStrategy strategy, Context context) {
       return List.of();
     }
 
@@ -79,6 +78,7 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
     var operationContext = child(context, operation);
     addNotifications(strategyValidator.validateOperation(operation, operationContext));
     visitObservable(operation.getObservable(), operationContext);
-    for (var function : safe(operation.getFunctions())) visitServiceCall(function, operationContext);
+    for (var function : safe(operation.getFunctions()))
+      visitServiceCall(function, operationContext);
   }
 }

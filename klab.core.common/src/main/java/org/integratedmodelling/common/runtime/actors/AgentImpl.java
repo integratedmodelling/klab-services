@@ -242,7 +242,8 @@ public class AgentImpl implements Agent {
       T message, Class<? extends R> responseClass, Duration timeout) {
     if (urn == null || message == null || responseClass == null || messagingChannel == null) {
       return CompletableFuture.failedFuture(
-          new IllegalArgumentException("A connected recipient, request, and response class are required"));
+          new IllegalArgumentException(
+              "A connected recipient, request, and response class are required"));
     }
     RuntimeAgent.CustomMessage request =
         message instanceof RuntimeAgent.CustomMessage custom
@@ -252,22 +253,16 @@ public class AgentImpl implements Agent {
                 : new RuntimeAgent.CustomMessage(Constant.create("message"), message);
     stampSenderName(request);
     return AgentEventBus.INSTANCE.ask(
-        messagingChannel,
-        this,
-        messageSenderUrn(),
-        urn,
-        request,
-        responseClass,
-        timeout,
-        true);
+        messagingChannel, this, messageSenderUrn(), urn, request, responseClass, timeout, true);
   }
 
   /**
-   * Attach this deserialized handle to its AMQP peer. Transport state remains centralized in
-   * {@link AgentEventBus} and is not serialized with the bean.
+   * Attach this deserialized handle to its AMQP peer. Transport state remains centralized in {@link
+   * AgentEventBus} and is not serialized with the bean.
    */
   public boolean connect(MessagingChannel channel) {
-    if (urn == null || !AgentEventBus.INSTANCE.subscribe(urn, this, channel, this::receiveMessage)) {
+    if (urn == null
+        || !AgentEventBus.INSTANCE.subscribe(urn, this, channel, this::receiveMessage)) {
       notifications.add(
           Notification.info(
               "Agent messaging is disabled because its creating scope is not connected"));
@@ -423,8 +418,7 @@ public class AgentImpl implements Agent {
   }
 
   void receiveMessage(Message message) {
-    if (message == null
-        || message.getMessageClass() != Message.MessageClass.AgentCommunication) {
+    if (message == null || message.getMessageClass() != Message.MessageClass.AgentCommunication) {
       return;
     }
     if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
@@ -497,12 +491,9 @@ public class AgentImpl implements Agent {
 
   public String toString() {
     String label =
-        name == null || name.isBlank()
-            ? urn == null || urn.isBlank() ? "agent" : urn
-            : name;
+        name == null || name.isBlank() ? urn == null || urn.isBlank() ? "agent" : urn : name;
     return Character.toString(0x1F464) + " " + label;
   }
-
 
   private void markActivity() {
     this.lastActivityAt = Math.max(this.lastActivityAt, System.currentTimeMillis());
