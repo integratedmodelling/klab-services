@@ -28,7 +28,7 @@ pipeline {
         DOCKER_STACK = "klab"
     }
     stages {
-        stage('Maven Build') {
+        stage('Maven Package') {
             steps {
                 script {
                     currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
