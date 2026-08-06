@@ -48,7 +48,8 @@ public class StackImpl implements Stack {
     var remoteDistributions =
         DistributionImpl.distributions(
             name,
-            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)));
+            Utils.URLs.newURL(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)),
+            false);
     for (var distribution : remoteDistributions) {
       for (var remoteTag : distribution.getTags()) {
         tags.keySet().stream()

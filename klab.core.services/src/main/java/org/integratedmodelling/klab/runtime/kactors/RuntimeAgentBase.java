@@ -2475,9 +2475,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
   }
 
   protected void assertValue(Object actual, Object expected) {
-    boolean success = expected == null ? truthy(actual) : Objects.equals(actual, expected);
+    assertValue(actual, expected, expected != null);
+  }
+
+  private void assertValue(Object actual, Object expected, boolean expectedSupplied) {
+    boolean success = expectedSupplied ? Objects.equals(actual, expected) : truthy(actual);
     if (!success) {
-      throw new AssertionError("k.Actors assertion failed: expected " + expected + ", got " + actual);
+      String expectation = expectedSupplied ? String.valueOf(expected) : "a truthy value";
+      throw new AssertionError(
+          "k.Actors assertion failed: expected " + expectation + ", got " + actual);
     }
   }
 
@@ -2491,7 +2497,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       KActorsStatement.Assert.Assertion assertion,
       AgentScope scope) {
     try {
-      assertValue(actual.get(), expected == null ? null : expected.get());
+      assertValue(actual.get(), expected == null ? null : expected.get(), expected != null);
     } catch (RuntimeException | Error failure) {
       try {
         assertionEvaluated(scope, assertion, false, failure);

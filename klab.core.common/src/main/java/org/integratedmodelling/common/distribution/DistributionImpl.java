@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -121,6 +122,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
   }
 
   static List<DistributionImpl> distributions(String distributionName, URL url) {
+    return distributions(distributionName, url, true);
+  }
+
+  static List<DistributionImpl> distributions(
+      String distributionName, URL url, boolean reportIncompleteCatalog) {
 
     /*
      * Remote first. This may fail
@@ -140,9 +146,30 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                   Utils.URLs.newURL(url + "/" + distributionName + "/" + version));
           if (!distribution.isEmpty()) {
             ret.add(distribution);
+          } else {
+            var invalidProducts =
+                distribution.releases.stream()
+                    .flatMap(release -> release.getBuilds().stream())
+                    .flatMap(build -> build.getInvalidProductReferences().stream())
+                    .distinct()
+                    .toList();
+            if (reportIncompleteCatalog) {
+              Logging.INSTANCE.warn(
+                  "Ignoring incomplete online distribution version "
+                      + version
+                      + " at "
+                      + distributionUrl
+                      + (invalidProducts.isEmpty()
+                          ? ""
+                          : "; unreadable products: " + String.join(", ", invalidProducts)));
+            }
           }
         } catch (RuntimeException e) {
-          // Ignore malformed version entries; other versions in the distribution may still be valid.
+          if (reportIncompleteCatalog) {
+            Logging.INSTANCE.warn(
+                "Ignoring unreadable distribution version " + version + " at " + distributionUrl,
+                e);
+          }
         }
       }
     }

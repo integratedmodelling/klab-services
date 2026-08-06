@@ -523,7 +523,9 @@ generated `runDeclaredTests(rootScope)` passes every local `@test` action, in se
 order, to `TestCaseBase.runTests(...)`. With no `parallel` property (or with `false`), function tests
 complete directly and supplier tests are joined before the next test begins. With the boolean
 property `parallel=true`, the runner launches one virtual thread per test and waits for all finite
-tests; failures are aggregated and propagated only after every launched test has completed.
+tests. Generated action boundaries record exceptions and failed assertions in each test report;
+the runner consumes those ordinary test failures and continues, allowing the finite testcase agent
+to terminate normally after publishing the complete report. Fatal JVM errors still escape.
 Emitter tests start their emitter and keep the testcase alive under the normal emitter lifecycle;
 unresolved dynamic calls retain the same conservative persistent behavior used by ordinary
 generated `main` actions. Test report-tree mutation is serialized while action scopes remain

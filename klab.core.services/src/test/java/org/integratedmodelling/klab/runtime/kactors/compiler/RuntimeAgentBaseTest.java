@@ -111,6 +111,33 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void assertionDistinguishesTruthChecksFromExplicitNullComparisons() {
+    var agent = new AssertionReportingTestAgent();
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+
+    agent.evaluate(() -> true, null, assertion);
+    agent.evaluate(() -> null, () -> null, assertion);
+
+    var falseTruthCheck =
+        assertThrows(AssertionError.class, () -> agent.evaluate(() -> false, null, assertion));
+    assertEquals(
+        "k.Actors assertion failed: expected a truthy value, got false",
+        falseTruthCheck.getMessage());
+
+    var nullMismatch =
+        assertThrows(
+            AssertionError.class, () -> agent.evaluate(() -> false, () -> null, assertion));
+    assertEquals(
+        "k.Actors assertion failed: expected null, got false", nullMismatch.getMessage());
+
+    assertEquals(4, agent.evaluations.size());
+    assertTrue(agent.evaluations.get(0).success());
+    assertTrue(agent.evaluations.get(1).success());
+    assertFalse(agent.evaluations.get(2).success());
+    assertFalse(agent.evaluations.get(3).success());
+  }
+
+  @Test
   void testcaseRunnerIsSequentialByDefaultAndParallelWhenRequested() {
     var sequential = new TestExecutionAgent(false);
     var order = new ArrayList<String>();
@@ -153,6 +180,38 @@ class RuntimeAgentBaseTest {
       completed.add(name);
       return name;
     };
+  }
+
+  @Test
+  void failedTestDoesNotAbortSuiteOrFailFiniteTestcaseAgent() {
+    for (boolean parallel : List.of(false, true)) {
+      var agent = new FailureIsolatingTestAgent(parallel);
+
+      var result = agent.run();
+
+      assertEquals(0, result.getErrorCode());
+      assertEquals("stopped", agent.status());
+      assertEquals(2, agent.executed().size());
+      assertTrue(agent.executed().containsAll(List.of("failing_test", "passing_test")));
+      assertEquals(2, agent.report().get("testsFinished", 0));
+      assertEquals(1, agent.report().get("testsPassed", 0));
+      assertEquals(1, agent.report().get("testsFailed", 0));
+      assertNotNull(agent.report().get("end"));
+
+      var failed =
+          agent.report().getChildren().stream()
+              .filter(test -> "failing_test".equals(test.urn()))
+              .findFirst()
+              .orElseThrow();
+      var passed =
+          agent.report().getChildren().stream()
+              .filter(test -> "passing_test".equals(test.urn()))
+              .findFirst()
+              .orElseThrow();
+      assertFalse(failed.get("outcome", true));
+      assertNotNull(failed.get("stacktrace"));
+      assertTrue(passed.get("outcome", false));
+    }
   }
 
   @Test
@@ -1457,6 +1516,41 @@ class RuntimeAgentBaseTest {
     }
   }
 
+  @Test
+  void failedTestcasePublishesStoppedInsteadOfAgentFailed() {
+    var channel = mock(ConnectedScope.class);
+    var amqp = mock(AMQPChannel.class);
+    when(channel.isConnected()).thenReturn(true);
+    when(channel.getFederation())
+        .thenReturn(new Federation("test-federation", "amqp://test"));
+    when(amqp.isOnline()).thenReturn(true);
+    var runtime = new FailureIsolatingTestAgent(false);
+    var client = new AgentImpl();
+    client.setUrn("agent:failed-testcase");
+    client.setViable(true);
+    var lifecycle = new CopyOnWriteArrayList<Message.MessageType>();
+
+    try (var mocked = mockStatic(AMQPChannel.class)) {
+      mocked
+          .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
+          .thenReturn(amqp);
+      assertTrue(
+          runtime.initializeMessaging("agent:failed-testcase", channel, ignored -> {}));
+      assertTrue(client.connect(channel));
+      client.addMessageListener(message -> lifecycle.add(message.getMessageType()));
+
+      assertTrue(client.start());
+
+      assertTrue(lifecycle.contains(Message.MessageType.AgentStopped));
+      assertFalse(lifecycle.contains(Message.MessageType.AgentFailed));
+      assertFalse(client.isAlive());
+      assertTrue(client.isViable());
+    } finally {
+      client.disconnect();
+      runtime.closeMessaging();
+    }
+  }
+
   private record AssertionEvaluation(
       KActorsStatement.Assert.Assertion assertion, boolean success, Throwable exception) {}
 
@@ -1716,6 +1810,65 @@ class RuntimeAgentBaseTest {
     @Override
     protected ExitValue main(AgentScope rootScope) {
       return NORMAL_EXIT;
+    }
+
+    @Override
+    public Verb.Type getAgentExecutionMode() {
+      return Verb.Type.FUNCTION;
+    }
+  }
+
+  private static class FailureIsolatingTestAgent extends TestCaseBase {
+
+    private final List<String> executed = new CopyOnWriteArrayList<>();
+    private final AtomicInteger actionId = new AtomicInteger();
+
+    private FailureIsolatingTestAgent(boolean parallel) {
+      super(testBehavior(parallel), null);
+    }
+
+    private static KActorsBehaviorImpl testBehavior(boolean parallel) {
+      var behavior = new KActorsBehaviorImpl();
+      behavior.getProperties().put("parallel", parallel);
+      return behavior;
+    }
+
+    @Override
+    protected ExitValue main(AgentScope rootScope) {
+      Object result =
+          runTests(
+              () -> executeTest(rootScope, "failing_test", true),
+              () -> executeTest(rootScope, "passing_test", false));
+      return ExitValue.success(result);
+    }
+
+    private Object executeTest(
+        AgentScope rootScope, String actionName, boolean shouldFail) {
+      var annotation = AnnotationImpl.create("test", "name", actionName);
+      var testScope =
+          (TestCaseScope) rootScope.withId(actionId.incrementAndGet());
+      testScope.beforeAction(actionName, List.of(annotation));
+      Throwable failure = null;
+      try {
+        executed.add(actionName);
+        if (shouldFail) {
+          throw new AssertionError("expected test failure");
+        }
+        return actionName;
+      } catch (RuntimeException | Error error) {
+        failure = error;
+        throw error;
+      } finally {
+        testScope.afterAction(actionName, List.of(annotation), failure);
+      }
+    }
+
+    private List<String> executed() {
+      return List.copyOf(executed);
+    }
+
+    private DomainObject report() {
+      return report;
     }
 
     @Override

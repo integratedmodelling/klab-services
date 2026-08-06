@@ -82,6 +82,7 @@ class StackImplTest {
     var tag = catalog.keySet().iterator().next();
     assertTrue(tag.availableLocally());
     assertFalse(tag.orphan());
+    assertEquals(List.of("null"), catalog.get(tag).findBuild(tag).getInvalidProductReferences());
   }
 
   @Test
@@ -157,6 +158,10 @@ class StackImplTest {
         stack.tags().stream().filter(Stack.Tag::availableLocally).map(Stack.Tag::build).toList();
     assertEquals(List.of(BUILD, oldest), installedBuilds);
     assertFalse(Files.exists(buildRoot(local, middle)));
+    var remoteOnly =
+        stack.resolve(Stack.Tag.of(Version.create(VERSION), RELEASE, middle, false, false));
+    assertEquals(middle, remoteOnly.build());
+    assertFalse(remoteOnly.availableLocally());
   }
 
   @Test
@@ -261,7 +266,7 @@ class StackImplTest {
           Distribution.BUILD_NAME_PROPERTY,
           build,
           Distribution.BUILD_PRODUCTS_PROPERTY,
-          "engine");
+          "null,engine");
       writeProperties(
           productRoot.resolve(Distribution.PRODUCT_PROPERTIES_FILE),
           Distribution.PRODUCT_NAME_PROPERTY,

@@ -55,6 +55,7 @@ public interface Distribution {
 
     private String name;
     private List<Product> products = new ArrayList<>();
+    private List<String> invalidProductReferences = new ArrayList<>();
 
     protected Build(String name, URL url) {
       super(url);
@@ -65,13 +66,21 @@ public interface Distribution {
         return;
       }
       for (var key : commaSeparated(productsProperty)) {
+        if ("null".equalsIgnoreCase(key)) {
+          invalidProductReferences.add(key);
+          continue;
+        }
         var productUrl = url.toString().substring(0, url.toString().lastIndexOf("/")) + "/" + key;
         var product =
             new Product(key, Utils.URLs.newURL(productUrl + "/" + PRODUCT_PROPERTIES_FILE));
-        if (product.isEmpty()) {
-          setEmpty(true);
+        if (!product.isEmpty()) {
+          this.products.add(product);
+        } else {
+          invalidProductReferences.add(key);
         }
-        this.products.add(product);
+      }
+      if (this.products.isEmpty()) {
+        setEmpty(true);
       }
     }
 
@@ -81,6 +90,11 @@ public interface Distribution {
 
     public List<Product> getProducts() {
       return products;
+    }
+
+    /** Product names advertised by the build whose metadata could not be read. */
+    public List<String> getInvalidProductReferences() {
+      return List.copyOf(invalidProductReferences);
     }
 
     public boolean isAvailableLocally() {

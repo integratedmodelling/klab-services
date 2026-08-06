@@ -239,17 +239,23 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
    * Run the generated {@code @test} actions in declaration order, or concurrently when the
    * testcase declares the boolean {@code parallel} property.
    *
-   * <p>Parallel tests use one virtual thread per action. The method waits until every finite test
-   * has completed before returning and only then propagates failures, so one failed test cannot
-   * prevent the remaining parallel tests from running. Emitter tests only start their emitter and
-   * leave testcase termination to the normal agent lifecycle.
+   * <p>Each test action reports its own failure through {@link TestCaseScope}. Ordinary test
+   * failures are therefore isolated at this suite boundary instead of failing the testcase agent.
+   * Every declared test is attempted in both modes. Parallel tests use one virtual thread per
+   * action and the method waits until every finite test has completed. Emitter tests only start
+   * their emitter and leave testcase termination to the normal agent lifecycle.
    */
   @SafeVarargs
   protected final Object runTests(Supplier<Object>... tests) {
     Object result = VOID_VALUE;
     if (!runTestsInParallel()) {
       for (var test : tests) {
-        result = test.get();
+        try {
+          result = test.get();
+        } catch (Throwable failure) {
+          rethrowIfFatal(failure);
+          // The generated action boundary has already recorded this failed test in the report.
+        }
       }
       return result;
     }
@@ -263,29 +269,25 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
           .handle((ignored, failure) -> null)
           .join();
 
-      Throwable failure = null;
       for (var future : futures) {
         try {
           result = future.join();
         } catch (CompletionException exception) {
           var cause = exception.getCause() == null ? exception : exception.getCause();
-          if (failure == null) {
-            failure = cause;
-          } else if (failure != cause) {
-            failure.addSuppressed(cause);
-          }
+          rethrowIfFatal(cause);
+          // All futures have completed and each failed action has already updated the report.
         }
       }
-      if (failure instanceof RuntimeException runtimeException) {
-        throw runtimeException;
-      }
-      if (failure instanceof Error error) {
-        throw error;
-      }
-      if (failure != null) {
-        throw new CompletionException(failure);
-      }
       return result;
+    }
+  }
+
+  private static void rethrowIfFatal(Throwable failure) {
+    if (failure instanceof VirtualMachineError virtualMachineError) {
+      throw virtualMachineError;
+    }
+    if (failure instanceof ThreadDeath threadDeath) {
+      throw threadDeath;
     }
   }
 

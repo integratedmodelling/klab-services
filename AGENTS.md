@@ -839,8 +839,11 @@ action parses_space_dimension:
 ```
 
 An assertion may check that a call or expression succeeds, use `is ok`, or compare its result with
-a value. Several assertions may be comma-separated and may share statement arguments. Assertions
-in non-test behaviors are allowed with a warning and may be omitted from production compilation.
+a value. A bare expression such as `assert [left == right]` is a truth check: it succeeds when the
+evaluated result is truthy and otherwise records a failed assertion. An explicit comparison keeps
+its expected operand distinct, including an explicitly expected `null`. Several assertions may be
+comma-separated and may share statement arguments. Assertions in non-test behaviors are allowed
+with a warning and may be omitted from production compilation.
 
 ### 8.4. Embedded text
 
@@ -966,10 +969,12 @@ inherited and local initialization and the optional `main` action have run, ever
 annotated with `@test` runs automatically in source declaration order. Supplier tests are joined
 before the next test starts. Set `with properties {parallel: true}` in the preamble to launch all
 `@test` actions concurrently on separate virtual threads instead; the testcase waits for every
-finite test before completing and propagates failures only after all launched tests finish. The
-tests deliberately share their agent and its state, while retaining independent action scopes and
-report entries, so this mode can expose races and exercise runtime concurrency. An absent or false
-`parallel` property preserves sequential execution, and a non-boolean value is a validation error.
+finite test before completing. A failed test is recorded in the report but does not abort the
+remaining tests or fail the testcase agent; after every test has been attempted, the finite agent
+terminates normally and publishes the complete report. The tests deliberately share their agent
+and its state, while retaining independent action scopes and report entries, so this mode can expose
+races and exercise runtime concurrency. An absent or false `parallel` property preserves sequential
+execution, and a non-boolean value is a validation error.
 Use testcases for runtime services, semantic
 operations, actors, and application behavior—not only pure functions. Test scopes collect action
 and assertion results for later reporting. The testcase scaffolding collects results and computes statistics that may be preserved after the testcase has completed. It is used to exercise k.LAB complex observation behaviors against their intended results. A suite of testcases will be made available to cover every k.LAB functionalities, to run at each release cycle.
