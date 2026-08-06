@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.distribution;
 
 import org.integratedmodelling.common.configuration.CommonConfiguration;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
@@ -172,9 +173,57 @@ public class StackImpl implements Stack {
         && distribution.synchronize(
             settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class), tag, sync)) {
       refreshTags();
+      if (sync.isSynchronizing()) {
+        removeExpiredLocalDistributions();
+      }
       return true;
     }
     return false;
+  }
+
+  /** Retain the newest binary distribution and the configured number of previous builds. */
+  private void removeExpiredLocalDistributions() {
+    var newest =
+        tags().stream()
+            .filter(candidate -> candidate.version() != Version.HEAD && candidate.availableLocally())
+            .findFirst()
+            .orElse(null);
+    if (newest == null) {
+      return;
+    }
+
+    var configured = settings.get(Setting.NUMBER_OF_DISTRIBUTION_TO_KEEP, Integer.class);
+    var previousToKeep = Math.max(0, configured == null ? 1 : configured);
+    var previous =
+        tags().stream()
+            .filter(candidate -> candidate.version() != Version.HEAD)
+            .filter(Tag::availableLocally)
+            .filter(candidate -> candidate.compareTo(newest) < 0)
+            .toList();
+    var current = persistedCurrentTag();
+    var currentIsPrevious = current != null && previous.stream().anyMatch(current::equals);
+    var remainingSlots = Math.max(0, previousToKeep - (currentIsPrevious ? 1 : 0));
+
+    for (var candidate : previous) {
+      if (candidate.equals(current)) {
+        continue;
+      }
+      if (remainingSlots > 0) {
+        remainingSlots--;
+      } else if (!delete(candidate)) {
+        Logging.INSTANCE.warn("Could not remove expired software distribution " + candidate);
+      }
+    }
+  }
+
+  private Tag persistedCurrentTag() {
+    try {
+      return disambiguateTag(
+          DistributionTagCodec.decode(
+              settings.get(Setting.CURRENT_DISTRIBUTION_TAG, String.class)));
+    } catch (RuntimeException invalidTag) {
+      return null;
+    }
   }
 
   @Override

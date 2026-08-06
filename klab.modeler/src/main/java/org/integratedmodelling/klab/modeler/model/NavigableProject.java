@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.io.File;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -13,12 +18,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableFolder;
-
-import java.io.File;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
 
@@ -108,14 +107,53 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
     final Project project = getDelegate();
 
     ret.addAll(getNamespaces().stream().map(n -> new NavigableKimNamespace(n, this)).toList());
-    ret.addAll(getBehaviors().stream().map(n -> new NavigableKActorsBehavior(n, this)).toList());
 
-    // TODO apps, tests, scripts in their folders
-    if (!delegate.getApps().isEmpty()) {}
+    if (!delegate.getBehaviors().isEmpty()) {
+      ret.add(
+          new NavigableFolderImpl<NavigableDocument>("Behaviors", this) {
+            @Override
+            protected List<NavigableAsset> createChildren() {
+              return project.getBehaviors().stream()
+                  .map(s -> (NavigableAsset) (new NavigableKActorsBehavior(s, this)))
+                  .toList();
+            }
+          });
+    }
 
-    if (!delegate.getTestCases().isEmpty()) {}
+    if (!delegate.getApps().isEmpty()) {
+      ret.add(
+          new NavigableFolderImpl<NavigableDocument>("Applications", this) {
+            @Override
+            protected List<NavigableAsset> createChildren() {
+              return project.getApps().stream()
+                  .map(s -> (NavigableAsset) (new NavigableKActorsBehavior(s, this)))
+                  .toList();
+            }
+          });
+    }
+    if (!delegate.getTestCases().isEmpty()) {
+      ret.add(
+          new NavigableFolderImpl<NavigableDocument>("Test cases", this) {
+            @Override
+            protected List<NavigableAsset> createChildren() {
+              return project.getTestCases().stream()
+                  .map(s -> (NavigableAsset) (new NavigableKActorsBehavior(s, this)))
+                  .toList();
+            }
+          });
+    }
 
-    if (!delegate.getScripts().isEmpty()) {}
+    if (!delegate.getScripts().isEmpty()) {
+      ret.add(
+          new NavigableFolderImpl<NavigableDocument>("Scripts", this) {
+            @Override
+            protected List<NavigableAsset> createChildren() {
+              return project.getScripts().stream()
+                  .map(s -> (NavigableAsset) (new NavigableKActorsBehavior(s, this)))
+                  .toList();
+            }
+          });
+    }
 
     // observation strategies
     if (!delegate.getObservationStrategies().isEmpty()) {
@@ -130,10 +168,6 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
             }
           });
     }
-
-    // TODO local project resources
-
-    // TODO settings if editable
 
     return ret;
   }

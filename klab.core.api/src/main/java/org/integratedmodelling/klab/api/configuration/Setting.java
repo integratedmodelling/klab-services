@@ -70,6 +70,11 @@ public enum Setting {
               + ".klab"
               + File.separator
               + "distribution")),
+  NUMBER_OF_DISTRIBUTION_TO_KEEP(
+      Page.GENERAL,
+      "The number of previous k.LAB distributions to keep on disk when updating to a new one.",
+      Integer.class,
+      1),
   // WARNING: this is used in the graphdb local service without importing the setting. If changed,
   // the graphdb service will need to be updated to use the new setting.
   DATABASE_DIRECTORY(
@@ -131,6 +136,11 @@ public enum Setting {
       "Interval in minutes between automatic software stack update checks. Set to 0 to disable.",
       Integer.class,
       5),
+  CURRENT_DISTRIBUTION_TAG(
+      Page.SERVICES,
+      "Physical identity of the software stack distribution selected by the user",
+      String.class,
+      ""),
   START_LSP_SERVER_ON_STARTUP(
       Page.EDITOR,
       "Automatically start and restart the k.LAB LSP language server if a software stack is available.",

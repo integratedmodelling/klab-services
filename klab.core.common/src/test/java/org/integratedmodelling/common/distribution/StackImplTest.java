@@ -140,6 +140,26 @@ class StackImplTest {
   }
 
   @Test
+  void retainsConfiguredPreviousBuildsWithoutDeletingCurrentSelection() throws Exception {
+    var local = temporaryDirectory.resolve("local");
+    var oldest = "202608031200";
+    var middle = "202608041200";
+    createDistribution(remoteDirectory, true, oldest, middle, BUILD);
+    var current = Stack.Tag.of(Version.create(VERSION), RELEASE, oldest, false, false);
+    var stack =
+        new StackImpl(
+            "klab", settings(local, 1, DistributionTagCodec.encode(current)));
+
+    assertTrue(
+        stack.synchronize(stack.tags().getFirst(), DistributionImpl.actingSynchronizer));
+
+    var installedBuilds =
+        stack.tags().stream().filter(Stack.Tag::availableLocally).map(Stack.Tag::build).toList();
+    assertEquals(List.of(BUILD, oldest), installedBuilds);
+    assertFalse(Files.exists(buildRoot(local, middle)));
+  }
+
+  @Test
   void reportsProcessLivenessInsteadOfRelyingOnLifecycleStatus() {
     var product = mock(Distribution.Product.class);
     when(product.getLocalPath()).thenReturn(temporaryDirectory.toFile());
@@ -187,22 +207,32 @@ class StackImplTest {
   }
 
   private Settings settings(Path local) {
+    return settings(local, 1, "");
+  }
+
+  private Settings settings(Path local, int distributionsToKeep, String currentDistribution) {
     var settings = mock(Settings.class);
     when(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class))
         .thenReturn(remoteUrl);
     when(settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class)).thenReturn(local.toFile());
     when(settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class))
         .thenReturn(false);
+    when(settings.get(Setting.NUMBER_OF_DISTRIBUTION_TO_KEEP, Integer.class))
+        .thenReturn(distributionsToKeep);
+    when(settings.get(Setting.CURRENT_DISTRIBUTION_TAG, String.class))
+        .thenReturn(currentDistribution);
     return settings;
   }
 
   private void createDistribution(Path root, boolean validPayload) throws Exception {
+    createDistribution(root, validPayload, BUILD);
+  }
+
+  private void createDistribution(Path root, boolean validPayload, String... builds)
+      throws Exception {
     var stackRoot = root.resolve("klab");
     var versionRoot = stackRoot.resolve(VERSION);
     var releaseRoot = versionRoot.resolve(RELEASE);
-    var buildRoot = releaseRoot.resolve(BUILD);
-    var productRoot = buildRoot.resolve("engine");
-    Files.createDirectories(productRoot);
 
     writeProperties(
         stackRoot.resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE),
@@ -221,32 +251,41 @@ class StackImplTest {
         Distribution.RELEASE_NAME_PROPERTY,
         RELEASE,
         Distribution.RELEASE_BUILDS_PROPERTY,
-        BUILD);
-    writeProperties(
-        buildRoot.resolve(Distribution.BUILD_PROPERTIES_FILE),
-        Distribution.BUILD_NAME_PROPERTY,
-        BUILD,
-        Distribution.BUILD_PRODUCTS_PROPERTY,
-        "engine");
-    writeProperties(
-        productRoot.resolve(Distribution.PRODUCT_PROPERTIES_FILE),
-        Distribution.PRODUCT_NAME_PROPERTY,
-        "engine",
-        Distribution.PRODUCT_TYPE_PROPERTY,
-        Distribution.Product.Type.CLI.name(),
-        Distribution.PRODUCT_PLATFORM_PROPERTY,
-        Distribution.Product.Platform.JAR.name());
+        String.join(",", builds));
+    for (var build : builds) {
+      var buildRoot = releaseRoot.resolve(build);
+      var productRoot = buildRoot.resolve("engine");
+      Files.createDirectories(productRoot);
+      writeProperties(
+          buildRoot.resolve(Distribution.BUILD_PROPERTIES_FILE),
+          Distribution.BUILD_NAME_PROPERTY,
+          build,
+          Distribution.BUILD_PRODUCTS_PROPERTY,
+          "engine");
+      writeProperties(
+          productRoot.resolve(Distribution.PRODUCT_PROPERTIES_FILE),
+          Distribution.PRODUCT_NAME_PROPERTY,
+          "engine",
+          Distribution.PRODUCT_TYPE_PROPERTY,
+          Distribution.Product.Type.CLI.name(),
+          Distribution.PRODUCT_PLATFORM_PROPERTY,
+          Distribution.Product.Platform.JAR.name());
 
-    var payload = validPayload ? "test-payload".getBytes() : "broken".getBytes();
-    Files.write(productRoot.resolve("payload.jar"), payload);
-    var hash = HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(payload));
-    Files.writeString(
-        productRoot.resolve(Distribution.BUILD_DIGEST_FILE),
-        hash + " payload.jar " + payload.length + System.lineSeparator());
+      var payload = validPayload ? ("test-payload-" + build).getBytes() : "broken".getBytes();
+      Files.write(productRoot.resolve("payload.jar"), payload);
+      var hash = HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(payload));
+      Files.writeString(
+          productRoot.resolve(Distribution.BUILD_DIGEST_FILE),
+          hash + " payload.jar " + payload.length + System.lineSeparator());
+    }
   }
 
   private Path buildRoot(Path root) {
-    return root.resolve("klab").resolve(VERSION).resolve(RELEASE).resolve(BUILD);
+    return buildRoot(root, BUILD);
+  }
+
+  private Path buildRoot(Path root, String build) {
+    return root.resolve("klab").resolve(VERSION).resolve(RELEASE).resolve(build);
   }
 
   private void writeProperties(Path path, String... entries) throws IOException {

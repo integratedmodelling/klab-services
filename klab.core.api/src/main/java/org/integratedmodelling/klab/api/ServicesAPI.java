@@ -417,8 +417,8 @@ public interface ServicesAPI {
     String INSTANTIATE_AGENT = API_BASE + "/instantiate/agent";
 
     /**
-     * CRUD endpoint to control a remote agent. The request is one of the operations
-     * that can be performed on the agent (TBD as an enum)
+     * CRUD endpoint to control a remote agent. The request is one of the operations that can be
+     * performed on the agent (TBD as an enum)
      */
     String AGENT = API_BASE + "/agent/{urn}/{request}";
   }
@@ -449,6 +449,8 @@ public interface ServicesAPI {
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
 
     String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
+
+    String QUERY = API_BASE + "/query/{knowledgeClass}/{urn}";
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";

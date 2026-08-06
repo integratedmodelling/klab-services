@@ -1,5 +1,13 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.*;
@@ -18,19 +26,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
-
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
@@ -100,7 +100,12 @@ public interface ResourcesService extends KlabService {
      * Just add the asset if it's not already present, ignoring the request if the asset URN is
      * already known.
      */
-    ADD
+    ADD,
+    /**
+     * Add the asset if it's not already present, update it otherwise. Must have create and update
+     * permissions.
+     */
+    CREATE_OR_UPDATE
   }
 
   /**
@@ -198,11 +203,12 @@ public interface ResourcesService extends KlabService {
    * Submit an asset for the operations specified in #SubmissionMode.
    *
    * @param asset the asset to submit. Use Project.create(), Workspace.create(), etc. to create new
-   *     empty containers and documents.
+   *     empty containers and documents. Document assets must have their source code set or
+   *     exceptions will be thrown.
    * @param submissionMode
    * @param scope
    * @return resource sets for all workspaces affected by the change.
-   * @param <T>
+   * @param <T> an asset compatible with the submission mode
    */
   <T extends KlabAsset> List<ResourceSet> submit(
       T asset, SubmissionMode submissionMode, UserScope scope);
@@ -222,14 +228,31 @@ public interface ResourcesService extends KlabService {
    *
    * @param urn the urn of the asset. When appropriate and in some instances mandatorily, the urn
    *     can be prefixed with workspaceId and projectId, separated by forward slashes.
-   * @param infoClass
-   * @param scope
-   * @return
-   * @param <T>
+   * @param infoClass the desired class of the returned object
+   * @param scope user scope; can be null only for public assets
+   * @return an object of the given class, or null if no asset matches the URN
+   * @param <T> a {@link org.integratedmodelling.klab.api.collections.DomainObject} should always be
+   *     accepted, returning a sensible schema for documentation; the asset class itself should also
+   *     be accepted; other classes are accepted depending on the asset class.
    */
   <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope);
 
-  // TODO query - like info + query, returning List<T>
+  /**
+   * Query assets using a map to represent query parameters. Contract like {@link #info(String,
+   * KnowledgeClass, Class, UserScope)} but returning a list of results, one per matching asset.
+   *
+   * @param query an empty map should return all assets of the given class. Otherwise the parameters
+   *     will be validated against the class of the object queried.
+   * @param assetClass
+   * @param infoClass the desired class of the returned object
+   * @param scope user scope; can be null only for public assets
+   * @return a list of objects of the given class, one per matching asset.
+   * @param <T> a {@link org.integratedmodelling.klab.api.collections.DomainObject} should always be
+   *     accepted, returning a sensible schema for documentation; the asset class itself should also
+   *     be accepted; other classes are accepted depending on the asset class.
+   */
+  <T> List<T> query(
+      Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope);
 
   ///  FROM HERE ON ALL ENDPOINTS ARE OBSOLETE
 
@@ -414,6 +437,7 @@ public interface ResourcesService extends KlabService {
    * assets.
    *
    * <p>FIXME rename to assetInfo
+   *
    * @deprecated use streamlined API
    * @param urn
    * @param scope
@@ -424,6 +448,7 @@ public interface ResourcesService extends KlabService {
   /**
    * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own
    * resource metadata - i.e. workspaces, projects, components and resources.
+   *
    * @deprecated use streamlined API (update/store)
    * @param urn
    * @param info the new resource status from now on
@@ -509,6 +534,7 @@ public interface ResourcesService extends KlabService {
    * Return all the document URNs that depend directly on the passed namespace. This is used for
    * special purposes as the <code>resolve</code> endpoints in the service return the full closure
    * of any resource needed.
+   *
    * @deprecated use streamlined API (resolve) - we shouldn't need this
    * @param namespaceId the ID of the namespace to find dependents for
    * @return list of URNs that depend on the specified namespace
@@ -530,6 +556,7 @@ public interface ResourcesService extends KlabService {
    * available to the resolver prior to loading any namespace. This is used for special purposes as
    * the <code>resolve</code> endpoints in the service return the full closure of any resource
    * needed.
+   *
    * @deprecated use streamlined API (resolve) - dependency info is in the resourceset
    * @param namespaceId the ID of the namespace to find precursors for
    * @return list of namespaces that are dependencies of the specified namespace

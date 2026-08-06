@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -139,6 +140,14 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .get(ServicesAPI.RESOURCES.INFO, infoClass, "urn", urn, "knowledgeClass", assetClass);
+  }
+
+  @Override
+  public <T> List<T> query(
+      Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
+    return client
+        .withScope(scope)
+        .getCollection(ServicesAPI.RESOURCES.QUERY, infoClass, "knowledgeClass", assetClass);
   }
 
   @Override

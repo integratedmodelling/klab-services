@@ -4,10 +4,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Function;
@@ -256,6 +253,17 @@ public class ResourcesMerger implements ResourcesService {
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     return primary().info(urn, assetClass, infoClass, scope);
+  }
+
+  @Override
+  public <T> List<T> query(
+      Map<String, Object> query,
+      KlabAsset.KnowledgeClass assetClass,
+      Class<T> infoClass,
+      UserScope scope) {
+    // TODO this should merge the results intelligently if they are domain objects; less
+    //  intelligently if not.
+    return List.of();
   }
 
   @Override

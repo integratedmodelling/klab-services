@@ -10,6 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.distribution.DistributionTagCodec;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
@@ -139,6 +140,21 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   public void setDistributionTag(Stack.Tag distributionTag) {
     this.distributionTag = distributionTag;
+    settings.set(Setting.CURRENT_DISTRIBUTION_TAG, DistributionTagCodec.encode(distributionTag));
+  }
+
+  static String serializeDistributionTag(Stack.Tag tag) {
+    return DistributionTagCodec.encode(tag);
+  }
+
+  static Stack.Tag deserializeDistributionTag(String specification) {
+    try {
+      return DistributionTagCodec.decode(specification);
+    } catch (RuntimeException invalidSpecification) {
+      Logging.INSTANCE.warn(
+          "Ignoring invalid persisted software distribution tag: " + specification);
+      return null;
+    }
   }
 
   @Override
@@ -237,21 +253,27 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     this.softwareStack = Stack.of("klab", settings);
 
-    if (settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
-      softwareStack.tags().stream()
-          .filter(tag -> tag.version() == Version.HEAD)
-          .findFirst()
-          .ifPresent(head -> this.distributionTag = head);
-    }
-    if (this.distributionTag.version() != Version.HEAD
-        && getUser().getUser().getGroups().stream()
-            .anyMatch(group -> group.getName().equals("DEVELOPERS"))) {
-      this.distributionTag = Stack.Tag.LATEST_DEVELOP;
+    var restoredTag =
+        softwareStack.resolve(
+            deserializeDistributionTag(
+                settings.get(Setting.CURRENT_DISTRIBUTION_TAG, String.class)));
+    if (restoredTag != null && restoredTag.availableLocally()) {
+      this.distributionTag = restoredTag;
+    } else {
+      if (settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
+        softwareStack.tags().stream()
+            .filter(tag -> tag.version() == Version.HEAD)
+            .findFirst()
+            .ifPresent(head -> this.distributionTag = head);
+      }
+      if (this.distributionTag.version() != Version.HEAD
+          && getUser().getUser().getGroups().stream()
+              .anyMatch(group -> group.getName().equals("DEVELOPERS"))) {
+        this.distributionTag = Stack.Tag.LATEST_DEVELOP;
+      }
     }
 
     ensureRuntimeAuxiliariesForLocalRuntime(null);
-
-    // TODO explore how to best save and restore the chosen tag - we have just established a default
 
     // TODO now check what is available and default to any admissible defaults if present
 
@@ -436,10 +458,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     // The synthetic local federation is part of the user's effective execution identity. Scope
     // creation and agent instrumentation happen after authentication and must not depend on the
     // later UI callback that announces an operational Runtime.
-    authData
-        .getFirst()
-        .getData()
-        .put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
+    authData.getFirst().getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
 
     /* federation must be already established at this point */
     this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this);

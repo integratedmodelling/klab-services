@@ -1156,6 +1156,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
+  public <T> List<T> query(Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass,
+                           UserScope scope) {
+    // TODO diocan
+    return List.of();
+  }
+
+  @Override
   public String serviceId() {
     return workspaceManager.getConfiguration().getServiceId();
   }
