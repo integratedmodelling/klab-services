@@ -36,31 +36,36 @@ pipeline {
                 sh './mvnw clean source:jar package -DskipTests'
             }
         }
-        stage('Maven Install') {
-            steps {
-               script {
-                   jibBuild = 'jib:build -Djib.httpTimeout=180000'
-                   dockerBuild = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
-                   env.JIB = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop' || dockerBuild == 0) ? jibBuild : ''
-               }
-               echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
-               withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                   sh "./mvnw clean source:jar install -DskipTests -U ${env.JIB}"
-               }
-            }
-        }
-        stage('Maven Deploy') {
-            when {
-                anyOf { branch 'develop'; branch 'master' }
-            }
+        stage('Maven Build') {
             steps {
                 script {
-                    try {
-                        configFileProvider([configFile(fileId: '1f5f24a2-9839-4194-b2ad-0613279f9fba', variable: 'MAVEN_SETTINGS_XML')]) {
-                            sh './mvnw --settings $MAVEN_SETTINGS_XML deploy -DskipTests -U'
+                    def jibArgs = 'jib:build -Djib.httpTimeout=180000'
+                    def dockerBuild = sh(
+                        script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
+                    def publishBranch = env.BRANCH_NAME in ['master', 'develop']
+                    def mavenPhase = publishBranch ? 'deploy' : 'install'
+                    env.JIB_ARGS = (publishBranch || dockerBuild == 0) ? jibArgs : ''
+                    env.MAVEN_PHASE = mavenPhase
+                    echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
+                    echo "Running Maven phase: ${env.MAVEN_PHASE}"
+
+                    configFileProvider([
+                        configFile(
+                            fileId: '1f5f24a2-9839-4194-b2ad-0613279f9fba',
+                            variable: 'MAVEN_SETTINGS_XML'
+                        )
+                    ]) {
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: env.REGISTRY_CREDENTIALS,
+                                usernameVariable: 'USERNAME',
+                                passwordVariable: 'PASSWORD'
+                            )
+                        ]) {
+                            sh '''
+                                ./mvnw --settings "$MAVEN_SETTINGS_XML" clean source:jar "$MAVEN_PHASE" -DskipTests -U $JIB_ARGS
+                            '''
                         }
-                    } catch (error) {
-                        echo error.getMessage()
                     }
                 }
             }
