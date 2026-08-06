@@ -28,7 +28,7 @@ pipeline {
         DOCKER_STACK = "klab"
     }
     stages {
-        stage('Build') {
+        stage('Maven Build') {
             steps {
                 script {
                     currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
@@ -36,7 +36,7 @@ pipeline {
                 sh './mvnw clean source:jar package -DskipTests'
             }
         }
-        stage('Install') {
+        stage('Maven Install') {
             steps {
                script {
                    jibBuild = 'jib:build -Djib.httpTimeout=180000'
@@ -47,6 +47,16 @@ pipeline {
                withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                    sh "./mvnw clean source:jar install -DskipTests -U ${env.JIB}"
                }
+            }
+        }
+        stage('Maven Deploy') {
+            when {
+                anyOf { branch 'develop'; branch 'master' }
+            }
+            steps {
+                configFileProvider([configFile(fileId: '1f5f24a2-9839-4194-b2ad-0613279f9fba', variable: 'MAVEN_SETTINGS_XML')]) {
+                    sh './mvnw --settings $MAVEN_SETTINGS_XML deploy -DskipTests'
+                }
             }
         }
         stage('Deploy artifacts') {
