@@ -54,9 +54,6 @@ pipeline {
                 anyOf { branch 'develop'; branch 'master' }
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                   sh "./mvnw deploy -DskipTests"
-                }
                 withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-im-communication', keyFileVariable: 'identity')]) {
                     sh './mvnw --projects klab.core.api javadoc:javadoc'
                     sh 'rsync --archive --progress --delete --rsh="ssh -i ${identity} -o StrictHostKeyChecking=no" klab.core.api/target/reports/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/'
