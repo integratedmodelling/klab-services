@@ -28,20 +28,11 @@ pipeline {
         DOCKER_STACK = "klab"
     }
     stages {
-        stage('Maven Package') {
-            steps {
-                script {
-                    currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
-                }
-                sh './mvnw clean source:jar package -DskipTests'
-            }
-        }
         stage('Maven Build') {
             steps {
                 script {
                     def jibArgs = 'jib:build -Djib.httpTimeout=180000'
-                    def dockerBuild = sh(
-                        script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
+                    def dockerBuild = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
                     def publishBranch = env.BRANCH_NAME in ['master', 'develop']
                     def mavenPhase = publishBranch ? 'deploy' : 'install'
                     env.JIB_ARGS = (publishBranch || dockerBuild == 0) ? jibArgs : ''
