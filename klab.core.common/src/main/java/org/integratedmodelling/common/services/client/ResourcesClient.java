@@ -256,7 +256,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public <T extends KlabDocument<?>> T parseAsset(
+  public <T extends KlabAsset> T parseAsset(
       URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
     return client

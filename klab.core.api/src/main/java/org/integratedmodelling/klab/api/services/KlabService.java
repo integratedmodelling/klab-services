@@ -317,8 +317,7 @@ public interface KlabService extends Service {
    * @param infoClass requested projection class
    * @param scope requesting user; null is only valid for public information
    */
-  <T> T info(
-      String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope);
+  <T> T info(String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope);
 
   /**
    * Query objects known to this service and return one typed projection for each match. An empty
@@ -330,7 +329,7 @@ public interface KlabService extends Service {
    * @param scope requesting user; null is only valid for public information
    */
   <T> List<T> query(
-      Map<String, Object> query,
+      Parameters<String> query,
       KlabAsset.KnowledgeClass objectClass,
       Class<T> infoClass,
       UserScope scope);

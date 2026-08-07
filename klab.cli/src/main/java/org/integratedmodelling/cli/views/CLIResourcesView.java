@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -266,7 +267,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
       for (var urn :
           service.query(
-              Map.of(), KnowledgeClass.RESOURCE, String.class, KlabCLI.INSTANCE.user())) {
+              Parameters.create(), KnowledgeClass.RESOURCE, String.class, KlabCLI.INSTANCE.user())) {
         System.out.println("   " + urn);
       }
     }

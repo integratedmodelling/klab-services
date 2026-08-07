@@ -66,6 +66,8 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import javax.print.DocFlavor;
+
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService}
  * functions but does not create the {@link ServiceScope} it runs within, which is supplied from the
@@ -281,7 +283,7 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public <T> List<T> query(
-      Map<String, Object> query,
+      Parameters<String> query,
       KlabAsset.KnowledgeClass objectClass,
       Class<T> infoClass,
       UserScope scope) {

@@ -272,7 +272,7 @@ public class ResourcesMerger implements ResourcesService {
 
   @Override
   public <T> List<T> query(
-      Map<String, Object> query,
+      Parameters<String> query,
       KlabAsset.KnowledgeClass assetClass,
       Class<T> infoClass,
       UserScope scope) {
@@ -312,8 +312,7 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public <T extends KlabDocument<?>> T parseAsset(
-      URL url, Class<T> assetClass, UserScope scope) {
+  public <T extends KlabAsset> T parseAsset(URL url, Class<T> assetClass, UserScope scope) {
     return primary().parseAsset(url, assetClass, scope);
   }
 

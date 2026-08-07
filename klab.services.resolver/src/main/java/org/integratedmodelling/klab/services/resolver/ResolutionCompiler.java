@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -115,9 +116,7 @@ public class ResolutionCompiler {
             ? GeometryRepository.INSTANCE.scale(resolutionGeometry, scope)
             : suppliedQuery.requestedScale();
     var query =
-        suppliedQuery == null
-            ? query(observation.getObservable(), scale, scope)
-            : suppliedQuery;
+        suppliedQuery == null ? query(observation.getObservable(), scale, scope) : suppliedQuery;
     if (query.hasCoverage() && query.coverage().isComplete()) {
       var ret = parentGraph.createChild(observation, scale);
       ret.addReference(query.reference(), query.coverage());
@@ -420,11 +419,7 @@ public class ResolutionCompiler {
     }
 
     // create the observation in unresolved state, restricted to the uncovered geometry
-    var observation =
-        requireObservation(
-            observable,
-            contextualizedScope.getFirst(),
-            geometry);
+    var observation = requireObservation(observable, contextualizedScope.getFirst(), geometry);
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
@@ -456,8 +451,7 @@ public class ResolutionCompiler {
 
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
         && observable.getSemantics().isCollective())) {
-      return new QueryMatch(
-          null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
+      return new QueryMatch(null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
     }
 
     var result =
@@ -494,9 +488,7 @@ public class ResolutionCompiler {
         Coverage.create(requested, 0.0).merge(covered, LogicalConnector.UNION).getCoverage();
     var missingProportion =
         Coverage.create(requested, 0.0).merge(missing, LogicalConnector.UNION).getCoverage();
-    return Math.abs((1.0 - coveredProportion) - missingProportion) <= 1.0e-6
-        ? missing
-        : requested;
+    return Math.abs((1.0 - coveredProportion) - missingProportion) <= 1.0e-6 ? missing : requested;
   }
 
   /**
@@ -517,7 +509,7 @@ public class ResolutionCompiler {
     ResourceSet models =
         resources
             .query(
-                Map.of("observable", observable),
+                Parameters.create("observable", observable),
                 KlabAsset.KnowledgeClass.MODEL,
                 ResourceSet.class,
                 scope)

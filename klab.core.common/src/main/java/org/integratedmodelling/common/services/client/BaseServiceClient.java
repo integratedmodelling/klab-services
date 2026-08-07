@@ -97,10 +97,7 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public <T> T info(
-      String urn,
-      KlabAsset.KnowledgeClass objectClass,
-      Class<T> infoClass,
-      UserScope scope) {
+      String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
     return client
         .withScope(scope)
         .get(
@@ -116,7 +113,7 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public <T> List<T> query(
-      Map<String, Object> query,
+      Parameters<String> query,
       KlabAsset.KnowledgeClass objectClass,
       Class<T> infoClass,
       UserScope scope) {
@@ -124,7 +121,7 @@ public abstract class BaseServiceClient implements KlabService {
         .withScope(scope)
         .postCollection(
             ServicesAPI.QUERY,
-            query == null ? Map.of() : query,
+            query == null ? Parameters.create() : query,
             infoClass,
             "knowledgeClass",
             objectClass,

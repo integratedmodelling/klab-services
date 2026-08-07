@@ -388,12 +388,12 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       // if nothing was done, we just store the HAS_CHILD relationships that point to observations.
       // TODO/CHECK the logics here may require some attention
-      var trivial = false;
-      synchronized (graph) {
-        trivial =
-            contextualizers.isEmpty()
-                && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
-      }
+//      var trivial = false;
+//      synchronized (graph) {
+//        trivial =
+//            contextualizers.isEmpty()
+//                && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
+//      }
 
       var ret = Transaction.INTERMEDIATE_COMMIT_ID;
 
@@ -410,7 +410,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
           synchronized (graph) {
             for (var asset : graph.vertexSet()) {
-              if (setupForStorage(asset, trivial)) {
+              if (setupForStorage(asset, false)) {
                 kgTransaction.store(asset);
                 // KLAB-DEBUG-GUARD: store() is intentionally not treated as a success signal here;
                 // record any asset that is still unassigned before preserving the existing logic.
@@ -418,7 +418,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                   Logging.INSTANCE.warn(
                       "KLAB-DEBUG-GUARD: asset remains unassigned after KG store: class={} id={} "
                           + "activity={} trivial={}",
-                      asset.getClass().getName(), asset.getId(), activity.getId(), trivial);
+                      asset.getClass().getName(), asset.getId(), activity.getId(), false);
                 }
                 stored.add(asset);
               }
@@ -431,12 +431,11 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
-
-              if (trivial
-                  && !(target instanceof Observation)
-                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
-                continue;
-              }
+//              if (trivial
+//                  && !(target instanceof Observation)
+//                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+//                continue;
+//              }
               var relationshipData = getRelationshipData(edge);
               // KLAB-DEBUG-GUARD: links are intentionally still submitted and advertised; expose
               // unassigned endpoints without changing the existing commit behavior.
@@ -450,7 +449,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                     target.getClass().getName(),
                     edge.relationship,
                     activity.getId(),
-                    trivial);
+                    false);
               }
               kgTransaction.link(source, target, edge.relationship, relationshipData);
               // Only advertise relationships that were actually persisted. In particular, trivial
@@ -468,7 +467,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
           return -1;
         } finally {
-          // dio sanguinaccio
+          // dio sanguisuga
           try {
             kgTransaction.close();
             var commit = new CommitImpl();

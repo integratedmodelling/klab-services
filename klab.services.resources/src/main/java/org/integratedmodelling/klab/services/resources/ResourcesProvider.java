@@ -1175,20 +1175,25 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   Notification.error(
                       "TO BE IMPLEMENTED: WorkspaceManager cannot update k.Actors documents yet")));
         }
-        var existingDocument =
-            retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
+        var existingDocument = retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
         if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
           return List.of();
         }
         // UPDATE currently replaces the source in file storage. Version history is pending storage
         // support and is called out explicitly in docs/RESOURCES.md.
         return updateDocument(
-            document.getProjectName(), knowledgeClass.getResourceType(), document.getSourceCode(), scope);
+            document.getProjectName(),
+            knowledgeClass.getResourceType(),
+            document.getSourceCode(),
+            scope);
       default:
         return List.of(
             ResourceSet.empty(
                 Notification.error(
-                    "TO BE IMPLEMENTED: submit " + KlabAsset.classify(asset) + " " + asset.getUrn())));
+                    "TO BE IMPLEMENTED: submit "
+                        + KlabAsset.classify(asset)
+                        + " "
+                        + asset.getUrn())));
     }
   }
 
@@ -1266,16 +1271,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public <T> List<T> query(Map<String, Object> query, KnowledgeClass assetClass, Class<T> infoClass,
-                            UserScope scope) {
-    var parameters = query == null ? Map.<String, Object>of() : query;
+  public <T> List<T> query(
+      Parameters<String> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
             || assetClass == KnowledgeClass.INFORMATION
             || assetClass == KnowledgeClass.SERVICE_IMPLEMENTATION)) {
-      return super.query(parameters, assetClass, infoClass, scope);
+      return super.query(query == null ? Parameters.create() : query, assetClass, infoClass, scope);
     }
-    if (parameters.isEmpty()) {
+    if (query.isEmpty()) {
       if (KlabAsset.class.isAssignableFrom(infoClass)) {
         return (List<T>) list((Class<? extends KlabAsset>) infoClass, scope);
       }
@@ -1287,19 +1291,20 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     if (assetClass == KnowledgeClass.MODEL
         && ResourceSet.class.isAssignableFrom(infoClass)
-        && parameters.get("observable") instanceof Observable observable
+        && query.get("observable", Observable.class) != null
         && scope instanceof ContextScope contextScope) {
-      return (List<T>) List.of(resolveModels(observable, contextScope));
+      return (List<T>)
+          List.of(resolveModels(query.get("observable", Observable.class), contextScope));
     }
 
     var unsupported =
-        parameters.keySet().stream().filter(key -> !Set.of("urn", "query").contains(key)).toList();
+        query.keySet().stream().filter(key -> !Set.of("urn", "query").contains(key)).toList();
     if (!unsupported.isEmpty()) {
       throw new KlabIllegalArgumentException(
           "TO BE IMPLEMENTED: query parameters " + unsupported + " for " + assetClass);
     }
 
-    var pattern = Objects.toString(parameters.getOrDefault("urn", parameters.get("query")), "");
+    var pattern = Objects.toString(query.getOrDefault("urn", query.get("query")), "");
     if (ResourceInfo.class.isAssignableFrom(infoClass)) {
       return (List<T>) queryResources(pattern, scope, assetClass);
     }
@@ -1749,8 +1754,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public <T extends KlabDocument<?>> T parseAsset(
-      URL url, Class<T> assetClass, UserScope scope) {
+  public <T extends KlabAsset> T parseAsset(URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
     return workspaceManager.parseAsset(content, assetClass);
   }

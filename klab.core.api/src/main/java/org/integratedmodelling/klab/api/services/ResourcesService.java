@@ -38,41 +38,32 @@ import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescri
  * with all their contents (namespaces with {@link KimConceptStatement}, {@link KimModel} and other
  * definitions, {@link KActorsBehavior} behaviors, and local {@link Resource}s), plus any published,
  * independently managed {@link Resource}s, and any component plug-ins, managed directly as
- * jar/zips. All assets are versioned and history is maintained. Permissions and review-driven
- * ranking are enabled for all primary assets, i.e. projects, components and published resources.
- * Assets that come as content of projects get their permissions and ranks from the project they are
- * part of.
+ * jar/zips. All assets are versioned and history is maintained. Projects are always assigned to
+ * {@link Workspace}s, which constitute the root-level assets along with {@link Resource}s and
+ * components.
  *
- * <p>The resource manager holds all language parsers and can also turn a behavior specification in
- * k.Actors located at a given URL into its correspondent serialized, executable {@link
- * KActorsBehavior}. This should normally only happen for scripts, applications and user behaviors,
- * which can exist independent of projects.
+ * <p>Permissions and review-driven rankings are enabled for projects, components and published
+ * resources. Assets that come as content of projects get their permissions and ranks from the
+ * project they are part of.
  *
- * <p>If a community service is available in the service scope, the resource manager initiates, and
- * reacts to, events that create the review history of an asset. Primary assets (projects,
- * components and published resources) are subject to review and the resulting rank and history is
- * held by the resources service.
+ * <p>The resource manager holds all language parsers and through the {@link #parseAsset(URL, Class,
+ * UserScope)} endpoint it can turn a specification in any supported k.LAB language into its
+ * corresponding semantic beans, adding lexically annotated notifications, independent of their
+ * management.
  *
  * <p>Endpoints are part of three main families:
  *
  * <dl>
- *   <dt>get..()
- *   <dd>endpoints retrieve URN-named assets in their serialized form. The <code>get</code> prefix
- *       is omitted in this implementation.
- *   <dt>resolve..()
- *   <dd>endpoints retrieve {@link ResourceSet}s that contain all the information needed to
+ *   <dt>resolve
+ *   <dd>retrieves lightweight {@link ResourceSet}s that contain all the information needed to
  *       operationalize the asset requested at the requesting end, including any dependent assets
- *       and their sources. For example, retrieval of a {@link KimModel} is used in the {@link
- *       Resolver} to build a {@link Model} with all its dependencies satisfied.
- *   <dt>{list|add|remove|update}..()
- *   <dd>endpoints manage inquiry and CRUD operations
+ *       and their sources. Can be merged with results from other services to obtain the best
+ *       resolution strategy.
+ *   <dt>{retrieve|submit|delete|list}..()
+ *   <dd>inquiry and CRUD operations
+ *   <dt>other endpoints()
+ *   <dd>language parsing and validation, management, publishing, review, permission handling
  * </dl>
- *
- * <p>In addition, the resource manager exposes querying methods, either based on semantics and
- * context ({@link #resolveModels(Observable, ContextScope)}) or on textual search ({@link
- * #queryResources(String, Scope, KnowledgeClass...)}). The semantic query model uses the connected
- * reasoner and will only return a ResourceSet listing {@link KimModel}s and their requirements,
- * leaving ranking and prioritization to the caller.
  *
  * @author Ferd
  */
@@ -119,7 +110,7 @@ public interface ResourcesService extends KlabService {
 
     /**
      * If true, the service is connected to an operational reasoner and can support semantically
-     * aware calls such as {@link #resolveModels(Observable, ContextScope)}.
+     * aware calls.
      *
      * @return true if semantic search is supported, false otherwise
      */
@@ -287,11 +278,13 @@ public interface ResourcesService extends KlabService {
   Future<ResourceSet> importResource(Resource resource, UserScope scope);
 
   /**
-   * Parse a standalone language document without adding it to a managed workspace. The supported
-   * document classes are {@link KActorsBehavior}, {@link KimOntology}, {@link KimNamespace}, and
-   * {@link KimObservationStrategyDocument}.
+   * Parse a standalone language asset into k.LAB semantic beans without mutating any managed
+   * workspace. The currently supported document classes are {@link KActorsBehavior}, {@link
+   * KimOntology}, {@link KimNamespace}, and {@link KimObservationStrategyDocument}. It also needs
+   * to support a service call so that we can reconstruct contextualizers dynamically, and k.IM
+   * models for inline definition.
    */
-  <T extends KlabDocument<?>> T parseAsset(URL url, Class<T> assetClass, UserScope scope);
+  <T extends KlabAsset> T parseAsset(URL url, Class<T> assetClass, UserScope scope);
 
   /**
    * Apply the passed operation to the remote repository associated with a project and return

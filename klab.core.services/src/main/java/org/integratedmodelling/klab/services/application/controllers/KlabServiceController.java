@@ -49,12 +49,12 @@ public class KlabServiceController {
 
   @Autowired private HealthEndpoint healthEndpoint;
 
-
   @GetMapping(ServicesAPI.HEALTH)
   public HealthComponent getHealth() {
     // Returns the aggregated Health object with all components
     return healthEndpoint.health();
   }
+
   /**
    * Retrieve the capabilities of the service. These have a common part (specified by the {@link
    * org.integratedmodelling.klab.api.services.KlabService.ServiceCapabilities} API) and
@@ -101,7 +101,7 @@ public class KlabServiceController {
   public <T> List<T> query(
       @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
       @RequestParam(name = "infoClass") String infoClass,
-      @RequestBody Map<String, Object> query,
+      @RequestBody Parameters<String> query,
       Principal principal) {
     if (principal instanceof EngineAuthorization authorization
         && authorization.getScope() instanceof UserScope userScope) {
