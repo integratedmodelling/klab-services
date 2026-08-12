@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -629,14 +630,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return Data.empty(Notification.error("Encoding failed"));
   }
 
-  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+  //  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
+  //    // TODO Auto-generated method stub
+  //    return null;
+  //  }
 
-  public List<String> dependents(String namespaceId) {
-    return workspaceManager.dependents(namespaceId);
-  }
+  //  public List<String> dependents(String namespaceId) {
+  //    return workspaceManager.dependents(namespaceId);
+  //  }
 
   public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
     var adapter = Version.splitVersion(adapterType);
@@ -644,9 +645,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ad == null ? null : ad.getAdapterInfo();
   }
 
-  public List<String> precursors(String namespaceId) {
-    return null;
-  }
+  //  public List<String> precursors(String namespaceId) {
+  //    return null;
+  //  }
 
   /**
    * TODO improve logics: the main function should return the appropriate ProjectStorage for the URL
@@ -1292,9 +1293,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (assetClass == KnowledgeClass.MODEL
         && ResourceSet.class.isAssignableFrom(infoClass)
         && query.get("observable", Observable.class) != null
+        && query.get("geometry", Geometry.class) != null
         && scope instanceof ContextScope contextScope) {
       return (List<T>)
-          List.of(resolveModels(query.get("observable", Observable.class), contextScope));
+          List.of(
+              resolveModels(
+                  query.get("observable", Observable.class),
+                  query.get("geometry", Geometry.class),
+                  query.get("contextObservable", Concept.class),
+                  query.getList("resolutionConstraints", ResolutionConstraint.class),
+                  contextScope));
     }
 
     var unsupported =
@@ -1589,15 +1597,20 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return null;
   }
 
-  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
+  public ResourceSet resolveModels(
+      Observable observable,
+      Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope scope) {
 
     if (!checkSemanticServices(scope)) {
       return ResourceSet.empty(Notification.warning("Semantic search is not available"));
     }
 
     ResourceSet results = new ResourceSet();
-    // FIXME use the observation's scale (pass the observation)
-    for (ModelReference model : this.kbox.query(observable, scope)) {
+    for (ModelReference model :
+        this.kbox.query(observable, geometry, contextObservable, resolutionConstraints, scope)) {
       results
           .getResults()
           .add(

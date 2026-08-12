@@ -1806,7 +1806,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Collection<Concept> traits = directTraits(c);
     Collection<Concept> roles = directRoles(c);
-    if (traits.size() == 0 && roles.size() == 0 && derived(c)) {
+    if (traits.isEmpty() && roles.isEmpty() && derived(c)) {
       return c.asConcept();
     }
 

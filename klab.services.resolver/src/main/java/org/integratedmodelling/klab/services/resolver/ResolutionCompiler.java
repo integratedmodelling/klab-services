@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -232,10 +231,19 @@ public class ResolutionCompiler {
           List<ResolutionGraph> modelGraphs = new ArrayList<>();
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
+          var contextObservable =
+              contextualizedScope.getFirst().getContextObservation() == null
+                  ? null
+                  : contextualizedScope
+                      .getFirst()
+                      .getContextObservation()
+                      .getObservable()
+                      .getSemantics();
 
           for (Model model :
               queryModels(
                   operation.getObservable(),
+                  contextObservable,
                   contextualizedScope.getFirst(),
                   contextualizedScope.getSecond())) {
 
@@ -500,7 +508,8 @@ public class ResolutionCompiler {
    * @param scope
    * @return
    */
-  public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
+  public List<Model> queryModels(
+      Observable observable, Concept contextObservable, ContextScope scope, Scale scale) {
 
     var prioritizer =
         new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
@@ -509,13 +518,21 @@ public class ResolutionCompiler {
     ResourceSet models =
         resources
             .query(
-                Parameters.create("observable", observable),
+                Parameters.create(
+                    "observable",
+                    observable,
+                    "geometry",
+                    GeometryRepository.INSTANCE.geometry(scale),
+                    "contextObservable",
+                    contextObservable,
+                    "resolutionConstraints",
+                    scope.getResolutionConstraints()),
                 KlabAsset.KnowledgeClass.MODEL,
                 ResourceSet.class,
                 scope)
             .stream()
             .reduce(ResourceSet.empty(), Utils.Resources::merge);
-    // FIXME the notifications from the resourceset must end up in the resolution output
+    // FIXME the notifications from the resource set must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);
     return ret;

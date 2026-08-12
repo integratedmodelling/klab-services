@@ -3,12 +3,8 @@ package org.integratedmodelling.common.services.client;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import java.io.File;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -20,33 +16,19 @@ import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
-import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
-import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 
@@ -217,13 +199,21 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   // TODO CACHE
   public KimObservable resolveObservableInternal(String definition) {
-    return client.get(
-        ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE, KimObservable.class, "definition", definition);
+    return client.post(
+        ServicesAPI.RESOURCES.PARSE_ASSET,
+        definition,
+        KimObservable.class,
+        "assetClass",
+        KlabAsset.KnowledgeClass.OBSERVABLE);
   }
 
   public KimConcept resolveConceptInternal(String definition) {
-    return client.get(
-        ServicesAPI.RESOURCES.RETRIEVE_CONCEPT, KimConcept.class, "definition", definition);
+    return client.post(
+        ServicesAPI.RESOURCES.PARSE_ASSET,
+        definition,
+        KimConcept.class,
+        "assetClass",
+        KnowledgeClass.CONCEPT);
   }
 
   @Override
@@ -252,12 +242,19 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
     return client
         .withScope(scope)
-        .postAsync(ServicesAPI.RESOURCES.IMPORT_RESOURCE, resource, ResourceSet.class);
+        // FIXME this one is used both in synchronous and asynchronous calls
+        .postAsync(
+            ServicesAPI.RESOURCES.SUBMIT,
+            resource,
+            ResourceSet.class,
+            "knowledgeClass",
+            KnowledgeClass.RESOURCE,
+            "submissionMode",
+            SubmissionMode.CREATE_OR_UPDATE);
   }
 
   @Override
-  public <T extends KlabAsset> T parseAsset(
-      URL url, Class<T> assetClass, UserScope scope) {
+  public <T extends KlabAsset> T parseAsset(URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
     return client
         .withScope(scope)
@@ -266,7 +263,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             content,
             assetClass,
             "assetClass",
-            assetClass.getCanonicalName());
+            KlabAsset.KnowledgeClass.classify(assetClass));
   }
 
   @Override

@@ -224,12 +224,16 @@ public interface ResourcesService extends KlabService {
   Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope);
 
   /**
+   * Provided as a shortcut for parseAsset
+   *
    * @param definition the observable definition string to parse
    * @return the parsed KimObservable object, or null if definition is invalid
    */
   KimObservable declareObservable(String definition);
 
   /**
+   * Provided as a shortcut for parseAsset
+   *
    * @param definition the concept definition string to parse
    * @return the parsed KimConcept object, or null if definition is invalid
    */
@@ -307,6 +311,7 @@ public interface ResourcesService extends KlabService {
    * Publish an observation from the passed context scope into a persistent resource. The resource
    * will be published at tier 0 with rights restricted to the published.
    *
+   * @deprecated use SUBMIT
    * @param observation
    * @param scope
    * @return a future for the completed resource

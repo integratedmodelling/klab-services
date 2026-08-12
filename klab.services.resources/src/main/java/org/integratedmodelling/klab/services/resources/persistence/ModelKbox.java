@@ -12,8 +12,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -240,7 +240,12 @@ public class ModelKbox extends ObservableKbox {
    * @param scope
    * @return models resulting from query, best first.
    */
-  public Collection<ModelReference> query(Observable observable, ContextScope scope) {
+  public Collection<ModelReference> query(
+      Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope scope) {
 
     initialize(scope);
 
@@ -250,7 +255,8 @@ public class ModelKbox extends ObservableKbox {
      */
     if (database.hasTable("model")) {
       try {
-        for (ModelReference md : queryModels(observable, scope)) {
+        for (ModelReference md :
+            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope)) {
           if (md.getPermissions().checkAuthorization(scope)) {
             local.add(md);
           }
@@ -268,10 +274,17 @@ public class ModelKbox extends ObservableKbox {
    * Find and deserialize all modeldata matching the parameters. Do not rank or anything.
    *
    * @param observable
-   * @param context
+   * @param geometry
+   * @param contextObservable
+   * @param resolutionConstraints
    * @return all unranked model descriptors matching the query
    */
-  public List<ModelReference> queryModels(Observable observable, ContextScope context) {
+  public List<ModelReference> queryModels(
+      Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope context) {
 
     List<ModelReference> ret = new ArrayList<>();
 
@@ -279,24 +292,24 @@ public class ModelKbox extends ObservableKbox {
       return ret;
     }
 
-    var geometry = ContextScope.getResolutionGeometry(context);
+    //    var geometry = ContextScope.getResolutionGeometry(context);
     if (geometry == null || geometry.isEmpty()) {
       return ret;
     }
 
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     String query = "SELECT model.oid FROM model WHERE ";
-    Concept contextObservable =
-        context.getContextObservation() == null
-            ? null
-            : context.getContextObservation().getObservable().getSemantics();
+    //    Concept contextObservable =
+    //        context.getContextObservation() == null
+    //            ? null
+    //            : context.getContextObservation().getObservable().getSemantics();
 
     String typeQuery = observableQuery(observable, contextObservable);
     if (typeQuery == null) {
       return ret;
     }
 
-    query += "(" + scopeQuery(context, observable) + ")";
+    query += "(" + scopeQuery(resolutionConstraints, observable) + ")";
     query += " AND (" + typeQuery + ")";
     if (scale.getSpace() != null) {
       String sq = spaceQuery(scale.getSpace());
@@ -340,7 +353,7 @@ public class ModelKbox extends ObservableKbox {
                 + " of "
                 + observable
                 + " found "
-                + (ret.size() == 1 ? ret.get(0).getName() : (ret.size() + " models")));
+                + (ret.size() == 1 ? ret.getFirst().getName() : (ret.size() + " models")));
 
     return ret;
   }
@@ -387,32 +400,60 @@ public class ModelKbox extends ObservableKbox {
     return "typeid IN (" + ret + ")";
   }
 
+  public <T> T getConstraint(
+      List<ResolutionConstraint> resolutionConstraints,
+      ResolutionConstraint.Type type,
+      Class<T> resultClass) {
+    var constraint = resolutionConstraints.stream().filter(c -> c.getType() == type).findFirst();
+    if (constraint.isEmpty()) {
+      return null;
+    }
+    return (T) constraint.get().payload(resultClass).getFirst();
+  }
+
+  public <T> List<T> getConstraints(
+      List<ResolutionConstraint> resolutionConstraints,
+      ResolutionConstraint.Type type,
+      Class<T> resultClass) {
+    var constraint = resolutionConstraints.stream().filter(c -> c.getType() == type).findFirst();
+    if (constraint.isEmpty()) {
+      return List.of();
+    }
+    return constraint.get().payload(resultClass);
+  }
+
   /*
    * select models that are [instantiators if required] AND:] [private and in the home namespace
    * if not dummy OR] [project private and in the home project if not dummy OR] (non-private and
    * non-scenario) OR (in any of the scenarios in the context).
    */
-  private String scopeQuery(ContextScope context, Observable observable) {
+  private String scopeQuery(
+      List<ResolutionConstraint> resolutionConstraints, Observable observable) {
 
     String ret = "";
     String projectId = null;
     String namespaceId =
-        context.getConstraint(ResolutionConstraint.Type.ResolutionNamespace, DUMMY_NAMESPACE_ID);
-    if (!namespaceId.equals(DUMMY_NAMESPACE_ID)) {
+        getConstraint(
+            resolutionConstraints, ResolutionConstraint.Type.ResolutionNamespace, String.class);
+    if (namespaceId != null) {
       ret += "(model.namespaceid = '" + namespaceId + "')";
-      projectId = context.getConstraint(ResolutionConstraint.Type.ResolutionProject, String.class);
+      projectId =
+          getConstraint(
+              resolutionConstraints, ResolutionConstraint.Type.ResolutionProject, String.class);
     }
 
     ret +=
         (ret.isEmpty() ? "" : " OR ")
             + "((NOT model.scope = 'PRIVATE') AND (NOT model.inscenario))";
 
-    if (!context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class).isEmpty()) {
+    if (!getConstraints(resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class)
+        .isEmpty()) {
       ret +=
           " OR ("
               + joinStringConditions(
                   "model.namespaceid",
-                  context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class),
+                  getConstraints(
+                      resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class),
                   "OR")
               + ")";
     }

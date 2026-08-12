@@ -40,7 +40,7 @@ public interface KimConcept extends KlabStatement {
    * @param description
    * @param isAbstract
    */
-  public record Descriptor(
+  record Descriptor(
       String namespace,
       String conceptName,
       SemanticType mainDeclaredType,
