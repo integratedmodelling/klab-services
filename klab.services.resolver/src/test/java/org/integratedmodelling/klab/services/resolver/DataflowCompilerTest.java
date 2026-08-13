@@ -1,7 +1,8 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -9,11 +10,14 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
+import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.junit.jupiter.api.Test;
 
 class DataflowCompilerTest {
@@ -31,17 +35,14 @@ class DataflowCompilerTest {
     when(rootObservable.is(SemanticType.COUNTABLE)).thenReturn(false);
     when(rootObservable.getName()).thenReturn("resolvedRoot");
 
-    var rootScale = mock(Scale.class);
-    var root = mock(Observation.class);
-    when(root.getId()).thenReturn(42L);
-    when(root.getName()).thenReturn("root");
-    when(root.getObservable()).thenReturn(rootObservable);
-    when(root.getGeometry()).thenReturn(rootScale);
+    var rootScale = new ScaleImpl(Geometry.UNIVERSAL);
+    var root = new ObservationImpl();
+    root.setId(42L);
+    root.setName("root");
+    root.setObservable(rootObservable);
+    root.setGeometry(rootScale);
 
-    var coverage = mock(Coverage.class);
-    when(coverage.getCoverage()).thenReturn(0.75);
-    var transportGeometry = mock(Geometry.class);
-    when(coverage.as(Geometry.class)).thenReturn(transportGeometry);
+    var coverage = new CoverageImpl(rootScale, 0.75);
     var graph = ResolutionGraph.create(scope);
     var targetCoverage = ResolutionGraph.class.getDeclaredField("targetCoverage");
     targetCoverage.setAccessible(true);
@@ -55,10 +56,12 @@ class DataflowCompilerTest {
     var dataflow = new DataflowCompiler(requested, graph, scope).compile();
 
     assertEquals(1, dataflow.getComputation().size());
-    assertSame(root, dataflow.getComputation().getFirst().getObservation());
+    assertNotSame(root, dataflow.getComputation().getFirst().getObservation());
+    assertFalse(dataflow.getComputation().getFirst().getObservation().getGeometry() instanceof Scale);
     assertEquals(Actuator.Type.REFERENCE, dataflow.getComputation().getFirst().getActuatorType());
-    assertSame(transportGeometry, dataflow.getCoverage());
-    assertSame(requirements, dataflow.getRequirements());
+    assertFalse(dataflow.getCoverage() instanceof Scale);
+    assertFalse(dataflow.getCoverage() instanceof Coverage);
+    assertEquals(requirements, dataflow.getRequirements());
     assertEquals(
         0.75,
         ((org.integratedmodelling.common.runtime.DataflowImpl) dataflow).getResolvedCoverage());

@@ -7,6 +7,7 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.actors.AgentImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
@@ -59,7 +60,10 @@ public class RuntimeClient extends BaseServiceClient
       Observation observation, ContextScope scope) {
     return client
         .withScope(scope)
-        .post(ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY, observation, Data.ShardingStrategy.class);
+        .post(
+            ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY,
+            Observation.forTransport(observation),
+            Data.ShardingStrategy.class);
   }
 
   @Override
@@ -70,12 +74,32 @@ public class RuntimeClient extends BaseServiceClient
     }
 
     ResolutionRequest resolutionRequest = new ResolutionRequest();
-    resolutionRequest.setObservation(observation);
+    resolutionRequest.setObservation(Observation.forTransport(observation));
     resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
-    resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
+    resolutionRequest.setResolutionConstraints(
+        scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
     return client
         .withScope(scope)
-        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
+        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class)
+        .thenApply(
+            resolved -> {
+              /*
+               * The HTTP completion and the ObservationSubmissionFinished event race each other.
+               * Ingest the returned observation before exposing it to callers so its Commit is
+               * attached regardless of which transport wins. Event ingestion is idempotent by
+               * commit ID and will either do the work first or become a no-op.
+              */
+              try {
+                if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+                  clientDigitalTwin.getKnowledgeGraph().ingest(resolved);
+                }
+              } catch (Throwable failure) {
+                // Commit synchronization is auxiliary: never turn a successful observation
+                // submission into a failed future because its visualization delta was unavailable.
+                scope.warn("Cannot synchronize the submission commit", failure);
+              }
+              return resolved;
+            });
   }
 
   @Override
@@ -86,7 +110,10 @@ public class RuntimeClient extends BaseServiceClient
     }
     return client
         .withScope(scope)
-        .post(ServicesAPI.RUNTIME.REGISTER_OBSERVATION, observation, Observation.class);
+        .post(
+            ServicesAPI.RUNTIME.REGISTER_OBSERVATION,
+            Observation.forTransport(observation),
+            Observation.class);
   }
 
   @Override

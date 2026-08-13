@@ -658,15 +658,17 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   public List<ObservationStrategy> computeObservationStrategies(
       Observation observation, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
-    resolutionRequest.setObservation(observation);
-    resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
+    resolutionRequest.setObservation(Observation.forTransport(observation));
+    resolutionRequest
+        .getResolutionConstraints()
+        .addAll(scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
     if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
       resolutionRequest
           .getResolutionConstraints()
           .add(
               ResolutionConstraint.of(
                   ResolutionConstraint.Type.UnresolvedContextObservation,
-                  scope.getContextObservation()));
+                  Observation.forTransport(scope.getContextObservation())));
     }
     return client
         .withScope(scope)

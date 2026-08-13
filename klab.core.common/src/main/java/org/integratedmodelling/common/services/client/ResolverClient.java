@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -7,6 +8,7 @@ import java.util.function.BiConsumer;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.*;
@@ -37,8 +39,12 @@ public class ResolverClient extends BaseServiceClient implements Resolver {
   @Override
   public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     ResolutionRequest request = new ResolutionRequest();
-    request.setObservation(observation);
-    request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
+    request.setObservation(Observation.forTransport(observation));
+    request.setResolutionConstraints(
+        new ArrayList<>(
+            contextScope.getResolutionConstraints().stream()
+                .map(ResolverClient::forTransport)
+                .toList()));
     if (contextScope.getContextObservation() != null
         && contextScope.getContextObservation().getId() < 0) {
       request
@@ -46,11 +52,25 @@ public class ResolverClient extends BaseServiceClient implements Resolver {
           .add(
               ResolutionConstraint.of(
                   ResolutionConstraint.Type.UnresolvedContextObservation,
-                  contextScope.getContextObservation()));
+                  Observation.forTransport(contextScope.getContextObservation())));
     }
     return client
         .withScope(contextScope)
         .postAsync(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
+  }
+
+  public static ResolutionConstraint forTransport(ResolutionConstraint constraint) {
+    var payload = constraint.payload(Object.class).stream();
+    return ResolutionConstraint.of(
+        constraint.getType(),
+        (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation
+                ? payload.map(value -> Observation.forTransport((Observation) value))
+                : payload.map(Geometry::valueForTransport))
+            .toArray());
+  }
+
+  public static Observation forTransport(Observation observation) {
+    return Observation.forTransport(observation);
   }
 
   @Override
@@ -63,7 +83,10 @@ public class ResolverClient extends BaseServiceClient implements Resolver {
   public Resource submitResource(Observation observation, ContextScope contextScope) {
     return client
         .withScope(contextScope)
-        .post(ServicesAPI.RESOLVER.SUBMIT_RESOURCE, observation, Resource.class);
+        .post(
+            ServicesAPI.RESOLVER.SUBMIT_RESOURCE,
+            Observation.forTransport(observation),
+            Resource.class);
   }
 
   @Override

@@ -23,17 +23,15 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationBuilderImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -58,6 +56,31 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * @version $Id: $Id
  */
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
+
+  /**
+   * The relationship between an observation and its geometry. The default {@link #getGeometry()}
+   * reports the OCCUPIES relationship.
+   */
+  enum GeometryRelationship {
+    OCCUPIES(GraphModel.Relationship.HAS_GEOMETRY),
+    PERCEIVES(GraphModel.Relationship.PERCEIVES_GEOMETRY),
+    OVERSEES(GraphModel.Relationship.OVERSEES_GEOMETRY),
+    AFFECTS(GraphModel.Relationship.AFFECTS_GEOMETRY);
+
+    final GraphModel.Relationship relationship;
+
+    /**
+     * The relationship between an observation and its geometry that is encoded in the knowledge
+     * graph.
+     */
+    GraphModel.Relationship getRelationship() {
+      return relationship;
+    }
+
+    GeometryRelationship(GraphModel.Relationship relationship) {
+      this.relationship = relationship;
+    }
+  }
 
   /**
    * An observation whose ID is -1 has not been registered with a runtime for submission and is
@@ -88,12 +111,24 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
     /**
      * Mandatory for all observations except dependents, which inherit their geometry from their
-     * context (which must be defined in the scope that provides the builder).
+     * context (which must be defined in the scope that provides the builder). This is equivalent to
+     * calling {@link #geometry(Geometry, GeometryRelationship)} with {@link
+     * GeometryRelationship#OCCUPIES}.
      *
      * @param geometry
      * @return
      */
     Builder geometry(Geometry geometry);
+
+    /**
+     * Specify the geometry along with the relationship it belongs to. Calling this on a non-agent
+     * with anything that is not OCCUPIES will make build() fail.
+     *
+     * @param geometry
+     * @param relationship
+     * @return
+     */
+    Builder geometry(Geometry geometry, GeometryRelationship relationship);
 
     /**
      * If called, the observation built will only resolve through the current content of the
@@ -329,6 +364,58 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     return ret;
   }
 
+  /**
+   * Return a detached representation suitable for service transport. Runtime scale implementations
+   * carry local indexes and caches and must never be serialized; geometries and any geometries
+   * nested in portable parameter values are reduced to their encoded API representation.
+   */
+  static Observation forTransport(Observation observation) {
+    if (observation == null) {
+      return null;
+    }
+    var ret = new ObservationImpl();
+    ret.setObservable(observation.getObservable());
+    ret.setGeometry(Geometry.forTransport(observation.getGeometry()));
+    var metadata = org.integratedmodelling.klab.api.data.Metadata.create();
+    observation
+        .getMetadata()
+        .forEach((key, value) -> metadata.put(key, Geometry.valueForTransport(value)));
+    ret.setMetadata(metadata);
+    ret.setId(observation.getId());
+    ret.setUrn(observation.getUrn());
+    ret.setValue(Geometry.valueForTransport(observation.getValue()));
+    ret.setHistograms(observation.getHistograms());
+    ret.setName(observation.getName());
+    ret.setResolvedCoverage(observation.getResolvedCoverage());
+    ret.setEventTimestamps(new java.util.ArrayList<>(observation.getEventTimestamps()));
+    if (observation.getContextualizationData() != null) {
+      var source = observation.getContextualizationData();
+      var contextualization = new ObservationImpl.ContextualizationDataImpl();
+      contextualization.setData(source.getData());
+      contextualization.setServiceUrl(source.getServiceUrl());
+      contextualization.setServiceId(source.getServiceId());
+      contextualization.setAdapterId(source.getAdapterId());
+      var parameters = Parameters.<String>create();
+      source
+          .getParameters()
+          .forEach((key, value) -> parameters.put(key, Geometry.valueForTransport(value)));
+      contextualization.setParameters(parameters);
+      contextualization.setNativeShardingStrategy(source.getNativeShardingStrategy());
+      contextualization.setPersistent(source.isPersistent());
+      ret.setContextualizationData(contextualization);
+    }
+    ret.setNotifications(new java.util.ArrayList<>(observation.getNotifications()));
+    ret.setTransientId(observation.getTransientId());
+    ret.setParentId(observation.getParentId());
+    ret.setChildrenCount(observation.getChildrenCount());
+    ret.setParentTransientId(observation.getParentTransientId());
+    if (observation instanceof ObservationImpl observationImpl) {
+      ret.setEmpty(observationImpl.isEmpty());
+      ret.setSubstantialQuality(observationImpl.isSubstantialQuality());
+    }
+    return ret;
+  }
+
   Object getValue();
 
   /**
@@ -374,6 +461,21 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   double getResolvedCoverage();
 
   /**
+   * Observations of agents can have additional geometries that they perceive, oversee or affect.
+   * This method returns the geometry associated with the given relationship. The default
+   * #getGeometry() reports the OCCUPIES relationship. Calling this with any other relationship on a
+   * non-agent is an error. Otherwise, it will return null or a valid geometry.
+   *
+   * <p>The observation should normally not store the geometries besides OCCUPIES, as these are more
+   * dynamic. This method is intentionally not an accessor and should retrieve the geometry from the
+   * knowledge graph when called.
+   *
+   * @param relationship
+   * @return
+   */
+  Geometry geometry(GeometryRelationship relationship);
+
+  /**
    * A trivial builder that does not support submission or registration and exposes a {@link
    * #make()} method to produce an unregistered observation. Only to be used when the service API is
    * used directly. Normal use is to create observations with {@link
@@ -382,7 +484,7 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   class NaiveBuilder extends ObservationBuilderImpl {
 
     NaiveBuilder(ContextScope scope) {
-      super((Observable)null, scope);
+      super((Observable) null, scope);
     }
 
     public NaiveBuilder(Observable observable, ContextScope contextScope) {

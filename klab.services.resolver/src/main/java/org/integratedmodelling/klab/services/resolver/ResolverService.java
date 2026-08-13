@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
@@ -53,6 +55,7 @@ public class ResolverService extends BaseService implements Resolver {
   // resource kbox for scope-bound persistent resources from observations that come with
   // contextualization data and request to be persisted.
   private final ResourcesKBox resourcesKbox;
+  private final ExecutorService resolutionExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
   //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
@@ -126,7 +129,7 @@ public class ResolverService extends BaseService implements Resolver {
     //            Message.MessageType.ServiceUnavailable,
     //            capabilities(serviceScope()));
     //
-    // TODO Auto-generated method stub
+    resolutionExecutor.shutdownNow();
     return super.shutdown();
   }
 
@@ -166,7 +169,8 @@ public class ResolverService extends BaseService implements Resolver {
           return isSubstantial
               ? Dataflow.trivial(ret.getNotifications())
               : Dataflow.empty(ret.getNotifications());
-        });
+        },
+        resolutionExecutor);
   }
 
   @Override

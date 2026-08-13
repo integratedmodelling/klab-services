@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CyclicBarrier;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -186,6 +188,39 @@ class ClientKnowledgeGraphTest {
     assertSame(
         commit, duplicateChild.getMetadata().get(Metadata.IM_COMMIT, KnowledgeGraph.Commit.class));
     verify(runtime, times(1)).getCommit(1, scope);
+  }
+
+  @Test
+  void serializesConcurrentHttpAndEventCommitIngestion() {
+    var commit = commit(5);
+    commit.getAddedAssets().add(602L);
+    commit.getAddedObservations().add(602L);
+    when(runtime.getCommit(5, scope)).thenReturn(commit);
+    var httpResult = observation(602, 5L);
+    var eventResult = observation(602, 5L);
+    var barrier = new CyclicBarrier(2);
+
+    var first = CompletableFuture.runAsync(() -> ingestAfterBarrier(httpResult, barrier));
+    var second = CompletableFuture.runAsync(() -> ingestAfterBarrier(eventResult, barrier));
+    CompletableFuture.allOf(first, second).join();
+
+    verify(runtime, times(1)).getCommit(5, scope);
+    assertSame(
+        commit,
+        httpResult.getMetadata().get(Metadata.IM_COMMIT, KnowledgeGraph.Commit.class));
+    assertSame(
+        commit,
+        eventResult.getMetadata().get(Metadata.IM_COMMIT, KnowledgeGraph.Commit.class));
+    assertEquals(1, graph.getCommitQueue().size());
+  }
+
+  private void ingestAfterBarrier(ObservationImpl observation, CyclicBarrier barrier) {
+    try {
+      barrier.await();
+      graph.ingest(observation);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
   }
 
   @Test

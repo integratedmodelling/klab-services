@@ -303,7 +303,9 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
   }
 
   /**
-   * The geometry linked to the observation. Observed artifacts will specialize this as IScale.
+   * The geometry linked to the artifact. In {@link Observation}s, this represent the geometry
+   * <em>occupied</em> by the observation. When the observation is an agent, other geometries will
+   * be available through the
    *
    * @return the geometry
    */

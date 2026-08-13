@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -112,7 +113,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private Observation target;
     private final Activity activity;
     private final ServiceContextScope scope;
-    private final List<Throwable> failures = new ArrayList<>();
+    private final Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
@@ -266,17 +267,18 @@ public class DigitalTwinImpl implements DigitalTwin {
       if (cohort == null || observedGeometry == null) {
         return;
       }
+      synchronized (graph) {
+        var cohortObservable = cohort.getObservable().getSemantics();
+        var currentGeometry = cohortGeometries.get(cohortObservable);
+        var newGeometry =
+            mergeCohortGeometry(
+                cohortObservable.getType(),
+                currentGeometry == null ? cohort.getGeometry() : currentGeometry,
+                observedGeometry);
 
-      var cohortObservable = cohort.getObservable().getSemantics();
-      var currentGeometry = cohortGeometries.get(cohortObservable);
-      var newGeometry =
-          mergeCohortGeometry(
-              cohortObservable.getType(),
-              currentGeometry == null ? cohort.getGeometry() : currentGeometry,
-              observedGeometry);
-
-      this.cohortGeometries.put(cohortObservable, newGeometry);
-      applyCohortGeometry(cohort, newGeometry);
+        this.cohortGeometries.put(cohortObservable, newGeometry);
+        applyCohortGeometry(cohort, newGeometry);
+      }
     }
 
     static Scale mergeCohortGeometry(

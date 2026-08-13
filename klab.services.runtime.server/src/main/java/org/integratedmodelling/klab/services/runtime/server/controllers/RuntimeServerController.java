@@ -103,7 +103,11 @@ public class RuntimeServerController {
         var scope =
             serviceContextScope.withResolutionConstraints(
                 ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
-        var ret = runtimeService.klabService().submit(resolutionRequest.getObservation(), scope);
+        var ret =
+            runtimeService
+                .klabService()
+                .submit(resolutionRequest.getObservation(), scope)
+                .thenApply(Observation::forTransport);
         return serviceContextScope
             .getJobManager()
             .submit(ret, "Resolution of " + resolutionRequest.getObservation());
@@ -230,7 +234,8 @@ public class RuntimeServerController {
       throws ExecutionException, InterruptedException {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      return runtimeService.klabService().register(observation, contextScope);
+      return Observation.forTransport(
+          runtimeService.klabService().register(observation, contextScope));
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

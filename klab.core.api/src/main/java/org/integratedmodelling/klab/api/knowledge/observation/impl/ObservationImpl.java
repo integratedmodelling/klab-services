@@ -1,10 +1,15 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
+import java.io.Serial;
+import java.net.URL;
+import java.util.*;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -15,15 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.io.Serial;
-import java.net.URL;
-import java.util.*;
-import java.util.HashMap;
 
 /**
  * A "naked" observation only has an observable + metadata and provenance info. Additional metadata
@@ -323,6 +320,19 @@ public class ObservationImpl implements Observation {
   @Override
   public double getResolvedCoverage() {
     return resolvedCoverage;
+  }
+
+  @Override
+  public Geometry geometry(GeometryRelationship relationship) {
+    if (relationship == GeometryRelationship.OCCUPIES) {
+      return geometry;
+    }
+    if (!observable.is(SemanticType.AGENT)) {
+      throw new KlabIllegalArgumentException(
+          "Non-agent observations cannot have geometries in relationship " + relationship);
+    }
+    throw new KlabUnimplementedException(
+        "Observation still cannot access geometries for relationship " + relationship);
   }
 
   public void setResolvedCoverage(double resolvedCoverage) {

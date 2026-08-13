@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -89,6 +90,10 @@ public class RuntimeService extends BaseService
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
   private final ConcurrentMap<String, AgentCompiler.Environment> agentCompilerEnvironments =
       new ConcurrentHashMap<>();
+  private final ConcurrentMap<SubmissionIdentity, CompletableFuture<Observation>>
+      inFlightSubmissions = new ConcurrentHashMap<>();
+
+  private record SubmissionIdentity(String contextId, String cohortUrn, String observationUrn) {}
 
   /**
    * We keep identification strategies for each concept encountered. The base one is implemented for
@@ -494,6 +499,18 @@ public class RuntimeService extends BaseService
       return CompletableFuture.completedFuture(query(submitted, scope));
     }
 
+    var submissionIdentity = submissionIdentity(submitted, scope);
+    return submissionIdentity == null
+        ? submitInternal(submitted, scope)
+        : coalesce(
+            inFlightSubmissions,
+            submissionIdentity,
+            () -> submitInternal(submitted, scope));
+  }
+
+  private CompletableFuture<Observation> submitInternal(
+      Observation submitted, ContextScope scope) {
+
     /*
      * A complete query is the terminal answer. Partial and empty queries must continue to the
      * resolver, which will retain the covered part as a reference and resolve only the remainder.
@@ -522,7 +539,12 @@ public class RuntimeService extends BaseService
 
     var observation = register(submitted, scope);
 
-    if (observation.getId() > 0 || observation.isEmpty()) {
+    /*
+     * register() may return an existing member of the cohort. During collective contextualization
+     * that member can still have a negative, transaction-local ID, so ID positivity alone is not a
+     * sufficient indication that submission is already complete.
+     */
+    if (observation != submitted || observation.getId() > 0 || observation.isEmpty()) {
       return CompletableFuture.completedFuture(observation);
     }
 
@@ -859,6 +881,50 @@ public class RuntimeService extends BaseService
         "RuntimeService::observe() called with unexpected scope implementation");
   }
 
+  private SubmissionIdentity submissionIdentity(Observation observation, ContextScope scope) {
+    var observable = observation.getObservable();
+    if (observable == null
+        || observable.getSemantics().isCollective()
+        || !SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
+        || observation.getUrn() == null) {
+      return null;
+    }
+    var cohortSemantics =
+        scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
+    return new SubmissionIdentity(scope.getId(), cohortSemantics.getUrn(), observation.getUrn());
+  }
+
+  static <K, T> CompletableFuture<T> coalesce(
+      ConcurrentMap<K, CompletableFuture<T>> inFlight,
+      K key,
+      Supplier<CompletableFuture<T>> operation) {
+    var result = new CompletableFuture<T>();
+    var existing = inFlight.putIfAbsent(key, result);
+    if (existing != null) {
+      return existing.copy();
+    }
+    try {
+      operation
+          .get()
+          .whenComplete(
+              (value, failure) -> {
+                try {
+                  if (failure == null) {
+                    result.complete(value);
+                  } else {
+                    result.completeExceptionally(failure);
+                  }
+                } finally {
+                  inFlight.remove(key, result);
+                }
+              });
+    } catch (Throwable failure) {
+      inFlight.remove(key, result);
+      result.completeExceptionally(failure);
+    }
+    return result.copy();
+  }
+
   /**
    * Resolve an ID-0 observation exclusively against knowledge already visible in the scope. Query
    * execution is deliberately kept outside the submission transaction: it creates no activities,
@@ -1108,13 +1174,6 @@ public class RuntimeService extends BaseService
    */
   private Observation checkIdentity(
       Observation observation, Cohort cohort, ServiceContextScope submissionScope) {
-
-    if (cohort.getId() < 0) {
-      // cohort is new, can't have observations
-      return null;
-    }
-
-    var reasoner = submissionScope.getService(Reasoner.class);
     //    var comparisonStrategy =
     //        reasoner.computeIdentificationStrategies(observation.getObservable(),
     // submissionScope);
@@ -1122,6 +1181,27 @@ public class RuntimeService extends BaseService
     //    if (comparisonStrategy != null) {
     // TODO compile into identificationStrategy
     //    }
+
+    /*
+     * Child observations produced by an instantiator are submitted before the enclosing
+     * transaction commits. They are therefore not visible through the knowledge-graph query yet,
+     * even though they have already been linked to the cohort. Check those pending links first so
+     * the identification strategy applies uniformly to individual submissions and collective
+     * results.
+     */
+    var transaction = submissionScope.getCurrentTransaction();
+    if (transaction != null) {
+      var existing =
+          findIdenticalMember(
+              observation, transaction.outgoing(cohort), identificationStrategy);
+      if (existing != null) {
+        return existing;
+      }
+    }
+
+    if (cohort.getId() < 0) {
+      return null;
+    }
 
     for (var sibling :
         submissionScope
@@ -1139,11 +1219,24 @@ public class RuntimeService extends BaseService
     return null;
   }
 
+  static Observation findIdenticalMember(
+          Observation observation,
+          Collection<KnowledgeGraph.Link> cohortLinks,
+          Comparator<Observation> identificationStrategy) {
+    for (var link : cohortLinks) {
+      if (link.type() == GraphModel.Relationship.HAS_MEMBER
+          && link.target() instanceof Observation sibling
+          && identificationStrategy.compare(observation, sibling) == 0) {
+        return sibling;
+      }
+    }
+    return null;
+  }
+
   @Override
   public Observation register(Observation observation, ContextScope scope) {
 
     if (observation.getId() == Observation.QUERY_ID
-        || observation.getId() < -1
         || observation.getId() > 0
         || observation.isEmpty()) {
       return observation;
@@ -1170,7 +1263,9 @@ public class RuntimeService extends BaseService
         }
       }
 
-      observationImpl.setId(serviceContextScope.getNextObservationId());
+      if (observation.getId() == Observation.UNASSIGNED_ID) {
+        observationImpl.setId(serviceContextScope.getNextObservationId());
+      }
 
       return observation;
     }

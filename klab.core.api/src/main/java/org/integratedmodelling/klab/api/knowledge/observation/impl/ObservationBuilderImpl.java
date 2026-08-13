@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -28,7 +25,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private Observable observable;
   private ContextScope scope;
   private Urn identity;
-  private Geometry geometry;
+  private Map<Observation.GeometryRelationship, Geometry> geometries = new HashMap<>();
   private Object defaultValue;
   private final Metadata metadata = Metadata.create();
   private Observation.ContextualizationData contextualizationData;
@@ -60,7 +57,8 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   public ObservationBuilderImpl(Data data, ContextScope scope) {
     this.scope = scope;
     observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
-    geometry = data.geometry();
+    // TODO Data must have the same geometry breakdown
+    geometries.put(Observation.GeometryRelationship.OCCUPIES, data.geometry());
     if (observable == null) {
       notifications.add(Notification.error("Cannot resolve observable: " + data.semantics()));
     } else if (observable.getSemantics().is(SemanticType.COUNTABLE)
@@ -160,18 +158,20 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       }
     }
     if (definition.containsKey("space") || definition.containsKey("time")) {
-      geometry = defineGeometry(definition);
+      geometries.put(Observation.GeometryRelationship.OCCUPIES, defineGeometry(definition));
     }
 
     if (definition.containsKey("geometry") && definition.get("geometry") instanceof Map<?, ?>) {
-      geometry = defineGeometry((Map<?, ?>) definition.get("geometry"));
+      geometries.put(
+          Observation.GeometryRelationship.OCCUPIES,
+          defineGeometry((Map<?, ?>) definition.get("geometry")));
     }
 
     if (definition.containsKey("contextualization")
         && definition.get("contextualization") instanceof Map<?, ?> contextualization) {
       // TODO must be either collective or quality. Geometry is supplied externally and it's
       //  illegal here.
-      if (geometry != null) {
+      if (geometries.get(Observation.GeometryRelationship.OCCUPIES) != null) {
         notifications.add(
             Notification.error(
                 "Geometry cannot be supplied when contextualization data are given. Observation: "
@@ -206,9 +206,14 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
 
   @Override
   public Observation.Builder geometry(Geometry geometry) {
-    if (geometry != null) {
-      this.geometry = geometry;
-    }
+    this.geometries.put(Observation.GeometryRelationship.OCCUPIES, geometry);
+    return this;
+  }
+
+  @Override
+  public Observation.Builder geometry(
+      Geometry geometry, Observation.GeometryRelationship relationship) {
+    this.geometries.put(relationship, geometry);
     return this;
   }
 
@@ -236,7 +241,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   public ObservationImpl build() {
 
     ObservationImpl ret = new ObservationImpl();
-    ret.setGeometry(geometry);
+    ret.setGeometry(geometries.get(Observation.GeometryRelationship.OCCUPIES));
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
     ret.setValue(defaultValue);

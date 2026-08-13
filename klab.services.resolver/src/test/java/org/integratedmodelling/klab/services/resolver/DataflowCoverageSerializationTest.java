@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
@@ -27,5 +28,6 @@ class DataflowCoverageSerializationTest {
     var decodedImpl = assertInstanceOf(DataflowImpl.class, decoded);
     assertNotNull(decodedImpl.getCoverage());
     assertFalse(decodedImpl.getCoverage() instanceof Coverage);
+    assertFalse(decodedImpl.getCoverage() instanceof Scale);
   }
 }

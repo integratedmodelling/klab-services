@@ -6,6 +6,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -61,7 +62,12 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
-    return resolve(observation, scope, ResolverService.getResolutionGraph(scope));
+    var contextGraph = ResolverService.getResolutionGraph(scope);
+    if (contextGraph == null) {
+      throw new KlabIllegalStateException(
+          "Resolver context was not declared before starting observation resolution");
+    }
+    return resolve(observation, scope, contextGraph.createAttempt());
   }
 
   public List<Notification> getNotifications() {

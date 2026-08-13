@@ -74,7 +74,7 @@ public class DataflowCompiler {
     var ret = new DataflowImpl();
     ret.setName(observation.getName() + "_" + scope.getId());
     var coverage = resolutionGraph.getCoverage();
-    ret.setCoverage(coverage == null ? null : coverage.as(Geometry.class));
+    ret.setCoverage(coverage == null ? null : Geometry.forTransport(coverage));
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     ret.setRequirements(resolutionGraph.getDependencies());
     for (var node : resolutionGraph.rootNodes()) {
@@ -113,7 +113,7 @@ public class DataflowCompiler {
     // compile references for any obs with ID > 0 (coming from the remote KG) or already compiled
     if (observation.getId() > 0 || catalog.contains(observation.getId())) {
       var ret = new ActuatorImpl();
-      ret.setObservation(observation);
+      ret.setObservation(Observation.forTransport(observation));
       ret.setId(observation.getId());
       ret.setName(
           localName == null
@@ -121,7 +121,7 @@ public class DataflowCompiler {
                   ? observation.getName()
                   : observation.getObservable().getName())
               : localName);
-      ret.setCoverage(coverage.as(Geometry.class));
+      ret.setCoverage(Geometry.forTransport(coverage));
       ret.setActuatorType(Actuator.Type.REFERENCE);
       return List.of(ret);
     }
@@ -137,12 +137,13 @@ public class DataflowCompiler {
 
       if (child instanceof ObservationStrategy observationStrategy) {
         var actuator = new ActuatorImpl();
-        actuator.setObservation(observation);
+        actuator.setObservation(Observation.forTransport(observation));
         actuator.setName(localName == null ? observation.getObservable().getName() : localName);
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
-        actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
-        actuator.setResolvedGeometry(observation.getGeometry());
+        actuator.setCoverage(
+            childCoverage == null ? null : Geometry.forTransport(childCoverage));
+        actuator.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
         actuator.setStrategyUrn(observationStrategy.getUrn());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);
@@ -308,10 +309,10 @@ public class DataflowCompiler {
 
   private Actuator compileReference(Observation observation, Coverage coverage, String localName) {
     var ret = new ActuatorImpl();
-    ret.setObservation(observation);
+    ret.setObservation(Observation.forTransport(observation));
     ret.setId(observation.getId());
     ret.setName(localName == null ? observation.getObservable().getName() : localName);
-    ret.setCoverage(coverage.as(Geometry.class));
+    ret.setCoverage(Geometry.forTransport(coverage));
     ret.setActuatorType(Actuator.Type.REFERENCE);
     return ret;
   }
@@ -376,6 +377,12 @@ public class DataflowCompiler {
     if (ret != null && contextualizer.getTarget() != null) {
       ret.getParameters().put("_target", contextualizer.getTarget());
       ret.getParameters().put("_targetId", contextualizer.getTargetId());
+    }
+
+    if (ret != null) {
+      ret = new ServiceCallImpl(ret);
+      ret.getParameters()
+          .replaceAll((key, value) -> Geometry.valueForTransport(value));
     }
 
     return ret;

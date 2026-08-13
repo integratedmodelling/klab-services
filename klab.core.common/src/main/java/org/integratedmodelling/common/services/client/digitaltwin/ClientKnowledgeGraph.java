@@ -106,7 +106,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             Map.of("builtin", true)));
   }
 
-  public void ingest(Observation observation) {
+  public synchronized void ingest(Observation observation) {
     if (observation == null || !isAddressableAssetId(observation.getId())) {
       scope.warn(
           "Ignoring observation that is not stored in the knowledge graph"

@@ -1,7 +1,12 @@
 package org.integratedmodelling.klab.api.geometry;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
@@ -9,6 +14,7 @@ import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 
 /**
  * TODO obsolete - revise these javadocs!
@@ -76,6 +82,44 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
  * @author fvilla
  */
 public interface Geometry extends Serializable, Locator {
+
+  /**
+   * Return a plain geometry suitable for a serialized service boundary. Runtime {@link Scale} and
+   * {@link Coverage} instances contain service-local state and must never be transported.
+   */
+  static Geometry forTransport(Geometry geometry) {
+    return geometry instanceof Scale || geometry instanceof Coverage
+        ? Geometry.create(geometry.encode())
+        : geometry;
+  }
+
+  /** Recursively replace service-local geometries in common transport containers. */
+  static Object valueForTransport(Object value) {
+    if (value instanceof Geometry geometry) {
+      return forTransport(geometry);
+    }
+    if (value instanceof Parameters<?> parameters) {
+      var ret = Parameters.create();
+      parameters.forEach((key, item) -> ret.put(key, valueForTransport(item)));
+      return ret;
+    }
+    if (value instanceof Map<?, ?> map) {
+      var ret = new LinkedHashMap<>();
+      map.forEach((key, item) -> ret.put(key, valueForTransport(item)));
+      return ret;
+    }
+    if (value instanceof Collection<?> collection) {
+      return collection.stream().map(Geometry::valueForTransport).toList();
+    }
+    if (value != null && value.getClass().isArray()) {
+      var ret = new ArrayList<>();
+      for (int i = 0; i < Array.getLength(value); i++) {
+        ret.add(valueForTransport(Array.get(value, i)));
+      }
+      return ret;
+    }
+    return value;
+  }
 
   enum Granularity {
     /** */

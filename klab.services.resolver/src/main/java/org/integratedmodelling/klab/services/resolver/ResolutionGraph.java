@@ -22,6 +22,9 @@ import org.jgrapht.graph.DefaultEdge;
 import org.w3.xlink.XlinkFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Next-gen Resolution graph, to substitute Resolution/ResolutionImpl.
@@ -53,7 +56,7 @@ public class ResolutionGraph {
   private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
       new DefaultDirectedGraph<>(ResolutionEdge.class);
   private ResolutionGraph parent;
-  private long internalObservationId = -1;
+  private final AtomicLong internalObservationId = new AtomicLong(-1);
   private Map<Long, Observation> observations;
   private Map<String, ServiceInfo> serviceInfos;
   private List<Notification> notifications = new ArrayList<>();
@@ -75,9 +78,9 @@ public class ResolutionGraph {
 
   private ResolutionGraph(ContextScope rootScope) {
     this.rootScope = rootScope;
-    this.observations = new HashMap<>();
-    this.localResources = new ArrayList<>();
-    this.serviceInfos = new HashMap<>();
+    this.observations = new ConcurrentHashMap<>();
+    this.localResources = new CopyOnWriteArrayList<>();
+    this.serviceInfos = new ConcurrentHashMap<>();
   }
 
   public Graph<Resolvable, ResolutionEdge> graph() {
@@ -154,7 +157,7 @@ public class ResolutionGraph {
   }
 
   public List<Resource> getLocalResources() {
-    return localResources;
+    return List.copyOf(localResources);
   }
 
   public ResourceSet getDependencies() {
@@ -252,6 +255,20 @@ public class ResolutionGraph {
     return new ResolutionGraph(rootScope);
   }
 
+  /**
+   * Create an isolated graph for one resolution attempt. Context resources are snapshotted at the
+   * attempt boundary; observations, service prototypes, dependencies, graph structure and
+   * synthetic IDs are not shared with concurrent attempts.
+   */
+  public ResolutionGraph createAttempt() {
+    if (parent != null) {
+      throw new KlabIllegalStateException("resolution attempts can only be created from a root graph");
+    }
+    var ret = new ResolutionGraph(rootScope);
+    ret.localResources.addAll(localResources);
+    return ret;
+  }
+
   public static ResolutionGraph empty() {
     var ret = new ResolutionGraph(null);
     ret.empty = true;
@@ -300,7 +317,7 @@ public class ResolutionGraph {
   }
 
   private long nextInternalObservationId() {
-    return --internalObservationId;
+    return internalObservationId.decrementAndGet();
   }
 
   /**
