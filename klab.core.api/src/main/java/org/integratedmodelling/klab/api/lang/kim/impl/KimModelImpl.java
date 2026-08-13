@@ -133,22 +133,4 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
         this.coverage = coverage;
     }
 
-    @Override
-    public void visit(Visitor visitor) {
-
-        for (var annotation : getAnnotations()) {
-            visitor.visitAnnotation(annotation, null);
-        }
-
-        for (var observable : getObservables()) {
-            observable.visit(visitor);
-        }
-        for (var dependency : getDependencies()) {
-            dependency.visit(visitor);
-        }
-        for (var contextualizable : getContextualization()) {
-            contextualizable.visit(visitor);
-        }
-        // TODO metadata etc.
-    }
 }

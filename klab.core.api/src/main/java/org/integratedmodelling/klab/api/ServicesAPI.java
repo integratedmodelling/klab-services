@@ -12,6 +12,12 @@ public interface ServicesAPI {
 
   String API_BASE = "/api/v1";
 
+  /** Retrieve a typed information projection from any k.LAB service. */
+  String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
+
+  /** Query typed information projections from any k.LAB service. */
+  String QUERY = API_BASE + "/query/{knowledgeClass}";
+
   // legacy - hub is same architecture as before
   String HUB_API_BASE = "/api/v2";
 
@@ -425,20 +431,24 @@ public interface ServicesAPI {
 
   interface RESOURCES {
 
-    @Deprecated // use /query/resources
-    String QUERY_RESOURCES = API_BASE + "/query/resources";
+    //    @Deprecated // use /query/resources
+    //    String QUERY_RESOURCES = API_BASE + "/query/resources";
+
+    // TODO this can also be INFO using rights as type linked to the URN
     String RIGHTS = API_BASE + "/rights/{urn}";
+    // TODO and this
     String STATUS = API_BASE + "/status/{knowledgeClass}/{urn}";
 
-    @Deprecated // use info
-    String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
+    //    @Deprecated // use info
+    //    String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
 
     String CONTEXTUALIZE = "/contextualize";
     String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
-    String DEPENDENTS = "/dependents/{namespaceId}";
-    String PRECURSORS = "/precursors/{namespaceId}";
-    @Deprecated // get /info/geometry/{class}/{urn} on whatever
-    String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
+//    String DEPENDENTS = "/dependents/{namespaceId}";
+//    String PRECURSORS = "/precursors/{namespaceId}";
+
+    //    @Deprecated // get /info/geometry/{class}/{urn} on whatever
+    //    String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
 
     /**
      * The RESOLVE endpoint always returns a ResourceSet with the full dependency closure for the
@@ -447,10 +457,6 @@ public interface ServicesAPI {
     String RESOLVE = API_BASE + "/resolve/{knowledgeClass}/{urn}";
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
-
-    String INFO = API_BASE + "/info/{knowledgeClass}/{urn}";
-
-    String QUERY = API_BASE + "/query/{knowledgeClass}/{urn}";
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
@@ -467,68 +473,72 @@ public interface ServicesAPI {
      */
     String RETRIEVE = API_BASE + "/retrieve/{knowledgeClass}/{urn}";
 
-    String RESOLVE_PROJECTS = "/resolveProjects";
-    String RESOLVE_MODEL = "/resolveModel/{modelName}";
+    //    String RESOLVE_PROJECTS = "/resolveProjects";
+    //    String RESOLVE_MODEL = "/resolveModel/{modelName}";
     String RESOLVE_URN = "/resolve/{urn}";
-    String RESOLVE_RESOURCE = "/resolveResource";
-    String RESOLVE_ADAPTER = "/resolveAdapter/{urn}";
-    String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
+    //    String RESOLVE_RESOURCE = "/resolveResource";
+    //    String RESOLVE_ADAPTER = "/resolveAdapter/{urn}";
+    //    String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
     String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema";
     String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema";
-    String RESOLVE_MODELS = "/resolveModels";
+    //    String RESOLVE_MODELS = "/resolveModels";
 
-    @Deprecated // use PUT on whatever
-    String IMPORT_RESOURCE = "importResource";
+    //    @Deprecated // use PUT on whatever
+    //    String IMPORT_RESOURCE = "importResource";
 
-    @Deprecated // use GET /worspaces
-    String LIST_WORKSPACES = "/listWorkspaces";
-    String LIST_PROJECTS = "/listProjects";
-    String LIST_RESOURCE_URNS = "/listResourceUrns";
+    //    @Deprecated // use GET /worspaces
+    //    String LIST_WORKSPACES = "/listWorkspaces";
+    //    String LIST_PROJECTS = "/listProjects";
+    //    String LIST_RESOURCE_URNS = "/listResourceUrns";
 
-    @Deprecated // use project with GET
-    String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
-    String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
-    String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
-    String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT = "/retrieveObservationStrategyDocument/{urn}";
-    String RETRIEVE_BEHAVIOR = "/retrieveBehavior/{urn}";
-    String RETRIEVE_RESOURCE = "/retrieveResource";
-    String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
-    String RETRIEVE_OBSERVABLE = "/retrieveObservable";
-    String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
-    String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
-    String RETRIEVE_WORLDVIEW = "/getWorldview";
-    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
+    //    @Deprecated // use project with GET
+    //    String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
+    //    String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
+    //    String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
+    //    String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT =
+    // "/retrieveObservationStrategyDocument/{urn}";
+    //    String RETRIEVE_BEHAVIOR = "/retrieveBehavior/{urn}";
+    //    String RETRIEVE_RESOURCE = "/retrieveResource";
+    //    String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
+//    String RETRIEVE_OBSERVABLE = "/retrieveObservable";
+//    String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
+
+    //    String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
+    //    String RETRIEVE_WORLDVIEW = "/getWorldview";
+    //    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
 
     /** Set/get the access rights for the passed resource URN */
     String RESOURCE_INFO = "/resourceInfo/{urn}";
 
-    String READ_BEHAVIOR = "/readBehavior";
+    String PARSE_ASSET = "/parseAsset/{assetClass}";
 
-    /** create a new workspace, posting metadata */
-    String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
-
-    /** Create new empty project in passed workspace. */
-    String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
-
-    /** POST request to update an existing project's manifest */
-    String UPDATE_PROJECT = "/updateProject/{projectName}";
-
-    /**
-     * GET endpoint: create new document with passed URN. Return changes in each workspace affected.
-     */
-    String CREATE_DOCUMENT = "/createDocument/{projectName}/{documentType}/{urn}";
-
-    /**
-     * Update document with passed type. POST endpoint whose body is the document content. Return
-     * changes in each workspace affected.
-     *
-     * <p>NO should be PUT but currently we don't return a body
-     */
-    String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
-
-    String REMOVE_PROJECT = "/removeProject/{urn}";
-    String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
-    String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{documentType}/{urn}";
+    //    /** create a new workspace, posting metadata */
+    //    String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
+    //
+    //    /** Create new empty project in passed workspace. */
+    //    String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
+    //
+    //    /** POST request to update an existing project's manifest */
+    //    String UPDATE_PROJECT = "/updateProject/{projectName}";
+    //
+    //    /**
+    //     * GET endpoint: create new document with passed URN. Return changes in each workspace
+    // affected.
+    //     */
+    //    String CREATE_DOCUMENT = "/createDocument/{projectName}/{documentType}/{urn}";
+    //
+    //    /**
+    //     * Update document with passed type. POST endpoint whose body is the document content.
+    // Return
+    //     * changes in each workspace affected.
+    //     *
+    //     * <p>NO should be PUT but currently we don't return a body
+    //     */
+    //    String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
+    //
+    //    String REMOVE_PROJECT = "/removeProject/{urn}";
+    //    String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
+    //    String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{documentType}/{urn}";
 
     String MANAGE_PROJECT = API_BASE + "/project/manage/{urn}";
 

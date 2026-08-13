@@ -29,7 +29,6 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 public class SyntacticMatcher {
 
   private ReasonerService reasonerService;
-  private ResourcesService resourcesService;
 
   /**
    * @deprecated switch to the resources client and service along with a KimConcept cache
@@ -40,9 +39,8 @@ public class SyntacticMatcher {
   private final Cache<Pair<Semantics, Semantics>, Boolean> matchCache =
       Caffeine.newBuilder().maximumSize(10_000).recordStats().build();
 
-  public SyntacticMatcher(ReasonerService reasonerService, ResourcesService resourcesService) {
+  public SyntacticMatcher(ReasonerService reasonerService) {
     this.reasonerService = reasonerService;
-    this.resourcesService = resourcesService;
   }
 
   public boolean match(Semantics candidate, Semantics pattern) {
@@ -75,6 +73,8 @@ public class SyntacticMatcher {
     KimConcept pCandidate = null;
 
     try {
+      final var resourcesService =
+          reasonerService.serviceScope().getService(ResourcesService.class);
       oCandidateObservable =
           conceptCache.get(candidate.getUrn(), resourcesService::declareObservable);
       oCandidate = oCandidateObservable.getSemantics();

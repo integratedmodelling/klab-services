@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -16,6 +17,7 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.HealthComponent;
@@ -30,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Principal;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Unsecured information endpoints common to all controllers, inquiring about status and
@@ -46,12 +49,12 @@ public class KlabServiceController {
 
   @Autowired private HealthEndpoint healthEndpoint;
 
-
   @GetMapping(ServicesAPI.HEALTH)
   public HealthComponent getHealth() {
     // Returns the aggregated Health object with all components
     return healthEndpoint.health();
   }
+
   /**
    * Retrieve the capabilities of the service. These have a common part (specified by the {@link
    * org.integratedmodelling.klab.api.services.KlabService.ServiceCapabilities} API) and
@@ -79,6 +82,40 @@ public class KlabServiceController {
   @GetMapping(ServicesAPI.STATUS)
   public KlabService.ServiceStatus status() {
     return instance.klabService().status();
+  }
+
+  @GetMapping(ServicesAPI.INFO)
+  public <T> T info(
+      @PathVariable(name = "urn") String urn,
+      @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
+      @RequestParam(name = "infoClass") String infoClass,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      return instance.klabService().info(urn, objectClass, loadClass(infoClass), userScope);
+    }
+    throw new KlabAuthorizationException("No valid scope in service INFO request");
+  }
+
+  @PostMapping(ServicesAPI.QUERY)
+  public <T> List<T> query(
+      @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
+      @RequestParam(name = "infoClass") String infoClass,
+      @RequestBody Parameters<String> query,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      return instance.klabService().query(query, objectClass, loadClass(infoClass), userScope);
+    }
+    throw new KlabAuthorizationException("No valid scope in service QUERY request");
+  }
+
+  private static <T> Class<T> loadClass(String className) {
+    try {
+      return (Class<T>) Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      throw new KlabIllegalArgumentException("Class " + className + " not found");
+    }
   }
 
   /**

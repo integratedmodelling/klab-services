@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
+import org.integratedmodelling.klab.runtime.language.KimObservableVisitor;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -308,8 +309,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     this.observationReasoner = new ObservationReasoner(this);
-    this.syntacticMatcher =
-        new SyntacticMatcher(this, serviceScope().getService(ResourcesService.class));
+    this.syntacticMatcher = new SyntacticMatcher(this);
     this.semanticMatcher = new SemanticMatcher(this);
 
     return true;
@@ -358,7 +358,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         int maxAttempts = 5;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-          worldview = resources.retrieveWorldview();
+          // Worldview discovery is public during service startup, so no user scope exists yet.
+          worldview = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
           if (worldview != null) {
             serviceScope().info("Worldview retrieved after " + attempt + " attempts");
             break;
@@ -1315,7 +1316,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var notifications = new ArrayList<Notification>();
         var parsingScope =
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var ontology = resourceService.retrieveOntology(resource.getResourceUrn(), parsingScope);
+        var ontology =
+            resourceService.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
         }
@@ -1343,8 +1345,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var parsingScope =
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
         var observationStrategyDocument =
-            resourceService.retrieveObservationStrategyDocument(
-                resource.getResourceUrn(), parsingScope);
+            resourceService.retrieve(
+                resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
 
         observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
         for (var strategy : observationStrategyDocument.getStatements()) {
@@ -1800,7 +1802,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Collection<Concept> traits = directTraits(c);
     Collection<Concept> roles = directRoles(c);
-    if (traits.size() == 0 && roles.size() == 0 && derived(c)) {
+    if (traits.isEmpty() && roles.isEmpty() && derived(c)) {
       return c.asConcept();
     }
 
@@ -2673,32 +2675,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     Set<Concept> ret = new HashSet<>();
     KimConcept peer =
         serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
-    peer.visit(
-        new Statement.Visitor() {
-          @Override
-          public void visitAnnotation(Annotation annotation, Context context) {
-            // TODO
-          }
-
-          @Override
-          public void visitStatement(Statement statement, Context context) {
-            // TODO call the method below with the ref if we have it
-          }
-
-          //            @Override
-          public void visitReference(
-              String conceptName, Set<SemanticType> type, KimConcept validParent) {
-            Concept cn = resolveConcept(conceptName);
-            if (cn != null
-                && Sets.intersection(
-                            type,
-                            org.integratedmodelling.common.utils.Utils.Collections.asSet(types))
-                        .size()
-                    == types.size()) {
-              ret.add(cn);
-            }
-          }
-        });
+    var visitor = new KimObservableVisitor();
+    visitor.visit(peer);
+    var requestedTypes = org.integratedmodelling.common.utils.Utils.Collections.asSet(types);
+    for (var component : visitor.getConcepts()) {
+      if (component.getName() == null
+          || Sets.intersection(component.getType(), requestedTypes).size() != types.size()) {
+        continue;
+      }
+      var resolved = resolveConcept(component.getName());
+      if (resolved != null) ret.add(resolved);
+    }
     return ret;
   }
 

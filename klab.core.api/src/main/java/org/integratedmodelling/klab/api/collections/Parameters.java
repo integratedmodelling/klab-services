@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.api.collections;
 
-import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 
 /**
  * API for a read-only, nicer to use Map<String, Object> that collects named parameters of a

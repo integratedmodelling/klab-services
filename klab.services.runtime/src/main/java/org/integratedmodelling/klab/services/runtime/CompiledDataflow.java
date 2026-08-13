@@ -171,7 +171,11 @@ public class CompiledDataflow {
                   embeddedAdapter == null
                       ? scope
                           .getService(ResourcesService.class)
-                          .retrieveAdapterInfo(resource.getAdapterType(), scope)
+                          .info(
+                              resource.getAdapterType(),
+                              KlabAsset.KnowledgeClass.INFORMATION,
+                              AdapterDescriptor.class,
+                              scope)
                       : embeddedAdapter.getAdapterInfo();
             }
           }
@@ -193,7 +197,11 @@ public class CompiledDataflow {
                   embeddedAdapter == null
                       ? scope
                           .getService(ResourcesService.class)
-                          .retrieveAdapterInfo(resource.getAdapterType(), scope)
+                          .info(
+                              resource.getAdapterType(),
+                              KlabAsset.KnowledgeClass.INFORMATION,
+                              AdapterDescriptor.class,
+                              scope)
                       : embeddedAdapter.getAdapterInfo();
             }
           }
@@ -223,8 +231,13 @@ public class CompiledDataflow {
       return scope.getData().get(urns.getFirst(), Resource.class);
     }
 
-    // TODO use all services hostia
-    return scope.getService(ResourcesService.class).retrieveResource(urns, scope);
+    if (urns.size() != 1) {
+      throw new KlabInternalErrorException(
+          "TO BE IMPLEMENTED: composite resource retrieval for multiple URNs");
+    }
+    return scope
+        .getService(ResourcesService.class)
+        .retrieve(urns.getFirst(), Resource.class, scope);
   }
 
   private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {

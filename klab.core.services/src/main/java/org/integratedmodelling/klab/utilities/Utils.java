@@ -28,6 +28,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -88,7 +89,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       var result =
           queryResources(
-              scope, ResourcesService.class, service -> service.resolveResourceAdapter(urn, scope));
+              scope,
+              ResourcesService.class,
+              service ->
+                  service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT, scope));
 
       if (!result.isEmpty()) {
         if (targetService.getComponentRegistry().loadComponents(result, scope)) {

@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -48,7 +49,11 @@ public class RemoteAdapterExecutor extends AbstractExecutor
             .map(
                 resourcesService -> {
                   this.service = resourcesService;
-                  return resourcesService.retrieveAdapterInfo(resource.getAdapterType(), scope);
+                  return resourcesService.info(
+                      resource.getAdapterType(),
+                      KlabAsset.KnowledgeClass.INFORMATION,
+                      AdapterDescriptor.class,
+                      scope);
                 })
             .orElse(null);
   }

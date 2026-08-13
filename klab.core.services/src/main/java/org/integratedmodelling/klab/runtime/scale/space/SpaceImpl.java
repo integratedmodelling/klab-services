@@ -6,10 +6,13 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.*;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
@@ -47,8 +50,11 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
         throw new KlabIllegalArgumentException(
             "cannot create spatial extent from resource: " + "resource services not available");
       }
-      var resource =
-          scope.getService(ResourcesService.class).retrieveResource(List.of(resourceUrn), scope);
+      if (!(scope instanceof UserScope userScope)) {
+        throw new KlabIllegalArgumentException("A user scope is required to retrieve resources");
+      }
+      Resource resource =
+          scope.getService(ResourcesService.class).retrieve(resourceUrn, Resource.class, userScope);
       dimension =
           resource.getGeometry().getDimensions().stream()
               .filter(d -> d.getType() == Type.SPACE)
@@ -99,14 +105,20 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
           throw new KlabIllegalArgumentException(
               "cannot create spatial extent from resource: " + "resource services not available");
         }
-        var definition = scope.getService(ResourcesService.class).resolve(gridUrn, scope);
+        if (!(scope instanceof UserScope userScope)) {
+          throw new KlabIllegalArgumentException("A user scope is required to resolve resources");
+        }
+        var definition =
+            scope
+                .getService(ResourcesService.class)
+                .resolve(gridUrn, KlabAsset.KnowledgeClass.DEFINITION, userScope);
         // TODO ingest the resource set and parse the symbol
         if (Utils.Notifications.hasErrors(definition.getNotifications())) {
           throw new KlabUnimplementedException("cannot create grid from definition yet");
         }
         var result =
             KnowledgeRepository.INSTANCE.ingest(
-                scope.getService(ResourcesService.class).resolve(gridUrn, scope),
+                definition,
                 scope,
                 KimSymbolDefinition.class);
         if (result.size() == 1) {

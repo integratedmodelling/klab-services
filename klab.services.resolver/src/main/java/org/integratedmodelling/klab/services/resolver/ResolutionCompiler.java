@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -114,9 +115,7 @@ public class ResolutionCompiler {
             ? GeometryRepository.INSTANCE.scale(resolutionGeometry, scope)
             : suppliedQuery.requestedScale();
     var query =
-        suppliedQuery == null
-            ? query(observation.getObservable(), scale, scope)
-            : suppliedQuery;
+        suppliedQuery == null ? query(observation.getObservable(), scale, scope) : suppliedQuery;
     if (query.hasCoverage() && query.coverage().isComplete()) {
       var ret = parentGraph.createChild(observation, scale);
       ret.addReference(query.reference(), query.coverage());
@@ -232,10 +231,19 @@ public class ResolutionCompiler {
           List<ResolutionGraph> modelGraphs = new ArrayList<>();
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
+          var contextObservable =
+              contextualizedScope.getFirst().getContextObservation() == null
+                  ? null
+                  : contextualizedScope
+                      .getFirst()
+                      .getContextObservation()
+                      .getObservable()
+                      .getSemantics();
 
           for (Model model :
               queryModels(
                   operation.getObservable(),
+                  contextObservable,
                   contextualizedScope.getFirst(),
                   contextualizedScope.getSecond())) {
 
@@ -419,11 +427,7 @@ public class ResolutionCompiler {
     }
 
     // create the observation in unresolved state, restricted to the uncovered geometry
-    var observation =
-        requireObservation(
-            observable,
-            contextualizedScope.getFirst(),
-            geometry);
+    var observation = requireObservation(observable, contextualizedScope.getFirst(), geometry);
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
@@ -455,8 +459,7 @@ public class ResolutionCompiler {
 
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
         && observable.getSemantics().isCollective())) {
-      return new QueryMatch(
-          null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
+      return new QueryMatch(null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
     }
 
     var result =
@@ -493,9 +496,7 @@ public class ResolutionCompiler {
         Coverage.create(requested, 0.0).merge(covered, LogicalConnector.UNION).getCoverage();
     var missingProportion =
         Coverage.create(requested, 0.0).merge(missing, LogicalConnector.UNION).getCoverage();
-    return Math.abs((1.0 - coveredProportion) - missingProportion) <= 1.0e-6
-        ? missing
-        : requested;
+    return Math.abs((1.0 - coveredProportion) - missingProportion) <= 1.0e-6 ? missing : requested;
   }
 
   /**
@@ -507,14 +508,31 @@ public class ResolutionCompiler {
    * @param scope
    * @return
    */
-  public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
+  public List<Model> queryModels(
+      Observable observable, Concept contextObservable, ContextScope scope, Scale scale) {
 
     var prioritizer =
         new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
 
     var resources = scope.getService(ResourcesService.class);
-    ResourceSet models = resources.resolveModels(observable, scope);
-    // FIXME the notifications from the resourceset must end up in the resolution output
+    ResourceSet models =
+        resources
+            .query(
+                Parameters.create(
+                    "observable",
+                    observable,
+                    "geometry",
+                    GeometryRepository.INSTANCE.geometry(scale),
+                    "contextObservable",
+                    contextObservable,
+                    "resolutionConstraints",
+                    scope.getResolutionConstraints()),
+                KlabAsset.KnowledgeClass.MODEL,
+                ResourceSet.class,
+                scope)
+            .stream()
+            .reduce(ResourceSet.empty(), Utils.Resources::merge);
+    // FIXME the notifications from the resource set must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);
     return ret;

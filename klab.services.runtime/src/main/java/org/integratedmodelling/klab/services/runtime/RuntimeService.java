@@ -606,8 +606,10 @@ public class RuntimeService extends BaseService
           var requirements =
               scope
                   .getService(ResourcesService.class)
-                  // FIXME use the generic resource resolution service
-                  .resolveResourceAdapter(contextualizationData.getAdapterId(), scope);
+                  .resolve(
+                      contextualizationData.getAdapterId(),
+                      KlabAsset.KnowledgeClass.COMPONENT,
+                      scope);
           if (requirements == null || requirements.isEmpty()) {
             return CompletableFuture.completedFuture(
                 Observation.empty(
@@ -1638,11 +1640,13 @@ public class RuntimeService extends BaseService
           /*
           Lookup a component that implements the service
            */
+          var requiredVersion = contextualizable.getServiceCall().getRequiredVersion();
+          var serviceUrn =
+              contextualizable.getServiceCall().getUrn()
+                  + (requiredVersion == null ? "" : "@" + requiredVersion);
           resolution =
-              resourcesService.resolveServiceCall(
-                  contextualizable.getServiceCall().getUrn(),
-                  contextualizable.getServiceCall().getRequiredVersion(),
-                  scope);
+              resourcesService.resolve(
+                  serviceUrn, KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION, scope);
         }
 
         if (resolution.isEmpty()) {
@@ -1679,7 +1683,8 @@ public class RuntimeService extends BaseService
 
           // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
           var resolution =
-              resourcesService.resolveResource(preResolveResourceData.getFirst(), scope);
+              resourcesService.resolve(
+                  preResolveResourceData.getFirst(), KlabAsset.KnowledgeClass.RESOURCE, scope);
           if (resolution.isEmpty()) {
             return resolution;
           }
@@ -1700,7 +1705,9 @@ public class RuntimeService extends BaseService
                               + resource.getResourceUrn()
                               + " is in a service that is not available"));
                 }
-                var res = service.retrieveResource(List.of(resource.getResourceUrn()), scope);
+                var res =
+                    service.retrieve(
+                        resource.getResourceUrn(), Resource.class, scope);
                 if (res == null) {
                   return ResourceSet.empty(
                       Notification.error(

@@ -95,9 +95,6 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
     return "";
   }
 
-  @Override
-  public void visit(Visitor visitor) {}
-
   public String toString() {
     return "kval[" + type + "=" + statedValue + "]";
   }

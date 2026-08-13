@@ -127,7 +127,13 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
     } else if (type == Urn.Type.KIM_OBJECT || type == Urn.Type.RESOURCE) {
 
-      var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
+      var resolvable =
+          resources.resolve(
+              urn,
+              type == Urn.Type.RESOURCE
+                  ? KlabAsset.KnowledgeClass.RESOURCE
+                  : KlabAsset.KnowledgeClass.MODEL,
+              KlabCLI.INSTANCE.user());
       var results =
           KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user(), KlabAsset.class);
 

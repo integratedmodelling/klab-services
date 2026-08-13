@@ -40,11 +40,6 @@ public abstract class NavigableKlabStatement<T extends KlabStatement> extends Na
   }
 
   @Override
-  public void visit(Visitor visitor) {
-    delegate.visit(visitor);
-  }
-
-  @Override
   public int getOffsetInDocument() {
     return delegate.getOffsetInDocument();
   }

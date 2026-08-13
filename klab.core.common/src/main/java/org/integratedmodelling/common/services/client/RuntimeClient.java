@@ -1,9 +1,6 @@
 package org.integratedmodelling.common.services.client;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -38,7 +35,6 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -75,7 +71,7 @@ public class RuntimeClient extends BaseServiceClient
 
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(observation);
-    resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
+    resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
     resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
     return client
         .withScope(scope)

@@ -25,8 +25,12 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -420,7 +424,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     Thread.ofVirtual()
         .start(
             () -> {
-              handleResultSets(resources.deleteProject(projectUrl, currentUser()));
+              handleResultSets(
+                  resources.delete(
+                      projectUrl, KlabAsset.KnowledgeClass.PROJECT, currentUser()));
             });
   }
 
@@ -435,8 +441,19 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     Thread.ofVirtual()
         .start(
             () -> {
-              handleResultSets(
-                  service.updateDocument(projectName, documentType, updatedContent, currentUser()));
+              var knowledgeClass = documentKnowledgeClass(documentType);
+              var document =
+                  service.retrieve(documentUrn, knowledgeClass.getAssetClass(), currentUser());
+              if (document instanceof KlabDocumentImpl<?> editableDocument) {
+                editableDocument.setSourceCode(updatedContent);
+                handleResultSets(
+                    service.submit(
+                        editableDocument, ResourcesService.SubmissionMode.UPDATE, currentUser()));
+              } else {
+                Logging.INSTANCE.error(
+                    "TO BE IMPLEMENTED: update requires a mutable document payload for "
+                        + documentUrn);
+              }
             });
     return true;
   }
@@ -448,13 +465,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       Thread.ofVirtual()
           .start(
               () -> {
-                var project = asset.parent(NavigableProject.class);
                 var ret =
-                    resources.deleteDocument(
-                        project.getUrn(),
-                        asset.getUrn(),
-                        ProjectStorage.ResourceType.classify(document),
-                        currentUser());
+                    resources.delete(
+                        asset.getUrn(), KlabAsset.classify(document), currentUser());
                 handleResultSets(ret);
               });
     }
@@ -504,16 +517,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     Thread.ofVirtual()
         .start(
             () -> {
-              var changes =
-                  service.createDocument(projectName, newDocumentUrn, documentType, currentUser());
-              if (changes != null) {
-                for (var change : changes) {
-                  dispatch(
-                      this,
-                      UIEvent.WorkspaceModified,
-                      getUI() == null ? change : getUI().processAlerts(change));
-                }
-              }
+              // TO BE IMPLEMENTED: submit needs a typed document containing the language-specific
+              // default source; the modeler does not yet have a template/parser factory here.
+              Logging.INSTANCE.error(
+                  "TO BE IMPLEMENTED: create document through submit: " + newDocumentUrn);
             });
     return true;
   }
@@ -667,8 +674,24 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public boolean createProject(ResourcesService service, String projectName, String workspaceName) {
     if (projectName != null) {
-      return handleResultSets(List.of(service.createProject(workspaceName, projectName, user())));
+      var project = new ProjectImpl();
+      project.setUrn(workspaceName + "/" + projectName);
+      return handleResultSets(
+          service.submit(project, ResourcesService.SubmissionMode.ADD, user()));
     }
     return false;
+  }
+
+  private static KlabAsset.KnowledgeClass documentKnowledgeClass(
+      ProjectStorage.ResourceType resourceType) {
+    return switch (resourceType) {
+      case ONTOLOGY -> KlabAsset.KnowledgeClass.ONTOLOGY;
+      case MODEL_NAMESPACE -> KlabAsset.KnowledgeClass.NAMESPACE;
+      case STRATEGY -> KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
+      case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE -> KlabAsset.KnowledgeClass.BEHAVIOR;
+      default ->
+          throw new KlabUnimplementedException(
+              "TO BE IMPLEMENTED: generic document mapping for " + resourceType);
+    };
   }
 }

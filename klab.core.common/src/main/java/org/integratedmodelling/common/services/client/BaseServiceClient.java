@@ -96,6 +96,40 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
+  public <T> T info(
+      String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.INFO,
+            infoClass,
+            "urn",
+            urn,
+            "knowledgeClass",
+            objectClass,
+            "infoClass",
+            infoClass.getCanonicalName());
+  }
+
+  @Override
+  public <T> List<T> query(
+      Parameters<String> query,
+      KlabAsset.KnowledgeClass objectClass,
+      Class<T> infoClass,
+      UserScope scope) {
+    return client
+        .withScope(scope)
+        .postCollection(
+            ServicesAPI.QUERY,
+            query == null ? Parameters.create() : query,
+            infoClass,
+            "knowledgeClass",
+            objectClass,
+            "infoClass",
+            infoClass.getCanonicalName());
+  }
+
+  @Override
   public URL getUrl() {
     return monitor.getUrl();
   }

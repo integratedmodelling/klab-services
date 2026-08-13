@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.DomainObject;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -56,12 +57,16 @@ import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import javax.print.DocFlavor;
 
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService}
@@ -241,6 +246,157 @@ public abstract class BaseService implements KlabService {
     ret.setConnected(true); // obviously
     ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     ret.setLoadPercentage(cachedLoadPercentage.get());
+    return ret;
+  }
+
+  @Override
+  public <T> T info(
+      String urn,
+      KlabAsset.KnowledgeClass objectClass,
+      Class<T> infoClass,
+      UserScope scope) {
+    Objects.requireNonNull(infoClass, "The requested info class cannot be null");
+
+    if (ServiceCapabilities.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
+      return infoClass.cast(capabilities(scope));
+    }
+    if (ServiceStatus.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
+      return infoClass.cast(status());
+    }
+
+    var object = commonInformationObjects(objectClass, scope).stream()
+        .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
+        .findFirst()
+        .orElse(null);
+    if (object != null && infoClass.isInstance(object)) {
+      return infoClass.cast(object);
+    }
+    if (DomainObject.class.isAssignableFrom(infoClass)) {
+      return infoClass.cast(asDomainObject(urn, objectClass, object));
+    }
+    if (object == null) {
+      return null;
+    }
+    throw new KlabIllegalArgumentException(
+        "Cannot project " + objectClass + " " + urn + " as " + infoClass.getCanonicalName());
+  }
+
+  @Override
+  public <T> List<T> query(
+      Parameters<String> query,
+      KlabAsset.KnowledgeClass objectClass,
+      Class<T> infoClass,
+      UserScope scope) {
+    var parameters = query == null ? Map.<String, Object>of() : query;
+    var unsupported =
+        parameters.keySet().stream().filter(key -> !Set.of("urn", "query").contains(key)).toList();
+    if (!unsupported.isEmpty()) {
+      throw new KlabIllegalArgumentException(
+          "Unsupported service query parameters " + unsupported + " for " + objectClass);
+    }
+    var pattern = Objects.toString(parameters.getOrDefault("urn", parameters.get("query")), ".*");
+    if (ServiceCapabilities.class.isAssignableFrom(infoClass)) {
+      var capabilities = capabilities(scope);
+      return informationIdentifier(capabilities).matches(pattern)
+          ? List.of(infoClass.cast(capabilities))
+          : List.of();
+    }
+    if (ServiceStatus.class.isAssignableFrom(infoClass)) {
+      var status = status();
+      return informationIdentifier(status).matches(pattern)
+          ? List.of(infoClass.cast(status))
+          : List.of();
+    }
+    return commonInformationObjects(objectClass, scope).stream()
+        .filter(object -> informationIdentifier(object).matches(pattern))
+        .map(
+            object -> {
+              if (infoClass.isInstance(object)) {
+                return infoClass.cast(object);
+              }
+              if (DomainObject.class.isAssignableFrom(infoClass)) {
+                return infoClass.cast(
+                    asDomainObject(informationIdentifier(object), objectClass, object));
+              }
+              throw new KlabIllegalArgumentException(
+                  "Cannot project "
+                      + objectClass
+                      + " as "
+                      + infoClass.getCanonicalName());
+            })
+        .toList();
+  }
+
+  protected boolean isCommonInformationClass(
+      KlabAsset.KnowledgeClass objectClass, Class<?> infoClass) {
+    return DomainObject.class.isAssignableFrom(infoClass)
+        || AdapterDescriptor.class.isAssignableFrom(infoClass)
+        || Extensions.ComponentDescriptor.class.isAssignableFrom(infoClass)
+        || Extensions.FunctionDescriptor.class.isAssignableFrom(infoClass)
+        || ServiceCapabilities.class.isAssignableFrom(infoClass)
+        || ServiceStatus.class.isAssignableFrom(infoClass);
+  }
+
+  private List<?> commonInformationObjects(
+      KlabAsset.KnowledgeClass objectClass, UserScope scope) {
+    if (getComponentRegistry() == null) {
+      return List.of();
+    }
+    return switch (objectClass) {
+      case COMPONENT -> List.copyOf(getComponentRegistry().getComponents(scope));
+      case INFORMATION ->
+          getComponentRegistry().getComponents(scope).stream()
+              .flatMap(component -> component.adapters().stream())
+              .distinct()
+              .toList();
+      case SERVICE_IMPLEMENTATION ->
+          getComponentRegistry().getComponents(scope).stream()
+              .flatMap(component -> component.services().values().stream())
+              .flatMap(Collection::stream)
+              .distinct()
+              .toList();
+      default -> List.of();
+    };
+  }
+
+  private boolean identifiesThisService(String urn) {
+    return urn == null
+        || urn.isBlank()
+        || Objects.equals(urn, serviceId())
+        || Objects.equals(urn, serviceName());
+  }
+
+  private String informationIdentifier(Object object) {
+    return switch (object) {
+      case Extensions.ComponentDescriptor component -> component.id();
+      case AdapterDescriptor adapter -> adapter.getName();
+      case Extensions.FunctionDescriptor function -> function.serviceInfo.getName();
+      case ServiceCapabilities ignored -> serviceId();
+      case ServiceStatus ignored -> serviceId();
+      default -> Objects.toString(object, "");
+    };
+  }
+
+  private DomainObject asDomainObject(
+      String urn, KlabAsset.KnowledgeClass objectClass, Object object) {
+    var ret =
+        DomainObject.create(
+            DomainObject.TYPE,
+            objectClass.name(),
+            DomainObject.URN,
+            urn,
+            DomainObject.NAME,
+            urn,
+            "serviceId",
+            serviceId());
+    if (object instanceof Extensions.ComponentDescriptor component) {
+      ret.put(DomainObject.VERSION, component.version());
+      ret.put(DomainObject.DESCRIPTION, component.description());
+    } else if (object instanceof AdapterDescriptor adapter) {
+      ret.put(DomainObject.VERSION, adapter.getVersion());
+    } else if (object != null) {
+      ret.put("value", object.toString());
+    }
     return ret;
   }
 

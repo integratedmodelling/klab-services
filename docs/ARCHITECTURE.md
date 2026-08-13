@@ -65,7 +65,8 @@ scope it receives, not by constructing service clients directly.
 The four main services all derive from the same `KlabService` contract through
 the shared service base. That common layer gives them a service identity, URL,
 status, capabilities, settings, component registry, service secret, import and
-export handling, and a `ScopeManager` for service-side peer scopes.
+export handling, shared typed `info`/`query` inspection, and a `ScopeManager` for service-side peer
+scopes.
 
 In this codebase the four concrete service classes are:
 
@@ -130,6 +131,20 @@ Resources, and Runtime.
 Capabilities are the service's scoped promise. They advertise not only service
 type, URL, and ID, but also things such as worldview status, permissions,
 components, import/export schemata, storage defaults, and semantic readiness.
+
+### Shared Inspection
+
+`info` and `query` belong to `KlabService`, not to one specialized service. Their common HTTP
+transport accepts a `KnowledgeClass`, a requested projection class, and a user scope. The shared
+`BaseService` implementation exposes service capabilities/status and the installed component,
+adapter, and service-implementation catalogues. It also provides a portable `DomainObject`
+projection when a caller needs a representation independent of a concrete descriptor class.
+
+Specialized services override these operations for objects they own. `ResourcesProvider`, for
+example, handles resource assets, workspaces, projects, and language documents, then delegates
+component, adapter, service and generic `DomainObject` projections to `BaseService`. Client-side
+transport lives in `BaseServiceClient`, so reasoner, resolver, resources and runtime clients use the
+same endpoints and serialization rules.
 
 ## Services In Scopes
 
@@ -315,7 +330,9 @@ It manages:
 - resource adapter lookup, validation, import, contextualization, and encoding.
 
 Resources is also a language-facing service. It holds parsers and can turn
-concept, observable, and behavior definitions into serialized k.LAB objects.
+concept and observable definitions into serialized k.LAB objects. Its standalone
+`parseAsset(URL, Class, UserScope)` operation parses k.Actors behaviors, k.IM ontologies and
+namespaces, and observation-strategy documents without registering them in a workspace.
 That makes it the bridge between files, projects, component archives, and the
 runtime objects used by the rest of the stack.
 

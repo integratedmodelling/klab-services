@@ -8,6 +8,7 @@ import com.google.inject.Injector;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -32,6 +33,8 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -59,6 +62,9 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
+import org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor;
+import org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor;
+import org.integratedmodelling.klab.runtime.language.KimOntologyVisitor;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
@@ -145,6 +151,68 @@ public class WorkspaceManager {
 
   public Project getProject(String projectName) {
     return projects.get(projectName);
+  }
+
+  /**
+   * Retrieve a workspace-managed asset through the generic resources-service contract. Resource
+   * assets are deliberately excluded because they are owned by the resource catalog, not the
+   * workspace indexes.
+   */
+  public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass) {
+    KlabAsset asset = null;
+    if (Workspace.class.isAssignableFrom(assetClass)) {
+      asset = getWorkspace(urn);
+    } else if (Project.class.isAssignableFrom(assetClass)) {
+      asset = getProject(urn);
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      asset = getNamespace(urn);
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      asset = getOntology(urn);
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      asset = getStrategyDocument(urn);
+    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      asset = getBehavior(urn);
+    } else if (KimModel.class.isAssignableFrom(assetClass)
+        || KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
+      var namespace = getNamespace(Utils.Paths.getLeading(urn, '.'));
+      if (namespace != null) {
+        asset =
+            namespace.getStatements().stream()
+                .filter(assetClass::isInstance)
+                .filter(statement -> urn.equals(statement.getUrn()))
+                .findFirst()
+                .orElse(null);
+      }
+    }
+    return asset == null ? null : assetClass.cast(asset);
+  }
+
+  /** Return all workspace-managed assets assignable to the requested API class. */
+  public <T extends KlabAsset> List<T> list(Class<T> assetClass) {
+    Collection<? extends KlabAsset> assets;
+    if (Workspace.class.isAssignableFrom(assetClass)) {
+      assets = getWorkspaces();
+    } else if (Project.class.isAssignableFrom(assetClass)) {
+      assets = getProjects();
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      assets = getNamespaces();
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      assets = getOntologies(false);
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      assets = getStrategyDocuments();
+    } else if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      assets = getBehaviors();
+    } else if (KimModel.class.isAssignableFrom(assetClass)
+        || KimSymbolDefinition.class.isAssignableFrom(assetClass)) {
+      assets =
+          getNamespaces().stream()
+              .flatMap(namespace -> namespace.getStatements().stream())
+              .filter(assetClass::isInstance)
+              .toList();
+    } else {
+      return List.of();
+    }
+    return assets.stream().filter(assetClass::isInstance).map(assetClass::cast).toList();
   }
 
   private <T extends KlabAsset> T updateStatus(T container) {
@@ -2534,52 +2602,22 @@ public class WorkspaceManager {
   }
 
   public KActorsBehavior getBehavior(String urn) {
-    return null; // TODO _ontologyMap.get(urn);
+    getBehaviors();
+    return updateStatus(_behaviorMap.get(urn));
   }
 
   public KimObservationStrategyDocument getStrategyDocument(String urn) {
+    getStrategyDocuments();
     return _observationStrategyDocumentMap.get(urn);
   }
 
   private KimOntology loadOntology(URL url, String project) {
     try (var input = url.openStream()) {
-      List<Notification> notifications = new ArrayList<>();
-      var parsed = ontologyParser.parse(input, notifications);
-      var syntax =
-          new OntologySyntaxImpl(parsed, languageValidationScope) {
-
-            @Override
-            protected void logWarning(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
-                          .Warning));
-            }
-
-            @Override
-            protected void logError(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
-            }
-          };
-
-      var timestamp =
+      return readOntology(
+          new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified();
-
-      return LanguageAdapter.INSTANCE.adaptOntology(syntax, project, notifications, timestamp);
+              : new File(url.getFile()).lastModified());
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -2588,48 +2626,39 @@ public class WorkspaceManager {
 
   private KimNamespace loadNamespace(URL url, String project) {
     try (var input = url.openStream()) {
-      List<Notification> notifications = new ArrayList<>();
-      var parsed = namespaceParser.parse(input, notifications);
-      var syntax =
-          new NamespaceSyntaxImpl(parsed, languageValidationScope) {
-
-            @Override
-            protected void logWarning(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
-                          .Warning));
-            }
-
-            @Override
-            protected void logError(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
-            }
-          };
-      var timestamp =
+      return readNamespace(
+          new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified();
-      return LanguageAdapter.INSTANCE.adaptNamespace(syntax, project, notifications, timestamp);
+              : new File(url.getFile()).lastModified());
     } catch (IOException e) {
       scope.error(e);
+      return null;
     }
-    return null;
   }
 
-  public KActorsBehavior readBehavior(String input) {
+  public <T extends KlabAsset> T parseAsset(String input, Class<T> assetClass) {
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+    if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(readBehavior(input, System.currentTimeMillis()));
+    } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(readObservationStrategy(input, System.currentTimeMillis()));
+    } else if (KimOntology.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(readOntology(input, System.currentTimeMillis()));
+    } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(readNamespace(input, System.currentTimeMillis()));
+    }
+    throw new KlabIllegalArgumentException(
+        "Unsupported standalone document class " + assetClass.getCanonicalName());
+  }
+
+  private KActorsBehavior readBehavior(String input, long timestamp) {
+
+    if (input == null || input.isBlank()) {
+      return null;
+    }
 
     var errors = new AtomicBoolean(false);
     var notams = new ArrayList<Notification>();
@@ -2637,10 +2666,6 @@ public class WorkspaceManager {
     InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     var parsed = behaviorParser.parse(inputStream, notams);
     KActorsBehavior ret = null;
-
-    if (input == null || input.isBlank()) {
-      return null;
-    }
 
     if (!notams.isEmpty()) {
 
@@ -2688,7 +2713,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptBehavior(
-                syntax, syntax.getUrn(), "no.project", notifications, System.currentTimeMillis());
+                syntax, syntax.getUrn(), "no.project", notifications, timestamp);
         /*
         unless there are already syntax errors in the behavior, perform basic validation
         using the lenient validator and add any logical errors/warnings to the result
@@ -2704,47 +2729,34 @@ public class WorkspaceManager {
     return ret;
   }
 
-  private KActorsBehavior loadBehavior(URL url, String project) {
-    //        try (var input = url.openStream()) {
-    //            List<Notification> notifications = new ArrayList<>();
-    //            var parsed = behaviorParser.parse(input, notifications);
-    //            var syntax = new KActorsBehaviorImpl(parsed, languageValidationScope) {
-    //
-    //                @Override
-    //                protected void logWarning(ParsedObject target, EObject object,
-    //                EStructuralFeature
-    //                feature,
-    //                                          String message) {
-    //                    notifications.add(makeNotification(target, object, feature, message,
-    //
-    // org.integratedmodelling.klab.api.services.runtime.Notification.Level
-    //                            .Warning));
-    //                }
-    //
-    //                @Override
-    //                protected void logError(ParsedObject target, EObject object,
-    // EStructuralFeature
-    //                feature,
-    //                                        String message) {
-    //                    notifications.add(makeNotification(target, object, feature, message,
-    //
-    // org.integratedmodelling.klab.api.services.runtime.Notification.Level
-    //                            .Error));
-    //                }
-    //            };
-    //            return LanguageAdapter.INSTANCE.adaptBehavior(syntax, project, notifications);
-    //        } catch (IOException e) {
-    //            scope.error(e);
-    return null;
-    //        }
-  }
+  private KimNamespace readNamespace(String input, long timestamp) {
 
-  private KimObservationStrategyDocument loadStrategy(URL url, String project) {
-    try (var input = url.openStream()) {
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+
+    var errors = new AtomicBoolean(false);
+    var notams = new ArrayList<Notification>();
+
+    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    var parsed = namespaceParser.parse(inputStream, notams);
+    KimNamespace ret = null;
+
+    if (!notams.isEmpty()) {
+
+      // TODO extract lexical context
+      Logging.INSTANCE.error(
+          "k.Actors submitted code has errors: ",
+          Klab.ErrorCode.RESOURCE_VALIDATION,
+          Klab.ErrorContext.OBSERVATION_STRATEGY);
+
+      Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+    } else {
+
       List<Notification> notifications = new ArrayList<>();
-      var parsed = strategyParser.parse(input, notifications);
       var syntax =
-          new ObservationStrategiesSyntaxImpl(parsed, languageValidationScope) {
+          new NamespaceSyntaxImpl(parsed, this.languageValidationScope) {
 
             @Override
             protected void logWarning(
@@ -2769,13 +2781,197 @@ public class WorkspaceManager {
                       feature,
                       message,
                       org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
+              errors.set(true);
             }
           };
-      var timestamp =
+
+      if (!errors.get()) {
+        ret =
+            LanguageAdapter.INSTANCE.adaptNamespace(syntax, "no.project", notifications, timestamp);
+        /*
+        unless there are already syntax errors in the behavior, perform basic validation
+        using the lenient validator and add any logical errors/warnings to the result
+         */
+        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
+          var visitor = new KimNamespaceVisitor();
+          visitor.visit(ret);
+          ret.getNotifications().addAll(visitor.getNotifications());
+        }
+      }
+    }
+
+    return ret;
+  }
+
+  private KimObservationStrategyDocument readObservationStrategy(String input, long timestamp) {
+
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+
+    var errors = new AtomicBoolean(false);
+    var notams = new ArrayList<Notification>();
+
+    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    var parsed = strategyParser.parse(inputStream, notams);
+    KimObservationStrategyDocument ret = null;
+
+    if (!notams.isEmpty()) {
+
+      // TODO extract lexical context
+      Logging.INSTANCE.error(
+          "k.Actors submitted code has errors: ",
+          Klab.ErrorCode.RESOURCE_VALIDATION,
+          Klab.ErrorContext.OBSERVATION_STRATEGY);
+
+      Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+    } else {
+
+      List<Notification> notifications = new ArrayList<>();
+      var syntax =
+          new ObservationStrategiesSyntaxImpl(parsed, this.languageValidationScope) {
+
+            @Override
+            protected void logWarning(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
+                          .Warning));
+            }
+
+            @Override
+            protected void logError(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
+              errors.set(true);
+            }
+          };
+
+      if (!errors.get()) {
+        ret =
+            LanguageAdapter.INSTANCE.adaptStrategies(
+                syntax, "no.project", notifications, timestamp);
+        /*
+        unless there are already syntax errors in the behavior, perform basic validation
+        using the lenient validator and add any logical errors/warnings to the result
+         */
+        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
+          var visitor = new KimObservationStrategyDocumentVisitor();
+          visitor.visit(ret);
+          ret.getNotifications().addAll(visitor.getNotifications());
+        }
+      }
+    }
+
+    return ret;
+  }
+
+  private KimOntology readOntology(String input, long timestamp) {
+
+    if (input == null || input.isBlank()) {
+      return null;
+    }
+
+    var errors = new AtomicBoolean(false);
+    var notams = new ArrayList<Notification>();
+
+    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+    var parsed = ontologyParser.parse(inputStream, notams);
+    KimOntology ret = null;
+
+    if (!notams.isEmpty()) {
+
+      // TODO extract lexical context
+      Logging.INSTANCE.error(
+          "k.Actors submitted code has errors: ",
+          Klab.ErrorCode.RESOURCE_VALIDATION,
+          Klab.ErrorContext.OBSERVATION_STRATEGY);
+
+      Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+    } else {
+
+      List<Notification> notifications = new ArrayList<>();
+      var syntax =
+          new OntologySyntaxImpl(parsed, this.languageValidationScope) {
+
+            @Override
+            protected void logWarning(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
+                          .Warning));
+            }
+
+            @Override
+            protected void logError(
+                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              notifications.add(
+                  makeNotification(
+                      target,
+                      object,
+                      feature,
+                      message,
+                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
+              errors.set(true);
+            }
+          };
+
+      if (!errors.get()) {
+        ret =
+            LanguageAdapter.INSTANCE.adaptOntology(syntax, "no.project", notifications, timestamp);
+        /*
+        unless there are already syntax errors in the behavior, perform basic validation
+        using the lenient validator and add any logical errors/warnings to the result
+         */
+        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
+          var visitor = new KimOntologyVisitor();
+          visitor.visit(ret);
+          ret.getNotifications().addAll(visitor.getNotifications());
+        }
+      }
+    }
+
+    return ret;
+  }
+
+  private KActorsBehavior loadBehavior(URL url, String project) {
+    try (var input = url.openStream()) {
+      return readBehavior(
+          new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified();
-      return LanguageAdapter.INSTANCE.adaptStrategies(syntax, project, notifications, timestamp);
+              : new File(url.getFile()).lastModified());
+    } catch (IOException e) {
+      scope.error(e);
+      return null;
+    }
+  }
+
+  private KimObservationStrategyDocument loadStrategy(URL url, String project) {
+    try (var input = url.openStream()) {
+      return readObservationStrategy(
+          new String(input.readAllBytes(), StandardCharsets.UTF_8),
+          url.getFile().isEmpty()
+              ? System.currentTimeMillis()
+              : new File(url.getFile()).lastModified());
     } catch (IOException e) {
       scope.error(e);
       return null;

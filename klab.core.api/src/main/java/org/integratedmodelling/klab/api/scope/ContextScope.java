@@ -452,6 +452,7 @@ public interface ContextScope extends SessionScope {
     return ret.toString();
   }
 
+  // FIXME this must come with the query, not with the scope
   static Geometry getResolutionGeometry(ContextScope scope) {
 
     var resolutionGeometry =

@@ -10,14 +10,14 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * The handle to an agent running in a runtime service. This is available at both client and service
  * sides, and while it offers advanced functionalities through its action methods, it must remain
  * serializable across network boundaries. The agent runs a k.Actors {@link
- * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior} and may or may not be tied to a
- * {@link org.integratedmodelling.klab.api.scope.UserScope}, {@link
- * org.integratedmodelling.klab.api.scope.SessionScope} or {@link
- * org.integratedmodelling.klab.api.scope.ContextScope}. In addition, the agent may represent an
- * agent {@link org.integratedmodelling.klab.api.knowledge.observation.Observation} in a {@link
- * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}. In all these cases, the reference to
- * the agent is obtained through their respective hosts. Otherwise, a raw behavior may be submitted
- * to the runtime for execution outside of these scopes.
+ * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior behavior} and may or may not be
+ * tied to a {@link org.integratedmodelling.klab.api.scope.UserScope user scope}, {@link
+ * org.integratedmodelling.klab.api.scope.SessionScope session scope} or {@link
+ * org.integratedmodelling.klab.api.scope.ContextScope context scope}. In addition, the agent may
+ * represent an agent {@link org.integratedmodelling.klab.api.knowledge.observation.Observation
+ * observation} in a {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin digital twin}.
+ * In all these cases, the reference to the agent is obtained through their respective hosts.
+ * Otherwise, a raw behavior may be submitted to the runtime for execution outside of these scopes.
  */
 public interface Agent extends Serializable {
 
@@ -39,8 +39,8 @@ public interface Agent extends Serializable {
    * All agents have a name, which may be automatically generated and is not guaranteed to be
    * unique. A nonblank name submitted with the instantiation call is retained. If no name is
    * requested and the agent is linked to an {@link
-   * org.integratedmodelling.klab.api.knowledge.observation.Observation}, the observation name is
-   * used; otherwise a name is derived from the behavior URN.
+   * org.integratedmodelling.klab.api.knowledge.observation.Observation observation}, the
+   * observation name is used; otherwise a name is derived from the behavior URN.
    *
    * @return the name of the agent. Never null.
    */
@@ -90,9 +90,9 @@ public interface Agent extends Serializable {
   List<Notification> getNotifications();
 
   /**
-   * Textual CONSTANT values accepted by actions annotated with {@code @handle}, including
-   * inherited handlers after runtime override resolution. These values describe the agent's
-   * inspectable custom-message API. Reserved runtime messages such as {@code @stdin} are excluded.
+   * Textual CONSTANT values accepted by actions annotated with {@code @handle}, including inherited
+   * handlers after runtime override resolution. These values describe the agent's inspectable
+   * custom-message API. Reserved runtime messages such as {@code @stdin} are excluded.
    *
    * @return an immutable list, never null
    */
@@ -123,9 +123,9 @@ public interface Agent extends Serializable {
       T message, Class<? extends R> responseClass);
 
   /**
-   * Ask a question and complete exceptionally if no correlated response arrives within the
-   * supplied timeout. Implementations predating correlated messaging may ignore the explicit
-   * timeout by delegating to the two-argument contract.
+   * Ask a question and complete exceptionally if no correlated response arrives within the supplied
+   * timeout. Implementations predating correlated messaging may ignore the explicit timeout by
+   * delegating to the two-argument contract.
    *
    * @param message serializable request, normally a {@link RuntimeAgent.CustomMessage}
    * @param responseClass expected response payload class

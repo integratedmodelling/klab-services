@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Tag(
@@ -92,23 +93,6 @@ public class ResourceCRUDController {
     throw new KlabAuthorizationException("No valid scope in resource LIST request");
   }
 
-  @Operation(
-      summary = "Query assets",
-      description = "Run a query for assets in the specified knowledge class")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Query executed successfully"),
-    @ApiResponse(responseCode = "400", description = "Invalid query parameters"),
-    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-    @ApiResponse(responseCode = "403", description = "Forbidden")
-  })
-  @PostMapping(ServicesAPI.RESOURCES.LIST)
-  public <T extends KlabAsset> List<T> query(
-      @Parameter(description = "Knowledge class to query") @PathVariable(name = "knowledgeClass")
-          KlabAsset.KnowledgeClass assetClass,
-      Principal scope) {
-    return List.of(); // resourcesServer.klabService().q(assetClass, scope);
-  }
-
   @Operation(summary = "Delete asset", description = "Delete a k.LAB asset by its URN")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Asset deleted successfully"),
@@ -118,8 +102,9 @@ public class ResourceCRUDController {
   })
   @DeleteMapping(ServicesAPI.RESOURCES.DELETE)
   public List<ResourceSet> delete(
-      @Parameter(description = "URN of the asset to delete") String urn,
+      @Parameter(description = "URN of the asset to delete") @PathVariable(name = "urn") String urn,
       @Parameter(description = "Knowledge class of the asset")
+          @PathVariable(name = "knowledgeClass")
           KlabAsset.KnowledgeClass knowledgeClass,
       Principal principal) {
 
@@ -158,42 +143,6 @@ public class ResourceCRUDController {
       return resourcesServer.klabService().resolve(urn, assetClass, userScope);
     }
     return ResourceSet.empty(Notification.error("No valid scope in resource SUBMIT request"));
-  }
-
-  @GetMapping(ServicesAPI.RESOURCES.INFO)
-  public <T> T info(
-      @Parameter(
-              description =
-                  "URN of the asset to resolve. If knowledgeClass==INFORMATION, must also contain class name after a @ sign")
-          @PathVariable(name = "urn")
-          String urn,
-      @Parameter(description = "Knowledge class of the asset")
-          @PathVariable(name = "knowledgeClass")
-          KlabAsset.KnowledgeClass assetClass,
-      Principal principal) {
-    /*
-    if asset class is INFORMATION, the URN must contain the desired class name
-     */
-    if (principal instanceof EngineAuthorization authorization) {
-      var scope = authorization.getScope();
-      if (scope instanceof UserScope userScope) {
-        if (assetClass == KlabAsset.KnowledgeClass.INFORMATION) {
-          var ss = urn.split("@");
-          urn = ss.length > 1 ? ss[0] : null;
-          var className = ss.length > 1 ? ss[1] : ss[0];
-          try {
-            Class<T> clazz = (Class<T>) Class.forName(className);
-            return resourcesServer.klabService().info(urn, assetClass, clazz, userScope);
-          } catch (ClassNotFoundException e) {
-            throw new KlabIllegalArgumentException("Class " + className + " not found");
-          }
-        }
-        return resourcesServer
-            .klabService()
-            .info(urn, assetClass, (Class<T>) assetClass.getAssetClass(), userScope);
-      }
-    }
-    return null;
   }
 
   @Operation(

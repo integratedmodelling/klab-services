@@ -4,9 +4,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Verb;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -63,9 +64,17 @@ public class LanguageService implements Language {
       check the resource service in the scope to see if we can find a component that supports this call
        */
       ResourceSet resourceSet =
-          scope
-              .getService(ResourcesService.class)
-              .resolveServiceCall(call.getUrn(), call.getRequiredVersion(), scope);
+          scope instanceof UserScope userScope
+              ? scope
+                  .getService(ResourcesService.class)
+                  .resolve(
+                      call.getRequiredVersion() == null
+                          ? call.getUrn()
+                          : call.getUrn() + "@" + call.getRequiredVersion(),
+                      KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION,
+                      userScope)
+              : ResourceSet.empty(
+                  Notification.error("A user scope is required to resolve service calls"));
       if (!resourceSet.isEmpty()) {
         componentRegistry.loadComponents(resourceSet, scope);
         descriptors = this.componentRegistry.getFunctionDescriptor(call);

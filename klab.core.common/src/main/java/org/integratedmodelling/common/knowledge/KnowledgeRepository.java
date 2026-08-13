@@ -9,8 +9,10 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
@@ -209,14 +211,22 @@ public enum KnowledgeRepository {
                 ResourcesService.class, s -> Objects.equals(s.serviceId(), resource.getServiceId()))
             .orElse(scope.getService(ResourcesService.class));
 
+    if (!(scope instanceof UserScope userScope)) {
+      scope.error("A user scope is required to retrieve resources-service documents");
+      return false;
+    }
+
     KlabDocument<?> doc =
         switch (resource.getKnowledgeClass()) {
-          case NAMESPACE -> resources.retrieveNamespace(resource.getResourceUrn(), scope);
+          case NAMESPACE ->
+              resources.retrieve(resource.getResourceUrn(), KimNamespace.class, userScope);
           case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT ->
-              resources.retrieveBehavior(resource.getResourceUrn(), scope);
-          case ONTOLOGY -> resources.retrieveOntology(resource.getResourceUrn(), scope);
+              resources.retrieve(resource.getResourceUrn(), KActorsBehavior.class, userScope);
+          case ONTOLOGY ->
+              resources.retrieve(resource.getResourceUrn(), KimOntology.class, userScope);
           case OBSERVATION_STRATEGY_DOCUMENT ->
-              resources.retrieveObservationStrategyDocument(resource.getResourceUrn(), scope);
+              resources.retrieve(
+                  resource.getResourceUrn(), KimObservationStrategyDocument.class, userScope);
           default -> null;
         };
 

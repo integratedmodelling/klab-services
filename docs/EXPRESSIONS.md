@@ -193,4 +193,3 @@ builder.
   and comments are shielded from that lexer, and regression tests cover the supported
   transformations, but new Groovy syntax should be tested before it is relied upon in contextual
   expressions. `DoNotPreprocess` is the escape hatch for stand-alone code.
-

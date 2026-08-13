@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -292,15 +293,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
   private KlabAsset resolveAsset(
       KnowledgeClass type, String urn, ResourcesService service, Scope scope) {
+    if (!(scope instanceof UserScope userScope)) {
+      throw new KlabUnimplementedException("A user scope is required to retrieve navigable assets");
+    }
     return switch (type) {
-      case RESOURCE -> service.retrieveResource(List.of(urn), scope);
-      case NAMESPACE -> service.retrieveNamespace(urn, scope);
-      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> service.retrieveBehavior(urn, scope);
-      case ONTOLOGY -> service.retrieveOntology(urn, scope);
-      case OBSERVATION_STRATEGY_DOCUMENT -> service.retrieveObservationStrategyDocument(urn, scope);
+      case RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, ONTOLOGY,
+              OBSERVATION_STRATEGY_DOCUMENT, PROJECT ->
+          service.retrieve(urn, type.getAssetClass(), userScope);
       case COMPONENT ->
           throw new KlabUnimplementedException("resolving components within navigable assets");
-      case PROJECT -> service.retrieveProject(urn, scope);
       default ->
           throw new KlabUnimplementedException(
               "resolving unsupported type " + type + " of " + "navigable assets");

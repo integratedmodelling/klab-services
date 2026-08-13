@@ -36,9 +36,6 @@ public abstract class KActorsStatementImpl extends KActorsCodeStatementImpl
   }
 
   @Override
-  public void visit(Visitor visitor) {}
-
-  @Override
   public String getTag() {
     return tag;
   }
