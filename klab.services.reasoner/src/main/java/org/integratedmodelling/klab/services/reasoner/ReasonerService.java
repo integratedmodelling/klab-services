@@ -51,8 +51,8 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
-import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.runtime.language.KimObservableVisitor;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
@@ -309,8 +309,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     this.observationReasoner = new ObservationReasoner(this);
-    this.syntacticMatcher =
-        new SyntacticMatcher(this, serviceScope().getService(ResourcesService.class));
+    this.syntacticMatcher = new SyntacticMatcher(this);
     this.semanticMatcher = new SemanticMatcher(this);
 
     return true;
@@ -1318,8 +1317,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var parsingScope =
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
         var ontology =
-            resourceService.retrieve(
-                resource.getResourceUrn(), KimOntology.class, parsingScope);
+            resourceService.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
         }
@@ -1348,9 +1346,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
         var observationStrategyDocument =
             resourceService.retrieve(
-                resource.getResourceUrn(),
-                KimObservationStrategyDocument.class,
-                parsingScope);
+                resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
 
         observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
         for (var strategy : observationStrategyDocument.getStatements()) {
@@ -2681,8 +2677,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
     var visitor = new KimObservableVisitor();
     visitor.visit(peer);
-    var requestedTypes =
-        org.integratedmodelling.common.utils.Utils.Collections.asSet(types);
+    var requestedTypes = org.integratedmodelling.common.utils.Utils.Collections.asSet(types);
     for (var component : visitor.getConcepts()) {
       if (component.getName() == null
           || Sets.intersection(component.getType(), requestedTypes).size() != types.size()) {
