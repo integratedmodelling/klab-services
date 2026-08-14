@@ -54,6 +54,8 @@ public interface KlabAsset extends Serializable {
      * This is used to tag a variety of informational assets, such as adapter descriptors, reports,
      * language info, etc. When this is used, more information is always supplied so that the actual
      * informational object wanted can be identified and processed correctly.
+     *
+     * TODO substitute with something more idiomatic + use DomainObject with a schema
      */
     INFORMATION;
 

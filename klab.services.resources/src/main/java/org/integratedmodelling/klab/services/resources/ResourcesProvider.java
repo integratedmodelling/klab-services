@@ -1276,7 +1276,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Parameters<String> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
-            || assetClass == KnowledgeClass.INFORMATION
+//            || assetClass == KnowledgeClass.INFORMATION
             || assetClass == KnowledgeClass.SERVICE_IMPLEMENTATION)) {
       return super.query(query == null ? Parameters.create() : query, assetClass, infoClass, scope);
     }
