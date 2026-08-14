@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler;
 
 import java.io.File;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
 // import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
@@ -145,7 +147,9 @@ public interface Modeler extends UIController {
       RepositoryState.Operation operation,
       String... arguments);
 
-  /**
+    boolean handleResultSets(List<ResourceSet> ret);
+
+    /**
    * Call the correspondent API on the service and ingest all modifications, propagating UI events
    * as needed.
    *

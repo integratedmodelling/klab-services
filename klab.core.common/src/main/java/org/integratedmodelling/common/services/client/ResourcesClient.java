@@ -106,9 +106,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
         .withScope(scope)
         .putCollection(
             ServicesAPI.RESOURCES.SUBMIT,
-            asset instanceof KlabDocument<?> document
-                ? document.getSourceCode()
-                : Utils.Json.asString(asset),
+            Utils.Json.asString(asset),
             ResourceSet.class,
             "knowledgeClass",
             KlabAsset.classify(asset),

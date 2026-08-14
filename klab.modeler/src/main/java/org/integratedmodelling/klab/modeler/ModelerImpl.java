@@ -28,7 +28,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.*;
@@ -47,7 +46,6 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContain
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
-import org.integratedmodelling.klab.modeler.model.NavigableProject;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
@@ -488,7 +486,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             });
   }
 
-  private boolean handleResultSets(List<ResourceSet> ret) {
+  @Override
+  public boolean handleResultSets(List<ResourceSet> ret) {
     var result = true;
     if (ret != null && !ret.isEmpty()) {
       for (var change : ret) {

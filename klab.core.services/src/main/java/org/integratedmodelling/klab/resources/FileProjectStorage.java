@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -384,24 +385,26 @@ public class FileProjectStorage implements ProjectStorage {
           collectResources(".obs", "strategies", false, ret);
         }
         case BEHAVIOR -> {
-          collectResources(".kactors", "src", false, ret);
+          collectResources(".kactor", "behaviors", false, ret);
         }
         case APPLICATION -> {
-          collectResources(".kactors", "apps", false, ret);
+          collectResources(".kactor", "apps", false, ret);
         }
         case SCRIPT -> {
-          collectResources(".kactors", "scripts", false, ret);
+          collectResources(".kactor", "scripts", false, ret);
         }
         case TESTCASE -> {
-          collectResources(".kactors", "testcases", false, ret);
+          collectResources(".kactor", "testcases", false, ret);
         }
         case BEHAVIOR_COMPONENT -> {
-          collectResources(".kactors", "components", false, ret);
+          collectResources(".kactor", "components", false, ret);
         }
         case RESOURCE -> {
+          // FIXME obsolete
           collectResources("resource.json", "resources", false, ret);
         }
         case RESOURCE_ASSET -> {
+          // FIXME obsolete
           // ehm - requires the resource name, then pass * as extension
         }
       }
@@ -445,7 +448,15 @@ public class FileProjectStorage implements ProjectStorage {
   }
 
   @Override
-  public URL create(String resourceId, ResourceType resourceType, Scope scope) {
+  public URL create(KlabDocument<?> document, Scope scope) {
+    var resourceType = ProjectStorage.ResourceType.classify(document);
+    var resourceId = document.getUrn();
+    return create(resourceId, resourceType, document.getSourceCode(), scope);
+  }
+
+  // TODO pass the source code from the template or from an existing document
+  @Override
+  public URL create(String resourceId, ResourceType resourceType, String contents, Scope scope) {
 
     if (!rootFolder.exists()) {
       rootFolder.mkdirs();
@@ -461,7 +472,7 @@ public class FileProjectStorage implements ProjectStorage {
     try {
 
       URL ret = file.toURI().toURL();
-      Templates.createDocument(resourceType, resourceId, file);
+      Utils.Files.writeStringToFile(contents, file);
 
       if (isTracked()) {
         try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {

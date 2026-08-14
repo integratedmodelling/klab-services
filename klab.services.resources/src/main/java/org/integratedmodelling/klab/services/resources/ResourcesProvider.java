@@ -794,12 +794,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return null;
   }
 
-  public List<ResourceSet> createDocument(
+  public List<ResourceSet> createEmptyDocument(
       String projectName,
       String documentUrn,
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
-    return this.workspaceManager.createDocument(projectName, documentType, documentUrn, scope);
+    return this.workspaceManager.createEmptyDocument(projectName, documentType, documentUrn, scope);
+  }
+
+  public List<ResourceSet> createDocument(
+      KlabDocument<?> document, Project project, UserScope scope) {
+    return this.workspaceManager.createDocument(document, project, scope);
   }
 
   public List<ResourceSet> updateDocument(
@@ -1159,6 +1164,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         }
         return List.of(createProject(coordinates[0], coordinates[1], scope));
       case KlabDocument<?> document:
+        var project =
+            document.getProjectName() == null
+                ? null
+                : workspaceManager.getProject(document.getProjectName());
+        if (project == null) {
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "Document "
+                          + document.getUrn()
+                          + " references an unknown project "
+                          + document.getProjectName())));
+        }
         var knowledgeClass = KlabAsset.classify(document);
         if (submissionMode == SubmissionMode.MERGE) {
           return List.of(
@@ -1170,23 +1188,36 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           throw new KlabIllegalArgumentException(
               "Submitted documents must provide projectName and sourceCode");
         }
-        if (document instanceof KActorsBehavior) {
+        //        if (document instanceof KActorsBehavior) {
+        //          return List.of(
+        //              ResourceSet.empty(
+        //                  Notification.error(
+        //                      "TO BE IMPLEMENTED: WorkspaceManager cannot update k.Actors
+        // documents yet")));
+        //        }
+        var existingDocument = retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
+        if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
           return List.of(
               ResourceSet.empty(
                   Notification.error(
-                      "TO BE IMPLEMENTED: WorkspaceManager cannot update k.Actors documents yet")));
+                      "ADD requested for an existing document " + document.getUrn())));
         }
-        var existingDocument = retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
-        if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
-          return List.of();
+        if (existingDocument != null
+            && (submissionMode == SubmissionMode.UPDATE
+                || submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
+
+          // UPDATE currently replaces the source in file storage. Version history is pending
+          // storage support and is called out explicitly in docs/RESOURCES.md.
+          return updateDocument(
+              document.getProjectName(),
+              knowledgeClass.getResourceType(),
+              document.getSourceCode(),
+              scope);
+        } else if (existingDocument == null
+            && (submissionMode == SubmissionMode.ADD
+                || submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
+          return createDocument(document, project, scope);
         }
-        // UPDATE currently replaces the source in file storage. Version history is pending storage
-        // support and is called out explicitly in docs/RESOURCES.md.
-        return updateDocument(
-            document.getProjectName(),
-            knowledgeClass.getResourceType(),
-            document.getSourceCode(),
-            scope);
       default:
         return List.of(
             ResourceSet.empty(
@@ -1276,7 +1307,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Parameters<String> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
-//            || assetClass == KnowledgeClass.INFORMATION
+            //            || assetClass == KnowledgeClass.INFORMATION
             || assetClass == KnowledgeClass.SERVICE_IMPLEMENTATION)) {
       return super.query(query == null ? Parameters.create() : query, assetClass, infoClass, scope);
     }

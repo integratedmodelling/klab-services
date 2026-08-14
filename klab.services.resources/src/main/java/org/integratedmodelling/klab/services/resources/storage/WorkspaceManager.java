@@ -8,7 +8,6 @@ import com.google.inject.Injector;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -32,9 +31,8 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -62,6 +60,7 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
+import org.integratedmodelling.klab.resources.Templates;
 import org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor;
 import org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor;
 import org.integratedmodelling.klab.runtime.language.KimOntologyVisitor;
@@ -709,6 +708,30 @@ public class WorkspaceManager {
     return new ResourceSet()
         .withNotification(
             Notification.info("This service does not provide the " + urn + " worldview"));
+  }
+
+  public List<ResourceSet> createDocument(
+      KlabDocument<?> document, Project project, UserScope scope) {
+    var pd = projectDescriptors.get(project.getUrn());
+    if (pd == null || !(pd.storage instanceof FileProjectStorage fileProjectStorage)) {
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + project + " is not handled by this service. Update ignored.")));
+    }
+
+    try {
+      var documentType = ProjectStorage.ResourceType.classify(document);
+      var docUrl = fileProjectStorage.create(document, scope);
+      if (docUrl != null) {
+        return handleFileChange(
+            project.getUrn(), List.of(Triple.of(documentType, CRUDOperation.CREATE, docUrl)));
+      }
+    } catch (Exception e) {
+      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
+    }
+
+    return List.of();
   }
 
   class StrategyParser extends Parser<Strategies> {
@@ -3804,7 +3827,7 @@ public class WorkspaceManager {
     return ret;
   }
 
-  public List<ResourceSet> createDocument(
+  public List<ResourceSet> createEmptyDocument(
       String projectName,
       ProjectStorage.ResourceType documentType,
       String documentUrn,
@@ -3829,7 +3852,12 @@ public class WorkspaceManager {
     }
 
     try {
-      var document = fileProjectStorage.create(documentUrn, documentType, lockingScope);
+      var document =
+          fileProjectStorage.create(
+              documentUrn,
+              documentType,
+              Templates.getTemplateContent(documentType, documentUrn),
+              lockingScope);
       if (document != null) {
         return handleFileChange(
             projectName, List.of(Triple.of(documentType, CRUDOperation.CREATE, document)));

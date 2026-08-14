@@ -95,6 +95,17 @@ public interface ProjectStorage {
   List<URL> listResources(ResourceType... types);
 
   /**
+   * Create a project document from an externally submitted one, which must be error-free and
+   * contain the document source code. The document type, URN and storage location will be inferred
+   * from the document type and content.
+   *
+   * @param document
+   * @param scope
+   * @return
+   */
+  URL create(KlabDocument<?> document, Scope scope);
+
+  /**
    * Create a project resource in the right place with default content. Only supported by some
    * storage types, should throw an exception if creation of the requested assets isn't supported.
    * Must be aware of tracking according to implementation conventions.
@@ -105,7 +116,7 @@ public interface ProjectStorage {
    *     tracked, this should add authorship information to the commit.
    * @return
    */
-  URL create(String resourceId, ResourceType resourceType, Scope scope);
+  URL create(String resourceId, ResourceType resourceType, String contents, Scope scope);
 
   /**
    * Read-only status may depend on the storage medium (online, protected JAR) and/or on signature
@@ -161,15 +172,17 @@ public interface ProjectStorage {
         urn = path.substring("src".length() + 1).replace(separator, ".");
       } else if (relativeFilePath.startsWith("scripts" + separator) && behaviorExtension) {
         type = ResourceType.SCRIPT;
-        urn = path.substring("scripts".length() + 1);
-      } else if ((relativeFilePath.startsWith("tests" + separator)
-              || relativeFilePath.startsWith("testcases" + separator))
+        urn = path.substring("scripts".length() + 1).replace(separator, ".");
+      } else if (relativeFilePath.startsWith("testcases" + separator)
           && behaviorExtension) {
         type = ResourceType.TESTCASE;
-        urn = path.substring(relativeFilePath.indexOf(separator) + separator.length());
+        urn = path.substring("testcases".length() + 1).replace(separator, ".");
       } else if (relativeFilePath.startsWith("apps" + separator) && behaviorExtension) {
         type = ResourceType.APPLICATION;
-        urn = path.substring("apps".length() + 1);
+        urn = path.substring("apps".length() + 1).replace(separator, ".");
+      } else if (relativeFilePath.startsWith("behaviors" + separator) && behaviorExtension) {
+        type = ResourceType.BEHAVIOR;
+        urn = path.substring("behaviors".length() + 1).replace(separator, ".");
       } else if (relativeFilePath.startsWith("strategies" + separator) && "obs".equals(extension)) {
         type = ResourceType.STRATEGY;
         urn = path.substring("strategies".length() + 1);
@@ -199,10 +212,31 @@ public interface ProjectStorage {
    */
   static String getRelativeFilePath(String urn, ResourceType type, String separator) {
     return switch (type) {
-      case SCRIPT -> "scripts" + separator + urn + "." + type.getFileExtension();
-      case TESTCASE -> "testcases" + separator + urn + "." + type.getFileExtension();
-      case APPLICATION -> "apps" + separator + urn + "." + type.getFileExtension();
-      case ONTOLOGY, MODEL_NAMESPACE, BEHAVIOR ->
+      case SCRIPT ->
+          "scripts"
+              + separator
+              + urn.replace('.', separator.charAt(0))
+              + "."
+              + type.getFileExtension();
+      case TESTCASE ->
+          "testcases"
+              + separator
+              + urn.replace('.', separator.charAt(0))
+              + "."
+              + type.getFileExtension();
+      case APPLICATION ->
+          "apps"
+              + separator
+              + urn.replace('.', separator.charAt(0))
+              + "."
+              + type.getFileExtension();
+      case BEHAVIOR, BEHAVIOR_COMPONENT ->
+          "behaviors"
+              + separator
+              + urn.replace('.', separator.charAt(0))
+              + "."
+              + type.getFileExtension();
+      case ONTOLOGY, MODEL_NAMESPACE ->
           "src" + separator + urn.replace('.', separator.charAt(0)) + "." + type.getFileExtension();
       case STRATEGY -> "strategies" + separator + urn + "." + type.getFileExtension();
       default -> null;
