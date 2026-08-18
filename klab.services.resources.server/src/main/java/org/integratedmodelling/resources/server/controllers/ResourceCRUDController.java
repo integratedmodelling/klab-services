@@ -181,7 +181,7 @@ public class ResourceCRUDController {
           var namespace = Utils.Json.parseObject(contents, KimNamespaceImpl.class);
           return resourcesServer.klabService().submit(namespace, submissionMode, userScope);
         }
-        case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
+        case BEHAVIOR, COMPONENT, SCRIPT, TESTCASE, APPLICATION -> {
           var behavior = Utils.Json.parseObject(contents, KActorsBehaviorImpl.class);
           return resourcesServer.klabService().submit(behavior, submissionMode, userScope);
         }

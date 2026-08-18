@@ -28,6 +28,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.*;
@@ -37,6 +39,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.UIView;
@@ -439,21 +442,52 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     Thread.ofVirtual()
         .start(
             () -> {
-              var knowledgeClass = documentKnowledgeClass(documentType);
-              var document =
-                  service.retrieve(documentUrn, knowledgeClass.getAssetClass(), currentUser());
-              if (document instanceof KlabDocumentImpl<?> editableDocument) {
-                editableDocument.setSourceCode(updatedContent);
+              try {
+                var knowledgeClass = documentKnowledgeClass(documentType);
+                var document =
+                    service.retrieve(documentUrn, knowledgeClass.getAssetClass(), currentUser());
+                var editableDocument =
+                    documentUpdatePayload(document, projectName, documentUrn, updatedContent);
+                if (editableDocument != null) {
+                  handleResultSets(
+                      service.submit(
+                          editableDocument, ResourcesService.SubmissionMode.UPDATE, currentUser()));
+                } else {
+                  handleResultSets(
+                      List.of(
+                          ResourceSet.empty(
+                              Notification.error(
+                                  "Cannot update document "
+                                      + documentUrn
+                                      + ": no mutable document was retrieved"))));
+                }
+              } catch (Throwable throwable) {
                 handleResultSets(
-                    service.submit(
-                        editableDocument, ResourcesService.SubmissionMode.UPDATE, currentUser()));
-              } else {
-                Logging.INSTANCE.error(
-                    "TO BE IMPLEMENTED: update requires a mutable document payload for "
-                        + documentUrn);
+                    List.of(
+                        ResourceSet.empty(
+                            Notification.error(
+                                "Cannot update document " + documentUrn, throwable))));
               }
             });
     return true;
+  }
+
+  static KlabAsset documentUpdatePayload(
+      KlabAsset retrieved, String projectName, String documentUrn, String updatedContent) {
+    if (retrieved instanceof KActorsBehavior behavior) {
+      var update = new KActorsBehaviorImpl();
+      update.setUrn(documentUrn);
+      update.setBehaviorType(behavior.getBehaviorType());
+      update.setProjectName(projectName);
+      update.setSourceCode(updatedContent);
+      return update;
+    }
+    if (retrieved instanceof KlabDocumentImpl<?> editableDocument) {
+      editableDocument.setProjectName(projectName);
+      editableDocument.setSourceCode(updatedContent);
+      return editableDocument;
+    }
+    return null;
   }
 
   @Override
@@ -687,7 +721,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       case ONTOLOGY -> KlabAsset.KnowledgeClass.ONTOLOGY;
       case MODEL_NAMESPACE -> KlabAsset.KnowledgeClass.NAMESPACE;
       case STRATEGY -> KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
-      case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE -> KlabAsset.KnowledgeClass.BEHAVIOR;
+      case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE ->
+          KlabAsset.KnowledgeClass.BEHAVIOR;
       default ->
           throw new KlabUnimplementedException(
               "TO BE IMPLEMENTED: generic document mapping for " + resourceType);

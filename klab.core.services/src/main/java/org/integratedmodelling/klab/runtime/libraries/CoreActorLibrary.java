@@ -208,7 +208,11 @@ public class CoreActorLibrary {
 
     private static void write(
         RuntimeAgent.Scope scope, RuntimeAgent.ConsoleMessageType stream, String text) {
-      if (!scope.getAgent().sendToConsole(stream, text)) {
+      boolean delivered =
+          scope.getAgent() instanceof RuntimeAgentBase runtime
+              ? runtime.sendToConsole(scope, stream, text)
+              : scope.getAgent().sendToConsole(stream, text);
+      if (!delivered) {
         if (stream == RuntimeAgent.ConsoleMessageType.STDERR) {
           System.err.print(text);
           System.err.flush();

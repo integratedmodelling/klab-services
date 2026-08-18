@@ -16,7 +16,7 @@ public class TestCaseFolder extends NavigableFolderImpl<NavigableDocument> {
 
   @Override
   protected List<NavigableAsset> createChildren() {
-    return parent(NavigableProject.class).getScripts().stream()
+    return parent(NavigableProject.class).getTestCases().stream()
         .map(
             s ->
                 (NavigableAsset)

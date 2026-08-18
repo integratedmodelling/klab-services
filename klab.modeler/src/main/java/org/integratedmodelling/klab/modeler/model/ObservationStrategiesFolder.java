@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ObservationStrategiesFolder extends NavigableFolderImpl<NavigableDocument> {
 
-  public static final String TITLE = "Observation Strategies";
+  public static final String TITLE = "Observation strategies";
 
   ObservationStrategiesFolder(NavigableProject project) {
     super(TITLE, project);

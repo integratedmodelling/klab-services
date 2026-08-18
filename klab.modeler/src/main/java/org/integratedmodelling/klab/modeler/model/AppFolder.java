@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 
 public class AppFolder extends NavigableFolderImpl<NavigableDocument> {
 
-  public static final String TITLE = "Apps";
+  public static final String TITLE = "Applications";
 
   AppFolder(NavigableProject project) {
     super(TITLE, project);
@@ -16,7 +16,7 @@ public class AppFolder extends NavigableFolderImpl<NavigableDocument> {
 
   @Override
   protected List<NavigableAsset> createChildren() {
-    return parent(NavigableProject.class).getScripts().stream()
+    return parent(NavigableProject.class).getApps().stream()
         .map(
             s ->
                 (NavigableAsset)

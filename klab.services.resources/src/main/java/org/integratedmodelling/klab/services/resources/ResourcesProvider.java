@@ -809,10 +809,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public List<ResourceSet> updateDocument(
       String projectName,
+      String documentUrn,
       ProjectStorage.ResourceType documentType,
       String content,
+      boolean overwriteExisting,
       UserScope scope) {
-    var ret = this.workspaceManager.updateDocument(projectName, documentType, content, scope);
+    var ret =
+        this.workspaceManager.updateDocument(
+            projectName, documentUrn, documentType, content, overwriteExisting, scope);
     invalidateCaches();
     return ret;
   }
@@ -1210,8 +1214,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           // storage support and is called out explicitly in docs/RESOURCES.md.
           return updateDocument(
               document.getProjectName(),
-              knowledgeClass.getResourceType(),
+              document.getUrn(),
+              ProjectStorage.ResourceType.classify(document),
               document.getSourceCode(),
+              submissionMode == SubmissionMode.CREATE_OR_UPDATE,
               scope);
         } else if (existingDocument == null
             && (submissionMode == SubmissionMode.ADD

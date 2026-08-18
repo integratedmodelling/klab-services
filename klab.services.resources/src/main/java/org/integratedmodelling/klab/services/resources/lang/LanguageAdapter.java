@@ -1418,14 +1418,14 @@ public enum LanguageAdapter {
 
   public KActorsBehavior adaptBehavior(
       BehaviorSyntaxImpl syntax,
-      String name,
       String projectName,
       List<Notification> notifications,
       long timestamp) {
 
     var ret = new KActorsBehaviorImpl();
+    var behaviorUrn = syntax.getUrn();
 
-    ret.setUrn(name);
+    ret.setUrn(behaviorUrn);
     ret.setLastUpdateTimestamp(timestamp);
     ret.setProjectName(projectName);
     ret.setSourceCode(syntax.encode());
@@ -1439,7 +1439,10 @@ public enum LanguageAdapter {
         .putAll(
             (Map<? extends String, ?>)
                 adaptValue(
-                    syntax.getProperties(), name, projectName, KlabAsset.KnowledgeClass.BEHAVIOR));
+                    syntax.getProperties(),
+                    behaviorUrn,
+                    projectName,
+                    KlabAsset.KnowledgeClass.BEHAVIOR));
     ret.setBehaviorType(
         switch (syntax.getType()) {
           case TESTCASE -> KActorsBehavior.Type.UNITTEST;
@@ -1458,7 +1461,10 @@ public enum LanguageAdapter {
             .map(
                 annotation ->
                     adaptAnnotation(
-                        annotation, name, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
+                        annotation,
+                        behaviorUrn,
+                        projectName,
+                        KlabAsset.KnowledgeClass.BEHAVIOR))
             .toList());
 
     for (var imp : syntax.getImports()) {
@@ -1482,7 +1488,8 @@ public enum LanguageAdapter {
     }
 
     for (var action : syntax.getActions()) {
-      ret.getStatements().add(adaptAction(action, ret, name, projectName, notifications));
+      ret.getStatements()
+          .add(adaptAction(action, ret, behaviorUrn, projectName, notifications));
     }
     ret.setNotifications(new ArrayList<>(notifications));
 

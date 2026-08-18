@@ -787,6 +787,7 @@ public class ServiceMonitor {
       }
       recomputeEngineStatus();
     }
+    recomputeWhenProcessesHaveStopped();
   }
 
   public void stopApplicationAuxiliaryServices() {

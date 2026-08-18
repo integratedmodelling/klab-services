@@ -122,7 +122,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     if (asset == null) {
       return null;
     }
-    var parent = getParentFor(asset, this);
+    var parent =
+        asset instanceof NavigableKlabAsset<?> navigableAsset
+                && navigableAsset.parent instanceof NavigableKlabAsset<?> declaredParent
+            ? declaredParent
+            : getParentFor(asset, this);
+
+    if (parent == null) {
+      return null;
+    }
 
     NavigableAsset ret = null;
     if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
@@ -135,10 +143,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             case KimOntology ontology -> new NavigableKimOntology(ontology, parent);
             case KimObservationStrategyDocument observationStrategyDocument ->
                 new NavigableObservationStrategies(observationStrategyDocument, parent);
-
-            //            case KActorsBehavior behavior -> { // TODO missing
-            //              new NavigableActorsBehavior(behavior);
-            //            }
+            case KActorsBehavior behavior -> new NavigableKActorsBehavior(behavior, parent);
             default ->
                 throw new KlabInternalErrorException("cannot handle navigable " + asset.getClass());
           };
@@ -300,8 +305,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       case RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, ONTOLOGY,
               OBSERVATION_STRATEGY_DOCUMENT, PROJECT ->
           service.retrieve(urn, type.getAssetClass(), userScope);
-      case COMPONENT ->
-          throw new KlabUnimplementedException("resolving components within navigable assets");
+      case COMPONENT -> service.retrieve(urn, KActorsBehavior.class, userScope);
       default ->
           throw new KlabUnimplementedException(
               "resolving unsupported type " + type + " of " + "navigable assets");
@@ -468,8 +472,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     // breadth-first as we normally would use this for documents. Skip folders.
     for (var child : this.children) {
       if (!(child instanceof NavigableFolder)
-          && match.contains(KlabAsset.classify(child))
-          && resourceUrn.equals(child.getUrn())) {
+          && assetClass.isInstance(child)
+          && resourceUrn.equals(child.getUrn())
+          && match.contains(KlabAsset.classify(child))) {
         return (T) child;
       }
     }
@@ -563,10 +568,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         var path =
             ProjectStorage.getRelativeFilePath(
                 document.getUrn(), ProjectStorage.ResourceType.classify(document), "/");
-        if (state.getUncommittedPaths().contains(path)) {
-          // this is the actual one we need I guess
-          this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
-        } else if (state.getConflictingPaths().contains(path)) {
+        if (state.getConflictingPaths().contains(path)) {
           this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.CONFLICTED);
         } else if (state.getAddedPaths().contains(path)) {
           this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.ADDED);
@@ -576,6 +578,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
           this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
         } else if (state.getRemovedPaths().contains(path)) {
           this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
+        } else if (state.getUncommittedPaths().contains(path)) {
+          // JGit reports a broad union here; use it only after the specific states above.
+          this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
         } else {
           this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.CLEAN);
         }

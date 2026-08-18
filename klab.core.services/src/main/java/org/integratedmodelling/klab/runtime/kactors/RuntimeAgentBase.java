@@ -667,6 +667,21 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return publishConsoleOutput(type, text);
   }
 
+  /**
+   * Send console output while preserving the action scope that produced it. Specialized runtimes
+   * use the scope to associate output with an execution record; the ordinary live-console path is
+   * unchanged.
+   */
+  public final boolean sendToConsole(
+      RuntimeAgent.Scope sourceScope, RuntimeAgent.ConsoleMessageType type, String text) {
+    consoleOutput(sourceScope, type, text);
+    return sendToConsole(type, text);
+  }
+
+  /** Hook for runtimes that retain scoped console output in execution reports. */
+  protected void consoleOutput(
+      RuntimeAgent.Scope sourceScope, RuntimeAgent.ConsoleMessageType type, String text) {}
+
   protected boolean publishConsoleOutput(
       RuntimeAgent.ConsoleMessageType type, String text) {
     return publishAgentMessage(

@@ -1659,7 +1659,7 @@ public class WorkspaceManager {
                 if (!errors.get()) {
                   var document =
                       LanguageAdapter.INSTANCE.adaptBehavior(
-                          syntax, pd.name, projectName, notifications, timestamp);
+                          syntax, projectName, notifications, timestamp);
                   _behaviorOrder.add(document);
                   _behaviorMap.put(document.getUrn(), document);
                 }
@@ -1815,8 +1815,26 @@ public class WorkspaceManager {
 
       for (KActorsBehavior behavior : getBehaviors()) {
         if (projectId.equals(behavior.getProjectName())) {
-          // FIXME choose based on where they belong
-          ret.getBehaviors().add(behavior);
+
+          switch (behavior.getBehaviorType()) {
+            case KActorsBehavior.Type.SCRIPT:
+              ret.getScripts().add(behavior);
+              break;
+            case KActorsBehavior.Type.APP:
+              ret.getApps().add(behavior);
+              break;
+            case KActorsBehavior.Type.UNITTEST:
+              ret.getTestCases().add(behavior);
+              break;
+            case KActorsBehavior.Type.BEHAVIOR:
+            case KActorsBehavior.Type.TASK:
+            case KActorsBehavior.Type.USER:
+            case KActorsBehavior.Type.COMPONENT:
+            case KActorsBehavior.Type.TRAIT:
+            case KActorsBehavior.Type.LIBRARY:
+              ret.getBehaviors().add(behavior);
+              break;
+          }
         }
       }
 
@@ -2028,7 +2046,8 @@ public class WorkspaceManager {
             switch (change.getFirst()) {
               case ONTOLOGY -> loadOntology(change.getThird(), project);
               case MODEL_NAMESPACE -> loadNamespace(change.getThird(), project);
-              case BEHAVIOR -> loadBehavior(change.getThird(), project);
+              case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE ->
+                  loadBehavior(change.getThird(), project);
               case STRATEGY -> loadStrategy(change.getThird(), project);
               default -> null;
             };
@@ -2055,7 +2074,8 @@ public class WorkspaceManager {
             switch (change.getFirst()) {
               case ONTOLOGY -> loadOntology(change.getThird(), project);
               case MODEL_NAMESPACE -> loadNamespace(change.getThird(), project);
-              case BEHAVIOR -> loadBehavior(change.getThird(), project);
+              case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE ->
+                  loadBehavior(change.getThird(), project);
               case STRATEGY -> loadStrategy(change.getThird(), project);
               default -> null;
             };
@@ -2120,7 +2140,7 @@ public class WorkspaceManager {
 
           if (change.getFirst() == ProjectStorage.ResourceType.ONTOLOGY
               || change.getFirst() == ProjectStorage.ResourceType.MODEL_NAMESPACE
-              || change.getFirst() == ProjectStorage.ResourceType.BEHAVIOR) {
+              || isBehaviorResource(change.getFirst())) {
             // same for strategies and behaviors
             affectedBehaviors.addAll(affectedOntologies);
             affectedBehaviors.add(oldAsset.getUrn());
@@ -2312,6 +2332,10 @@ public class WorkspaceManager {
 
     this.loading.set(false);
 
+    if (projectDescriptor != null && projectDescriptor.workspace != null) {
+      createProjectData(project, projectDescriptor.workspace);
+    }
+
     var ret = new ArrayList<ResourceSet>();
     if (!worldviewChange.getOntologies().isEmpty()
         || !worldviewChange.getObservationStrategies().isEmpty()) {
@@ -2339,21 +2363,41 @@ public class WorkspaceManager {
 
   private void replaceAndIndex(KimNamespace namespace) {
     _namespaceMap.put(namespace.getUrn(), namespace);
+    if (_namespaceOrder != null
+        && _namespaceOrder.stream()
+            .noneMatch(existing -> existing.getUrn().equals(namespace.getUrn()))) {
+      _namespaceOrder.add(namespace);
+    }
   }
 
   private void replaceAndIndex(KActorsBehavior behavior) {
     // TODO index app and component metadata for queries
     _behaviorMap.put(behavior.getUrn(), behavior);
+    if (_behaviorOrder != null
+        && _behaviorOrder.stream()
+            .noneMatch(existing -> existing.getUrn().equals(behavior.getUrn()))) {
+      _behaviorOrder.add(behavior);
+    }
   }
 
   private void replaceAndIndex(KimOntology ontology) {
     // TODO index concept declarations for queries
     _ontologyMap.put(ontology.getUrn(), ontology);
+    if (_ontologyOrder != null
+        && _ontologyOrder.stream()
+            .noneMatch(existing -> existing.getUrn().equals(ontology.getUrn()))) {
+      _ontologyOrder.add(ontology);
+    }
   }
 
   private void replaceAndIndex(KimObservationStrategyDocument strategies) {
     // TODO index concept declarations for queries
     _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
+    if (_observationStrategyDocuments != null
+        && _observationStrategyDocuments.stream()
+            .noneMatch(existing -> existing.getUrn().equals(strategies.getUrn()))) {
+      _observationStrategyDocuments.add(strategies);
+    }
   }
 
   private void handleRepositoryDelete(
@@ -2389,7 +2433,8 @@ public class WorkspaceManager {
         switch (change.getFirst()) {
           case ONTOLOGY -> _ontologyMap.remove(deletedUrn);
           case MODEL_NAMESPACE -> _namespaceMap.remove(deletedUrn);
-          case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> _behaviorMap.remove(deletedUrn);
+          case BEHAVIOR, BEHAVIOR_COMPONENT, SCRIPT, TESTCASE, APPLICATION ->
+              _behaviorMap.remove(deletedUrn);
           case STRATEGY -> _observationStrategyDocumentMap.remove(deletedUrn);
           default -> null;
         };
@@ -2473,7 +2518,8 @@ public class WorkspaceManager {
 
     switch (knowledgeClass) {
       case NAMESPACE -> resourceSet.getNamespaces().add(resource);
-      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> resourceSet.getBehaviors().add(resource);
+      case BEHAVIOR, COMPONENT, SCRIPT, TESTCASE, APPLICATION ->
+          resourceSet.getBehaviors().add(resource);
       case ONTOLOGY -> resourceSet.getOntologies().add(resource);
       case OBSERVATION_STRATEGY_DOCUMENT -> resourceSet.getObservationStrategies().add(resource);
       default -> resourceSet.getResources().add(resource);
@@ -2485,13 +2531,21 @@ public class WorkspaceManager {
     return switch (resourceType) {
       case ONTOLOGY -> KlabAsset.KnowledgeClass.ONTOLOGY;
       case MODEL_NAMESPACE -> KlabAsset.KnowledgeClass.NAMESPACE;
-      case BEHAVIOR -> KlabAsset.KnowledgeClass.BEHAVIOR;
+      case BEHAVIOR, BEHAVIOR_COMPONENT -> KlabAsset.KnowledgeClass.BEHAVIOR;
       case SCRIPT -> KlabAsset.KnowledgeClass.SCRIPT;
       case TESTCASE -> KlabAsset.KnowledgeClass.TESTCASE;
       case APPLICATION -> KlabAsset.KnowledgeClass.APPLICATION;
       case STRATEGY -> KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
       default -> KlabAsset.KnowledgeClass.RESOURCE;
     };
+  }
+
+  private boolean isBehaviorResource(ProjectStorage.ResourceType resourceType) {
+    return resourceType == ProjectStorage.ResourceType.BEHAVIOR
+        || resourceType == ProjectStorage.ResourceType.BEHAVIOR_COMPONENT
+        || resourceType == ProjectStorage.ResourceType.APPLICATION
+        || resourceType == ProjectStorage.ResourceType.SCRIPT
+        || resourceType == ProjectStorage.ResourceType.TESTCASE;
   }
 
   /**
@@ -2542,7 +2596,7 @@ public class WorkspaceManager {
           case NAMESPACE -> {
             resourceSet.getNamespaces().add(resource);
           }
-          case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
+          case BEHAVIOR, COMPONENT, SCRIPT, TESTCASE, APPLICATION -> {
             resourceSet.getBehaviors().add(resource);
           }
           case ONTOLOGY -> {
@@ -2665,7 +2719,7 @@ public class WorkspaceManager {
       return null;
     }
     if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
-      return assetClass.cast(readBehavior(input, System.currentTimeMillis()));
+      return assetClass.cast(readBehavior(input, System.currentTimeMillis(), "no.project"));
     } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
       return assetClass.cast(readObservationStrategy(input, System.currentTimeMillis()));
     } else if (KimOntology.class.isAssignableFrom(assetClass)) {
@@ -2677,7 +2731,7 @@ public class WorkspaceManager {
         "Unsupported standalone document class " + assetClass.getCanonicalName());
   }
 
-  private KActorsBehavior readBehavior(String input, long timestamp) {
+  private KActorsBehavior readBehavior(String input, long timestamp, String projectName) {
 
     if (input == null || input.isBlank()) {
       return null;
@@ -2736,7 +2790,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptBehavior(
-                syntax, syntax.getUrn(), "no.project", notifications, timestamp);
+                syntax, projectName, notifications, timestamp);
         /*
         unless there are already syntax errors in the behavior, perform basic validation
         using the lenient validator and add any logical errors/warnings to the result
@@ -2981,7 +3035,8 @@ public class WorkspaceManager {
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified());
+              : new File(url.getFile()).lastModified(),
+          project);
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -3565,8 +3620,10 @@ public class WorkspaceManager {
    */
   public List<ResourceSet> updateDocument(
       String projectName,
+      String documentUrn,
       ProjectStorage.ResourceType documentType,
       String contents,
+      boolean overwriteExisting,
       Scope lockingScope) {
 
     String lockingAuthorization = lockingScope.getIdentity().getId();
@@ -3603,7 +3660,10 @@ public class WorkspaceManager {
                   .parse(new StringReader(contents), notifications)
                   .getNamespace()
                   .getName();
-          //            case BEHAVIOR-> null; // TODO
+          case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> {
+            var behavior = readBehavior(contents, System.currentTimeMillis(), projectName);
+            yield behavior == null ? null : behavior.getUrn();
+          }
           case STRATEGY ->
               strategyParser
                   .parse(new StringReader(contents), notifications)
@@ -3615,11 +3675,25 @@ public class WorkspaceManager {
     if (parsed != null && pd.storage instanceof FileProjectStorage fileProjectStorage) {
 
       // do the update in the stored project and screw it
-      var url = fileProjectStorage.update(documentType, parsed, contents);
+      var previousUrl = fileProjectStorage.locate(documentUrn, documentType);
+      var targetExisted =
+          !documentUrn.equals(parsed) && fileProjectStorage.locate(parsed, documentType) != null;
+      var url =
+          fileProjectStorage.update(
+              documentType, documentUrn, parsed, contents, overwriteExisting);
 
       ret =
-          handleFileChange(
-              projectName, List.of(Triple.of(documentType, CRUDOperation.UPDATE, url)));
+          documentUrn.equals(parsed)
+              ? handleFileChange(
+                  projectName, List.of(Triple.of(documentType, CRUDOperation.UPDATE, url)))
+              : handleFileChange(
+                  projectName,
+                  List.of(
+                      Triple.of(documentType, CRUDOperation.DELETE, previousUrl),
+                      Triple.of(
+                          documentType,
+                          targetExisted ? CRUDOperation.UPDATE : CRUDOperation.CREATE,
+                          url)));
     }
 
     return ret;
@@ -3749,11 +3823,12 @@ public class WorkspaceManager {
                   .add(Notification.error("Ontology " + documentUrn + " not found"));
             }
           }
-          case BEHAVIOR -> {
+          case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> {
             var previous = _behaviorMap.remove(documentUrn);
-            _behaviorOrder.stream()
-                .filter(o -> !o.getUrn().equals(documentUrn))
-                .collect(Collectors.toList());
+            _behaviorOrder =
+                _behaviorOrder.stream()
+                    .filter(o -> !o.getUrn().equals(documentUrn))
+                    .collect(Collectors.toList());
             if (previous != null) {
               result
                   .getBehaviors()
@@ -3764,7 +3839,7 @@ public class WorkspaceManager {
                           documentUrn,
                           projectName,
                           previous.getVersion(),
-                          KlabAsset.KnowledgeClass.BEHAVIOR,
+                          KlabAsset.classify(previous),
                           previous.getLastUpdateTimestamp(),
                           false));
               result
@@ -3779,9 +3854,13 @@ public class WorkspaceManager {
           }
           case STRATEGY -> {
             var previous = _observationStrategyDocumentMap.remove(documentUrn);
-            _observationStrategies.stream()
-                .filter(o -> !o.getUrn().equals(documentUrn))
-                .collect(Collectors.toList());
+            _observationStrategyDocuments =
+                _observationStrategyDocuments.stream()
+                    .filter(o -> !o.getUrn().equals(documentUrn))
+                    .collect(Collectors.toList());
+            if (_worldview != null) {
+              _worldview.setObservationStrategies(_observationStrategyDocuments);
+            }
             if (previous != null) {
               result
                   .getObservationStrategies()
@@ -3822,6 +3901,9 @@ public class WorkspaceManager {
 
     if (!ret.isEmpty()) {
       addRepositoryState(ret, pd, fileProjectStorage.getRepositoryState());
+      if (pd.workspace != null) {
+        createProjectData(projectName, pd.workspace);
+      }
     }
 
     return ret;

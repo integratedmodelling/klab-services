@@ -126,7 +126,7 @@ public final class KActorsTestSupport {
                   : new File(behaviorUrl.getFile()).lastModified();
           behavior =
               LanguageAdapter.INSTANCE.adaptBehavior(
-                  syntax, syntax.getUrn(), "test.project", adaptationNotifications, timestamp);
+                  syntax, "test.project", adaptationNotifications, timestamp);
         }
       }
     } catch (IOException e) {

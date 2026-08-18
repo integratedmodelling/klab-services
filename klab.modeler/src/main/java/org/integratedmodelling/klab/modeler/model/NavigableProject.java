@@ -109,15 +109,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
     ret.addAll(getNamespaces().stream().map(n -> new NavigableKimNamespace(n, this)).toList());
 
     if (!delegate.getBehaviors().isEmpty()) {
-      ret.add(
-          new NavigableFolderImpl<NavigableDocument>("Behaviors", this) {
-            @Override
-            protected List<NavigableAsset> createChildren() {
-              return project.getBehaviors().stream()
-                  .map(s -> (NavigableAsset) (new NavigableKActorsBehavior(s, this)))
-                  .toList();
-            }
-          });
+      ret.add(new BehaviorFolder(this));
     }
 
     if (!delegate.getApps().isEmpty()) {
@@ -225,7 +217,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
             } else if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
               yield TestCaseFolder.TITLE;
             }
-            yield null;
+            yield BehaviorFolder.TITLE;
           }
           case KimObservationStrategyDocument strategy -> ObservationStrategiesFolder.TITLE;
           default -> null;
@@ -254,7 +246,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
               } else if (behavior.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
                 yield new TestCaseFolder(this);
               }
-              throw new KlabInternalErrorException("cannot handle " + behavior.getBehaviorType());
+              yield new BehaviorFolder(this);
             }
             case KimObservationStrategyDocument strategy -> new ObservationStrategiesFolder(this);
             default -> throw new KlabInternalErrorException("cannot handle " + document.getClass());

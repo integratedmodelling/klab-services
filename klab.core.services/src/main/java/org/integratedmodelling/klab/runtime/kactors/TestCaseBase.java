@@ -173,6 +173,26 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       }
     }
 
+    /** Retain one scoped console chunk alongside the test that produced it. */
+    public void consoleOutput(RuntimeAgent.ConsoleMessageType stream, String text) {
+      if (data == null || stream == null || text == null) {
+        return;
+      }
+      var output =
+          DomainObject.create(
+              DomainObject.TYPE,
+              "console",
+              "stream",
+              stream.name(),
+              "text",
+              text,
+              "timestamp",
+              System.currentTimeMillis());
+      synchronized (getAgent().report) {
+        data.getChildren().add(output);
+      }
+    }
+
     private void publish(TestMessageType type, DomainObject payload) {
       getAgent()
           .publishAgentMessage(
@@ -182,12 +202,16 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     }
 
     private static void updateTestOutcome(DomainObject test, Throwable failure) {
-      long passed =
+      var assertions =
           test.getChildren().stream()
+              .filter(child -> "assertion".equals(child.type()))
+              .toList();
+      long passed =
+          assertions.stream()
               .filter(assertion -> assertion.get("outcome", false))
               .count();
-      long failed = test.getChildren().size() - passed;
-      test.put("assertions", test.getChildren().size());
+      long failed = assertions.size() - passed;
+      test.put("assertions", assertions.size());
       test.put("assertionsPassed", passed);
       test.put("assertionsFailed", failed);
       test.put("outcome", failure == null && failed == 0);
@@ -200,10 +224,14 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
               .filter(test -> test.get("end") != null && test.get("outcome", false))
               .count();
       long assertions =
-          report.getChildren().stream().mapToLong(test -> test.getChildren().size()).sum();
+          report.getChildren().stream()
+              .flatMap(test -> test.getChildren().stream())
+              .filter(child -> "assertion".equals(child.type()))
+              .count();
       long assertionsPassed =
           report.getChildren().stream()
               .flatMap(test -> test.getChildren().stream())
+              .filter(child -> "assertion".equals(child.type()))
               .filter(assertion -> assertion.get("outcome", false))
               .count();
       report.put("tests", report.getChildren().size());
@@ -379,6 +407,14 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       Throwable exception) {
     if (scope instanceof TestCaseScope testCaseScope) {
       testCaseScope.assertionEvaluated(assertion, success, exception);
+    }
+  }
+
+  @Override
+  protected void consoleOutput(
+      RuntimeAgent.Scope scope, RuntimeAgent.ConsoleMessageType type, String text) {
+    if (scope instanceof TestCaseScope testCaseScope) {
+      testCaseScope.consoleOutput(type, text);
     }
   }
 

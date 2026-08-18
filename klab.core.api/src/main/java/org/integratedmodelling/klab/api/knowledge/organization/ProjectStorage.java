@@ -57,7 +57,7 @@ public interface ProjectStorage {
         case ONTOLOGY -> "kwv";
         case MODEL_NAMESPACE -> "kim";
         case STRATEGY -> "obs";
-        case BEHAVIOR, TESTCASE, SCRIPT, APPLICATION -> "kactors";
+        case BEHAVIOR, BEHAVIOR_COMPONENT, TESTCASE, SCRIPT, APPLICATION -> "kactors";
         default ->
             throw new KlabUnimplementedException("file extension for document of class " + this);
       };
@@ -68,7 +68,13 @@ public interface ProjectStorage {
         case KimOntology o -> ONTOLOGY;
         case KimNamespace o -> MODEL_NAMESPACE;
         case KimObservationStrategyDocument o -> STRATEGY;
-        case KActorsBehavior o -> BEHAVIOR; // TODO check type
+        case KActorsBehavior behavior ->
+            switch (behavior.getBehaviorType()) {
+              case APP -> APPLICATION;
+              case SCRIPT -> SCRIPT;
+              case UNITTEST -> TESTCASE;
+              default -> BEHAVIOR;
+            };
         default -> throw new KlabUnimplementedException("no resource type for " + document);
       };
     }

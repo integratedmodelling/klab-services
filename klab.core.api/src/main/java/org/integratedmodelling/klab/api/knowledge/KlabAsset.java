@@ -88,6 +88,7 @@ public interface KlabAsset extends Serializable {
         case SCRIPT -> ProjectStorage.ResourceType.SCRIPT;
         case TESTCASE -> ProjectStorage.ResourceType.TESTCASE;
         case APPLICATION -> ProjectStorage.ResourceType.APPLICATION;
+        case COMPONENT -> ProjectStorage.ResourceType.BEHAVIOR;
         case ONTOLOGY -> ProjectStorage.ResourceType.ONTOLOGY;
         case OBSERVATION_STRATEGY_DOCUMENT -> ProjectStorage.ResourceType.STRATEGY;
         default ->

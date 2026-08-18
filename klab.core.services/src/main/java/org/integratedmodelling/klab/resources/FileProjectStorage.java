@@ -288,16 +288,10 @@ public class FileProjectStorage implements ProjectStorage {
           new FileWatcher(
               this.rootFolder,
               (changedFile, action) -> {
-                var extension = Utils.Files.getFileExtension(changedFile);
-                ResourceType type =
-                    switch (extension) {
-                      case "kwv" -> ResourceType.ONTOLOGY;
-                      case "kim" -> ResourceType.MODEL_NAMESPACE;
-                      case "kactors" -> ResourceType.BEHAVIOR;
-                      case "obs" -> ResourceType.STRATEGY;
-                      // TODO handle all other files, whose role depends on location
-                      default -> null;
-                    };
+                var relativePath =
+                    this.rootFolder.toPath().relativize(changedFile.toPath()).toString();
+                var documentData = ProjectStorage.getDocumentData(relativePath, File.separator);
+                ResourceType type = documentData == null ? null : documentData.getFirst();
                 CRUDOperation operation = null;
                 if (action == StandardWatchEventKinds.ENTRY_MODIFY) {
                   operation = CRUDOperation.UPDATE;
@@ -518,14 +512,65 @@ public class FileProjectStorage implements ProjectStorage {
   }
 
   public URL update(ResourceType resourceType, String urn, String content) {
+    return update(resourceType, urn, urn, content);
+  }
+
+  /** Update a document, moving it to its canonical path when its declared URN changes. */
+  public URL update(
+      ResourceType resourceType, String previousUrn, String updatedUrn, String content) {
+    return update(resourceType, previousUrn, updatedUrn, content, false);
+  }
+
+  public URL update(
+      ResourceType resourceType,
+      String previousUrn,
+      String updatedUrn,
+      String content,
+      boolean overwriteExisting) {
     try {
-      File resourceFile =
+      File previousFile =
           new File(
               rootFolder
                   + File.separator
-                  + ProjectStorage.getRelativeFilePath(urn, resourceType, File.separator));
-      Utils.Files.writeStringToFile(content, resourceFile);
-      return resourceFile.toURI().toURL();
+                  + ProjectStorage.getRelativeFilePath(
+                      previousUrn, resourceType, File.separator));
+      File updatedFile =
+          new File(
+              rootFolder
+                  + File.separator
+                  + ProjectStorage.getRelativeFilePath(
+                      updatedUrn, resourceType, File.separator));
+
+      if (!previousFile.equals(updatedFile)) {
+        if (!previousFile.isFile()) {
+          throw new KlabIOException("Cannot rename missing document " + previousFile);
+        }
+        if (updatedFile.exists() && !overwriteExisting) {
+          throw new KlabIOException("Cannot rename document over existing file " + updatedFile);
+        }
+        Files.createDirectories(updatedFile.toPath().getParent());
+        try {
+          if (overwriteExisting) {
+            Files.move(
+                previousFile.toPath(),
+                updatedFile.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING);
+          } else {
+            Files.move(previousFile.toPath(), updatedFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+          }
+        } catch (AtomicMoveNotSupportedException e) {
+          if (overwriteExisting) {
+            Files.move(
+                previousFile.toPath(), updatedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+          } else {
+            Files.move(previousFile.toPath(), updatedFile.toPath());
+          }
+        }
+      }
+
+      Utils.Files.writeStringToFile(content, updatedFile);
+      return updatedFile.toURI().toURL();
     } catch (Exception e) {
       throw new KlabIOException(e);
     }

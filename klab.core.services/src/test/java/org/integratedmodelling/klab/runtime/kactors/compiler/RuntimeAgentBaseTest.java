@@ -230,6 +230,8 @@ class RuntimeAgentBaseTest {
     var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
     assertion.setSourceCode("actual == expected");
     testCase.record(testScope, assertion, false, new AssertionError("different"));
+    testCase.recordConsole(testScope, RuntimeAgent.ConsoleMessageType.STDOUT, "checking values\n");
+    testCase.recordConsole(testScope, RuntimeAgent.ConsoleMessageType.STDERR, "different values\n");
     testScope.afterAction("checks_values", List.of(testAnnotation));
 
     assertEquals(1, testCase.report().getChildren().size());
@@ -239,8 +241,14 @@ class RuntimeAgentBaseTest {
     assertEquals("Checks values", test.name());
     assertFalse(test.get("outcome", true));
     assertEquals(1L, test.get("assertionsFailed", Long.class));
+    assertEquals(3, test.getChildren().size());
     assertEquals("actual == expected", test.getChildren().getFirst().urn());
     assertNotNull(test.getChildren().getFirst().get("stacktrace"));
+    assertEquals("console", test.getChildren().get(1).type());
+    assertEquals("STDOUT", test.getChildren().get(1).get("stream"));
+    assertEquals("checking values\n", test.getChildren().get(1).get("text"));
+    assertEquals("STDERR", test.getChildren().get(2).get("stream"));
+    assertEquals(1L, testCase.report().get("assertions", Long.class));
 
     var throwingScope = (TestCaseBase.TestCaseScope) rootScope.withId(3);
     throwingScope.beforeAction("throws_error", List.of(testAnnotation));
@@ -1748,6 +1756,11 @@ class RuntimeAgentBaseTest {
         boolean success,
         Throwable failure) {
       assertionEvaluated(scope, assertion, success, failure);
+    }
+
+    private void recordConsole(
+        AgentScope scope, RuntimeAgent.ConsoleMessageType stream, String text) {
+      sendToConsole(scope, stream, text);
     }
 
     @SuppressWarnings("unused")
