@@ -385,19 +385,24 @@ public class FileProjectStorage implements ProjectStorage {
           collectResources(".obs", "strategies", false, ret);
         }
         case BEHAVIOR -> {
-          collectResources(".kactor", "behaviors", false, ret);
+          collectResources(".kactor", "behaviors", true, ret);
+          collectResources(".kactors", "behaviors", true, ret);
         }
         case APPLICATION -> {
-          collectResources(".kactor", "apps", false, ret);
+          collectResources(".kactor", "apps", true, ret);
+          collectResources(".kactors", "apps", true, ret);
         }
         case SCRIPT -> {
-          collectResources(".kactor", "scripts", false, ret);
+          collectResources(".kactor", "scripts", true, ret);
+          collectResources(".kactors", "scripts", true, ret);
         }
         case TESTCASE -> {
-          collectResources(".kactor", "testcases", false, ret);
+          collectResources(".kactor", "testcases", true, ret);
+          collectResources(".kactors", "testcases", true, ret);
         }
         case BEHAVIOR_COMPONENT -> {
-          collectResources(".kactor", "components", false, ret);
+          // FIXME obsolete; behaviors, tasks and components are together
+          collectResources(".kactor", "components", true, ret);
         }
         case RESOURCE -> {
           // FIXME obsolete

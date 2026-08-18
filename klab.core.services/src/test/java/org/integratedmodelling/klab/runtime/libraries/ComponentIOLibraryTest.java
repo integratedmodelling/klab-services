@@ -1,22 +1,18 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import static org.mockito.ArgumentMatchers.any;
+
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import java.io.File;
-
-import static org.mockito.ArgumentMatchers.any;
 
 class ComponentIOLibraryTest {
 

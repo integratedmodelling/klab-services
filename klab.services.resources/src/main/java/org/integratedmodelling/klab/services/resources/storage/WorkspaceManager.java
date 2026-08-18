@@ -1595,7 +1595,7 @@ public class WorkspaceManager {
           for (var behaviorUrl :
               pd.storage.listResources(
                   ProjectStorage.ResourceType.APPLICATION,
-                  ProjectStorage.ResourceType.BEHAVIOR_COMPONENT,
+                  ProjectStorage.ResourceType.SCRIPT,
                   ProjectStorage.ResourceType.TESTCASE,
                   ProjectStorage.ResourceType.BEHAVIOR)) {
 
