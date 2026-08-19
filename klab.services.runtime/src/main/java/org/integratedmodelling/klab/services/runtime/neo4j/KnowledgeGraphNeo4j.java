@@ -1012,11 +1012,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           asset instanceof Observation observation
               ? (observation.getUrn() == null
                   ? (rootContextId + "." + ret)
-                  : (rootContextId
-                      + ":"
-                      + ObservationImpl.INDIVIDUALS_CATALOG_NAME
-                      + ":"
-                      + observation.getUrn()))
+                  : ObservationImpl.catalogUrn(rootContextId, observation.getUrn()))
               : (rootContextId + "." + ret);
 
       props.put("urn", urn);
@@ -1063,11 +1059,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           asset instanceof Observation observation
               ? (observation.getUrn() == null
                   ? (rootContextId + "." + ret)
-                  : (rootContextId
-                      + ":"
-                      + ObservationImpl.INDIVIDUALS_CATALOG_NAME
-                      + ":"
-                      + observation.getUrn()))
+                  : ObservationImpl.catalogUrn(rootContextId, observation.getUrn()))
               : (rootContextId + "." + ret);
 
       props.put("urn", urn);
@@ -1339,11 +1331,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setUrn(
             observation.getUrn() == null
                 ? rootContextId + "." + id
-                : rootContextId
-                    + ":"
-                    + ObservationImpl.INDIVIDUALS_CATALOG_NAME
-                    + ":"
-                    + observation.getUrn());
+                : ObservationImpl.catalogUrn(rootContextId, observation.getUrn()));
         if (scope != null && observation.getObservable().is(SemanticType.QUALITY)) {
           if (!scope.getDigitalTwin().getStorageManager().finalizeStorage(temporaryId, id)) {
             observation.getNotifications().add(Notification.error("Problem finalizing storage"));

@@ -378,11 +378,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
           query.where(
               "urn",
               KnowledgeGraph.Query.Operator.EQUALS,
-              getId()
-                  + ":"
-                  + ObservationImpl.INDIVIDUALS_CATALOG_NAME
-                  + ":"
-                  + observation.getUrn());
+              ObservationImpl.catalogUrn(getId(), observation.getUrn()));
     } else {
       query =
           query.where(

@@ -790,11 +790,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           query.where(
               "urn",
               KnowledgeGraph.Query.Operator.EQUALS,
-              getId()
-                  + ":"
-                  + ObservationImpl.INDIVIDUALS_CATALOG_NAME
-                  + ":"
-                  + observation.getUrn());
+              ObservationImpl.catalogUrn(getId(), observation.getUrn()));
     } else {
       query =
           query.where(
@@ -811,9 +807,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return !observation.getObservable().getSemantics().isCollective()
         && SemanticType.isEnumerableSubstantial(
             observation.getObservable().getSemantics().getType())
-        && observation
-            .getUrn()
-            .equals(getId() + ":" + ObservationImpl.INDIVIDUALS_CATALOG_NAME + ":" + o.getUrn());
+        && Objects.equals(
+            ObservationImpl.logicalUrn(observation.getUrn()),
+            ObservationImpl.logicalUrn(o.getUrn()));
   }
 
   @Override

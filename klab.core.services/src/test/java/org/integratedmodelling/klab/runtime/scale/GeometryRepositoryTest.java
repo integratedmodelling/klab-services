@@ -67,4 +67,19 @@ class GeometryRepositoryTest {
     assertEquals(canonicalClockwise.encode(), canonicalCounterClockwise.encode());
     assertEquals(canonicalClockwise.key(), canonicalCounterClockwise.key());
   }
+
+  @Test
+  void persistedGeometryDefinitionLoadsWithoutRecursingIntoItsOwnCacheEntry() {
+    var encoded = "T0(1){tend=987654321,tstart=123456789,ttype=PHYSICAL}";
+
+    Geometry geometry = GeometryRepository.INSTANCE.get(encoded, Geometry.class);
+    Scale scale = GeometryRepository.INSTANCE.get(encoded, Scale.class);
+
+    assertNotNull(geometry);
+    assertNotNull(scale);
+    assertEquals(geometry.key(), scale.as(Geometry.class).key());
+    assertEquals(
+        geometry.key(), GeometryRepository.INSTANCE.get(encoded, Geometry.class).key());
+    assertEquals(scale.encode(), GeometryRepository.INSTANCE.get(encoded, Scale.class).encode());
+  }
 }

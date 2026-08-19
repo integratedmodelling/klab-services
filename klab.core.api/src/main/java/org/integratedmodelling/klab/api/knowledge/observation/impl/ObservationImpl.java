@@ -34,6 +34,29 @@ public class ObservationImpl implements Observation {
   /** The catalog name for the URN of a resolved substantial observation. */
   public static final String INDIVIDUALS_CATALOG_NAME = "individuals";
 
+  private static final String INDIVIDUALS_CATALOG_SEPARATOR =
+      ":" + INDIVIDUALS_CATALOG_NAME + ":";
+
+  /**
+   * Return the logical identity URN of an observation, removing the context-local catalog prefix
+   * used by the knowledge graph if present. The namespace/name separator in an identity such as
+   * {@code test.tanzania:ruaha} is preserved.
+   */
+  public static String logicalUrn(String urn) {
+    if (urn == null) {
+      return null;
+    }
+    var catalogSeparator = urn.indexOf(INDIVIDUALS_CATALOG_SEPARATOR);
+    return catalogSeparator < 0
+        ? urn
+        : urn.substring(catalogSeparator + INDIVIDUALS_CATALOG_SEPARATOR.length());
+  }
+
+  /** Return the context-qualified knowledge-graph URN for a logical observation identity. */
+  public static String catalogUrn(String contextId, String urn) {
+    return urn == null ? null : contextId + INDIVIDUALS_CATALOG_SEPARATOR + logicalUrn(urn);
+  }
+
   private Observable observable;
   private Geometry geometry;
   private Metadata metadata = Metadata.create();

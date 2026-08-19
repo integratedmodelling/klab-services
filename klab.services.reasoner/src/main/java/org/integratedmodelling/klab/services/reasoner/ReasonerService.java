@@ -612,7 +612,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return nothingConcept("null substantial concept");
     }
 
-    if (!SemanticType.isSubstantial(original.getType())) {
+    if (!SemanticType.isEnumerableSubstantial(original.getType())) {
       return nothingConcept(original.getUrn());
     }
 
@@ -627,12 +627,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
        * directIdentities(concept), but the loop had no effect and forced an additional OWL lookup.
        */
       Concept ret = builder.buildConcept();
-      return ret == null || ret.is(SemanticType.NOTHING) ? original : ret;
+      return ensureCountableSubstantial(
+          ret == null || ret.is(SemanticType.NOTHING) ? original : ret);
     } catch (RuntimeException t) {
       Logging.INSTANCE.warn(
           "Could not establish base substantial type for " + original.getUrn() + ": " + t);
-      return original;
+      return ensureCountableSubstantial(original);
     }
+  }
+
+  private Concept ensureCountableSubstantial(Concept concept) {
+    if (concept != null
+        && SemanticType.isEnumerableSubstantial(concept.getType())
+        && !concept.is(SemanticType.COUNTABLE)) {
+      Logging.INSTANCE.warn(
+          "Restoring missing COUNTABLE semantic type on substantial {}", concept.getUrn());
+      concept.getType().add(SemanticType.COUNTABLE);
+    }
+    return concept;
   }
 
   @Override

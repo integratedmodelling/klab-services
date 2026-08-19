@@ -183,6 +183,16 @@ notification.
 The geometry becomes a worldview-bound `Scale` through `GeometryRepository.scale(geometry,
 scope)`.
 
+Persisted observations take the inverse path in `KnowledgeGraphNeo4j.adapt(...)`: their encoded
+geometry definition is decoded through `GeometryRepository.get(...)`. The repository uses
+Caffeine caches for canonical geometry/scale pairs and merged scales. Scale construction is
+intentionally performed outside a cache mapping function because `Scale.create(...)` calls the
+configured geometry promoter, which reentrantly publishes the same pair through
+`GeometryRepository.put(...)`. Loading through `Cache.get(key, mappingFunction)` would therefore
+attempt a same-key recursive cache update and abort observation adaptation before identity lookup.
+After construction, `putIfAbsent` converges concurrent creators on the first published canonical
+pair, and alternate geometry keys are registered only after the primary load completes.
+
 ### 5.5 Querying knowledge that already exists
 
 Before model resolution, `query(...)` asks the runtime for existing knowledge only for:
@@ -781,6 +791,27 @@ Only the owner performs resolution and commit; other callers receive independent
 the same result, so cancellation by one waiter does not cancel shared work. This is process-local;
 multi-runtime deployments will require a knowledge-graph uniqueness constraint or distributed
 admission protocol when they permit concurrent writes to the same context.
+
+For persisted identity checks, the submitted URN is the logical `namespace:name` identity
+(for example, `test.tanzania:ruaha`). Neo4j stores that observation under the context-local catalog
+URN `<context-id>:individuals:<namespace:name>`. The default identification strategy compares the
+logical URNs after removing only that catalog wrapper. A match returned by `register(...)` is a
+terminal submission result: its already resolved positive-ID observation is returned without
+creating resolution, provenance, or knowledge-graph state again.
+
+Cohort eligibility is based on the fundamental enumerable substantial types—subject, agent, event,
+and relationship, which normally also carry `COUNTABLE`. `Reasoner.baseSubstantialType(...)` removes
+non-identifying traits, roles, and modifiers to produce the common cohort observable. A null,
+`owl:Nothing`, or non-substantial reasoner result is invalid and falls back to the original singular
+semantics. Registration always requests creation of a missing cohort, including the first root
+submission where no observation transaction exists yet. Cohorts are durable context-catalog assets:
+creation uses a short independent knowledge-graph transaction that atomically stores the cohort and
+its `Context -HAS_CHILD-> Cohort` link. Therefore a later failed observation submission legitimately
+leaves an empty cohort in the graph. Creation is serialized and rechecked per local knowledge-graph
+instance; cross-runtime uniqueness still requires the graph-level constraint mentioned above. Later
+submissions must find the cohort before applying the identification strategy. If an older Reasoner
+stored a cohort using decorated rather than canonical semantics, lookup re-normalizes existing cohort
+observables and reuses the semantic match instead of creating a parallel cohort.
 
 ### 11.2 Service boundary and blocking
 

@@ -14,9 +14,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.integratedmodelling.common.knowledge.CohortImpl;
+import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -108,6 +110,90 @@ class RuntimeServiceQueryTest {
             submitted,
             links.stream().map(l -> (KnowledgeGraph.Link) l).collect(Collectors.toList()),
             (first, second) -> first.getUrn().compareTo(second.getUrn())));
+  }
+
+  @Test
+  void cohortEligibilityRemainsDefensiveWhenATypeSetLosesItsCountableBit() {
+    var subject = new ConceptImpl();
+    subject.setType(EnumSet.of(SemanticType.SUBJECT));
+
+    var relationship = new ConceptImpl();
+    relationship.setType(EnumSet.of(SemanticType.RELATIONSHIP));
+
+    assertTrue(RuntimeService.requiresCohort(subject));
+    assertTrue(RuntimeService.requiresCohort(relationship));
+  }
+
+  @Test
+  void newCohortIsStoredAndLinkedToTheContextInOneKnowledgeGraphTransaction() {
+    class CapturingTransaction implements KnowledgeGraph.Transaction {
+      private RuntimeAsset stored;
+      private RuntimeAsset source;
+      private RuntimeAsset destination;
+      private GraphModel.Relationship relationship;
+
+      @Override
+      public void store(RuntimeAsset asset, Object... additionalProperties) {
+        stored = asset;
+      }
+
+      @Override
+      public void update(RuntimeAsset asset, Object... properties) {}
+
+      @Override
+      public void link(
+          RuntimeAsset source,
+          RuntimeAsset destination,
+          GraphModel.Relationship relationship,
+          Object... additionalProperties) {
+        this.source = source;
+        this.destination = destination;
+        this.relationship = relationship;
+      }
+
+      @Override
+      public void fail(Exception e) {}
+
+      @Override
+      public void close() {}
+    }
+
+    var subject = new ConceptImpl();
+    subject.setUrn("earth:Region");
+    subject.setType(EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE));
+    var transaction = new CapturingTransaction();
+
+    var cohort = RuntimeService.storeNewCohort(subject, transaction);
+
+    assertEquals(cohort, transaction.stored);
+    assertEquals(RuntimeAsset.CONTEXT_ASSET, transaction.source);
+    assertEquals(cohort, transaction.destination);
+    assertEquals(GraphModel.Relationship.HAS_CHILD, transaction.relationship);
+    assertEquals("earth:Region", cohort.getObservable().getUrn());
+    assertEquals(0, cohort.getChildrenCount());
+  }
+
+  @Test
+  void persistedCohortMemberMatchesItsLogicalNamespaceAndNameUrn() {
+    var cohort = new CohortImpl();
+    var existing = new ObservationImpl();
+    existing.setId(42);
+    existing.setUrn("context-1:individuals:test.tanzania:ruaha");
+    var submitted = new ObservationImpl();
+    submitted.setUrn("test.tanzania:ruaha");
+
+    var links =
+        List.<KnowledgeGraph.Link>of(
+            new LinkImpl(cohort, existing, GraphModel.Relationship.HAS_MEMBER));
+
+    assertEquals("test.tanzania:ruaha", ObservationImpl.logicalUrn(existing.getUrn()));
+    assertEquals(
+        "context-1:individuals:test.tanzania:ruaha",
+        ObservationImpl.catalogUrn("context-1", existing.getUrn()));
+    assertEquals(
+        existing,
+        RuntimeService.findIdenticalMember(
+            submitted, links, RuntimeService::compareDefaultIdentity));
   }
 
   @Test

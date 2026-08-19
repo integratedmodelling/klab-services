@@ -106,9 +106,7 @@ public class RuntimeService extends BaseService
 
         @Override
         public int compare(Observation o1, Observation o2) {
-          // TODO add prefix. O1 is the unknown observation so it gets the prefix if it doesn't have
-          // one
-          return o1.getUrn().compareTo(o2.getUrn());
+          return compareDefaultIdentity(o1, o2);
         }
 
         @Override
@@ -891,7 +889,8 @@ public class RuntimeService extends BaseService
     }
     var cohortSemantics =
         scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
-    return new SubmissionIdentity(scope.getId(), cohortSemantics.getUrn(), observation.getUrn());
+    return new SubmissionIdentity(
+        scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()));
   }
 
   static <K, T> CompletableFuture<T> coalesce(
@@ -1219,6 +1218,13 @@ public class RuntimeService extends BaseService
     return null;
   }
 
+  static int compareDefaultIdentity(Observation first, Observation second) {
+    return Comparator.nullsFirst(String::compareTo)
+        .compare(
+            ObservationImpl.logicalUrn(first.getUrn()),
+            ObservationImpl.logicalUrn(second.getUrn()));
+  }
+
   static Observation findIdenticalMember(
           Observation observation,
           Collection<KnowledgeGraph.Link> cohortLinks,
@@ -1253,11 +1259,25 @@ public class RuntimeService extends BaseService
       //  and relationships
 
       if (mayExistInCohort) {
-        // query for the object's identity within the cohort. If existing, extract and return it
-        var cohort = getCohortFor(observation.getObservable(), scope, false);
-        if (cohort != null) { // should never happen
+        /*
+         * Query for the object's identity within the cohort. Cohorts are durable context-catalog
+         * assets, not products of an individual observation transaction, so the first lookup must
+         * create one even when registration precedes creation of the submission transaction.
+         */
+        var cohort = getCohortFor(observation.getObservable(), scope, true);
+        if (cohort != null) {
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
+            return existing;
+          }
+        } else {
+          /*
+           * Compatibility for observations committed by versions that failed to create cohorts:
+           * those root observations were linked directly to the context. Do not duplicate them.
+           * Cohort repair remains a separate graph-migration operation.
+           */
+          var existing = scope.getObservation(observation);
+          if (existing != null && existing.getId() > 0) {
             return existing;
           }
         }
@@ -1505,8 +1525,9 @@ public class RuntimeService extends BaseService
   }
 
   /**
-   * Find the cohort for the passed observation and optionally create it if missing. Must be called
-   * with a current transaction unless the cohort is guaranteed to exist.
+   * Find the cohort for the passed observation and optionally create it if missing. Missing cohorts
+   * are committed in their own knowledge-graph transaction: they are durable context-catalog
+   * assets and remain valid (and possibly empty) if the observation submission subsequently fails.
    *
    * @param observable
    * @param scope
@@ -1515,13 +1536,24 @@ public class RuntimeService extends BaseService
    */
   public Cohort getCohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing) {
 
-    var needsCohort =
-        observable.is(SemanticType.COUNTABLE) && !observable.asConcept().isCollective();
+    var needsCohort = requiresCohort(observable);
 
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
       var cohortObservable = reasoner.baseSubstantialType(observable, scope);
+      if (cohortObservable == null
+          || cohortObservable.is(SemanticType.NOTHING)
+          || !SemanticType.isEnumerableSubstantial(cohortObservable.getType())) {
+        Logging.INSTANCE.warn(
+            "Reasoner returned an invalid base substantial type for cohort {}; using the original semantics",
+            observable.getUrn());
+        cohortObservable = observable.asConcept();
+      }
+      if (cohortObservable.isCollective()) {
+        cohortObservable = cohortObservable.singular();
+      }
+      var canonicalCohortObservable = cohortObservable;
 
       // local uncommitted
       if (scope.getCurrentTransaction() != null) {
@@ -1530,7 +1562,10 @@ public class RuntimeService extends BaseService
                 .filter(
                     a ->
                         a instanceof Cohort cohort
-                            && cohort.getObservable().getUrn().equals(cohortObservable.getUrn()))
+                            && cohort
+                                .getObservable()
+                                .getUrn()
+                                .equals(canonicalCohortObservable.getUrn()))
                 .findFirst()
                 .orElse(null);
 
@@ -1539,36 +1574,121 @@ public class RuntimeService extends BaseService
         }
       }
 
+      var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
       var result =
-          scope
-              .getDigitalTwin()
-              .getKnowledgeGraph()
+          knowledgeGraph
               .query(Cohort.class, scope)
               .source(RuntimeAsset.CONTEXT_ASSET)
               .along(GraphModel.Relationship.HAS_CHILD)
               .where(
                   GraphModel.Cohort.OBSERVABLE_FIELD,
                   KnowledgeGraph.Query.Operator.EQUALS,
-                  cohortObservable.getUrn())
+                  canonicalCohortObservable.getUrn())
               .run(scope);
+
+      if (result.isEmpty()) {
+        /*
+         * Compatibility with cohorts stored using a non-canonical observable by older reasoner
+         * implementations. Re-normalize their observable now and reuse the matching cohort rather
+         * than creating a parallel cohort for the same substantial category.
+         */
+        result =
+            knowledgeGraph
+                .query(Cohort.class, scope)
+                .source(RuntimeAsset.CONTEXT_ASSET)
+                .along(GraphModel.Relationship.HAS_CHILD)
+                .run(scope)
+                .stream()
+                .filter(
+                    cohort -> {
+                      var existingBase =
+                          reasoner.baseSubstantialType(
+                              cohort.getObservable().getSemantics(), scope);
+                      return existingBase != null
+                          && !existingBase.is(SemanticType.NOTHING)
+                          && canonicalCohortObservable.getUrn().equals(existingBase.getUrn());
+                    })
+                .toList();
+        if (!result.isEmpty()) {
+          Logging.INSTANCE.warn(
+              "Reusing cohort {} stored under non-canonical observable {} instead of {}",
+              result.getFirst().getId(),
+              result.getFirst().getObservable().getUrn(),
+              canonicalCohortObservable.getUrn());
+        }
+      }
 
       if (result.isEmpty()) {
 
         if (addCohortIfMissing) {
-          var cohort = new CohortImpl();
-          cohort.setObservable(Observable.promote(cohortObservable));
-          cohort.setChildrenCount(0);
-          scope.getCurrentTransaction().add(cohort);
-          scope
-              .getCurrentTransaction()
-              .link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
-          return cohort;
+          /*
+           * Registration can run before the observation transaction exists. Serialize creation on
+           * this context's graph, recheck after acquiring the lock, then atomically store and link
+           * the cohort in an independent KG transaction. It must not be rolled back merely because
+           * the observation that first required it later fails.
+           */
+          synchronized (knowledgeGraph) {
+            result =
+                knowledgeGraph
+                    .query(Cohort.class, scope)
+                    .source(RuntimeAsset.CONTEXT_ASSET)
+                    .along(GraphModel.Relationship.HAS_CHILD)
+                    .where(
+                        GraphModel.Cohort.OBSERVABLE_FIELD,
+                        KnowledgeGraph.Query.Operator.EQUALS,
+                        canonicalCohortObservable.getUrn())
+                    .run(scope);
+            if (!result.isEmpty()) {
+              return result.getFirst();
+            }
+
+            try (var transaction = knowledgeGraph.createTransaction(scope)) {
+              storeNewCohort(canonicalCohortObservable, transaction);
+            } catch (Exception e) {
+              throw new KlabIllegalStateException(e);
+            }
+
+            result =
+                knowledgeGraph
+                    .query(Cohort.class, scope)
+                    .source(RuntimeAsset.CONTEXT_ASSET)
+                    .along(GraphModel.Relationship.HAS_CHILD)
+                    .where(
+                        GraphModel.Cohort.OBSERVABLE_FIELD,
+                        KnowledgeGraph.Query.Operator.EQUALS,
+                        canonicalCohortObservable.getUrn())
+                    .run(scope);
+            if (result.isEmpty()) {
+              throw new KlabIllegalStateException(
+                  "Cohort transaction completed without persisting "
+                      + canonicalCohortObservable.getUrn());
+            }
+            return result.getFirst();
+          }
         }
       } else {
         return result.getFirst();
       }
     }
     return null;
+  }
+
+  static Cohort storeNewCohort(
+      Semantics canonicalCohortObservable, KnowledgeGraph.Transaction transaction) {
+    var cohort = new CohortImpl();
+    cohort.setObservable(Observable.promote(canonicalCohortObservable));
+    cohort.setChildrenCount(0);
+    transaction.store(cohort);
+    transaction.link(
+        RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
+    return cohort;
+  }
+
+  static boolean requiresCohort(Semantics semantics) {
+    return semantics != null
+        && semantics.asConcept() != null
+        && !semantics.asConcept().isCollective()
+        && SemanticType.isEnumerableSubstantial(semantics.asConcept().getType());
   }
 
   private void publishContextualization(

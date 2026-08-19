@@ -1,8 +1,7 @@
 package org.integratedmodelling.common.knowledge;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import java.util.concurrent.ExecutionException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.function.Supplier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -23,15 +22,13 @@ public enum GeometryRepository {
   INSTANCE;
 
   private final Cache<String, Pair<Geometry, Scale>> cache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20) // TODO configure
+      Caffeine.newBuilder()
           .maximumWeight(800000L) // TODO configure - this is just the spec length
           .weigher((String key, Pair<Geometry, Scale> value) -> value.getFirst().encode().length())
           .build();
 
   private final Cache<String, Pair<Geometry, Scale>> mergeCache =
-      CacheBuilder.newBuilder()
-          .concurrencyLevel(20) // TODO configure
+      Caffeine.newBuilder()
           .maximumWeight(800000L) // TODO configure - this is just the spec length
           .weigher((String key, Pair<Geometry, Scale> value) -> value.getFirst().encode().length())
           .build();
@@ -106,9 +103,13 @@ public enum GeometryRepository {
     }
 
     var identifier = Utils.Strings.hash(encoded);
-    var cached =
-        getCached(
-            cache, identifier, () -> getOrCreate(Geometry.create(encoded, identifier), identifier));
+    /*
+     * getOrCreate() already owns the cache load for this identifier. Wrapping it in another
+     * cache.get() for the same key makes the inner call wait for its own in-progress load, which
+     * Guava rejects as a recursive load. This path is exercised whenever a geometry is rebuilt
+     * from its persisted definition (for example while adapting an observation from Neo4j).
+     */
+    var cached = getOrCreate(Geometry.create(encoded, identifier), identifier);
     return (T)
         (Scale.class.isAssignableFrom(geometryClass) ? cached.getSecond() : cached.getFirst());
   }
@@ -182,17 +183,19 @@ public enum GeometryRepository {
 
   private Pair<Geometry, Scale> getOrCreate(
       Geometry geometry, String lookupKey, Supplier<Scale> supplier) {
-    return getCached(
-        cache,
-        lookupKey,
-        () -> {
-          var cached = canonicalPair(supplier.get());
-          cache.put(cached.getFirst().key(), cached);
-          if (!lookupKey.equals(geometry.key())) {
-            cache.put(geometry.key(), cached);
-          }
-          return cached;
-        });
+    var cached = getCached(cache, lookupKey, () -> canonicalPair(supplier.get()));
+
+    /*
+     * Publish aliases only after the primary load has completed. Besides avoiding mutation of a
+     * key whose value is still loading, this makes every alias point to the same canonical pair.
+     */
+    if (!lookupKey.equals(cached.getFirst().key())) {
+      cache.put(cached.getFirst().key(), cached);
+    }
+    if (!lookupKey.equals(geometry.key())) {
+      cache.put(geometry.key(), cached);
+    }
+    return cached;
   }
 
   private Pair<Geometry, Scale> canonicalPair(Scale scale) {
@@ -204,10 +207,20 @@ public enum GeometryRepository {
       Cache<String, Pair<Geometry, Scale>> target,
       String key,
       Supplier<Pair<Geometry, Scale>> supplier) {
-    try {
-      return target.get(key, supplier::get);
-    } catch (ExecutionException e) {
-      throw new IllegalStateException("error creating geometry cache entry for " + key, e);
+    var cached = target.getIfPresent(key);
+    if (cached != null) {
+      return cached;
     }
+
+    /*
+     * Do not use Cache.get(key, mappingFunction) here. Scale creation calls the configured
+     * geometry promoter, which legitimately publishes the new geometry/scale pair back into this
+     * repository. That reentrant put targets the same key and is rejected by both Guava's loading
+     * cache and Caffeine's compute-based implementation. Construct outside a cache computation,
+     * then converge concurrent creators on whichever value was published first.
+     */
+    var created = supplier.get();
+    var previous = target.asMap().putIfAbsent(key, created);
+    return previous == null ? created : previous;
   }
 }
