@@ -813,6 +813,39 @@ submissions must find the cohort before applying the identification strategy. If
 stored a cohort using decorated rather than canonical semantics, lookup re-normalizes existing cohort
 observables and reuses the semantic match instead of creating a parallel cohort.
 
+Instantiators return individual observations while contextualizing a collective. The runtime must
+submit each outcome in `executionScope.within(collective)`: registration then records both the
+durable cohort membership and the structural `collective -HAS_CHILD-> individual` relationship,
+while `contextualizeFor(individual)` removes the collective focus before resolving the independent
+countable observation. The random generator currently assigns identities of the form
+`random:<KSUID>`; these are valid, distinct logical URNs. They are intentionally ephemeral, so a
+reproducible generator should eventually derive stable identities from identifying source data,
+but the current URNs do not prevent persistence or commit membership.
+
+All nested runtime transactions form one atomic transition. They share not only the transaction
+graph, ID allocation, cohort geometry, and contextualizers, but also the `added`, `modified`, and
+`failures` collections used to assemble the root commit. This is essential after cohorts became
+durable independently of observation submission: a generated individual is an added observation,
+its pre-existing cohort is a modified asset, and the `HAS_MEMBER`/`HAS_CHILD` edges are added links
+in the same root commit. The cohort must not be mislabeled as an added cohort. The final commit ID
+is attached to every newly stored observation, including secondary submissions that returned an
+intermediate commit result before the root commit existed.
+
+The cohort's durable ownership link is context-local. `KnowledgeGraphNeo4j` translates the
+`CONTEXT_ASSET` sentinel to the contextualized graph's `rootContextId`, so both cohort lookup and
+the independent `Context -HAS_CHILD-> Cohort` write address one specific digital twin even when the
+same database hosts several contexts. Because that link is created before the observation
+transaction, the root commit also asserts it whenever the cohort is modified. The assertion does
+not write a duplicate Neo4j relationship; it closes the synchronization gap for a client that had
+already loaded the Context adjacency before the cohort existed. `ClientKnowledgeGraph` applies the
+asserted link idempotently, making the cohort visible as a Context child without a full graph
+reload.
+
+Knowledge-graph transaction operations are fail-fast. A failed node creation, invalid allocated
+ID, update, or link rolls back the graph transaction and makes the enclosing contextualization
+fail; it must never be logged and swallowed while activities and a commit are reported as
+successful.
+
 ### 11.2 Service boundary and blocking
 
 The resolver still blocks on runtime query `.join()`, but now uses a virtual-thread-per-task

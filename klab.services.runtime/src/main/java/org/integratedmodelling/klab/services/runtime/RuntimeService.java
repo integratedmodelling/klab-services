@@ -1961,12 +1961,20 @@ public class RuntimeService extends BaseService
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.INSTANTIATION) {
 
+        /*
+         * Outcomes of an instantiator are independent observations, but they are children of the
+         * collective observation that produced them. The execution scope still carries the
+         * enclosing context, so submitting it unchanged loses that parent relationship. Focus a
+         * child scope on the collective for registration; contextualizeFor() will subsequently
+         * remove that focus while resolving each countable child.
+         */
+        var instantiationScope = contextScope.within(scope.getTarget());
         for (var child : scope.getOutcomes()) {
           // enqueue tasks to resolve any new observation
           tasks.add(
-              contextScope
+              instantiationScope
                   .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
-                  .submit(child, contextScope));
+                  .submit(child, instantiationScope));
         }
 
       } else if (scope.getTarget().getObservable().getContextualization()

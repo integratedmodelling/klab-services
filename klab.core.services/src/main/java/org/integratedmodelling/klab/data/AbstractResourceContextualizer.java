@@ -70,8 +70,6 @@ public abstract class AbstractResourceContextualizer {
       //  Should be accomplished through an "execution scope" provided by the runtime at dataflow
       // run.
       if (observable.is(SemanticType.COUNTABLE)) {
-        // scope contextualized to the collective observation
-        var observationScope = scope.within(observation);
         if (observation instanceof ObservationImpl observationImpl) {
           observationImpl.setChildrenCount(builder.getObjects().size());
         }

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -19,6 +18,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -108,12 +108,12 @@ public class DigitalTwinImpl implements DigitalTwin {
   public class TransactionImpl implements Transaction {
 
     private final String id = Utils.Names.fastName();
-    private final Set<RuntimeAsset> modified = new HashSet<>();
-    private final Set<RuntimeAsset> added = new HashSet<>();
+    private final Set<RuntimeAsset> modified;
+    private final Set<RuntimeAsset> added;
     private Observation target;
     private final Activity activity;
     private final ServiceContextScope scope;
-    private final Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
+    private final Queue<Throwable> failures;
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
@@ -160,6 +160,9 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
       this.activity = activity;
       this.scope = scope;
+      this.modified = new HashSet<>();
+      this.added = new HashSet<>();
+      this.failures = new ConcurrentLinkedQueue<>();
       this.contextualizers = new ConcurrentHashMap<>();
       this.cohortGeometries = new HashMap<>();
       boolean activityLinked = false;
@@ -211,6 +214,12 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.activity = activity;
       this.scope = parent.scope; // TODO careful with executing() being called outside
       this.parent = parent;
+      // A child transaction contributes to the one atomic root commit. Keep all mutable commit
+      // state root-shared just like the graph itself; otherwise modifications and failures from
+      // secondary submissions disappear when the root assembles its commit result.
+      this.modified = parent.modified;
+      this.added = parent.added;
+      this.failures = parent.failures;
       this.cohortGeometries = parent.cohortGeometries;
       this.contextualizers = parent.contextualizers;
 
@@ -414,13 +423,9 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var asset : graph.vertexSet()) {
               if (setupForStorage(asset, false)) {
                 kgTransaction.store(asset);
-                // KLAB-DEBUG-GUARD: store() is intentionally not treated as a success signal here;
-                // record any asset that is still unassigned before preserving the existing logic.
-                if (asset.getId() == 0) {
-                  Logging.INSTANCE.warn(
-                      "KLAB-DEBUG-GUARD: asset remains unassigned after KG store: class={} id={} "
-                          + "activity={} trivial={}",
-                      asset.getClass().getName(), asset.getId(), activity.getId(), false);
+                if (asset.getId() <= 0) {
+                  throw new KlabInternalErrorException(
+                      "Knowledge graph did not persist " + asset.getClass().getSimpleName());
                 }
                 stored.add(asset);
               }
@@ -468,42 +473,13 @@ public class DigitalTwinImpl implements DigitalTwin {
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
           return -1;
-        } finally {
-          // dio sanguisuga
-          try {
-            kgTransaction.close();
-            var commit = new CommitImpl();
-            var commitId = knowledgeGraph.nextKey();
-            commit.setId(commitId);
-            commit.setTimestamp(System.currentTimeMillis());
-            commit.setOwner(scope.getUser().getUsername());
-            commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
-            commit
-                .getAddedObservations()
-                .addAll(
-                    stored.stream()
-                        .filter(a -> a instanceof Observation)
-                        .map(RuntimeAsset::getId)
-                        .toList());
-            commit
-                .getAddedCohorts()
-                .addAll(
-                    stored.stream()
-                        .filter(a -> a instanceof Cohort)
-                        .map(RuntimeAsset::getId)
-                        .toList());
-
-            commit.getAddedLinks().addAll(linked);
-            commit
-                .getModifiedAssets()
-                .addAll(modified.stream().map(RuntimeAsset::getId).filter(id -> id >= 0).toList());
-            commitCache.put(commit.getId(), commit);
-
-            ret = commit.getId();
-          } catch (IOException e) {
-            Logging.INSTANCE.error(e);
-          }
         }
+
+        var commitId = knowledgeGraph.nextKey();
+        var commit = createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
+        commitCache.put(commit.getId(), commit);
+
+        ret = commit.getId();
       }
 
       /* Upon successful commit, establish the ID for any target that was passed in the initialization
@@ -528,6 +504,64 @@ public class DigitalTwinImpl implements DigitalTwin {
       scope.unregisterTransaction(this);
 
       return ret;
+    }
+
+    static CommitImpl createCommit(
+        long commitId,
+        String owner,
+        Collection<RuntimeAsset> stored,
+        Collection<RuntimeAsset> modified,
+        Collection<Triple<Long, Long, String>> linked) {
+      var commit = new CommitImpl();
+      commit.setId(commitId);
+      commit.setTimestamp(System.currentTimeMillis());
+      commit.setOwner(owner);
+      commit.getAddedAssets().addAll(stored.stream().map(RuntimeAsset::getId).toList());
+      commit
+          .getAddedObservations()
+          .addAll(
+              stored.stream()
+                  .filter(a -> a instanceof Observation)
+                  .map(RuntimeAsset::getId)
+                  .toList());
+      commit
+          .getAddedCohorts()
+          .addAll(
+              stored.stream()
+                  .filter(a -> a instanceof Cohort)
+                  .map(RuntimeAsset::getId)
+                  .toList());
+      commit.getAddedLinks().addAll(linked);
+      /*
+       * Cohorts are durable context-catalog assets and may have been created in a short
+       * knowledge-graph transaction before this observation transaction existed. Reassert their
+       * context ownership in the observation commit so a client whose Context adjacency is
+       * already loaded learns about the cohort. This is a synchronization assertion only: the
+       * Context -HAS_CHILD-> Cohort relationship is already present in Neo4j and is not written a
+       * second time.
+       */
+      modified.stream()
+          .filter(Cohort.class::isInstance)
+          .map(RuntimeAsset::getId)
+          .filter(id -> id > 0)
+          .map(
+              id ->
+                  Triple.of(
+                      RuntimeAsset.CONTEXT_ASSET_ID,
+                      id,
+                      GraphModel.Relationship.HAS_CHILD.name()))
+          .forEach(commit.getAddedLinks()::add);
+      commit
+          .getModifiedAssets()
+          .addAll(modified.stream().map(RuntimeAsset::getId).filter(id -> id > 0).toList());
+
+      // Secondary submissions return before the root commit exists. Attach the final commit ID to
+      // every newly stored observation now, not only to the root observation returned by submit().
+      stored.stream()
+          .filter(Observation.class::isInstance)
+          .map(Observation.class::cast)
+          .forEach(observation -> observation.getMetadata().put(Metadata.IM_COMMIT_ID, commitId));
+      return commit;
     }
 
     /**

@@ -1,0 +1,7 @@
+testcase klab.staging.vxii.testsuite
+    "Preserve the complete identity of a managed testcase."
+    version 1.0
+
+@test
+action smoke:
+    return true

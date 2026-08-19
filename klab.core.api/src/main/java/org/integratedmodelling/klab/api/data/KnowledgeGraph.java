@@ -86,9 +86,11 @@ public interface KnowledgeGraph {
     Set<Long> getAddedCohorts();
 
     /**
-     * IDs of all the links that were created in the transaction. Each link is a triple with the
-     * source asset ID, the target asset ID and the relationship type. The IDs may refer to assets
-     * previously seen in the graph and not present in #newAssets().
+     * IDs of all the links that were created in the transaction, plus durable catalog links that
+     * must be asserted to synchronize a client with assets created by an earlier independent
+     * transaction. Each link is a triple with the source asset ID, the target asset ID and the
+     * relationship type. The IDs may refer to assets previously seen in the graph and not present
+     * in {@link #getAddedAssets()}.
      *
      * @return
      */

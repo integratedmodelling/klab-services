@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CyclicBarrier;
+import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -243,6 +244,36 @@ class ClientKnowledgeGraphTest {
     graph.ingest(parent);
 
     assertEquals(List.of(child), graph.getChildAssets(parent));
+  }
+
+  @Test
+  void commitAddsIndependentlyCreatedCohortToAnAlreadyLoadedContext() {
+    var cohort = new CohortImpl();
+    cohort.setId(50);
+    stubLinks(RuntimeAsset.CONTEXT_ASSET, List.of());
+    assertTrue(graph.getChildAssets(RuntimeAsset.CONTEXT_ASSET).isEmpty());
+
+    var commit = commit(6);
+    commit.getModifiedAssets().add(50L);
+    commit
+        .getAddedLinks()
+        .add(
+            Triple.of(
+                RuntimeAsset.CONTEXT_ASSET_ID,
+                50L,
+                GraphModel.Relationship.HAS_CHILD.name()));
+    when(runtime.getCommit(6, scope)).thenReturn(commit);
+    when(runtime.getAsset(50, RuntimeAsset.class, scope)).thenReturn(cohort);
+
+    graph.ingest(observation(601, 6L));
+
+    assertEquals(List.of(cohort), graph.getChildAssets(RuntimeAsset.CONTEXT_ASSET));
+    verify(runtime, times(1))
+        .getLinkInfo(
+            eq(RuntimeAsset.CONTEXT_ASSET),
+            eq(GraphModel.Relationship.Direction.OUTGOING),
+            eq(scope),
+            any(GraphModel.Relationship[].class));
   }
 
   @Test
