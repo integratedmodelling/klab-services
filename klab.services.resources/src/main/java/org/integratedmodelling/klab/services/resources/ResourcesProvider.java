@@ -1206,12 +1206,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   Notification.error(
                       "ADD requested for an existing document " + document.getUrn())));
         }
-        if (existingDocument != null
-            && (submissionMode == SubmissionMode.UPDATE
-                || submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
+        if (submissionMode == SubmissionMode.UPDATE
+            || (existingDocument != null
+                && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
 
           // UPDATE currently replaces the source in file storage. Version history is pending
-          // storage support and is called out explicitly in docs/RESOURCES.md.
+          // storage support and is called out explicitly in docs/RESOURCES.md. Do not make UPDATE
+          // conditional on semantic retrieval: a document with errors may be absent from semantic
+          // indexes while its file remains the project's source of truth.
           return updateDocument(
               document.getProjectName(),
               document.getUrn(),
@@ -1224,6 +1226,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 || submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
           return createDocument(document, project, scope);
         }
+        return List.of(
+            ResourceSet.empty(
+                Notification.error(
+                    "Cannot "
+                        + submissionMode
+                        + " document "
+                        + document.getUrn()
+                        + " in project "
+                        + document.getProjectName())));
       default:
         return List.of(
             ResourceSet.empty(

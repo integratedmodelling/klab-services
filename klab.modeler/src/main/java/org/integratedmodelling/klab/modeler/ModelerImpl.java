@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -28,9 +29,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
+import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -444,8 +449,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             () -> {
               try {
                 var knowledgeClass = documentKnowledgeClass(documentType);
-                var document =
-                    service.retrieve(documentUrn, knowledgeClass.getAssetClass(), currentUser());
+                KlabAsset document =
+                    service.parseAsset(
+                        DocumentTemplates.sourceUrl(documentType, documentUrn, updatedContent),
+                        knowledgeClass.getAssetClass(),
+                        currentUser());
+                if (document == null) {
+                  document = emptyDocument(documentType);
+                }
                 var editableDocument =
                     documentUpdatePayload(document, projectName, documentUrn, updatedContent);
                 if (editableDocument != null) {
@@ -459,7 +470,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                               Notification.error(
                                   "Cannot update document "
                                       + documentUrn
-                                      + ": no mutable document was retrieved"))));
+                                      + ": the edited source could not be parsed as a mutable "
+                                      + documentType
+                                      + " document"))));
                 }
               } catch (Throwable throwable) {
                 handleResultSets(
@@ -483,11 +496,34 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       return update;
     }
     if (retrieved instanceof KlabDocumentImpl<?> editableDocument) {
+      if (editableDocument.getUrn() == null || editableDocument.getUrn().isBlank()) {
+        editableDocument.setUrn(documentUrn);
+      }
       editableDocument.setProjectName(projectName);
       editableDocument.setSourceCode(updatedContent);
       return editableDocument;
     }
     return null;
+  }
+
+  private static KlabAsset emptyDocument(ProjectStorage.ResourceType documentType) {
+    return switch (documentType) {
+      case ONTOLOGY -> new KimOntologyImpl();
+      case MODEL_NAMESPACE -> new KimNamespaceImpl();
+      case STRATEGY -> new KimObservationStrategiesImpl();
+      case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> {
+        var behavior = new KActorsBehaviorImpl();
+        behavior.setBehaviorType(
+            switch (documentType) {
+              case APPLICATION -> KActorsBehavior.Type.APP;
+              case SCRIPT -> KActorsBehavior.Type.SCRIPT;
+              case TESTCASE -> KActorsBehavior.Type.UNITTEST;
+              default -> KActorsBehavior.Type.BEHAVIOR;
+            });
+        yield behavior;
+      }
+      default -> throw new KlabUnimplementedException("No editable document for " + documentType);
+    };
   }
 
   @Override
@@ -543,17 +579,54 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public boolean createDocument(
       ResourcesService service,
-      String newDocumentUrn,
       String projectName,
+      String newDocumentUrn,
       ProjectStorage.ResourceType documentType) {
+
+    if (service == null
+        || projectName == null
+        || projectName.isBlank()
+        || newDocumentUrn == null
+        || newDocumentUrn.isBlank()
+        || documentType == null) {
+      return false;
+    }
 
     Thread.ofVirtual()
         .start(
             () -> {
-              // TO BE IMPLEMENTED: submit needs a typed document containing the language-specific
-              // default source; the modeler does not yet have a template/parser factory here.
-              Logging.INSTANCE.error(
-                  "TO BE IMPLEMENTED: create document through submit: " + newDocumentUrn);
+              try {
+                var assetClass = documentKnowledgeClass(documentType).getAssetClass();
+                var source = DocumentTemplates.render(documentType, newDocumentUrn);
+                var parsed =
+                    service.parseAsset(
+                        DocumentTemplates.renderUrl(documentType, newDocumentUrn),
+                        assetClass,
+                        currentUser());
+                if (!(parsed instanceof KlabDocumentImpl<?> document)) {
+                  handleResultSets(
+                      List.of(
+                          ResourceSet.empty(
+                              Notification.error(
+                                  "The resources service could not parse a mutable "
+                                      + documentType
+                                      + " document for "
+                                      + newDocumentUrn))));
+                  return;
+                }
+                document.setProjectName(projectName);
+                // Parsers normally preserve the source. Setting it explicitly makes the submit
+                // contract independent of individual language-adapter implementations.
+                document.setSourceCode(source);
+                handleResultSets(
+                    service.submit(document, ResourcesService.SubmissionMode.ADD, currentUser()));
+              } catch (Throwable throwable) {
+                handleResultSets(
+                    List.of(
+                        ResourceSet.empty(
+                            Notification.error(
+                                "Cannot create document " + newDocumentUrn, throwable))));
+              }
             });
     return true;
   }
@@ -706,13 +779,32 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public boolean createProject(ResourcesService service, String projectName, String workspaceName) {
-    if (projectName != null) {
+    if (service != null
+        && projectName != null
+        && !projectName.isBlank()
+        && workspaceName != null
+        && !workspaceName.isBlank()) {
       var project = new ProjectImpl();
       project.setUrn(workspaceName + "/" + projectName);
       return handleResultSets(
           service.submit(project, ResourcesService.SubmissionMode.ADD, user()));
     }
     return false;
+  }
+
+  @Override
+  public boolean createWorkspace(
+      ResourcesService service, String workspaceName, String description) {
+    if (service == null || workspaceName == null || workspaceName.isBlank()) {
+      return false;
+    }
+    var workspace = new WorkspaceImpl();
+    workspace.setUrn(workspaceName);
+    if (description != null && !description.isBlank()) {
+      workspace.setMetadata(Metadata.create(Metadata.DC_COMMENT, description));
+    }
+    return handleResultSets(
+        service.submit(workspace, ResourcesService.SubmissionMode.ADD, user()));
   }
 
   private static KlabAsset.KnowledgeClass documentKnowledgeClass(

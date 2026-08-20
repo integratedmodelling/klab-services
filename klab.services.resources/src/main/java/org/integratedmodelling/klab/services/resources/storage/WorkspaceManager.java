@@ -50,6 +50,10 @@ import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
@@ -1273,18 +1277,32 @@ public class WorkspaceManager {
 
             try (var input = ontologyUrl.openStream()) {
               var errors = new ArrayList<Notification>();
-              var parsed = ontologyParser.parse(input, errors);
+              var source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+              var parsed = ontologyParser.parse(new StringReader(source), errors);
+              var storageUrn = documentUrn(pd.name, ProjectStorage.ResourceType.ONTOLOGY, ontologyUrl);
+              var ontologyUrn = storageUrn;
+              try {
+                if (parsed != null && parsed.getNamespace() != null) {
+                  ontologyUrn = parsed.getNamespace().getName();
+                }
+              } catch (Throwable ignored) {
+                // Use the file-derived URN below.
+              }
               if (!errors.isEmpty()) {
                 scope.error(
                     "Ontology resource has errors: " + ontologyUrl,
                     Klab.ErrorCode.RESOURCE_VALIDATION,
                     Klab.ErrorContext.ONTOLOGY);
-                //                                return Collections.emptyList();
+                var invalid =
+                    invalidOntology(ontologyUrn, pd.name, source, timestamp, errors);
+                cache.put(ontologyUrn, Triple.of(null, invalid, isWorldview));
+              } else {
+                cache.put(ontologyUrn, Triple.of(parsed, null, isWorldview));
               }
-              urlCache.put(parsed.getNamespace().getName(), ontologyUrl);
-              lastUpdates.put(parsed.getNamespace().getName(), timestamp);
-              ontologyProjects.put(parsed.getNamespace().getName(), pd.name);
-              cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
+              urlCache.put(ontologyUrn, ontologyUrl);
+              documentURLs.put(ontologyUrn, ontologyUrl);
+              lastUpdates.put(ontologyUrn, timestamp);
+              ontologyProjects.put(ontologyUrn, pd.name);
             } catch (IOException e) {
               // log error and return failure
               scope.error(
@@ -1400,7 +1418,9 @@ public class WorkspaceManager {
           //                    return Collections.emptyList();
         }
 
-        languageValidationScope.addNamespace(ontology);
+        if (!ontology.isInactive()) {
+          languageValidationScope.addNamespace(ontology);
+        }
 
         this._ontologyOrder.add(ontology);
         this._ontologyMap.put(ontology.getUrn(), ontology);
@@ -1435,24 +1455,40 @@ public class WorkspaceManager {
               pd.storage.listResources(ProjectStorage.ResourceType.MODEL_NAMESPACE)) {
             try (var input = namespaceUrl.openStream()) {
               var errors = new ArrayList<Notification>();
-              var parsed = namespaceParser.parse(input, errors);
+              var timestamp =
+                  namespaceUrl.getFile().isEmpty()
+                      ? System.currentTimeMillis()
+                      : new File(namespaceUrl.getFile()).lastModified();
+              var source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+              var parsed = namespaceParser.parse(new StringReader(source), errors);
+              var storageUrn =
+                  documentUrn(pd.name, ProjectStorage.ResourceType.MODEL_NAMESPACE, namespaceUrl);
+              var namespaceUrn = storageUrn;
+              try {
+                if (parsed != null && parsed.getNamespace() != null) {
+                  namespaceUrn = parsed.getNamespace().getName();
+                }
+              } catch (Throwable ignored) {
+                // Use the file-derived URN below.
+              }
               if (!errors.isEmpty()) {
                 scope.error(
                     "Namespace resource has errors: " + namespaceUrl,
                     Klab.ErrorCode.RESOURCE_VALIDATION,
                     Klab.ErrorContext.NAMESPACE);
-                //                                return Collections.emptyList();
+                cache.put(
+                    namespaceUrn,
+                    Pair.of(
+                        null,
+                        invalidNamespace(namespaceUrn, pd.name, source, timestamp, errors)));
+              } else {
+                cache.put(namespaceUrn, Pair.of(parsed, null));
               }
 
-              var timestamp =
-                  namespaceUrl.getFile().isEmpty()
-                      ? System.currentTimeMillis()
-                      : new File(namespaceUrl.getFile()).lastModified();
-
-              urlCache.put(parsed.getNamespace().getName(), namespaceUrl);
-              kimProjects.put(parsed.getNamespace().getName(), pd.name);
-              cache.put(parsed.getNamespace().getName(), Pair.of(parsed, null));
-              lastUpdates.put(parsed.getNamespace().getName(), timestamp);
+              urlCache.put(namespaceUrn, namespaceUrl);
+              documentURLs.put(namespaceUrn, namespaceUrl);
+              kimProjects.put(namespaceUrn, pd.name);
+              lastUpdates.put(namespaceUrn, timestamp);
             } catch (IOException e) {
               // log error and return failure
               scope.error(
@@ -1692,21 +1728,38 @@ public class WorkspaceManager {
 
               var errors = new AtomicBoolean(false);
               var notams = new ArrayList<Notification>();
-              var parsed = strategyParser.parse(input, notams);
+              var source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+              var parsed = strategyParser.parse(new StringReader(source), notams);
+              var timestamp =
+                  strategyUrl.getFile().isEmpty()
+                      ? System.currentTimeMillis()
+                      : new File(strategyUrl.getFile()).lastModified();
+              var strategyUrn =
+                  documentUrn(pd.name, ProjectStorage.ResourceType.STRATEGY, strategyUrl);
+              try {
+                if (parsed != null && parsed.getPreamble() != null) {
+                  strategyUrn = parsed.getPreamble().getName();
+                }
+              } catch (Throwable ignored) {
+                // Use the file-derived URN below.
+              }
 
               if (!notams.isEmpty()) {
                 scope.error(
                     "Observation strategy resource has errors: " + strategyUrl,
                     Klab.ErrorCode.RESOURCE_VALIDATION,
                     Klab.ErrorContext.OBSERVATION_STRATEGY);
-                //                                return Collections.emptyList();
+                var document =
+                    invalidStrategies(
+                        strategyUrn,
+                        pd.name,
+                        source,
+                        timestamp,
+                        notams);
+                _observationStrategyDocuments.add(document);
+                _observationStrategyDocumentMap.put(document.getUrn(), document);
+                documentURLs.put(document.getUrn(), strategyUrl);
               } else {
-
-                var timestamp =
-                    strategyUrl.getFile().isEmpty()
-                        ? System.currentTimeMillis()
-                        : new File(strategyUrl.getFile()).lastModified();
-
                 List<Notification> notifications = new ArrayList<>();
                 var syntax =
                     new ObservationStrategiesSyntaxImpl(parsed, this.languageValidationScope) {
@@ -1751,6 +1804,14 @@ public class WorkspaceManager {
                           syntax, pd.name, notifications, timestamp);
                   _observationStrategyDocuments.add(document);
                   _observationStrategyDocumentMap.put(document.getUrn(), document);
+                  documentURLs.put(document.getUrn(), strategyUrl);
+                } else {
+                  var document =
+                      invalidStrategies(
+                          strategyUrn, pd.name, source, timestamp, notifications);
+                  _observationStrategyDocuments.add(document);
+                  _observationStrategyDocumentMap.put(document.getUrn(), document);
+                  documentURLs.put(document.getUrn(), strategyUrl);
                 }
               }
             } catch (IOException e) {
@@ -2671,10 +2732,12 @@ public class WorkspaceManager {
   }
 
   public KimOntology getOntology(String urn) {
+    getOntologies(false);
     return updateStatus(_ontologyMap.get(urn));
   }
 
   public KimNamespace getNamespace(String urn) {
+    getNamespaces();
     return updateStatus(_namespaceMap.get(urn));
   }
 
@@ -2694,7 +2757,9 @@ public class WorkspaceManager {
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified());
+              : new File(url.getFile()).lastModified(),
+          project,
+          documentUrn(project, ProjectStorage.ResourceType.ONTOLOGY, url));
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -2707,11 +2772,66 @@ public class WorkspaceManager {
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified());
+              : new File(url.getFile()).lastModified(),
+          project,
+          documentUrn(project, ProjectStorage.ResourceType.MODEL_NAMESPACE, url));
     } catch (IOException e) {
       scope.error(e);
       return null;
     }
+  }
+
+  private String documentUrn(
+      String project, ProjectStorage.ResourceType resourceType, URL documentUrl) {
+    var descriptor = projectDescriptors.get(project);
+    return descriptor != null && descriptor.storage instanceof FileProjectStorage storage
+        ? storage.getDocumentUrn(resourceType, documentUrl)
+        : null;
+  }
+
+  private <T extends KlabDocumentImpl<?>> T invalidDocument(
+      T document,
+      String urn,
+      String projectName,
+      String source,
+      long timestamp,
+      Collection<Notification> notifications) {
+    document.setUrn(urn);
+    document.setProjectName(projectName);
+    document.setSourceCode(source);
+    document.setLastUpdateTimestamp(timestamp);
+    document.setInactive(true);
+    document.setNotifications(new ArrayList<>(notifications));
+    return document;
+  }
+
+  private KimNamespace invalidNamespace(
+      String urn,
+      String projectName,
+      String source,
+      long timestamp,
+      Collection<Notification> notifications) {
+    return invalidDocument(
+        new KimNamespaceImpl(), urn, projectName, source, timestamp, notifications);
+  }
+
+  private KimOntology invalidOntology(
+      String urn,
+      String projectName,
+      String source,
+      long timestamp,
+      Collection<Notification> notifications) {
+    return invalidDocument(new KimOntologyImpl(), urn, projectName, source, timestamp, notifications);
+  }
+
+  private KimObservationStrategyDocument invalidStrategies(
+      String urn,
+      String projectName,
+      String source,
+      long timestamp,
+      Collection<Notification> notifications) {
+    return invalidDocument(
+        new KimObservationStrategiesImpl(), urn, projectName, source, timestamp, notifications);
   }
 
   public <T extends KlabAsset> T parseAsset(String input, Class<T> assetClass) {
@@ -2721,11 +2841,12 @@ public class WorkspaceManager {
     if (KActorsBehavior.class.isAssignableFrom(assetClass)) {
       return assetClass.cast(readBehavior(input, System.currentTimeMillis(), "no.project"));
     } else if (KimObservationStrategyDocument.class.isAssignableFrom(assetClass)) {
-      return assetClass.cast(readObservationStrategy(input, System.currentTimeMillis()));
+      return assetClass.cast(
+          readObservationStrategy(input, System.currentTimeMillis(), "no.project", null));
     } else if (KimOntology.class.isAssignableFrom(assetClass)) {
-      return assetClass.cast(readOntology(input, System.currentTimeMillis()));
+      return assetClass.cast(readOntology(input, System.currentTimeMillis(), "no.project", null));
     } else if (KimNamespace.class.isAssignableFrom(assetClass)) {
-      return assetClass.cast(readNamespace(input, System.currentTimeMillis()));
+      return assetClass.cast(readNamespace(input, System.currentTimeMillis(), "no.project", null));
     }
     throw new KlabIllegalArgumentException(
         "Unsupported standalone document class " + assetClass.getCanonicalName());
@@ -2806,10 +2927,16 @@ public class WorkspaceManager {
     return ret;
   }
 
-  private KimNamespace readNamespace(String input, long timestamp) {
+  private KimNamespace readNamespace(
+      String input, long timestamp, String projectName, String fallbackUrn) {
 
     if (input == null || input.isBlank()) {
-      return null;
+      return invalidNamespace(
+          fallbackUrn,
+          projectName,
+          input,
+          timestamp,
+          List.of(Notification.error("Namespace source is empty")));
     }
 
     var errors = new AtomicBoolean(false);
@@ -2818,6 +2945,14 @@ public class WorkspaceManager {
     InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     var parsed = namespaceParser.parse(inputStream, notams);
     KimNamespace ret = null;
+    var declaredUrn = fallbackUrn;
+    try {
+      if (parsed != null && parsed.getNamespace() != null) {
+        declaredUrn = parsed.getNamespace().getName();
+      }
+    } catch (Throwable ignored) {
+      // Keep the storage-derived URN when the declaration itself is incomplete.
+    }
 
     if (!notams.isEmpty()) {
 
@@ -2828,6 +2963,8 @@ public class WorkspaceManager {
           Klab.ErrorContext.OBSERVATION_STRATEGY);
 
       Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+      ret = invalidNamespace(declaredUrn, projectName, input, timestamp, notams);
 
     } else {
 
@@ -2864,7 +3001,7 @@ public class WorkspaceManager {
 
       if (!errors.get()) {
         ret =
-            LanguageAdapter.INSTANCE.adaptNamespace(syntax, "no.project", notifications, timestamp);
+            LanguageAdapter.INSTANCE.adaptNamespace(syntax, projectName, notifications, timestamp);
         /*
         unless there are already syntax errors in the behavior, perform basic validation
         using the lenient validator and add any logical errors/warnings to the result
@@ -2874,16 +3011,24 @@ public class WorkspaceManager {
           visitor.visit(ret);
           ret.getNotifications().addAll(visitor.getNotifications());
         }
+      } else {
+        ret = invalidNamespace(declaredUrn, projectName, input, timestamp, notifications);
       }
     }
 
     return ret;
   }
 
-  private KimObservationStrategyDocument readObservationStrategy(String input, long timestamp) {
+  private KimObservationStrategyDocument readObservationStrategy(
+      String input, long timestamp, String projectName, String fallbackUrn) {
 
     if (input == null || input.isBlank()) {
-      return null;
+      return invalidStrategies(
+          fallbackUrn,
+          projectName,
+          input,
+          timestamp,
+          List.of(Notification.error("Observation strategy source is empty")));
     }
 
     var errors = new AtomicBoolean(false);
@@ -2892,6 +3037,14 @@ public class WorkspaceManager {
     InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     var parsed = strategyParser.parse(inputStream, notams);
     KimObservationStrategyDocument ret = null;
+    var declaredUrn = fallbackUrn;
+    try {
+      if (parsed != null && parsed.getPreamble() != null) {
+        declaredUrn = parsed.getPreamble().getName();
+      }
+    } catch (Throwable ignored) {
+      // Keep the storage-derived URN when the declaration itself is incomplete.
+    }
 
     if (!notams.isEmpty()) {
 
@@ -2902,6 +3055,8 @@ public class WorkspaceManager {
           Klab.ErrorContext.OBSERVATION_STRATEGY);
 
       Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+      ret = invalidStrategies(declaredUrn, projectName, input, timestamp, notams);
 
     } else {
 
@@ -2939,7 +3094,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptStrategies(
-                syntax, "no.project", notifications, timestamp);
+                syntax, projectName, notifications, timestamp);
         /*
         unless there are already syntax errors in the behavior, perform basic validation
         using the lenient validator and add any logical errors/warnings to the result
@@ -2949,16 +3104,24 @@ public class WorkspaceManager {
           visitor.visit(ret);
           ret.getNotifications().addAll(visitor.getNotifications());
         }
+      } else {
+        ret = invalidStrategies(declaredUrn, projectName, input, timestamp, notifications);
       }
     }
 
     return ret;
   }
 
-  private KimOntology readOntology(String input, long timestamp) {
+  private KimOntology readOntology(
+      String input, long timestamp, String projectName, String fallbackUrn) {
 
     if (input == null || input.isBlank()) {
-      return null;
+      return invalidOntology(
+          fallbackUrn,
+          projectName,
+          input,
+          timestamp,
+          List.of(Notification.error("Ontology source is empty")));
     }
 
     var errors = new AtomicBoolean(false);
@@ -2967,6 +3130,14 @@ public class WorkspaceManager {
     InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
     var parsed = ontologyParser.parse(inputStream, notams);
     KimOntology ret = null;
+    var declaredUrn = fallbackUrn;
+    try {
+      if (parsed != null && parsed.getNamespace() != null) {
+        declaredUrn = parsed.getNamespace().getName();
+      }
+    } catch (Throwable ignored) {
+      // Keep the storage-derived URN when the declaration itself is incomplete.
+    }
 
     if (!notams.isEmpty()) {
 
@@ -2977,6 +3148,8 @@ public class WorkspaceManager {
           Klab.ErrorContext.OBSERVATION_STRATEGY);
 
       Logging.INSTANCE.notifications(notams.toArray(new Notification[0]));
+
+      ret = invalidOntology(declaredUrn, projectName, input, timestamp, notams);
 
     } else {
 
@@ -3013,7 +3186,7 @@ public class WorkspaceManager {
 
       if (!errors.get()) {
         ret =
-            LanguageAdapter.INSTANCE.adaptOntology(syntax, "no.project", notifications, timestamp);
+            LanguageAdapter.INSTANCE.adaptOntology(syntax, projectName, notifications, timestamp);
         /*
         unless there are already syntax errors in the behavior, perform basic validation
         using the lenient validator and add any logical errors/warnings to the result
@@ -3023,6 +3196,8 @@ public class WorkspaceManager {
           visitor.visit(ret);
           ret.getNotifications().addAll(visitor.getNotifications());
         }
+      } else {
+        ret = invalidOntology(declaredUrn, projectName, input, timestamp, notifications);
       }
     }
 
@@ -3049,7 +3224,9 @@ public class WorkspaceManager {
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
           url.getFile().isEmpty()
               ? System.currentTimeMillis()
-              : new File(url.getFile()).lastModified());
+              : new File(url.getFile()).lastModified(),
+          project,
+          documentUrn(project, ProjectStorage.ResourceType.STRATEGY, url));
     } catch (IOException e) {
       scope.error(e);
       return null;
@@ -3648,31 +3825,41 @@ public class WorkspaceManager {
     file storage: modify as specified
      */
     List<Notification> notifications = new ArrayList<>();
-    var parsed =
-        switch (documentType) {
-          case ONTOLOGY ->
-              ontologyParser
-                  .parse(new StringReader(contents), notifications)
-                  .getNamespace()
-                  .getName();
-          case MODEL_NAMESPACE ->
-              namespaceParser
-                  .parse(new StringReader(contents), notifications)
-                  .getNamespace()
-                  .getName();
-          case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> {
-            var behavior = readBehavior(contents, System.currentTimeMillis(), projectName);
-            yield behavior == null ? null : behavior.getUrn();
-          }
-          case STRATEGY ->
-              strategyParser
-                  .parse(new StringReader(contents), notifications)
-                  .getPreamble()
-                  .getName();
-          default -> throw new KlabUnimplementedException("parsing new " + documentType);
-        };
+    var parsed = documentUrn;
+    try {
+      var declaredUrn =
+          switch (documentType) {
+            case ONTOLOGY ->
+                ontologyParser
+                    .parse(new StringReader(contents), notifications)
+                    .getNamespace()
+                    .getName();
+            case MODEL_NAMESPACE ->
+                namespaceParser
+                    .parse(new StringReader(contents), notifications)
+                    .getNamespace()
+                    .getName();
+            case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> {
+              var behavior = readBehavior(contents, System.currentTimeMillis(), projectName);
+              yield behavior == null ? null : behavior.getUrn();
+            }
+            case STRATEGY ->
+                strategyParser
+                    .parse(new StringReader(contents), notifications)
+                    .getPreamble()
+                    .getName();
+            default -> throw new KlabUnimplementedException("parsing new " + documentType);
+          };
+      if (declaredUrn != null && !declaredUrn.isBlank()) {
+        parsed = declaredUrn;
+      }
+    } catch (Throwable throwable) {
+      // Invalid source is still the source of truth. Keep the current URN so the file remains
+      // addressable and editable; the subsequent reload will attach parser diagnostics.
+      notifications.add(Notification.error("Cannot parse document declaration", throwable));
+    }
 
-    if (parsed != null && pd.storage instanceof FileProjectStorage fileProjectStorage) {
+    if (pd.storage instanceof FileProjectStorage fileProjectStorage) {
 
       // do the update in the stored project and screw it
       var previousUrl = fileProjectStorage.locate(documentUrn, documentType);

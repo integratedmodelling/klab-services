@@ -170,6 +170,17 @@ public interface Modeler extends UIController {
   boolean createProject(ResourcesService service, String projectName, String workspaceName);
 
   /**
+   * Create a workspace by submitting its semantic bean to the selected resources service.
+   *
+   * @param service target resources service
+   * @param workspaceName workspace URN
+   * @param description optional human-readable description
+   * @return true when the creation request was accepted
+   */
+  boolean createWorkspace(
+      ResourcesService service, String workspaceName, String description);
+
+  /**
    * Call the correspondent API on the service and ingest all modifications, propagating UI events
    * as needed.
    *

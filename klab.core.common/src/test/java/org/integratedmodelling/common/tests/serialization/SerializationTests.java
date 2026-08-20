@@ -8,11 +8,48 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategyImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimSymbolDefinitionImpl;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class SerializationTests {
+
+  @Test
+  void semanticDocumentsDeserializePolymorphicStatements() {
+    var namespace =
+        Utils.Json.parseObject(
+            """
+            {"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl",
+             "statements":[{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimSymbolDefinitionImpl"}]}
+            """,
+            KimNamespaceImpl.class);
+    assertInstanceOf(KimSymbolDefinitionImpl.class, namespace.getStatements().getFirst());
+
+    var ontology =
+        Utils.Json.parseObject(
+            """
+            {"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl",
+             "statements":[{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl"}]}
+            """,
+            KimOntologyImpl.class);
+    assertInstanceOf(KimConceptStatementImpl.class, ontology.getStatements().getFirst());
+
+    var strategies =
+        Utils.Json.parseObject(
+            """
+            {"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl",
+             "statements":[{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategyImpl"}]}
+            """,
+            KimObservationStrategiesImpl.class);
+    assertInstanceOf(KimObservationStrategyImpl.class, strategies.getStatements().getFirst());
+  }
 
   static String centralColombia =
       "τ0(1){ttype=LOGICAL,period=[1609459200000 1640995200000],tscope=1.0,"
