@@ -63,7 +63,6 @@ import org.pf4j.*;
 
 public class ComponentRegistry {
 
-  public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
   private static final String PLUGINS_DIRECTORY = "plugins";
   private static final String PLUGIN_REQUIRES_ATTRIBUTE = "Plugin-Requires";
   private final BaseService service;
@@ -114,7 +113,7 @@ public class ComponentRegistry {
     this.service = service;
     localComponentDescriptor =
         new Extensions.ComponentDescriptor(
-            LOCAL_SERVICE_COMPONENT,
+            Extensions.LOCAL_SERVICE_COMPONENT,
             Version.CURRENT_VERSION,
             "Natively available " + "services",
             null,
@@ -344,7 +343,7 @@ public class ComponentRegistry {
     for (var descriptor :
         Utils.Json.load(this.catalogFile, Extensions.ComponentDescriptor[].class)) {
 
-      if (descriptor.id().equals(LOCAL_SERVICE_COMPONENT)) {
+      if (descriptor.id().equals(Extensions.LOCAL_SERVICE_COMPONENT)) {
         continue;
       }
 
@@ -710,6 +709,8 @@ public class ComponentRegistry {
     var adapters = new ArrayList<AdapterDescriptor>();
     var license = component.getWrapper().getDescriptor().getLicense();
     var description = component.getWrapper().getDescriptor().getPluginDescription();
+    var timestamp = pluginFile.lastModified();
+
     var sourceArchive =
         component.getWrapper().getPluginPath() == null
             ? null
@@ -752,7 +753,7 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             service.serviceId(),
-            System.currentTimeMillis());
+            timestamp);
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {
@@ -988,8 +989,8 @@ public class ComponentRegistry {
   private int adapterSourceParameterCount(Method method) {
     int ret = 0;
     for (var parameter : method.getParameterTypes()) {
-      if (!org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
-          .isAssignableFrom(parameter)) {
+      if (!org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class.isAssignableFrom(
+          parameter)) {
         ret++;
       }
     }
@@ -999,8 +1000,8 @@ public class ComponentRegistry {
   private int adapterScopeParameterCount(Method method) {
     int ret = 0;
     for (var parameter : method.getParameterTypes()) {
-      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
-          .isAssignableFrom(parameter)) {
+      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class.isAssignableFrom(
+          parameter)) {
         ret++;
       }
     }
@@ -1009,9 +1010,8 @@ public class ComponentRegistry {
 
   /**
    * Invoke the adapter advertised by a Java actor descriptor. The source argument is matched by
-   * runtime type and an optional {@link
-   * org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope} parameter is injected in any
-   * position. Supplier adapters are joined before returning.
+   * runtime type and an optional {@link org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope}
+   * parameter is injected in any position. Supplier adapters are joined before returning.
    */
   public Object invokeAgentAdapter(
       Extensions.ActorDescriptor actor,
@@ -1045,8 +1045,8 @@ public class ComponentRegistry {
     boolean sourceMatched = false;
     for (int i = 0; i < method.getParameterCount(); i++) {
       Class<?> parameter = method.getParameterTypes()[i];
-      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class
-          .isAssignableFrom(parameter)) {
+      if (org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class.isAssignableFrom(
+          parameter)) {
         arguments[i] = scope;
       } else if (!sourceMatched && acceptsAdapterSource(parameter, source)) {
         arguments[i] = source;
@@ -1107,8 +1107,8 @@ public class ComponentRegistry {
    * implementations may split or combine values (for example, a temporal quantity into a numeric
    * value and {@link java.util.concurrent.TimeUnit}) and return them in declaration order.
    *
-   * <p>The default implementation deliberately rejects the match. The compiler converts this into
-   * a lexical parameter-mismatch notification and runtime dynamic calls fail explicitly.
+   * <p>The default implementation deliberately rejects the match. The compiler converts this into a
+   * lexical parameter-mismatch notification and runtime dynamic calls fail explicitly.
    */
   public List<Object> negotiateAgentParameters(
       List<Class<?>> unmatchedParameterTypes, List<?> suppliedParameters) {
@@ -1178,7 +1178,7 @@ public class ComponentRegistry {
                   + implementation(ret).implementation.getCanonicalName()
                   + ": "
                   + e.getMessage());
-//          ret.error = true;
+          //          ret.error = true;
         }
       }
     } else {
@@ -1777,7 +1777,7 @@ public class ComponentRegistry {
                 registerAdapter(
                     (ResourceAdapter) annotation,
                     cls,
-                    LOCAL_SERVICE_COMPONENT,
+                    Extensions.LOCAL_SERVICE_COMPONENT,
                     Version.CURRENT_VERSION,
                     adapters)));
 
@@ -1825,7 +1825,7 @@ public class ComponentRegistry {
       }
     }
 
-    this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
+    this.components.put(Extensions.LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
   }
 
   /**
@@ -1872,7 +1872,8 @@ public class ComponentRegistry {
     for (var wrapper : this.componentManager.getPlugins()) {
       Plugin plugin = wrapper.getPlugin();
       if (plugin instanceof KlabComponent component) {
-        registerComponent(component, null, null /* TODO */);
+        var file = component.getWrapper().getPluginPath().toFile();
+        registerComponent(component, null, file);
       }
     }
 

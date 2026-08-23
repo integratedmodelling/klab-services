@@ -17,6 +17,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 /** Holder of descriptive records for extensions of all kinds. */
 public interface Extensions {
 
+  String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
+
   /**
    * Descriptor of an extension library with its services, annotations and verbs.
    *
