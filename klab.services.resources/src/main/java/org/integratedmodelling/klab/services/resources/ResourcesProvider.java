@@ -394,6 +394,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (adapter == null) {
       return ResourceSet.empty(Notification.error("No adapter available for " + urn));
     }
+    var component =
+        getComponentRegistry()
+            .getComponent(adapter.getComponentUrn(), adapter.getComponentVersion());
     ResourceSet ret = new ResourceSet();
     ret.getResults()
         .add(
@@ -403,7 +406,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 null,
                 adapter.getComponentVersion(),
                 KnowledgeClass.COMPONENT,
-                adapter.getAdapterInfo().getTimestamp(),
+                component == null
+                    ? adapter.getAdapterInfo().getTimestamp()
+                    : component.timestamp(),
                 false));
     return ret;
   }
@@ -528,6 +533,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (adapter.isEmbeddable()) {
       // runtime will decide what to do, but we can embed the adapter so we can add an optional
       // dependency on the component that provides it.
+      var component =
+          getComponentRegistry()
+              .getComponent(adapter.getComponentUrn(), adapter.getComponentVersion());
       ret.getResults()
           .add(
               new ResourceSet.Resource(
@@ -536,7 +544,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   null,
                   adapter.getComponentVersion(),
                   KnowledgeClass.COMPONENT,
-                  adapter.getAdapterInfo().getTimestamp(),
+                  component == null ? info.getTimestamp() : component.timestamp(),
                   true));
     }
 

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.extension;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -28,6 +29,9 @@ public class MavenComponentCache {
     NEEDS_UPDATE_FROM_REMOTE_REPOSITORY,
     UNKNOWN
   }
+
+  /** Non-mutating availability result, including the source artifact's authoritative timestamp. */
+  public record Availability(Status status, long latestVersionTimestamp) {}
 
   // descriptor saved in the catalog
   public static class ArtifactInfo {
@@ -100,7 +104,15 @@ public class MavenComponentCache {
     AtomicReference<String> artifactHashRef = new AtomicReference<>();
     AtomicReference<File> fileRef = new AtomicReference<>();
     var status =
-        getAvailability(groupId, artifactId, version, classifier, suffix, artifactHashRef, fileRef);
+        getAvailability(
+            groupId,
+            artifactId,
+            version,
+            classifier,
+            suffix,
+            artifactHashRef,
+            fileRef,
+            new AtomicReference<>(0L));
     if (status == Status.UNKNOWN) {
       return null;
     }
@@ -196,14 +208,27 @@ public class MavenComponentCache {
    */
   public Status getAvailability(
       String groupId, String artifactId, String version, String classifier, String suffix) {
-    return getAvailability(
-        groupId,
-        artifactId,
-        version,
-        classifier,
-        suffix,
-        new AtomicReference<>(),
-        new AtomicReference<>());
+    return getAvailabilityInfo(groupId, artifactId, version, classifier, suffix).status();
+  }
+
+  /**
+   * Establish update availability without downloading an artifact, retaining the timestamp of the
+   * latest local or remote version when it can be established.
+   */
+  public Availability getAvailabilityInfo(
+      String groupId, String artifactId, String version, String classifier, String suffix) {
+    var latestTimestamp = new AtomicReference<>(0L);
+    var status =
+        getAvailability(
+            groupId,
+            artifactId,
+            version,
+            classifier,
+            suffix,
+            new AtomicReference<>(),
+            new AtomicReference<>(),
+            latestTimestamp);
+    return new Availability(status, latestTimestamp.get());
   }
 
   /**
@@ -226,7 +251,8 @@ public class MavenComponentCache {
       String classifier,
       String suffix,
       AtomicReference<String> artifactHashRef,
-      AtomicReference<File> fileRef) {
+      AtomicReference<File> fileRef,
+      AtomicReference<Long> latestTimestampRef) {
 
     var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
     var current = cacheCatalog.get(signature);
@@ -238,6 +264,7 @@ public class MavenComponentCache {
       var localHash = Utils.Files.hash(local);
       artifactHashRef.set(localHash);
       fileRef.set(local);
+      latestTimestampRef.set(local.lastModified());
       return current == null
               || current.getMd5hash() == null
               || !current.getMd5hash().equals(localHash)
@@ -248,6 +275,10 @@ public class MavenComponentCache {
       // check out if available on remote repositories
       var latest = Utils.Maven.getLatestSnapshotDate(groupId, artifactId, version);
       if (latest != null) {
+        if (latest.getLastModified() != null) {
+          latestTimestampRef.set(
+              latest.getLastModified().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+        }
         if (current != null
             && current.getCachedFile() != null
             && current.getCachedFile().exists()
@@ -265,6 +296,10 @@ public class MavenComponentCache {
 
     // if we get here, we don't have it in the cache or in the local repo, and it's not a SNAPSHOT
     if (current != null) {
+      if (current.getLastModified() != null) {
+        latestTimestampRef.set(
+            current.getLastModified().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+      }
       // download the MD5; its existence will tell us if the file is available
       var md5file =
           Utils.Maven.findOrDownloadArtifactFile(

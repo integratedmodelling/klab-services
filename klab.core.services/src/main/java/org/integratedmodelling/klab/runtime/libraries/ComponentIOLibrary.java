@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
@@ -14,10 +17,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.base.BaseService;
-
-import java.io.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 @Library(
     name = "component",
@@ -118,11 +117,9 @@ public class ComponentIOLibrary {
                     service.serviceId(),
                     component.id(),
                     null,
-                    component.version() != null
-                        ? component.version()
-                        : Version.ANY_VERSION,
+                    component.version() != null ? component.version() : Version.ANY_VERSION,
                     KlabAsset.KnowledgeClass.COMPONENT,
-                    System.currentTimeMillis(),
+                    component.timestamp(),
                     false));
         result
             .getNotifications()
@@ -132,11 +129,10 @@ public class ComponentIOLibrary {
                         + component.id()
                         + " successful with version "
                         + component.version()));
-        result
-            .getNotifications()
-            .add(
-                Notification.warning(
-                    "TO BE IMPLEMENTED: register imported component ownership and privileges through submit"));
+
+        Logging.INSTANCE.warn(
+            "TO BE IMPLEMENTED: register imported component ownership and privileges through submit");
+
         return result;
       }
       if (ret == null) {

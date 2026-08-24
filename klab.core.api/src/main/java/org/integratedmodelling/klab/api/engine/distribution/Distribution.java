@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -544,9 +545,50 @@ public interface Distribution {
     private List<Build> builds = new ArrayList<>();
 
     public Release(URL url) {
+      this(url, false);
+    }
+
+    /**
+     * Read a release catalog, optionally recovering its build list from an intact local directory.
+     *
+     * <p>The fallback is intended for source distributions whose generated index files may have
+     * been removed by an interrupted clean while runnable products remain locked on disk.
+     */
+    public Release(URL url, boolean inferLocalCatalog) {
       super(url);
       this.name = this.properties.getProperty(RELEASE_NAME_PROPERTY);
       var buildsProperty = this.properties.getProperty(RELEASE_BUILDS_PROPERTY);
+      if ((buildsProperty == null || buildsProperty.isBlank())
+          && inferLocalCatalog
+          && "file".equals(url.getProtocol())) {
+        var releaseProperties = new File(url.getFile());
+        var releaseDirectory = releaseProperties.getParentFile();
+        this.name = releaseDirectory == null ? null : releaseDirectory.getName();
+        var buildDirectories =
+            releaseDirectory == null
+                ? null
+                : releaseDirectory.listFiles(
+                    file ->
+                        file.isDirectory()
+                            && new File(file, BUILD_PROPERTIES_FILE).isFile());
+        if (buildDirectories != null) {
+          Arrays.sort(buildDirectories, Comparator.comparing(File::getName).reversed());
+          for (var buildDirectory : buildDirectories) {
+            var build =
+                new Build(
+                    buildDirectory.getName(),
+                    Utils.URLs.newURL(
+                        new File(buildDirectory, BUILD_PROPERTIES_FILE)));
+            if (!build.isEmpty()) {
+              this.builds.add(build);
+            }
+          }
+        }
+        if (!this.builds.isEmpty()) {
+          setEmpty(false);
+          return;
+        }
+      }
       if (buildsProperty == null || buildsProperty.isBlank()) {
         setEmpty(true);
         return;

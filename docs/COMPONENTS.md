@@ -125,8 +125,11 @@ looks like a Java archive with a manifest, copies it into `plugins/`, loads it w
 it for k.LAB contributions.
 
 Direct imports are intentionally local. They do not record Maven coordinates, so the registry
-cannot automatically rediscover a newer build. Updating a directly imported component means
-uploading a replacement `.kar` or importing a newer version.
+cannot automatically rediscover a newer build. The hosting service therefore reports the imported
+archive as up to date until a replacement `.kar` is uploaded. Updating a directly imported
+component means uploading that replacement or importing a newer version. Services that copied the
+component as a dependency can still discover the replacement through the hosting Resources
+service's component descriptor.
 
 ### Maven Import
 
@@ -163,6 +166,14 @@ descriptor records:
 - Libraries, actors, adapters, services, annotations, verbs, importers, and exporters.
 - The source service id, when applicable.
 - The registration or update timestamp.
+- The import type: `BUILT_IN`, `FILE`, `MAVEN`, or `DEPENDENCY`.
+- The last computed update status and timestamp of the latest version known at the source.
+
+The update status is one of `NOT_UPDATEABLE`, `UNKNOWN`, `UP_TO_DATE`, or `UPDATE_AVAILABLE`.
+`latestVersionTimestamp` is zero when the source cannot provide an authoritative timestamp. These
+fields are computed for advertised descriptors and do not alter or install components. Stable
+Maven releases and the built-in service component are not updateable; Maven SNAPSHOTs, directly
+imported `.kar` archives, and dependency copies are updateable through their respective sources.
 
 The descriptor is saved to `catalog.json` and indexed by contribution type. Service verbs,
 adapters, annotations, verbs, importers, and exporters can then be resolved by name. When more than
@@ -201,6 +212,21 @@ descriptor for lookups.
 
 Components can be updated manually or automatically. Automatic updates apply only to Maven-sourced
 SNAPSHOT components.
+
+Update discovery follows the component's import type:
+
+- A hosted `MAVEN` SNAPSHOT checks the Maven component cache and configured repositories. Its
+  latest timestamp comes from the selected local artifact or remote snapshot metadata.
+- A hosted `FILE` component has no external repository to poll. Its current registration timestamp
+  is also its latest-known timestamp; uploading a replacement advances both.
+- A `DEPENDENCY` component asks the `ResourcesService` identified by `sourceServiceId` for the
+  matching hosted descriptor. A newer hosted registration or an update advertised by that service
+  makes the dependency's status `UPDATE_AVAILABLE`.
+- `BUILT_IN` components and stable Maven versions report `NOT_UPDATEABLE`.
+
+This separation is important operationally: the Resources service owns and serves hosted
+components, while Runtime and other services should refresh dependency copies from that Resources
+service rather than consulting Maven or a local file path themselves.
 
 ### Manual Direct Update
 

@@ -128,7 +128,10 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             service.serviceId(),
-            System.currentTimeMillis());
+            System.currentTimeMillis(),
+            Extensions.ComponentImportType.BUILT_IN,
+            Extensions.ComponentUpdateStatus.NOT_UPDATEABLE,
+            0L);
   }
 
   public MavenComponentCache getComponentCache() {
@@ -491,7 +494,92 @@ public class ComponentRegistry {
   }
 
   public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
-    return components.values().stream().filter(/* TODO permissions */ c -> true).toList();
+    return components.values().stream()
+        .filter(/* TODO permissions */ c -> true)
+        .map(component -> computeUpdateStatus(component, scope))
+        .toList();
+  }
+
+  private Extensions.ComponentDescriptor computeUpdateStatus(
+      Extensions.ComponentDescriptor component, Scope scope) {
+    if (!component.isUpdateable()) {
+      return component.withUpdateStatus(Extensions.ComponentUpdateStatus.NOT_UPDATEABLE, 0L);
+    }
+    if (component.importType() == Extensions.ComponentImportType.FILE) {
+      return component.withUpdateStatus(
+          Extensions.ComponentUpdateStatus.UP_TO_DATE, component.timestamp());
+    }
+    if (component.importType() == Extensions.ComponentImportType.MAVEN) {
+      var coordinates = component.mavenCoordinates().split(":");
+      if (coordinates.length != 3) {
+        return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+      }
+      try {
+        var availability =
+            cache.getAvailabilityInfo(
+                coordinates[0], coordinates[1], coordinates[2], "component", "kar");
+        var status =
+            switch (availability.status()) {
+              case UP_TO_DATE -> Extensions.ComponentUpdateStatus.UP_TO_DATE;
+              case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY,
+                      NEEDS_UPDATE_FROM_REMOTE_REPOSITORY ->
+                  Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE;
+              case UNKNOWN -> Extensions.ComponentUpdateStatus.UNKNOWN;
+            };
+        return component.withUpdateStatus(status, availability.latestVersionTimestamp());
+      } catch (RuntimeException e) {
+        Logging.INSTANCE.warn(
+            "Unable to establish update status for component " + component.id(), e);
+        return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+      }
+    }
+    return computeDependencyUpdateStatus(component, scope);
+  }
+
+  private Extensions.ComponentDescriptor computeDependencyUpdateStatus(
+      Extensions.ComponentDescriptor component, Scope scope) {
+    if (scope == null || component.sourceServiceId() == null) {
+      return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+    }
+    var source =
+        scope
+            .findService(
+                ResourcesService.class,
+                candidate -> Objects.equals(candidate.serviceId(), component.sourceServiceId()))
+            .orElse(null);
+    if (source == null) {
+      return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+    }
+    try {
+      var sourceDescriptor =
+          source.capabilities(scope).getComponents().stream()
+              .filter(candidate -> Objects.equals(candidate.id(), component.id()))
+              .filter(candidate -> Objects.equals(candidate.version(), component.version()))
+              .findFirst()
+              .orElse(null);
+      if (sourceDescriptor == null) {
+        return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+      }
+      return applyDependencySourceStatus(component, sourceDescriptor);
+    } catch (RuntimeException e) {
+      Logging.INSTANCE.warn(
+          "Unable to obtain component update status from service " + component.sourceServiceId(),
+          e);
+      return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+    }
+  }
+
+  static Extensions.ComponentDescriptor applyDependencySourceStatus(
+      Extensions.ComponentDescriptor component,
+      Extensions.ComponentDescriptor sourceDescriptor) {
+    var latestTimestamp =
+        Math.max(sourceDescriptor.timestamp(), sourceDescriptor.latestVersionTimestamp());
+    var status =
+        sourceDescriptor.updateStatus() == Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE
+                || latestTimestamp > component.timestamp()
+            ? Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE
+            : sourceDescriptor.updateStatus();
+    return component.withUpdateStatus(status, latestTimestamp);
   }
 
   /*
@@ -536,7 +624,12 @@ public class ComponentRegistry {
       pluginPath.mkdirs();
       file = cache.install(groupId, artifactId, version, pluginPath);
       if (file != null && file.exists()) {
-        return installComponent(file, mavenCoordinates);
+        return installComponent(
+            file,
+            mavenCoordinates,
+            Extensions.ComponentImportType.MAVEN,
+            service.serviceId(),
+            0L);
       }
     }
     return null;
@@ -552,6 +645,23 @@ public class ComponentRegistry {
    */
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath, String mavenCoordinates) {
+
+    return installComponent(
+        resourcePath,
+        mavenCoordinates,
+        mavenCoordinates == null
+            ? Extensions.ComponentImportType.FILE
+            : Extensions.ComponentImportType.MAVEN,
+        service.serviceId(),
+        0L);
+  }
+
+  private Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
+      File resourcePath,
+      String mavenCoordinates,
+      Extensions.ComponentImportType importType,
+      String sourceServiceId,
+      long sourceTimestamp) {
 
     if (pluginPath == null) {
       return Pair.of(
@@ -597,7 +707,15 @@ public class ComponentRegistry {
 
       Plugin component = plugin.getPlugin();
       if (component instanceof KlabComponent comp) {
-        info = registerComponent(comp, mavenCoordinates, pluginDestination);
+        info =
+            registerComponent(
+                comp,
+                mavenCoordinates,
+                pluginDestination,
+                importType,
+                sourceServiceId,
+                sourceTimestamp);
+        result.setTimestamp(info.timestamp());
         ret.getNotifications().add(info.extractInfo());
         ret.getResults().add(result);
       } else {
@@ -700,6 +818,17 @@ public class ComponentRegistry {
   public Extensions.ComponentDescriptor registerComponent(
       KlabComponent component, String mavenCoordinates, File pluginFile) {
 
+    return registerComponent(component, mavenCoordinates, pluginFile, null, null, 0L);
+  }
+
+  private Extensions.ComponentDescriptor registerComponent(
+      KlabComponent component,
+      String mavenCoordinates,
+      File pluginFile,
+      Extensions.ComponentImportType importType,
+      String sourceServiceId,
+      long sourceTimestamp) {
+
     // TODO negotiate updates before we open the file.
 
     var componentName = component.getName();
@@ -709,7 +838,7 @@ public class ComponentRegistry {
     var adapters = new ArrayList<AdapterDescriptor>();
     var license = component.getWrapper().getDescriptor().getLicense();
     var description = component.getWrapper().getDescriptor().getPluginDescription();
-    var timestamp = pluginFile.lastModified();
+    var timestamp = sourceTimestamp > 0 ? sourceTimestamp : pluginFile.lastModified();
 
     var sourceArchive =
         component.getWrapper().getPluginPath() == null
@@ -721,6 +850,18 @@ public class ComponentRegistry {
     var existingDescriptor = getExactComponent(componentName, componentVersion);
     if (mavenCoordinates == null && existingDescriptor != null) {
       mavenCoordinates = existingDescriptor.mavenCoordinates();
+    }
+    if (importType == null) {
+      importType =
+          existingDescriptor == null
+              ? (mavenCoordinates == null
+                  ? Extensions.ComponentImportType.FILE
+                  : Extensions.ComponentImportType.MAVEN)
+              : existingDescriptor.importType();
+    }
+    if (sourceServiceId == null) {
+      sourceServiceId =
+          existingDescriptor == null ? service.serviceId() : existingDescriptor.sourceServiceId();
     }
     removeComponentRegistration(componentName, componentVersion);
 
@@ -752,8 +893,17 @@ public class ComponentRegistry {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            service.serviceId(),
-            timestamp);
+            sourceServiceId,
+            timestamp,
+            importType,
+            importType == Extensions.ComponentImportType.FILE
+                    || importType == Extensions.ComponentImportType.DEPENDENCY
+                ? Extensions.ComponentUpdateStatus.UP_TO_DATE
+                : null,
+            importType == Extensions.ComponentImportType.FILE
+                    || importType == Extensions.ComponentImportType.DEPENDENCY
+                ? timestamp
+                : 0L);
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {
@@ -1485,7 +1635,12 @@ public class ComponentRegistry {
         scope.error(e);
         return false;
       }
-      installComponent(plugin, null);
+      installComponent(
+          plugin,
+          null,
+          Extensions.ComponentImportType.DEPENDENCY,
+          result.getServiceId(),
+          result.getTimestamp());
     }
 
     // hopefully this is OK with plugins that have started already

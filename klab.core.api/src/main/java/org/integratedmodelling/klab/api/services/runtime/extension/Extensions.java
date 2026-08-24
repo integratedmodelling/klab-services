@@ -19,6 +19,26 @@ public interface Extensions {
 
   String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
 
+  /** How a component entered the registry. The import type determines how updates are obtained. */
+  enum ComponentImportType {
+    /** Code contributed by the service itself rather than an imported archive. */
+    BUILT_IN,
+    /** A {@code .kar} archive imported directly into this service. */
+    FILE,
+    /** A component imported from Maven coordinates. */
+    MAVEN,
+    /** A component copied from a Resources service to satisfy a service dependency. */
+    DEPENDENCY
+  }
+
+  /** Result of the most recent non-mutating update-status computation. */
+  enum ComponentUpdateStatus {
+    NOT_UPDATEABLE,
+    UNKNOWN,
+    UP_TO_DATE,
+    UPDATE_AVAILABLE
+  }
+
   /**
    * Descriptor of an extension library with its services, annotations and verbs.
    *
@@ -70,6 +90,11 @@ public interface Extensions {
    *     those in libraries
    * @param actors descriptor for all {@link Actor}-annotated classes in the component, including
    *     those in libraries.
+   * @param importType how the component entered this registry and therefore where updates come
+   *     from
+   * @param updateStatus result of the latest non-mutating update check
+   * @param latestVersionTimestamp timestamp of the latest version known at the source, or zero if
+   *     it could not be established
    */
   record ComponentDescriptor(
       String id,
@@ -89,7 +114,10 @@ public interface Extensions {
       Map<String, List<FunctionDescriptor>> exporters,
       Map<String, List<FunctionDescriptor>> importers,
       String sourceServiceId, // ID of source service for updates,
-      long timestamp // time of creation/last update
+      long timestamp, // time of creation/last update
+      ComponentImportType importType,
+      ComponentUpdateStatus updateStatus,
+      long latestVersionTimestamp
       ) {
 
     public ComponentDescriptor {
@@ -100,6 +128,63 @@ public interface Extensions {
       actors = actors == null ? new HashMap<>() : actors;
       exporters = exporters == null ? new HashMap<>() : exporters;
       importers = importers == null ? new HashMap<>() : importers;
+      importType = inferImportType(importType, id, mavenCoordinates);
+      updateStatus =
+          updateStatus == null
+              ? (isUpdateable(importType, mavenCoordinates)
+                  ? ComponentUpdateStatus.UNKNOWN
+                  : ComponentUpdateStatus.NOT_UPDATEABLE)
+              : updateStatus;
+    }
+
+    private static ComponentImportType inferImportType(
+        ComponentImportType importType, String id, String mavenCoordinates) {
+      if (importType != null) {
+        return importType;
+      }
+      if (LOCAL_SERVICE_COMPONENT.equals(id)) {
+        return ComponentImportType.BUILT_IN;
+      }
+      return mavenCoordinates == null ? ComponentImportType.FILE : ComponentImportType.MAVEN;
+    }
+
+    private static boolean isUpdateable(
+        ComponentImportType importType, String mavenCoordinates) {
+      return importType == ComponentImportType.FILE
+          || importType == ComponentImportType.DEPENDENCY
+          || (importType == ComponentImportType.MAVEN
+              && mavenCoordinates != null
+              && mavenCoordinates.endsWith("-SNAPSHOT"));
+    }
+
+    /** True when this component has a source that supports ad-hoc update checks. */
+    public boolean isUpdateable() {
+      return isUpdateable(importType, mavenCoordinates);
+    }
+
+    /** Return an equivalent descriptor carrying freshly computed update information. */
+    public ComponentDescriptor withUpdateStatus(
+        ComponentUpdateStatus status, long latestTimestamp) {
+      return new ComponentDescriptor(
+          id,
+          version,
+          description,
+          sourceArchive,
+          fileHash,
+          mavenCoordinates,
+          usageRights,
+          libraries,
+          adapters,
+          services,
+          annotations,
+          actors,
+          exporters,
+          importers,
+          sourceServiceId,
+          timestamp,
+          importType,
+          status,
+          latestTimestamp);
     }
 
     @Override

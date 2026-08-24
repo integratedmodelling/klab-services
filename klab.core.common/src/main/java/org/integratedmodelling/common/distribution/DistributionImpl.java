@@ -91,6 +91,11 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
                     + File.separator
                     + "klab"
                     + "-services"));
+    return developmentDistribution(distributionName, distributionDirectory);
+  }
+
+  static DistributionImpl developmentDistribution(
+      String distributionName, File distributionDirectory) {
     if (distributionDirectory.isDirectory()) {
       File distributionFolder =
           new File(
@@ -108,11 +113,50 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         var properties = Utils.Properties.create(distributionProperties);
         for (var version : commaSeparated(properties.getProperty(DISTRIBUTION_VERSIONS_PROPERTY))) {
           if (Version.CURRENT_VERSION.compatible(Version.create(version))) {
-            return new DistributionImpl(
-                distributionName,
-                Version.create(version),
-                Utils.URLs.newURL(distributionFolder),
-                Utils.URLs.newURL(new File(distributionFolder, version)));
+            var distribution =
+                new DistributionImpl(
+                    distributionName,
+                    Version.create(version),
+                    Utils.URLs.newURL(distributionFolder),
+                    Utils.URLs.newURL(new File(distributionFolder, version)),
+                    true);
+            if (!distribution.isEmpty()) {
+              return distribution;
+            }
+          }
+        }
+      }
+
+      // A failed clean on Windows can remove the index properties before locked product JARs.
+      // Recover HEAD from complete build/product metadata without modifying the source tree.
+      var versionDirectories =
+          distributionFolder.listFiles(
+              file -> file.isDirectory() && !"common".equals(file.getName()));
+      if (versionDirectories != null) {
+        var compatibleVersions =
+            Arrays.stream(versionDirectories)
+                .map(
+                    directory -> {
+                      try {
+                        return Map.entry(directory, Version.create(directory.getName()));
+                      } catch (RuntimeException ignored) {
+                        return null;
+                      }
+                    })
+                .filter(Objects::nonNull)
+                .filter(entry -> Version.CURRENT_VERSION.compatible(entry.getValue()))
+                .sorted(Map.Entry.<File, Version>comparingByValue().reversed())
+                .toList();
+        for (var candidate : compatibleVersions) {
+          var distribution =
+              new DistributionImpl(
+                  distributionName,
+                  candidate.getValue(),
+                  Utils.URLs.newURL(distributionFolder),
+                  Utils.URLs.newURL(candidate.getKey()),
+                  true);
+          if (!distribution.isEmpty()) {
+            return distribution;
           }
         }
       }
@@ -210,11 +254,42 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   public DistributionImpl(
       String distributionName, Version version, URL distributionUrl, URL versionUrl) {
+    this(distributionName, version, distributionUrl, versionUrl, false);
+  }
+
+  private DistributionImpl(
+      String distributionName,
+      Version version,
+      URL distributionUrl,
+      URL versionUrl,
+      boolean inferLocalCatalog) {
     super(Utils.URLs.newURL(distributionUrl + "/" + DISTRIBUTION_PROPERTIES_FILE));
     this.name = distributionName;
     var versionProperties =
         Utils.Properties.create(Utils.URLs.newURL(versionUrl + "/version.properties"));
     this.version = version;
+    if (versionProperties.isEmpty()
+        && inferLocalCatalog
+        && "file".equals(versionUrl.getProtocol())) {
+      var versionDirectory = new File(versionUrl.getFile());
+      var releaseDirectories = versionDirectory.listFiles(File::isDirectory);
+      if (releaseDirectories != null) {
+        Arrays.sort(releaseDirectories, Comparator.comparing(File::getName));
+        for (var releaseDirectory : releaseDirectories) {
+          var release =
+              new Distribution.Release(
+                  Utils.URLs.newURL(new File(releaseDirectory, RELEASE_PROPERTIES_FILE)),
+                  true);
+          if (!release.isEmpty()) {
+            this.releases.add(release);
+          }
+        }
+      }
+      if (!this.releases.isEmpty()) {
+        setEmpty(false);
+        return;
+      }
+    }
     if (versionProperties.isEmpty()) {
       setEmpty(true);
       return;
@@ -227,7 +302,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     for (var release : releaseNames) {
       var releaseData =
           new Distribution.Release(
-              Utils.URLs.newURL(versionUrl + "/" + release + "/" + RELEASE_PROPERTIES_FILE));
+              Utils.URLs.newURL(versionUrl + "/" + release + "/" + RELEASE_PROPERTIES_FILE),
+              inferLocalCatalog);
       if (releaseData.isEmpty()) {
         setEmpty(true);
       }

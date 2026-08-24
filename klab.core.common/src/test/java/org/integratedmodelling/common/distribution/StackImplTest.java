@@ -86,6 +86,41 @@ class StackImplTest {
   }
 
   @Test
+  void discoversDevelopmentBuildAfterAggregateCatalogWasPartiallyCleaned() throws Exception {
+    var repository = temporaryDirectory.resolve("klab-services");
+    var distributionRoot =
+        repository.resolve("klab.distribution").resolve("target").resolve("distribution");
+    createDistribution(distributionRoot, true);
+    Files.delete(distributionRoot.resolve("klab").resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE));
+    Files.delete(
+        distributionRoot
+            .resolve("klab")
+            .resolve(VERSION)
+            .resolve(Distribution.VERSION_PROPERTIES_FILE));
+    Files.delete(
+        distributionRoot
+            .resolve("klab")
+            .resolve(VERSION)
+            .resolve(RELEASE)
+            .resolve(Distribution.RELEASE_PROPERTIES_FILE));
+
+    var distribution =
+        DistributionImpl.developmentDistribution("klab", repository.toFile());
+
+    assertTrue(distribution != null);
+    assertEquals(1, distribution.getTags().size());
+    var sourceTag = distribution.getTags().getFirst();
+    assertEquals(Version.create(VERSION), sourceTag.version());
+    assertEquals(RELEASE, sourceTag.release());
+    assertEquals(BUILD, sourceTag.build());
+    assertTrue(sourceTag.availableLocally());
+    assertTrue(distribution.verify(sourceTag));
+    assertFalse(
+        Files.exists(
+            distributionRoot.resolve("klab").resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE)));
+  }
+
+  @Test
   void reportsVerificationProgressAroundEachHashCheck() throws Exception {
     var local = temporaryDirectory.resolve("local");
     createDistribution(local, true);
