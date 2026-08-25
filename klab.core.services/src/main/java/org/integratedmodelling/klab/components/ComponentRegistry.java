@@ -10,6 +10,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -64,6 +65,13 @@ import org.pf4j.*;
 public class ComponentRegistry {
 
   private static final String PLUGINS_DIRECTORY = "plugins";
+  private static final String PENDING_UPDATES_DIRECTORY = "pending-updates";
+  private static final String PENDING_UPDATE_ARCHIVE = "archive";
+  private static final String PENDING_UPDATE_COMPONENT = "component";
+  private static final String PENDING_UPDATE_VERSION = "version";
+  private static final String PENDING_UPDATE_SOURCE_SERVICE = "sourceService";
+  private static final String PENDING_UPDATE_SOURCE_TIMESTAMP = "sourceTimestamp";
+  private static final String PENDING_UPDATE_TARGET_ARCHIVE = "targetArchive";
   private static final String PLUGIN_REQUIRES_ATTRIBUTE = "Plugin-Requires";
   private final BaseService service;
   private final StartupOptions startupOptions;
@@ -179,6 +187,14 @@ public class ComponentRegistry {
       Extensions.ComponentDescriptor component, MavenComponentCache.Availability availability) {}
 
   private record MavenUpdateCheck(List<MavenSnapshotUpdate> updates, ResourceSet report) {}
+
+  record PendingDependencyUpdate(
+      String componentId,
+      Version version,
+      String sourceServiceId,
+      long sourceTimestamp,
+      File archive,
+      File marker) {}
 
   /**
    * Check Maven-sourced SNAPSHOT components for updates without synchronizing a replacement
@@ -691,6 +707,382 @@ public class ComponentRegistry {
             ? Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE
             : sourceDescriptor.updateStatus();
     return component.withUpdateStatus(status, latestTimestamp);
+  }
+
+  static boolean isInstalledDependencyUpdateAvailable(
+      Extensions.ComponentDescriptor dependency,
+      Extensions.ComponentDescriptor sourceDescriptor) {
+    return dependency != null
+        && sourceDescriptor != null
+        && dependency.importType() == Extensions.ComponentImportType.DEPENDENCY
+        && Objects.equals(dependency.id(), sourceDescriptor.id())
+        && Objects.equals(dependency.version(), sourceDescriptor.version())
+        && sourceDescriptor.timestamp() > dependency.timestamp();
+  }
+
+  /**
+   * Refresh the dependency component providing the requested service when its source service has a
+   * newer installation of the same component. Failures are logged and leave (or restore) the
+   * current component whenever possible so callers can continue resolution transparently.
+   *
+   * @return true only when a replacement was installed successfully
+   */
+  public synchronized boolean refreshDependencyComponentIfAvailable(
+      String serviceUrn, Version requiredVersion, Scope scope) {
+    var dependency = selectBestComponent(serviceFinder.get(serviceUrn), requiredVersion);
+    if (dependency == null
+        || dependency.importType() != Extensions.ComponentImportType.DEPENDENCY
+        || dependency.sourceServiceId() == null
+        || scope == null) {
+      return false;
+    }
+    var source =
+        scope
+            .findService(
+                ResourcesService.class,
+                candidate -> Objects.equals(candidate.serviceId(), dependency.sourceServiceId()))
+            .orElse(null);
+    if (source == null) {
+      return false;
+    }
+    try {
+      var sourceDescriptor =
+          source.capabilities(scope).getComponents().stream()
+              .filter(candidate -> Objects.equals(candidate.id(), dependency.id()))
+              .filter(candidate -> Objects.equals(candidate.version(), dependency.version()))
+              .findFirst()
+              .orElse(null);
+      if (!isInstalledDependencyUpdateAvailable(dependency, sourceDescriptor)) {
+        return false;
+      }
+
+      Logging.INSTANCE.info(
+          "Refreshing dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version()
+              + " from service "
+              + dependency.sourceServiceId());
+      if (replaceDependencyComponent(dependency, sourceDescriptor, source, scope)) {
+        Logging.INSTANCE.info(
+            "Dependency component "
+                + dependency.id()
+                + " version "
+                + dependency.version()
+                + " refreshed successfully from service "
+                + dependency.sourceServiceId());
+        return true;
+      }
+      Logging.INSTANCE.warn(
+          "Could not refresh dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version()
+              + " from service "
+              + dependency.sourceServiceId()
+              + "; continuing with the installed component");
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(
+          "Unable to refresh dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version()
+              + " from service "
+              + dependency.sourceServiceId()
+              + "; continuing with the installed component",
+          t);
+    }
+    return false;
+  }
+
+  private boolean replaceDependencyComponent(
+      Extensions.ComponentDescriptor dependency,
+      Extensions.ComponentDescriptor sourceDescriptor,
+      ResourcesService source,
+      Scope scope)
+      throws Throwable {
+    if (dependency.sourceArchive() == null || !dependency.sourceArchive().isFile()) {
+      Logging.INSTANCE.warn(
+          "Cannot back up dependency component "
+              + dependency.id()
+              + " because its installed archive is unavailable");
+      return false;
+    }
+
+    var temporaryDirectory = Files.createTempDirectory("klab-component-refresh-").toFile();
+    var stagedDirectory = new File(temporaryDirectory, "staged");
+    var backupDirectory = new File(temporaryDirectory, "backup");
+    stagedDirectory.mkdirs();
+    backupDirectory.mkdirs();
+    var archiveName = dependency.sourceArchive().getName();
+    var stagedArchive = new File(stagedDirectory, archiveName);
+    var backupArchive = new File(backupDirectory, archiveName);
+    var stagedAndValidated = false;
+    var componentUnloaded = false;
+    var updateComplete = false;
+
+    try {
+      Files.copy(
+          dependency.sourceArchive().toPath(),
+          backupArchive.toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+
+      final String mediaType = "application/java-archive";
+      var schemata =
+          ResourceTransport.INSTANCE.findExportSchemata(
+              KlabAsset.KnowledgeClass.COMPONENT, mediaType, null, source, scope);
+      if (schemata.isEmpty()) {
+        Logging.INSTANCE.warn(
+            "No authorized component export schema is available from service "
+                + dependency.sourceServiceId());
+        return false;
+      }
+      var componentUrn = dependency.id() + "@" + dependency.version();
+      try (var input =
+              source.exportAsset(
+                  componentUrn,
+                  KlabAsset.KnowledgeClass.COMPONENT,
+                  mediaType,
+                  Parameters.create(),
+                  scope);
+          var output = new FileOutputStream(stagedArchive)) {
+        if (input == null) {
+          Logging.INSTANCE.warn(
+              "Source service returned no archive for dependency component " + componentUrn);
+          return false;
+        }
+        IOUtils.copy(input, output);
+      }
+      try (var ignored = new JarFile(stagedArchive)) {
+        // Opening the archive validates its ZIP/JAR structure before the installed copy is removed.
+      }
+      stagedAndValidated = true;
+
+      if (!unloadDependencyComponentForReplacement(dependency)) {
+        Logging.INSTANCE.warn(
+            "Could not unload dependency component "
+                + dependency.id()
+                + " version "
+                + dependency.version());
+        scheduleDependencyUpdate(dependency, sourceDescriptor, stagedArchive);
+        return false;
+      }
+      componentUnloaded = true;
+
+      var installed =
+          installComponent(
+              stagedArchive,
+              null,
+              Extensions.ComponentImportType.DEPENDENCY,
+              dependency.sourceServiceId(),
+              sourceDescriptor.timestamp());
+      if (installed != null && installed.getFirst() != null) {
+        componentManager.startPlugins();
+        updateComplete = true;
+        return true;
+      }
+
+      restoreDependencyComponent(dependency, backupArchive);
+      scheduleDependencyUpdate(dependency, sourceDescriptor, stagedArchive);
+      return false;
+    } catch (Throwable updateFailure) {
+      if (componentUnloaded && !updateComplete) {
+        restoreDependencyComponent(dependency, backupArchive);
+      }
+      if (stagedAndValidated) {
+        scheduleDependencyUpdate(dependency, sourceDescriptor, stagedArchive);
+      }
+      throw updateFailure;
+    } finally {
+      try {
+        org.apache.commons.io.FileUtils.deleteDirectory(temporaryDirectory);
+      } catch (IOException cleanupFailure) {
+        Logging.INSTANCE.warn(
+            "Unable to remove temporary component update directory " + temporaryDirectory,
+            cleanupFailure);
+      }
+    }
+  }
+
+  private void scheduleDependencyUpdate(
+      Extensions.ComponentDescriptor dependency,
+      Extensions.ComponentDescriptor sourceDescriptor,
+      File stagedArchive) {
+    try {
+      var pendingDirectory = pendingUpdatesDirectory();
+      pendingDirectory.mkdirs();
+      var key =
+          Integer.toUnsignedString(Objects.hash(dependency.id(), dependency.version()), 16);
+      var archive = new File(pendingDirectory, key + ".jar");
+      var marker = new File(pendingDirectory, key + ".properties");
+      Files.copy(stagedArchive.toPath(), archive.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      var properties = new Properties();
+      properties.setProperty(PENDING_UPDATE_ARCHIVE, archive.getName());
+      properties.setProperty(PENDING_UPDATE_COMPONENT, dependency.id());
+      properties.setProperty(PENDING_UPDATE_VERSION, dependency.version().toString());
+      properties.setProperty(PENDING_UPDATE_SOURCE_SERVICE, dependency.sourceServiceId());
+      properties.setProperty(
+          PENDING_UPDATE_SOURCE_TIMESTAMP, Long.toString(sourceDescriptor.timestamp()));
+      properties.setProperty(
+          PENDING_UPDATE_TARGET_ARCHIVE, dependency.sourceArchive().getName());
+      try (var output = Files.newOutputStream(marker.toPath())) {
+        properties.store(output, null);
+      }
+      Logging.INSTANCE.info(
+          "Scheduled dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version()
+              + " for update at the next service restart");
+    } catch (Throwable schedulingFailure) {
+      Logging.INSTANCE.error(
+          "Unable to schedule dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version()
+              + " for update at restart",
+          schedulingFailure);
+    }
+  }
+
+  /**
+   * Remove a dependency only after PF4J has actually released and deleted its archive. The general
+   * unload operation also reports success when it only removed registry metadata, which is useful
+   * for administrative removal but would make a failed hot replacement unavailable to the current
+   * resolution.
+   */
+  private boolean unloadDependencyComponentForReplacement(
+      Extensions.ComponentDescriptor dependency) {
+    if (componentManager == null || componentManager.getPlugin(dependency.id()) == null) {
+      return false;
+    }
+    if (!componentManager.deletePlugin(dependency.id())) {
+      return false;
+    }
+    removeComponentRegistration(dependency);
+    saveConfiguration();
+    return true;
+  }
+
+  private File pendingUpdatesDirectory() {
+    return pendingUpdatesDirectory(pluginPath);
+  }
+
+  static File pendingUpdatesDirectory(File pluginPath) {
+    return new File(pluginPath.getParentFile(), PENDING_UPDATES_DIRECTORY);
+  }
+
+  private Map<String, PendingDependencyUpdate> applyPendingDependencyUpdates() {
+    return applyPendingDependencyUpdates(pluginPath);
+  }
+
+  static Map<String, PendingDependencyUpdate> applyPendingDependencyUpdates(File pluginPath) {
+    var ret = new HashMap<String, PendingDependencyUpdate>();
+    var pendingDirectory = pendingUpdatesDirectory(pluginPath);
+    var markers =
+        pendingDirectory.listFiles(
+            file -> file.isFile() && file.getName().endsWith(".properties"));
+    if (markers == null) {
+      return ret;
+    }
+    for (var marker : markers) {
+      try {
+        var properties = new Properties();
+        try (var input = Files.newInputStream(marker.toPath())) {
+          properties.load(input);
+        }
+        var archive = new File(pendingDirectory, properties.getProperty(PENDING_UPDATE_ARCHIVE));
+        var targetArchive = properties.getProperty(PENDING_UPDATE_TARGET_ARCHIVE);
+        var update =
+            new PendingDependencyUpdate(
+                properties.getProperty(PENDING_UPDATE_COMPONENT),
+                Version.create(properties.getProperty(PENDING_UPDATE_VERSION)),
+                properties.getProperty(PENDING_UPDATE_SOURCE_SERVICE),
+                Long.parseLong(properties.getProperty(PENDING_UPDATE_SOURCE_TIMESTAMP)),
+                archive,
+                marker);
+        if (!archive.isFile() || targetArchive == null || targetArchive.isBlank()) {
+          Logging.INSTANCE.warn("Ignoring incomplete pending component update " + marker);
+          continue;
+        }
+        var target = new File(pluginPath, targetArchive);
+        var replacement = new File(pluginPath, targetArchive + ".pending");
+        Files.copy(
+            archive.toPath(), replacement.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        try {
+          Files.move(
+              replacement.toPath(),
+              target.toPath(),
+              StandardCopyOption.ATOMIC_MOVE,
+              StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+          Files.move(
+              replacement.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+          Utils.Files.deleteQuietly(replacement);
+        }
+        ret.put(target.toPath().toAbsolutePath().normalize().toString(), update);
+        Logging.INSTANCE.info(
+            "Applied pending archive for dependency component "
+                + update.componentId()
+                + " version "
+                + update.version()
+                + " before plug-in initialization");
+      } catch (Throwable updateFailure) {
+        Logging.INSTANCE.error(
+            "Unable to apply pending dependency component update " + marker, updateFailure);
+      }
+    }
+    return ret;
+  }
+
+  private void completePendingDependencyUpdate(PendingDependencyUpdate update) {
+    if (update == null) {
+      return;
+    }
+    Utils.Files.deleteQuietly(update.archive());
+    Utils.Files.deleteQuietly(update.marker());
+    Logging.INSTANCE.info(
+        "Completed pending dependency component update for "
+            + update.componentId()
+            + " version "
+            + update.version());
+  }
+
+  private void restoreDependencyComponent(
+      Extensions.ComponentDescriptor dependency, File backupArchive) {
+    try {
+      unloadComponent(dependency.id(), dependency.version());
+      var restored =
+          installComponent(
+              backupArchive,
+              null,
+              Extensions.ComponentImportType.DEPENDENCY,
+              dependency.sourceServiceId(),
+              dependency.timestamp());
+      if (restored == null || restored.getFirst() == null) {
+        Logging.INSTANCE.error(
+            "Rollback failed for dependency component "
+                + dependency.id()
+                + " version "
+                + dependency.version());
+      } else {
+        componentManager.startPlugins();
+        Logging.INSTANCE.info(
+            "Restored dependency component "
+                + dependency.id()
+                + " version "
+                + dependency.version()
+                + " after an unsuccessful refresh");
+      }
+    } catch (Throwable rollbackFailure) {
+      Logging.INSTANCE.error(
+          "Rollback failed for dependency component "
+              + dependency.id()
+              + " version "
+              + dependency.version(),
+          rollbackFailure);
+    }
   }
 
   /*
@@ -2131,6 +2523,9 @@ public class ComponentRegistry {
     this.pluginPath = getPluginDirectory(pluginRoot);
     this.pluginPath.mkdirs();
     migrateExistingRootPlugins(pluginRoot, this.pluginPath);
+    // Pending archives were downloaded during an earlier resolution and require no source service
+    // here; remote services may not be visible yet during component initialization.
+    var pendingDependencyUpdates = applyPendingDependencyUpdates();
     this.componentManager = new DefaultPluginManager(this.pluginPath.toPath());
     this.componentManager.setSystemVersion(Version.CURRENT);
     this.componentManager.loadPlugins();
@@ -2139,7 +2534,32 @@ public class ComponentRegistry {
       Plugin plugin = wrapper.getPlugin();
       if (plugin instanceof KlabComponent component) {
         var file = component.getWrapper().getPluginPath().toFile();
-        registerComponent(component, null, file);
+        var pending =
+            pendingDependencyUpdates.get(
+                file.toPath().toAbsolutePath().normalize().toString());
+        if (pending == null) {
+          registerComponent(component, null, file);
+        } else {
+          var registered =
+              registerComponent(
+                  component,
+                  null,
+                  file,
+                  Extensions.ComponentImportType.DEPENDENCY,
+                  pending.sourceServiceId(),
+                  pending.sourceTimestamp());
+          if (registered != null
+              && Objects.equals(registered.id(), pending.componentId())
+              && Objects.equals(registered.version(), pending.version())) {
+            completePendingDependencyUpdate(pending);
+          } else {
+            Logging.INSTANCE.error(
+                "Pending dependency update did not contain expected component "
+                    + pending.componentId()
+                    + " version "
+                    + pending.version());
+          }
+        }
       }
     }
 

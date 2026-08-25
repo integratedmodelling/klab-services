@@ -1826,6 +1826,14 @@ public class RuntimeService extends BaseService
 
         ResourceSet resolution = ResourceSet.empty();
 
+        if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
+          getComponentRegistry()
+              .refreshDependencyComponentIfAvailable(
+                  contextualizable.getServiceCall().getUrn(),
+                  contextualizable.getServiceCall().getRequiredVersion(),
+                  scope);
+        }
+
         /*
         first check if we have the service in our own catalog.
         */

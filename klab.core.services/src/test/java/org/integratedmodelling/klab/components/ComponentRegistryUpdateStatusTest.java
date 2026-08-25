@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.components;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -8,11 +10,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Properties;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ComponentRegistryUpdateStatusTest {
 
@@ -43,6 +49,53 @@ class ComponentRegistryUpdateStatusTest {
     assertEquals(
         Extensions.ComponentUpdateStatus.NOT_UPDATEABLE,
         ComponentRegistry.applyDependencySourceStatus(dependency, stableSource).updateStatus());
+  }
+
+  @Test
+  void dependencyRefreshRequiresANewerInstalledSourceComponent() {
+    var dependency = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 1000L);
+    var merelyAdvertisedUpdate =
+        descriptor(Extensions.ComponentImportType.MAVEN, 1000L, 2000L)
+            .withUpdateStatus(Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE, 2000L);
+    var installedUpdate = descriptor(Extensions.ComponentImportType.MAVEN, 2000L, 2000L);
+
+    assertFalse(
+        ComponentRegistry.isInstalledDependencyUpdateAvailable(
+            dependency, merelyAdvertisedUpdate));
+    assertTrue(
+        ComponentRegistry.isInstalledDependencyUpdateAvailable(dependency, installedUpdate));
+  }
+
+  @Test
+  void pendingDependencyUpdateIsAppliedWithoutASourceService(@TempDir Path repository)
+      throws Exception {
+    var pluginDirectory = Files.createDirectory(repository.resolve("plugins"));
+    var pendingDirectory = Files.createDirectory(repository.resolve("pending-updates"));
+    var archive = pendingDirectory.resolve("update.jar");
+    Files.writeString(archive, "updated component");
+    var marker = pendingDirectory.resolve("update.properties");
+    var properties = new Properties();
+    properties.setProperty("archive", archive.getFileName().toString());
+    properties.setProperty("component", "test.component");
+    properties.setProperty("version", "1.0.0");
+    properties.setProperty("sourceService", "resources-service");
+    properties.setProperty("sourceTimestamp", "2000");
+    properties.setProperty("targetArchive", "test-component.jar");
+    try (var output = Files.newOutputStream(marker)) {
+      properties.store(output, null);
+    }
+
+    var applied =
+        ComponentRegistry.applyPendingDependencyUpdates(pluginDirectory.toFile());
+    var installed = pluginDirectory.resolve("test-component.jar");
+    var update =
+        applied.get(installed.toAbsolutePath().normalize().toString());
+
+    assertEquals("updated component", Files.readString(installed));
+    assertNotNull(update);
+    assertEquals("test.component", update.componentId());
+    assertEquals("resources-service", update.sourceServiceId());
+    assertEquals(2000L, update.sourceTimestamp());
   }
 
   @Test
