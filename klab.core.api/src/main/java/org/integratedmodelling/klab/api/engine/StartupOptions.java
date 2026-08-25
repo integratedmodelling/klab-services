@@ -78,9 +78,10 @@ public interface StartupOptions {
   }
 
   /**
-   * If true, Maven-sourced SNAPSHOT components should be checked periodically after startup.
+   * If true, Maven-sourced SNAPSHOT components should be checked and updated periodically after
+   * startup.
    *
-   * @return true if scheduled component update checks are requested
+   * @return true if scheduled component updates are requested
    */
   default boolean isComponentAutoUpdateEnabled() {
     return false;

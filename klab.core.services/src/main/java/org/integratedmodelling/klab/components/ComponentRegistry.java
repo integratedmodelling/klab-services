@@ -108,8 +108,17 @@ public class ComponentRegistry {
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   public ComponentRegistry(BaseService service, StartupOptions options) {
-    this.startupOptions = options;
+    this(service, options, null, List.of());
     readConfiguration(service, options);
+  }
+
+  ComponentRegistry(
+      BaseService service,
+      StartupOptions options,
+      MavenComponentCache cache,
+      Collection<Extensions.ComponentDescriptor> initialComponents) {
+    this.startupOptions = options;
+    this.cache = cache;
     this.service = service;
     localComponentDescriptor =
         new Extensions.ComponentDescriptor(
@@ -132,6 +141,9 @@ public class ComponentRegistry {
             Extensions.ComponentImportType.BUILT_IN,
             Extensions.ComponentUpdateStatus.NOT_UPDATEABLE,
             0L);
+    for (var component : initialComponents) {
+      components.put(component.id(), component);
+    }
   }
 
   public MavenComponentCache getComponentCache() {
@@ -163,29 +175,122 @@ public class ComponentRegistry {
     return ret;
   }
 
-  /** Explicitly check Maven-sourced SNAPSHOT components and update any changed compatible ones. */
+  private record MavenSnapshotUpdate(
+      Extensions.ComponentDescriptor component, MavenComponentCache.Availability availability) {}
+
+  private record MavenUpdateCheck(List<MavenSnapshotUpdate> updates, ResourceSet report) {}
+
+  /**
+   * Check Maven-sourced SNAPSHOT components for updates without synchronizing a replacement
+   * artifact, unloading, or replacing any component.
+   */
   public synchronized ResourceSet checkForUpdates() {
-    return checkForUpdates(true);
+    var check = checkMavenSnapshotUpdates(true);
+    for (var update : check.updates()) {
+      check
+          .report()
+          .getNotifications()
+          .add(
+              Notification.info(
+                  "Update available for component "
+                      + update.component().id()
+                      + " from "
+                      + updateSource(update.availability().status())
+                      + " repository"));
+    }
+    return check.report();
   }
 
-  /** Explicitly check Maven-sourced SNAPSHOT components and update any changed compatible ones. */
+  /** Check and update all changed Maven-sourced SNAPSHOT components. */
   public synchronized ResourceSet updateMavenSnapshotComponents() {
-    return checkForUpdates(true);
+    return updateMavenSnapshotComponents(true);
   }
 
-  private synchronized ResourceSet checkForUpdates(boolean reportNoUpdates) {
+  private ResourceSet updateMavenSnapshotComponents(boolean reportNoUpdates) {
+    var check = checkMavenSnapshotUpdates(reportNoUpdates);
+    for (var update : check.updates()) {
+      merge(
+          check.report(),
+          applyMavenSnapshotUpdate(update.component(), update.availability().status()));
+    }
+    return check.report();
+  }
+
+  /**
+   * Update one registered component from its source. At present only Maven-imported SNAPSHOT
+   * components support an update action.
+   */
+  public synchronized ResourceSet updateComponent(String componentId, Version version) {
+    var component =
+        components.get(componentId).stream()
+            .filter(candidate -> version == null || Objects.equals(candidate.version(), version))
+            .findFirst()
+            .orElse(null);
+    if (component == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot update unknown component "
+                  + componentId
+                  + (version == null ? "" : " version " + version)));
+    }
+    if (component.importType() != Extensions.ComponentImportType.MAVEN
+        || component.mavenCoordinates() == null
+        || !component.mavenCoordinates().contains("SNAPSHOT")) {
+      return ResourceSet.empty(
+          Notification.warning(
+              "Component " + component.id() + " does not support Maven SNAPSHOT updates"));
+    }
+    var coordinates = component.mavenCoordinates().split(":");
+    if (coordinates.length != 3) {
+      return ResourceSet.empty(
+          Notification.error("Invalid Maven coordinates for component " + component.id()));
+    }
+    try {
+      var availability =
+          cache.getAvailabilityInfo(
+              coordinates[0], coordinates[1], coordinates[2], "component", "kar");
+      return switch (availability.status()) {
+        case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY, NEEDS_UPDATE_FROM_REMOTE_REPOSITORY ->
+            applyMavenSnapshotUpdate(component, availability.status());
+        case UP_TO_DATE ->
+            ResourceSet.empty(
+                Notification.info("Component " + component.id() + " is already up to date"));
+        case UNKNOWN ->
+            ResourceSet.empty(
+                Notification.warning(
+                    "Unable to establish update status for component " + component.id()));
+      };
+    } catch (KlabIOException e) {
+      return ResourceSet.empty(
+          Notification.warning(
+              "Unable to establish update status for component "
+                  + component.id()
+                  + " from "
+                  + component.mavenCoordinates()
+                  + " with cause "
+                  + e.getMessage()));
+    }
+  }
+
+  private MavenUpdateCheck checkMavenSnapshotUpdates(boolean reportNoUpdates) {
     var ret = new ResourceSet();
+    var updates = new ArrayList<MavenSnapshotUpdate>();
     for (var component : new ArrayList<>(components.values())) {
       if (component.mavenCoordinates() != null
           && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           try {
-            var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
-            if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
-                || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
-              merge(ret, updateComponent(component, status));
-            } else if (status == MavenComponentCache.Status.UNKNOWN && reportNoUpdates) {
+            var availability =
+                cache.getAvailabilityInfo(
+                    coords[0], coords[1], coords[2], "component", "kar");
+            if (availability.status()
+                    == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+                || availability.status()
+                    == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+              updates.add(new MavenSnapshotUpdate(component, availability));
+            } else if (availability.status() == MavenComponentCache.Status.UNKNOWN
+                && reportNoUpdates) {
               ret.getNotifications()
                   .add(
                       Notification.warning(
@@ -218,13 +323,13 @@ public class ComponentRegistry {
         }
       }
     }
-    if (ret.getResults().isEmpty() && ret.getNotifications().isEmpty()) {
+    if (updates.isEmpty() && ret.getNotifications().isEmpty()) {
       ret.setEmpty(true);
       if (reportNoUpdates) {
         ret.getNotifications().add(Notification.info("No Maven SNAPSHOT component updates found"));
       }
     }
-    return ret;
+    return new MavenUpdateCheck(List.copyOf(updates), ret);
   }
 
   private void merge(ResourceSet target, ResourceSet source) {
@@ -234,7 +339,7 @@ public class ComponentRegistry {
     }
   }
 
-  private synchronized ResourceSet updateComponent(
+  private ResourceSet applyMavenSnapshotUpdate(
       Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
     Logging.INSTANCE.info(
@@ -307,6 +412,12 @@ public class ComponentRegistry {
     return ResourceSet.empty(
         Notification.warning(
             "Updated Maven artifact could not be retrieved for component " + component.id()));
+  }
+
+  private String updateSource(MavenComponentCache.Status status) {
+    return status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+        ? "local"
+        : "remote";
   }
 
   private boolean isCompatibleWithCurrentKlab(File pluginFile) {
@@ -2041,21 +2152,21 @@ public class ComponentRegistry {
         });
 
     if (startupOptions != null && startupOptions.isComponentUpdateOnStartup()) {
-      var result = checkForUpdates();
+      var result = updateMavenSnapshotComponents();
       Logging.INSTANCE.notifications(result.getNotifications().toArray(new Notification[0]));
     }
     if (startupOptions != null && startupOptions.isComponentAutoUpdateEnabled()) {
       var interval = Math.max(1, startupOptions.getComponentUpdateIntervalMinutes());
       scheduler.scheduleAtFixedRate(
-          () -> runScheduledUpdateCheck(), interval, interval, TimeUnit.MINUTES);
+          () -> runScheduledComponentUpdate(), interval, interval, TimeUnit.MINUTES);
     }
   }
 
-  private void runScheduledUpdateCheck() {
+  private synchronized void runScheduledComponentUpdate() {
     try {
-      checkForUpdates(false);
+      updateMavenSnapshotComponents(false);
     } catch (Throwable t) {
-      Logging.INSTANCE.error("Scheduled component update check failed", t);
+      Logging.INSTANCE.error("Scheduled component update failed", t);
     }
   }
 

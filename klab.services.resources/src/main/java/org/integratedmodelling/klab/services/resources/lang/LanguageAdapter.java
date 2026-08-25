@@ -1214,6 +1214,13 @@ public enum LanguageAdapter {
                   type ->
                       f.getTypePattern()
                           .add(KimObservationStrategy.Filter.SemanticPattern.valueOf(type.name())));
+        } else if (match.getTypeTest() != null) {
+          f.setTypeTest(
+              adaptServiceCall(
+                  match.getTypeTest(),
+                  namespace,
+                  projectName,
+                  KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
         }
 
         for (var condition : match.getConditions()) {
@@ -1252,7 +1259,10 @@ public enum LanguageAdapter {
                 strategy.getName(),
                 projectName,
                 KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
+      } else if (operation.getReference() != null) {
+        System.out.println("HEY HOSTIAZZA");
       }
+
       if (!operation.getFunctions().isEmpty()) {
         o.getFunctions()
             .addAll(
@@ -1461,10 +1471,7 @@ public enum LanguageAdapter {
             .map(
                 annotation ->
                     adaptAnnotation(
-                        annotation,
-                        behaviorUrn,
-                        projectName,
-                        KlabAsset.KnowledgeClass.BEHAVIOR))
+                        annotation, behaviorUrn, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
             .toList());
 
     for (var imp : syntax.getImports()) {
@@ -1488,8 +1495,7 @@ public enum LanguageAdapter {
     }
 
     for (var action : syntax.getActions()) {
-      ret.getStatements()
-          .add(adaptAction(action, ret, behaviorUrn, projectName, notifications));
+      ret.getStatements().add(adaptAction(action, ret, behaviorUrn, projectName, notifications));
     }
     ret.setNotifications(new ArrayList<>(notifications));
 

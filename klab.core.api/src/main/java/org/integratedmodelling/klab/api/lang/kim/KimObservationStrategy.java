@@ -5,7 +5,6 @@ package org.integratedmodelling.klab.api.lang.kim;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-
 import org.integratedmodelling.klab.api.knowledge.Contextualization;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -103,14 +102,21 @@ public interface KimObservationStrategy extends KlabStatement {
     boolean isNegated();
 
     /**
-     * This or a type pattern may be defined
+     * This or a type pattern or a type test may be defined. Any two together are impossible.
      *
      * @return
      */
     KimConcept getMatch();
 
     /**
-     * This or an observable may be defined. Two together are impossible.
+     * This or an observable or a type pattern may be defined. Any two together are impossible. *
+     *
+     * @return
+     */
+    ServiceCall getTypeTest();
+
+    /**
+     * This or an observable or a type test may be defined. Any two together are impossible.
      *
      * @return
      */
@@ -156,23 +162,24 @@ public interface KimObservationStrategy extends KlabStatement {
      */
     List<ServiceCall> getFunctions();
 
-//    /**
-//     * Deferred strategies will be resolved again in the context returned by a previous successful
-//     * resolution.
-//     *
-//     * <p>Multiple deferred strategies should be tried in order of presentation until full coverage
-//     * is achieved.
-//     *
-//     * @return
-//     */
-//    List<KimObservationStrategy> getDeferredStrategies();
+    //    /**
+    //     * Deferred strategies will be resolved again in the context returned by a previous
+    // successful
+    //     * resolution.
+    //     *
+    //     * <p>Multiple deferred strategies should be tried in order of presentation until full
+    // coverage
+    //     * is achieved.
+    //     *
+    //     * @return
+    //     */
+    //    List<KimObservationStrategy> getDeferredStrategies();
 
     /**
      * If this is not null, the operation is an OBSERVE type specified through a <code>
      * transform ID through OBSERVABLE</id></code>. The method returns the ID of the corresponding
      * <code>resolve</code> observation operation, and the observable must resolve to a filtering
-     * description type ({@link
-     * Contextualization#CLASSIFICATION}, {@link
+     * description type ({@link Contextualization#CLASSIFICATION}, {@link
      * Contextualization#CHARACTERIZATION} or
      * org.integratedmodelling.klab.api.knowledge.DescriptionType#TRANSFORMATION}).
      *
