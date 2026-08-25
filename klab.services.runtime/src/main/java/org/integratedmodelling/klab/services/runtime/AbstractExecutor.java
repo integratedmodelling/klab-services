@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.runtime.language.ScannerAdapters;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 public abstract class AbstractExecutor implements CompiledDataflow.ContextualExecutor {
@@ -174,10 +175,11 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             exceptions.add(future.exceptionNow());
           }
         }
-        cause =
-            exceptions.isEmpty()
-                ? new KlabIllegalStateException("Execution failed")
-                : exceptions.getFirst();
+        if (!exceptions.isEmpty()) {
+          cause = exceptions.getFirst();
+        } else if (cause == null) {
+          cause = new KlabIllegalStateException("Execution failed");
+        }
       }
 
       observation.getNotifications().addAll(threadNotifications);
@@ -364,7 +366,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       // parameters.
       if (dependencies.containsKey(input.getName())) {
         return adaptObservationArgument(
-            input, argument, dependencies.get(input.getName()), scanners.get(input.getName()));
+            argument, dependencies.get(input.getName()), scanners.get(input.getName()));
       } else {
         // single input? Bind to that anyway
         if (dependencies.keySet().stream().filter(k -> !Dataflow.SELF_ID.equals(k)).count() == 1) {
@@ -375,7 +377,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                   .orElse(null);
           if (singleInputKey != null) {
             return adaptObservationArgument(
-                input, argument, dependencies.get(singleInputKey), scanners.get(singleInputKey));
+                argument, dependencies.get(singleInputKey), scanners.get(singleInputKey));
           }
         }
       }
@@ -386,10 +388,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
        */
       if (dependencies.containsKey(output.getName())) {
         return adaptObservationArgument(
-            output, argument, dependencies.get(output.getName()), scanners.get(output.getName()));
+            argument, dependencies.get(output.getName()), scanners.get(output.getName()));
       }
 
-      return adaptObservationArgument(output, argument, observation, self);
+      return adaptObservationArgument(argument, observation, self);
     }
 
     /* either an input or an output must be mapped. Otherwise this is just null. */
@@ -401,23 +403,22 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
    * Once established that the argument should be bound to an observation or its helper objects,
    * return the adapted argument that the function argument wants.
    *
-   * @param input
    * @param argument
    * @param observation
    * @param scanner
    * @return
    */
-  private Object adaptObservationArgument(
-      ServiceInfo.Argument input,
-      Parameter argument,
-      Observation observation,
-      Storage.Scanner scanner) {
+  static Object adaptObservationArgument(
+      Parameter argument, Observation observation, Storage.Scanner scanner) {
 
     if (Observation.class.isAssignableFrom(argument.getType())) {
       return observation;
     } else if (Storage.Scanner.class.isAssignableFrom(argument.getType())) {
-      // TODO adapt the scanner type and UNIT if adaptable
-      return scanner;
+      if (scanner == null) {
+        return null;
+      }
+      return ScannerAdapters.adaptType(
+          scanner, argument.getType().asSubclass(Storage.Scanner.class));
     } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
       return scanner == null ? null : scanner.shard();
     }

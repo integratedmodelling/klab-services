@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -59,6 +60,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean messagingChecked = false;
   private JobManager jobManager;
   private boolean empty;
+  private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
   private List<Notification> notifications = new ArrayList<>();
 
   protected Map<KlabService.Type, List<KlabService>> serviceMap = new ConcurrentHashMap<>();
@@ -155,6 +157,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.data = parent.data;
     this.roles = parent.roles;
     this.local = parent.local;
+    this.permissions = EnumSet.copyOf(parent.permissions);
     this.id = parent.id;
     this.jobManager = parent.jobManager;
     copyServicesFrom(parent);
@@ -312,6 +315,22 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   public void setLocal(boolean local) {
     this.local = local;
+  }
+
+  /** The service-wide permissions established when this user scope is first authenticated. */
+  public Set<CRUDOperation> getPermissions() {
+    return Collections.unmodifiableSet(permissions);
+  }
+
+  public void setPermissions(Collection<CRUDOperation> permissions) {
+    this.permissions =
+        permissions == null || permissions.isEmpty()
+            ? EnumSet.of(CRUDOperation.READ)
+            : EnumSet.copyOf(permissions);
+  }
+
+  public boolean isAuthorized(CRUDOperation operation) {
+    return permissions.contains(operation);
   }
 
   @Override

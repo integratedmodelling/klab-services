@@ -16,6 +16,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
+import org.integratedmodelling.klab.services.application.security.Role;
 
 /**
  * The scope manager maintains service-side scopes that are generated through the orchestrating
@@ -254,6 +256,13 @@ public class ScopeManager {
     ret = login(createUserIdentity(authorization));
 
     ret.getRoles().addAll(authorization.getRoles());
+    ret.setLocal(authorization.isLocal());
+    ret.setPermissions(
+        authorization.isLocal()
+                || authorization.getRoles().contains(Role.ROLE_ADMINISTRATOR)
+                || authorization.getRoles().contains(Role.ROLE_SYSTEM)
+            ? EnumSet.allOf(CRUDOperation.class)
+            : EnumSet.of(CRUDOperation.READ));
     var federation = Klab.INSTANCE.getFederationData(ret.getUser());
     if (federation != null) {
       var brokerURI = federation.getBroker();

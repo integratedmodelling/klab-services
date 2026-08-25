@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.common.data.impl.ShardImpl;
+import org.integratedmodelling.klab.runtime.language.ScannerAdapters;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
 
@@ -300,14 +301,7 @@ public class StorageImpl implements Storage {
       var ret = new ArrayList<T>();
       for (var shard : getNativeShards(locator)) {
         var scanner = getNativeScanner(shard, readOnly, !readOnly);
-        if (!scannerClass.isInstance(scanner)) {
-          throw new KlabIllegalStateException(
-              "Native "
-                  + scanner.getClass().getSimpleName()
-                  + " is incompatible with requested scanner "
-                  + scannerClass.getSimpleName());
-        }
-        ret.add(scannerClass.cast(scanner));
+        ret.add(ScannerAdapters.adaptType(scanner, scannerClass));
       }
       return ret;
     }

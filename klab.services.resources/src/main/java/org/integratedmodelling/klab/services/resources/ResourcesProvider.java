@@ -935,14 +935,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     // TODO Must reflect the scope
     // permissions and roles! User must be in ADMIN group or be configured to access
     // this service. All permissions are to be given if the service is local.
-    ret.getPermissions()
-        .addAll(
-            EnumSet.of(
-                CRUDOperation.CREATE,
-                CRUDOperation.READ,
-                CRUDOperation.UPDATE,
-                CRUDOperation.DELETE,
-                CRUDOperation.ADMINISTER));
+    ret.setPermissions(permissions(scope));
 
     ret.setSemanticSearchCapable(semanticSearchAvailable.get());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());

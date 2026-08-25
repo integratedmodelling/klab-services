@@ -233,7 +233,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 + " has no local authentication package; authenticating through certificate/hub");
       }
     }
-    return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
+    return Authentication.INSTANCE.authenticate(SettingsImpl.forServiceOwner(serviceType()));
   }
 
   /**
@@ -315,7 +315,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         var client =
             ServiceClientCatalog.INSTANCE.getService(
                 s.getUrls().getFirst(),
-                SettingsImpl.forService(s.getIdentityType()),
+                SettingsImpl.forServiceOwner(s.getIdentityType()),
                 scope,
                 s.getIdentityType().classify());
 

@@ -7,11 +7,12 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -25,11 +26,10 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /** Administration endpoints common to all k.LAB services. Accessible only to administrators. */
 @RestController
-@Secured(Role.ADMINISTRATOR)
+@Secured({Role.ADMINISTRATOR, Role.SYSTEM})
 @Tag(name = "Generic service administration")
 public class KlabAdminController {
 
@@ -133,6 +133,7 @@ public class KlabAdminController {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
     if (scope instanceof ServiceUserScope userScope
+        && userScope.isAuthorized(CRUDOperation.ADMINISTER)
         && instance.klabService().settings() instanceof SettingsImpl settings) {
       var s = settings.property2Setting(setting);
       if (s != null) {
@@ -140,15 +141,25 @@ public class KlabAdminController {
         return userScope
             .getJobManager()
             .submit(
-                CompletableFuture.supplyAsync(() -> settings.set(s, body)),
+                settings.set(s, body),
                 "Setting change: " + setting);
       }
+    }
+    if (scope instanceof ServiceUserScope userScope
+        && !userScope.isAuthorized(CRUDOperation.ADMINISTER)) {
+      throw new KlabAuthorizationException("ADMINISTER permission is required for service settings");
     }
     throw new KlabIllegalArgumentException("Invalid setting: " + setting);
   }
 
   @GetMapping(ServicesAPI.ADMIN.SETTINGS)
   public @ResponseBody Map<String, Object> getSettings(Principal principal) {
-    return instance.klabService().settings().asMap();
+    var scope =
+        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
+    if (scope instanceof ServiceUserScope userScope
+        && userScope.isAuthorized(CRUDOperation.ADMINISTER)) {
+      return instance.klabService().settings().asMap();
+    }
+    throw new KlabAuthorizationException("ADMINISTER permission is required for service settings");
   }
 }

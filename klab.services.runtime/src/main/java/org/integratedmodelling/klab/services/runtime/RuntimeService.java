@@ -191,8 +191,9 @@ public class RuntimeService extends BaseService
           value -> {
             if (serviceScope().getIdentity() instanceof UserIdentity userIdentity) {
               Klab.INSTANCE.setupLocalFederation(userIdentity, this);
+              return Map.of("result", true);
             }
-            return null;
+            return Map.of("result", false, "error", "The service identity is not a user identity");
           });
     }
 
@@ -353,17 +354,7 @@ public class RuntimeService extends BaseService
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
 
-    // TODO this enables creating DTs from the passed scope. Must reflect the scope
-    // permissions and roles! User must be in ADMIN group or be configured to access
-    // this service. All permissions are to be given if the service is local.
-    ret.getPermissions()
-        .addAll(
-            EnumSet.of(
-                CRUDOperation.CREATE,
-                CRUDOperation.READ,
-                CRUDOperation.UPDATE,
-                CRUDOperation.DELETE,
-                CRUDOperation.ADMINISTER));
+    ret.setPermissions(permissions(scope));
 
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());

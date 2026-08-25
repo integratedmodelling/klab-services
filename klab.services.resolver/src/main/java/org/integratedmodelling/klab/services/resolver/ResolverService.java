@@ -147,14 +147,7 @@ public class ResolverService extends BaseService implements Resolver {
     // TODO Must reflect the scope
     // permissions and roles! User must be in ADMIN group or be configured to access
     // this service. All permissions are to be given if the service is local.
-    ret.getPermissions()
-        .addAll(
-            EnumSet.of(
-                CRUDOperation.CREATE,
-                CRUDOperation.READ,
-                CRUDOperation.UPDATE,
-                CRUDOperation.DELETE,
-                CRUDOperation.ADMINISTER));
+    ret.setPermissions(permissions(scope));
 
     ret.setServiceName(serviceName);
     ret.setType(Type.RESOLVER);

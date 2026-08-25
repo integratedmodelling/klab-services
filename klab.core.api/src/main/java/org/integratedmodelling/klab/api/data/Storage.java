@@ -244,7 +244,9 @@ public interface Storage {
    * @param readOnly if true, the returned scanners will be read-only and throw an exception on
    *     add().
    * @return a list of new or existing scanners, possibly wrapped in mediating scanners that
-   *     ultimately affect the native shards according to the original geometry.
+   *     ultimately affect the native shards according to the original geometry. Compatible
+   *     floating-point type mediation must use primitive, write-through scanners: implementations
+   *     must not box individual values or allocate a converted copy of the buffer.
    */
   <T extends Scanner> List<T> scan(
       Scheduler.Event locator,

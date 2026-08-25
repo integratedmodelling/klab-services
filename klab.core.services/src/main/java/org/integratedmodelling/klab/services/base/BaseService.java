@@ -112,17 +112,17 @@ public abstract class BaseService implements KlabService {
   protected BaseService(
       ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
 
-    settings = SettingsImpl.forService(serviceType);
+    this.type = serviceType;
+    settings = SettingsImpl.forService(this, serviceType);
 
     settingsForSlaveServices = SettingsImpl.forSlaveServices(serviceType, settings);
 
-    settingsForSlaveServices.setIfUnset(Setting.POLLING, "on");
+    settingsForSlaveServices.setIfUnset(Setting.POLLING, true);
     settingsForSlaveServices.setIfUnset(Setting.POLLING_INTERVAL_REMOTE, 15);
     settingsForSlaveServices.setIfUnset(Setting.LOG_EVENTS, true);
     settingsForSlaveServices.setIfUnset(Setting.LAUNCH_PRODUCT, false);
 
     this.serviceScope = scope;
-    this.type = serviceType;
     this.startupOptions = options;
     try {
       URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
@@ -164,11 +164,6 @@ public abstract class BaseService implements KlabService {
 
   public Settings settings() {
     return settings;
-  }
-
-  @Override
-  public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
-    return (CompletableFuture<T>) settings.set(setting, value);
   }
 
   /**
@@ -646,11 +641,24 @@ public abstract class BaseService implements KlabService {
   }
 
   protected boolean isAllowed(CRUDOperation operation, UserScope scope) {
+    if (scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope userScope
+        && !userScope.isAuthorized(operation)) {
+      return false;
+    }
     var rights = getServiceConfiguration().getPermissions().get(operation);
     if (rights == null) {
-      return isLocal();
+      return scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope
+          || isLocal();
     }
     return rights.checkAuthorization(scope);
+  }
+
+  /** Resolve the service-wide CRUD mask established for the authenticated user scope. */
+  protected Set<CRUDOperation> permissions(Scope scope) {
+    if (scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope userScope) {
+      return userScope.getPermissions();
+    }
+    return EnumSet.of(CRUDOperation.READ);
   }
 
   @Override

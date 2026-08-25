@@ -210,6 +210,46 @@ The principal stored relationships are:
 
 After the resolution child transaction commits, its executors are registered with the scheduler.
 
+## Storage attribution and scanner binding
+
+The authoritative description of storage attribution, scanner contracts, persistence, component
+rules, and known limitations is [Storage in the k.LAB runtime](../docs/STORAGE.md). The summary below
+places that contract within the observation lifecycle.
+
+Storage is attributed to a quality before its first contextualization. The attributed
+`Data.ShardingStrategy` is the durable contract for that observation: it fixes the primitive data
+type, fill curve, and split policy used to create its shards.
+
+For a new observation, `CompiledDataflow.harmonizeSharding()` combines the available strategies:
+
+1. the runtime derives a semantic default: numeric qualities use `DOUBLE`, classifications use
+   `KEYED`, and presence/absence qualities use `BOOLEAN`;
+2. model and adapter declarations contribute explicit sharding requirements;
+3. compatible requirements from dependent actuators are harmonized;
+4. runtime settings apply the final service policy. `USE_SHORT_FLOAT_REPRESENTATION` changes a
+   numeric `DOUBLE` result to native `FLOAT`, and `PARALLELIZE_OBSERVATIONS=false` forces one split;
+5. the result is stored in `Observation.ContextualizationData.nativeShardingStrategy` and is then
+   used by `StorageManager` to create or reconstruct the observation storage.
+
+An already persisted observation keeps its recorded native strategy. Changing a setting affects
+storage attributed after the change; it does not reinterpret existing shard bytes.
+
+During execution, `AbstractExecutor` opens native scanners for the output and read-only scanners
+for quality dependencies, with matching shard geometries. Contextualizer parameters are then bound
+by their declared API type. A component may declare the generic `Storage.Scanner`, the native
+typed scanner, or the other floating-point scanner type. When native `FLOAT` storage is passed to
+a contextualizer declaring `Storage.DoubleScanner` (or native `DOUBLE` to a
+`Storage.FloatScanner`), `ScannerAdapters` supplies a write-through primitive decorator. Reads,
+peeks, and writes use primitive calls throughout: no values are boxed and no intermediate buffer
+is allocated. Narrowing a double write to float intentionally has the precision semantics selected
+by `USE_SHORT_FLOAT_REPRESENTATION`.
+
+Scanner adaptation does not change the shard, cursor, iteration order, read-only status, histogram
+updates, or persistence target. Finalization is performed on the native output scanner. Conversions
+between numeric and boolean/keyed storage remain invalid and fail during argument binding with a
+descriptive error. Geometry/fill-curve remapping and unit mediation are separate contracts and are
+still unsupported where the requested sharding strategy differs from the stored native strategy.
+
 ## Scheduling and contextualization
 
 `ServiceContextScope.contextualize(observation)` submits the root observation to the digital-twin

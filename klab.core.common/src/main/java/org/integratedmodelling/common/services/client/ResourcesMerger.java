@@ -11,7 +11,6 @@ import java.util.function.Function;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -157,11 +156,6 @@ public class ResourcesMerger implements ResourcesService {
   @Override
   public Settings settings() {
     return primary().settings();
-  }
-
-  @Override
-  public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
-    return primary().set(setting, value, returnType);
   }
 
   @Override

@@ -1049,17 +1049,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     var ret = new ReasonerCapabilitiesImpl();
 
-    // TODO Must reflect the scope
-    // permissions and roles! User must be in ADMIN group or be configured to access
-    // this service. All permissions are to be given if the service is local.
-    ret.getPermissions()
-        .addAll(
-            EnumSet.of(
-                CRUDOperation.CREATE,
-                CRUDOperation.READ,
-                CRUDOperation.UPDATE,
-                CRUDOperation.DELETE,
-                CRUDOperation.ADMINISTER));
+    ret.setPermissions(permissions(scope));
 
     ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
     ret.setServiceName(serviceName);

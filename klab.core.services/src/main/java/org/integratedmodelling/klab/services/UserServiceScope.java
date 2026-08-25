@@ -77,7 +77,7 @@ public class UserServiceScope extends AbstractReactiveScopeImpl implements Servi
     this.serviceMonitor =
         new ServiceMonitor(
             this,
-            SettingsImpl.forService(serviceType),
+            SettingsImpl.forServiceOwner(serviceType),
             true,
             serviceList,
             this::notifyLocalService,

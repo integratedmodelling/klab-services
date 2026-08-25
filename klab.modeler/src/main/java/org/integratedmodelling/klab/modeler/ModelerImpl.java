@@ -123,7 +123,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         federation = Klab.INSTANCE.setupLocalFederation(user().getUser(), localRuntime);
         if (federation != null && localRuntime != null) {
           // inform the runtime that the local federation is available
-          localRuntime.set(Setting.USE_LOCAL_FEDERATION, Map.of(), Map.class);
+          localRuntime.settings().set(Setting.USE_LOCAL_FEDERATION, Map.of());
         }
       }
     }

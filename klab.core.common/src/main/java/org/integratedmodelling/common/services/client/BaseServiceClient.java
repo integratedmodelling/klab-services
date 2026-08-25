@@ -13,6 +13,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -58,7 +59,9 @@ public abstract class BaseServiceClient implements KlabService {
     this.monitor = monitor;
     this.userScope = scope;
     this.client = monitor.getClient().withIdentity(scope.getIdentity());
-    this.settings = settings;
+    // Service settings are always the remote service's settings. The settings passed by the
+    // owning engine/service remain monitor configuration and must not become a second setting API.
+    this.settings = SettingsImpl.forService(this, monitor.getType());
     this.monitor.registerClient(this);
     this.serviceScope =
         new AbstractServiceDelegatingScope(scope) {
@@ -149,8 +152,14 @@ public abstract class BaseServiceClient implements KlabService {
     return settings;
   }
 
-  @Override
-  public <T> CompletableFuture<T> set(Setting setting, Object value, Class<T> returnType) {
+  /** Read the settings exposed by this service's administration API. */
+  public Map<String, Object> readSettings() {
+    return client.withScope(userScope).get(ServicesAPI.ADMIN.SETTINGS, Map.class);
+  }
+
+  /** Submit a setting change through the administration API and poll its job to completion. */
+  public <T> CompletableFuture<T> postSetting(
+      Setting setting, Object value, Class<T> returnType) {
     return client
         .withScope(userScope)
         .postAsync(

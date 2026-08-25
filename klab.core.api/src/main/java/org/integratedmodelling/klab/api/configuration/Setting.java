@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.configuration;
 import java.io.File;
 import java.util.Map;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
@@ -430,5 +431,11 @@ public enum Setting {
       }
     }
     return value != null && valueClass.isAssignableFrom(value.getClass());
+  }
+
+  /** Return whether this setting belongs to the configuration category for a service type. */
+  public boolean appliesTo(KlabService.Type serviceType) {
+    return serviceType != null
+        && page.name().equals(serviceType.name());
   }
 }
