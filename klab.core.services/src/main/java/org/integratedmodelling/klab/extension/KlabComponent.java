@@ -58,7 +58,4 @@ public class KlabComponent extends Plugin {
     public String getName() {
         return this.name;
     }
-
-    public void getWra() {
-    }
 }

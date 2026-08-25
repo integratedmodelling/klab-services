@@ -22,6 +22,7 @@ import org.dizitart.no2.spatial.SpatialModule;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -92,12 +93,24 @@ public class ResourcesKBox {
         ResourceIndexer.create(
             Configuration.INSTANCE.getDataPath(
                 "services/" + service.serviceType().name().toLowerCase() + "/index/resources"));
+    if (!index.hasCurrentSchema()) {
+      rebuildResourceIndex();
+    }
   }
 
   public void shutdown() {
+    index.ensureClosed();
     if (this.db != null && !this.db.isClosed()) {
       this.db.close();
     }
+  }
+
+  private void rebuildResourceIndex() {
+    index.clear();
+    for (var resource : resources.find()) {
+      index.index(resource, resourceMetadata.getById(resource.getUrn()));
+    }
+    index.commitChanges();
   }
 
   /**
@@ -136,7 +149,7 @@ public class ResourcesKBox {
     if (resource instanceof ResourceImpl resource1) {
       var result = resources.update(resource1, true);
       if (result.getAffectedCount() == 1) {
-        index.index(resource1);
+        index.index(resource1, resourceMetadata.getById(resource1.getUrn()));
         index.commitChanges();
         return true;
       }
@@ -146,27 +159,46 @@ public class ResourcesKBox {
 
   public boolean deleteResource(String urn) {
     var resource = resources.getById(urn);
-    if (resource != null) {
+    if (resource == null) {
       return false;
     }
     resources.remove(resource);
+    index.delete(urn);
+    index.commitChanges();
     return true;
   }
 
   public boolean deleteMetadata(String urn) {
     var resource = resourceMetadata.getById(urn);
-    if (resource != null) {
+    if (resource == null) {
       return false;
     }
     resourceMetadata.remove(resource);
+    var storedResource = resources.getById(urn);
+    if (storedResource != null) {
+      index.index(storedResource, null);
+      index.commitChanges();
+    }
     return true;
   }
 
   public List<ResourceInfo> queryResources(String query) {
+    return queryResources(query, ResourceIndexer.MAX_RESULT_COUNT);
+  }
+
+  public List<ResourceInfo> queryResources(String query, int maxResults) {
     var ret = new ArrayList<ResourceInfo>();
-    for (var document : index.query(query)) {
+    for (var document : index.query(query, maxResults)) {
       var info = getStatus(document.getId(), Version.ANY_VERSION);
       if (info != null) {
+        var resource = resources.getById(document.getId());
+        if (resource != null) {
+          // Resource metadata are authoritative and make the result useful without another request.
+          info.getMetadata().putAll(resource.getMetadata());
+          info.getMetadata().put("im:adapter", resource.getAdapterType());
+          info.getMetadata().put("im:version", resource.getVersion());
+        }
+        info.getMetadata().put(Metadata.IM_SEARCH_SCORE, document.getScore());
         ret.add(info);
       }
     }
@@ -191,6 +223,11 @@ public class ResourcesKBox {
 
   public boolean putStatus(ResourceInfo status) {
     var result = resourceMetadata.update(status, true);
+    var resource = resources.getById(status.getUrn());
+    if (result.getAffectedCount() == 1 && resource != null) {
+      index.index(resource, status);
+      index.commitChanges();
+    }
     return result.getAffectedCount() == 1;
   }
 

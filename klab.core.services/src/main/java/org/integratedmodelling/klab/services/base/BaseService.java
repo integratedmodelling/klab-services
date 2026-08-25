@@ -246,10 +246,7 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public <T> T info(
-      String urn,
-      KlabAsset.KnowledgeClass objectClass,
-      Class<T> infoClass,
-      UserScope scope) {
+      String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
     Objects.requireNonNull(infoClass, "The requested info class cannot be null");
 
     if (ServiceCapabilities.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
@@ -259,10 +256,11 @@ public abstract class BaseService implements KlabService {
       return infoClass.cast(status());
     }
 
-    var object = commonInformationObjects(objectClass, scope).stream()
-        .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
-        .findFirst()
-        .orElse(null);
+    var object =
+        commonInformationObjects(objectClass, scope).stream()
+            .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
+            .findFirst()
+            .orElse(null);
     if (object != null && infoClass.isInstance(object)) {
       return infoClass.cast(object);
     }
@@ -314,10 +312,7 @@ public abstract class BaseService implements KlabService {
                     asDomainObject(informationIdentifier(object), objectClass, object));
               }
               throw new KlabIllegalArgumentException(
-                  "Cannot project "
-                      + objectClass
-                      + " as "
-                      + infoClass.getCanonicalName());
+                  "Cannot project " + objectClass + " as " + infoClass.getCanonicalName());
             })
         .toList();
   }
@@ -332,8 +327,7 @@ public abstract class BaseService implements KlabService {
         || ServiceStatus.class.isAssignableFrom(infoClass);
   }
 
-  private List<?> commonInformationObjects(
-      KlabAsset.KnowledgeClass objectClass, UserScope scope) {
+  private List<?> commonInformationObjects(KlabAsset.KnowledgeClass objectClass, UserScope scope) {
     if (getComponentRegistry() == null) {
       return List.of();
     }

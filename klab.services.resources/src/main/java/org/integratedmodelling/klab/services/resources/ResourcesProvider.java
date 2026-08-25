@@ -61,6 +61,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -1327,6 +1328,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public <T> List<T> query(
       Parameters<String> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
+    query = query == null ? Parameters.create() : query;
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
             //            || assetClass == KnowledgeClass.INFORMATION
@@ -1359,7 +1361,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
 
     var unsupported =
-        query.keySet().stream().filter(key -> !Set.of("urn", "query").contains(key)).toList();
+        query.keySet().stream()
+            .filter(key -> !Set.of("urn", "query", "limit", "maxResults").contains(key))
+            .toList();
     if (!unsupported.isEmpty()) {
       throw new KlabIllegalArgumentException(
           "TO BE IMPLEMENTED: query parameters " + unsupported + " for " + assetClass);
@@ -1367,7 +1371,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     var pattern = Objects.toString(query.getOrDefault("urn", query.get("query")), "");
     if (ResourceInfo.class.isAssignableFrom(infoClass)) {
-      return (List<T>) queryResources(pattern, scope, assetClass);
+      Integer requestedLimit = query.get("limit", Integer.class);
+      if (requestedLimit == null) {
+        requestedLimit = query.get("maxResults", ResourceIndexer.MAX_RESULT_COUNT);
+      }
+      int maxResults = Math.max(1, Math.min(100, requestedLimit));
+      return (List<T>) queryResources(pattern, scope, maxResults, assetClass);
     }
     return list(assetClass.getAssetClass(), scope).stream()
         .filter(asset -> asset.getUrn().matches(pattern))
@@ -1758,6 +1767,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public List<ResourceInfo> queryResources(
       String queryPattern, Scope scope, KnowledgeClass... resourceTypes) {
+    return queryResources(
+        queryPattern,
+        scope,
+        ResourceIndexer.MAX_RESULT_COUNT,
+        resourceTypes);
+  }
+
+  public List<ResourceInfo> queryResources(
+      String queryPattern, Scope scope, int maxResults, KnowledgeClass... resourceTypes) {
 
     List<ResourceInfo> ret = new ArrayList<>();
     Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
@@ -1769,7 +1787,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
 
     if (wanted.contains(KnowledgeClass.RESOURCE)) {
-      ret.addAll(getResourcesKbox().queryResources(queryPattern));
+      ret.addAll(getResourcesKbox().queryResources(queryPattern, maxResults));
     }
 
     if (wanted.contains(KnowledgeClass.MODEL)) {}
@@ -1786,6 +1804,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     if (wanted.contains(KnowledgeClass.PROJECT)) {}
 
+    for (var info : ret) {
+      info.setServiceId(serviceId());
+      if (info.getType() != null
+          && info.getType().isUsable()
+          && info.getRights() != null
+          && !info.getRights().checkAuthorization(scope)) {
+        info.setType(ResourceInfo.Type.UNAUTHORIZED);
+      }
+    }
     return ret;
   }
 
