@@ -15,7 +15,6 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
     private boolean worldviewProvider;
     private String adoptedWorldview;
     private List<String> workspaceNames = new ArrayList<>();
-    private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
     private List<Notification> serviceNotifications = new ArrayList<>();
     private boolean semanticSearchCapable;
 
@@ -37,11 +36,6 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
     @Override
     public List<String> getWorkspaceNames() {
         return workspaceNames;
-    }
-
-    @Override
-    public Set<CRUDOperation> getPermissions() {
-        return permissions;
     }
 
     public void setType(KlabService.Type type) {
@@ -66,10 +60,6 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
 
     public void setWorkspaceNames(List<String> workspaceNames) {
         this.workspaceNames = workspaceNames;
-    }
-
-    public void setPermissions(Set<CRUDOperation> permissions) {
-        this.permissions = permissions;
     }
 
     @Override

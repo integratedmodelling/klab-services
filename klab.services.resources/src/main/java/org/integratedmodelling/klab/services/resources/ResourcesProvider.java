@@ -406,9 +406,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 null,
                 adapter.getComponentVersion(),
                 KnowledgeClass.COMPONENT,
-                component == null
-                    ? adapter.getAdapterInfo().getTimestamp()
-                    : component.timestamp(),
+                component == null ? adapter.getAdapterInfo().getTimestamp() : component.timestamp(),
                 false));
     return ret;
   }
@@ -933,12 +931,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
-    // TODO capabilities are being asked from same machine as the one that runs the server. This
-    // call
-    //  should have a @Nullable scope. The condition here is silly.
-    ret.getPermissions().add(CRUDOperation.CREATE);
-    ret.getPermissions().add(CRUDOperation.DELETE);
-    ret.getPermissions().add(CRUDOperation.UPDATE);
+
+    // TODO Must reflect the scope
+    // permissions and roles! User must be in ADMIN group or be configured to access
+    // this service. All permissions are to be given if the service is local.
+    ret.getPermissions()
+        .addAll(
+            EnumSet.of(
+                CRUDOperation.CREATE,
+                CRUDOperation.READ,
+                CRUDOperation.UPDATE,
+                CRUDOperation.DELETE,
+                CRUDOperation.ADMINISTER));
+
     ret.setSemanticSearchCapable(semanticSearchAvailable.get());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
@@ -1215,8 +1220,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       "ADD requested for an existing document " + document.getUrn())));
         }
         if (submissionMode == SubmissionMode.UPDATE
-            || (existingDocument != null
-                && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
+            || (existingDocument != null && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
 
           // UPDATE currently replaces the source in file storage. Version history is pending
           // storage support and is called out explicitly in docs/RESOURCES.md. Do not make UPDATE

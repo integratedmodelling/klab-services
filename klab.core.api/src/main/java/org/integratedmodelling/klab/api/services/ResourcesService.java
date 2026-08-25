@@ -126,15 +126,6 @@ public interface ResourcesService extends KlabService {
      */
     List<String> getWorkspaceNames();
 
-    /**
-     * Return the current CRUD permissions for the authenticated user. These are used as a mask when
-     * accessing resources, combined with the resource's own permissions so that resource
-     * permissions not available to the requesting identity on a service base are not returned. Only
-     * READ should be returned if the service does not implement ResourceService.Admin.
-     *
-     * @return
-     */
-    Set<CRUDOperation> getPermissions();
   }
 
   /**

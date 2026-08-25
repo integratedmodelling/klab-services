@@ -16,5 +16,7 @@ public enum CRUDOperation {
   /** Curator access - may modify existing asset metadata but not necessarily create assets */
   UPDATE_METADATA,
   /** General read assets when the asset rights agree */
-  READ
+  READ,
+  /** Administer assets and service configuration */
+  ADMINISTER
 }

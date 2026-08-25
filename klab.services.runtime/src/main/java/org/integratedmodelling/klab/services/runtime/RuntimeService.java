@@ -352,16 +352,18 @@ public class RuntimeService extends BaseService
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    //    ret.setBroker(getEmbeddedBroker() != null);
 
-    // TODO this enables creating DTs from the passed scope
+    // TODO this enables creating DTs from the passed scope. Must reflect the scope
+    // permissions and roles! User must be in ADMIN group or be configured to access
+    // this service. All permissions are to be given if the service is local.
     ret.getPermissions()
         .addAll(
             EnumSet.of(
                 CRUDOperation.CREATE,
                 CRUDOperation.READ,
                 CRUDOperation.UPDATE,
-                CRUDOperation.DELETE));
+                CRUDOperation.DELETE,
+                CRUDOperation.ADMINISTER));
 
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());

@@ -22,6 +22,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -1047,6 +1048,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ReasonerCapabilitiesImpl();
+
+    // TODO Must reflect the scope
+    // permissions and roles! User must be in ADMIN group or be configured to access
+    // this service. All permissions are to be given if the service is local.
+    ret.getPermissions()
+        .addAll(
+            EnumSet.of(
+                CRUDOperation.CREATE,
+                CRUDOperation.READ,
+                CRUDOperation.UPDATE,
+                CRUDOperation.DELETE,
+                CRUDOperation.ADMINISTER));
 
     ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
     ret.setServiceName(serviceName);

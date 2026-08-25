@@ -13,6 +13,7 @@ import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -142,6 +143,19 @@ public class ResolverService extends BaseService implements Resolver {
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ResolverCapabilitiesImpl();
+
+    // TODO Must reflect the scope
+    // permissions and roles! User must be in ADMIN group or be configured to access
+    // this service. All permissions are to be given if the service is local.
+    ret.getPermissions()
+        .addAll(
+            EnumSet.of(
+                CRUDOperation.CREATE,
+                CRUDOperation.READ,
+                CRUDOperation.UPDATE,
+                CRUDOperation.DELETE,
+                CRUDOperation.ADMINISTER));
+
     ret.setServiceName(serviceName);
     ret.setType(Type.RESOLVER);
     ret.setUrl(getUrl());

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services.impl;
 
 import java.net.URL;
 import java.util.*;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -15,6 +16,7 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
   private Map<String, List<ResourceTransport.Schema>> importSchemata = new HashMap<>();
   private Map<String, List<ResourceTransport.Schema>> exportSchemata = new HashMap<>();
   private List<Extensions.ComponentDescriptor> components = new ArrayList<>();
+  private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
 
   @Override
   public String getServiceName() {
@@ -68,6 +70,15 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
 
   public void setExportSchemata(Map<String, List<ResourceTransport.Schema>> exportSchemata) {
     this.exportSchemata = exportSchemata;
+  }
+
+  @Override
+  public Set<CRUDOperation> getPermissions() {
+    return permissions;
+  }
+
+  public void setPermissions(Set<CRUDOperation> permissions) {
+    this.permissions = permissions;
   }
 
   @Override

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -286,6 +287,16 @@ public interface KlabService extends Service {
     Map<String, List<ResourceTransport.Schema>> getImportSchemata();
 
     List<Extensions.ComponentDescriptor> getComponents();
+
+    /**
+     * Return the current CRUD permissions for the authenticated user. These are used as a mask when
+     * accessing resources, combined with the resource's own permissions so that resource
+     * permissions not available to the requesting identity on a service base are not returned. Only
+     * READ should be returned if the service does not implement ResourceService.Admin.
+     *
+     * @return
+     */
+    Set<CRUDOperation> getPermissions();
   }
 
   /**
