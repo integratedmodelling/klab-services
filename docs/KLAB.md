@@ -16,7 +16,14 @@ The central interaction is deliberately different from asking for a file or call
 observe <concept> in <context>
 ```
 
-The concept states *what* should be observed. The context states where, when, at what scale, under which scenario and from whose perspective. k.LAB discovers candidate knowledge, reasons about semantic compatibility, assembles a computational plan called a **dataflow**, executes it and records the resulting **observation** in a digital twin. The observation remains linked to its semantics, computation, provenance and context.
+The concept placeholder is expressed in practice through an [observable
+expression](OBSERVABLES.md): k.LAB's compositional query language for *what*
+should be observed. The context states where, when, at what scale, under which
+scenario and from whose perspective. k.LAB discovers candidate knowledge,
+reasons about semantic compatibility, assembles a computational plan called a
+**dataflow**, executes it and records the resulting **observation** in a digital
+twin. The observation remains linked to its semantics, computation, provenance
+and context.
 
 This changes the unit of interoperability. Files, APIs and database records remain necessary, but they are not the final contract. The contract is the meaning of an observation in context.
 
@@ -102,10 +109,29 @@ k.LAB separates three logical layers and instruments them through four main serv
 ### Three logical layers
 
 1. The **resource layer** makes heterogeneous data, models, algorithms, services, projects and software components addressable through uniform contracts. Resources retain their native representation and do not acquire one mandatory meaning at this layer.
-2. The **semantic layer** uses k.IM and the worldview to define observables, annotate resources, reason about compatibility, select observation strategies and assemble dataflows.
-3. The **reactivity layer** hosts observations in digital twins and lets behaviors, users, sessions and observations react to events through k.Actors.
+2. The **semantic layer** uses the worldview ontology language (`.kwv`) to define shared concepts, the observable expression language to formulate semantic queries, and k.IM (`.kim`) to annotate resources and publish observation strategies.
+3. The **reactivity layer** hosts observations in digital twins and uses k.Actors (`.kactor`) to let observations, users, sessions and twins react to events.
 
 Keeping these layers distinct is essential. The same dataset can be interpreted through more than one worldview or used to observe more than one concept. A semantic model can change without moving the source data. A digital twin can be re-resolved when better knowledge becomes available without redefining its storage format.
+
+### Languages of the semantic commons
+
+Three user-facing host languages instrument these layers, using observable
+expressions as their common semantic sublanguage:
+
+| Language | Contract in the commons |
+| --- | --- |
+| [Observable expressions](OBSERVABLES.md) | Query what should be observed and annotate what every semantic asset can contribute |
+| [Worldview ontology language](ONTOLOGY_LANGUAGE.md) (`.kwv`) | Define and govern the concepts, relationships and inference structure of a shared worldview |
+| [k.IM](KIM.md) (`.kim`) | Publish contextual observation strategies, model dependencies and semantic resource annotations |
+| [k.Actors](AGENTS.md) (`.kactor`) | Instrument observations, digital twins, users and sessions with reactive behavior |
+
+Observable expressions appear directly in worldview definitions and k.IM model
+declarations. When passed as values they are enclosed in `{{ ... }}`; this
+semantic-literal form is the only way k.Actors embeds them. The resulting
+division is deliberate: `.kwv` establishes communal meaning, `.kim` connects
+that meaning to ways of observing, and `.kactor` governs behavior after
+observations become live state.
 
 ### Four operational services
 
@@ -113,7 +139,7 @@ The pre-1.0 architecture grouped responsibilities into nodes and engines. The cu
 
 | Service | Owns | Principal responsibility |
 | --- | --- | --- |
-| **Resources** | Assets and their availability | Workspaces, projects, k.IM and k.Actors documents, resources, components, adapters, rights, versions and transport |
+| **Resources** | Assets and their availability | Workspaces, projects, worldview, k.IM and k.Actors documents, resources, components, adapters, rights, versions and transport |
 | **Reasoner** | Semantic truth | The worldview, OWL-backed inference, concept and observable interpretation, semantic relationships and observation strategies |
 | **Resolver** | Plans | Context-sensitive resolution graphs, candidate ranking, coverage and compilation of a dataflow |
 | **Runtime** | Live state and execution | Sessions, contexts, digital twins, knowledge graphs, transactions, storage, provenance, scheduling and contextualization |
@@ -191,7 +217,15 @@ An **observable** is a logical description of what may be observed. An **observa
 
 For example, a request for the probability of flood exposure in a watershed during a period does not identify a raster, model or service. It identifies an observational intent. The available context, worldview and resolution constraints determine which resources can contribute, whether their scales and meanings are compatible and what mediation is required.
 
-k.IM provides the language for concepts, observables, models and semantic annotations. Its observation-centered semantics can compose meaning through subjects, qualities, processes, events, relationships, traits, roles and operators. Its logical model is compatible with OWL 2, while the language is designed for scientific modelling rather than direct manipulation of triples. See [Semantic Modeling](SEMANTIC_MODELING.md), [Observables](OBSERVABLES.md) and [ODO-IM](ODO_IM.md) for the conceptual model.
+The [worldview ontology language](ONTOLOGY_LANGUAGE.md) defines concepts and
+their formal relationships. The shared [observable expression
+language](OBSERVABLES.md) composes those concepts into queries through
+subjects, qualities, processes, events, relationships, predicates and semantic
+operators. [k.IM](KIM.md) then uses the same expressions to state model outputs
+and dependencies and to annotate datasets, algorithms and services. The
+logical model is compatible with OWL 2, while the languages are designed for
+scientific modelling rather than direct manipulation of triples. See also
+[Semantic Modeling](SEMANTIC_MODELING.md) and [ODO-IM](ODO_IM.md).
 
 ### Reasoning, strategies and mediation
 
@@ -213,7 +247,12 @@ Digitally signed or institutionally endorsed outputs can build on this record, b
 
 The Runtime service hosts digital twins. A twin is represented by a context scope backed by a knowledge graph, storage, a scheduler and lifecycle policy. It may contain observations of entities, qualities, processes, events and relationships, along with the provenance and activities that connect them.
 
-k.Actors defines executable behaviors for observations and other runtime agents. Behaviors can initialize state, respond to messages, emit events, schedule work and call semantic observation services. They can instrument observations, users and sessions; implement agent-based models; automate workflows; expose interactive applications; and provide test cases that exercise the system lifecycle.
+[k.Actors](AGENTS.md) defines executable behaviors for observations and other
+runtime agents. Behaviors can initialize state, respond to messages, emit
+events, schedule work and call semantic observation services using
+`{{ ... }}` observable literals. They can instrument observations, users and
+sessions; implement agent-based models; automate workflows; expose interactive
+applications; and provide test cases that exercise the system lifecycle.
 
 Reactivity changes the temporal character of scientific integration. A contextualization no longer has to be a one-off pipeline. An observation can remain alive, receive new evidence, react to a threshold, interact with another agent or be re-observed under a scenario. Persistent and network-addressable twins can therefore act as decision systems rather than static reports.
 
@@ -275,9 +314,10 @@ Users may reach k.LAB through modelling tools, applications, command-line client
 Providers contribute at several levels:
 
 - publish or connect a resource through an existing adapter;
-- annotate a resource with a k.IM model and validity constraints;
-- publish an observation strategy or worldview namespace;
-- write a k.Actors behavior, application, script or test;
+- define or review concepts in a `.kwv` worldview ontology;
+- annotate a resource and publish observation strategies in `.kim`;
+- use observable expressions to make assets discoverable by meaning;
+- write a `.kactor` behavior, application, script or test;
 - contribute a component containing adapters, runtime functions, authorities, importers or exporters;
 - operate one or more services for a community or institution.
 
@@ -306,6 +346,7 @@ The repository is under active development. The four core service contracts and 
 For implementation details, start with:
 
 - [Architecture](ARCHITECTURE.md) for service ownership and the observation lifecycle;
+- [Observable expressions](OBSERVABLES.md), [worldview ontologies](ONTOLOGY_LANGUAGE.md), [k.IM](KIM.md) and [k.Actors](AGENTS.md) for the user-facing languages;
 - [Scopes](SCOPES.md) for identity, service propagation and context lifetime;
 - [Resources](RESOURCES.md) for asset operations and service contracts;
 - [Resolution](RESOLUTION.md) for resolution graphs, dataflow compilation and known limitations;

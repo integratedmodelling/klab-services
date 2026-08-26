@@ -2,7 +2,15 @@
 
 `klab-services` is the Java 21 reference implementation of k.LAB's distributed semantic-modelling and digital-twin service stack.
 
-k.LAB accepts an observation request expressed as meaning in context - conceptually, `observe <concept> in <context>` - and turns it into a semantically validated, executable dataflow. The result is an observation stored in a digital twin together with its semantics, provenance and lifecycle state. This enables independent providers to contribute data, models, components and compute to a shared semantic knowledge commons without moving every asset into one platform.
+k.LAB accepts an observation request expressed as meaning in context -
+conceptually, `observe <observable> in <context>` - and turns it into a
+semantically validated, executable dataflow. The
+[observable expression language](docs/OBSERVABLES.md) supplies the query and
+the semantic annotation used to catalogue candidate assets. The result is an
+observation stored in a digital twin together with its semantics, provenance
+and lifecycle state. This enables independent providers to contribute data,
+models, components and compute to a shared semantic knowledge commons without
+moving every asset into one platform.
 
 The current architecture separates four kinds of ownership:
 
@@ -16,6 +24,24 @@ Runtime   -> sessions, digital twins, execution, storage and provenance
 An Engine authenticates the user, starts or discovers services and creates scoped workflows across them. User, session and context scopes preserve identity, permissions, service selection and digital-twin position across process boundaries.
 
 For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md). For a code-oriented trace of the service stack, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## User-facing languages
+
+The semantic commons is instrumented through three host languages sharing one
+observable query language:
+
+| Language | Layer and purpose |
+| --- | --- |
+| [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax inherited by all three languages |
+| [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships maintained by a worldview community |
+| [k.IM](docs/KIM.md) (`.kim`) | Publishes models, resource annotations, dependencies, and contextualization strategies |
+| [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior |
+
+Observable expressions are used directly in `.kwv` definitions and `.kim`
+models. In value positions they are written as `{{ ... }}` semantic literals;
+k.Actors uses only this literal form. Together the languages separate shared
+meaning, ways of producing observations, and behavior after observations enter
+a digital twin.
 
 ## Repository layout
 
@@ -54,12 +80,13 @@ Individual server modules contain their Spring application configuration under `
 
 - [k.LAB technical note](docs/KLAB.md): the semantic commons, service architecture, federated network and composable digital twins
 - [Architecture](docs/ARCHITECTURE.md): service ownership and end-to-end observation lifecycle
-- [Semantic modeling](docs/SEMANTIC_MODELING.md), [observables](docs/OBSERVABLES.md) and [ODO-IM](docs/ODO_IM.md): the knowledge model
+- [Observable expressions](docs/OBSERVABLES.md), [worldview ontologies](docs/ONTOLOGY_LANGUAGE.md), [k.IM](docs/KIM.md) and [k.Actors](docs/AGENTS.md): the user-facing language guides
+- [Semantic modeling](docs/SEMANTIC_MODELING.md) and [ODO-IM](docs/ODO_IM.md): the conceptual knowledge model
 - [Resources](docs/RESOURCES.md): resource service contract
 - [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
 - [Scopes](docs/SCOPES.md): identity, propagation and digital-twin lifetime
 - [Storage](docs/STORAGE.md) and [provenance](docs/PROVENANCE.md): runtime state and traceability
-- [Agent compiler](docs/AGENT_COMPILER.md): k.Actors runtime and behavior execution
+- [Agent compiler](docs/AGENT_COMPILER.md): k.Actors runtime and behavior execution internals
 - [Components](docs/COMPONENTS.md): plug-ins, adapters and service extensions
 
 ## Status

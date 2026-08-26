@@ -1,117 +1,563 @@
-# Observables, observations, models
+# Observable expression language guide
 
-This chapter is about _observable queries_, or in short _observables_: the logical queries that k.LAB deals with, introduced [previously](index.adoc) with some examples. We discuss how they are defined and what observations can be expected to come from them. This chapter is written and should be read from the perspective of a user or modeler: this means that we assume that a _worldview_ has already been defined and chosen, so there is a pre-defined, searchable repository of logically consistent concepts that we can use and combine with operators to produce observables.
+An **observable expression** is k.LAB's query language for meaning. It states
+what should be observed independently of any dataset, model, service, or
+digital twin. The same expression is the semantic key used to annotate and
+catalogue assets, declare model outputs and dependencies, select observations,
+and route semantic values through behaviors.
 
-**Concepts** are the basic building blocks of any observable, and in fact many concepts can be used directly as queries. In written expressions, they take the form `namespace:ConceptName`: the element before the colon is the _namespace_, i.e. the knowledge space to which the concept belongs, and may be a single lowercase name or a  _path_ composed of dot-separated names, such as `hydrology.physical`, where each names that comes after the dot implies a more specific subspace of the previous one. The part after the dot, the _concept name_, is written using "camel case" conventions (the first word starting with either case, then the following words having an initial uppercase letter): e.g. `hydrology.physical:WaterFlow`. We always refer to those two elements as a unit, so concepts in different namespaces may have the same name without conflict.
+This guide follows the active
+`org.integratedmodelling.languages.Observable` Xtext grammar. Its parsed
+service contracts are `KimObservable` and `KimConcept` in `klab-api`. The
+grammar is shared by all three user-facing languages:
 
-Concepts can belong to a few different basic types. The first distinction is between _observable_ concepts, of which observations can be made, and _predicates_, that cannot exist alone but serve to further specify observables. In linguistic terms, these are broadly equivalent to _nouns_ and _adjectives_, respectively. These may be combined by simply mentioning them together, as in everyday English, or if needed connecting them through the use of _semantic operators_. In general, though, all observable queries must contain _one_ main observable and can contain as many predicates and operators as needed.
+| Host language | Use of observable syntax |
+|---|---|
+| [Worldview ontology language](ONTOLOGY_LANGUAGE.md) (`.kwv`) | Directly in concept definitions and relationships; as `{{ ... }}` literals where a value is expected |
+| [k.IM](KIM.md) (`.kim`) | Directly for model outputs and dependencies; as `{{ ... }}` literals in parameters and other value positions |
+| [k.Actors](AGENTS.md) (`.kactor`) | Only as `{{ ... }}` semantic literals in values and semantic match patterns |
 
-## Observable concepts
+Observable syntax is not a fourth workflow language. It is the common semantic
+sublanguage through which the other three refer to the same meaning.
 
-Observable concepts belong to one of six possible categories, which are fairly easy to understand, although the thinking process behind them is quite involved. These categories are so important that we color-code them for easy reference; even the k.LAB modeler editor uses the same colors to ease understanding. We give first a narrative description of the categories and then try to fit them into a unifying explanation. The philosophical background on which all these notions are built is the [ODO-IM ontology](ODO_IM.md), to which interested readers can refer.
+## 1. Observable, observation, and model
 
-To structure these classes of observables and clearly define how to attribute them to our everyday objects of study, we use two conceptual dimensions, well known to philosophers and relatively straightforward to understand.
+- An **observable** is a logical specification of something that could be
+  observed.
+- An **observation** is its contextualized realization in a digital twin.
+- A **model** is one possible strategy for producing an observation.
 
-1. Observations can be made from two main perspectives, distinguished by their treatment of persistence, or more simply, by the underlying view of time. Foundational scientific ontologies commonly distinguish between entities that are (such as objects like a city or a car) and entities that happen (such as events or processes), using terms like continuant versus occurrent (BFO) or endurant versus perdurant (DOLCE). Rather than making philosophical claims about the nature of entities, we focus on how observations are described and adopt terminology familiar to scientists. Accordingly, we speak of perspectives of description rather than ontological categories. In this framework, persistence is addressed by distinguishing a structural perspective, in which an observable (e.g., a physical object) is described without reference to temporal change, from a functional perspective, in which descriptions are inherently tied to time and change.
-2. In addition, we distinguish three fundamental classes of observables based on the number of other entities required to make a meaningful observationâ€”that is, the _arity_ of their description: _independent_, _dependent_, and _relational_. Independent observables can be described on their own, whereas dependent and relational observables must inhere in or relate to other entities to be fully specified. Although these distinctions are well known in philosophyâ€”appearing, for example, in discussions of substantial and dependent entitiesâ€”we adopt them here strictly as descriptive tools rather than as philosophical commitments.
+```observable
+probability of hydrology:FloodEvent during time:AnnualPeriod;
+```
 
-All observable concepts pertain to one of the six classes resulting from intersecting the three dependence categories with the two persistence perspectives, as summarized in Table 1.
+This expression does not identify a raster or endpoint. It asks for a meaning.
+In a context scope, the Reasoner interprets it, the Resolver finds compatible
+strategies, Resources supplies applicable assets, and Runtime produces or
+retrieves an observation. Different contexts may lead to different dataflows
+without changing the query.
 
-| | 2+^|*Observation perspective*|
-|---|---|---|---|
-|*Arity* |*Dependence* |*Structural* |*Functional*|
-|`0` |Independent|Subject|Event|
-|`1` |Dependent|Quality|Process|
-|`2` |Relational|Structural relationship|Functional relationship|
+Observable expressions are consequently the primary semantic catalogue key. A
+resource still has a physical URN, but its k.IM models state which observables
+it can contribute to. Discovery by meaning can then find resources the
+requester did not know by name.
 
-EXAMPLES HERE
+## 2. Concepts and predicates
 
-## Configurations
+A worldview concept is written as `namespace.path:ConceptName`:
 
-Before we move on, we also need to mention a further category of observables that stands on its own: the _configuration_. Configurations can be described as _patterns_ that form in the human mind when faced with certain observables: a good example is a network, like a river network or even something less material like a family tree. These stand alone because they are not part of the physical world, but they _emerge_ in the mind after certain observations are made. Configurations can be extremely important in science as very often they are the context for mathematical or conceptual descriptions that are crucial to our understanding of the world. But as they are only mental constructs, they cannot be the object of a query, or be explicitly put into a context: rather, they are _detected_ based on what observations are made, driven by the semantics of the observations in a context, and models can be made of them to _explain_ them after they are detected. So for example....
+```observable
+earth:Region;
+hydrology.physical:WaterFlow;
+```
 
-In the case of configurations, the _observer_ is crucial: different observers may build different configurations when faced with the same observables. Formally, they are treated as dependents of arity 1, and their perspective may be structural or functional, depending on the observations they emerge from. Configurations and observers are relatively advanced topics, so we will leave these alone for the time being, and come back to them in the dedicated chapters.
+The namespace is a lower-case dotted path and the concept name begins with an
+upper-case letter. A concept may be a complete query or be composed with other
+concepts and semantic operators. Every expression has one main observable;
+other concepts constrain or qualify it.
 
+k.LAB describes observable concepts by dependence and perspective:
 
-## Predicates
+| Dependence | Structural perspective | Functional perspective |
+|---|---|---|
+| Independent | subject or other substantial entity | event |
+| Dependent | quality | process |
+| Relational | structural relationship or bond | functional relationship |
 
-Before getting to descriptions, we must mention another class of concepts, _predicates_, which can be linked to observabels to further describe them when their full description through observations is not possible or when the description is linked to the observation context/process/agent rather than directly to the observed entity. Predicates cannot be used by themselves but always refer, implicitly or explicitly, to some observable concept. Specific classes of description attribute predicates to observations. The observations must have been made already, therefore such descriptions are to be considered dependent.
+Configurations describe recognized, observer-dependent patterns emerging from
+other observations. Worldviews also define agents, extents, identities, realms,
+roles, attributes, domains, quantities, and classes. See the
+[worldview guide](ONTOLOGY_LANGUAGE.md) and [ODO-IM](ODO_IM.md).
 
-### Essential predicates vs. attributes, and roles
+Predicates refine an observable but do not normally stand alone as an
+observation request:
 
-### Essential predicate redistribution in generic concepts
+```observable
+biology:Eucalyptus biology:Tree;
+(ecology:AboveGround ecology:Biomass) of biology:Tree;
+```
 
-...
+The active worldview determines whether such sequences are logically
+admissible. Parsing alone cannot establish that.
 
-Concepts with arity 1 or higher are called _countables_ and we will use this term to refer to both. In both perspectives, independent and relational observables are _countable_ and can be both _instantiated_ and _resolved_; for dependents, instantiation is implicit and only _resolution_ descriptions can be given.
+## 3. Observable statements
 
-Again, it is important to remember that the dependence or temporal perspectives are  In k.LAB all ontological statements are interpreted this way; the described entities may be seen as the worldview pleases, and as long as the terminology is consistent there is no other assumption of concern for the implementation. Also, the choice between representing the targets with structural or functional perspectives depends on the choice of description given of time - as a unchanging delimited duration or as a dynamic extent onto which notions of "change" and "currency" can be mapped.
+The base grammar can parse a stand-alone sequence of semicolon-terminated
+statements. Observable expressions are not normally published as a separate
+k.LAB asset type; deployed declarations are embedded in `.kwv`, `.kim`, or
+`.kactor` host documents.
 
-## Modeling in a semantic world
+```ebnf
+concept-expression
+  [observed as concept-expression]
+  [in unit | in currency | range-min to range-max]
+  [named local-name]
+  [optional | required]
+  [inline-metadata ...]
+;
+```
 
-In scientific work, a _model_ is a simplified representation of a real system or phenomenon (conceptual, mathematical, physical, or computational) that captures key features so researchers can explain observations, test hypotheses, and make predictions under stated assumptions. Commonly, scientific models take the form of computations (e.g., software programs or equations) that once computed will produce a "result" representing the desired phenomenon, given a configuration set as input (for example, a set of initial conditions including the spatial and temporal extents of calculation).
+These clauses are unordered in the grammar. The order above is recommended:
 
-In k.LAB, a model is a generalized, formal recipe that links a concept (the observable) to the method that produces a scientific artifact (an observation) describing that concept within a specified context - the _where_ and _when_ that localize the computed results. Running the model is therefore best understood as an observation process: it generates the observation of that concept for the chosen context.
+```observable
+climate:AirTemperature
+  observed as earth:AtmosphericCondition
+  in degC
+  named air_temperature
+  required
+  :source-kind "station"
+;
+```
 
-Models will perform different actions according to the semantics of the observable. The main categories of models are only few and clearly separated; understanding how observable semantics defines the type of observation made and the category of the model is key to fully utilizing k.LAB's potential. 
+### 3.1 Units, currencies, and ranges
 
-### Types of models vs. semantics
+```observable
+geography:Elevation in m;
+climate:PrecipitationVolume in mm;
+economy:Revenue in EUR@2025;
+economy:PropertyValue in EUR@2025/m/m;
+ecology:HabitatSuitability 0 to 1;
+```
 
-We show examples of each main model type and the semantics that trigger it. Although the examples use observables and operators that are not yet fully defined, they should be understandable; complete documentation of the observable syntax follows later.
+A currency requires a reference year. Units may contain multiplication,
+division, `^` connectors, and parenthesized parts, such as `kg/(m*m*m)` and
+`(J/s)/(m*m)`. In the current grammar, the operand after `^` is a unit element,
+not a numeric exponent, so use explicit products rather than forms such as
+`m^2`. A numeric range is an alternative to a unit or currency.
 
-The first five model types apply to _qualities_
+Mediators constrain representation; they do not replace meaning. Compatible
+unit conversion must remain visible in dataflow provenance.
 
-#### Measurement
+### 3.2 Observation semantics
 
-model geography:Elevation in m
+`observed as` states an observation lens:
 
-#### Categorization
+```observable
+ecology:LandCoverClass
+  observed as remote_sensing:SatelliteObservation;
+```
 
-model type of Vegetation within Region // within specializes `applies to` !
+This is distinct from inherency expressed with `of` and from a runtime user or
+actor. Its validity depends on the worldview.
 
-#### Verification
+### 3.3 Names and optionality
 
-model presence of Tree within Region
+`named` gives a host construct a lower-case local identifier. `optional` and
+`required` are most useful on k.IM dependencies:
 
-#### Quantification
+```kim
+model hydrology:WaterBalance
+  observing
+    climate:PrecipitationVolume in mm named precipitation required,
+    hydrology:EvapotranspirationVolume in mm named evapotranspiration optional
+  set to [precipitation - evapotranspiration]
+;
+```
 
-ranking (priority), percentage/proportion, ratio. No unit, may have a range (implicit in perc/prop, optional in ranking and inferrable in ratio if the operands have a range)
+These clauses express host-level resolution needs; they do not change the
+concept.
 
-#### Valuation
+### 3.4 Inline metadata
 
-model value of X
-model Income
+```observable
+climate:AirTemperature :preferred true :source-kind "station";
+hydrology:DischargeRate !deprecated;
+```
 
-#### Simulation
+Keys beginning with `:` may carry a value. Keys beginning with `!` are negative
+flags. Metadata is extensible; do not use it to hide distinctions that belong
+in the semantics.
 
-model Process
+## 4. Concept-expression base forms
 
-#### Instantiation
+### 4.1 Plain sequences and grouping
 
-model each Substantial
+```observable
+geography:Elevation;
+biology:Eucalyptus biology:Tree;
+(ecology:AboveGround ecology:Biomass) of biology:Tree;
+```
 
-#### Explanation
+Parentheses group an expression so a later modifier applies to the whole. Use
+them whenever scope would otherwise be unclear.
 
-model Substantial
+### 4.2 Distribution
 
-#### Connection
+```observable
+each biology:Tree;
+count of biology:Tree;
+```
 
-model each Relationship
+`each` requests individual or distributed observations. The second expression
+requests one derived count. Validity depends on concept type and context.
 
-#### Classification
+### 4.3 Unary operators
 
-model AbstractAttribute of each Substantial
+| Syntax | Typical intent |
+|---|---|
+| `presence of X` | whether or where X is present |
+| `magnitude of X` | magnitude associated with X |
+| `distance to X` or `distance from X` | distance relative to X |
+| `probability of X` | probability of X |
+| `change in X` | change in X |
+| `change rate of X` | rate of change |
+| `uncertainty of X` | uncertainty associated with X |
+| `level of X` | level representation |
+| `type of X` | classification of X |
+| `occurrence of X` | occurrence of an event or process |
+| `count of X` | count of instances |
 
-#### Characterization
+```observable
+presence of biology:Tree;
+distance to infrastructure:Road;
+probability of hydrology:FloodEvent;
+change rate of climate:AirTemperature;
+uncertainty of ecology:HabitatSuitability;
+```
 
-model ConcreteAttribute of Substantial
+Operators are semantic, not merely syntactic functions. Their valid operands
+and inference behavior come from the worldview and Reasoner.
 
-models the consequence of having an attribute assigned to a substantial
+### 4.4 Explicit change
 
-#### Transformation
+```observable
+changed ecology:LandCoverClass;
+changed ecology:LandCoverClass
+  from ecology:Forest
+  to ecology:UrbanArea;
+```
 
-model ConcreteAttribute of Quality
+This differs from `change in X`: `changed` describes a transition and may
+constrain its endpoints.
 
+### 4.5 Proportion, percentage, and ratio
 
+```observable
+proportion ecology:Forest in earth:Region;
+percentage ecology:Wetland in earth:Watershed;
+ratio of ecology:Input to ecology:Output;
+```
 
+The `in` operand of proportion or percentage states the whole. Do not insert
+`of` after those keywords; it is not in the current grammar. A ratio requires
+both operands.
 
+### 4.6 Value
+
+```observable
+value of ecology:Pollination;
+monetary value of ecology:Pollination;
+monetary value of ecology:Pollination over agriculture:Crop;
+```
+
+`over` here states the comparison or beneficiary operand. It differs from the
+numeric `over number` value operator.
+
+## 5. Semantic modifiers
+
+Expressions may chain binary modifiers:
+
+| Operator | Relationship expressed |
+|---|---|
+| `of [each] X` | inherency or attribution |
+| `and X` / `or X` | intersection or union |
+| `causing [each] X` / `caused by [each] X` | causal direction |
+| `for [each] X` | goal or beneficiary |
+| `adjacent to [each] X` | adjacency |
+| `contained in [each] X` / `containing [each] X` | containment |
+| `with [each] X` | compresence |
+| `during [each] X` | temporal co-occurrence |
+
+```observable
+ecology:Biomass of each biology:Tree;
+hydrology:WaterFlow caused by climate:Precipitation;
+ecology:HabitatSuitability for biology:Species;
+infrastructure:Road adjacent to hydrology:River;
+biology:Tree contained in earth:Forest;
+hydrology:FloodEvent during time:AnnualPeriod;
+```
+
+The grammar also admits another concept expression as a modifier, enabling
+predicate sequences and higher-order composition. Prefer explicit parentheses
+in complex expressions.
+
+### 5.1 Relationship endpoints
+
+```observable
+infrastructure:TransportLink
+  linking geography:Origin
+  to geography:Destination;
+```
+
+The head must have relationship semantics in the active worldview.
+
+## 6. Value operators
+
+Value operators constrain or transform values. They are part of the concept
+expression and precede statement clauses such as `in unit` and `named`.
+
+### 6.1 Comparisons
+
+```observable
+geography:Elevation > 500.m;
+climate:AirTemperature >= 0.degC;
+ecology:HabitatSuitability <= 0.8;
+hydrology:DischargeRate == 12.m*m*m/s;
+```
+
+Supported comparisons are `>`, `>=`, `<=`, `<`, and `==`. The operand is a
+number or quantity; quantities join a number to a unit or currency with `.` or
+`/`.
+
+### 6.2 Semantic and contextual filters
+
+```observable
+ecology:LandCoverClass is any ecology:Forest;
+presence of biology:Tree when climate:PrecipitationVolume > 0.mm;
+biology:Tree whose ecology:Biomass > 100.kg;
+biology:Tree without ecology:Disease;
+```
+
+The grammar provides `is`, `where`, `when`, `whose`, `without`, `by`, and
+`down to`. Their condition operand is itself a concept expression. A grammar
+comment calls for conditions to contain a value operator, but the current
+parser rule does not enforce that restriction.
+
+### 6.3 Aggregation and existence
+
+```observable
+hydrology:WaterVolume total;
+presence of biology:Tree exists;
+climate:AirTemperature averaged;
+hydrology:RunoffVolume summed;
+```
+
+Applicability depends on observable type and scale. Parseability is not proof
+of semantic validity.
+
+### 6.4 Arithmetic transforms
+
+```observable
+statistics:Index plus 1;
+statistics:Score minus 10;
+statistics:Score times 100;
+economy:Amount over 1000;
+```
+
+Use these only when rescaling is part of the requested observable. Model
+implementation math normally belongs in k.IM contextualization.
+
+The grammar also admits a bare `!=` with no operand and specialized `by` and
+`down to` forms. Treat these as provisional until validator and runtime
+contracts define their intended use.
+
+## 7. References, authorities, and selectors
+
+A reference is a worldview concept, an authority identity, or a pattern
+variable:
+
+```observable
+hydrology:River;
+IUPAC:water;
+GBIF:2435099;
+presence of $target;
+```
+
+Authority prefixes are upper case and require an available authority component.
+Parsing does not prove that the authority can resolve the identifier.
+
+`not` may prefix a deniable attribute:
+
+```observable
+not ecology:Managed ecology:Forest;
+```
+
+The worldview must declare that attribute deniable.
+
+The selectors `any`, `all`, and `no` alter matching:
+
+- `any X` selects X or its children;
+- `all X` enables generalized, primarily model-side matching; and
+- `no X` selects compatible siblings without X or its descendants.
+
+They are query selectors, not new concepts. Pattern variables require
+substitution before an expression becomes concrete; `KimObservable` exposes
+the pattern and variable collection.
+
+## 8. Semantic literals in host languages
+
+Where a host grammar expects a value, wrap observable semantics in double
+braces:
+
+```text
+{{ <observable-semantics> }}
+```
+
+No semicolon appears inside the braces.
+
+### 8.1 k.IM
+
+k.IM uses observables directly for model outputs and dependencies, but braces
+in literal and parameter positions:
+
+```kim
+@documentation(subject = {{probability of hydrology:FloodEvent}})
+model probability of hydrology:FloodEvent;
+
+define elevation_query as {{geography:Elevation in m}};
+```
+
+### 8.2 Worldview ontologies
+
+Worldview clauses use expressions directly:
+
+```kwv
+process Flooding
+  affects geography:Region
+  emerges from probability of hydrology:FloodEvent
+;
+```
+
+Annotations, maps, and other value positions can carry `{{ ... }}`.
+
+### 8.3 k.Actors
+
+k.Actors accepts observables only as semantic literals:
+
+```kactors
+action main:
+    def query {{probability of hydrology:FloodEvent}}
+    runtime.observe(query)
+```
+
+They can also be semantic match patterns:
+
+```kactors
+runtime.observe({{each biology:Tree}}):
+    {{biology:Tree}} as tree -> console.info(tree)
+```
+
+The runtime decides whether the literal acts as a query, classifier, message
+value, or observation request.
+
+## 9. Annotations and shared literals
+
+Derived host grammars can accept one or more annotations before an observable.
+For example, k.IM model outputs are `AnnotatedObservable` values:
+
+```kim
+model @predictor(weight = 0.7)
+  distance to infrastructure:Road;
+```
+
+A stand-alone `ObservableSequence` does not accept annotations before its
+statements.
+
+The shared grammar also defines numbers, ranges, quantities, strings, Booleans,
+lists, maps, concepts, functions, parameters, and URNs for derived languages.
+The host grammar still decides which value rule is accepted in each position:
+
+- `Value` admits naked concept references;
+- `Literal` admits `{{ observable }}` but not naked concept expressions; and
+- `Variable` adds identifiers and constants.
+
+## 10. Contextualized expressions
+
+The shared grammar defines this host-only construct:
+
+```ebnf
+concept-expression [within concept-expression]
+```
+
+```kwv
+quality UpstreamArea
+  is geography:Area within hydrology:Watershed
+;
+```
+
+`within` is not part of a stand-alone observable statement. It is accepted only
+where the host asks for a `ContextualizedExpression`.
+
+## 11. Common query patterns
+
+```observable
+// Direct concept
+geography:Elevation;
+
+// Qualified and distributed quality
+(ecology:AboveGround ecology:Biomass) of each biology:Tree in kg;
+
+// Derived observables
+presence of biology:Tree;
+count of biology:Tree;
+probability of hydrology:FloodEvent;
+
+// Relational query
+infrastructure:TransportLink
+  linking geography:Origin
+  to geography:Destination;
+
+// Filtered individual query
+each biology:Tree whose ecology:Biomass > 100.kg;
+```
+
+In a model, the same language annotates a resource:
+
+```kim
+model urn:klab:agency:elevation:global:dem
+  as geography:Elevation in m
+;
+```
+
+The URN identifies the asset; the observable says what it can contribute.
+Semantic discovery and ranking need both.
+
+## 12. Authoring guidance
+
+- **Express meaning before implementation.** Write what a user would ask for,
+  not the filename, algorithm, provider, or storage layout.
+- **Use the active worldview.** Reuse stable concepts and import the namespaces
+  required by the host document.
+- **Parenthesize complex expressions.** Human review should not depend on
+  guessed operator scope.
+- **Separate semantics from mediation.** Put meaning in the expression and
+  units or currency in `in`.
+- **Keep metadata secondary.** If a distinction affects compatibility or
+  resolution, represent it semantically rather than only as a tag.
+
+## 13. Review checklist
+
+Check that:
+
+- the expression has one clear main observable;
+- every namespace and authority resolves under the intended worldview;
+- predicates and operators are valid for their operands;
+- parentheses make complex scope unambiguous;
+- `each` reflects the intended distributed observation;
+- units, currencies, ranges, and filters are compatible with the semantics;
+- optionality and local names serve only their host-level purpose;
+- `within` appears only where the host admits contextualized expressions;
+- `{{ ... }}` is used whenever the host expects a semantic literal;
+- metadata does not substitute for semantic distinctions; and
+- both the parser and Reasoner validate the expression.
+
+## 14. Current implementation status
+
+The grammar defines source structure; full validity requires semantic services:
+
+- `ObservableSemanticsForCondition` accepts any concept expression although its
+  comment describes a required value operator;
+- the bare `!=` form has no operand;
+- numeric exponents such as `m^2` are not accepted by the current `Unit` rule
+  because `^` is followed by a unit element;
+- authorities, units, and semantic relationships need runtime registries or
+  worldview reasoning;
+- `KimObservableImpl.namespaces()` currently returns an empty set, and its
+  formatter omits units, currency, range, formal name, and optionality; and
+- parser acceptance does not prove that a compatible model, resource, adapter,
+  or runtime exists.
+
+Language evolution must keep `Observable.xtext`, `KimConcept`,
+`KimObservable`, adapters and validators, Reasoner tests, and this guide in
+sync. Because `.kwv`, `.kim`, and `.kactor` inherit this grammar, regression
+fixtures should cover stand-alone expressions and every host embedding form.
