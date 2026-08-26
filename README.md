@@ -1,84 +1,69 @@
-# k.LAB: a software stack for semantic modeling
+# k.LAB services
 
-<img src="https://docs.integratedmodelling.org/klab/_images/KLAB_LOGO.png" align="left"
-     alt="k.LAB logo" width="258" height="108">
-     
-The k.LAB software stack implements 
-a semantic web platform for integrated, distributed semantic modeling. See http://www.integratedmodelling.org 
-for details on k.LAB and the mission behind it.
+`klab-services` is the Java 21 reference implementation of k.LAB's distributed semantic-modelling and digital-twin service stack.
 
-A technical overview of the k.LAB software stack is available at https://docs.integratedmodelling.org/technote/index.html. 
-The version of k.LAB currently in production is in the `klab` GitHub project. This project (`klab-services`) is a 
-complete rewrite slated to become version 1.0 of k.LAB and the reference implementation
-of the software stack. It is not currently functional and is not expected to be used in production before mid-2024.
+k.LAB accepts an observation request expressed as meaning in context - conceptually, `observe <concept> in <context>` - and turns it into a semantically validated, executable dataflow. The result is an observation stored in a digital twin together with its semantics, provenance and lifecycle state. This enables independent providers to contribute data, models, components and compute to a shared semantic knowledge commons without moving every asset into one platform.
 
-## Description of k.LAB (previous version)
+The current architecture separates four kinds of ownership:
 
-k.LAB aims to address the activity of _integrated modeling_, which reconciles strong 
-semantics with modeling practice, helping achieve advantages such as modularity, 
-interoperability, reusability, and integration of multiple paradigms and scales. 
-To achieve this goal, k.LAB keeps the logical representation of the modeled world 
-distinct from the algorithmic knowledge that allows it to be simulated, and uses 
-artificial intelligence to assemble computations that produce *observations* of such 
-knowledge. The resulting user experience enables workflows that only use the semantics 
-of the information in order to obtain results, making the need for modeling skills 
-a choice rather than a necessity for most users.
+```text
+Resources -> available projects, data, models, components and adapters
+Reasoner  -> worldview semantics and context-appropriate strategies
+Resolver  -> resolution graphs and executable dataflows
+Runtime   -> sessions, digital twins, execution, storage and provenance
+```
 
-While k.LAB has been in use for several years, k.LAB v 0.10.0 should be considered a 
-preview release and all APIs and code structure are subject to change at this time. 
-It includes the following software components:
+An Engine authenticates the user, starts or discovers services and creates scoped workflows across them. User, session and context scopes preserve identity, permissions, service selection and digital-twin position across process boundaries.
 
-- Semantic modeling engine (klab.engine) providing:
-    - support for the basic semantic modeling workflow: k.IM language support with 
-      reasoning, resolver, dataflow compiler and runtime;
-    - support for creating and using URN-based non-semantic resources and for their 
-      semantic annotation in k.IM;
-    - support for instrumenting "live" sessions, users and observations with behaviors 
-      using the k.Actors language, enabling complex individual-based models and specialized 
-      applications;
-    - support for 2D regular and irregular spatial extents (GIS functionalities) 
-      through Geotools, including OGC services;
-    - support for regular and irregular temporal extents;
-    - support for tabular resources with interfaces for common (XLS, Access, JDBC, 
-      text) and specialized (weather stations) formats;
-    - configurable runtime for local, enhanced local (using GPU and virtual memory) 
-      and distributed computation;
-    - Ability to connect to remote computations and build interactive, distributed 
-      runtimeAgent systems (based on Akka);
-    - Groovy-based runtimeAgent modeling language bindings;
-    - support for machine learning through WEKA integration;
-    - support for calibration and data assimilation through OpenDA integration;
-    - REST API and UI for web-based modeling and administration
-- Node server software that can be installed on a network server to create a node of 
-  the k.LAB semantic web, with the option of spawning networked knowledge servers 
-  and modelling engines as seen fit by the node administrators.
-- Command-line tooling, including:
-    - Command line engine interface for debugging and expert operations;
-    - OWL processor to save k.IM worldviews as OWL ontologies and perform inquiries 
-      and alignments
-    - Bulk import, validation, publishing and CRUD operations on resources
-- Eclipse IDE for modelers, providing:
-- Component development tools:
-    - Maven component archetype
-- Web explorer application
-- User and developer documentation (Asciidoc, in early stages of development)
+For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md). For a code-oriented trace of the service stack, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-A working distribution of k.LAB is not easily obtainable by merely downloading and compiling 
-the code, as using the software requires registration to access the k.LAB semantic 
-web. Prospective users should consult https://www.integratedmodelling.org/statics/pages/gettingstarted.html 
-to access binary distributions, licensing information and registration instructions.
+## Repository layout
 
-The development of k.LAB has been or is being supported by the US National Science Foundation, the 
-European Union, UNEP-WCMC, the UK NERC, the Basque Government, the Interamerican Development Bank, 
-the United Nations and other actors, starting in 2007.
+| Module | Purpose |
+| --- | --- |
+| `klab.core.api` | Portable service contracts, scopes, language objects, observations, dataflows and digital-twin APIs |
+| `klab.core.common` | Shared domain implementations and utilities |
+| `klab.core.services` | Service bases, clients, scope management and common service infrastructure |
+| `klab.services.resources` | Resource, workspace, project, component and adapter management |
+| `klab.services.reasoner` | Worldview loading, semantic inference and observation strategies |
+| `klab.services.resolver` | Context-sensitive resolution graphs and dataflow compilation |
+| `klab.services.runtime` | Digital twins, knowledge graphs, transactions, scheduling, execution, storage and provenance |
+| `*.server` modules | Stand-alone server applications for the corresponding core services |
+| `klab.modeler` | Modeler-side orchestration and client functionality |
+| `klab.cli` | Command-line tooling |
+| `klab.distribution` | Distribution and local service-stack management |
+| `support` | Graph database, language-server and AMQP support modules |
 
-The main active developers are:
+## Build
 
-* Ferdinando Villa (lead developer and designer, modeling engine and IDE)
-* Enrico Girotto (UI, web development, release engineering)
-* Steven Wohl (networking, authentication, security)
-* Andrea Antonello (geospatial and hydrological modeling)
+The project uses Maven and requires JDK 21. From the repository root:
 
-Any inquiries should be directed to info@integratedmodelling.org.
+```powershell
+.\mvnw.cmd clean install
+```
 
+The build is a multi-module reactor and may require access to configured snapshot repositories and sibling k.LAB language artifacts. Use targeted module builds while developing when the complete dependency set is not available, for example:
 
+```powershell
+.\mvnw.cmd -pl klab.services.resolver -am test
+```
+
+Individual server modules contain their Spring application configuration under `src/main/resources`. Deployment, certificates, service discovery and components are environment-specific; do not assume that compiling the repository creates a connected public k.LAB network.
+
+## Documentation
+
+- [k.LAB technical note](docs/KLAB.md): the semantic commons, service architecture, federated network and composable digital twins
+- [Architecture](docs/ARCHITECTURE.md): service ownership and end-to-end observation lifecycle
+- [Semantic modeling](docs/SEMANTIC_MODELING.md), [observables](docs/OBSERVABLES.md) and [ODO-IM](docs/ODO_IM.md): the knowledge model
+- [Resources](docs/RESOURCES.md): resource service contract
+- [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
+- [Scopes](docs/SCOPES.md): identity, propagation and digital-twin lifetime
+- [Storage](docs/STORAGE.md) and [provenance](docs/PROVENANCE.md): runtime state and traceability
+- [Agent compiler](docs/AGENT_COMPILER.md): k.Actors runtime and behavior execution
+- [Components](docs/COMPONENTS.md): plug-ins, adapters and service extensions
+
+## Status
+
+This repository is under active development toward the k.LAB 1.0 architecture. The four core service APIs and implementations are present, but not every network capability is complete. In particular, global semantic and capability discovery is planned work, and some external dataflow transport and execution paths remain transitional. The older node/engine terminology describes pre-1.0 deployments and should not be used as the organizing model for new code.
+
+k.LAB is licensed under the [GNU Affero General Public License v3](LICENSE.txt). Project and partnership information is available from [Integrated Modelling](https://integratedmodelling.org/).
