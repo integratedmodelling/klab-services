@@ -1064,6 +1064,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private int stageCounter = 0;
       private int currentStage = 0;
       private long start = System.currentTimeMillis();
+      private Function<T, T> resultTransformer = Function.identity();
 
       /**
        * Delay for the next poll cycle in milliseconds
@@ -1088,6 +1089,25 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         for (int i = 0; i < 100; i++) {
           System.out.println(pop.nextDelay());
         }
+      }
+
+      /**
+       * Use to expose the job ID, making it possible to use the Job API to interrupt a task.
+       *
+       * @return
+       */
+      public long getJobId() {
+        return id;
+      }
+
+      /**
+       * Transform a successful result before this future is completed. This preserves the concrete
+       * polling future (and therefore its job ID and cancellation contract) while allowing client
+       * layers to perform mandatory result synchronization.
+       */
+      public synchronized PollingFuture<T> transformResult(Function<T, T> transformer) {
+        resultTransformer = resultTransformer.andThen(Objects.requireNonNull(transformer));
+        return this;
       }
 
       /**
@@ -1121,11 +1141,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       @Override
-      public boolean cancel(boolean b) {
-        return super.cancel(client.get(ServicesAPI.JOBS.CANCEL, Boolean.class, "id", id));
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        if (isDone()) {
+          return false;
+        }
+        var cancelledRemotely =
+            client != null
+                && Boolean.TRUE.equals(
+                    client.get(ServicesAPI.JOBS.CANCEL, Boolean.class, "id", id));
+        return cancelledRemotely && cancelLocally(mayInterruptIfRunning);
       }
 
       public void poll() {
+        if (isDone()) {
+          scheduler.shutdownNow();
+          return;
+        }
         // if not done, reschedule, else complete. If exception (remote or local), complete
         // exceptionally.
         var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
@@ -1148,7 +1179,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     ? client.getData(ServicesAPI.JOBS.RETRIEVE_DATA, resultClass, "id", id)
                     : client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
             if (result != null) {
-              complete(result);
+              complete(transformResult(result));
             } else {
               completeExceptionally(
                   new KlabServiceAccessException(
@@ -1162,11 +1193,32 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               new KlabServiceAccessException(
                   status.getStackTrace() == null ? "Server error" : status.getStackTrace()));
         } else if (status.getStatus() == Scope.Status.INTERRUPTED) {
-          cancel(true);
+          cancelLocally(false);
         } else {
           // schedule the next step
           scheduler.schedule(this::poll, nextDelay(), TimeUnit.MILLISECONDS);
         }
+      }
+
+      private synchronized T transformResult(T result) {
+        return resultTransformer.apply(result);
+      }
+
+      private boolean cancelLocally(boolean mayInterruptIfRunning) {
+        scheduler.shutdownNow();
+        return super.cancel(mayInterruptIfRunning);
+      }
+
+      @Override
+      public boolean complete(T value) {
+        scheduler.shutdownNow();
+        return super.complete(value);
+      }
+
+      @Override
+      public boolean completeExceptionally(Throwable ex) {
+        scheduler.shutdownNow();
+        return super.completeExceptionally(ex);
       }
     }
 
@@ -3081,7 +3133,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       return rendererBuilder.build().render(document);
     }
-
   }
 
   public static class Names extends org.integratedmodelling.klab.api.utils.Utils.Names {

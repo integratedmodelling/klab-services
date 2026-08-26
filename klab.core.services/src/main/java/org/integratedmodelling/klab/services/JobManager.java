@@ -11,12 +11,11 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -24,7 +23,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class JobManager {
 
-  private final Map<Long, CompletableFuture<?>> jobs = new ConcurrentHashMap<>();
+  private record Job(
+      CompletableFuture<?> task, Runnable cancellation, AtomicBoolean cancellationRequested) {}
+
+  private final Map<Long, Job> jobs = new ConcurrentHashMap<>();
   private final Cache<Long, Pair<Object, Throwable>> results =
       CacheBuilder.newBuilder().maximumSize(400).build();
   private final AtomicLong nextId = new AtomicLong(0L);
@@ -38,31 +40,31 @@ public class JobManager {
    * @return
    */
   public Long submit(CompletableFuture<?> task, String description) {
+    return submit(task, description, () -> task.cancel(true));
+  }
+
+  /** Submit a job with an explicit cancellation action for wrapped or transformed futures. */
+  public Long submit(CompletableFuture<?> task, String description, Runnable cancellation) {
     var ret = nextId.incrementAndGet();
-    jobs.put(
-        ret,
-        task.handle(
-            (o, t) -> {
-              if (o == null) {
-                Logging.INSTANCE.error(
-                    "Job " + description + " failed\n" + Utils.Exceptions.stackTrace(t));
-              } else {
-                if (t != null) {
-                  Logging.INSTANCE.info(
-                      "Job "
-                          + description
-                          + " completed exceptionally with error "
-                          + t.getMessage());
-                } else {
-                  Logging.INSTANCE.info("Job " + description + " completed successfully");
-                }
-              }
-              // put away result
-              results.put(ret, Pair.of(o, t));
-              // dereference self
-              jobs.remove(ret);
-              return this;
-            }));
+    var job = new Job(task, cancellation, new AtomicBoolean());
+    jobs.put(ret, job);
+    task.whenComplete(
+        (result, failure) -> {
+          var storedFailure =
+              job.cancellationRequested().get()
+                  ? new CancellationException("Job was cancelled")
+                  : failure;
+          if (storedFailure instanceof CancellationException || task.isCancelled()) {
+            Logging.INSTANCE.info("Job " + description + " was cancelled");
+          } else if (storedFailure != null) {
+            Logging.INSTANCE.error(
+                "Job " + description + " failed\n" + Utils.Exceptions.stackTrace(storedFailure));
+          } else {
+            Logging.INSTANCE.info("Job " + description + " completed successfully");
+          }
+          results.put(ret, Pair.of(result, storedFailure));
+          jobs.remove(ret, job);
+        });
     return ret;
   }
 
@@ -72,7 +74,9 @@ public class JobManager {
 
     var result = results.getIfPresent(id);
     if (result != null) {
-      if (result.getFirst() != null) {
+      if (result.getSecond() instanceof CancellationException) {
+        ret.setStatus(Scope.Status.INTERRUPTED);
+      } else if (result.getFirst() != null) {
         ret.setStatus(Scope.Status.FINISHED);
       } else if (result.getSecond() != null) {
         ret.setStatus(Scope.Status.ABORTED);
@@ -81,8 +85,13 @@ public class JobManager {
       return ret;
     }
 
-    var task = jobs.get(id);
-    if (task != null) {
+    var job = jobs.get(id);
+    if (job != null) {
+      if (job.cancellationRequested().get()) {
+        ret.setStatus(Scope.Status.INTERRUPTED);
+        return ret;
+      }
+      var task = job.task();
       // most of these should never happen
       if (task.isCompletedExceptionally()) {
         ret.setStatus(Scope.Status.ABORTED);
@@ -128,9 +137,17 @@ public class JobManager {
   }
 
   public boolean cancel(long id) {
-    var task = jobs.remove(id);
-    if (task != null) {
-      task.cancel(true);
+    var job = jobs.get(id);
+    if (job != null) {
+      if (!job.cancellationRequested().compareAndSet(false, true)) {
+        return false;
+      }
+      try {
+        job.cancellation().run();
+      } catch (Throwable failure) {
+        Logging.INSTANCE.error("Error while cancelling job " + id, failure);
+      }
+      job.task().cancel(true);
       return true;
     }
     return false;

@@ -78,28 +78,35 @@ public class RuntimeClient extends BaseServiceClient
     resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
     resolutionRequest.setResolutionConstraints(
         scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
-    return client
+    var submission =
+        client
         .withScope(scope)
-        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class)
-        .thenApply(
-            resolved -> {
-              /*
-               * The HTTP completion and the ObservationSubmissionFinished event race each other.
-               * Ingest the returned observation before exposing it to callers so its Commit is
-               * attached regardless of which transport wins. Event ingestion is idempotent by
-               * commit ID and will either do the work first or become a no-op.
-              */
-              try {
-                if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
-                  clientDigitalTwin.getKnowledgeGraph().ingest(resolved);
-                }
-              } catch (Throwable failure) {
-                // Commit synchronization is auxiliary: never turn a successful observation
-                // submission into a failed future because its visualization delta was unavailable.
-                scope.warn("Cannot synchronize the submission commit", failure);
-              }
-              return resolved;
-            });
+        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
+    if (submission
+        instanceof org.integratedmodelling.common.utils.Utils.Http.PollingFuture<Observation>
+            pollingFuture) {
+      return pollingFuture.transformResult(resolved -> synchronizeSubmission(resolved, scope));
+    }
+    return submission.thenApply(resolved -> synchronizeSubmission(resolved, scope));
+  }
+
+  private Observation synchronizeSubmission(Observation resolved, ContextScope scope) {
+    /*
+     * The HTTP completion and the ObservationSubmissionFinished event race each other. Ingest the
+     * returned observation before exposing it to callers so its Commit is attached regardless of
+     * which transport wins. Event ingestion is idempotent by commit ID and will either do the work
+     * first or become a no-op.
+     */
+    try {
+      if (scope.getDigitalTwin() instanceof ClientDigitalTwin clientDigitalTwin) {
+        clientDigitalTwin.getKnowledgeGraph().ingest(resolved);
+      }
+    } catch (Throwable failure) {
+      // Commit synchronization is auxiliary: never turn a successful observation submission into
+      // a failed future because its visualization delta was unavailable.
+      scope.warn("Cannot synchronize the submission commit", failure);
+    }
+    return resolved;
   }
 
   @Override

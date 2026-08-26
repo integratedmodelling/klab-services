@@ -250,73 +250,60 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     var submissionContext =
         currentContext.withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new));
 
-    return submissionContext
-        .getService(RuntimeService.class)
-        .submit(observation, submissionContext)
-        .exceptionally(
-            t -> {
-              // for the benefit of linked DTs
-              currentContext.send(
-                  Message.MessageClass.DigitalTwin,
-                  Message.MessageType.ObservationSubmissionAborted,
-                  observation);
-              // for the UI
-              dispatch(
-                  this,
-                  UIEvent.ObservationSubmissionAborted,
-                  currentContext,
-                  currentContext.getService(RuntimeService.class),
-                  observation);
+    var submission =
+        submissionContext
+            .getService(RuntimeService.class)
+            .submit(observation, submissionContext);
+    submission.whenComplete(
+        (obs, failure) -> {
+          if (failure != null) {
+            // Linked digital twins and the local UI must both leave their computing state.
+            currentContext.send(
+                Message.MessageClass.DigitalTwin,
+                Message.MessageType.ObservationSubmissionAborted,
+                observation);
+            dispatch(
+                this,
+                UIEvent.ObservationSubmissionAborted,
+                currentContext,
+                currentContext.getService(RuntimeService.class),
+                observation);
+            if (!isCancellation(failure)) {
               currentContext.error(
                   "Resolution of observation "
                       + observation
-                      + " was aborted"
-                      + " due to errors: "
-                      + Utils.Exceptions.stackTrace(t));
+                      + " was aborted due to errors: "
+                      + Utils.Exceptions.stackTrace(failure));
+            }
+            return;
+          }
 
-              return observation;
-            })
-        .thenApply(
-            obs -> {
-              // Notifications remain client-local. The runtime publishes the successful commit
-              // event so that all clients see one authoritative graph update.
-              obs.getNotifications().forEach(currentContext::send);
-              dispatch(
-                  this,
-                  UIEvent.ObservationSubmissionFinished,
-                  currentContext,
-                  currentContext.getService(RuntimeService.class),
-                  obs);
-              if (obs.isEmpty()) {
-                currentContext.error(
-                    "Observation " + observation + " was not resolved due to errors");
-              } // else {
-              //                if (observering) {
-              //                  // Send a DT focus event with observer emphasis. The
-              //                  //  observation will be in the KG anyway.
-              //                  currentContext.send(
-              //                      Message.MessageClass.DigitalTwin,
-              // Message.MessageType.ObserverResolved, obs);
-              //                  //
-              // setCurrentContext(currentContext.withObserver(obs));
-              //                  currentContext.ui(
-              //                      Message.create(
-              //                          currentContext,
-              //                          Message.MessageClass.UserInterface,
-              //                          Message.MessageType.CurrentContextModified));
-              //                  dispatch(
-              //                      this,
-              //                      UIEvent.ObserverResolved,
-              //                      currentContext,
-              //                      currentContext.getService(RuntimeService.class),
-              //                      obs);
-              //                  currentContext.info(obs + " is now the current observer");
-              //                } else {
-              currentContext.info("Observation of " + obs + " resolved successfully");
-              //                }
-              //              }
-              return obs;
-            });
+          // Notifications remain client-local. The runtime publishes the successful commit event
+          // so that all clients see one authoritative graph update.
+          obs.getNotifications().forEach(currentContext::send);
+          dispatch(
+              this,
+              UIEvent.ObservationSubmissionFinished,
+              currentContext,
+              currentContext.getService(RuntimeService.class),
+              obs);
+          if (obs.isEmpty()) {
+            currentContext.error("Observation " + observation + " was not resolved due to errors");
+          } else {
+            currentContext.info("Observation of " + obs + " resolved successfully");
+          }
+        });
+    return submission;
+  }
+
+  private static boolean isCancellation(Throwable failure) {
+    while (failure != null) {
+      if (failure instanceof java.util.concurrent.CancellationException) {
+        return true;
+      }
+      failure = failure.getCause();
+    }
+    return false;
   }
 
   //  @Override

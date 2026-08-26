@@ -103,14 +103,17 @@ public class RuntimeServerController {
         var scope =
             serviceContextScope.withResolutionConstraints(
                 ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
-        var ret =
+        var submission =
             runtimeService
                 .klabService()
-                .submit(resolutionRequest.getObservation(), scope)
-                .thenApply(Observation::forTransport);
+                .submit(resolutionRequest.getObservation(), scope);
+        var ret = submission.thenApply(Observation::forTransport);
         return serviceContextScope
             .getJobManager()
-            .submit(ret, "Resolution of " + resolutionRequest.getObservation());
+            .submit(
+                ret,
+                "Resolution of " + resolutionRequest.getObservation(),
+                () -> submission.cancel(true));
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");

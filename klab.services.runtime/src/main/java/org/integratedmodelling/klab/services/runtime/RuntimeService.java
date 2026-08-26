@@ -19,7 +19,6 @@ import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -63,8 +62,8 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
-import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
+import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.integratedmodelling.klab.runtime.kactors.compiler.runtime.AgentRegistry;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -493,14 +492,10 @@ public class RuntimeService extends BaseService
     var submissionIdentity = submissionIdentity(submitted, scope);
     return submissionIdentity == null
         ? submitInternal(submitted, scope)
-        : coalesce(
-            inFlightSubmissions,
-            submissionIdentity,
-            () -> submitInternal(submitted, scope));
+        : coalesce(inFlightSubmissions, submissionIdentity, () -> submitInternal(submitted, scope));
   }
 
-  private CompletableFuture<Observation> submitInternal(
-      Observation submitted, ContextScope scope) {
+  private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
 
     /*
      * A complete query is the terminal answer. Partial and empty queries must continue to the
@@ -730,9 +725,7 @@ public class RuntimeService extends BaseService
         transaction.checkCohortGeometry(cohort, observation.getGeometry());
       }
 
-      if (cohort != null
-          && !collective
-          && observation.getObservable().is(SemanticType.COUNTABLE)) {
+      if (cohort != null && !collective && observation.getObservable().is(SemanticType.COUNTABLE)) {
         transaction.link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
       }
 
@@ -948,8 +941,7 @@ public class RuntimeService extends BaseService
       return null;
     }
     if (observable.is(SemanticType.QUALITY)) {
-      var existing =
-          scope.getContextObservation() == null ? null : scope.getObservation(submitted);
+      var existing = scope.getContextObservation() == null ? null : scope.getObservation(submitted);
       return existing != null && existing.getId() > 0 ? existing : null;
     }
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
@@ -1184,8 +1176,7 @@ public class RuntimeService extends BaseService
     var transaction = submissionScope.getCurrentTransaction();
     if (transaction != null) {
       var existing =
-          findIdenticalMember(
-              observation, transaction.outgoing(cohort), identificationStrategy);
+          findIdenticalMember(observation, transaction.outgoing(cohort), identificationStrategy);
       if (existing != null) {
         return existing;
       }
@@ -1219,9 +1210,9 @@ public class RuntimeService extends BaseService
   }
 
   static Observation findIdenticalMember(
-          Observation observation,
-          Collection<KnowledgeGraph.Link> cohortLinks,
-          Comparator<Observation> identificationStrategy) {
+      Observation observation,
+      Collection<KnowledgeGraph.Link> cohortLinks,
+      Comparator<Observation> identificationStrategy) {
     for (var link : cohortLinks) {
       if (link.type() == GraphModel.Relationship.HAS_MEMBER
           && link.target() instanceof Observation sibling
@@ -1519,8 +1510,8 @@ public class RuntimeService extends BaseService
 
   /**
    * Find the cohort for the passed observation and optionally create it if missing. Missing cohorts
-   * are committed in their own knowledge-graph transaction: they are durable context-catalog
-   * assets and remain valid (and possibly empty) if the observation submission subsequently fails.
+   * are committed in their own knowledge-graph transaction: they are durable context-catalog assets
+   * and remain valid (and possibly empty) if the observation submission subsequently fails.
    *
    * @param observable
    * @param scope
@@ -1672,8 +1663,7 @@ public class RuntimeService extends BaseService
     cohort.setObservable(Observable.promote(canonicalCohortObservable));
     cohort.setChildrenCount(0);
     transaction.store(cohort);
-    transaction.link(
-        RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
+    transaction.link(RuntimeAsset.CONTEXT_ASSET, cohort, GraphModel.Relationship.HAS_CHILD);
     return cohort;
   }
 
@@ -1921,9 +1911,7 @@ public class RuntimeService extends BaseService
                               + resource.getResourceUrn()
                               + " is in a service that is not available"));
                 }
-                var res =
-                    service.retrieve(
-                        resource.getResourceUrn(), Resource.class, scope);
+                var res = service.retrieve(resource.getResourceUrn(), Resource.class, scope);
                 if (res == null) {
                   return ResourceSet.empty(
                       Notification.error(
