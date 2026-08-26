@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,25 @@ class PollingFutureTest {
 
     assertTrue(returned instanceof Utils.Http.PollingFuture<?>);
     assertEquals("RESOLVED", returned.get(2, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void completionDoesNotInterruptDependentStages() throws Exception {
+    var client = mock(Utils.Http.Client.class);
+    when(client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", 42L))
+        .thenReturn(status(Scope.Status.FINISHED));
+    when(client.get(ServicesAPI.JOBS.RETRIEVE, String.class, "id", 42L))
+        .thenReturn("resolved");
+    var future = new Utils.Http.PollingFuture<>(client, String.class, 42, -1, 10);
+
+    var dependentStage =
+        future.thenApply(
+            result -> {
+              assertFalse(Thread.currentThread().isInterrupted());
+              return result;
+            });
+
+    assertEquals("resolved", dependentStage.get(2, TimeUnit.SECONDS));
   }
 
   private static JobStatus status(Scope.Status status) {

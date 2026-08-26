@@ -1205,20 +1205,29 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       private boolean cancelLocally(boolean mayInterruptIfRunning) {
-        scheduler.shutdownNow();
-        return super.cancel(mayInterruptIfRunning);
+        try {
+          return super.cancel(mayInterruptIfRunning);
+        } finally {
+          scheduler.shutdownNow();
+        }
       }
 
       @Override
       public boolean complete(T value) {
-        scheduler.shutdownNow();
-        return super.complete(value);
+        try {
+          return super.complete(value);
+        } finally {
+          scheduler.shutdownNow();
+        }
       }
 
       @Override
       public boolean completeExceptionally(Throwable ex) {
-        scheduler.shutdownNow();
-        return super.completeExceptionally(ex);
+        try {
+          return super.completeExceptionally(ex);
+        } finally {
+          scheduler.shutdownNow();
+        }
       }
     }
 
