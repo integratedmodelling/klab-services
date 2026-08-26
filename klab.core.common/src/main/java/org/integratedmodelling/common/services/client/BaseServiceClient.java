@@ -12,8 +12,8 @@ import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -47,6 +47,7 @@ public abstract class BaseServiceClient implements KlabService {
   protected final Utils.Http.Client client;
   private final ServiceScope serviceScope;
   protected final Settings settings;
+  protected ServiceCapabilities capabilities;
 
   List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
 
@@ -139,7 +140,9 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public String serviceName() {
-    return capabilities(userScope).getServiceName();
+    return this.capabilities == null
+        ? capabilities(userScope).getServiceName()
+        : capabilities.getServiceName();
   }
 
   @Override
@@ -158,8 +161,7 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   /** Submit a setting change through the administration API and poll its job to completion. */
-  public <T> CompletableFuture<T> postSetting(
-      Setting setting, Object value, Class<T> returnType) {
+  public <T> CompletableFuture<T> postSetting(Setting setting, Object value, Class<T> returnType) {
     return client
         .withScope(userScope)
         .postAsync(
@@ -412,9 +414,12 @@ public abstract class BaseServiceClient implements KlabService {
 
   protected <T extends ServiceCapabilities> T getCapabilities(Scope scope, Class<T> tClass) {
     try {
-      return client
-          .withScope(scope)
-          .get(ServicesAPI.CAPABILITIES, tClass, Notification.Mode.Silent);
+      var capabilities =
+          client.withScope(scope).get(ServicesAPI.CAPABILITIES, tClass, Notification.Mode.Silent);
+      if (capabilities instanceof ServiceCapabilities) {
+        this.capabilities = capabilities;
+      }
+      return capabilities;
     } catch (Throwable t) {
       // not ready yet
       return null;
