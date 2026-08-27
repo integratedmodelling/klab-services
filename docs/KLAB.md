@@ -116,22 +116,23 @@ Keeping these layers distinct is essential. The same dataset can be interpreted 
 
 ### Languages of the semantic commons
 
-Three user-facing host languages instrument these layers, using observable
-expressions as their common semantic sublanguage:
+The semantic commons is instrumented through three languages, all sharing one common
+_observable_ syntax to express meaning. Assets written in these languages are assembled into versioned projects, hosted and indexed by Resources services. The latter make them available as semantic assets to their intended communities, forming the k.LAB semantic web.
 
-| Language | Contract in the commons |
+| Language | Layer and purpose |
 | --- | --- |
-| [Observable expressions](OBSERVABLES.md) | Query what should be observed and annotate what every semantic asset can contribute |
-| [Worldview ontology language](ONTOLOGY_LANGUAGE.md) (`.kwv`) | Define and govern the concepts, relationships and inference structure of a shared worldview |
-| [k.IM](KIM.md) (`.kim`) | Publish contextual observation strategies, model dependencies and semantic resource annotations |
-| [k.Actors](AGENTS.md) (`.kactor`) | Instrument observations, digital twins, users and sessions with reactive behavior |
+| [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax. inherited by all three languages |
+| [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships maintained by a worldview community |
+| [k.IM](docs/KIM.md) (`.kim`) | Publishes context-explicit models, including resource annotations, algorithms with dependencies, and semantic bridges to external services and models |
+| [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior, enabling agent-based models, interactive applications and monitoring systems |
 
-Observable expressions appear directly in worldview definitions and k.IM model
-declarations. When passed as values they are enclosed in `{{ ... }}`; this
-semantic-literal form is the only way k.Actors embeds them. The resulting
-division is deliberate: `.kwv` establishes communal meaning, `.kim` connects
-that meaning to ways of observing, and `.kactor` governs behavior after
-observations become live state.
+Observable expressions are used directly to specialized concepts in `.kwv` definitions and in `.kim`
+models to annotate resources and outputs, and to specify dependencies. In value positions, such as in function parameters or metadata, they are written as `{{ ... }}` semantic literals;
+k.Actors uses only this literal form. Together the languages separate shared
+meaning, ways of producing observations, and behavior after observations enter
+a digital twin.
+
+The resulting division is deliberate: `.kwv` establishes communal meaning, `.kim` connects that meaning to context-, observer- and scale-scoped ways of observing, and `.kactor` governs behavior after observations become live state.
 
 ### Four operational services
 

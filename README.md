@@ -6,13 +6,12 @@ k.LAB accepts an observation request expressed as meaning in context -
 conceptually, `observe <observable> in <context>` - and turns it into a
 semantically validated, executable dataflow. The
 [observable expression language](docs/OBSERVABLES.md) supplies the query and
-the semantic annotation used to catalogue candidate assets. The result is an
-observation stored in a digital twin together with its semantics, provenance
+the semantic annotation grammar used to catalogue candidate assets. The result of an `observe` query is an
+observation stored in a digital twin, together with its semantics, provenance
 and lifecycle state. This enables independent providers to contribute data,
-models, components and compute to a shared semantic knowledge commons without
-moving every asset into one platform.
+models, components and compute to a shared semantic knowledge commons, and make it immediately actionable without moving every asset into one platform or specifically planning for interoperability.
 
-The current architecture separates four kinds of ownership:
+The current service architecture separates four kinds of ownership:
 
 ```text
 Resources -> available projects, data, models, components and adapters
@@ -21,24 +20,24 @@ Resolver  -> resolution graphs and executable dataflows
 Runtime   -> sessions, digital twins, execution, storage and provenance
 ```
 
-An Engine authenticates the user, starts or discovers services and creates scoped workflows across them. User, session and context scopes preserve identity, permissions, service selection and digital-twin position across process boundaries.
+The services are used through an Engine process, which authenticates a human user, institution or agent, discovers services (possibly starting local instances) and creates an initial _user scope_ that gives access to coordinated pathways across services to implement the k.LAB observation workflow. User, session and context scope abstractions are used to drive the workflow, preserving identity, permissions, service selection and digital-twin position across process boundaries.
 
 For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md). For a code-oriented trace of the service stack, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## User-facing languages
 
-The semantic commons is instrumented through three host languages sharing one
-observable query language:
+The semantic commons is instrumented through three languages, all sharing one common
+_observable_ syntax to express meaning. Assets written in these languages are assembled into versioned projects, hosted and indexed by Resources services. The latter make them available as semantic assets to their intended communities, forming the k.LAB semantic web.
 
 | Language | Layer and purpose |
 | --- | --- |
-| [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax inherited by all three languages |
+| [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax. inherited by all three languages |
 | [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships maintained by a worldview community |
-| [k.IM](docs/KIM.md) (`.kim`) | Publishes models, resource annotations, dependencies, and contextualization strategies |
-| [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior |
+| [k.IM](docs/KIM.md) (`.kim`) | Publishes context-explicit models, including resource annotations, algorithms with dependencies, and semantic bridges to external services and models |
+| [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior, enabling agent-based models, interactive applications and monitoring systems |
 
-Observable expressions are used directly in `.kwv` definitions and `.kim`
-models. In value positions they are written as `{{ ... }}` semantic literals;
+Observable expressions are used directly to specialized concepts in `.kwv` definitions and in `.kim`
+models to annotate resources and outputs, and to specify dependencies. In value positions, such as in function parameters or metadata, they are written as `{{ ... }}` semantic literals;
 k.Actors uses only this literal form. Together the languages separate shared
 meaning, ways of producing observations, and behavior after observations enter
 a digital twin.
@@ -60,6 +59,8 @@ a digital twin.
 | `klab.distribution` | Distribution and local service-stack management |
 | `support` | Graph database, language-server and AMQP support modules |
 
+The k.LAB Modeler IDE, a specialized Maven plug-in to aid deployment and testing, and several plug-in components are available in this same Github repository as separate projects.
+
 ## Build
 
 The project uses Maven and requires JDK 21. From the repository root:
@@ -75,6 +76,8 @@ The build is a multi-module reactor and may require access to configured snapsho
 ```
 
 Individual server modules contain their Spring application configuration under `src/main/resources`. Deployment, certificates, service discovery and components are environment-specific; do not assume that compiling the repository creates a connected public k.LAB network.
+
+No release is available yet, but the artifacts are deployed as SNAPSHOTs in the Maven Central snapshot repository.
 
 ## Documentation
 
