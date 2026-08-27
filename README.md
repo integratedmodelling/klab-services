@@ -4,17 +4,12 @@
 
 k.LAB accepts an observation request expressed as meaning in context -
 conceptually, `observe <observable> in <context>` - and turns it into a
-semantically validated, executable dataflow. The
-[observable expression language](docs/OBSERVABLES.md) supplies the query and
-the semantic annotation grammar used to catalogue candidate assets. The result of an `observe` query is an
-observation stored in a digital twin, together with its semantics, provenance
-and lifecycle state. This enables independent providers to contribute data,
-models, components and compute to a shared semantic knowledge commons, and make it immediately actionable without moving every asset into one platform or specifically planning for interoperability.
+semantically validated, executable dataflow that creates live scientific artifacts incarnating the observation. The [observable expression language](docs/OBSERVABLES.md) supplies the query and semantic annotation grammar used to express meaning and catalog candidate assets. The result of an `observe` query is an _observation_, hosted in a _digital twin_ of configurable persistence, indissolubly linked to its semantics, provenance and lifecycle state. The k.LAB paradigm enables independent providers to contribute data, models, components and compute to a shared semantic knowledge commons, and make it immediately actionable without moving every asset into one platform or specifically planning for interoperability.
 
-The current service architecture separates four kinds of ownership:
+The current architecture separates four kinds of artifacts, whose ownership is assigned to different services:
 
 ```text
-Resources -> available projects, data, models, components and adapters
+Resources -> projects, data, models, components and adapters
 Reasoner  -> worldview semantics and context-appropriate strategies
 Resolver  -> resolution graphs and executable dataflows
 Runtime   -> sessions, digital twins, execution, storage and provenance
