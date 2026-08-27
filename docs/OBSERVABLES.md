@@ -28,7 +28,7 @@ sublanguage through which the other three refer to the same meaning.
 - A **model** is one possible strategy for producing an observation.
 
 ```observable
-probability of hydrology:FloodEvent during time:AnnualPeriod;
+probability of hydrology:FloodEvent during calendar:Year;
 ```
 
 This expression does not identify a raster or endpoint. It asks for a meaning.

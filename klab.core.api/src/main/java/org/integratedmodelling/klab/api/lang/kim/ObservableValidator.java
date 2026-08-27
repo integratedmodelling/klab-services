@@ -129,7 +129,8 @@ public class ObservableValidator {
     }
 
     if (concept.is(SemanticType.NOTHING)) {
-      return List.of(Notification.error("Concept is unknown or semantically inconsistent"));
+      return List.of(
+          Notification.error("Concept is unknown or semantically inconsistent", concept));
     }
 
     var notifications = new ArrayList<Notification>();
