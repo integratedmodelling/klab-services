@@ -21,6 +21,8 @@ The agent must return a self-consistent, provenance-rich corpus that:
 - identifies all domain-relevant observables and predicates supported by the literature;
 - assigns each proposal an ODO-IM category, dependence arity, and structural or functional
   perspective;
+- keeps every target concept at the requested tier and exposes its valid ancestry to the required
+  upper or Tier-1 ontology context;
 - relates it to the most defensible existing upper concept without inventing equivalence;
 - explains both the concept and why it was extracted;
 - distinguishes explicit source claims from interpretation and modeling choice;
@@ -772,7 +774,7 @@ stable IDs between iterations. A field may be `null`; do not omit required field
 analysis.
 
 ```yaml
-context_pack_version: "1.0"
+context_pack_version: "1.1"
 proposal:
   id: "domain-slug-v1"
   title: "Domain ontology articulation proposal"
@@ -1096,18 +1098,21 @@ When community feedback is returned with a previous corpus:
 
 1. ingest the previous YAML as the baseline rather than extracting the whole domain anew;
 2. preserve `concept_id`, `evidence_id`, and `comment_id` values for unchanged records;
-3. append comments and decisions; never rewrite review history or delete rejected alternatives;
-4. resolve each accepted comment through a named field change and cite the resolution in
+3. preserve the requested tier across an iteration; changing tier starts a separately scoped
+   proposal and requires a new context and ancestry audit;
+4. append comments and decisions; never rewrite review history or delete rejected alternatives;
+5. resolve each accepted comment through a named field change and cite the resolution in
    `change_log.feedback_resolved`;
-5. retain removed proposals as records with `disposition: defer`,
+6. retain removed proposals as records with `disposition: defer`,
    `not_a_worldview_concept`, or an explicit rejection decision instead of silently dropping them;
-6. rerun reference, category, ambiguity, pairwise orthogonality, dependency, and ordering validation
+7. rerun tier ancestry, reference, category, ambiguity, pairwise orthogonality, dependency, and
+   ordering validation
    for every changed concept, its close conceptual neighbors, and all of its downstream dependents;
-7. require a recorded reviewer decision for every applicable `equals_vs_is_review_required` flag,
+8. require a recorded reviewer decision for every applicable `equals_vs_is_review_required` flag,
    preserving the articulated expression even when a jargon name is accepted;
-8. increment `iteration`, set `supersedes` to the previous proposal ID/version, and summarize both
+9. increment `iteration`, set `supersedes` to the previous proposal ID/version, and summarize both
    semantic and editorial changes; and
-9. reopen corpus-level review when a local change alters category boundaries, naming policy,
+10. reopen corpus-level review when a local change alters category boundaries, naming policy,
    partitions, imports, or dependency order elsewhere in the proposal.
 
 If two review comments conflict, preserve both, state the conflict, identify the decision authority
@@ -1229,7 +1234,24 @@ exponent syntax.
 - Contested meanings, jurisdictional variation, and source disagreement remain visible.
 - Dataset columns and method steps are not promoted without a domain-semantic rationale.
 
-### 11.2 Category integrity
+### 11.2 Tier integrity
+
+- `requested_tier` is a positive integer and is not interpreted as confidence, maturity, or source
+  quality.
+- Every supplied ontology records its role, tier where applicable, version, and domain scope.
+- A Tier-1 target specializes upper concepts from ontologies that do not describe the same domain.
+- A Tier-2+ request includes the mandatory authoritative Tier-1 ontology context for the same
+  domain and all dependencies needed to interpret it.
+- Every target concept is assigned to the requested tier and has a tier rationale.
+- Every Tier-2+ target concept has a verified direct parent and a complete specialization path to a
+  Tier-1 domain ancestor; relevant intervening tiers are present when that path uses them.
+- Upper, Tier-1, and intervening-tier context concepts are reused as dependencies rather than
+  duplicated in the target corpus.
+- Missing Tier-1 context yields a blocked response with `missing_tier_1_context`, not speculative
+  concepts.
+- Gaps discovered in Tier-1 ancestry are reported as `upstream_gap` records for upstream governance.
+
+### 11.3 Category integrity
 
 - Every observable has one primary kind, perspective, dependence class, and arity.
 - Every quality names plausible bearer types and value kind.
@@ -1244,7 +1266,7 @@ exponent syntax.
   physical/contextual.
 - `type of` reifications remain separate from their identity taxonomies.
 
-### 11.3 Orthogonality and ambiguity
+### 11.4 Orthogonality and ambiguity
 
 - Every concept has exactly one selected sense, primary category, and conceptual dimension.
 - Every concept passes the single-meaning, discrimination, compositionality, non-redundancy, and
@@ -1262,7 +1284,7 @@ exponent syntax.
   term. Naming such a meaning is not misreported as a new orthogonal dimension.
 - No concept is retained only to improve apparent coverage when it reduces clarity or independence.
 
-### 11.4 Composition and alignment
+### 11.5 Composition and alignment
 
 - Parent and clause-target types are compatible.
 - `is`, `equals`, `inherits`, predicate composition, and `of` are not conflated.
@@ -1277,7 +1299,7 @@ exponent syntax.
 - Authorities preserve externally governed identifiers.
 - Every dependency exists, and the concept graph is acyclic and topologically ordered.
 
-### 11.5 Syntax and operational honesty
+### 11.6 Syntax and operational honesty
 
 - Namespace and concept names follow the current lexical rules.
 - Candidate expressions have explicit grouping and modifier scope.
@@ -1288,7 +1310,7 @@ exponent syntax.
   Reasoner-validated states.
 - Parser success is never reported as proof of semantic or runtime support.
 
-### 11.6 Review readiness
+### 11.7 Review readiness
 
 - Definitions include boundaries, examples, and counterexamples where useful.
 - Extraction, category, alignment, unambiguity, and orthogonality confidence are separate.
@@ -1302,18 +1324,20 @@ exponent syntax.
 
 Accompany the structured corpus with a concise report containing:
 
-1. scope, source policy, and ontology context;
-2. the dominant structural and functional perspectives in the domain;
-3. coverage by observable and predicate category;
-4. a dependency-ordered walkthrough of proposed concepts;
-5. concepts reused from supplied ontologies and newly proposed concepts;
-6. key derivations using unary operators or composition;
-7. compositional meanings proposed as named domain jargon, their salience evidence, and pending or
+1. scope, requested tier, target community, source policy, and ontology-context manifest;
+2. tier validation, including mandatory Tier-1 context and representative ancestry paths;
+3. the dominant structural and functional perspectives in the domain;
+4. coverage by observable and predicate category;
+5. a dependency-ordered walkthrough of proposed concepts;
+6. concepts reused from supplied upper/Tier-1/intervening ontologies and newly proposed concepts;
+7. upstream gaps that require a broader-tier governance decision;
+8. key derivations using unary operators or composition;
+9. compositional meanings proposed as named domain jargon, their salience evidence, and pending or
    completed `equals`-versus-`is` decisions;
-8. the orthogonality audit, including splits, merges, compositions, and unresolved overlaps;
-9. ambiguities, competing articulations, and evidence gaps;
-10. validation performed and validation not performed; and
-11. specific questions for community review at both concept and corpus level.
+10. the orthogonality audit, including splits, merges, compositions, and unresolved overlaps;
+11. ambiguities, competing articulations, and evidence gaps;
+12. validation performed and validation not performed; and
+13. specific questions for community review at both concept and corpus level.
 
 The report must not hide uncertainty behind polished prose. A smaller, coherent proposal with
 traceable gaps is preferable to a large taxonomy built from weak lexical associations.
@@ -1321,6 +1345,11 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 ## 13. Compact instruction to the analyzing agent
 
 > Analyze the supplied literature as evidence about observable meaning, not as a bag of terms.
+> First validate the requested tier. Tier 1 must descend directly from upper ontologies outside the
+> domain. Every Tier-2+ request must include the authoritative Tier-1 domain ontology context, and
+> every proposed lower-tier concept must expose a complete specialization path to Tier 1. If that
+> context is missing, return `missing_tier_1_context` and no concept corpus; never invent the
+> foundation. Keep context concepts out of the target list unless their revision is requested.
 > Extract independent structural subjects and agents, bounded functional events, dependent
 > qualities and processes, binary structural and functional relationships/bonds, emergent
 > configurations, and the four refining predicate dimensions: identity, realm, attribute, and
