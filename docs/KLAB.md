@@ -121,10 +121,10 @@ _observable_ syntax to express meaning. Assets written in these languages are as
 
 | Language | Layer and purpose |
 | --- | --- |
-| [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax. inherited by all three languages |
-| [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships that delimit the boundaries of interoperability; distributed, synchronized and maintained by a worldview community |
-| [k.IM](docs/KIM.md) (`.kim`) | Publishes context-explicit models, including resource annotations, algorithms with dependencies, and semantic bridges to external services and models |
-| [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior, enabling agent-based models, interactive applications and monitoring systems |
+| [Observable expressions](OBSERVABLES.md) | Shared semantic query and asset-description syntax. inherited by all three languages |
+| [Worldview ontology language](ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships that delimit the boundaries of interoperability; distributed, synchronized and maintained by a worldview community |
+| [k.IM](KIM.md) (`.kim`) | Publishes context-explicit models, including resource annotations, algorithms with dependencies, and semantic bridges to external services and models |
+| [k.Actors](AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior, enabling agent-based models, interactive applications and monitoring systems |
 
 Observable expressions are used directly to specialized concepts in `.kwv` definitions and in `.kim`
 models to annotate resources and outputs, and to specify dependencies. In value positions, such as in function parameters or metadata, they are written as `{{ ... }}` semantic literals;

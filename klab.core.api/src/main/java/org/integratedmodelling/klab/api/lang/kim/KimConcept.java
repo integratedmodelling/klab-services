@@ -184,15 +184,6 @@ public interface KimConcept extends KlabStatement {
    */
   KimConcept getAdjacent();
 
-  //  /**
-  //   * Return a string suitable for naming a k.IM object after this concept.
-  //   *
-  //   * @return
-  //   */
-  //  String getCodeName();
-
-  //  SemanticRole getSemanticRole();
-
   /**
    * Declared parent concept, if any.
    *
