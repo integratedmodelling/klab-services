@@ -25,15 +25,17 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
       implements Validator {}
 
+  public static class DefaultValidator extends KimValidator implements Validator {}
+
   private final Validator namespaceValidator;
 
   public KimNamespaceVisitor() {
-    this(new LenientValidator(), null);
+    this(new DefaultValidator(), null);
   }
 
   public KimNamespaceVisitor(Validator validator, Resolver resolver) {
     super(validator, resolver);
-    this.namespaceValidator = validator == null ? new LenientValidator() : validator;
+    this.namespaceValidator = validator == null ? new DefaultValidator() : validator;
   }
 
   public void visit(KimNamespace namespace) {

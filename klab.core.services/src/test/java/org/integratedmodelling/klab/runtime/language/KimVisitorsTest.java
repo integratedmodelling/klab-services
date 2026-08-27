@@ -6,12 +6,26 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.junit.jupiter.api.Test;
 
 class KimVisitorsTest {
+
+  @Test
+  void defaultKimValidatorAppliesObservableRulesToConcepts() {
+    var invalid = concept("demo:Quality");
+    invalid.setType(EnumSet.of(SemanticType.QUALITY));
+    invalid.setCollective(true);
+
+    var visitor = new KimObservableVisitor();
+    visitor.visit(invalid);
+
+    assertEquals(1, visitor.getNotifications().size());
+    assertTrue(visitor.getNotifications().getFirst().getMessage().contains("each"));
+  }
 
   @Test
   void observableTraversalDelegatesConceptsToResolverAndValidatorOnce() {

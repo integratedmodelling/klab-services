@@ -22,15 +22,17 @@ public class KimOntologyVisitor extends KimObservableVisitor {
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
       implements Validator {}
 
+  public static class DefaultValidator extends KimValidator implements Validator {}
+
   private final Validator ontologyValidator;
 
   public KimOntologyVisitor() {
-    this(new LenientValidator(), null);
+    this(new DefaultValidator(), null);
   }
 
   public KimOntologyVisitor(Validator validator, Resolver resolver) {
     super(validator, resolver);
-    this.ontologyValidator = validator == null ? new LenientValidator() : validator;
+    this.ontologyValidator = validator == null ? new DefaultValidator() : validator;
   }
 
   public void visit(KimOntology ontology) {

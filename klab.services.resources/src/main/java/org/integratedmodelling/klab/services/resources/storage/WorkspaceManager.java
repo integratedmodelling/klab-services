@@ -66,6 +66,7 @@ import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.resources.Templates;
 import org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor;
+import org.integratedmodelling.klab.runtime.language.KimObservableVisitor;
 import org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor;
 import org.integratedmodelling.klab.runtime.language.KimOntologyVisitor;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -1407,6 +1408,7 @@ public class WorkspaceManager {
                   ontologyProjects.get(syntax.getName()),
                   notifications,
                   lastUpdates.get(syntax.getName()));
+          validateSemanticAsset(ontology);
           documentURLs.put(ontology.getUrn(), urlCache.get(ontology.getUrn()));
         }
 
@@ -1593,6 +1595,7 @@ public class WorkspaceManager {
                   kimProjects.get(syntax.getUrn()),
                   notifications,
                   lastUpdates.get(syntax.getUrn()));
+          validateSemanticAsset(namespace);
           documentURLs.put(namespace.getUrn(), urlCache.get(namespace.getUrn()));
         }
 
@@ -1696,6 +1699,7 @@ public class WorkspaceManager {
                   var document =
                       LanguageAdapter.INSTANCE.adaptBehavior(
                           syntax, projectName, notifications, timestamp);
+                  validateSemanticAsset(document);
                   _behaviorOrder.add(document);
                   _behaviorMap.put(document.getUrn(), document);
                 }
@@ -1802,6 +1806,7 @@ public class WorkspaceManager {
                   var document =
                       LanguageAdapter.INSTANCE.adaptStrategies(
                           syntax, pd.name, notifications, timestamp);
+                  validateSemanticAsset(document);
                   _observationStrategyDocuments.add(document);
                   _observationStrategyDocumentMap.put(document.getUrn(), document);
                   documentURLs.put(document.getUrn(), strategyUrl);
@@ -2912,15 +2917,7 @@ public class WorkspaceManager {
         ret =
             LanguageAdapter.INSTANCE.adaptBehavior(
                 syntax, projectName, notifications, timestamp);
-        /*
-        unless there are already syntax errors in the behavior, perform basic validation
-        using the lenient validator and add any logical errors/warnings to the result
-         */
-        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
-          var visitor = new KActorsVisitor();
-          visitor.visit(ret);
-          ret.getNotifications().addAll(visitor.getNotifications());
-        }
+        validateSemanticAsset(ret);
       }
     }
 
@@ -3002,15 +2999,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptNamespace(syntax, projectName, notifications, timestamp);
-        /*
-        unless there are already syntax errors in the behavior, perform basic validation
-        using the lenient validator and add any logical errors/warnings to the result
-         */
-        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
-          var visitor = new KimNamespaceVisitor();
-          visitor.visit(ret);
-          ret.getNotifications().addAll(visitor.getNotifications());
-        }
+        validateSemanticAsset(ret);
       } else {
         ret = invalidNamespace(declaredUrn, projectName, input, timestamp, notifications);
       }
@@ -3095,15 +3084,7 @@ public class WorkspaceManager {
         ret =
             LanguageAdapter.INSTANCE.adaptStrategies(
                 syntax, projectName, notifications, timestamp);
-        /*
-        unless there are already syntax errors in the behavior, perform basic validation
-        using the lenient validator and add any logical errors/warnings to the result
-         */
-        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
-          var visitor = new KimObservationStrategyDocumentVisitor();
-          visitor.visit(ret);
-          ret.getNotifications().addAll(visitor.getNotifications());
-        }
+        validateSemanticAsset(ret);
       } else {
         ret = invalidStrategies(declaredUrn, projectName, input, timestamp, notifications);
       }
@@ -3187,15 +3168,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptOntology(syntax, projectName, notifications, timestamp);
-        /*
-        unless there are already syntax errors in the behavior, perform basic validation
-        using the lenient validator and add any logical errors/warnings to the result
-         */
-        if (!Utils.Notifications.hasErrors(ret.getNotifications())) {
-          var visitor = new KimOntologyVisitor();
-          visitor.visit(ret);
-          ret.getNotifications().addAll(visitor.getNotifications());
-        }
+        validateSemanticAsset(ret);
       } else {
         ret = invalidOntology(declaredUrn, projectName, input, timestamp, notifications);
       }
@@ -3231,6 +3204,155 @@ public class WorkspaceManager {
       scope.error(e);
       return null;
     }
+  }
+
+  /**
+   * Run the default semantic validator before a locally parsed bean is indexed or returned. K.IM
+   * visitors also receive a workspace-backed resolver that only consults indexes already built; it
+   * deliberately does not call the public lazy-loading accessors while a workspace is being loaded.
+   */
+  private <T extends KlabDocument<?>> T validateSemanticAsset(T asset) {
+    return validateSemanticAsset(asset, this::resolveKimReference);
+  }
+
+  static <T extends KlabDocument<?>> T validateSemanticAsset(
+      T asset, KimObservableVisitor.Resolver resolver) {
+    if (asset == null || Utils.Notifications.hasErrors(asset.getNotifications())) {
+      return asset;
+    }
+    List<Notification> notifications;
+    switch (asset) {
+      case KActorsBehavior behavior -> {
+        var visitor = new KActorsVisitor();
+        visitor.visit(behavior);
+        notifications = visitor.getNotifications();
+      }
+      case KimNamespace namespace -> {
+        var visitor = new KimNamespaceVisitor(null, resolver);
+        visitor.visit(namespace);
+        notifications = visitor.getNotifications();
+      }
+      case KimOntology ontology -> {
+        var visitor = new KimOntologyVisitor(null, resolver);
+        visitor.visit(ontology);
+        notifications = visitor.getNotifications();
+      }
+      case KimObservationStrategyDocument strategies -> {
+        var visitor = new KimObservationStrategyDocumentVisitor(null, resolver);
+        visitor.visit(strategies);
+        notifications = visitor.getNotifications();
+      }
+      default -> {
+        return asset;
+      }
+    }
+    asset.getNotifications().addAll(notifications);
+    return asset;
+  }
+
+  private Object resolveKimReference(
+      String urn,
+      KlabAsset.KnowledgeClass knowledgeClass,
+      KimObservableVisitor.Context context) {
+    if (urn == null || urn.isBlank()) {
+      return null;
+    }
+    var document = context == null ? null : context.getDocument();
+    return switch (knowledgeClass) {
+      case NAMESPACE ->
+          matchingDocument(document, urn, KimNamespace.class, _namespaceMap);
+      case ONTOLOGY -> matchingDocument(document, urn, KimOntology.class, _ontologyMap);
+      case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION ->
+          matchingDocument(document, urn, KActorsBehavior.class, _behaviorMap);
+      case OBSERVATION_STRATEGY_DOCUMENT ->
+          matchingDocument(
+              document, urn, KimObservationStrategyDocument.class, _observationStrategyDocumentMap);
+      case MODEL, DEFINITION -> resolveNamespaceStatement(urn, document, knowledgeClass);
+      case CONCEPT, CONCEPT_STATEMENT -> resolveConceptStatement(urn, document);
+      default -> null;
+    };
+  }
+
+  private <T extends KlabDocument<?>> T matchingDocument(
+      KlabDocument<?> current, String urn, Class<T> documentClass, Map<String, T> documents) {
+    if (documentClass.isInstance(current) && urn.equals(current.getUrn())) {
+      return documentClass.cast(current);
+    }
+    return documents == null ? null : documents.get(urn);
+  }
+
+  private KlabStatement resolveNamespaceStatement(
+      String urn, KlabDocument<?> current, KlabAsset.KnowledgeClass knowledgeClass) {
+    if (current instanceof KimNamespace namespace) {
+      var ret = findNamespaceStatement(namespace, urn, knowledgeClass);
+      if (ret != null) {
+        return ret;
+      }
+    }
+    if (_namespaceMap != null) {
+      for (var namespace : _namespaceMap.values()) {
+        var ret = findNamespaceStatement(namespace, urn, knowledgeClass);
+        if (ret != null) {
+          return ret;
+        }
+      }
+    }
+    return null;
+  }
+
+  private KlabStatement findNamespaceStatement(
+      KimNamespace namespace, String urn, KlabAsset.KnowledgeClass knowledgeClass) {
+    for (var statement : namespace.getStatements()) {
+      if (((knowledgeClass == KlabAsset.KnowledgeClass.MODEL && statement instanceof KimModel)
+              || (knowledgeClass == KlabAsset.KnowledgeClass.DEFINITION
+                  && statement instanceof KimSymbolDefinition))
+          && urn.equals(statement.getUrn())) {
+        return statement;
+      }
+    }
+    return null;
+  }
+
+  private KimConceptStatement resolveConceptStatement(String urn, KlabDocument<?> current) {
+    if (current instanceof KimOntology ontology) {
+      var ret = findConceptStatement(ontology, urn);
+      if (ret != null) {
+        return ret;
+      }
+    }
+    if (_ontologyMap != null) {
+      for (var ontology : _ontologyMap.values()) {
+        var ret = findConceptStatement(ontology, urn);
+        if (ret != null) {
+          return ret;
+        }
+      }
+    }
+    return null;
+  }
+
+  private KimConceptStatement findConceptStatement(KimOntology ontology, String urn) {
+    for (var statement : ontology.getStatements()) {
+      var ret = findConceptStatement(statement, ontology.getUrn(), urn);
+      if (ret != null) {
+        return ret;
+      }
+    }
+    return null;
+  }
+
+  private KimConceptStatement findConceptStatement(
+      KimConceptStatement statement, String ontologyUrn, String urn) {
+    if (urn.equals(statement.getUrn()) || urn.equals(ontologyUrn + ":" + statement.getUrn())) {
+      return statement;
+    }
+    for (var child : statement.getChildren()) {
+      var ret = findConceptStatement(child, ontologyUrn, urn);
+      if (ret != null) {
+        return ret;
+      }
+    }
+    return null;
   }
 
   /**
@@ -3739,8 +3861,9 @@ public class WorkspaceManager {
             _worldview
                 .getObservationStrategies()
                 .add(
-                    LanguageAdapter.INSTANCE.adaptStrategies(
-                        parsed, pd.name, List.of(), timestamp));
+                    validateSemanticAsset(
+                        LanguageAdapter.INSTANCE.adaptStrategies(
+                            parsed, pd.name, new ArrayList<>(), timestamp)));
           }
         }
       }

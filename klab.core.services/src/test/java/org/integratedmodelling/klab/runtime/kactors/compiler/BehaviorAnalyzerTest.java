@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction.Argument;
@@ -45,6 +46,7 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsValueImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
@@ -56,6 +58,20 @@ import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
 class BehaviorAnalyzerTest {
+
+  @Test
+  void defaultKActorsValidatorAppliesObservableRulesToSemanticLiterals() {
+    var concept = new KimConceptImpl();
+    concept.setType(Set.of(SemanticType.QUALITY));
+    concept.setCollective(true);
+    var value = new KActorsValueImpl();
+    value.setType(ValueType.CONCEPT);
+    value.setStatedValue(concept);
+    var analyzer = new BehaviorAnalyzer(behavior(action("main", returned(value))));
+
+    assertFalse(analyzer.analyze());
+    assertTrue(messages(analyzer).contains("each"));
+  }
 
   @Test
   void baselineValidatorRecognizesImplicitCoreAgentVerbs() {

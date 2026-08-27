@@ -47,12 +47,12 @@ public class BehaviorAnalyzer {
   private Lifecycle lifecycle = Lifecycle.FINITE;
 
   public BehaviorAnalyzer(KActorsBehavior behavior) {
-    this(behavior, new KActorsVisitor.LenientValidator());
+    this(behavior, new KActorsValidator());
   }
 
   public BehaviorAnalyzer(KActorsBehavior behavior, KActorsVisitor.Validator validator) {
     this.behavior = behavior;
-    this.validator = Objects.requireNonNullElseGet(validator, KActorsVisitor.LenientValidator::new);
+    this.validator = Objects.requireNonNullElseGet(validator, KActorsValidator::new);
   }
 
   public boolean analyze() {

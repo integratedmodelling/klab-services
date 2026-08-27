@@ -43,15 +43,15 @@ in the _Basic Formal Ontology_ (BFO) and the _Unified Foundational
 Ontology_ (UFO) . While a commitment to universal and particular is not
 part of ODO-IM, _concrete_ and _abstract_ categories are implicitly
 included; indeed Observables and Predicates abstractions which can be
-concretized to compute an ``observation''. For example, when a
+concretized to compute an `observation`. For example, when a
 scientific description invokes a countable observable, such as an insect
-or a plant, the concept is ``reified''. The inclusion of the
+or a plant, the concept is `reified`. The inclusion of the
 concrete-abstract distinction is implicit because there are no
-super-classes for ``concrete'' or ``abstract'' entities in the ontology.
+super-classes for `concrete` or `abstract` entities in the ontology.
 Instead, those emerge when a scientific description is identified and
 realized by the system. In this sense, a concrete entity is considered a
 _token_-instance, while its abstraction is analogous to a _type_ . For
-example, the ``Elio'' is the token-instance of the type CAT.
+example, the `Elio` is the token-instance of the type CAT.
 
 The three backbone categories of ODO-IM are (i) Description, (ii)
 Observable, and (iii) Predicate (see Figure #fig:backbone[1]
@@ -96,7 +96,7 @@ core, the scientific process is seen as the transformation of existing
 knowledge artifacts into others that incorporate and define scientific
 advancement; such transformations are enacted by _agents_ as scientific
 _activities_, such as measurement, symbolic integration or numeric
-simulation, under the guidance of _plans_ representing the ``script''
+simulation, under the guidance of _plans_ representing the `script`
 for the transformation and incorporating the scientific hypotheses and
 methodologies guiding the process. These artifacts, agents, activities,
 and descriptions have direct counterparts in the PROV-O concept
@@ -104,7 +104,7 @@ hierarchy, namely: _entity_, _agent_, _activity_ and _plan_.
 
 To enhance the provenance model with an explicit observational
 grounding, we must recognize that any scientific artifact reflects a
-chosen ``overall'' entity of the world, providing the spatial and
+chosen `overall` entity of the world, providing the spatial and
 temporal aspects for successive observations. Therefore the first step
 of any scientific activity is the choice of a _context_ of reference,
 including its identity (e.g. a model organism, a region of space) and
@@ -117,7 +117,7 @@ PROV-O classes as follows:
 any communicable, storable artifact that embodies scientific knowledge -
 such as a dataset, report, or equation. Resources are always
 semantically characterized by the concept they describe (the Observable)
-and are intended as directly ``actionable'', i.e. machine-readable in
+and are intended as directly `actionable`, i.e. machine-readable in
 all their parts and implications with no human intervention.
 * *Contextualization* is the ODO-IM sub-class of PROV-O _activity_,
 representing the production of a Resource (using zero or more other
@@ -129,7 +129,7 @@ semantic statement (the Observable) to a computational strategy to build
 the Resource mentioned above that represents it - the k.LAB software
 stack defines an AI-driven process that finds, connects, and uses
 Descriptions from a networked, distributed repository to respond to
-logical queries of the form ``observe _observable_ in _context_''.
+logical queries of the form `observe _observable_ in _context_`.
 
 Based on these definitions, ODO-IM grounds a conceptual model to
 facilitate:
@@ -138,7 +138,7 @@ facilitate:
 semantic operators and Predicates that intuitively capture complex
 meanings and linguistic distinctions commonly adopted in day-to-day
 scientific practice;
-. the definition of scientific methodological ``recipes'' (_models_) as
+. the definition of scientific methodological `recipes` (_models_) as
 Descriptions that have Observables as inputs and outputs, representing
 the synthetic statements of scientific methods that are typically only
 expressed as non-directly actionable artifacts, such as equations in
@@ -165,8 +165,8 @@ and stored in physical supports, and represent a particular state of
 affairs based on the perspectives, goals, hypothesis, knowledge, and
 capabilities of the observer(s). Consequently, observations are
 cognitive abstractions guided by empirical and scientific practices
-.Yet, the label ``observation'' carries an ambiguity that lies between
-its meaning in terms of a type of activity (``doing an observation'')
+.Yet, the label `observation` carries an ambiguity that lies between
+its meaning in terms of a type of activity (`doing an observation`)
 and a type of information, i.e. a _content_, that can be replicated,
 copied, transcribed, and analyzed to create more content.(Note: An
 up-to-date review of information entities in ontologies is presented by
@@ -176,14 +176,14 @@ in this regard, scientific observations cannot exist without a context
 (and one or more observers).
 
 Observables and Predicates are abstract concepts(Note: Here
-``concept'' is intended as ``type'' rather than ``universal'' .]
+`concept` is intended as `type` rather than `universal` .]
 employed to describe scientific observations that can be computed
 according to a Description to produce a Resource. A Description provides
 a plan to contextualize an observation into a Resource that represents
 it within a spatio-temporal and semantic frame of reference that
 provides a context for its computation (the Description that produces
 the context itself is a specialized sub-class of Description,
-Acknowledgement - i.e. ``commitment'', whose computational aspects are
+Acknowledgement - i.e. `commitment`, whose computational aspects are
 trivial). The next sections illustrate the main components that
 constitute a scientific observation description in k.LAB, namely
 Observable, Predicate, and Description and their associated definitions.
@@ -194,28 +194,28 @@ The notion of _observable_ has been debated for a long time in several
 academic literature. In physics, in which probably the standard
 definition of observables was proposed, an observable is a physical
 measurable property , such as temperature and mass. In philosophy, the
-``nature'' of observables was the object of discussion, in particular by
+`nature` of observables was the object of discussion, in particular by
 logical empiricists who attempted to distinguish and define different
 aspects of the scientific practice, such as sensory/perceived objective
 evidence and unobservable theories . Despite the efforts in defining
 observables, especially in the philosophical corpus, what can be
 accounted as such has been the object of disagreement. For example, are
-observables only entities that can be ``directly'' observed through the
+observables only entities that can be `directly` observed through the
 perception, or should we include in the catalog of observables also
 entities that are observed or measured through the mediation of more or
 less complex technologies, such as a thermometer, a water monitoring
 buoy, satellite observations, and a magnetic resonance imaging (MRI),
 and if yes, how the observations derived from complex technologies are
-connected with their ``unobservable'' preconditions based on articulated
+connected with their `unobservable` preconditions based on articulated
 theories ? Recently it has been suggested that perhaps the idea of
 observations conceived in the old-fashioned way is not any-more
-appropriate and useful . Leaving aside (i) the strict ``direct'' versus
+appropriate and useful . Leaving aside (i) the strict `direct` versus
 instrumentation-mediated observability issue, which it has been
 partially surpassed also due to the contemporary over-reliance of
 technology in most of the scientific fields, and (ii) the philosophical
 literature that argues in favor of a broader and often pervasive role of
 technology in our lives, such as for postphenomenology , a more modern
-reading of ``observables'' is through empirical/observation _data_ , and
+reading of `observables` is through empirical/observation _data_ , and
 to extend observations from direct empiricism to a more complex
 interpretations .
 
@@ -227,14 +227,14 @@ accessible through data, yet theories explain phenomena and not data
 (pp. 305-306). This view has been re-elaborated by Votsis , who
 considers data as evidence for theories when auxiliary hypotheses are
 adequately employed. In a clarification of the work of Bogen and
-Woodward, Teller offered a contemporary analysis of the ``phenomena''
+Woodward, Teller offered a contemporary analysis of the `phenomena`
 following the hierarchical structure of models proposed by Giere in
 which the relations between world, data, theories, and models are
 articulated. In particular relevant for our discussion is the idea that
 physical quantifiable qualities that are included in models(Note: In
 this writing we will not discuss the different kinds of models presented
 in Giere .), such as mass, temperature, and weight, are (i) interpreted
-and contextualized within the scientific ``enterprise'', and (ii)
+and contextualized within the scientific `enterprise`, and (ii)
 related to real-world entities to provide the basis for further
 interpretations .
 
@@ -246,15 +246,15 @@ artefacts (e.g. datasets, data models, and images) taken as
 phenomenological evidence and interpreted based on scientific
 humanly-driven perspectives , perspectives that are also domain-based .
 Thus ODO-IM Observables, with the capital O that refers to the concept
-``observable'', are central elements for describing observation and are
+`observable`, are central elements for describing observation and are
 defined as abstract concepts that represent entities that can be
 observed through the mediation of scientific artifacts, such as physical
-objects, processes, and qualities. Examples of Observables are ``city''
-and ``land cover type'', which are classified according to ODO-IM as
-``subject'' and ``quality''. Note that in ODO-IM Observables are agreed
+objects, processes, and qualities. Examples of Observables are `city`
+and `land cover type`, which are classified according to ODO-IM as
+`subject` and `quality`. Note that in ODO-IM Observables are agreed
 upon and negotiated within scientific communities and should be also
 negotiated beyond them in a transdisciplinary effort. In the following a
-description of the main Observableâ€™s concepts is provided, more
+description of the main Observable's concepts is provided, more
 specifically: (i) _countable_, (ii) _process_, (iii) _quality_, and
 _configuration_ (see Figure #fig:observable[2]).
 
@@ -263,19 +263,19 @@ _configuration_ (see Figure #fig:observable[2]).
 #### Countable.
 
 In philosophy, countable entities are often called
-_sortals_.(Note: See the ``Sortal'' for a richer and articulated
+_sortals_.(Note: See the `Sortal` for a richer and articulated
 review .] countable can be identified as individuals carrying a
 principle of _identity_ and having _unity_, then countable are wholes
 having boundaries , i.e. temporal/spatial/conceptual. So when we refer
-to countable, we answer the question ``How many x are
-there?'', for example, how many people and lakes are in a certain
-region? In k.LAB countables are reified by _instatiation_ Description
+to countable, we answer the question `How many x are
+there?`, for example, how many people and lakes are in a certain
+region? In k.LAB countables are reified by _instantiation_ Description
 and are organized into: (i) _substantial_, (ii) _event_, and (iii)
 _relationship_.
 
 * A substantial (here adopted in a similar fashion of UFO and DOLCE ) is
-an concept that captures endurant-continuant like entities, such as
-``lamb'', ``mountain'', and ``person''. Substantials, which are often
+a concept that captures endurant-continuant like entities, such as
+`lamb`, `mountain`, and `person`. Substantials, which are often
 understood with the less technical term _object_, describe entities that
 endure in time by being wholly existent and bear qualities. In k.LAB
 only substantials can determine the context for observations; indeed the
@@ -290,13 +290,12 @@ characteristics, i.e. intentionality , the former does not.
 perdurants/occurrents (e.g. ), which corresponds to event instances,
 i.e. tokens, that happen in time, are composed of temporal parts, and
 involve participants . However, in the case of ODO-IM, events are
-Observables inheriting their abstract-type ``repeatable'' or
-``reusable'' characteristics. The notion of _repeatability_ has been
+Observables inheriting their abstract-type `repeatable` or
+`reusable` characteristics. The notion of _repeatability_ has been
 analyzed by Galton in the context of processes as abstract patterns ,
 ODO-IM adopts a similar view for events in which those are cognitively
 salient abstract scripts that can be reused to described and give
-structure to one or more qualitative change in substantial Observables
-.(Note: Although each of these accounts of events present analyses
+structure to one or more qualitative change in substantial Observables.(Note: Although each of these accounts of events present analyses
 relevant for ODO-IM, nevertheless, these works are not entirely adherent
 with events described in ODO-IM. In particular, in the recent paper of
 Guarino et al., , the examination of events from a metaphysical and
@@ -314,18 +313,18 @@ outside human interventions. ODO-IM events are identified by (i) their
 temporal boundaries, a start and end point (over a time interval ) which
 limit the time-span of the event in a cognitive relevant interval, (ii)
 the presence of substantials that participate to the events and exhibit
-changes, and (iii) as being ``made'' by processes (this aspect of event
-has also been called durative ), for example, the event ``season'' is
-made by processes such as ``precipitation''. The relation between events
+changes, and (iii) as being _made_ by processes (this aspect of event
+has also been called durative ), for example, the event `season` is
+made by processes such as `precipitation`. The relation between events
 and processes opens the debate concerning the level of description of
 those concepts; this is discussed below when we introduce the _process_
-construct. Examples of events are ``birth'', ``conference'', and
-``wildfire''; considering the latter (i.e. ``wildfire''), the
+construct. Examples of events are `birth`, `conference`, and
+`wildfire`; considering the latter (i.e. `wildfire`), the
 qualitative change is described, for example, as the water vaporized
 from the vegetation.
 * A relationship(Note: In this writing, we do not engage in the
-discussion concerning the difference between ``relation'' and
-``relationship'' .] is a countable concept directionally connecting two
+discussion concerning the difference between `relation` and
+`relationship` .] is a countable concept directionally connecting two
 substantials. Relationships in ODO-IM are _structural_ and _functional_
 whether the observerâ€™s focus is on static or dynamic aspects of the
 relationship. Structural relationships between two substantials (relata)
@@ -334,15 +333,15 @@ between two relata is what allowed the relator to emerge, i.e. to be
 observed, an interpretation that is inspired, although with some
 significant differences from Guarino and Guizzardi .(Note: Among the
 most prominent differences, in the work of Guarino and Guizzardi , the
-connection between the relata (for the author the ``relation'') is
+connection between the relata (for the author the `relation`) is
 derived from the relator that is what bound the relata being its
 truthmaker. Instead in ODO-IM the relata is dependent upon the
-relationship itself.] For example, ``city A is connected to city B''
-generates the subject ``road'' that links the two cities. Focusing on
+relationship itself.] For example, `city A is connected to city B`
+generates the subject `road` that links the two cities. Focusing on
 functional relationships, those generate events, for instance, the
-functional relationship ``skier using a mountain (for recreation)''
+functional relationship `skier using a mountain (for recreation)`
 comprises interaction(s) between the subject skier and mountain, which
-generates for instance the event ``ski slalom''. So structural
+generates for instance the event `ski slalom`. So structural
 relationships engender or define subjects (e.g. parenthood between human
 individuals engenders families) qualities bearer, and functional
 relationships engender/define events that are composed of processes.
@@ -358,24 +357,24 @@ homogeneous . In addition, processes are described as experienced
 dynamically at a certain time, while events are historical records that
 can be remembered . Both event and process are involved in changes, for
 example, the former triggers something else, such as another event, and
-changes occur to its participants (``change of state'' ), the latter
-perpetrates those changes in a ``state of change'' mode (pg. 6 ). Thus
-while ``storm'' and ``earthquakes'' are events with a start and
-termination points, ``pollination'' is an ongoing course that is
-described with a focus on its ongoing interactions or affects. Processes
+changes occur to its participants (`change of state` ), the latter
+perpetrates those changes in a `state of change` mode. Thus
+while `storm` and `earthquakes` are events with a start and
+termination points, `pollination` is an ongoing course that is
+described with a focus on its on`going interactions or affects. Processes
 in k.LAB are realized through _simulation_ Description.
 
 #### Quality.
 
 Observable qualities require an intermediate entity to produce a
-Resource that represents it, e.g. a ``reference'' is needed to carry out
+Resource that represents it, e.g. a `reference` is needed to carry out
 a measurement. In this regards, the intermediate entity, for example a
 substantial, bears quality, or from the other way around, qualities are
-inherent to the intermediate entity . For example ``temperature'' cannot
+inherent to the intermediate entity . For example `temperature` cannot
 be measured without a reference entity, such as water, atmosphere and a
-substantial body. In addition ``temperature'' can be measured only in
+substantial body. In addition `temperature` can be measured only in
 reference to a conventional unit or other numeric scale in order to
-produce a quantifiable outcome, such as ``25 degrees Celsius''.
+produce a quantifiable outcome, such as `25 degrees Celsius`.
 
 The hierarchy of quality is organized following the sub-classes of (i)
 _contextual_, (ii) _presence_, (iii) _enumerable_, and (iv)
@@ -429,12 +428,12 @@ https://en.wikipedia.org/wiki/Intensive_and_extensive_properties.]
 Examples of the former are _volume_ and _length_, instead of the latter
 _temperature_ and _duration_.
 * Probability is the measurement of the likelihood of occurrence of
-``favorable events'' that is contextualized as a _probability
+`favorable events` that is contextualized as a _probability
 description_. Probability has one sub-class, called _presence
 probability_, that frames the probability focus on subjects in a certain
 context.
 * When a quality requires another (compatible) quality to be assessed is
-called _relative_ and has a similar semantics as ``integral'' qualities
+called _relative_ and has a similar semantics as `integral` qualities
 in the conceptual spaces theory, which mentions the example of hue and
 brightness when considering the color of an object . _Ratio_
 (contextualized by _ratio description_) and _proportion_ are sub-classes
@@ -481,7 +480,7 @@ modeling and can only be created by the system through a _detection_
 Description. Configurations represent emergent patterns that are
 generated by observations of quality and relationship concepts.
 Configurations are dependent upon the observer that decides the focus on
-particular aggregations. For example ``social network'' is a
+particular aggregations. For example `social network` is a
 configuration that emerges from the functional relationship ``social
 connection''.
 
@@ -491,7 +490,7 @@ As mentioned in Section link:#intro[1), ODO-IM undertakes a
 phenomenological, descriptive, and linguistic ontological position of
 scientific observations. In particular, scientific observations depend
 upon perspectives, more precisely structural and functional, and
-Observable concepts ``live'' in context, which signifies that
+Observable concepts `live` in context, which signifies that
 Observables are observed not in isolation but in relation to each other,
 allowing the identification of further ontological constraints. Once the
 focus shifts on the relationships between Observables both
@@ -544,14 +543,14 @@ to characterize Observables further. For example, important uses for
 Predicates are to describe more specific qualities that often cannot be
 observed, only attributed, e.g. color in substitution of ``reflected
 wavelength'' of an object, and to define arbitrary discrete scales, such
-as ``very short'', ``short'', ``tall'', and ``very tall''.
+as `very short`, `short`, `tall`, and `very tall`.
 
 Broadly speaking, predicates are often considered the linguistic
-counterpart of _properties_ identifiable using the copula ``is'' in
-sentences as ``x is P'' . This association between the predicate and the
-``is'' generated semantic vaguenesses, summarised by the so-called
+counterpart of _properties_ identifiable using the copula `is` in
+sentences as `x is P` . This association between the predicate and the
+`is` generated semantic vaguenesses, summarised by the so-called
 Frege-Russell ambiguity thesis citing Villko and Hintikka , in which
-``is'' carries multiple meanings, namely _predication_, _identity_,
+`is` carries multiple meanings, namely _predication_, _identity_,
 _existence_, and _subsumption_. Long ago, this issue has also been the
 object of debate in knowledge representation and formal ontologies;
 notable are the works of Brachman in semantic networks , and Guarino and
@@ -570,14 +569,14 @@ _role_, the latter (iv) _domain_ and (v) _identity_ (see Figure
 * Attribute is the most generic Predicate that can be used to specialize
 Observables. Attributes describe inference to Observable in the
 following ways: (i) as capability or disposition of the Observable, such
-as ``reproductive'', ``human visible'', and ``pervious'', (ii) as states
+as `reproductive`, `human visible`, and `pervious`, (ii) as states
 or phases of Observables that have been reached or are ongoing, such as
-``pollinated'', ``irrigated'', ``adult'', and finally (iv) as subjective
+`pollinated`, `irrigated`, `adult`, and finally (iv) as subjective
 _ordering_ by defining non-quantitative rankings to be attributed to
-Observables, such as ``severe'', ``mild'', ``hot'', ``damaged''.
+Observables, such as `severe`, `mild`, `hot`, `damaged`.
 * Realm restricts the physical location of an Observable, for example,
-the temperature of the ``atmosphere'' or the amount of soil in the
-``soil stratum''. This predicate can be intended, in a similar fashion
+the temperature of the `atmosphere` or the amount of soil in the
+`soil stratum`. This predicate can be intended, in a similar fashion
 to that of realms included in the International Union for Conservation
 of Nature (IUCN) , as parts of the biosphere which are divided into
 terrestrial, subterranean, atmospheric, marine, and freshwater.
@@ -586,7 +585,7 @@ entities and is bound to a context. The same entity can play multiple
 roles simultaneously in different contexts without affecting its
 identity or core semantics. Note that role is different from other
 predicates because it describes external characterizations of
-Observables (contexts), for example, an insect may be a ``pollinator''
+Observables (contexts), for example, an insect may be a `pollinator`
 in one particular ecosystem but not in another.
 
 While the Predicates mentioned above specify either traits that are
@@ -595,21 +594,21 @@ where Observables are placed, _epistemic predicates_ have the function
 of explaining Observables either based on (i) their domain of
 application or (ii) categorization established within scientific
 communities following some of the accounts proposed by the so-called
-``philosophy of science approach'' .(Note: Here we extend the idea of
-``natural kinds'' and their explanatory and inductive roles in science
+`philosophy of science approach` .(Note: Here we extend the idea of
+`natural kinds` and their explanatory and inductive roles in science
 to other kinds or classifications, such as for artifacts and domains of
 knowledge . Note that the explanatory and inductive relevance of
-``natural kinds'' is central to the positions assumed by Boyd , which is
+`natural kinds` is central to the positions assumed by Boyd , which is
 far more articulated than our exposition of epistemic Predicates in
 ODO-IM [#f1]#[f1]#.] Domain Predicates assign Observables to a
 scientific discipline using domain-specific ontologies as reference; for
-instance, the Observable quality ``elevation'' belongs to the
+instance, the Observable quality `elevation` belongs to the
 `geography` ontology. Focusing now on the most challenging Predicate,
 i.e. identity, this concept has been widely discussed in ontology and
 metaphysics , and it is outside the scope of this technical report to
 address its vast and diverse literature;(Note: In the context of
 applied ontology and conceptual modeling, Guizzardi and colleagues
-proposed an analysis of the so-called ``Powertypes'', i.e. types having
+proposed an analysis of the so-called `Powertypes`, i.e. types having
 instances that present both types- and instances-like aspects.
 Powertypes exhibit similarities with ODO-IM identities that should be
 further investigated in the future.] thus, for this analysis, the aim is
@@ -627,7 +626,7 @@ managed through what in the system is called _authority_ , following a
 strategy to link concepts with referenced external terminologies (e.g.
 IUPAC for chemistry ), thesauri (e.g. the FAO AGROVOC ) and information
 providers (e.g. the Global Biodiversity Information Facility (GBIF) ).
-An example is the identity ``water'' that associates the meaning of
+An example is the identity `water` that associates the meaning of
 water in reference to the IUPAC classification .
 
 An interesting final consideration concerning epistemic Predicates is
@@ -651,7 +650,7 @@ for epistemic Predicates.
 The main concrete element of ODO-IM, except for Resource that is derived
 from the PROV-O , is Description (see Figure #fig:description[4]). It
 defines one or more Observable aspects within a scale of observation
-through a ``recipe'' that creates a Resource that represents it in the
+through a `recipe` that creates a Resource that represents it in the
 selected spatio-temporal context. In ODO-IM Description is a _plan_
 (PROV-O entity), the latter denotes a set of activities performed by an
 agent for a purpose . Although often in literature plans have been
@@ -689,7 +688,7 @@ Resolution, which describes the explanation of a previously instantiated
 observable, is further articulated as _simulation_ and _state
 attribution_; the former is applied in the context of a process, the
 latter is a concept container that includes all Descriptions that
-attribute ``values'' when applied to: _classification_, _quantification_
+attribute `values` when applied to: _classification_, _quantification_
 and _verification_. These three sub-classes of state attribution apply
 respectively to (a) enumerable qualities (whose attributed values must
 be concepts subsuming a specified conceptual space, e.g. soil types),
@@ -721,7 +720,7 @@ _plan_ that is a sub-class of entity, and second we defined another
 sub-class of entity that is Resource. In particular, Resource, as
 mentioned in the introduction, this element in ODO-IM is generated by
 some contextualization of Observables and is any scientific artifact
-that lives in the ``resource layer'' of k.LAB. Those include literals,
+that lives in the `resource layer` of k.LAB. Those include literals,
 datasets, data services, computations, and computational services
 without a semantic characterization. Resources are uniquely identified
 by a URN, which are resolved to their contextualized values through
@@ -737,50 +736,50 @@ example `prov:wasInfluencedBy` that defines the agent-to-agent
 responsibility, 21 object properties have been newly created for this
 application, those are:
 
-. `affects`: a process affects a quality in its context when it is able
+* `affects`: a process affects a quality in its context when it is able
 to change the state of the correspondent quality as time moves on. If
 this relationship exists, the state that describes the quality is
 dynamic.
-. `appliesTo`: allows restricting the range of observables that an
+* `appliesTo`: allows restricting the range of observables that an
 observable applies to.
-. `confers`: specifies the attribute or role conferred by a process.
-. `contextualizes`: defines the relationship that links an observation
+* `confers`: specifies the attribute or role conferred by a process.
+* `contextualizes`: defines the relationship that links an observation
 to its observable.
-. `creates`: specifies the qualities or countable generated by the the
+* `creates`: specifies the qualities or countable generated by the the
 process.
-. `describesQuality`: defines the quality using another quality or an
+* `describesQuality`: defines the quality using another quality or an
 attribute.
-. `emergesFrom`: establishes observables emerged from quality or
+* `emergesFrom`: establishes observables emerged from quality or
 countable.
-. `increasesWith`: defines the increase proportionaliy of quality and
+* `increasesWith`: defines the increase proportionaliy of quality and
 ordering..
-. `decreasesWith`: defines the decrease proportionaliy of quality and
+* `decreasesWith`: defines the decrease proportionaliy of quality and
 ordering.
-. `exposesTrait`: has as a domain an enumerable quality and as a range a
+* `exposesTrait`: has as a domain an enumerable quality and as a range a
 trait.
-. `hasDestination` and `hasSource`: define the links between types of
+* `hasDestination` and `hasSource`: define the links between types of
 relationship and the class of subjects.
-. `hasRole`: points to the roles of an observable in the current
+* `hasRole`: points to the roles of an observable in the current
 context.
-. `hasScale`: specifies the scale of a description.
-. `impliesDestination`: this object property is used for a role that
+* `hasScale`: specifies the scale of a description.
+* `impliesDestination`: this object property is used for a role that
 applies to a relationship, to restrict the type of destination the
 relationship can lead into.
-. `impliesObservable`: this property embodies the notion of
-``implication'' of another observable, whose existence is implied by
-observing a particular trait. For example, the trait ``warm'' implies
+* `impliesObservable`: this property embodies the notion of
+`implication` of another observable, whose existence is implied by
+observing a particular trait. For example, the trait `warm` implies
 presence of a process in which energy moves particles causing heat, or
 more prosaically, observability of buildings in a point implies that a
 building is there.
-. `inherits`: specifies the predicate inherited in an observable.
-. `limitedBy`: used to limit the possible value of a categorical
+* `inherits`: specifies the predicate inherited in an observable.
+* `limitedBy`: used to limit the possible value of a categorical
 observer to a partial union of sub-types.
-. `participates`: defines the participation of substantial in event or
+* `participates`: defines the participation of substantial in event or
 process.
-. `relatedTo`: most generic stated restriction used to imply an allowed
+* `relatedTo`: most generic stated restriction used to imply an allowed
 dependency.
-. `representedBy`: can be used to restrict an observable when it is
+* `representedBy`: can be used to restrict an observable when it is
 observed through another - e.g. geographical direction by presence of
 moss on trees.
-. `requires`: used for compulsory declared elements to be coupled to an
+* `requires`: used for compulsory declared elements to be coupled to an
 observable.

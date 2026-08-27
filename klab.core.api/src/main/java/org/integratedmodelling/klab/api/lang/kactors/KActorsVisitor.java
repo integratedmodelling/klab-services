@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Ternary;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
@@ -210,9 +212,18 @@ public class KActorsVisitor {
         Expression.Descriptor expressionDescriptor, KActorsContext context) {
       return List.of();
     }
+
+    default List<Notification> validateObservable(
+        KimObservable observable, KActorsContext context) {
+      return List.of();
+    }
+
+    default List<Notification> validateConcept(KimConcept concept, KActorsContext context) {
+      return List.of();
+    }
   }
 
-  /** Syntax-only validator used when component-backed resolution is not available. */
+  /** Explicitly permissive validator for callers that want traversal without validation. */
   public static class LenientValidator implements Validator {}
 
   public record ActionInfo(
@@ -342,7 +353,7 @@ public class KActorsVisitor {
       this.parent = null;
       this.behavior = Objects.requireNonNull(behavior, "behavior");
       this.action = null;
-      this.validator = Objects.requireNonNullElseGet(validator, LenientValidator::new);
+      this.validator = Objects.requireNonNullElseGet(validator, KActorsValidator::new);
       this.upstream = List.of();
       this.knownVariables = new LinkedHashMap<>();
     }
@@ -446,6 +457,8 @@ public class KActorsVisitor {
       new IdentityHashMap<>();
   private final Set<KActorsStatement> explicitValueStatements =
       Collections.newSetFromMap(new IdentityHashMap<>());
+  private final Set<Object> visitedSemanticValues =
+      Collections.newSetFromMap(new IdentityHashMap<>());
 
   private record PendingCall(
       KActorsStatement.Verb statement, KActorsContext context, boolean valueRequired) {}
@@ -474,7 +487,7 @@ public class KActorsVisitor {
   }
 
   public void visit(KActorsBehavior behavior) {
-    visit(behavior, new LenientValidator());
+    visit(behavior, new KActorsValidator());
   }
 
   public void visit(KActorsBehavior behavior, Validator validator) {
@@ -515,6 +528,7 @@ public class KActorsVisitor {
     pendingCalls.clear();
     assignmentVariables.clear();
     explicitValueStatements.clear();
+    visitedSemanticValues.clear();
     visitedBehavior = null;
   }
 
@@ -2235,6 +2249,10 @@ public class KActorsVisitor {
       }
       visitNested(argument.getFunction(), context, List.of(), false);
       visitNested(argument.getSwitch(), context, List.of(), false);
+    } else if (values instanceof KimObservable observable) {
+      visitSemanticObservable(observable, context);
+    } else if (values instanceof KimConcept concept) {
+      visitSemanticConcept(concept, context);
     } else if (values instanceof Map<?, ?> map) {
       map.values()
           .forEach(value -> visitValues(value, context, resolveIdentifiers, lexicalOwner));
@@ -2248,6 +2266,52 @@ public class KActorsVisitor {
       visitValues(ternary.getCondition(), context, resolveIdentifiers, lexicalOwner);
       visitValues(ternary.getTrueCase(), context, resolveIdentifiers, lexicalOwner);
       visitValues(ternary.getFalseCase(), context, resolveIdentifiers, lexicalOwner);
+    }
+  }
+
+  private void visitSemanticObservable(KimObservable observable, KActorsContext context) {
+    if (observable == null || !visitedSemanticValues.add(observable)) {
+      return;
+    }
+    addNotifications(context.validator.validateObservable(observable, context));
+    visitSemanticConcept(observable.getSemantics(), context);
+    visitValues(observable.getValue(), context);
+    visitValues(observable.getDefaultValue(), context);
+    for (var operator : safe(observable.getValueOperators())) {
+      visitValues(operator == null ? null : operator.getSecond(), context);
+    }
+  }
+
+  private void visitSemanticConcept(KimConcept concept, KActorsContext context) {
+    if (concept == null || !visitedSemanticValues.add(concept)) {
+      return;
+    }
+    addNotifications(context.validator.validateConcept(concept, context));
+    visitSemanticConcept(concept.getObservable(), context);
+    visitSemanticConcept(concept.getParent(), context);
+    visitSemanticConcept(concept.getInherent(), context);
+    visitSemanticConcept(concept.getGoal(), context);
+    visitSemanticConcept(concept.getCausant(), context);
+    visitSemanticConcept(concept.getCaused(), context);
+    visitSemanticConcept(concept.getCompresent(), context);
+    visitSemanticConcept(concept.getCooccurrent(), context);
+    visitSemanticConcept(concept.getAdjacent(), context);
+    visitSemanticConcept(concept.getComparisonConcept(), context);
+    visitSemanticConcept(concept.getRelationshipSource(), context);
+    visitSemanticConcept(concept.getRelationshipTarget(), context);
+    for (var nested : safe(concept.getTraits())) visitSemanticConcept(nested, context);
+    for (var nested : safe(concept.getRoles())) visitSemanticConcept(nested, context);
+    for (var nested : safe(concept.getOperands())) visitSemanticConcept(nested, context);
+    for (var modifier : safe(concept.getModifiers())) {
+      visitSemanticConcept(modifier == null ? null : modifier.getSecond(), context);
+    }
+    for (var operator : safe(concept.getValueOperators())) {
+      visitValues(operator == null ? null : operator.getSecond(), context);
+    }
+    var operation = concept.semanticOperation();
+    if (operation != null) {
+      visitSemanticConcept(operation.getSecond(), context);
+      visitSemanticConcept(operation.getThird(), context);
     }
   }
 

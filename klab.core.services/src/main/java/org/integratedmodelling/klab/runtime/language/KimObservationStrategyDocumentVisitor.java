@@ -31,15 +31,17 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
       implements Validator {}
 
+  public static class DefaultValidator extends KimValidator implements Validator {}
+
   private final Validator strategyValidator;
 
   public KimObservationStrategyDocumentVisitor() {
-    this(new LenientValidator(), null);
+    this(new DefaultValidator(), null);
   }
 
   public KimObservationStrategyDocumentVisitor(Validator validator, Resolver resolver) {
     super(validator, resolver);
-    this.strategyValidator = validator == null ? new LenientValidator() : validator;
+    this.strategyValidator = validator == null ? new DefaultValidator() : validator;
   }
 
   public void visit(KimObservationStrategyDocument document) {

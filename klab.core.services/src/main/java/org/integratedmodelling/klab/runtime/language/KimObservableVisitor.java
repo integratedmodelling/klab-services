@@ -51,7 +51,7 @@ public class KimObservableVisitor {
     }
   }
 
-  /** Syntax-only default. Runtime-aware callers can replace either extension point. */
+  /** Explicitly permissive validator for callers that want traversal without validation. */
   public static class LenientValidator implements Validator {}
 
   /** Lexical path and document ownership at one point in the traversal. */
@@ -112,11 +112,11 @@ public class KimObservableVisitor {
   private final Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<>());
 
   public KimObservableVisitor() {
-    this(new LenientValidator(), NO_RESOLVER);
+    this(new KimValidator(), NO_RESOLVER);
   }
 
   public KimObservableVisitor(Validator validator, Resolver resolver) {
-    this.validator = Objects.requireNonNullElseGet(validator, LenientValidator::new);
+    this.validator = Objects.requireNonNullElseGet(validator, KimValidator::new);
     this.resolver = Objects.requireNonNullElse(resolver, NO_RESOLVER);
   }
 
