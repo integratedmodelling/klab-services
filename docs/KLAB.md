@@ -108,11 +108,11 @@ k.LAB separates three logical layers and instruments them through four main serv
 
 ### Three logical layers
 
-1. The **resource layer** makes heterogeneous data, models, algorithms, services, projects and software components addressable through uniform contracts. Resources retain their native representation and do not acquire one mandatory meaning at this layer.
+1. The **resource layer** makes heterogeneous data, models, algorithms, services, projects and software components addressable through uniform contracts and resolvable URNs. Resources retain their native representation and do not acquire one mandatory meaning at this layer.
 2. The **semantic layer** uses the worldview ontology language (`.kwv`) to define shared concepts, the observable expression language to formulate semantic queries, and k.IM (`.kim`) to annotate resources and publish observation strategies.
 3. The **reactivity layer** hosts observations in digital twins and uses k.Actors (`.kactor`) to let observations, users, sessions and twins react to events.
 
-Keeping these layers distinct is essential. The same dataset can be interpreted through more than one worldview or used to observe more than one concept. A semantic model can change without moving the source data. A digital twin can be re-resolved when better knowledge becomes available without redefining its storage format.
+Keeping these layers distinct is essential. The same dataset can be interpreted through more than one worldview or used to observe more than one concept. A semantic model can change without moving the source data. A digital twin is itself a semantic artifact that can be re-resolved when better knowledge becomes available without redefining its role in a cooperating network.
 
 ### Languages of the semantic commons
 
@@ -122,7 +122,7 @@ _observable_ syntax to express meaning. Assets written in these languages are as
 | Language | Layer and purpose |
 | --- | --- |
 | [Observable expressions](docs/OBSERVABLES.md) | Shared semantic query and asset-description syntax. inherited by all three languages |
-| [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships maintained by a worldview community |
+| [Worldview ontology language](docs/ONTOLOGY_LANGUAGE.md) (`.kwv`) | Defines the concepts and relationships that delimit the boundaries of interoperability; distributed, synchronized and maintained by a worldview community |
 | [k.IM](docs/KIM.md) (`.kim`) | Publishes context-explicit models, including resource annotations, algorithms with dependencies, and semantic bridges to external services and models |
 | [k.Actors](docs/AGENTS.md) (`.kactor`) | Gives observations, digital twins, users, and sessions reactive behavior, enabling agent-based models, interactive applications and monitoring systems |
 
