@@ -2,7 +2,9 @@ package org.integratedmodelling.klab.services.application.web;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
@@ -18,6 +20,7 @@ public record WebUiConfiguration(
     AuthenticationSettings authentication,
     List<DashboardPanel> panels,
     List<FullPageComponent> pages,
+    Map<String, String> modules,
     List<DashboardLink> links) {
 
   /** Public OpenID Connect settings needed by the Keycloak JavaScript adapter. */
@@ -59,6 +62,7 @@ public record WebUiConfiguration(
         new AuthenticationSettings(false, null, "im", "k.LAB");
     private final List<DashboardPanel> panels = new ArrayList<>();
     private final List<FullPageComponent> pages = new ArrayList<>();
+    private final Map<String, String> modules = new LinkedHashMap<>();
     private final List<DashboardLink> links = new ArrayList<>();
 
     private Builder(KlabService.Type serviceType) {
@@ -142,6 +146,20 @@ public record WebUiConfiguration(
               name, title, description, component, order, requiresAuthentication));
     }
 
+    /** Register a same-origin ESM implementation for a panel or full-page component ID. */
+    public Builder module(String component, String moduleUrl) {
+      if (component == null || !component.matches("[a-z0-9][a-z0-9-]*")) {
+        throw new IllegalArgumentException("Vue component IDs must be lowercase kebab-case");
+      }
+      if (moduleUrl == null || moduleUrl.isBlank()) {
+        throw new IllegalArgumentException("A Web UI module URL is required for " + component);
+      }
+      if (modules.putIfAbsent(component, moduleUrl) != null) {
+        throw new IllegalArgumentException("Duplicate Web UI module ID: " + component);
+      }
+      return this;
+    }
+
     public WebUiConfiguration build() {
       var orderedPanels = new ArrayList<>(panels);
       orderedPanels.sort(Comparator.comparingInt(DashboardPanel::order));
@@ -155,6 +173,7 @@ public record WebUiConfiguration(
           authentication,
           List.copyOf(orderedPanels),
           List.copyOf(orderedPages),
+          Map.copyOf(modules),
           List.copyOf(links));
     }
 

@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.extension;
 
-import org.apache.groovy.util.Maps;
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 
@@ -14,6 +13,9 @@ import org.pf4j.PluginWrapper;
  * component class must be located in the root package of a component.
  */
 public class KlabComponent extends Plugin {
+
+    /** Classpath root reserved for browser assets packaged in a component archive. */
+    public static final String WEB_UI_RESOURCE_ROOT = "META-INF/klab/webui/";
 
     private final Version version;
     private final String name;
@@ -57,5 +59,19 @@ public class KlabComponent extends Plugin {
 
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * Add dashboard panels or full-page entries exposed by this installed component. This method is
+     * called when the public Web UI configuration is built and must not perform expensive work.
+     */
+    public void configureWebUi(WebUiConfiguration.Builder dashboard) {}
+
+    /**
+     * Map Vue component IDs to prebuilt ESM files below {@link #WEB_UI_RESOURCE_ROOT}. Only declared
+     * files are published by the hosting service.
+     */
+    public Map<String, String> webUiModules() {
+        return Map.of();
     }
 }

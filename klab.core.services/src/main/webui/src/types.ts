@@ -40,6 +40,7 @@ export interface DashboardConfiguration {
   authentication: AuthenticationSettings;
   panels: DashboardPanel[];
   pages: FullPageComponent[];
+  modules: Record<string, string>;
   links: DashboardLink[];
 }
 

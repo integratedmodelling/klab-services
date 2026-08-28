@@ -20,6 +20,7 @@ class WebUiConfigurationTest {
             .panel("early", "Early", "", "early-panel", 10, true)
             .page("later-page", "Later", "", "later-page", 20, false)
             .page("first-page", "First", "", "first-page", 10, true)
+            .module("first-page", "public/ui/components/test/1.0.0/first-page.js")
             .build();
 
     assertEquals("k.LAB Reasoner service", configuration.title());
@@ -29,6 +30,9 @@ class WebUiConfigurationTest {
     assertTrue(configuration.panels().getFirst().requiresAuthentication());
     assertEquals("first-page", configuration.pages().getFirst().name());
     assertTrue(configuration.pages().getFirst().requiresAuthentication());
+    assertEquals(
+        "public/ui/components/test/1.0.0/first-page.js",
+        configuration.modules().get("first-page"));
   }
 
   @Test

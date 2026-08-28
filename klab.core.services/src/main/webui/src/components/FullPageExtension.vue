@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import extensionComponents from "virtual:klab-dashboard-extensions";
+import { resolveExtension } from "../services/extensions";
 import type { DashboardContext, FullPageComponent } from "../types";
 import AuthenticationDialog from "./AuthenticationDialog.vue";
 
 const props = defineProps<{ page: FullPageComponent; context: DashboardContext }>();
-const implementation = computed(() => extensionComponents[props.page.component]);
+const implementation = computed(() =>
+  resolveExtension(props.page.component, props.context.config),
+);
 const authenticationRequired = computed(
   () => props.page.requiresAuthentication && !props.context.auth.authenticated,
 );

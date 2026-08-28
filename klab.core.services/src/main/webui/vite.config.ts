@@ -73,5 +73,18 @@ export default defineConfig({
     outDir: path.resolve(rootDirectory, "../../../target/generated-resources/webui/static"),
     emptyOutDir: true,
     sourcemap: true,
+    rollupOptions: {
+      preserveEntrySignatures: "strict",
+      input: {
+        index: path.resolve(rootDirectory, "index.html"),
+        "klab-webui-api": path.resolve(rootDirectory, "src/plugin-api.ts"),
+      },
+      output: {
+        entryFileNames: (chunk) =>
+          chunk.name === "klab-webui-api"
+            ? "assets/klab-webui-api.js"
+            : "assets/[name]-[hash].js",
+      },
+    },
   },
 });

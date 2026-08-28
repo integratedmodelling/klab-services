@@ -310,6 +310,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
                 environment.getProperty("klab.webui.keycloak.client-id", "k.LAB"))
             .link("OpenAPI", "swagger-ui/index.html", false);
     configureWebUi(builder);
+    if (klabService().getComponentRegistry() != null) {
+      klabService().getComponentRegistry().configureWebUi(builder);
+    }
     return builder.build();
   }
 

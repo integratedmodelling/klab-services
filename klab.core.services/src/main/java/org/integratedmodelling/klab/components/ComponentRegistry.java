@@ -6,6 +6,7 @@ import io.github.classgraph.ScanResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -58,9 +59,11 @@ import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.runtime.language.ArgumentMatcher;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
+import org.springframework.web.util.UriUtils;
 
 public class ComponentRegistry {
 
@@ -78,6 +81,9 @@ public class ComponentRegistry {
   private PluginManager componentManager;
   private File pluginPath = null;
   private MavenComponentCache cache;
+
+  /** Browser resource read from an installed component archive. */
+  public record WebUiResource(byte[] content, String filename) {}
 
   // we keep the local services and adapters in here
   // FIXME the permissions should come from the external permission system, not as the internal
@@ -156,6 +162,104 @@ public class ComponentRegistry {
 
   public MavenComponentCache getComponentCache() {
     return this.cache;
+  }
+
+  /**
+   * Add contributions from installed k.LAB components to the service dashboard configuration.
+   * Component IDs are traversed deterministically so their declared order remains stable.
+   */
+  public synchronized void configureWebUi(WebUiConfiguration.Builder dashboard) {
+    if (componentManager == null) {
+      return;
+    }
+    var wrappers = new ArrayList<>(componentManager.getPlugins());
+    wrappers.sort(Comparator.comparing(wrapper -> wrapper.getDescriptor().getPluginId()));
+    for (var wrapper : wrappers) {
+      if (!(wrapper.getPlugin() instanceof KlabComponent component)
+          || wrapper.getPluginState() == PluginState.DISABLED
+          || wrapper.getPluginState() == PluginState.FAILED
+          || getExactComponent(component.getName(), component.getVersion()) == null) {
+        continue;
+      }
+      try {
+        for (var module : component.webUiModules().entrySet()) {
+          var resourcePath = normalizeWebUiModulePath(module.getValue());
+          dashboard.module(
+              module.getKey(),
+              "public/ui/components/"
+                  + encodePathSegment(component.getName())
+                  + "/"
+                  + encodePathSegment(component.getVersion().toString())
+                  + "/"
+                  + encodeResourcePath(resourcePath));
+        }
+        component.configureWebUi(dashboard);
+      } catch (Throwable failure) {
+        Logging.INSTANCE.error(
+            "Unable to configure Web UI contributions from component " + component.getName(),
+            failure);
+      }
+    }
+  }
+
+  /** Read one explicitly declared ESM file from an installed component. */
+  public synchronized Optional<WebUiResource> getWebUiResource(
+      String componentId, String version, String resourcePath) {
+    if (componentManager == null || componentId == null || version == null) {
+      return Optional.empty();
+    }
+    var wrapper = componentManager.getPlugin(componentId);
+    if (wrapper == null
+        || !(wrapper.getPlugin() instanceof KlabComponent component)
+        || !component.getVersion().toString().equals(version)) {
+      return Optional.empty();
+    }
+    try {
+      var normalizedPath = normalizeWebUiModulePath(resourcePath);
+      if (component.webUiModules().values().stream()
+          .map(ComponentRegistry::normalizeWebUiModulePath)
+          .noneMatch(normalizedPath::equals)) {
+        return Optional.empty();
+      }
+      try (InputStream input =
+          wrapper
+              .getPluginClassLoader()
+              .getResourceAsStream(KlabComponent.WEB_UI_RESOURCE_ROOT + normalizedPath)) {
+        return input == null
+            ? Optional.empty()
+            : Optional.of(new WebUiResource(input.readAllBytes(), normalizedPath));
+      }
+    } catch (IllegalArgumentException | IOException failure) {
+      Logging.INSTANCE.warn(
+          "Unable to read Web UI module " + resourcePath + " from component " + componentId,
+          failure);
+      return Optional.empty();
+    }
+  }
+
+  private static String normalizeWebUiModulePath(String resourcePath) {
+    if (resourcePath == null || resourcePath.isBlank() || resourcePath.contains("\\")) {
+      throw new IllegalArgumentException("A relative Web UI module path is required");
+    }
+    var segments = resourcePath.split("/");
+    if (resourcePath.startsWith("/")
+        || Arrays.stream(segments).anyMatch(segment -> segment.isBlank() || segment.equals(".."))
+        || !(resourcePath.endsWith(".js") || resourcePath.endsWith(".mjs"))) {
+      throw new IllegalArgumentException(
+          "Web UI modules must be relative .js or .mjs files below "
+              + KlabComponent.WEB_UI_RESOURCE_ROOT);
+    }
+    return resourcePath;
+  }
+
+  private static String encodePathSegment(String segment) {
+    return UriUtils.encodePathSegment(segment, java.nio.charset.StandardCharsets.UTF_8);
+  }
+
+  private static String encodeResourcePath(String resourcePath) {
+    return Arrays.stream(resourcePath.split("/"))
+        .map(ComponentRegistry::encodePathSegment)
+        .collect(java.util.stream.Collectors.joining("/"));
   }
 
   private static File getPluginDirectory(File componentRoot) {

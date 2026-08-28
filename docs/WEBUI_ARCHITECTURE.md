@@ -41,6 +41,12 @@ Spring forwards both `/` and `/ui/<component-name>` to the same SPA. A small `<b
 allows direct entry and browser refresh to work when the service is mounted below a context path
 such as `/reasoner`.
 
+After the Spring-service hook runs, `ServiceNetworkedInstance` asks the primary service's
+`ComponentRegistry` for installed-component contributions. A `KlabComponent` can add manifest
+entries and map their component IDs to prebuilt ESM resources under `META-INF/klab/webui/` in its
+archive. The generated public URL includes component ID and version; the controller serves only
+explicitly declared modules from that component's PF4J classloader.
+
 ## Frontend layout
 
 The frontend source is in `klab.core.services/src/main/webui`:
@@ -58,6 +64,10 @@ The frontend source is in `klab.core.services/src/main/webui`:
 - `src/components/AuthenticationDialog.vue` automatically presents the in-page sign-in gate for a
   protected direct-entry route.
 - `vite.config.ts` discovers service components and creates the component registry at build time.
+- `src/services/extensions.ts` resolves build-time components and lazily imports an explicit
+  installed-component module when the public configuration supplies one.
+- `src/plugin-api.ts` is emitted at the stable `assets/klab-webui-api.js` URL. An import map exposes
+  it as `vue` and `@klab/webui`, ensuring installed modules share the shell's Vue runtime.
 
 Panels receive a `DashboardContext` prop with the current configuration, status, capabilities,
 authentication state, shared API client, and `refresh()` callback. The TypeScript interface in
@@ -134,5 +144,6 @@ changing when a Java-only service build is repeated.
 - Protected REST endpoints remain covered by `ServiceSecurityConfiguration` and the existing k.LAB
   role/permission checks.
 - The panel manifest contains presentation metadata, never secrets or authorization decisions.
-- Remote component URLs are not executed. Every Vue extension is reviewed and compiled into the
-  artifact, keeping the service compatible with a strict content-security policy.
+- Remote component URLs are not executed. Build-time extensions are compiled into the service;
+  runtime extensions must come from trusted, installed k.LAB component archives and are served from
+  the service origin. Arbitrary URLs in component metadata are never exposed to the browser.

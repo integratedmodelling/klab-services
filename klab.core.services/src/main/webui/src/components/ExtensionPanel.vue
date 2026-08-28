@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import extensionComponents from "virtual:klab-dashboard-extensions";
+import { resolveExtension } from "../services/extensions";
 import type { DashboardContext, DashboardPanel } from "../types";
 
 const props = defineProps<{ panel: DashboardPanel; context: DashboardContext }>();
-const implementation = computed(() => extensionComponents[props.panel.component]);
+const implementation = computed(() =>
+  resolveExtension(props.panel.component, props.context.config),
+);
 </script>
 
 <template>
