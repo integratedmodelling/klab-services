@@ -36,6 +36,13 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
             "A starter panel contributed by the resources server module.",
             "resources-overview",
             100,
+            false)
+        .page(
+            "resource-catalog",
+            "Resource catalog",
+            "Browse and inspect resources exposed by this service.",
+            "resources-workspace",
+            100,
             false);
   }
 

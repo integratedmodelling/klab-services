@@ -23,6 +23,15 @@ export interface DashboardLink {
   external: boolean;
 }
 
+export interface FullPageComponent {
+  name: string;
+  title: string;
+  description: string;
+  component: string;
+  order: number;
+  requiresAuthentication: boolean;
+}
+
 export interface DashboardConfiguration {
   serviceType: string;
   title: string;
@@ -30,6 +39,7 @@ export interface DashboardConfiguration {
   logoUrl: string;
   authentication: AuthenticationSettings;
   panels: DashboardPanel[];
+  pages: FullPageComponent[];
   links: DashboardLink[];
 }
 

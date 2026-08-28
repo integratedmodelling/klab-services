@@ -33,6 +33,13 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
             "A starter panel contributed by the reasoner server module.",
             "reasoner-overview",
             100,
+            false)
+        .page(
+            "knowledge-explorer",
+            "Knowledge explorer",
+            "Full-page semantic knowledge and reasoning tools.",
+            "reasoner-workspace",
+            100,
             false);
   }
 

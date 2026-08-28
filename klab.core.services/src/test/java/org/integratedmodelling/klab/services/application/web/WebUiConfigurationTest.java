@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.application.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -17,6 +18,8 @@ class WebUiConfigurationTest {
             .keycloak(null, null, null)
             .panel("late", "Late", "", "late-panel", 20, false)
             .panel("early", "Early", "", "early-panel", 10, true)
+            .page("later-page", "Later", "", "later-page", 20, false)
+            .page("first-page", "First", "", "first-page", 10, true)
             .build();
 
     assertEquals("k.LAB Reasoner service", configuration.title());
@@ -24,6 +27,8 @@ class WebUiConfigurationTest {
     assertNull(configuration.authentication().url());
     assertEquals("early", configuration.panels().getFirst().id());
     assertTrue(configuration.panels().getFirst().requiresAuthentication());
+    assertEquals("first-page", configuration.pages().getFirst().name());
+    assertTrue(configuration.pages().getFirst().requiresAuthentication());
   }
 
   @Test
@@ -37,5 +42,14 @@ class WebUiConfigurationTest {
     assertEquals("https://identity.example.org", configuration.authentication().url());
     assertEquals("network", configuration.authentication().realm());
     assertEquals("service-dashboard", configuration.authentication().clientId());
+  }
+
+  @Test
+  void rejectsPageNamesThatCannotBeMappedToAUiRoute() {
+    var builder = WebUiConfiguration.builder(KlabService.Type.RUNTIME);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.page("Not Routable", "Invalid", "", "valid-component", 10, false));
   }
 }

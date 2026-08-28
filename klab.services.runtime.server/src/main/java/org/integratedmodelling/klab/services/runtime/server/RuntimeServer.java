@@ -42,6 +42,13 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
             "A protected starter panel contributed by the runtime server module.",
             "runtime-overview",
             100,
+            true)
+        .page(
+            "session-monitor",
+            "Session monitor",
+            "Inspect digital-twin sessions and runtime activity.",
+            "runtime-workspace",
+            100,
             true);
   }
 

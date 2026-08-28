@@ -41,6 +41,7 @@ public class ServiceSecurityConfiguration {
                         "/v3/api-docs.yaml",
                         "/api.html",
                         "/",
+                        "/ui/**",
                         "/index.html",
                         "/assets/**",
                         "/klab-logo.svg",

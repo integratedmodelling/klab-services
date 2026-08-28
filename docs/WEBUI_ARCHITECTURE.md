@@ -10,8 +10,9 @@ The dashboard is intentionally split into two layers:
 
 - `klab.core.services` owns the Spring controller, configuration contract, Vue/Quasar shell,
   authentication client, generic status display, and generic capability display.
-- Each concrete `*.server` module owns its title and service-specific panels. Panels receive the
-  same context and API client, so later interfaces can be developed without changing the shell.
+- Each concrete `*.server` module owns its title, dashboard panels, and full-page components. Both
+  extension forms receive the same context and API client, so later interfaces can be developed
+  without changing the shell.
 
 ## Request flow
 
@@ -20,6 +21,7 @@ The browser loads `index.html` through `KlabWebUiController`. The shell then req
 | Endpoint | Authentication | Purpose |
 | --- | --- | --- |
 | `/` | Public | Vue single-page application |
+| `/ui/<component-name>` | Public shell | Direct entry point for a compiled full-page component |
 | `/public/ui/config` | Public | Header, logo, authentication settings, links, and panel manifest |
 | `/public/status` | Public, identity-aware when a token is present | Lightweight operational telemetry |
 | `/public/capabilities` | Public, identity-aware when a token is present | Service identity, transports, components, and permissions |
@@ -30,7 +32,14 @@ temporarily busy.
 
 `WebUiConfiguration` is the server-to-client contract. `ServiceNetworkedInstance` builds the
 defaults and calls `configureWebUi(WebUiConfiguration.Builder)`. A derived Spring service overrides
-that hook to change branding or add ordered `DashboardPanel` records.
+that hook to change branding or add ordered `DashboardPanel` and `FullPageComponent` records.
+Full-page records are sorted by `order` and appear as links in the desktop header and compact mobile
+header menu. Their stable `name` is also their path segment under `/ui/`.
+
+Spring forwards both `/` and `/ui/<component-name>` to the same SPA. A small `<base>` bootstrap in
+`index.html` restores the service context root before Vite assets or API requests are resolved. This
+allows direct entry and browser refresh to work when the service is mounted below a context path
+such as `/reasoner`.
 
 ## Frontend layout
 
@@ -44,14 +53,18 @@ The frontend source is in `klab.core.services/src/main/webui`:
 - `src/components/StatusGrid.vue` and `CapabilitiesPanel.vue` are the common public dashboard.
 - `src/components/ExtensionPanel.vue` enforces the `requiresAuthentication` presentation rule and
   renders the configured component.
+- `src/components/FullPageExtension.vue` renders the selected `/ui/` component and prevents a
+  protected component from mounting until authentication succeeds.
+- `src/components/AuthenticationDialog.vue` automatically presents the in-page sign-in gate for a
+  protected direct-entry route.
 - `vite.config.ts` discovers service components and creates the component registry at build time.
 
 Panels receive a `DashboardContext` prop with the current configuration, status, capabilities,
 authentication state, shared API client, and `refresh()` callback. The TypeScript interface in
 `src/types.ts` is the generic downstream component contract.
 
-The authorization requirement on a panel controls its presentation only. Server endpoints remain
-the authority for access control. A component must never treat the presence of a panel or a decoded
+The authorization requirement on a panel or page controls its presentation only. Server endpoints
+remain the authority for access control. A component must never treat the manifest or a decoded
 browser token as authorization.
 
 ## Keycloak integration
@@ -61,6 +74,12 @@ the Keycloak base URL, realm, and public client ID. There is no client secret in
 The compact header control starts the normal Keycloak authorization-code flow with PKCE; Keycloak
 owns username/password collection. The initial dashboard remains anonymous by using `check-sso`
 instead of `login-required`.
+
+When a user enters an authentication-required `/ui/<name>` route directly, the shell completes
+`check-sso` before mounting the component. If no session exists, it leaves the requested page in
+place and opens a persistent Quasar dialog. Starting sign-in uses the Keycloak authorization-code
+flow and sets the exact current route as `redirectUri`, so the identity provider returns the user
+to the same component. Credentials are never collected by, or exposed to, the service UI.
 
 Configure the server settings with Spring properties (for example in `application.properties` or
 environment-backed configuration):
@@ -108,7 +127,8 @@ changing when a Java-only service build is repeated.
 
 ## Security boundaries
 
-- The SPA, its assets, configuration, status, health, and public capabilities remain anonymous.
+- The SPA, `/ui/**` shell routes, assets, configuration, status, health, and public capabilities
+  remain anonymous so the client can present the authentication dialog.
 - A token is attached automatically when present, allowing capabilities and downstream components
   to receive identity-specific responses.
 - Protected REST endpoints remain covered by `ServiceSecurityConfiguration` and the existing k.LAB

@@ -20,6 +20,7 @@ class KlabWebUiControllerTest {
     var controller = new KlabWebUiController(instance);
 
     assertEquals("forward:/index.html", controller.dashboard());
+    assertEquals("forward:/index.html", controller.fullPageComponent());
     assertEquals(configuration, controller.configuration());
   }
 }

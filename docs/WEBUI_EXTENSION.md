@@ -19,6 +19,13 @@ protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
           "Browse the objects advertised by this service.",
           "catalog-browser",
           100,
+          true)
+      .page(
+          "catalog",
+          "Resource catalog",
+          "Browse and manage the resources advertised by this service.",
+          "catalog-workspace",
+          100,
           true);
 }
 ```
@@ -26,6 +33,11 @@ protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
 Panel arguments are, in order: stable panel ID, heading, description, Vue component ID, sort order,
 and whether the shell should require a signed-in user before mounting the component. IDs should be
 lowercase kebab-case and remain stable across releases.
+
+Full-page arguments follow the same pattern: stable URL name, title, description, Vue component ID,
+sort order, and authentication requirement. The example is mounted at `/ui/catalog`. Registered
+pages automatically become links in the dashboard header, ordered by `order`; no separate link
+configuration is needed.
 
 `logoUrl` is resolved relative to the service context root. Replace the core `klab-logo.svg` for a
 global brand or package another static resource under the same Spring Boot static-resource rules
@@ -38,11 +50,13 @@ Create the source under the server module:
 ```text
 klab.services.example.server/
   src/main/webui/extensions/CatalogBrowser.vue
+  src/main/webui/extensions/CatalogWorkspace.vue
 ```
 
 The component ID is generated from the filename: `CatalogBrowser.vue` becomes `catalog-browser`.
-Use that ID in the Java panel configuration. Filenames must be unique across every extension
-directory included in a build.
+`CatalogWorkspace.vue` becomes `catalog-workspace` and can be referenced by a full-page record. Use
+the generated ID in the corresponding Java configuration. Filenames must be unique across every
+extension directory included in a build.
 
 An extension receives one required `context` prop:
 
@@ -78,6 +92,10 @@ The context provides:
 Use Quasar components for controls and layout. Quasar and Vue are already supplied by the shell;
 do not add another application root or another copy of either framework.
 
+The same prop contract applies to dashboard panels and full-page components. A full-page component
+owns the content area below the shared service header, so it should provide its own responsive
+working layout rather than wrapping everything in another application shell.
+
 ## Discover extensions outside this repository
 
 The build automatically scans the four standard server modules. A downstream service in another
@@ -90,9 +108,11 @@ design: a service never downloads and executes an untrusted remote component at 
 
 ## Authentication rules for extensions
 
-Set `requiresAuthentication` when a component has no useful anonymous state. The shell then shows
-a sign-in prompt instead of mounting it. The shared API client sends a standard bearer token and
-refreshes it shortly before expiry.
+Set `requiresAuthentication` when a component has no useful anonymous state. A dashboard panel is
+replaced by a sign-in prompt. A full-page component is not mounted; after the initial `check-sso`
+finishes, a persistent sign-in dialog opens over the requested URL. Keycloak returns to that exact
+URL after authentication, and the shared API client then sends a standard bearer token and refreshes
+it shortly before expiry.
 
 This flag is user experience, not security. Every backing controller must still enforce the
 appropriate role, CRUD permission, and resource privilege. Components should handle `401`, `403`,

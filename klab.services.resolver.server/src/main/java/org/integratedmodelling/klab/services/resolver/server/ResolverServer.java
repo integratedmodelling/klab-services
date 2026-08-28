@@ -34,6 +34,13 @@ public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
             "A protected starter panel with the shared authenticated component contract.",
             "resolver-overview",
             100,
+            true)
+        .page(
+            "resolution-workbench",
+            "Resolution workbench",
+            "Build and inspect contextualization and resolution plans.",
+            "resolver-workspace",
+            100,
             true);
   }
 

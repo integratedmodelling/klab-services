@@ -22,6 +22,17 @@ public class KlabWebUiController {
     return "forward:/index.html";
   }
 
+  /** Lets a user enter a compiled full-page extension directly without authenticating first. */
+  @GetMapping(
+      value = {
+        "/ui/{componentName:[a-z0-9][a-z0-9-]*}",
+        "/ui/{componentName:[a-z0-9][a-z0-9-]*}/"
+      },
+      produces = MediaType.TEXT_HTML_VALUE)
+  public String fullPageComponent() {
+    return "forward:/index.html";
+  }
+
   @ResponseBody
   @GetMapping(value = "/public/ui/config", produces = MediaType.APPLICATION_JSON_VALUE)
   public WebUiConfiguration configuration() {
