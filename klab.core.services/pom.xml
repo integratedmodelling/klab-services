@@ -460,4 +460,71 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!--
+            Build the Vue/Quasar dashboard independently with:
+              ./mvnw -pl klab.core.services -Pwebui generate-resources
+
+            The generated classpath resources are packaged into this module when package/verify is
+            used with the same profile. Normal Java-only builds do not require Node.js.
+        -->
+        <profile>
+            <id>webui</id>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                    </resource>
+                    <resource>
+                        <directory>${project.build.directory}/generated-resources/webui</directory>
+                    </resource>
+                </resources>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.15.1</version>
+                        <configuration>
+                            <workingDirectory>src/main/webui</workingDirectory>
+                            <installDirectory>${project.build.directory}/webui-toolchain</installDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>install-webui-toolchain</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v24.13.1</nodeVersion>
+                                    <npmVersion>11.8.0</npmVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>webui-install</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>ci --cache ${project.build.directory}/webui-npm-cache</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>webui-build</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

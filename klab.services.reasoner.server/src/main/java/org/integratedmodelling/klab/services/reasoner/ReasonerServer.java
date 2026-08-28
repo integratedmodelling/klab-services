@@ -5,6 +5,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,19 @@ import org.springframework.stereotype.Component;
       "org.integratedmodelling.klab.services.reasoner.controllers"
     })
 public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
+
+  @Override
+  protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
+    dashboard
+        .subtitle("Semantic knowledge and reasoning at a glance")
+        .panel(
+            "reasoner-overview",
+            "Reasoner workspace",
+            "A starter panel contributed by the reasoner server module.",
+            "reasoner-overview",
+            100,
+            false);
+  }
 
   @Override
   protected KlabService.Type serviceType() {

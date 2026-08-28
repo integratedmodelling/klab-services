@@ -178,6 +178,8 @@ public interface ServicesAPI {
     // TODO rename /nodes to /services (?)
     String SERVICE_BASE = HUB_API_BASE + "/nodes";
 
+    String USER_BASE = HUB_API_BASE + "/users";
+
     /**
      * Returns authenticated user details and network status with all nodes (including offline if
      * applicable) with refresh rate and unique network access token.
@@ -197,8 +199,22 @@ public interface ServicesAPI {
      */
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
 
+    /**
+     * POST endpoint to receive user authentication from a UserAuthenticationRequest
+     */
+    String AUTHENTICATE_USER = USER_BASE + "/log-in";
+
     /** Called from services to have information about the user */
     String USER_BASE_ID_SERVICES = HUB_API_BASE + "/users/services/{id}";
+
+    String USER_BASE_ID = USER_BASE + "/{id}";
+
+    /**
+     * Base URL path for user's agreements resources on the hub. This GET endpoint returns
+     * a generated certificate. Needs the agreement ID that isn't known in advance.
+     */
+    String USER_AGREEMENT_BASE_ID = USER_BASE_ID + "/{agreementId}";
+
   }
 
   /**

@@ -30,7 +30,9 @@ public class ObservableValidator {
   public enum ConceptAttribute {
     EACH,
     ABSTRACT,
-    ANY
+    ANY,
+    SUBJECTIVE,
+    SEALED
   }
 
   public record ConceptAttributeRule(

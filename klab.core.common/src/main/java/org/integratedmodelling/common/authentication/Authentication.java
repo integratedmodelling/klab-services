@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.UserAuthenticationRequest;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -138,6 +139,35 @@ public enum Authentication {
 
     return authenticate(certificate, settings);
   }
+
+  // Obviously this won't work - auth is with VaultWarden, then the token is exchanged for a JWT
+  //  public Pair<Identity, ServiceReference> authenticate(
+  //      String username, String password, Settings settings) {
+  //
+  //    UserIdentity identity = null;
+  //    ServiceReference serviceReference = null;
+  //
+  //    try (var client =
+  //        Utils.Http.getClient(settings.get(Setting.AUTHENTICATION_HUB, String.class), null)) {
+  //
+  //      UserAuthenticationRequest request = new UserAuthenticationRequest();
+  //      request.setUsername(username);
+  //      request.setPassword(password);
+  //      request.setRemote(true);
+  //
+  //      var response = client.post(ServicesAPI.HUB.AUTHENTICATE_USER, request, Map.class);
+  //
+  //      if (response != null) {}
+  //
+  //    } catch (Throwable e) {
+  //      Logging.INSTANCE.error("authentication failed for user " + username + ": " + e);
+  //      if (e instanceof KlabException ke) {
+  //        throw ke;
+  //      }
+  //    }
+  //
+  //    return Pair.of(identity, serviceReference);
+  //  }
 
   /**
    * Authenticate through a hub using the passed certificate. If the passed certificate is

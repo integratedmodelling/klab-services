@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -295,6 +296,25 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       System.exit(255);
     }
   }
+
+  /**
+   * Build the public configuration consumed by the shared Vue dashboard. Derived service
+   * applications customize it by overriding {@link #configureWebUi(WebUiConfiguration.Builder)}.
+   */
+  public WebUiConfiguration webUiConfiguration() {
+    var builder =
+        WebUiConfiguration.builder(serviceType())
+            .keycloak(
+                environment.getProperty("klab.webui.keycloak.url"),
+                environment.getProperty("klab.webui.keycloak.realm", "im"),
+                environment.getProperty("klab.webui.keycloak.client-id", "k.LAB"))
+            .link("OpenAPI", "swagger-ui/index.html", false);
+    configureWebUi(builder);
+    return builder.build();
+  }
+
+  /** Hook for a concrete Spring service to add dashboard panels, links, and branding. */
+  protected void configureWebUi(WebUiConfiguration.Builder dashboard) {}
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {

@@ -117,6 +117,11 @@ public enum Setting {
       false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
   LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false),
+  AUTHENTICATION_HUB(
+      Page.SERVICES,
+      "URL of the authentication hub to use for user authentication when using username and password",
+      String.class,
+      "https://integratedmodelling.org/hub"),
   DISTRIBUTION_SOURCE_URL(
       Page.SERVICES,
       "Alternative source URL for the k.LAB stack distribution",
@@ -435,7 +440,6 @@ public enum Setting {
 
   /** Return whether this setting belongs to the configuration category for a service type. */
   public boolean appliesTo(KlabService.Type serviceType) {
-    return serviceType != null
-        && page.name().equals(serviceType.name());
+    return serviceType != null && page.name().equals(serviceType.name());
   }
 }

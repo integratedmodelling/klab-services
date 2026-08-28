@@ -37,6 +37,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 
@@ -125,6 +126,7 @@ public class ResourceIndexer {
     Document document = new Document();
     String urn = resource.getUrn();
     String normalizedUrn = normalize(urn);
+    Urn urnObject = Urn.of(urn);
 
     document.add(new StringField("id", urn, Store.YES));
     document.add(new StringField("urn_exact", normalizedUrn, Store.NO));
@@ -133,6 +135,7 @@ public class ResourceIndexer {
     addName(document, resource.getLocalName());
     var metadata = resource.getMetadata();
     if (metadata != null) {
+      addName(document, urnObject.getResourceId());
       addName(document, metadata.get(Metadata.DC_NAME));
       addName(document, metadata.get(Metadata.DC_LABEL));
       addName(document, metadata.get(Metadata.DC_TITLE));
@@ -229,10 +232,14 @@ public class ResourceIndexer {
     }
 
     BooleanQuery.Builder result = new BooleanQuery.Builder();
-    result.add(boost(new TermQuery(new Term("urn_exact", normalized)), 30), BooleanClause.Occur.SHOULD);
-    result.add(boost(new TermQuery(new Term("name_exact", normalized)), 25), BooleanClause.Occur.SHOULD);
-    result.add(boost(new PrefixQuery(new Term("urn_exact", normalized)), 18), BooleanClause.Occur.SHOULD);
-    result.add(boost(new PrefixQuery(new Term("name_exact", normalized)), 16), BooleanClause.Occur.SHOULD);
+    result.add(
+        boost(new TermQuery(new Term("urn_exact", normalized)), 30), BooleanClause.Occur.SHOULD);
+    result.add(
+        boost(new TermQuery(new Term("name_exact", normalized)), 25), BooleanClause.Occur.SHOULD);
+    result.add(
+        boost(new PrefixQuery(new Term("urn_exact", normalized)), 18), BooleanClause.Occur.SHOULD);
+    result.add(
+        boost(new PrefixQuery(new Term("name_exact", normalized)), 16), BooleanClause.Occur.SHOULD);
 
     for (String term : normalized.split("[^\\p{L}\\p{N}]+")) {
       if (term.isBlank()) {
@@ -253,10 +260,13 @@ public class ResourceIndexer {
   private static void addTermAlternatives(
       BooleanQuery.Builder query, String field, String term, float boost) {
     query.add(boost(new TermQuery(new Term(field, term)), boost), BooleanClause.Occur.SHOULD);
-    query.add(boost(new PrefixQuery(new Term(field, term)), boost * 0.8f), BooleanClause.Occur.SHOULD);
+    query.add(
+        boost(new PrefixQuery(new Term(field, term)), boost * 0.8f), BooleanClause.Occur.SHOULD);
     if (term.length() >= 4) {
       query.add(
-          boost(new FuzzyQuery(new Term(field, term), 1, Math.min(2, term.length() - 1)), boost * 0.35f),
+          boost(
+              new FuzzyQuery(new Term(field, term), 1, Math.min(2, term.length() - 1)),
+              boost * 0.35f),
           BooleanClause.Occur.SHOULD);
     }
   }

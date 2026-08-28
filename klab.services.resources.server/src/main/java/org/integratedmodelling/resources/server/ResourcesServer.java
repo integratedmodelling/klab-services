@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -24,6 +25,19 @@ import java.util.List;
       "org.integratedmodelling.resources.server.controllers"
     })
 public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider> {
+
+  @Override
+  protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
+    dashboard
+        .subtitle("Resource catalogs, adapters, and transport capabilities")
+        .panel(
+            "resources-overview",
+            "Resource workspace",
+            "A starter panel contributed by the resources server module.",
+            "resources-overview",
+            100,
+            false);
+  }
 
   @Override
   protected KlabService.Type serviceType() {

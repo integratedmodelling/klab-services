@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.availability.LivenessStateHealthIndicator;
@@ -30,6 +31,19 @@ import org.springframework.util.unit.DataSize;
       "org.integratedmodelling.klab.services.runtime.server.controllers"
     })
 public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
+
+  @Override
+  protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
+    dashboard
+        .subtitle("Digital-twin execution and runtime telemetry")
+        .panel(
+            "runtime-overview",
+            "Runtime workspace",
+            "A protected starter panel contributed by the runtime server module.",
+            "runtime-overview",
+            100,
+            true);
+  }
 
   @Autowired private HealthContributorRegistry healthContributorRegistry;
 

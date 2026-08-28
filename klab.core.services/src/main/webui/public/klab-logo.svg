@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">k.LAB placeholder logo</title>
+  <rect width="64" height="64" rx="16" fill="#0d4b40"/>
+  <path d="M18 14v36M19 37l15-14M25 32l12 18" fill="none" stroke="#b9f36b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="45" cy="19" r="6" fill="#58d6b5"/>
+</svg>

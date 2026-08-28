@@ -39,7 +39,12 @@ public class ServiceSecurityConfiguration {
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/v3/api-docs.yaml",
-                        "/api.html")
+                        "/api.html",
+                        "/",
+                        "/index.html",
+                        "/assets/**",
+                        "/klab-logo.svg",
+                        "/favicon.svg")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

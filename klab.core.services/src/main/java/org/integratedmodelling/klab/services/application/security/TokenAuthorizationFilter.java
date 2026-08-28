@@ -45,6 +45,9 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
       throws IOException, ServletException {
 
     String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
+    if (tokenString != null && tokenString.regionMatches(true, 0, "Bearer ", 0, 7)) {
+      tokenString = tokenString.substring(7).trim();
+    }
     String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
     String runtimeId = req.getHeader(ServicesAPI.SERVICE_ID_HEADER);
 

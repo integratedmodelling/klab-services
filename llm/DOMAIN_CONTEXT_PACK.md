@@ -16,6 +16,8 @@ The agent receives:
 4. a required target `tier` specifying the intended level of domain generality; and
 5. optionally, prior proposals and community feedback.
 
+The agent can consult the attached documentation and prior proposals to inform its analysis. It can browse the Web for additional information and inspiration. It can refer to the ODO-IM ontology in its OWL2 source format at https://raw.githubusercontent.com/integratedmodelling/odo-im/refs/heads/master/releases/0.1.0/odo.owl
+
 The agent must return a self-consistent, provenance-rich corpus that:
 
 - identifies all domain-relevant observables and predicates supported by the literature;
@@ -52,7 +54,8 @@ the final metaphysical inventory of the world.
 
 Apply these commitments throughout the analysis:
 
-1. **Observable is not observation.** An Observable is an abstract, reusable meaning that may
+1. **Worldview remains coherent.** The worldview is a distributed but coherent corpus of ontologies that import each other and include a tier system, documented later. You are contributing to one ontology in the context of others; domain conceptual boundaries matter deeply when structuring the worldview. Your domain will import those most generic ones that are relevant to it, and these should be supplied as additional context to the request, but may themselves be in flux or incomplete. According to availability, the .kvw source, the YAML community process output, or both will be supplied for the imported domains. Only the root domain of the worldview can access ODO-IM concepts directly.
+2. **Observable is not observation.** An Observable is an abstract, reusable meaning that may
    be observed. An observation is contextualized semantic content produced for an observer in a
    spatial, temporal, and semantic frame.
 2. **Observability is mediated.** Direct perception is not privileged over instruments, data,
@@ -81,6 +84,7 @@ Apply these commitments throughout the analysis:
    predicates, clauses, and operators over atomic concepts that bundle several dimensions. The
    ontology's value increases when each dimension is clear, discriminable, and independently
    reusable.
+10. **Use the keyword `abstract` according to k.LAB conventions.** In k.LAB, an abstract concept cannot be directly observed: only its concrete subclasses can. A concept's abstract status matter in resolution and propagates through observables: tagging a concrete observable with an abstract predicate makes it abstract. In a dependency, the abstract status of a predicate needs to be resolved to its contextually concrete states before the observation can take place, creating independently resolved concrete dependencies for each state.
 
 ## 3. The semantic coordinate system
 
@@ -828,6 +832,7 @@ proposal:
   concepts:
     - concept_id: "domain:StableConceptName"
       label: "preferred human label"
+      abstract: false
       aliases: []
       section: "subjects"
       tier: 2

@@ -5,6 +5,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
 import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -22,6 +23,19 @@ import org.springframework.stereotype.Component;
       "org.integratedmodelling.klab.services.resolver.server.controllers"
     })
 public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
+
+  @Override
+  protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
+    dashboard
+        .subtitle("Resolution planning and dataflow services")
+        .panel(
+            "resolver-overview",
+            "Resolution workspace",
+            "A protected starter panel with the shared authenticated component contract.",
+            "resolver-overview",
+            100,
+            true);
+  }
 
   @Override
   protected KlabService.Type serviceType() {
