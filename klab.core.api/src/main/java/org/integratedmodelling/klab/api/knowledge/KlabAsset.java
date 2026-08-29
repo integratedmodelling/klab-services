@@ -15,6 +15,8 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 
 /**
  * All k.LAB assets have a URN, a version, metadata and possibly annotations. They are
@@ -50,6 +52,20 @@ public interface KlabAsset extends Serializable {
     CONCEPT_STATEMENT,
     SERVICE_IMPLEMENTATION,
     OBSERVATION,
+    /** Versioned workflow definition. */
+    WORKFLOW,
+    /** State schema embedded in a workflow definition. */
+    WORKFLOW_STATE,
+    /** Transition schema embedded in a workflow definition. */
+    WORKFLOW_TRANSITION,
+    /** Persistent instance of a workflow. */
+    FLOW,
+    /** Persistent state/task in a flow. */
+    FLOW_STATE,
+    /** Immutable transition transaction in a flow history. */
+    FLOW_TRANSITION,
+    /** Attachment descriptor in a flow state (the payload is retrieved separately). */
+    FLOW_ATTACHMENT,
     /**
      * This is used to tag a variety of informational assets, such as adapter descriptors, reports,
      * language info, etc. When this is used, more information is always supplied so that the actual
@@ -75,6 +91,13 @@ public interface KlabAsset extends Serializable {
         case OBSERVATION_STRATEGY -> KimObservationStrategy.class;
         case MODEL -> KimModel.class;
         case DEFINITION -> KimSymbolDefinition.class;
+        case WORKFLOW -> Workflow.class;
+        case WORKFLOW_STATE -> Workflow.StateSchema.class;
+        case WORKFLOW_TRANSITION -> Workflow.TransitionSchema.class;
+        case FLOW -> Flow.class;
+        case FLOW_STATE -> Flow.State.class;
+        case FLOW_TRANSITION -> Flow.Transaction.class;
+        case FLOW_ATTACHMENT -> Flow.Attachment.class;
         default ->
             throw new KlabIllegalStateException(
                 "Cannot convert  " + this + " into serializable asset class");
@@ -126,6 +149,20 @@ public interface KlabAsset extends Serializable {
         return RESOURCE;
       } else if (KActorsBehavior.class.isAssignableFrom(cls)) {
         return BEHAVIOR;
+      } else if (Workflow.class.isAssignableFrom(cls)) {
+        return WORKFLOW;
+      } else if (Workflow.StateSchema.class.isAssignableFrom(cls)) {
+        return WORKFLOW_STATE;
+      } else if (Workflow.TransitionSchema.class.isAssignableFrom(cls)) {
+        return WORKFLOW_TRANSITION;
+      } else if (Flow.class.isAssignableFrom(cls)) {
+        return FLOW;
+      } else if (Flow.State.class.isAssignableFrom(cls)) {
+        return FLOW_STATE;
+      } else if (Flow.Transaction.class.isAssignableFrom(cls)) {
+        return FLOW_TRANSITION;
+      } else if (Flow.Attachment.class.isAssignableFrom(cls)) {
+        return FLOW_ATTACHMENT;
       } else {
         throw new KlabUnimplementedException("Classification of asset class " + cls);
       }
@@ -148,6 +185,13 @@ public interface KlabAsset extends Serializable {
       case KimNamespace n -> KnowledgeClass.NAMESPACE;
       case KimModel model -> KnowledgeClass.MODEL;
       case Resource resource -> KnowledgeClass.RESOURCE;
+      case Workflow workflow -> KnowledgeClass.WORKFLOW;
+      case Workflow.StateSchema state -> KnowledgeClass.WORKFLOW_STATE;
+      case Workflow.TransitionSchema transition -> KnowledgeClass.WORKFLOW_TRANSITION;
+      case Flow flow -> KnowledgeClass.FLOW;
+      case Flow.State state -> KnowledgeClass.FLOW_STATE;
+      case Flow.Transaction transition -> KnowledgeClass.FLOW_TRANSITION;
+      case Flow.Attachment attachment -> KnowledgeClass.FLOW_ATTACHMENT;
       case KActorsBehavior behavior ->
           switch (behavior.getBehaviorType()) {
             case BEHAVIOR, TASK, USER, TRAIT, LIBRARY -> KnowledgeClass.BEHAVIOR;

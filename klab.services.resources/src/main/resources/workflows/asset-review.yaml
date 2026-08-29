@@ -1,0 +1,116 @@
+id: asset-review
+version: "1.0"
+name: k.LAB asset review
+description: Editorial, peer and public community review of a k.LAB asset.
+metadata:
+  provenanceStandard: W3C-PROV
+states:
+  editing:
+    description: Prepare the asset and its supporting material.
+    completionCriteria: A reviewable asset and summary are attached.
+    instructions: Editors should attach the candidate asset and explain its intended use.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    attachments:
+      - type: candidate
+        mediaType: application/*
+        arity: 1
+      - type: supporting-material
+        mediaType: "*/*"
+        arity: -1
+    assetTypes: [RESOURCE, PROJECT, COMPONENT]
+    open: true
+    metadata:
+      provenanceActivity: authoring
+  peer-review:
+    description: Independent technical and scientific review.
+    completionCriteria: Assigned reviewers have recorded a decision and rationale.
+    instructions: Review correctness, reproducibility, metadata quality and licensing.
+    managerRoles: [ADMIN]
+    contributorRoles: [REVIEWER]
+    attachments:
+      - type: review
+        mediaType: text/*
+        arity: -1
+    assetTypes: [RESOURCE, PROJECT, COMPONENT]
+    open: true
+    metadata:
+      provenanceActivity: peer-review
+  community-review:
+    description: Public review by identified community members.
+    completionCriteria: The configured public review period has elapsed and feedback is resolved.
+    instructions: Comment on usability, documentation and reproducibility. Give actionable evidence.
+    managerRoles: [ADMIN]
+    contributorRoles: [REVIEWER]
+    admittedGroups: [PUBLIC]
+    attachments:
+      - type: comment
+        mediaType: text/*
+        arity: -1
+    assetTypes: [RESOURCE, PROJECT, COMPONENT]
+    open: true
+    metadata:
+      provenanceActivity: community-review
+  accepted:
+    description: Review completed and asset accepted.
+    completionCriteria: Terminal state.
+    instructions: No further action is required.
+    managerRoles: [ADMIN]
+    contributorRoles: [ADMIN]
+    assetTypes: [RESOURCE, PROJECT, COMPONENT]
+    open: false
+    metadata:
+      provenanceActivity: publication
+  rejected:
+    description: Review completed and asset rejected.
+    completionCriteria: Terminal state.
+    instructions: The transition history contains the decision provenance.
+    managerRoles: [ADMIN]
+    contributorRoles: [ADMIN]
+    assetTypes: [RESOURCE, PROJECT, COMPONENT]
+    open: false
+    metadata:
+      provenanceActivity: rejection
+transitions:
+  initialize:
+    description: Start authoring a review submission.
+    sourceStates: [INIT]
+    targetState: editing
+    roles: [ADMIN, EDITOR]
+  submit:
+    description: Submit the edited asset for peer review.
+    sourceStates: [editing]
+    sourceAssetTypes: [RESOURCE, PROJECT, COMPONENT]
+    sourceMediaTypes: [application/*]
+    targetState: peer-review
+    roles: [ADMIN, EDITOR]
+  request-changes:
+    description: Return the asset to its editor.
+    sourceStates: [peer-review, community-review]
+    targetState: editing
+    roles: [ADMIN, REVIEWER]
+  open-community-review:
+    description: Open an accepted peer review to public community review.
+    sourceStates: [peer-review]
+    targetState: community-review
+    roles: [ADMIN, REVIEWER]
+  accept-peer-review:
+    description: Accept directly after peer review.
+    sourceStates: [peer-review]
+    targetState: accepted
+    roles: [ADMIN, REVIEWER]
+  accept-community-review:
+    description: Accept after community review.
+    sourceStates: [community-review]
+    targetState: accepted
+    roles: [ADMIN]
+  reject-peer-review:
+    description: Reject after peer review.
+    sourceStates: [peer-review]
+    targetState: rejected
+    roles: [ADMIN, REVIEWER]
+  reject-community-review:
+    description: Reject after community review.
+    sourceStates: [community-review]
+    targetState: rejected
+    roles: [ADMIN]

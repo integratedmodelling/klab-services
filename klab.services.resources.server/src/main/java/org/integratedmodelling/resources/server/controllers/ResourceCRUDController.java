@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
@@ -20,6 +22,9 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -31,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @Tag(
@@ -173,6 +179,55 @@ public class ResourceCRUDController {
     if (scope instanceof UserScope userScope) {
 
       switch (knowledgeClass) {
+        case WORKFLOW -> {
+          var workflow = Utils.Json.parseObject(contents, Workflow.class);
+          if (!urn.equals(workflow.getUrn())) {
+            throw new KlabIllegalArgumentException("Path URN does not match submitted workflow " + workflow.getUrn());
+          }
+          return resourcesServer.klabService().submit(workflow, submissionMode, userScope);
+        }
+        case FLOW -> {
+          var coordinates = WorkflowUrns.parse(urn, knowledgeClass);
+          var flow = Utils.Json.parseObject(contents, Flow.class);
+          flow.setId(coordinates.ownerId());
+          return resourcesServer.klabService().submit(flow, submissionMode, userScope);
+        }
+        case FLOW_STATE -> {
+          var coordinates = WorkflowUrns.parse(urn, knowledgeClass);
+          var state = Utils.Json.parseObject(contents, Flow.State.class);
+          state.setFlowId(coordinates.ownerId());
+          state.setId(coordinates.artifactId());
+          return resourcesServer.klabService().submit(state, submissionMode, userScope);
+        }
+        case FLOW_TRANSITION -> {
+          var coordinates = WorkflowUrns.parse(urn, knowledgeClass);
+          if (!coordinates.artifactId().equals("new")) {
+            throw new KlabIllegalArgumentException("FLOW_TRANSITION submission URN must end in :new");
+          }
+          var request = Utils.Json.parseObject(contents, Flow.TransitionRequest.class);
+          request.setTransactionId(UUID.randomUUID().toString());
+          resourcesServer.klabService().transitionFlow(coordinates.ownerId(), request, userScope);
+          var descriptor = new ResourceSet.Resource(
+              CRUDOperation.CREATE,
+              resourcesServer.klabService().serviceId(),
+              WorkflowUrns.flowTransition(coordinates.ownerId(), request.getTransactionId()),
+              null,
+              Version.EMPTY_VERSION,
+              knowledgeClass,
+              System.currentTimeMillis(),
+              false);
+          return List.of(ResourceSet.of(descriptor));
+        }
+        case FLOW_ATTACHMENT -> {
+          var coordinates = WorkflowUrns.parse(urn, knowledgeClass);
+          var upload = Utils.Json.parseObject(contents, Flow.AttachmentUpload.class);
+          var attachment = resourcesServer.klabService()
+              .addFlowAttachment(coordinates.ownerId(), coordinates.artifactId(), upload, userScope);
+          return List.of(resourcesServer.klabService().resolve(
+              attachment.getUrn(), knowledgeClass, userScope));
+        }
+        case WORKFLOW_STATE, WORKFLOW_TRANSITION -> throw new KlabIllegalArgumentException(
+            knowledgeClass + " is immutable and must be submitted as part of a WORKFLOW");
         case RESOURCE -> {
           var resource = Utils.Json.parseObject(contents, ResourceImpl.class);
           return resourcesServer.klabService().submit(resource, submissionMode, userScope);

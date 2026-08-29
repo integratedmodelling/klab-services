@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.common.mapper.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
@@ -28,6 +29,8 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -36,7 +39,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * is always the primary key. Disk-based with automatic backup. Can navigate semantics and
  * spatial/temporal queries.
  */
-public class ResourcesKBox {
+public class ResourcesKBox implements WorkflowStore {
 
   private final ResourceIndexer index;
 
@@ -44,6 +47,9 @@ public class ResourcesKBox {
   private final File databaseFile;
   private ObjectRepository<ResourceInfo> resourceMetadata;
   private ObjectRepository<ResourceImpl> resources;
+  private ObjectRepository<WorkflowRecord> workflows;
+  private ObjectRepository<Flow> flows;
+  private ObjectRepository<WorkflowAttachmentPayload> workflowAttachments;
   private boolean local;
 
   /** Take over the mapper so we can use interfaces */
@@ -89,6 +95,9 @@ public class ResourcesKBox {
 
     this.resourceMetadata = db.getRepository(new ResourceMetadataDecorator());
     this.resources = db.getRepository(new ResourceDecorator());
+    this.workflows = db.getRepository(new WorkflowDecorator());
+    this.flows = db.getRepository(new FlowDecorator());
+    this.workflowAttachments = db.getRepository(new WorkflowAttachmentDecorator());
     this.index =
         ResourceIndexer.create(
             Configuration.INSTANCE.getDataPath(
@@ -231,6 +240,67 @@ public class ResourcesKBox {
     return result.getAffectedCount() == 1;
   }
 
+  /** Persist or replace a validated workflow definition. */
+  public boolean putWorkflow(Workflow workflow) {
+    var record = new WorkflowRecord();
+    record.storageId = workflow.getId() + "@" + workflow.getVersion();
+    record.workflow = workflow;
+    return workflows.update(record, true).getAffectedCount() == 1;
+  }
+
+  public Workflow getWorkflow(String id) {
+    return workflows.find().toList().stream()
+        .map(WorkflowRecord::getWorkflow)
+        .filter(workflow -> id.equals(workflow.getId()))
+        .max(java.util.Comparator.comparing(workflow -> Version.create(workflow.getVersion())))
+        .orElse(null);
+  }
+
+  public Workflow getWorkflow(String id, String version) {
+    var record = workflows.getById(id + "@" + version);
+    return record == null ? null : record.workflow;
+  }
+
+  public List<Workflow> listWorkflows() {
+    return workflows.find().toList().stream().map(WorkflowRecord::getWorkflow).toList();
+  }
+
+  /** Persist the complete flow aggregate atomically in Nitrite. */
+  public boolean putFlow(Flow flow) {
+    return flows.update(flow, true).getAffectedCount() == 1;
+  }
+
+  public Flow getFlow(String id) {
+    return flows.getById(id);
+  }
+
+  public List<Flow> listFlows() {
+    return flows.find().toList();
+  }
+
+  /** Store opaque bytes separately so flow retrieval remains cheap. */
+  public boolean putWorkflowAttachment(String id, String flowId, String stateId, byte[] content) {
+    var payload = new WorkflowAttachmentPayload();
+    payload.id = id;
+    payload.flowId = flowId;
+    payload.stateId = stateId;
+    payload.content = content == null ? new byte[0] : Arrays.copyOf(content, content.length);
+    return workflowAttachments.update(payload, true).getAffectedCount() == 1;
+  }
+
+  public byte[] getWorkflowAttachment(String id) {
+    var payload = workflowAttachments.getById(id);
+    return payload == null || payload.content == null
+        ? null
+        : Arrays.copyOf(payload.content, payload.content.length);
+  }
+
+  public boolean deleteWorkflowAttachment(String id) {
+    var payload = workflowAttachments.getById(id);
+    if (payload == null) return false;
+    return workflowAttachments.remove(payload).getAffectedCount() == 1;
+  }
+
   private static class ResourceMetadataDecorator implements EntityDecorator<ResourceInfo> {
 
     @Override
@@ -275,5 +345,64 @@ public class ResourcesKBox {
     public String getEntityName() {
       return "resources";
     }
+  }
+
+  public static class WorkflowRecord {
+    private String storageId;
+    private Workflow workflow;
+    public WorkflowRecord() {}
+    public String getStorageId() { return storageId; }
+    public void setStorageId(String storageId) { this.storageId = storageId; }
+    public Workflow getWorkflow() { return workflow; }
+    public void setWorkflow(Workflow workflow) { this.workflow = workflow; }
+  }
+
+  private static class WorkflowDecorator implements EntityDecorator<WorkflowRecord> {
+    public Class<WorkflowRecord> getEntityType() { return WorkflowRecord.class; }
+    public EntityId getIdField() { return new EntityId("storageId"); }
+    public List<EntityIndex> getIndexFields() { return List.of(new EntityIndex(IndexType.UNIQUE, "storageId")); }
+    public String getEntityName() { return "workflows"; }
+  }
+
+  private static class FlowDecorator implements EntityDecorator<Flow> {
+    public Class<Flow> getEntityType() { return Flow.class; }
+    public EntityId getIdField() { return new EntityId("id"); }
+    public List<EntityIndex> getIndexFields() {
+      return List.of(
+          new EntityIndex(IndexType.UNIQUE, "id"),
+          new EntityIndex(IndexType.NON_UNIQUE, "workflowId"),
+          new EntityIndex(IndexType.NON_UNIQUE, "status"));
+    }
+    public String getEntityName() { return "workflowFlows"; }
+  }
+
+  /** Internal blob record. It is intentionally absent from the public API. */
+  public static class WorkflowAttachmentPayload {
+    private String id;
+    private String flowId;
+    private String stateId;
+    private byte[] content;
+    public WorkflowAttachmentPayload() {}
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getFlowId() { return flowId; }
+    public void setFlowId(String flowId) { this.flowId = flowId; }
+    public String getStateId() { return stateId; }
+    public void setStateId(String stateId) { this.stateId = stateId; }
+    public byte[] getContent() { return content; }
+    public void setContent(byte[] content) { this.content = content; }
+  }
+
+  private static class WorkflowAttachmentDecorator
+      implements EntityDecorator<WorkflowAttachmentPayload> {
+    public Class<WorkflowAttachmentPayload> getEntityType() { return WorkflowAttachmentPayload.class; }
+    public EntityId getIdField() { return new EntityId("id"); }
+    public List<EntityIndex> getIndexFields() {
+      return List.of(
+          new EntityIndex(IndexType.UNIQUE, "id"),
+          new EntityIndex(IndexType.NON_UNIQUE, "flowId"),
+          new EntityIndex(IndexType.NON_UNIQUE, "stateId"));
+    }
+    public String getEntityName() { return "workflowAttachments"; }
   }
 }

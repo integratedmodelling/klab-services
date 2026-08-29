@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import {computed} from "vue";
 
 const props = defineProps<{
   status: Record<string, unknown> | null;
@@ -37,11 +37,13 @@ function formatUptime(value: unknown): string {
     <q-card flat class="metric-card metric-card--primary">
       <q-card-section>
         <div class="metric-label">Operational state</div>
-        <div v-if="loading" class="metric-value"><q-skeleton type="text" width="65%" /></div>
+        <div v-if="loading" class="metric-value">
+          <q-skeleton type="text" width="65%"/>
+        </div>
         <div v-else class="metric-value state-value">
           <span
-            class="state-dot"
-            :class="status?.operational ? 'state-dot--ok' : status?.available ? 'state-dot--warn' : 'state-dot--down'"
+              class="state-dot"
+              :class="status?.operational ? 'state-dot--ok' : status?.available ? 'state-dot--warn' : 'state-dot--down'"
           />
           {{ status?.operational ? "Operational" : status?.available ? "Available" : "Unavailable" }}
         </div>
@@ -53,7 +55,7 @@ function formatUptime(value: unknown): string {
       <q-card-section>
         <div class="metric-label">Health</div>
         <div class="metric-value">{{ loading ? "—" : `${health}%` }}</div>
-        <q-linear-progress rounded size="6px" :value="health / 100" color="secondary" track-color="grey-8" />
+        <q-linear-progress rounded size="6px" :value="health / 100" color="secondary" track-color="grey-8"/>
       </q-card-section>
     </q-card>
 

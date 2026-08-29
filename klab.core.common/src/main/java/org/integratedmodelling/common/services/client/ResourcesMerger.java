@@ -40,6 +40,8 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -131,6 +133,57 @@ public class ResourcesMerger implements ResourcesService {
   @Override
   public Capabilities capabilities(Scope scope) {
     return primary().capabilities(scope);
+  }
+
+  @Override
+  public Workflow getWorkflow(String workflowId, UserScope scope) {
+    return primary().getWorkflow(workflowId, scope);
+  }
+
+  @Override
+  public Flow createFlow(String workflowId, Flow.State initialState, UserScope scope) {
+    return primary().createFlow(workflowId, initialState, scope);
+  }
+
+  @Override
+  public Flow getFlow(String flowId, UserScope scope) {
+    return primary().getFlow(flowId, scope);
+  }
+
+  @Override
+  public List<Flow> getFlows(boolean includeClosed, UserScope scope) {
+    return primary().getFlows(includeClosed, scope);
+  }
+
+  @Override
+  public Flow.State createFlowState(String flowId, Flow.State state, UserScope scope) {
+    return primary().createFlowState(flowId, state, scope);
+  }
+
+  @Override
+  public Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope) {
+    return primary().updateFlowState(flowId, stateId, state, scope);
+  }
+
+  @Override
+  public boolean deleteFlowState(String flowId, String stateId, UserScope scope) {
+    return primary().deleteFlowState(flowId, stateId, scope);
+  }
+
+  @Override
+  public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
+    return primary().transitionFlow(flowId, request, scope);
+  }
+
+  @Override
+  public Flow.Attachment addFlowAttachment(
+      String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope) {
+    return primary().addFlowAttachment(flowId, stateId, upload, scope);
+  }
+
+  @Override
+  public byte[] getFlowAttachment(String flowId, String attachmentId, UserScope scope) {
+    return primary().getFlowAttachment(flowId, attachmentId, scope);
   }
 
   @Override

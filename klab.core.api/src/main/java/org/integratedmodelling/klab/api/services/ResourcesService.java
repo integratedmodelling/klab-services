@@ -30,6 +30,8 @@ import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 
 /**
@@ -68,6 +70,37 @@ import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescri
  * @author Ferd
  */
 public interface ResourcesService extends KlabService {
+
+  /** Retrieve a versioned workflow schema. */
+  Workflow getWorkflow(String workflowId, UserScope scope);
+
+  /** Instantiate a workflow through its mandatory INIT transition. */
+  Flow createFlow(String workflowId, Flow.State initialState, UserScope scope);
+
+  /** Retrieve the caller-specific projection of a flow. */
+  Flow getFlow(String flowId, UserScope scope);
+
+  /** List caller-accessible active and, optionally, closed flows. */
+  List<Flow> getFlows(boolean includeClosed, UserScope scope);
+
+  /** Add a state without moving a current task; intended for branching workflows and administrators. */
+  Flow.State createFlowState(String flowId, Flow.State state, UserScope scope);
+
+  /** Update mutable task data. Schema identity and attachment descriptors cannot be changed here. */
+  Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope);
+
+  /** Remove an unreferenced, non-current state. */
+  boolean deleteFlowState(String flowId, String stateId, UserScope scope);
+
+  /** Validate, authorize, persist, and append a transition to a flow. */
+  Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope);
+
+  /** Store an attachment payload in the workflow persistence backend. */
+  Flow.Attachment addFlowAttachment(
+      String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope);
+
+  /** Retrieve attachment bytes after checking access to their state. */
+  byte[] getFlowAttachment(String flowId, String attachmentId, UserScope scope);
 
   /** For the SUBMIT endpoint, specifying the modality of submission of an asset. */
   enum SubmissionMode {

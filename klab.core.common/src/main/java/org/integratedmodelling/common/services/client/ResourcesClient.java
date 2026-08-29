@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.net.URL;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +30,8 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 
@@ -36,6 +39,58 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   private Capabilities capabilities;
   boolean useCaches = false;
+
+  @Override
+  public Workflow getWorkflow(String workflowId, UserScope scope) {
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.WORKFLOW, Workflow.class, "workflowId", workflowId);
+  }
+
+  @Override
+  public Flow createFlow(String workflowId, Flow.State initialState, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOWS, initialState, Flow.class, "workflowId", workflowId);
+  }
+
+  @Override
+  public Flow getFlow(String flowId, UserScope scope) {
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW, Flow.class, "flowId", flowId);
+  }
+
+  @Override
+  public List<Flow> getFlows(boolean includeClosed, UserScope scope) {
+    return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOWS, Flow.class, "includeClosed", includeClosed);
+  }
+
+  @Override
+  public Flow.State createFlowState(String flowId, Flow.State state, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATES, state, Flow.State.class, "flowId", flowId);
+  }
+
+  @Override
+  public Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATE, state, Flow.State.class, "flowId", flowId, "stateId", stateId);
+  }
+
+  @Override
+  public boolean deleteFlowState(String flowId, String stateId, UserScope scope) {
+    client.withScope(scope).delete(ServicesAPI.RESOURCES.FLOW_STATE, "flowId", flowId, "stateId", stateId);
+    return true;
+  }
+
+  @Override
+  public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_TRANSITIONS, request, Flow.class, "flowId", flowId);
+  }
+
+  @Override
+  public Flow.Attachment addFlowAttachment(String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_ATTACHMENTS, upload, Flow.Attachment.class, "flowId", flowId, "stateId", stateId);
+  }
+
+  @Override
+  public byte[] getFlowAttachment(String flowId, String attachmentId, UserScope scope) {
+    String encoded = client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW_ATTACHMENT, String.class, "flowId", flowId, "attachmentId", attachmentId);
+    return Base64.getDecoder().decode(encoded);
+  }
 
   /** Caches for concepts and observables. */
   private final LoadingCache<String, KimConcept> concepts =

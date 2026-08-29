@@ -445,6 +445,15 @@ public interface ServicesAPI {
 
   interface RESOURCES {
 
+    String WORKFLOW = API_BASE + "/workflows/{workflowId}";
+    String FLOWS = API_BASE + "/flows";
+    String FLOW = API_BASE + "/flows/{flowId}";
+    String FLOW_STATES = API_BASE + "/flows/{flowId}/states";
+    String FLOW_STATE = API_BASE + "/flows/{flowId}/states/{stateId}";
+    String FLOW_TRANSITIONS = API_BASE + "/flows/{flowId}/transitions";
+    String FLOW_ATTACHMENTS = API_BASE + "/flows/{flowId}/states/{stateId}/attachments";
+    String FLOW_ATTACHMENT = API_BASE + "/flows/{flowId}/attachments/{attachmentId}";
+
 
     // TODO this can also be INFO using rights as type linked to the URN
     String RIGHTS = API_BASE + "/rights/{urn}";

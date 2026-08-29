@@ -233,6 +233,8 @@ public interface Authority {
    * Write the documentation for the passed identity in the passed media type, which will be one of
    * those returned in the capabilities.
    *
+   * FIXME move to a DomainObject with a documentation schema
+   *
    * @param identityId
    * @param mediaType
    * @param destination
@@ -242,8 +244,8 @@ public interface Authority {
   /**
    * Called only if {@link Capabilities#isSearchable()} returns true. Implementations must set the
    * {@link Metadata#IM_KEY} to the unique identity ID that will produce the concept when called in
-   * {@link #getIdentity(String, String)}. Remaining fields should be set to support the user
-   * in choosing an identity.
+   * {@link #getIdentity(String, String)}. Remaining fields should be set to support the user in
+   * choosing an identity.
    *
    * @param query
    * @param catalog may be null
