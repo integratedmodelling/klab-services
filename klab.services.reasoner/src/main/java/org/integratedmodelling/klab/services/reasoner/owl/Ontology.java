@@ -662,7 +662,7 @@ public class Ontology {
     if (CoreOntology.NS.IS_ABSTRACT.equals(property)) {
       concept.setAbstract(Boolean.parseBoolean(literal.toString()));
     } else if (CoreOntology.NS.CONCEPT_DEFINITION_PROPERTY.equals(property)) {
-      concept.setUrn(removeOuterParentheses(literal.toString()));
+      owl.setConceptUrn(concept, removeOuterParentheses(literal.toString()));
     } else if (CoreOntology.NS.REFERENCE_NAME_PROPERTY.equals(property)) {
       concept.setReferenceName(literal.toString());
     }

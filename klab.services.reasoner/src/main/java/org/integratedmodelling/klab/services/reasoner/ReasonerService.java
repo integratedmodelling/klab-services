@@ -2411,7 +2411,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     concepts, ontology, concept.getOperands().get(0).getType())
                 : this.owl.getUnion(concepts, ontology, concept.getOperands().getFirst().getType());
 
-        ((ConceptImpl) ret).setUrn(concept.getUrn());
+        this.owl.setConceptUrn((ConceptImpl) ret, concept.getUrn());
         ret.getType()
             .add(
                 concept.is(SemanticType.INTERSECTION)

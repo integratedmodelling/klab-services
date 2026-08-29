@@ -336,6 +336,7 @@ public class SemanticsBuilder implements Observable.Builder {
             (kimConcept.getName() != null
                 ? reasoner.resolveConcept(kimConcept.getName())
                 : buildConcept(kimConcept.getObservable()));
+    var resolvedConcept = ret;
 
     if (ret.is(SemanticType.NOTHING)) {
       return ret;
@@ -571,7 +572,14 @@ public class SemanticsBuilder implements Observable.Builder {
     // TODO code name should be same as reference name and equal the lowercase URN with changed : ->
     //  _, ' ' -> __, '()' -> ___ and any value op with a base64 hash of the value
 
-    ret.setUrn(kimConcept.getUrn());
+    /*
+     * An atomic worldview alias resolves to the canonical core concept. Do not relabel that shared
+     * object with the alias URN. Generated concepts, on the other hand, may adopt the source URN as
+     * long as the OWL registry is rekeyed with them.
+     */
+    if (ret != resolvedConcept) {
+      reasoner.owl().setConceptUrn(ret, kimConcept.getUrn());
+    }
     ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
 
     return ret;

@@ -528,6 +528,29 @@ public class OWL {
     this.conceptsById.put(concept.getUrn(), concept);
   }
 
+  /**
+   * Change the semantic URN of a generated concept without leaving the OWL registries keyed by its
+   * previous URN. Canonical concepts returned for aliases must never be passed here.
+   */
+  public synchronized void setConceptUrn(ConceptImpl concept, String urn) {
+    String previousUrn = concept.getUrn();
+    if (Objects.equals(previousUrn, urn)) {
+      return;
+    }
+
+    if (conceptsById.get(previousUrn) == concept) {
+      OWLClass owlClass = owlClasses.remove(previousUrn);
+      conceptsById.remove(previousUrn);
+      concept.setUrn(urn);
+      if (owlClass != null) {
+        owlClasses.put(urn, owlClass);
+      }
+      conceptsById.put(urn, concept);
+    } else {
+      concept.setUrn(urn);
+    }
+  }
+
   public String getConceptSpace(IRI iri) {
 
     if (iri2ns.containsKey(iri.toString())) {
