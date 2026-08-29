@@ -277,6 +277,14 @@
             <version>2.8.6</version>
         </dependency>
 
+        <!-- Swagger Core introspection requires JAXB in the jakarta.xml.bind namespace at runtime. -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.2</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- this is to get the endpoints descriptions from javadoc -->
         <dependency>
             <groupId>com.github.therapi</groupId>

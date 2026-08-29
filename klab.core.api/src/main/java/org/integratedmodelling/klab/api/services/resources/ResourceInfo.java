@@ -92,7 +92,7 @@ public class ResourceInfo implements Serializable {
     /** Positive status means usable; 0 means usable by submitter only; -1 means unusable */
     public final int status;
 
-    private Stage(int status) {
+    Stage(int status) {
       this.status = status;
     }
   }
