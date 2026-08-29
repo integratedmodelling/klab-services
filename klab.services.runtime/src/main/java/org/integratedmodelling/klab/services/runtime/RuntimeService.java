@@ -207,8 +207,7 @@ public class RuntimeService extends BaseService
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
     } else {
       Logging.INSTANCE.error("Cannot connect to the knowledge graph database");
-      this.setOperational(
-          false, Notification.error("Cannot connect to the knowledge graph database"));
+      this.setOperational(false);
       return false;
     }
 

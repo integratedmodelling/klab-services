@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "Resolver API", description = "API for resolving observations and contextual requests")
+@Tag(name = "Resolver", description = "Observation resolution and contextual resource submission")
 public class ResolverController {
 
   @Autowired private ResolverServer resolverServer;
@@ -63,6 +63,9 @@ public class ResolverController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Submit a contextual resource",
+      description = "Make an observation available as a resource in the authorized context")
   @PostMapping(ServicesAPI.RESOLVER.SUBMIT_RESOURCE)
   public @ResponseBody Resource submitResource(
       @RequestBody Observation observation, Principal principal) {
@@ -75,6 +78,9 @@ public class ResolverController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "List submitted resources",
+      description = "Return resources submitted in the authorized context")
   @GetMapping(ServicesAPI.RESOLVER.GET_SUBMITTED_RESOURCES)
   public @ResponseBody List<Resource> submitResource(Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {

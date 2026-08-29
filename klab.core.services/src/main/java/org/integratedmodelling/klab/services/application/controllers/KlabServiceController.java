@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.h2.util.IOUtils;
@@ -40,7 +41,7 @@ import java.util.List;
  * privileges of the calling identity and contain more information.
  */
 @RestController
-@Tag(name = "Basic inspection")
+@Tag(name = "Service", description = "Health, capabilities, asset exchange, and generic queries")
 public class KlabServiceController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
@@ -49,6 +50,9 @@ public class KlabServiceController {
 
   @Autowired private HealthEndpoint healthEndpoint;
 
+  @Operation(
+      summary = "Get service health",
+      description = "Return aggregated service health information")
   @GetMapping(ServicesAPI.HEALTH)
   public HealthComponent getHealth() {
     // Returns the aggregated Health object with all components
@@ -62,6 +66,9 @@ public class KlabServiceController {
    *
    * @return
    */
+  @Operation(
+      summary = "Get service capabilities",
+      description = "Return public and caller-specific capabilities exposed by this service")
   @GetMapping(ServicesAPI.CAPABILITIES)
   public KlabService.ServiceCapabilities capabilities(Principal principal) {
     return instance
@@ -79,11 +86,15 @@ public class KlabServiceController {
    *
    * @return
    */
+  @Operation(summary = "Get service status", description = "Return the current operational status")
   @GetMapping(ServicesAPI.STATUS)
   public KlabService.ServiceStatus status() {
     return instance.klabService().status();
   }
 
+  @Operation(
+      summary = "Get asset information",
+      description = "Return typed information for an asset identified by URN and knowledge class")
   @GetMapping(ServicesAPI.INFO)
   public <T> T info(
       @PathVariable(name = "urn") String urn,
@@ -97,6 +108,9 @@ public class KlabServiceController {
     throw new KlabAuthorizationException("No valid scope in service INFO request");
   }
 
+  @Operation(
+      summary = "Query service assets",
+      description = "Run a generic query and return results using the requested information class")
   @PostMapping(ServicesAPI.QUERY)
   public <T> List<T> query(
       @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
@@ -128,6 +142,9 @@ public class KlabServiceController {
    * @param response
    * @param principal
    */
+  @Operation(
+      summary = "Export an asset",
+      description = "Stream an asset using the representation requested in the Accept header")
   @GetMapping(ServicesAPI.EXPORT)
   public void exportAsset(
       @PathVariable(name = "urn") String urn,
@@ -175,6 +192,10 @@ public class KlabServiceController {
     }
   }
 
+  @Operation(
+      summary = "Import an asset from properties",
+      description =
+          "Submit a JSON property set through the selected import schema and return the job ID")
   @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.APPLICATION_JSON_VALUE)
   public long importAsset(
       @PathVariable(name = "schema") String schema,
@@ -202,6 +223,10 @@ public class KlabServiceController {
     return -1;
   }
 
+  @Operation(
+      summary = "Import an uploaded asset",
+      description =
+          "Submit a multipart file through the selected import schema and return the job ID")
   @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public long uploadAsset(
       @PathVariable(name = "schema") String schema,

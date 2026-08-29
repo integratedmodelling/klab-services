@@ -42,8 +42,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Secured(Role.USER)
 @Tag(
-    name = "Resources service core API",
-    description = "Endpoints for managing k.LAB resources, namespaces, and knowledge assets")
+    name = "Resources",
+    description = "Resource resolution, contextualization, parsing, schemas, and access rights")
 public class ResourcesProviderController {
 
   @Autowired private ResourcesServer resourcesServer;
@@ -384,7 +384,7 @@ public class ResourcesProviderController {
   @Operation(
       summary = "Resolve components providing an export schema",
       description =
-          "Resolve a components providing an export schema for a specified media type and optional geometry")
+          "Resolve components providing an export schema for a specified media type and optional geometry")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Service call resolved successfully"),
     @ApiResponse(responseCode = "404", description = "Service call not found"),
@@ -416,7 +416,7 @@ public class ResourcesProviderController {
   @Operation(
       summary = "Resolve components providing an import schema",
       description =
-          "Resolve a components providing an import schema for a specified media type and optional geometry")
+          "Resolve components providing an import schema for a specified media type and optional geometry")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Service call resolved successfully"),
     @ApiResponse(responseCode = "404", description = "Service call not found"),
@@ -546,6 +546,10 @@ public class ResourcesProviderController {
    * @param requestBody
    * @param principal
    */
+  @Operation(
+      summary = "Contextualize a resource",
+      description =
+          "Decode a binary data request and submit resource contextualization as an asynchronous job")
   @PostMapping(
       value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
       consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -694,6 +698,9 @@ public class ResourcesProviderController {
   //    return resourcesServer.klabService().modelGeometry(modelUrn);
   //  }
 
+  @Operation(
+      summary = "Parse an asset",
+      description = "Parse source text into the requested k.LAB knowledge asset type")
   @PostMapping(ServicesAPI.RESOURCES.PARSE_ASSET)
   public @ResponseBody KlabAsset parseAsset(
       @RequestBody String input,
@@ -724,6 +731,9 @@ public class ResourcesProviderController {
   //    };
   //  }
 
+  @Operation(
+      summary = "Get resource rights",
+      description = "Return access privileges for a resource URN")
   @GetMapping(ServicesAPI.RESOURCES.RIGHTS)
   public ResourcePrivileges getResourceRights(
       @PathVariable("urn") String urn, Principal principal) {
@@ -736,6 +746,9 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Set resource rights",
+      description = "Replace access privileges for a resource URN")
   @PutMapping(ServicesAPI.RESOURCES.RIGHTS)
   public boolean setResourceRights(
       @PathVariable("urn") String urn,

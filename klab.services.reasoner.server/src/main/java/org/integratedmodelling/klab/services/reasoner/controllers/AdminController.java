@@ -30,7 +30,7 @@ import java.util.List;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
-@Tag(name = "Reasoner Administration API", description = "Administrative operations for the reasoner service")
+@Tag(name = "Reasoner administration", description = "Knowledge loading, updates, and concept definition")
 public class AdminController implements ServicesAPI.REASONER {
 
   @Autowired private ReasonerServer reasoner;

@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "Reasoner API", description = "API for semantic reasoning operations")
+@Tag(name = "Reasoning", description = "Concept resolution, semantic relationships, and logical inference")
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
@@ -45,14 +45,15 @@ public class ReasonerController {
   }
 
   /**
-   * POST /resolve/concept from URN
+   * POST /resolve/concept from a semantic definition
    *
    * @param definition
    * @return
    */
   @Operation(
-      summary = "Resolve concept from URN",
-      description = "Resolves a concept from its URN definition")
+      summary = "Resolve a concept",
+      description =
+          "Resolve a semantic concept definition, optionally through the resources service")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "Concept resolved successfully"),
@@ -83,7 +84,7 @@ public class ReasonerController {
       description = "Infers strategies for observing the specified resolution request")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Strategies computed successfully"),
+        @ApiResponse(responseCode = "200", description = "Observation strategies computed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid resolution request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
@@ -110,7 +111,8 @@ public class ReasonerController {
           "Infers the most specific strategy for establishing identity for substantials of a specified observable")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Strategies computed successfully"),
+        @ApiResponse(
+            responseCode = "200", description = "Identification strategy computed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid resolution request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })

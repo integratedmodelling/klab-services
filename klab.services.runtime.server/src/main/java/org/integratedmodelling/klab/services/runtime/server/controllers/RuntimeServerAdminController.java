@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
-@Tag(name = "Runtime Server Administration API", description = "Administrative operations for the runtime server")
+@Tag(name = "Runtime administration", description = "Administrative operations for runtime scopes and digital twins")
 public class RuntimeServerAdminController {
 
     @Autowired

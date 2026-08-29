@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.data.BaseDataImpl;
@@ -18,9 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
 
 @RestController
-@Tag(name = "Job management")
+@Tag(name = "Jobs", description = "Asynchronous job status, cancellation, and result retrieval")
 public class KlabJobController {
 
+  @Operation(
+      summary = "Get job status",
+      description = "Return the current status of an asynchronous job")
   @GetMapping(ServicesAPI.JOBS.STATUS)
   public JobStatus jobStatus(@PathVariable(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
@@ -32,6 +36,7 @@ public class KlabJobController {
     throw new KlabIllegalStateException("Unexpected runtime configuration");
   }
 
+  @Operation(summary = "Cancel a job", description = "Request cancellation of an asynchronous job")
   @GetMapping(ServicesAPI.JOBS.CANCEL)
   public boolean cancelJob(@PathVariable(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
@@ -43,6 +48,8 @@ public class KlabJobController {
     throw new KlabIllegalStateException("Unexpected runtime configuration");
   }
 
+  @Operation(
+      summary = "Get a job result", description = "Return the completed textual result of a job")
   @GetMapping(ServicesAPI.JOBS.RETRIEVE)
   public String retrieveJob(@PathVariable(name = "id") long id, Principal principal)
       throws Throwable {
@@ -55,6 +62,9 @@ public class KlabJobController {
     throw new KlabIllegalStateException("Unexpected runtime configuration");
   }
 
+  @Operation(
+      summary = "Download job data",
+      description = "Stream the binary data result produced by a job")
   @GetMapping(ServicesAPI.JOBS.RETRIEVE_DATA)
   public void retrieveData(
       @PathVariable(name = "id") long id, HttpServletResponse response, Principal principal) {

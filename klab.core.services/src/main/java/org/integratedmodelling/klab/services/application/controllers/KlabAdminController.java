@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
@@ -30,7 +31,9 @@ import java.util.Map;
 /** Administration endpoints common to all k.LAB services. Accessible only to administrators. */
 @RestController
 @Secured({Role.ADMINISTRATOR, Role.SYSTEM})
-@Tag(name = "Generic service administration")
+@Tag(
+    name = "Service administration",
+    description = "Shared administrative settings, credentials, and lifecycle operations")
 public class KlabAdminController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
@@ -42,6 +45,9 @@ public class KlabAdminController {
    *
    * @return true if the shutdown request is accepted and shutdown has begun.
    */
+  @Operation(
+      summary = "Shut down the service",
+      description = "Accept a request to stop this service instance")
   @PutMapping(ServicesAPI.ADMIN.SHUTDOWN)
   public boolean shutdown() {
     Logging.INSTANCE.info("Shutting down service instance " + instance.klabService().serviceName());
@@ -60,6 +66,9 @@ public class KlabAdminController {
    * @param host the host name (possibly with port and path)
    * @return true if the service has the requested credentials
    */
+  @Operation(
+      summary = "Check stored credentials",
+      description = "Report whether credentials are available for the requested scheme and host")
   @GetMapping(ServicesAPI.ADMIN.CHECK_CREDENTIALS)
   public boolean checkCredentials(String scheme, String host) {
     // TODO check if we have credentials for the passed scheme/host, return true if we do
@@ -75,6 +84,9 @@ public class KlabAdminController {
    * @param request contains the host and the credential data
    * @return the information relative to the added credentials, including the credential identifier
    */
+  @Operation(
+      summary = "Store credentials",
+      description = "Store external-service credentials for a host")
   @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(
       @RequestBody CredentialsRequest request, Principal principal) {
@@ -92,6 +104,8 @@ public class KlabAdminController {
    * @param id the credential ID obtained through one of the inspection endpoints.
    * @return true if the credentials were there and were deleted, false otherwise
    */
+  @Operation(
+      summary = "Delete credentials", description = "Delete stored credentials by identifier")
   @DeleteMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public boolean removeCredentials(@RequestParam("id") String id) {
     return Authentication.INSTANCE.removeCredentials(id);
@@ -106,6 +120,9 @@ public class KlabAdminController {
    *
    * @return the list of credentials, possibly empty
    */
+  @Operation(
+      summary = "List credentials",
+      description = "List metadata for external-service credentials visible to the caller")
   @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(
       Principal principal) {
@@ -125,6 +142,10 @@ public class KlabAdminController {
    *
    * @return
    */
+  @Operation(
+      summary = "Change a service setting",
+      description =
+          "Apply an administrative setting and return its asynchronous job ID when applicable")
   @PostMapping(ServicesAPI.ADMIN.SET)
   public @ResponseBody long postSetting(
       @RequestBody String dataBody,
@@ -152,6 +173,9 @@ public class KlabAdminController {
     throw new KlabIllegalArgumentException("Invalid setting: " + setting);
   }
 
+  @Operation(
+      summary = "Get service settings",
+      description = "Return all administrative settings visible to the caller")
   @GetMapping(ServicesAPI.ADMIN.SETTINGS)
   public @ResponseBody Map<String, Object> getSettings(Principal principal) {
     var scope =

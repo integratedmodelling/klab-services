@@ -59,9 +59,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Secured(Role.USER)
 @Tag(
-    name = "Runtime Server API",
-    description =
-        "API for runtime operations including observation submission, visualization, and knowledge graph queries")
+    name = "Runtime",
+    description = "Observations, scopes, digital twins, visualization, and knowledge graph queries")
 public class RuntimeServerController {
 
   @Autowired private RuntimeServer runtimeService;
@@ -125,12 +124,12 @@ public class RuntimeServerController {
    * @return
    */
   @Operation(
-      summary =
-          "Create an agent with the behavior in the request. Optionally only run a compile pass",
-      description = "Returns an agent response that may be converted into a remote Agent")
+      summary = "Instantiate an agent",
+      description =
+          "Create an agent from a behavior, optionally compiling without starting or binding it")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Observation submitted successfully"),
+        @ApiResponse(responseCode = "200", description = "Agent created successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
@@ -222,12 +221,12 @@ public class RuntimeServerController {
    * @return
    */
   @Operation(
-      summary = "Register an observation for resolution",
+      summary = "Register an observation",
       description =
-          "Returns an observation that may be resolved if present, or empty if invalid in the scope")
+          "Register an observation in the authorized context and return its transport representation")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Observation submitted successfully"),
+        @ApiResponse(responseCode = "200", description = "Observation registered successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
@@ -243,6 +242,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Get an observation sharding strategy",
+      description = "Return the runtime's default data sharding strategy for an observation")
   @PostMapping(ServicesAPI.RUNTIME.GET_SHARDING_STRATEGY)
   public @ResponseBody Data.ShardingStrategy getDefaultShardingStrategy(
       @RequestBody Observation observation, Principal principal) {
@@ -256,8 +258,8 @@ public class RuntimeServerController {
   }
 
   @Operation(
-      summary = "Get session information",
-      description = "Retrieves information about active sessions")
+      summary = "List context information",
+      description = "Return information about contexts visible to the caller")
   @ApiResponses(
       value = {
         @ApiResponse(
@@ -338,6 +340,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Get digital twin configuration",
+      description = "Return the configuration of a digital twin or scope by identifier")
   @GetMapping(ServicesAPI.RUNTIME.GET_DIGITAL_TWIN_CONFIGURATION)
   public @ResponseBody DigitalTwin.Configuration getDigitalTwinConfiguration(
       @PathVariable(name = "id") String scopeId, Principal principal) {
@@ -350,11 +355,8 @@ public class RuntimeServerController {
 
   @Operation(
       operationId = ServicesAPI.RUNTIME.DIGITAL_TWIN,
-      summary =
-          ServicesAPI.RUNTIME.DIGITAL_TWIN
-              + " - Connect to or create a digital twin and respond with its description for a client or a connected scope",
-      description =
-          "Retrieves the graph representation of a digital twin. If the user has the rights, the digital twin can also be created if not existent.")
+      summary = "Get a digital twin graph",
+      description = "Return the graph representation of a digital twin visible to the caller")
   @ApiResponses(
       value = {
         @ApiResponse(
@@ -393,6 +395,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Open the digital twin explorer",
+      description = "Return the HTML explorer for a digital twin")
   @GetMapping(value = ServicesAPI.RUNTIME.DIGITAL_TWIN, produces = MediaType.TEXT_HTML_VALUE)
   public void getDigitalTwinExplorer(Principal principal, @PathVariable(name = "id") String id) {
     if (principal instanceof EngineAuthorization authorization) {
@@ -494,6 +499,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Get a knowledge graph asset",
+      description = "Return a runtime asset by numeric identifier from the authorized context")
   @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET)
   public @ResponseBody RuntimeAsset retrieveAsset(
       @PathVariable(name = "id") long id, Principal principal) {
@@ -507,6 +515,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  @Operation(
+      summary = "Get knowledge graph links",
+      description = "Return links for a source asset, direction, and optional relationship types")
   @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_LINKS)
   public @ResponseBody Collection<KnowledgeGraph.LinkInfo> retrieveLinks(
       @RequestParam(name = "sourceId") long sourceId,
@@ -573,6 +584,9 @@ public class RuntimeServerController {
    * @param queuesHeader
    * @return
    */
+  @Operation(
+      summary = "Create a session scope",
+      description = "Create or reuse a runtime session and return its scope identifier")
   @PostMapping(ServicesAPI.CREATE_SESSION)
   public String createSession(
       @RequestBody ScopeRequest request,
@@ -655,6 +669,9 @@ public class RuntimeServerController {
    * @param principal
    * @return the ID of the new context scope
    */
+  @Operation(
+      summary = "Create a context scope",
+      description = "Create a context and its digital twin under the authorized session")
   @PostMapping(ServicesAPI.CREATE_CONTEXT)
   public DigitalTwin.Configuration createContext(
       @RequestBody ScopeRequest request,
@@ -736,6 +753,9 @@ public class RuntimeServerController {
         Notification.error("Context instantiation failed: no valid session scope for request"));
   }
 
+  @Operation(
+      summary = "Release the session scope",
+      description = "Close the authorized runtime session")
   @GetMapping(ServicesAPI.RELEASE_SESSION)
   public boolean closeSession(Principal principal) {
 
@@ -749,6 +769,9 @@ public class RuntimeServerController {
     return false;
   }
 
+  @Operation(
+      summary = "Release the context scope",
+      description = "Close the authorized runtime context")
   @GetMapping(ServicesAPI.RELEASE_CONTEXT)
   public boolean closeContext(Principal principal) {
 
@@ -762,6 +785,9 @@ public class RuntimeServerController {
     return false;
   }
 
+  @Operation(
+      summary = "Get contextualizer service information",
+      description = "Return service-call information for a contextualizer URN")
   @GetMapping(ServicesAPI.RUNTIME.GET_SERVICE_INFO)
   public @ResponseBody ServiceInfo retrieveServiceInfo(
       @PathVariable(name = "urn") String urn, Principal principal) {
@@ -772,6 +798,9 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Request authorization doesn't carry a context scope");
   }
 
+  @Operation(
+      summary = "Get knowledge graph commit information",
+      description = "Return a digital twin commit by numeric identifier")
   @GetMapping(ServicesAPI.RUNTIME.GET_COMMIT_INFO)
   public @ResponseBody KnowledgeGraph.Commit retrieveCommit(
       @RequestParam(name = "id") long id, Principal principal) {

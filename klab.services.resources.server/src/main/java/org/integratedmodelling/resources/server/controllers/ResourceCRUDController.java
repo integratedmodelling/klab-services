@@ -40,9 +40,8 @@ import java.util.UUID;
 
 @RestController
 @Tag(
-    name = "Resources CRUD operations",
-    description =
-        "Endpoints for managing k.LAB resources, bridging to the info, submit, retrieve and delete endpoints of the Resources service")
+    name = "Resource management",
+    description = "Retrieve, list, submit, resolve, delete, and inspect k.LAB assets")
 @Secured(Role.USER)
 public class ResourceCRUDController {
 

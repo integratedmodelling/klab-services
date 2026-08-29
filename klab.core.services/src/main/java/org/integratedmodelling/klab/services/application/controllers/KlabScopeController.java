@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
 import java.util.*;
@@ -18,11 +19,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "Scope management")
+@Tag(name = "Scopes", description = "User scope initialization and service federation")
 public class KlabScopeController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
 
+  @Operation(
+      summary = "Initialize a user scope",
+      description =
+          "Attach the authorized service federation described by the notification to the caller's user scope")
   @PostMapping(ServicesAPI.NOTIFY_USER_SCOPE)
   public boolean notifyUserScope(@RequestBody UserScopeNotification request, Principal principal) {
 

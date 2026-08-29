@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Tag(name = "Reasoner Assist API", description = "API for semantic search and assistance operations")
+@Tag(name = "Semantic assistance", description = "Semantic search and assisted concept discovery")
 public class AssistController {
 
   @Autowired ReasonerServer reasoner;

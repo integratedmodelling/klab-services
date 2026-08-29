@@ -28,7 +28,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
-@Tag(name = "Resources service administration API")
+@Tag(
+    name = "Resource administration",
+    description = "Administrative project locking and repository operations")
 public class ResourceAdminController {
 
   @Autowired private ResourcesServer resourcesServer;
@@ -203,6 +205,9 @@ public class ResourceAdminController {
 //                : null);
 //  }
 
+  @Operation(
+      summary = "Lock a project",
+      description = "Acquire the administrative lock for a project URN")
   @GetMapping(value = ServicesAPI.RESOURCES.LOCK_PROJECT)
   public boolean lockProject(@PathVariable("urn") String urn, Principal principal) {
     if (principal instanceof EngineAuthorization auth) {
@@ -211,6 +216,9 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
+  @Operation(
+      summary = "Unlock a project",
+      description = "Release the administrative lock for a project URN")
   @GetMapping(value = ServicesAPI.RESOURCES.UNLOCK_PROJECT)
   public boolean unlockProject(@PathVariable("urn") String urn, Principal principal) {
     if (principal instanceof EngineAuthorization auth) {
@@ -219,6 +227,9 @@ public class ResourceAdminController {
     throw new KlabInternalErrorException("Resources service is incapable of admin operation");
   }
 
+  @Operation(
+      summary = "Manage a project repository",
+      description = "Run the requested repository operation for a project URN")
   @PostMapping(value = ServicesAPI.RESOURCES.MANAGE_PROJECT)
   public List<ResourceSet> manageProject(
       @PathVariable("urn") String urn, @RequestBody ProjectRequest request, Principal principal) {
