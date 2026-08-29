@@ -112,10 +112,10 @@ observable in the chosen perspective. It is not grammatical argument count, data
 or the number of entities mentioned in a sentence.
 
 | Dependence class | Arity | Structural expression | Functional expression | Required question |
-| --- | ---: | --- | --- | --- |
-| Independent / bounded | `0` | substantial: subject or agent | event | Can it establish the guiding identity and boundary of an observation? |
-| Dependent | `>=1` | quality inhering in a bearer | process composing an event or involving participants | What must bear, undergo, or frame it? |
-| Relational | `2` | structural relationship | functional relationship | What are the typed source and target? |
+| --- |------:| --- | --- | --- |
+| Independent / bounded |   `0` | substantial: subject or agent | event | Can it establish the guiding identity and boundary of an observation? |
+| Dependent |   `1` | quality inhering in a bearer | process composing an event or involving participants | What must bear, undergo, or frame it? |
+| Relational |   `2` | structural relationship | functional relationship | What are the typed source and target? |
 
 Use the labels `independent`, `dependent`, and `relational` for these arity classes in the
 intermediate representation. The structural member of the independent class is a substantial;
