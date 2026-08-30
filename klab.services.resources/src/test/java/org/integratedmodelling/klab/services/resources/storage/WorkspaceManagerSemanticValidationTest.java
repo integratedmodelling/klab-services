@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class WorkspaceManagerSemanticValidationTest {
 
   @Test
-  void attachesDefaultValidationNotificationsBeforeReturningTheBean() {
+  void attachesDefaultValidationNotificationsBeforeReturningTheBean() throws Exception {
     var concept = new KimConceptImpl();
     concept.setName("test:Uncountable");
     concept.setType(EnumSet.of(SemanticType.QUALITY));
@@ -24,14 +24,20 @@ class WorkspaceManagerSemanticValidationTest {
     namespace.setUrn("test");
     namespace.getStatements().add(concept);
     var resolverCalled = new AtomicBoolean();
+    org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Resolver resolver =
+        (urn, knowledgeClass, context) -> {
+          resolverCalled.set(true);
+          return null;
+        };
 
-    var returned =
-        WorkspaceManager.validateSemanticAsset(
-            namespace,
-            (urn, knowledgeClass, context) -> {
-              resolverCalled.set(true);
-              return null;
-            });
+    var method =
+        Class.forName("org.integratedmodelling.klab.services.resources.storage.WorkspaceManager")
+            .getDeclaredMethod(
+                "validateSemanticAsset",
+                org.integratedmodelling.klab.api.lang.kim.KlabDocument.class,
+                org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Resolver.class);
+    method.setAccessible(true);
+    var returned = method.invoke(null, namespace, resolver);
 
     assertSame(namespace, returned);
     assertTrue(resolverCalled.get());

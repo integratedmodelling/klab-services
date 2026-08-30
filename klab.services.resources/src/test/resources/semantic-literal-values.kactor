@@ -1,9 +1,0 @@
-script test.semantic.literal.values
-    "Preserve semantic observable values through nested literal structures."
-    version 1.0
-
-action main:
-    return {
-        direct: {{earth:Region}},
-        nested: ({{earth:Region}}, {value: {{earth:Region}}})
-    }

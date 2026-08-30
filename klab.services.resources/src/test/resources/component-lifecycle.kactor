@@ -1,9 +1,0 @@
-component test.panel
-    "A self-contained component with construction and startup."
-    version 1.0
-
-action init:
-    def title "Panel"
-
-action main:
-    return 0

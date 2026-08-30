@@ -1,7 +1,0 @@
-script test.deferred.value
-    "A deferred value preserved through a frame alias."
-    version 1.0
-
-action echo(input):
-    answer <- `input
-    return answer

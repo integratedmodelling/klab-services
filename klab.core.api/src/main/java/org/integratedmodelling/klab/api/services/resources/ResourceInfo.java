@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 
 /**
@@ -31,6 +32,73 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
  * @author Ferd
  */
 public class ResourceInfo implements Serializable {
+
+  /** Compact catalog entry for one workflow instance associated with this asset. */
+  public static class FlowReference implements Serializable {
+    private String flowUrn;
+    private String workflowUrn;
+    private Flow.Status status;
+    private Set<String> currentStateUrns = new LinkedHashSet<>();
+    private Stage stage = Stage.REVIEWING;
+    private int reviewStatus;
+    private long updatedAt;
+
+    public String getFlowUrn() {
+      return flowUrn;
+    }
+
+    public void setFlowUrn(String flowUrn) {
+      this.flowUrn = flowUrn;
+    }
+
+    public String getWorkflowUrn() {
+      return workflowUrn;
+    }
+
+    public void setWorkflowUrn(String workflowUrn) {
+      this.workflowUrn = workflowUrn;
+    }
+
+    public Flow.Status getStatus() {
+      return status;
+    }
+
+    public void setStatus(Flow.Status status) {
+      this.status = status;
+    }
+
+    public Set<String> getCurrentStateUrns() {
+      return currentStateUrns;
+    }
+
+    public void setCurrentStateUrns(Set<String> value) {
+      currentStateUrns = value == null ? new LinkedHashSet<>() : value;
+    }
+
+    public Stage getStage() {
+      return stage;
+    }
+
+    public void setStage(Stage stage) {
+      this.stage = stage;
+    }
+
+    public int getReviewStatus() {
+      return reviewStatus;
+    }
+
+    public void setReviewStatus(int reviewStatus) {
+      this.reviewStatus = reviewStatus;
+    }
+
+    public long getUpdatedAt() {
+      return updatedAt;
+    }
+
+    public void setUpdatedAt(long updatedAt) {
+      this.updatedAt = updatedAt;
+    }
+  }
 
   public enum Type {
     AVAILABLE(true),
@@ -105,6 +173,13 @@ public class ResourceInfo implements Serializable {
   private Stage stage = Stage.STAGING;
   private int reviewStatus;
   private ResourcePrivileges rights = ResourcePrivileges.empty();
+
+  /**
+   * URN of the first-class asset that owns permissions, or null when this record owns them.
+   * Second-class records created for workflows normally point to their containing project.
+   */
+  private String permissionsOwnerUrn;
+
   private String owner;
   private File fileLocation;
   private boolean legacy;
@@ -113,6 +188,9 @@ public class ResourceInfo implements Serializable {
   private String serviceId;
   private Set<CRUDOperation> permissions = new HashSet<>();
   private boolean local;
+
+  /** Flow URN to current per-flow review summary. Persisted with the ResourceInfo record. */
+  private Map<String, FlowReference> flows = new LinkedHashMap<>();
 
   public List<String> getChildResourceUrns() {
     return childResourceUrns;
@@ -250,6 +328,14 @@ public class ResourceInfo implements Serializable {
     this.rights = rights;
   }
 
+  public String getPermissionsOwnerUrn() {
+    return permissionsOwnerUrn;
+  }
+
+  public void setPermissionsOwnerUrn(String permissionsOwnerUrn) {
+    this.permissionsOwnerUrn = permissionsOwnerUrn;
+  }
+
   public Metadata getMetadata() {
     return metadata;
   }
@@ -295,5 +381,13 @@ public class ResourceInfo implements Serializable {
 
   public void setPermissions(Set<CRUDOperation> permissions) {
     this.permissions = permissions;
+  }
+
+  public Map<String, FlowReference> getFlows() {
+    return flows;
+  }
+
+  public void setFlows(Map<String, FlowReference> flows) {
+    this.flows = flows == null ? new LinkedHashMap<>() : flows;
   }
 }

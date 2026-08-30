@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -203,12 +204,89 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public Flow createFlow(String workflowId, Flow.State initialState, UserScope scope) {
+    validateFlowTarget(initialState, scope);
     return workflowManager.createFlow(workflowId, initialState, scope);
+  }
+
+  /** Resolve the target before creating persistent workflow/catalog records for it. */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void validateFlowTarget(Flow.State initialState, UserScope scope) {
+    if (initialState == null
+        || initialState.getAssetUrn() == null
+        || initialState.getAssetUrn().isBlank()
+        || initialState.getAssetType() == null) {
+      throw new KlabIllegalArgumentException(
+          "A flow must identify an existing target asset URN and knowledge class");
+    }
+    Class targetClass = initialState.getAssetType().getAssetClass();
+    KlabAsset target = null;
+    boolean targetExists;
+    switch (initialState.getAssetType()) {
+      case COMPONENT -> {
+        var coordinates = Version.splitVersion(initialState.getAssetUrn());
+        targetExists =
+            getComponentRegistry().getComponent(coordinates.getFirst(), coordinates.getSecond())
+                != null;
+      }
+      case PROJECT -> {
+        target = workspaceManager.getProject(initialState.getAssetUrn());
+        targetExists = target != null;
+      }
+      case WORKSPACE -> {
+        target = workspaceManager.getWorkspace(initialState.getAssetUrn());
+        targetExists = target != null;
+      }
+      case RESOURCE -> {
+        target = retrieveResource(initialState.getAssetUrn(), scope);
+        targetExists = target != null;
+      }
+      default -> {
+        target =
+            targetClass == null
+                ? null
+                : (KlabAsset) retrieve(initialState.getAssetUrn(), targetClass, scope);
+        targetExists = target != null;
+      }
+    }
+    if (!targetExists) {
+      throw new KlabIllegalArgumentException(
+          "Unknown workflow target "
+              + initialState.getAssetUrn()
+              + " as "
+              + initialState.getAssetType());
+    }
+    String permissionsOwnerUrn =
+        switch (initialState.getAssetType()) {
+          case COMPONENT, PROJECT, WORKSPACE, RESOURCE -> initialState.getAssetUrn();
+          default ->
+              target instanceof KlabDocument<?> document
+                  ? document.getProjectName()
+                  : target instanceof KlabStatement statement ? statement.getProjectName() : null;
+        };
+    if (permissionsOwnerUrn == null || permissionsOwnerUrn.isBlank()) {
+      throw new KlabIllegalArgumentException(
+          "Cannot determine the first-class permissions owner for " + initialState.getAssetUrn());
+    }
+    var ownerInfo = resourcesKbox.getStatus(permissionsOwnerUrn, Version.ANY_VERSION);
+    if (ownerInfo == null) {
+      throw new KlabIllegalStateException(
+          "Missing ResourceInfo for workflow target permissions owner " + permissionsOwnerUrn);
+    }
+    if (ownerInfo.getRights() != null && !ownerInfo.getRights().checkAuthorization(scope)) {
+      throw new KlabResourceAccessException(
+          "Workflow access denied by " + permissionsOwnerUrn + " permissions");
+    }
+    initialState.setPermissionsOwnerUrn(permissionsOwnerUrn);
   }
 
   @Override
   public Flow getFlow(String flowId, UserScope scope) {
     return workflowManager.getFlow(flowId, scope);
+  }
+
+  @Override
+  public Flow reopenFlow(String flowId, UserScope scope) {
+    return workflowManager.reopenFlow(flowId, scope);
   }
 
   @Override
@@ -222,7 +300,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope) {
+  public Flow.State updateFlowState(
+      String flowId, String stateId, Flow.State state, UserScope scope) {
     return workflowManager.updateState(flowId, stateId, state, scope);
   }
 
@@ -1063,23 +1142,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         // TODO delete from registry!
         // TODO RESOURCE
         break;
-      case FLOW_STATE: {
-        var coordinates = org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(urn, knowledgeClass);
-        workflowManager.deleteState(coordinates.ownerId(), coordinates.artifactId(), scope);
-        var state = new Flow.State();
-        state.setFlowId(coordinates.ownerId());
-        state.setId(coordinates.artifactId());
-        return List.of(workflowResource(
-            state, KnowledgeClass.FLOW_STATE, CRUDOperation.DELETE));
-      }
-      case FLOW_ATTACHMENT: {
-        var coordinates = org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(urn, knowledgeClass);
-        workflowManager.deleteAttachment(coordinates.ownerId(), coordinates.artifactId(), scope);
-        var attachment = new Flow.Attachment();
-        attachment.setFlowId(coordinates.ownerId());
-        attachment.setId(coordinates.artifactId());
-        return List.of(workflowResource(attachment, KnowledgeClass.FLOW_ATTACHMENT, CRUDOperation.DELETE));
-      }
+      case FLOW_STATE:
+        {
+          var coordinates =
+              org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(
+                  urn, knowledgeClass);
+          workflowManager.deleteState(coordinates.ownerId(), coordinates.artifactId(), scope);
+          var state = new Flow.State();
+          state.setFlowId(coordinates.ownerId());
+          state.setId(coordinates.artifactId());
+          return List.of(workflowResource(state, KnowledgeClass.FLOW_STATE, CRUDOperation.DELETE));
+        }
+      case FLOW_ATTACHMENT:
+        {
+          var coordinates =
+              org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(
+                  urn, knowledgeClass);
+          workflowManager.deleteAttachment(coordinates.ownerId(), coordinates.artifactId(), scope);
+          var attachment = new Flow.Attachment();
+          attachment.setFlowId(coordinates.ownerId());
+          attachment.setId(coordinates.artifactId());
+          return List.of(
+              workflowResource(attachment, KnowledgeClass.FLOW_ATTACHMENT, CRUDOperation.DELETE));
+        }
     }
 
     return List.of(ResourceSet.empty(Notification.error("Cannot delete " + urn)));
@@ -1089,7 +1174,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
 
     if (isWorkflowKnowledgeClass(assetClass)) {
-      return workflowResource(workflowManager.retrieve(urn, assetClass, scope), assetClass, CRUDOperation.UPDATE);
+      return workflowResource(
+          workflowManager.retrieve(urn, assetClass, scope), assetClass, CRUDOperation.UPDATE);
     }
 
     ResourceSet.Resource desiredResource = null;
@@ -1230,6 +1316,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 KnowledgeClass.WORKFLOW,
                 CRUDOperation.UPDATE));
       case Flow flow:
+        var initialState =
+            flow.getStates().size() == 1 ? flow.getStates().values().iterator().next() : null;
+        if (initialState != null) {
+          if (initialState.getAssetUrn() == null) initialState.setAssetUrn(flow.getAssetUrn());
+          if (initialState.getAssetType() == null) initialState.setAssetType(flow.getAssetType());
+        }
+        validateFlowTarget(initialState, scope);
         return List.of(
             workflowResource(
                 workflowManager.submitFlow(flow, submissionMode, scope),
@@ -1871,17 +1964,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public List<ResourceInfo> queryResources(
       String queryPattern, Scope scope, KnowledgeClass... resourceTypes) {
-    return queryResources(
-        queryPattern,
-        scope,
-        ResourceIndexer.MAX_RESULT_COUNT,
-        resourceTypes);
+    return queryResources(queryPattern, scope, ResourceIndexer.MAX_RESULT_COUNT, resourceTypes);
   }
 
   private KnowledgeClass workflowKnowledgeClass(Class<? extends KlabAsset> assetClass) {
     if (Workflow.class.isAssignableFrom(assetClass)) return KnowledgeClass.WORKFLOW;
-    if (Workflow.StateSchema.class.isAssignableFrom(assetClass)) return KnowledgeClass.WORKFLOW_STATE;
-    if (Workflow.TransitionSchema.class.isAssignableFrom(assetClass)) return KnowledgeClass.WORKFLOW_TRANSITION;
+    if (Workflow.StateSchema.class.isAssignableFrom(assetClass))
+      return KnowledgeClass.WORKFLOW_STATE;
+    if (Workflow.TransitionSchema.class.isAssignableFrom(assetClass))
+      return KnowledgeClass.WORKFLOW_TRANSITION;
     if (Flow.class.isAssignableFrom(assetClass)) return KnowledgeClass.FLOW;
     if (Flow.State.class.isAssignableFrom(assetClass)) return KnowledgeClass.FLOW_STATE;
     if (Flow.Transaction.class.isAssignableFrom(assetClass)) return KnowledgeClass.FLOW_TRANSITION;
@@ -1891,26 +1982,45 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   private boolean isWorkflowKnowledgeClass(KnowledgeClass knowledgeClass) {
     return switch (knowledgeClass) {
-      case WORKFLOW, WORKFLOW_STATE, WORKFLOW_TRANSITION, FLOW, FLOW_STATE,
-          FLOW_TRANSITION, FLOW_ATTACHMENT -> true;
+      case WORKFLOW,
+          WORKFLOW_STATE,
+          WORKFLOW_TRANSITION,
+          FLOW,
+          FLOW_STATE,
+          FLOW_TRANSITION,
+          FLOW_ATTACHMENT ->
+          true;
       default -> false;
     };
   }
 
   private ResourceSet workflowResource(
       KlabAsset asset, KnowledgeClass knowledgeClass, CRUDOperation operation) {
-    Version version = asset instanceof Workflow workflow
-        ? Version.create(workflow.getVersion()) : Version.EMPTY_VERSION;
-    long timestamp = switch (asset) {
-      case Flow flow -> flow.getUpdatedAt() == null ? 0 : flow.getUpdatedAt().toEpochMilli();
-      case Flow.State state -> state.getUpdatedAt() == null ? 0 : state.getUpdatedAt().toEpochMilli();
-      case Flow.Transaction transaction -> transaction.getTimestamp() == null ? 0 : transaction.getTimestamp().toEpochMilli();
-      case Flow.Attachment attachment -> attachment.getCreatedAt() == null ? 0 : attachment.getCreatedAt().toEpochMilli();
-      default -> 0;
-    };
+    Version version =
+        asset instanceof Workflow workflow
+            ? Version.create(workflow.getVersion())
+            : Version.EMPTY_VERSION;
+    long timestamp =
+        switch (asset) {
+          case Flow flow -> flow.getUpdatedAt() == null ? 0 : flow.getUpdatedAt().toEpochMilli();
+          case Flow.State state ->
+              state.getUpdatedAt() == null ? 0 : state.getUpdatedAt().toEpochMilli();
+          case Flow.Transaction transaction ->
+              transaction.getTimestamp() == null ? 0 : transaction.getTimestamp().toEpochMilli();
+          case Flow.Attachment attachment ->
+              attachment.getCreatedAt() == null ? 0 : attachment.getCreatedAt().toEpochMilli();
+          default -> 0;
+        };
     return ResourceSet.of(
         new ResourceSet.Resource(
-            operation, serviceId(), asset.getUrn(), null, version, knowledgeClass, timestamp, false));
+            operation,
+            serviceId(),
+            asset.getUrn(),
+            null,
+            version,
+            knowledgeClass,
+            timestamp,
+            false));
   }
 
   public List<ResourceInfo> queryResources(
@@ -1962,8 +2072,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       ret = ResourceInfo.offline(urn);
     }
     ret.setServiceId(serviceId());
+    ResourcePrivileges effectiveRights = effectiveRights(ret);
     if (ret.getType().isUsable()) {
-      if (!ret.getRights().checkAuthorization(scope)) {
+      if (effectiveRights == null || !effectiveRights.checkAuthorization(scope)) {
         ret.setType(ResourceInfo.Type.UNAUTHORIZED);
       }
     }
@@ -2005,7 +2116,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
-      return status.getRights().asSeenByScope(scope);
+      var rights = effectiveRights(status);
+      return rights == null ? ResourcePrivileges.empty() : rights.asSeenByScope(scope);
     }
     return ResourcePrivileges.empty();
   }
@@ -2014,10 +2126,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
     var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
+      if (status.getPermissionsOwnerUrn() != null
+          && !resourceUrn.equals(status.getPermissionsOwnerUrn())) return false;
       status.setRights(resourcePrivileges);
       return resourcesKbox.putStatus(status);
     }
     return false;
+  }
+
+  private ResourcePrivileges effectiveRights(ResourceInfo info) {
+    if (info == null) return null;
+    if (info.getPermissionsOwnerUrn() == null
+        || info.getPermissionsOwnerUrn().isBlank()
+        || info.getUrn().equals(info.getPermissionsOwnerUrn())) return info.getRights();
+    var owner = resourcesKbox.getStatus(info.getPermissionsOwnerUrn(), Version.ANY_VERSION);
+    return owner == null ? null : owner.getRights();
   }
 
   @Override

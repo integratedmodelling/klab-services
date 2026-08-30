@@ -1,9 +1,0 @@
-behavior test.typed.parameters
-    "Preserve and validate type annotations on action parameters."
-    version 1.0
-
-action accept(@type("workers.base") worker, @type(class="boolean") enabled):
-    return enabled
-
-action main:
-    return 0

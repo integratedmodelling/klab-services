@@ -1,6 +1,0 @@
-behavior test.adaptation
-    "Adapt a local value to a behavior."
-    version 1.0
-
-action main:
-    adapted <- 1 as test.target

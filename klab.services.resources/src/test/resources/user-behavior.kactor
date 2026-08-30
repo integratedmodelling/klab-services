@@ -1,6 +1,0 @@
-user test.user_agent
-    "Instrument the runtime user."
-    version 1.0
-
-action main:
-    return 0

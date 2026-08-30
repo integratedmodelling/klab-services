@@ -199,9 +199,7 @@ public interface ServicesAPI {
      */
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
 
-    /**
-     * POST endpoint to receive user authentication from a UserAuthenticationRequest
-     */
+    /** POST endpoint to receive user authentication from a UserAuthenticationRequest */
     String AUTHENTICATE_USER = USER_BASE + "/log-in";
 
     /** Called from services to have information about the user */
@@ -210,11 +208,10 @@ public interface ServicesAPI {
     String USER_BASE_ID = USER_BASE + "/{id}";
 
     /**
-     * Base URL path for user's agreements resources on the hub. This GET endpoint returns
-     * a generated certificate. Needs the agreement ID that isn't known in advance.
+     * Base URL path for user's agreements resources on the hub. This GET endpoint returns a
+     * generated certificate. Needs the agreement ID that isn't known in advance.
      */
     String USER_AGREEMENT_BASE_ID = USER_BASE_ID + "/{agreementId}";
-
   }
 
   /**
@@ -448,12 +445,12 @@ public interface ServicesAPI {
     String WORKFLOW = API_BASE + "/workflows/{workflowId}";
     String FLOWS = API_BASE + "/flows";
     String FLOW = API_BASE + "/flows/{flowId}";
+    String FLOW_REOPEN = API_BASE + "/flows/{flowId}/reopen";
     String FLOW_STATES = API_BASE + "/flows/{flowId}/states";
     String FLOW_STATE = API_BASE + "/flows/{flowId}/states/{stateId}";
     String FLOW_TRANSITIONS = API_BASE + "/flows/{flowId}/transitions";
     String FLOW_ATTACHMENTS = API_BASE + "/flows/{flowId}/states/{stateId}/attachments";
     String FLOW_ATTACHMENT = API_BASE + "/flows/{flowId}/attachments/{attachmentId}";
-
 
     // TODO this can also be INFO using rights as type linked to the URN
     String RIGHTS = API_BASE + "/rights/{urn}";
@@ -490,6 +487,7 @@ public interface ServicesAPI {
 
     /** FIXME deprecate? */
     String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema";
+
     /** FIXME deprecate? */
     String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema";
 

@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -276,6 +277,63 @@ public class ResourcesKBox implements WorkflowStore {
 
   public List<Flow> listFlows() {
     return flows.find().toList();
+  }
+
+  /**
+   * Synchronize the compact, one-to-many flow catalog stored with an asset's status record.
+   *
+   * <p>Second-class assets normally have no {@link ResourceInfo}. Opening their first flow creates
+   * one; subsequent flow changes update only the entry keyed by that flow's permanent URN. Existing
+   * permissions are deliberately preserved because they belong to the containing first-class
+   * asset. The top-level stage is the most recently updated flow's summary, while every individual
+   * flow summary remains available in {@link ResourceInfo#getFlows()}.
+   */
+  @Override
+  public synchronized boolean updateResourceInfoForFlow(
+      Flow flow, ResourceInfo.Stage stage, int reviewStatus) {
+    if (flow == null
+        || flow.getAssetUrn() == null
+        || flow.getAssetUrn().isBlank()
+        || flow.getAssetType() == null) {
+      return false;
+    }
+    var info = resourceMetadata.getById(flow.getAssetUrn());
+    if (info == null) {
+      info = ResourceInfo.immediate();
+      info.setUrn(flow.getAssetUrn());
+      info.setKnowledgeClass(flow.getAssetType());
+      info.setOwner(flow.getOwner());
+      info.setPermissionsOwnerUrn(flow.getPermissionsOwnerUrn());
+      info.setStage(ResourceInfo.Stage.STAGING);
+      info.setReviewStatus(0);
+    } else if (info.getPermissionsOwnerUrn() == null
+        && flow.getPermissionsOwnerUrn() != null
+        && !flow.getAssetUrn().equals(flow.getPermissionsOwnerUrn())) {
+      info.setPermissionsOwnerUrn(flow.getPermissionsOwnerUrn());
+    }
+    var reference = new ResourceInfo.FlowReference();
+    reference.setFlowUrn(flow.getUrn());
+    reference.setWorkflowUrn(WorkflowUrns.workflow(flow.getWorkflowId(), flow.getWorkflowVersion()));
+    reference.setStatus(flow.getStatus());
+    reference.setCurrentStateUrns(
+        flow.getCurrentStateIds().stream()
+            .map(stateId -> WorkflowUrns.flowState(flow.getId(), stateId))
+            .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+    reference.setStage(stage == null ? ResourceInfo.Stage.REVIEWING : stage);
+    reference.setReviewStatus(reviewStatus);
+    reference.setUpdatedAt(
+        (flow.getUpdatedAt() == null ? java.time.Instant.now() : flow.getUpdatedAt()).toEpochMilli());
+    info.getFlows().put(reference.getFlowUrn(), reference);
+
+    // The aggregate status is intentionally a latest-update summary; the map above is authoritative
+    // when more than one independent flow is open on the same asset.
+    var latest =
+        info.getFlows().values().stream()
+            .max(java.util.Comparator.comparingLong(ResourceInfo.FlowReference::getUpdatedAt))
+            .orElse(reference);
+    info.setStage(latest.getStage());
+    info.setReviewStatus(latest.getReviewStatus());
+    return putStatus(info);
   }
 
   /** Store opaque bytes separately so flow retrieval remains cheap. */

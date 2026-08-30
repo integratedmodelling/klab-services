@@ -1,8 +1,0 @@
-behavior test.switch.unknown
-    "Verify lexical diagnostics for a functional switch selector."
-    version 1.0
-
-action main(message):
-    switch strings.lowercase(message) (
-        # -> return 0
-    )

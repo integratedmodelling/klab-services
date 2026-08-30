@@ -56,6 +56,11 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public Flow reopenFlow(String flowId, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_REOPEN, null, Flow.class, "flowId", flowId);
+  }
+
+  @Override
   public List<Flow> getFlows(boolean includeClosed, UserScope scope) {
     return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOWS, Flow.class, "includeClosed", includeClosed);
   }

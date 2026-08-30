@@ -61,6 +61,8 @@ states:
     open: false
     metadata:
       provenanceActivity: publication
+      resourceStage: REVIEWED
+      reviewStatus: 2
   rejected:
     description: Review completed and asset rejected.
     completionCriteria: Terminal state.
@@ -71,6 +73,8 @@ states:
     open: false
     metadata:
       provenanceActivity: rejection
+      resourceStage: REJECTED
+      reviewStatus: -1
 transitions:
   initialize:
     description: Start authoring a review submission.

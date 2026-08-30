@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.resources;
 import java.util.List;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 
 /**
  * Storage port for workflow aggregates and attachment payloads.
@@ -12,13 +13,25 @@ import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
  */
 public interface WorkflowStore {
   boolean putWorkflow(Workflow workflow);
+
   Workflow getWorkflow(String id);
+
   Workflow getWorkflow(String id, String version);
+
   List<Workflow> listWorkflows();
+
   boolean putFlow(Flow flow);
+
   Flow getFlow(String id);
+
   List<Flow> listFlows();
+
   boolean putWorkflowAttachment(String id, String flowId, String stateId, byte[] content);
+
   byte[] getWorkflowAttachment(String id);
+
   boolean deleteWorkflowAttachment(String id);
+
+  /** Create/update the asset's ResourceInfo flow catalog without changing its permissions. */
+  boolean updateResourceInfoForFlow(Flow flow, ResourceInfo.Stage stage, int reviewStatus);
 }

@@ -151,6 +151,11 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public Flow reopenFlow(String flowId, UserScope scope) {
+    return primary().reopenFlow(flowId, scope);
+  }
+
+  @Override
   public List<Flow> getFlows(boolean includeClosed, UserScope scope) {
     return primary().getFlows(includeClosed, scope);
   }

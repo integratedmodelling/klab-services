@@ -230,6 +230,4 @@ public class ResourcePrivileges implements Serializable {
     // TODO filter privileges to those visible by the scope
     return this;
   }
-
-
 }

@@ -1,9 +1,0 @@
-library test.actions
-    "A library cannot define lifecycle entry points."
-    version 1.0
-
-action init:
-    return 0
-
-action main:
-    return 0

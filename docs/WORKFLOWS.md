@@ -47,11 +47,13 @@ Resources service always repeats validation using its authoritative schema and f
 ### Flow
 
 `org.integratedmodelling.klab.api.services.resources.workflow.Flow` is a persistent aggregate. It
-records its workflow ID and exact version, owner, status, optimistic revision, timestamps,
-metadata, all states, current-state IDs, and append-only transaction history.
+records its workflow ID and exact version, the target asset URN and knowledge class, owner, status,
+optimistic revision, timestamps, metadata, all states, current-state IDs, a `publicRead` flag, and
+append-only transaction history. Flow creation resolves the target first and rejects a missing asset or an
+asset class not admitted by the initial state schema.
 
 Each flow state has a unique instance ID and points to a state-schema ID. It contains its mutable
-title, open/closed status, optional explicit assignees, attachment descriptors, metadata, and
+`owner` identity, title, open/closed status, optional explicit assignees, attachment descriptors, metadata, and
 timestamps. Attachment bytes are deliberately excluded, keeping routine flow retrieval cheap.
 
 Each transaction records the transition event, source and target state IDs, actor identity,
@@ -65,7 +67,8 @@ and are never deleted by normal workflow operations.
 
 The database holds the full aggregate. A response is projected for the requesting `UserScope`:
 
-- administrators and the flow owner receive all states;
+- a `publicRead` flow is returned in full to every identified caller, but remains read-only;
+- administrators and the flow owner receive all states for private flows;
 - other participants receive only states whose role and group rules admit them;
 - `currentStateIds` contains only visible tasks assigned to the caller, or unassigned visible
   tasks;
@@ -197,6 +200,37 @@ the process-level lock used by the embedded implementation.
 Attachment descriptors include byte length, SHA-256 checksum, actor, and timestamp. Payloads can
 later move to filesystem or object storage behind `WorkflowStore` without changing a `Flow`.
 
+### ResourceInfo catalog and asset ownership
+
+`ResourceInfo` remains primarily the status and permission record for first-class Resources-service
+assets: components, projects, workspaces, and resources. Those records are created as part of the
+normal asset lifecycle and own their permissions. Documents and other items contained by a project
+(for example namespaces, ontologies, models, and statements) continue to inherit permissions from
+their containing project; opening a flow does not turn them into independent permission owners.
+
+Flows may nevertheless target either first- or second-class assets. When the first flow is opened
+on an asset for which no status record exists, `ResourcesKBox` creates a minimal `ResourceInfo`
+record on demand. This makes review/update status addressable at the individual asset URN without
+changing the normal automatic catalog policy.
+
+An on-demand second-class record stores `permissionsOwnerUrn`, normally the containing project.
+Authorization and `getRights` dereference that first-class record, while `setRights` refuses to
+write through the child record. This prevents the catalog entry from becoming a separate
+permissions boundary.
+
+`ResourceInfo.flows` is a map keyed by permanent flow URN. Each `FlowReference` records the workflow
+URN, active/closed status, current flow-state URNs, review stage/status, and last-update timestamp.
+The map is one-to-many: opening or changing one flow only replaces its own entry, and closed flow
+references are retained. Thus multiple simultaneous or historical reviews of the same asset are
+fully distinguishable. The top-level `ResourceInfo.stage` and `reviewStatus` mirror the most
+recently updated flow as a cheap summary; consumers needing an individual review result must read
+the corresponding map entry.
+
+Every successful flow creation or mutation synchronizes this catalog in the same Resources-service
+operation. Active states default to `REVIEWING` with review status `1`. A state schema may define
+`metadata.resourceStage` and `metadata.reviewStatus` to publish a different result; the bundled
+review workflow uses `REVIEWED`/`2` for acceptance and `REJECTED`/`-1` for rejection.
+
 ### Knowledge classes and URNs
 
 Workflow objects are ordinary transmissible `KlabAsset` values. The following
@@ -238,6 +272,7 @@ All routes require the normal authenticated Resources-service user role:
 | `POST` | `/api/v1/flows?workflowId=...` | Create a flow from a `Flow.State` body. |
 | `GET` | `/api/v1/flows?includeClosed=false` | Caller-accessible flow projections. |
 | `GET` | `/api/v1/flows/{flowId}` | One caller-specific flow projection. |
+| `POST` | `/api/v1/flows/{flowId}/reopen` | Reopen the latest actionable stage; workflow `ADMIN` only. |
 | `POST` | `/api/v1/flows/{flowId}/states` | Create a manager-authorized state. |
 | `PUT` or `POST` | `/api/v1/flows/{flowId}/states/{stateId}` | Update task data. `POST` is retained for the current Java HTTP helper. |
 | `DELETE` | `/api/v1/flows/{flowId}/states/{stateId}` | Delete an unreferenced state. |
@@ -262,8 +297,10 @@ Generic submission follows these conventions:
   caller must have workflow `ADMIN` authorization. Use `ADD` or `CREATE_OR_UPDATE`; an existing
   version is returned unchanged because workflow versions are immutable. State and transition
   schemata are immutable children and are submitted only as part of their workflow.
-- `FLOW` accepts a `Flow` containing `workflowId` and exactly one initial state. Use
-  `urn:klab:flow:new` as the submission URN; the service assigns and returns the permanent flow ID.
+- `FLOW` accepts a `Flow` containing `workflowId`, target `assetUrn` and `assetType`, and exactly one
+  initial state. The dedicated API may place the target fields on that initial state. Use
+  `urn:klab:flow:new` as the submission URN; the service resolves the target, assigns the permanent
+  flow ID, and adds it to the target asset's `ResourceInfo.flows` map.
 - `FLOW_STATE` accepts a `Flow.State`. The route URN supplies the authoritative flow and state IDs;
   `ADD`, `UPDATE`, `REPLACE`, and `CREATE_OR_UPDATE` select creation/update semantics.
 - `FLOW_TRANSITION` accepts a `Flow.TransitionRequest` command at
@@ -318,6 +355,33 @@ new aggregate revision. Callers may suggest a target ID, but it must be unique i
 - `GET /flows` is also the portable JSON export available to ordinary participants. An owner or
   administrator receives a complete flow; other exports intentionally contain only their
   authorized projection.
+
+## IDE integration
+
+`klab-ide` provides a generic JavaFX `WorkflowEditor` hosted as an auxiliary tab of the
+`WorkspaceEditor` that owns the target asset. Its header reports flow status, start time, revision,
+and public-read mode; its stage browser exposes the caller's projection, or the complete flow when
+`publicRead` is true. A new flow focuses its INIT stage. An existing private flow focuses the first
+open stage assigned to the caller, then falls back to the first visible current stage.
+
+Install a `WorkflowUIProvider` on `WorkspaceView` to supply two callbacks: the workflow definitions
+that may be started for an `(asset, UserScope)`, and an optional specialized stage editor selected
+from the workflow, flow, state, and state schema. The specialized editor returns its JavaFX node,
+a live validity predicate, a metadata exporter, and a read-only callback. Calling the supplied
+`validationChanged` runnable refreshes confirmation-button enablement. Returning `null` selects the
+generic metadata browser.
+
+The common shell renders instructions, admitted attachment rules through `UploadBox`, cancel and
+delete controls, and one confirmation button per client-admitted transition. Confirmation first
+saves the specialized editor's export as `Flow.State.metadata`, then submits the transition with an
+optimistic revision. A private open stage is editable only by workflow `ADMIN`, its `owner`, or an
+assigned participant with `EDITOR`; public-read and closed flows are browsers. Only `ADMIN` sees the
+reopen action on a closed flow.
+
+The workspace-tree context menu contains a separated **Workflows** section only when content exists.
+It uses human-readable workflow names and provides **Start workflow**, **Open flows**, and **Closed
+flows** submenus. Accessible flows are filtered by exact target asset URN, and multiple flows on the
+same asset are shown independently.
 
 The current code does not implement timers, notifications, reviewer quorum, cryptographic
 signatures, attachment virus scanning, or multi-source joins. These are policy/execution features

@@ -1,9 +1,0 @@
-trait test.personality
-    "An inheritable personality with lifecycle actions."
-    version 1.0
-
-action init:
-    def disposition "calm"
-
-action main:
-    return 0

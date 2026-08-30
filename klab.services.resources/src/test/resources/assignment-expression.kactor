@@ -1,7 +1,0 @@
-script test.assignment.expression
-    "A frame-local assignment whose right side is an expression."
-    version 1.0
-
-action main:
-    doubled <- [21 * 2]
-    return doubled

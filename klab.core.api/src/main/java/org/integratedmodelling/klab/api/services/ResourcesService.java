@@ -80,13 +80,23 @@ public interface ResourcesService extends KlabService {
   /** Retrieve the caller-specific projection of a flow. */
   Flow getFlow(String flowId, UserScope scope);
 
+  /** Reopen a closed flow. This operation is restricted to workflow administrators. */
+  default Flow reopenFlow(String flowId, UserScope scope) {
+    throw new UnsupportedOperationException(
+        "This Resources service does not support reopening flows");
+  }
+
   /** List caller-accessible active and, optionally, closed flows. */
   List<Flow> getFlows(boolean includeClosed, UserScope scope);
 
-  /** Add a state without moving a current task; intended for branching workflows and administrators. */
+  /**
+   * Add a state without moving a current task; intended for branching workflows and administrators.
+   */
   Flow.State createFlowState(String flowId, Flow.State state, UserScope scope);
 
-  /** Update mutable task data. Schema identity and attachment descriptors cannot be changed here. */
+  /**
+   * Update mutable task data. Schema identity and attachment descriptors cannot be changed here.
+   */
   Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope);
 
   /** Remove an unreferenced, non-current state. */
@@ -158,7 +168,6 @@ public interface ResourcesService extends KlabService {
      * @return list of workspace names accessible to the requesting scope
      */
     List<String> getWorkspaceNames();
-
   }
 
   /**

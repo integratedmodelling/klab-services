@@ -65,6 +65,12 @@ public class WorkflowController {
     return resourcesServer.klabService().getFlow(flowId, userScope(principal));
   }
 
+  @Operation(summary = "Reopen a flow", description = "Reopen a closed flow as an administrator")
+  @PostMapping(ServicesAPI.RESOURCES.FLOW_REOPEN)
+  public Flow reopenFlow(@PathVariable String flowId, Principal principal) {
+    return resourcesServer.klabService().reopenFlow(flowId, userScope(principal));
+  }
+
   @Operation(summary = "Create a flow state", description = "Add a state to an existing flow")
   @PostMapping(ServicesAPI.RESOURCES.FLOW_STATES)
   public Flow.State createState(
@@ -83,7 +89,9 @@ public class WorkflowController {
       @PathVariable String stateId,
       @RequestBody Flow.State state,
       Principal principal) {
-    return resourcesServer.klabService().updateFlowState(flowId, stateId, state, userScope(principal));
+    return resourcesServer
+        .klabService()
+        .updateFlowState(flowId, stateId, state, userScope(principal));
   }
 
   @Operation(summary = "Delete a flow state", description = "Remove a state from an existing flow")
