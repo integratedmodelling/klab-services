@@ -17,12 +17,12 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 public class Flow implements KlabAsset {
 
   @SuppressWarnings("unchecked")
-  private static Metadata metadata(Object value) {
+  private static Metadata metadata(Map<String, Object> value) {
     if (value instanceof Metadata metadata) return metadata;
-    if (value instanceof Map<?, ?> map) {
-      Object delegate = map.get("delegate");
+    if (value != null) {
+      Object delegate = value.get("delegate");
       return Metadata.create(
-          (Map<String, Object>) (delegate instanceof Map<?, ?> nested ? nested : map));
+          (Map<String, Object>) (delegate instanceof Map<?, ?> nested ? nested : value));
     }
     return Metadata.create();
   }
@@ -66,7 +66,7 @@ public class Flow implements KlabAsset {
       return metadata;
     }
 
-    public void setMetadata(Object metadata) {
+    public void setMetadata(Map<String, Object> metadata) {
       this.metadata = Flow.metadata(metadata);
     }
 
@@ -281,7 +281,7 @@ public class Flow implements KlabAsset {
       return metadata;
     }
 
-    public void setMetadata(Object v) {
+    public void setMetadata(Map<String, Object> v) {
       metadata = Flow.metadata(v);
     }
 
@@ -383,7 +383,7 @@ public class Flow implements KlabAsset {
       return metadata;
     }
 
-    public void setMetadata(Object v) {
+    public void setMetadata(Map<String, Object> v) {
       metadata = Flow.metadata(v);
     }
   }
@@ -643,7 +643,7 @@ public class Flow implements KlabAsset {
     return metadata;
   }
 
-  public void setMetadata(Object v) {
+  public void setMetadata(Map<String, Object> v) {
     metadata = Flow.metadata(v);
   }
 

@@ -340,6 +340,12 @@ Example transition body:
 The server assigns the target state ID, timestamps, attachment list, actor, transaction ID, and
 new aggregate revision. Callers may suggest a target ID, but it must be unique in the flow.
 
+Workflow bean metadata setters use `Map<String, Object>` as their transport contract. Their getters
+return the idiomatic `Metadata` API required by `KlabAsset`. On input, the beans accept both a plain
+map (as produced by YAML and ordinary clients) and k.LAB's polymorphic Metadata envelope; the latter
+is unwrapped internally. `ResourceInfo.metadata` remains a `Metadata` property and is independent of
+the per-flow catalog held in `ResourceInfo.flows`.
+
 ## Provenance and operational guidance
 
 - Put stable vocabulary terms, policy identifiers, and form/schema versions in workflow, state,
