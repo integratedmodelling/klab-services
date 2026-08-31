@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -120,16 +122,20 @@ public class ResourceManager {
       // Establish the proper local name and URN for the new resource
       var currentName = resource.getLocalName();
       var currentUrn = resource.getUrn();
+      boolean replacingExisting =
+          resourcesKbox.getResource(currentUrn, Version.ANY_VERSION) != null;
 
       // Create or sanitize the URN using the UrnManager
       String sanitizedUrn =
-          urnManager.createOrSanitizeUrn(
-              resource,
-              service,
-              ResourceInfo.Stage.STAGING,
-              scope,
-              // Uniqueness checker callback
-              urn -> resourcesKbox.getResource(urn, Version.ANY_VERSION) == null);
+          replacingExisting
+              ? currentUrn
+              : urnManager.createOrSanitizeUrn(
+                  resource,
+                  service,
+                  ResourceInfo.Stage.STAGING,
+                  scope,
+                  // Uniqueness checker callback
+                  urn -> resourcesKbox.getResource(urn, Version.ANY_VERSION) == null);
 
       // Update the resource with the sanitized URN
       ((org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl) resource)
@@ -210,17 +216,22 @@ public class ResourceManager {
    * a thumbnail and whatever machine learning support we want, computed in a slower thread.
    */
   private ResourceInfo createInitialMetadata(Resource resource, UserScope scope) {
-    ResourceInfo ret = new ResourceInfo();
+    ResourceInfo ret = resourcesKbox.getStatus(resource.getUrn(), null);
+    boolean existing = ret != null;
+    if (!existing) ret = new ResourceInfo();
     ret.setUrn(resource.getUrn());
     ret.setType(ResourceInfo.Type.AVAILABLE);
-    ret.setRights(ResourcePrivileges.create(scope));
-    ret.getMetadata().putAll(resource.getMetadata());
+    if (!existing) {
+      ret.setRights(ResourcePrivileges.create(scope));
+      ret.setOwner(scope.getUser().getUsername());
+      ret.setReviewStatus(0);
+    }
+    ret.setMetadata(Metadata.create(resource.getMetadata()));
     ret.setKnowledgeClass(KlabAsset.KnowledgeClass.RESOURCE);
     ret.setServiceId(service.serviceId());
-    ret.setOwner(scope.getUser().getUsername());
-    ret.setReviewStatus(0);
-    ret.getNotifications()
-        .addAll(resource.getNotifications().stream().map(n -> (NotificationImpl) n).toList());
+    ret.setNotifications(
+        new ArrayList<>(
+            resource.getNotifications().stream().map(n -> (NotificationImpl) n).toList()));
     ret.setRetryTimeSeconds(180); // TODO configure
     return ret;
   }

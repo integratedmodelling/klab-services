@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Arrays;
 import org.dizitart.no2.Nitrite;
@@ -132,8 +133,24 @@ public class ResourcesKBox implements WorkflowStore {
    * @return the resource or null
    */
   public Resource getResource(String urn, Version version) {
-    // TODO handle version
-    return resources.getById(urn);
+    var split = Version.splitVersion(urn);
+    String resourceUrn = split.getFirst();
+    Version requested =
+        version == null || Version.ANY_VERSION.equals(version) ? split.getSecond() : version;
+    return selectVersion(resources.getById(resourceUrn), requested);
+  }
+
+  static Resource selectVersion(Resource current, Version requested) {
+    if (current == null
+        || requested == null
+        || Version.ANY_VERSION.equals(requested)
+        || requested.equals(current.getVersion())) {
+      return current;
+    }
+    return current.getHistory().stream()
+        .filter(previous -> requested.equals(previous.getVersion()))
+        .findFirst()
+        .orElse(null);
   }
 
   public List<Resource> getResourcesByUrnMatch(String regex) {
@@ -198,7 +215,13 @@ public class ResourcesKBox implements WorkflowStore {
 
   public List<ResourceInfo> queryResources(String query, int maxResults) {
     var ret = new ArrayList<ResourceInfo>();
+    var seenUrns = new HashSet<String>();
     for (var document : index.query(query, maxResults)) {
+      // The URN is the resource primary key. A stale/legacy index may still contain more than one
+      // Lucene document for it, but a catalogue query must expose only the current resource.
+      if (!seenUrns.add(document.getId())) {
+        continue;
+      }
       var info = getStatus(document.getId(), Version.ANY_VERSION);
       if (info != null) {
         var resource = resources.getById(document.getId());

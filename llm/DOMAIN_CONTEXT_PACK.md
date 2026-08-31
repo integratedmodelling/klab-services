@@ -25,7 +25,8 @@ The agent must return a self-consistent, provenance-rich corpus that:
   perspective;
 - keeps every target concept at the requested tier and exposes its valid ancestry to the required
   upper or Tier-1 ontology context;
-- relates it to the most defensible existing upper concept without inventing equivalence;
+- records the declaration keyword's implicit ODO-IM inheritance and adds an explicit upper/domain
+  parent only when genuine additional specialization is intended;
 - explains both the concept and why it was extracted;
 - distinguishes explicit source claims from interpretation and modeling choice;
 - maximizes orthogonality, so each atomic concept expresses one clear conceptual dimension that
@@ -184,16 +185,17 @@ status, implementation stage, source rank, or measure of concept importance.
 
 | Requested tier | Intended scope | Required ancestry | Intended community |
 | ---: | --- | --- | --- |
-| `1` | The first ontology layer that describes the domain itself | Direct specialization of upper-level concepts from ontologies that do **not** describe the same domain | The broad domain community and users of more specialized tiers |
+| `1` | The first ontology layer that describes the domain itself | Foundational ODO-IM ancestry established by each declaration keyword; optional explicit specialization of other upper concepts that do **not** describe the same domain | The broad domain community and users of more specialized tiers |
 | `2` | A specialist articulation within the Tier-1 domain | Every new domain concept must specialize, directly or transitively, a Tier-1 domain concept | A specialist community within the domain |
 | `N > 2` | A progressively narrower specialist articulation | Every new domain concept must specialize a Tier-1 concept through the available intervening tier structure | A correspondingly narrower specialist community |
 
 Apply these rules:
 
-1. **Tier 1 is the domain gateway.** Its concepts descend directly from imported upper concepts
-   whose ontologies are more general or describe another domain. Tier 1 should articulate the
-   clearest, most reusable conceptual dimensions shared across the domain, leaving specialist
-   distinctions to lower tiers.
+1. **Tier 1 is the domain gateway.** Its concepts receive their foundational ODO-IM ancestry from
+   their declaration keywords. An explicit `is` parent is added only when a genuine narrower
+   specialization of another upper concept is intended; that parent's ontology must be more
+   general or describe another domain. Tier 1 should articulate the clearest, most reusable
+   conceptual dimensions shared across the domain, leaving specialist distinctions to lower tiers.
 2. **Tier 2 and below are domain specializations.** Every proposed specialist concept must have a
    traceable `is` path to at least one Tier-1 domain concept. It may specialize Tier 1 directly or
    through Tier 2, Tier 3, and so on when those intermediate ontologies exist.
@@ -581,14 +583,64 @@ the relation as a modeling hypothesis when it is inferred.
 
 In worldview declarations:
 
-- `is Parent` means specialization/subsumption;
+- the **declaration keyword** establishes the concept's foundational ODO-IM type and its inherited
+  chain. For example, `thing`, `process`, `quality`, and `role` already place the declaration under
+  the corresponding ODO-IM category;
+- `is Parent` adds domain/worldview specialization beyond the inheritance already established by
+  the declaration keyword;
 - `is Parent within Context` means contextualized specialization;
-- `is core ExternalConcept` anchors a worldview concept to an imported foundational concept; and
+- `is core ExternalConcept`, which is legal **only in the root domain**, creates a
+  worldview-visible alias for a foundational concept so that other ontologies can use the alias to
+  generalize the scope of observable clauses; and
 - `equals Other` asserts genuine semantic equivalence.
 
-Use the narrowest defensible existing parent that preserves the proposed type. Multiple topical
-similarities do not justify multiple parents. Never use `equals` for synonyms that differ in scope,
-measurement convention, perspective, or community usage.
+Do **not** add an explicit derivation from ODO-IM merely to restate the declaration type. A
+declaration such as:
+
+```kwv
+thing Reservoir;
+```
+
+already carries the foundational inheritance associated with `thing`. Do not add `is
+imod:Subject`, `is core odo:Subject`, or another generic parent only to make that built-in type
+chain visible. Record it as `implicit_type_inheritance` in the proposal rather than as an explicit
+axiom.
+
+Use ordinary `is` only for a genuine domain or worldview parent that makes the concept narrower.
+Choose the narrowest defensible parent compatible with the declaration keyword. Multiple topical
+similarities do not justify multiple parents. Never use `equals` for synonyms that differ in
+scope, measurement convention, perspective, or community usage.
+
+#### Core aliases for generalized scope
+
+`is core` is exceptional, sparse, and restricted to the worldview's root domain. It aliases a
+foundational concept into the worldview's own namespace so other ontology authors can state broad
+constraints without accessing ODO-IM directly or knowing and enumerating every concrete concept
+outside their domain. For example, a root-domain alias such as `imod:Subject` can support:
+
+```kwv
+role ManagedEntity
+    applies to imod:Subject
+;
+```
+
+The clause means that the role may apply to any subject recognized through the foundational
+category, including subjects unknown to the current domain ontology. The alias is therefore a
+stable scope-generalization handle, not a parent that every subject declaration must mention.
+
+When reading the supplied root-domain context, record each available core alias with:
+
+- the foundational concept being aliased;
+- the worldview-visible alias and its declaration keyword;
+- the broad observable clauses expected to use it, such as `applies to`, `requires`, or endpoint
+  restrictions;
+- why a local generalized-scope handle is needed; and
+- validation that the alias does not narrow, reinterpret, or duplicate the foundational meaning.
+
+Never emit `is core` in a domain-ontology proposal. Domain ontologies may only reuse aliases already
+declared by the root domain. If a needed generalized-scope alias is missing, report a
+`root_domain_gap` with its intended scope and supporting evidence; do not declare or simulate the
+alias locally.
 
 ### 7.5 Naming a compositional meaning as domain jargon
 
@@ -714,9 +766,12 @@ For each candidate:
 5. assign perspective, dependence class, and arity;
 6. identify bearer, participants, or endpoints as required by category;
 7. search the supplied ontologies for exact concepts, parents, predicates, and reusable expressions;
-8. rank alignment candidates and explain the selected parent;
-9. for Tier 1, confirm that the direct parent belongs to an upper ontology outside the same domain;
-   for Tier 2+, construct and verify the complete ancestry path to a Tier-1 domain concept;
+8. record the declaration keyword's implicit ODO-IM type inheritance; if an additional explicit
+   specialization is semantically warranted, rank alignment candidates and explain the selected
+   parent;
+9. for Tier 1, confirm the implicit foundational chain and ensure that any explicit parent belongs
+   to an upper ontology outside the same domain; for Tier 2+, construct and verify the complete
+   explicit ancestry path to a Tier-1 domain concept;
 10. record rejected alternatives and why they fail;
 11. decide whether the result should be an atomic declaration, a specialization, a predicate
    composition, a unary derivation, a contextualized expression, an authority identity, or a
@@ -736,6 +791,8 @@ Do not force uncertain candidates into the ontology. Use `needs_review`, `defer`
 Build an explicit dependency graph. A concept depends on every parent, predicate, bearer type,
 endpoint type, clause target, operator operand, and referenced classification value that it uses.
 Reject missing references and cycles unless a reviewer confirms a legitimate mutual definition.
+The declaration keyword's built-in ODO-IM ancestry is recorded as type metadata, not expanded into
+ordinary dependency nodes or redundant `is` clauses.
 For Tier-2+ corpora, include context-only ancestry nodes in the graph so each target concept's path
 to Tier 1 can be validated without re-emitting those nodes as proposals.
 
@@ -777,13 +834,27 @@ re-ingestable. JSON with the same information model is acceptable. Preserve fiel
 stable IDs between iterations. A field may be `null`; do not omit required fields to hide missing
 analysis.
 
+Use identifiers consistently:
+
+- `proposal.id` identifies the continuing proposal;
+- `revision_id` identifies one immutable proposal revision;
+- `concept_id` is an opaque immutable identifier that survives renaming, deprecation, and
+  replacement review;
+- `qualified_name` is the mutable proposed worldview name; and
+- references to concepts inside the proposal use `concept_id`, while references to supplied
+  ontology concepts use their qualified names and ontology/version context.
+
+Never use a qualified concept name as the sole identity of a proposal record. That makes renames
+ambiguous and prevents safe automated reference updates.
+
 ```yaml
-context_pack_version: "1.1"
+context_pack_version: "1.2"
 proposal:
   id: "domain-slug-v1"
+  revision_id: "domain-slug-r1"
   title: "Domain ontology articulation proposal"
   iteration: 1
-  supersedes: null
+  supersedes_revision: null
   status: "draft" # blocked | draft | community_review | revised | accepted | rejected
   generated_at: "YYYY-MM-DD"
   scope:
@@ -810,9 +881,15 @@ proposal:
   existing_ontologies:
     - ontology_id: "upper"
       version: null
-      role: "upper" # upper | tier_1_mandatory | intervening_tier | neighboring | authority | prior_domain
+      role: "upper" # root_domain | upper | tier_1_mandatory | intervening_tier | neighboring | authority | prior_domain
       tier: null
       domain_scope: "a more general or different domain"
+      mandatory_context: true
+    - ontology_id: "imod"
+      version: null
+      role: "root_domain"
+      tier: null
+      domain_scope: "worldview root domain exposing foundational aliases"
       mandatory_context: true
     - ontology_id: "tier1-domain"
       version: "1.0"
@@ -820,6 +897,11 @@ proposal:
       tier: 1
       domain_scope: "the broad domain ontology specialized by this proposal"
       mandatory_context: true
+  root_scope_aliases:
+    - alias: "imod:Subject"
+      foundational_concept: "odo:Subject"
+      source_ontology_id: "imod"
+      available_for: ["applies_to", "requires", "relationship_endpoint"]
   evidence:
     - evidence_id: "ev-001"
       source_id: "src-001"
@@ -830,7 +912,11 @@ proposal:
       interpretation: "none, or the agent's explicit interpretation"
 
   concepts:
-    - concept_id: "domain:StableConceptName"
+    - concept_id: "concept-0001" # immutable across renames and iterations
+      qualified_name: "domain:StableConceptName" # mutable through an approved rename action
+      record_version: 1
+      record_hash: null # optional hash of canonicalized record for optimistic concurrency checks
+      name_history: []
       label: "preferred human label"
       abstract: false
       aliases: []
@@ -863,6 +949,14 @@ proposal:
         value_kind: null # boolean | concept | number | rank | geometry | duration | other
         aggregation_behavior: null # extensive | intensive | not_applicable | unresolved
       category_rationale: "why these coordinates fit better than alternatives"
+
+      type_inheritance:
+        declaration_keyword: "thing"
+        odo_im_chain: "implicit"
+        explicit_odo_derivation_required: false
+        rationale: "the declaration keyword already establishes the foundational type chain"
+
+      generalized_scope_aliases_used: [] # read-only aliases supplied by the root domain
 
       ambiguity:
         status: "unambiguous" # unambiguous | qualified | unresolved
@@ -908,13 +1002,17 @@ proposal:
         reviewer_decision: null
 
       alignment:
-        action: "specialize" # reuse_exact | specialize | core_anchor | authority_reference | new_root_candidate | unresolved
+        action: "specialize" # implicit_type_only | reuse_exact | specialize | authority_reference | new_root_candidate | unresolved
         selected_parent: "tier1:DomainConcept"
         direct_parent_tier: 1
         tier_1_ancestor: "tier1:DomainConcept"
         ancestry_to_tier_1:
-          - "domain:StableConceptName"
-          - "tier1:DomainConcept"
+          - ref_kind: "internal"
+            concept_id: "concept-0001"
+            qualified_name: "domain:StableConceptName"
+          - ref_kind: "external"
+            concept_id: null
+            qualified_name: "tier1:DomainConcept"
         ancestry_status: "verified" # verified | missing_parent | missing_tier_1_ancestor | unresolved
         contextualized_within: null
         candidates:
@@ -960,16 +1058,35 @@ proposal:
         state: "open" # open | changes_requested | accepted | rejected | deferred
         comments: []
         decisions: []
+        proposed_action_ids: []
+        applied_action_ids: []
         last_reviewed_iteration: null
 
-  dependency_order: ["domain:StableConceptName"]
+      lifecycle:
+        state: "active" # proposed | active | deprecated | deleted | rejected
+        introduced_in_iteration: 1
+        last_modified_in_iteration: 1
+        deleted_in_iteration: null
+        replacement_concept_ids: []
+
+  dependency_order: ["concept-0001"]
   upstream_gaps: []
+  root_domain_gaps: []
+  iteration_control:
+    current_iteration: 1
+    previous_revision_id: null
+    next_iteration: 2
+    state: "open_for_feedback" # open_for_feedback | actions_proposed | approved_for_apply | applied | closed
+    unresolved_feedback_ids: []
+    proposed_action_ids: []
+    applied_action_ids: []
+  actions: []
   orthogonality_review:
     hard_unambiguity_gate_passed: false
     pairwise_review_complete: false
     matrix:
-      - concept_a: "domain:StableConceptName"
-        concept_b: "domain:RelatedConcept"
+      - concept_a: "concept-0001"
+        concept_b: "concept-0002"
         relation: "orthogonal"
         a_varies_with_b_fixed: true
         b_varies_with_a_fixed: true
@@ -999,8 +1116,11 @@ proposal:
     requested_changes: []
   change_log:
     - iteration: 1
+      revision_id: "domain-slug-r1"
+      previous_revision_id: null
       changes: ["initial proposal"]
       feedback_resolved: []
+      actions_applied: []
 ```
 
 Allowed primary `kind` values are:
@@ -1017,6 +1137,13 @@ attribute, identity, role, realm, domain
 Prefer the most specific justified quality keyword. If the ODO-IM conceptual kind is known but no
 current declaration keyword is confidently mapped, use the nearest generic current kind and record
 the intended specialization in `category_rationale` and `open_questions`.
+
+When the declaration keyword supplies all required foundational ancestry, set
+`alignment.action: implicit_type_only`, leave `selected_parent` and explicit ancestry fields `null`
+or empty as appropriate, and do not add a parent dependency. For generalized scope, select an
+existing entry from `root_scope_aliases` and record it in `generalized_scope_aliases_used`. If the
+needed alias is absent, emit a `root_domain_gap`; a domain proposal has no action that can create
+an `is core` declaration.
 
 ### 9.1 Tier request and blocked-response contract
 
@@ -1055,6 +1182,23 @@ but it identifies the specific missing or ambiguous Tier-1 concept and cites the
 evidence that requires it. Such a gap belongs to Tier-1 governance and is not silently added to the
 lower-tier output.
 
+A missing generalized-scope alias is reported separately for root-domain governance:
+
+```yaml
+- gap_id: "gap-root-scope-001"
+  gap_type: "missing_generalized_scope_alias"
+  requested_alias: "imod:GeneralizedObservable"
+  intended_foundational_meaning: "the foundational category that must be exposed"
+  intended_scope_uses: ["applies_to"]
+  evidence_refs: ["ev-001"]
+  rationale: "why existing root aliases cannot express the required generalized scope"
+  status: "open" # open | resolved_in_root | rejected | superseded
+  root_revision_resolving_gap: null
+```
+
+Store these records in `proposal.root_domain_gaps`. They request root-domain governance; they are
+not permission to emit `is core` in the current proposal.
+
 ### 9.2 Per-concept feedback records
 
 Each comment must remain addressable and auditable:
@@ -1063,12 +1207,14 @@ Each comment must remain addressable and auditable:
 - comment_id: "fb-concept-004"
   author: "reviewer or community identifier"
   iteration: 1
-  target: "domain:StableConceptName"
+  proposal_revision_id: "domain-slug-r1"
+  target: "concept-0001"
   field: "semantic_coordinates.kind"
   stance: "question | support | object | request_change"
   comment: "Why is this a process rather than an event?"
   evidence_refs: ["ev-014"]
   proposed_change: "Reclassify as event and add temporal boundary criteria."
+  proposed_action_ids: ["action-0007"]
   status: "open" # open | accepted | rejected | superseded | resolved
   resolution: null
   resolved_in_iteration: null
@@ -1086,12 +1232,14 @@ ordering, naming policy, duplicated concepts, domain placement, and source-polic
 - comment_id: "fb-corpus-002"
   author: "community working group"
   iteration: 1
+  proposal_revision_id: "domain-slug-r1"
   target: "corpus"
   area: "coverage | structure | dependency_order | naming | source_policy | alignment"
   stance: "request_change"
   comment: "The proposal models outcomes but omits the agents and processes that produce them."
-  affected_concepts: ["domain:Outcome"]
+  affected_concepts: ["concept-0042"]
   proposed_change: "Repeat extraction phases B and C for agency and process dimensions."
+  proposed_action_ids: []
   status: "open"
   resolution: null
   resolved_in_iteration: null
@@ -1101,27 +1249,117 @@ ordering, naming policy, duplicated concepts, domain placement, and source-polic
 
 When community feedback is returned with a previous corpus:
 
-1. ingest the previous YAML as the baseline rather than extracting the whole domain anew;
-2. preserve `concept_id`, `evidence_id`, and `comment_id` values for unchanged records;
-3. preserve the requested tier across an iteration; changing tier starts a separately scoped
-   proposal and requires a new context and ancestry audit;
-4. append comments and decisions; never rewrite review history or delete rejected alternatives;
-5. resolve each accepted comment through a named field change and cite the resolution in
-   `change_log.feedback_resolved`;
-6. retain removed proposals as records with `disposition: defer`,
-   `not_a_worldview_concept`, or an explicit rejection decision instead of silently dropping them;
-7. rerun tier ancestry, reference, category, ambiguity, pairwise orthogonality, dependency, and
-   ordering validation
-   for every changed concept, its close conceptual neighbors, and all of its downstream dependents;
-8. require a recorded reviewer decision for every applicable `equals_vs_is_review_required` flag,
-   preserving the articulated expression even when a jargon name is accepted;
-9. increment `iteration`, set `supersedes` to the previous proposal ID/version, and summarize both
-   semantic and editorial changes; and
-10. reopen corpus-level review when a local change alters category boundaries, naming policy,
-   partitions, imports, or dependency order elsewhere in the proposal.
+1. ingest the previous YAML as an immutable baseline; never edit or replace an earlier revision;
+2. copy it to a new working revision with a new `revision_id`, incremented `iteration`, and
+   `supersedes_revision` pointing to the baseline;
+3. preserve `concept_id`, `evidence_id`, and `comment_id` values; change a concept's
+   `qualified_name`, not its ID, when renaming it;
+4. ingest new feedback by appending comment records and linking them to the exact revision, target,
+   and field reviewed;
+5. normalize every accepted requested change into one or more typed action records; comments state
+   intent, while actions specify a deterministic mutation;
+6. detect conflicting comments/actions, overlapping field patches, stale preconditions, missing
+   targets, and changes that would violate tier or dependency constraints;
+7. obtain explicit reviewer decisions for semantic actions, including changes to category,
+   definition, parentage, `equals`, tier, endpoints, or lifecycle; reject any domain action that
+   attempts to add `is core` and convert the need into a `root_domain_gap`;
+8. apply approved actions to the working revision, update all internal references by `concept_id`,
+   and record action outcomes without deleting the action requests;
+9. rerun tier ancestry, reference, category, ambiguity, pairwise orthogonality, dependency, naming,
+   and ordering validation for every changed concept, its close conceptual neighbors, and all of
+   its downstream dependents;
+10. require a recorded reviewer decision for every applicable `equals_vs_is_review_required` flag,
+    preserving the articulated expression even when a jargon name is accepted;
+11. populate `change_log.feedback_resolved` and `change_log.actions_applied`, retain unresolved
+    items in `iteration_control`, and set `next_iteration` so further review has an explicit place;
+    and
+12. close the revision only after validation, while reopening corpus-level review whenever a local
+    change alters category boundaries, naming policy, partitions, imports, tier ancestry, or
+    dependency order elsewhere in the proposal.
 
 If two review comments conflict, preserve both, state the conflict, identify the decision authority
 or evidence needed, and leave the affected field `needs_review` until a recorded resolution exists.
+
+Handle common concept changes as follows:
+
+- **Rename:** preserve `concept_id`; update `qualified_name`; append the previous name and iteration
+  to `name_history`; rewrite display-name and externalized syntax references; and separately decide
+  whether the old name should remain as a worldview `equals` alias.
+- **Delete:** never erase the record. Set `lifecycle.state: deleted`, record the iteration and
+  rationale, remove it from active output/dependency order, and either redirect or block every
+  dependent reference. Use `replacement_concept_ids` when successors exist.
+- **Expand:** retain the same `concept_id` only when new evidence, boundaries, examples, clauses, or
+  documentation clarify the same intension. Increment `record_version`. If the expansion changes
+  identity, category, tier, or extension substantially, use `split`, `merge`, or replacement
+  concepts instead of mutating the original silently.
+- **Split:** create new immutable concept IDs, preserve the old record as deprecated or deleted,
+  map it to all successors, and require reviewers to redirect each dependent reference explicitly.
+- **Merge:** create or select a surviving concept ID, preserve all source records and provenance,
+  record replacement mappings, and re-run ambiguity and orthogonality review.
+- **Add:** allocate a never-before-used `concept_id`; do not recycle IDs from deleted or rejected
+  records.
+
+### 9.5 Typed actions and partial automation
+
+Use a normalized action envelope so approved feedback can eventually drive tooling. At minimum,
+support `add`, `rename`, `modify`, `expand`, `delete`, `deprecate`, `restore`, `split`, `merge`, and
+`replace` operations.
+
+```yaml
+- action_id: "action-0007"
+  proposal_id: "domain-slug-v1"
+  base_revision_id: "domain-slug-r1"
+  requested_in_iteration: 1
+  requested_by_feedback_ids: ["fb-concept-004"]
+  operation: "rename"
+  target_concept_ids: ["concept-0001"]
+  status: "proposed" # proposed | needs_review | approved | rejected | applied | failed | superseded
+  semantic_review_required: true
+  preconditions:
+    expected_record_version: 1
+    expected_record_hash: null
+    expected_qualified_name: "domain:OldName"
+    expected_lifecycle_state: "active"
+  payload:
+    new_qualified_name: "domain:NewName"
+    retain_old_name_as_equals_alias: null # reviewer decision; never infer automatically
+    field_patch: {}
+    new_concepts: []
+    replacement_concept_ids: []
+  impact:
+    internal_reference_updates: []
+    external_reference_warnings: []
+    downstream_concept_ids: []
+  required_validations:
+    - "name_unique"
+    - "references_resolve"
+    - "tier_ancestry_valid"
+    - "semantic_review"
+  approval:
+    reviewer: null
+    decision: null
+    rationale: null
+    decided_in_iteration: null
+  apply_result:
+    applied_revision_id: null
+    applied_in_iteration: null
+    changed_fields: []
+    reference_updates: []
+    validation_results: []
+    error: null
+```
+
+Automation may safely normalize records, check preconditions, apply approved mechanical patches,
+rewrite internal references keyed by `concept_id`, maintain name/lifecycle history, compute impact,
+and run structural validation. It must not autonomously approve semantic changes. In particular,
+choosing `is` versus `equals`, changing concept kind or tier, resolving ambiguous feedback, or
+deciding whether an expansion preserves identity remains a reviewer action. Creating an `is core`
+alias is not an available domain action at all; tooling must reject it and report a root-domain gap.
+
+An apply tool should be transactional: validate the base revision and action preconditions, build a
+candidate revision, apply actions in dependency order, run required validations, and publish the
+new revision only if the whole approved batch succeeds. On failure, preserve the baseline, mark the
+failed action with diagnostics, and leave unapplied actions available for the next iteration.
 
 ## 10. Minimal syntax guidance
 
@@ -1162,6 +1400,23 @@ ontology freshwater.ecology
 Clause order is flexible in the grammar, but proposals should use parentage first, then
 restrictions, effects and emergence, metadata, and child taxonomies. Each clause family occurs at
 most once per concept definition.
+
+`<type>` is semantically active: it establishes the declaration's ODO-IM inheritance chain. Omit
+the optional `is` clause when there is no genuine additional domain/worldview specialization. Do
+not generate a generic ODO-IM parent clause from `type_inheritance` metadata.
+
+For recognition only, a generalized-scope alias in the **root domain** uses the exceptional form:
+
+```kwv
+abstract thing Subject
+    "The worldview-visible alias for any foundational subject."
+    is core odo:Subject
+;
+```
+
+This syntax must never be emitted into the domain ontology being proposed. Domain ontologies reuse
+`imod:Subject` (or the actual root alias) in broad clauses; they do not repeat this declaration or
+attach it as an explicit parent to every `thing`.
 
 ### 10.3 Representative declarations
 
@@ -1244,7 +1499,8 @@ exponent syntax.
 - `requested_tier` is a positive integer and is not interpreted as confidence, maturity, or source
   quality.
 - Every supplied ontology records its role, tier where applicable, version, and domain scope.
-- A Tier-1 target specializes upper concepts from ontologies that do not describe the same domain.
+- A Tier-1 target receives its foundational ODO-IM ancestry from its declaration keyword; any
+  additional explicit parent comes from an upper ontology that does not describe the same domain.
 - A Tier-2+ request includes the mandatory authoritative Tier-1 ontology context for the same
   domain and all dependencies needed to interpret it.
 - Every target concept is assigned to the requested tier and has a tier rationale.
@@ -1291,8 +1547,16 @@ exponent syntax.
 
 ### 11.5 Composition and alignment
 
+- Each declaration keyword matches `semantic_coordinates.kind` and records
+  `type_inheritance.odo_im_chain: implicit`.
+- No proposal adds an explicit ODO-IM derivation solely to restate inheritance already established
+  by the declaration keyword.
 - Parent and clause-target types are compatible.
 - `is`, `equals`, `inherits`, predicate composition, and `of` are not conflated.
+- No target concept or action in a domain proposal contains `is core`.
+- Every generalized-scope alias used by the proposal resolves to an `is core` declaration supplied
+  by the root domain, with its foundational concept and allowed scope uses known.
+- A missing generalized-scope alias is reported as a `root_domain_gap`, never declared locally.
 - Equivalent meanings are reused; composite meanings are not duplicated as opaque atomic concepts.
 - Every named compositional meaning preserves its full articulated expression and evidence of
   domain centrality, citation support, and expected use as a unit.
@@ -1323,7 +1587,31 @@ exponent syntax.
 - Named-composition decisions and their `equals`-versus-`is` rationale are preserved.
 - Each concept and the corpus have feedback containers.
 - Stable concept and feedback IDs survive iteration.
-- The change log connects accepted feedback to actual changes.
+- Qualified-name changes preserve immutable concept IDs and name history.
+- Deleted concepts remain as tombstones with impact and replacement information.
+- Accepted feedback is normalized into typed actions with preconditions, approval, impact, and
+  apply results.
+- The change log connects accepted feedback to actual applied actions and revisions.
+- Unresolved feedback and unapplied actions remain allocated to `next_iteration`.
+
+### 11.8 Iteration and apply readiness
+
+- Proposal IDs remain stable, revision IDs are unique, and `supersedes_revision` forms an acyclic
+  revision chain.
+- Concept IDs are unique and immutable; qualified names are unique among active concepts.
+- Every feedback and action ID is unique, and every referenced revision, concept, field, evidence
+  item, and predecessor exists.
+- Every applied action was approved when semantic review was required and satisfied its base
+  revision, record-version/hash, name, and lifecycle preconditions.
+- Rename actions preserve concept IDs, append name history, and update all internal references.
+- Delete actions retain tombstones and leave no unresolved active dependent reference.
+- Expand actions preserve the concept's intension; identity-changing expansions are represented as
+  split, merge, or replacement operations.
+- Applied action batches record impact and validation results, and actions are ordered so additions
+  and replacements precede dependent rewrites and deletions.
+- A failed action batch does not publish a partially modified revision.
+- `iteration_control`, concept feedback, action status, lifecycle history, and `change_log` agree on
+  which changes were proposed, approved, applied, rejected, failed, or deferred.
 
 ## 12. Required final narrative
 
@@ -1331,18 +1619,22 @@ Accompany the structured corpus with a concise report containing:
 
 1. scope, requested tier, target community, source policy, and ontology-context manifest;
 2. tier validation, including mandatory Tier-1 context and representative ancestry paths;
-3. the dominant structural and functional perspectives in the domain;
-4. coverage by observable and predicate category;
-5. a dependency-ordered walkthrough of proposed concepts;
-6. concepts reused from supplied upper/Tier-1/intervening ontologies and newly proposed concepts;
-7. upstream gaps that require a broader-tier governance decision;
-8. key derivations using unary operators or composition;
-9. compositional meanings proposed as named domain jargon, their salience evidence, and pending or
+3. declaration-keyword inheritance assumptions, root-domain generalized-scope aliases reused, and
+   any `root_domain_gap` reports;
+4. the dominant structural and functional perspectives in the domain;
+5. coverage by observable and predicate category;
+6. a dependency-ordered walkthrough of proposed concepts;
+7. concepts reused from supplied upper/Tier-1/intervening ontologies and newly proposed concepts;
+8. upstream gaps that require a broader-tier governance decision;
+9. key derivations using unary operators or composition;
+10. compositional meanings proposed as named domain jargon, their salience evidence, and pending or
    completed `equals`-versus-`is` decisions;
-10. the orthogonality audit, including splits, merges, compositions, and unresolved overlaps;
-11. ambiguities, competing articulations, and evidence gaps;
-12. validation performed and validation not performed; and
-13. specific questions for community review at both concept and corpus level.
+11. the orthogonality audit, including splits, merges, compositions, and unresolved overlaps;
+12. iteration changes, unresolved feedback, proposed/applied actions, renames, deletions,
+    expansions, and replacement mappings;
+13. ambiguities, competing articulations, and evidence gaps;
+14. validation performed and validation not performed; and
+15. specific questions for community review at both concept and corpus level.
 
 The report must not hide uncertainty behind polished prose. A smaller, coherent proposal with
 traceable gaps is preferable to a large taxonomy built from weak lexical associations.
@@ -1350,11 +1642,15 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 ## 13. Compact instruction to the analyzing agent
 
 > Analyze the supplied literature as evidence about observable meaning, not as a bag of terms.
-> First validate the requested tier. Tier 1 must descend directly from upper ontologies outside the
-> domain. Every Tier-2+ request must include the authoritative Tier-1 domain ontology context, and
-> every proposed lower-tier concept must expose a complete specialization path to Tier 1. If that
-> context is missing, return `missing_tier_1_context` and no concept corpus; never invent the
-> foundation. Keep context concepts out of the target list unless their revision is requested.
+> First validate the requested tier. A Tier-1 declaration's keyword already supplies its
+> foundational ODO-IM inheritance; add `is` only for a genuine additional specialization of an
+> upper concept outside the domain. Every Tier-2+ request must include the authoritative Tier-1
+> domain ontology context, and every proposed lower-tier concept must expose a complete
+> specialization path to Tier 1. If that context is missing, return `missing_tier_1_context` and no
+> concept corpus; never invent the foundation. Keep context concepts out of the target list unless
+> their revision is requested. `is core` is legal only in the root domain and must never be emitted
+> by a domain proposal. Reuse supplied root aliases for broad clauses such as `applies to
+> imod:Subject`; if a required alias is missing, report a `root_domain_gap`.
 > Extract independent structural subjects and agents, bounded functional events, dependent
 > qualities and processes, binary structural and functional relationships/bonds, emergent
 > configurations, and the four refining predicate dimensions: identity, realm, attribute, and
@@ -1370,5 +1666,9 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > source diversity and domain centrality, and flag it for mandatory `equals`-versus-`is` review so
 > reviewers can choose a genuine alias, a specialization, or the expression alone. Produce the
 > versioned YAML corpus in dependency order, retain unresolved issues, and support auditable
-> feedback on each concept and on the overall structure. Treat any proposed k.LAB syntax as
+> feedback on each concept and on the overall structure. Across iterations, preserve immutable
+> concept IDs and prior revisions; normalize accepted feedback into typed actions for add, rename,
+> modify, expand, delete, deprecate, restore, split, merge, or replacement. Keep name and lifecycle
+> history, update internal references, validate impacts, and automate only approved mechanical
+> changes—semantic decisions remain reviewer-controlled. Treat any proposed k.LAB syntax as
 > unverified until it has passed the corresponding parser, adaptation, and Reasoner checks.

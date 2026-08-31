@@ -1335,8 +1335,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 KnowledgeClass.FLOW_STATE,
                 CRUDOperation.UPDATE));
       case Resource resource:
-        // TODO RESOURCES-CRUD distinguish REPLACE, UPDATE, MERGE and ADD in resource ingestion.
-        return List.of(ingestResource(resource, scope));
+        return List.of(ingestResource(resource, submissionMode, scope));
       case Workspace workspace:
         if (workspaceManager.getWorkspace(workspace.getUrn()) != null) {
           if (submissionMode == SubmissionMode.ADD) {
@@ -2124,14 +2123,27 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+    if (!(scope instanceof UserScope userScope) || resourcePrivileges == null) return false;
     var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
-      if (status.getPermissionsOwnerUrn() != null
-          && !resourceUrn.equals(status.getPermissionsOwnerUrn())) return false;
+      if (!allowsRightsUpdate(
+          resourceUrn,
+          status,
+          userScope.getUser().getUsername(),
+          isAllowed(CRUDOperation.ADMINISTER, userScope))) return false;
       status.setRights(resourcePrivileges);
       return resourcesKbox.putStatus(status);
     }
     return false;
+  }
+
+  static boolean allowsRightsUpdate(
+      String resourceUrn, ResourceInfo status, String username, boolean administrator) {
+    if (status == null
+        || status.getPermissionsOwnerUrn() != null
+            && !resourceUrn.equals(status.getPermissionsOwnerUrn())) return false;
+    return administrator
+        || status.getOwner() != null && status.getOwner().equals(username);
   }
 
   private ResourcePrivileges effectiveRights(ResourceInfo info) {
@@ -2302,16 +2314,40 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
    * @return
    */
   public ResourceSet ingestResource(Resource resource, UserScope scope) {
+    return ingestResource(resource, SubmissionMode.CREATE_OR_UPDATE, scope);
+  }
+
+  private ResourceSet ingestResource(
+      Resource resource, SubmissionMode submissionMode, UserScope scope) {
 
     var operation = CRUDOperation.CREATE;
 
     var existingSame = resourcesKbox.getResource(resource.getUrn(), resource.getVersion());
-    if (existingSame != null) {
+    var existingPrev = resourcesKbox.getResource(resource.getUrn(), Version.ANY_VERSION);
+    if (submissionMode == SubmissionMode.REPLACE) {
+      var resourceInfo = resourcesKbox.getStatus(resource.getUrn(), null);
+      if (!allowsTemporaryUpdate(isLocal(), resourceInfo)) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Temporary updates are only allowed for tier-0 resources or on local services"));
+      }
+    }
+    if (submissionMode == SubmissionMode.ADD && existingPrev != null) {
+      return ResourceSet.empty();
+    }
+    if (submissionMode == SubmissionMode.MERGE) {
+      return ResourceSet.empty(
+          Notification.error("Resource merging is not supported by the persistence backend"));
+    }
+    if (submissionMode == SubmissionMode.UPDATE && existingPrev == null) {
+      return ResourceSet.empty(
+          Notification.error("Cannot update unknown resource " + resource.getUrn()));
+    }
+    if (existingSame != null && submissionMode != SubmissionMode.REPLACE) {
       return ResourceSet.empty(
           Notification.error(
               "Resource already exists in version " + resource.getVersion() + " or higher"));
     }
-    var existingPrev = resourcesKbox.getResource(resource.getUrn(), Version.ANY_VERSION);
     if (existingPrev != null) {
       operation = CRUDOperation.UPDATE;
     }
@@ -2326,6 +2362,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   + operation.name().toLowerCase()
                   + " resources"));
     }
+
+    String historyError = prepareVersionHistory(resource, existingPrev, submissionMode);
+    if (historyError != null) return ResourceSet.empty(Notification.error(historyError));
     // check if we're updating and, if so, whether we have the right to modify
 
     // find adapter
@@ -2371,6 +2410,39 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
 
     return resourceManager.ingestResource(resource, adapter, scope);
+  }
+
+  static boolean allowsTemporaryUpdate(boolean localService, ResourceInfo resourceInfo) {
+    return localService || resourceInfo != null && resourceInfo.getReviewStatus() == 0;
+  }
+
+  static String prepareVersionHistory(
+      Resource resource, Resource existing, SubmissionMode submissionMode) {
+    if (existing == null) return null;
+    if (submissionMode == SubmissionMode.REPLACE) {
+      if (!Objects.equals(resource.getVersion(), existing.getVersion())) {
+        return "Temporary updates cannot change the resource version";
+      }
+      replaceHistory(resource, existing.getHistory());
+    } else if (submissionMode == SubmissionMode.UPDATE
+        || submissionMode == SubmissionMode.CREATE_OR_UPDATE) {
+      if (resource.getVersion() == null
+          || existing.getVersion() == null
+          || !resource.getVersion().greater(existing.getVersion())) {
+        return "A saved resource version must be newer than " + existing.getVersion();
+      }
+      var history = new ArrayList<Resource>(existing.getHistory());
+      var previous = Utils.Json.parseObject(Utils.Json.asString(existing), ResourceImpl.class);
+      previous.setHistory(new ArrayList<>());
+      history.add(previous);
+      replaceHistory(resource, history);
+    }
+    return null;
+  }
+
+  private static void replaceHistory(Resource resource, Collection<Resource> history) {
+    resource.getHistory().clear();
+    resource.getHistory().addAll(history == null ? List.of() : history);
   }
 
   @Override
