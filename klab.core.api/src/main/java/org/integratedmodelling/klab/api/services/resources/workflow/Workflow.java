@@ -378,6 +378,7 @@ public class Workflow implements KlabAsset {
       Flow.State state, WorkflowParticipant participant) {
     var ret = new ArrayList<TransitionSchema>();
     if (state == null || participant == null) return ret;
+    if (!canAccess(states.get(state.getSchemaId()), participant)) return ret;
     for (var transition : transitions.values()) {
       if (transition.getSourceStates().contains(state.getSchemaId())
           && participant.hasAnyRole(transition.getRoles())
@@ -412,6 +413,8 @@ public class Workflow implements KlabAsset {
       return errors;
     }
     if (!flow.getCurrentStateIds().contains(stateId)) errors.add("State is not current");
+    if (participant == null || !canAccess(states.get(state.getSchemaId()), participant))
+      errors.add("Participant is not permitted to use this workflow state");
     var transition = transitions.get(transitionId);
     if (transition == null) errors.add("Unknown transition " + transitionId);
     else {
@@ -434,10 +437,11 @@ public class Workflow implements KlabAsset {
         participant.hasAnyRole(state.getManagerRoles())
             || participant.hasAnyRole(state.getContributorRoles());
     if (!role) return false;
-    if (state.getAdmittedGroups().isEmpty()) return true;
     if (state.getAdmittedGroups().contains(WorkflowParticipant.PUBLIC_GROUP)
         && participant.isKnownRealPerson()
         && participant.getRoles().contains(WorkflowRole.REVIEWER)) return true;
+    if (!participant.isWorkflowPermitted(this)) return false;
+    if (state.getAdmittedGroups().isEmpty()) return true;
     return state.getAdmittedGroups().stream().anyMatch(participant.getGroups()::contains);
   }
 

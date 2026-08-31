@@ -147,6 +147,7 @@ class WorkflowSchemaTest {
     var ret = new WorkflowParticipant();
     ret.setIdentity("test-user");
     ret.setRoles(new LinkedHashSet<>(Set.of(role)));
+    ret.setPermittedWorkflows(new LinkedHashSet<>(Set.of("*")));
     ret.setKnownRealPerson(known);
     return ret;
   }

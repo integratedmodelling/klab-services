@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.workflow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,14 +28,74 @@ import org.junit.jupiter.api.Test;
 class WorkflowManagerAuthorizationTest {
 
   @Test
+  void workflowPermissionAllowListIsEnforced() {
+    var store = new MemoryStore();
+    var manager = manager(store);
+
+    var denied = scope("editor", "EDITOR", "another-workflow");
+    var failure =
+        assertThrows(
+            InvocationTargetException.class,
+            () ->
+                invokeRaw(
+                    manager,
+                    "createFlow",
+                    new Class<?>[] {
+                      String.class, Flow.State.class, boolean.class, UserScope.class
+                    },
+                    "asset-review",
+                    initial(),
+                    false,
+                    denied));
+    assertTrue(failure.getCause() instanceof KlabResourceAccessException);
+    assertFalse(WorkflowParticipant.from(denied).isWorkflowPermitted("asset-review"));
+    List<?> hidden =
+        invoke(
+            manager,
+            "list",
+            new Class<?>[] {KlabAsset.KnowledgeClass.class, UserScope.class},
+            KlabAsset.KnowledgeClass.WORKFLOW,
+            denied);
+    assertTrue(hidden.isEmpty());
+
+    var wildcard = scope("editor", "EDITOR", "*");
+    assertTrue(WorkflowParticipant.from(wildcard).isWorkflowPermitted("asset-review"));
+    List<?> visible =
+        invoke(
+            manager,
+            "list",
+            new Class<?>[] {KlabAsset.KnowledgeClass.class, UserScope.class},
+            KlabAsset.KnowledgeClass.WORKFLOW,
+            wildcard);
+    assertEquals(1, visible.size());
+    assertEquals(
+        "asset-review", createFlow(manager, initial(), false, wildcard).getWorkflowId());
+  }
+
+  @Test
   void publicFlowIsFullyVisibleButCannotBeMutatedByItsReader() {
     var store = new MemoryStore();
     var manager = manager(store);
     var flow = createFlow(manager, initial(), true, scope("editor", "EDITOR"));
+    var reader = scope("reader", "REVIEWER", "another-workflow");
 
-    Flow visible = invoke(manager, "getFlow", new Class<?>[] {String.class, UserScope.class}, flow.getId(), scope("reader", "REVIEWER"));
+    Flow visible =
+        invoke(
+            manager,
+            "getFlow",
+            new Class<?>[] {String.class, UserScope.class},
+            flow.getId(),
+            reader);
     assertTrue(visible.isPublicRead());
     assertEquals(flow.getStates().keySet(), visible.getStates().keySet());
+    Workflow visibleSchema =
+        invoke(
+            manager,
+            "getWorkflow",
+            new Class<?>[] {String.class, UserScope.class},
+            flow.getWorkflowId(),
+            reader);
+    assertEquals(flow.getWorkflowId(), visibleSchema.getId());
     var failure = assertThrows(
         InvocationTargetException.class,
         () ->
@@ -42,7 +103,7 @@ class WorkflowManagerAuthorizationTest {
                 flow.getId(),
                 flow.getCurrentStateIds().iterator().next(),
                 flow.getStates().values().iterator().next(),
-                scope("reader", "REVIEWER")));
+                reader));
     assertTrue(failure.getCause() instanceof KlabResourceAccessException);
   }
 
@@ -113,9 +174,16 @@ class WorkflowManagerAuthorizationTest {
   }
 
   private UserScope scope(String username, String role) {
-    var property = new CustomProperty();
-    property.setKey(WorkflowParticipant.ROLES_PROPERTY);
-    property.setValue(role);
+    return scope(username, role, "asset-review");
+  }
+
+  private UserScope scope(String username, String role, String permitted) {
+    var roleProperty = new CustomProperty();
+    roleProperty.setKey(WorkflowParticipant.ROLES_PROPERTY);
+    roleProperty.setValue(role);
+    var permittedProperty = new CustomProperty();
+    permittedProperty.setKey(WorkflowParticipant.PERMITTED_WORKFLOWS_PROPERTY);
+    permittedProperty.setValue(permitted);
     Group group =
         (Group)
             Proxy.newProxyInstance(
@@ -124,7 +192,7 @@ class WorkflowManagerAuthorizationTest {
                 (proxy, method, args) ->
                     switch (method.getName()) {
                       case "getId" -> "workflow-" + role.toLowerCase();
-                      case "getCustomProperties" -> List.of(property);
+                      case "getCustomProperties" -> List.of(roleProperty, permittedProperty);
                       default -> defaultValue(method.getReturnType());
                     });
     UserIdentity user =

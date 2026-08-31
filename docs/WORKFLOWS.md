@@ -87,6 +87,7 @@ Group custom properties configure workflow authorization:
 | Property | Value | Effect |
 | --- | --- | --- |
 | `workflow.roles` | Comma-separated roles | Adds roles supplied by the group. |
+| `workflow.permitted` | Comma-separated workflow names | Allows the listed workflow schemas. `*` allows every workflow. |
 | `workflow.disallowedTransitions` | Comma-separated transition IDs | Denies those events even if a role permits them. |
 | `workflow.maxResponseHours` | Positive integer | Denies responses after that many hours from state creation. The smallest value from all groups wins. |
 
@@ -100,13 +101,25 @@ If no group supplies a workflow role, an authenticated, non-anonymous user may r
 The flag is the authentication system's assertion that identity and email verification have
 already happened. The workflow layer does not attempt to verify email itself.
 
-An empty admitted-group set means that groups add no further restriction after role checking.
+For non-administrators, `workflow.permitted` is an allow-list and an absent or empty value admits no
+non-public workflow. Entries from all of the user's groups are combined. A workflow may be named by
+its stable ID (recommended, for example `asset-review`), `id@version`, full workflow URN, or its
+human-readable name. `*` grants access to all workflow types. Administrators always have this
+wildcard access; for non-administrators it does not grant a role or bypass stage/group rules.
+Public-review stages remain available to known-real-person reviewers, and a
+`publicRead` flow remains browsable, even when its workflow is not in the allow-list; neither
+exception permits starting that workflow or editing a non-public stage.
+
+An empty admitted-group set means that groups add no further state restriction after workflow and
+role checking.
 `PUBLIC` is not a normal group ID: it admits only the known-real-person reviewer case. Any other
 listed value must match a group ID. `ADMIN` bypasses role and group checks, but still operates
 through an identified `UserScope` so provenance is complete.
 
-Authorization is checked again for every read, mutation, transition, upload, and download. A
-client-side projection is never trusted as authorization evidence.
+Authorization, including the workflow allow-list, is checked again for every schema read, flow
+creation, mutation, transition, upload, and download. A client-side projection is never trusted as
+authorization evidence. Clients also apply the allow-list when constructing menus and action bars
+so forbidden workflows are not offered optimistically.
 
 ## Lifecycle and invariants
 
@@ -387,7 +400,9 @@ reopen action on a closed flow.
 The workspace-tree context menu contains a separated **Workflows** section only when content exists.
 It uses human-readable workflow names and provides **Start workflow**, **Open flows**, and **Closed
 flows** submenus. Accessible flows are filtered by exact target asset URN, and multiple flows on the
-same asset are shown independently.
+same asset are shown independently. Both this menu and the corresponding workflow controls in
+`ResourceEditor` intersect the provider callback's results with `workflow.permitted`; direct start
+callbacks repeat the check, and `WorkflowEditor` derives editability from `Workflow.canAccess`.
 
 The current code does not implement timers, notifications, reviewer quorum, cryptographic
 signatures, attachment virus scanning, or multi-source joins. These are policy/execution features

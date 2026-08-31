@@ -96,19 +96,34 @@ public class WorkflowManager {
     return workflow;
   }
 
+  /**
+   * Retrieve a workflow schema only when group policy admits it or a visible public flow needs it.
+   */
+  public Workflow getWorkflow(String id, UserScope scope) {
+    var workflow = getWorkflow(id);
+    if (!canInspectWorkflow(workflow, WorkflowParticipant.from(scope))) throw access(id);
+    return workflow;
+  }
+
   /** Retrieve any persistent workflow artifact through its generic Resources CRUD URN. */
   public KlabAsset retrieve(String urn, KlabAsset.KnowledgeClass type, UserScope scope) {
     var coordinates = WorkflowUrns.parse(urn, type);
     return switch (type) {
-      case WORKFLOW -> getWorkflow(coordinates.ownerId(), coordinates.version());
+      case WORKFLOW -> {
+        var workflow = getWorkflow(coordinates.ownerId(), coordinates.version());
+        if (!canInspectWorkflow(workflow, WorkflowParticipant.from(scope))) throw access(urn);
+        yield workflow;
+      }
       case WORKFLOW_STATE -> {
         var workflow = getWorkflow(coordinates.ownerId(), coordinates.version());
+        if (!canInspectWorkflow(workflow, WorkflowParticipant.from(scope))) throw access(urn);
         var state = workflow.getStates().get(coordinates.artifactId());
         if (state == null) throw new KlabIllegalArgumentException("Unknown workflow state " + urn);
         yield state;
       }
       case WORKFLOW_TRANSITION -> {
         var workflow = getWorkflow(coordinates.ownerId(), coordinates.version());
+        if (!canInspectWorkflow(workflow, WorkflowParticipant.from(scope))) throw access(urn);
         var transition = workflow.getTransitions().get(coordinates.artifactId());
         if (transition == null)
           throw new KlabIllegalArgumentException("Unknown workflow transition " + urn);
@@ -144,16 +159,23 @@ public class WorkflowManager {
   }
 
   public List<? extends KlabAsset> list(KlabAsset.KnowledgeClass type, UserScope scope) {
+    var participant = WorkflowParticipant.from(scope);
     return switch (type) {
-      case WORKFLOW -> kbox.listWorkflows().stream().peek(Workflow::validate).toList();
+      case WORKFLOW ->
+          kbox.listWorkflows().stream()
+              .peek(Workflow::validate)
+              .filter(workflow -> canInspectWorkflow(workflow, participant))
+              .toList();
       case WORKFLOW_STATE ->
           kbox.listWorkflows().stream()
               .peek(Workflow::validate)
+              .filter(workflow -> canInspectWorkflow(workflow, participant))
               .flatMap(workflow -> workflow.getStates().values().stream())
               .toList();
       case WORKFLOW_TRANSITION ->
           kbox.listWorkflows().stream()
               .peek(Workflow::validate)
+              .filter(workflow -> canInspectWorkflow(workflow, participant))
               .flatMap(workflow -> workflow.getTransitions().values().stream())
               .toList();
       case FLOW -> listFlows(true, scope);
@@ -259,6 +281,7 @@ public class WorkflowManager {
       String workflowId, Flow.State initial, boolean publicRead, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
     var workflow = getWorkflow(workflowId);
+    if (!participant.isWorkflowPermitted(workflow)) throw access(workflowId);
     if (initial == null || initial.getSchemaId() == null)
       throw new KlabIllegalArgumentException("An initial state schema is required");
     var init =
@@ -687,6 +710,17 @@ public class WorkflowManager {
         || flow.getStates().values().stream()
             .anyMatch(
                 s -> workflow.canAccess(workflow.getStates().get(s.getSchemaId()), participant));
+  }
+
+  private boolean canInspectWorkflow(Workflow workflow, WorkflowParticipant participant) {
+    return participant.isWorkflowPermitted(workflow)
+        || workflow.getStates().values().stream()
+            .anyMatch(state -> workflow.canAccess(state, participant))
+        || kbox.listFlows().stream()
+            .anyMatch(
+                flow ->
+                    flow.isPublicRead()
+                        && Objects.equals(flow.getWorkflowId(), workflow.getId()));
   }
 
   private void requireManager(

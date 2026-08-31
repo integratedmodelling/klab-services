@@ -201,7 +201,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public Workflow getWorkflow(String workflowId, UserScope scope) {
-    return workflowManager.getWorkflow(workflowId);
+    return workflowManager.getWorkflow(workflowId, scope);
   }
 
   @Override
