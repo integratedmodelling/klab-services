@@ -240,6 +240,9 @@ public class ResourcesConfiguration extends ServiceConfiguration implements Seri
    */
   private Map<String, ComponentConfiguration> componentConfiguration = new HashMap<>();
 
+  /** Workflow started automatically for editor submissions; blank disables automatic review. */
+  private String publicationReviewWorkflow = "asset-review";
+
   public String getServicePath() {
     return servicePath;
   }
@@ -279,6 +282,14 @@ public class ResourcesConfiguration extends ServiceConfiguration implements Seri
   public void setComponentConfiguration(
       Map<String, ComponentConfiguration> componentConfiguration) {
     this.componentConfiguration = componentConfiguration;
+  }
+
+  public String getPublicationReviewWorkflow() {
+    return publicationReviewWorkflow;
+  }
+
+  public void setPublicationReviewWorkflow(String publicationReviewWorkflow) {
+    this.publicationReviewWorkflow = publicationReviewWorkflow;
   }
 
 }

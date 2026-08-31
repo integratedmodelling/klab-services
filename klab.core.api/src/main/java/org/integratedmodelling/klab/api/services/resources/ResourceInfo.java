@@ -189,6 +189,18 @@ public class ResourceInfo implements Serializable {
   private Set<CRUDOperation> permissions = new HashSet<>();
   private boolean local;
 
+  /** True only on the retained local source record after a successful publication. */
+  private boolean published;
+
+  /** Service that accepted the published copy and is authoritative for subsequent operations. */
+  private String authoritativeServiceId;
+
+  /** Final URN assigned by the authoritative service after validation and metadata analysis. */
+  private String authoritativeResourceUrn;
+
+  /** Time at which the local source was last published, as epoch milliseconds. */
+  private long publicationTimestamp;
+
   /** Flow URN to current per-flow review summary. Persisted with the ResourceInfo record. */
   private Map<String, FlowReference> flows = new LinkedHashMap<>();
 
@@ -366,6 +378,38 @@ public class ResourceInfo implements Serializable {
 
   public void setLocal(boolean local) {
     this.local = local;
+  }
+
+  public boolean isPublished() {
+    return published;
+  }
+
+  public void setPublished(boolean published) {
+    this.published = published;
+  }
+
+  public String getAuthoritativeServiceId() {
+    return authoritativeServiceId;
+  }
+
+  public void setAuthoritativeServiceId(String authoritativeServiceId) {
+    this.authoritativeServiceId = authoritativeServiceId;
+  }
+
+  public String getAuthoritativeResourceUrn() {
+    return authoritativeResourceUrn;
+  }
+
+  public void setAuthoritativeResourceUrn(String authoritativeResourceUrn) {
+    this.authoritativeResourceUrn = authoritativeResourceUrn;
+  }
+
+  public long getPublicationTimestamp() {
+    return publicationTimestamp;
+  }
+
+  public void setPublicationTimestamp(long publicationTimestamp) {
+    this.publicationTimestamp = publicationTimestamp;
   }
 
   /**

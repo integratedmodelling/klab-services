@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.integratedmodelling.common.data.BaseDataImpl;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -488,6 +490,22 @@ public class ResourcesProviderController {
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
+  }
+
+  @PutMapping(ServicesAPI.RESOURCES.MARK_PUBLISHED)
+  public boolean markPublished(
+      @PathVariable("urn") String urn,
+      @PathVariable("serviceId") String serviceId,
+      @RequestBody Map<String, String> publication,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      return resourcesServer
+          .klabService()
+          .markPublished(
+              urn, serviceId, publication.get("authoritativeResourceUrn"), userScope);
+    }
+    return false;
   }
 
   //  @Operation(

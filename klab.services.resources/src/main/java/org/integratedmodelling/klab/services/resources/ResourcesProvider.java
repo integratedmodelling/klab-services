@@ -74,6 +74,8 @@ import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.resources.workflow.WorkflowManager;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
@@ -1308,6 +1310,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (asset == null || asset.getUrn() == null || asset.getUrn().isBlank()) {
       throw new KlabIllegalArgumentException("Submitted assets must have a nonblank URN");
     }
+    if (submissionMode == SubmissionMode.PUBLISH && !(asset instanceof Resource)) {
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("PUBLISH is only supported for the Resource contract")));
+    }
     switch (asset) {
       case Workflow workflow:
         return List.of(
@@ -1558,7 +1565,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     var unsupported =
         query.keySet().stream()
-            .filter(key -> !Set.of("urn", "query", "limit", "maxResults").contains(key))
+            .filter(
+                key ->
+                    !Set.of("urn", "query", "limit", "maxResults", "includePublishedLocal")
+                        .contains(key))
             .toList();
     if (!unsupported.isEmpty()) {
       throw new KlabIllegalArgumentException(
@@ -1572,7 +1582,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         requestedLimit = query.get("maxResults", ResourceIndexer.MAX_RESULT_COUNT);
       }
       int maxResults = Math.max(1, Math.min(100, requestedLimit));
-      return (List<T>) queryResources(pattern, scope, maxResults, assetClass);
+      return (List<T>)
+          queryResources(
+              pattern,
+              scope,
+              maxResults,
+              Boolean.TRUE.equals(query.get("includePublishedLocal", Boolean.class)),
+              assetClass);
     }
     return list(assetClass.getAssetClass(), scope).stream()
         .filter(asset -> asset.getUrn().matches(pattern))
@@ -2024,6 +2040,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public List<ResourceInfo> queryResources(
       String queryPattern, Scope scope, int maxResults, KnowledgeClass... resourceTypes) {
+    return queryResources(queryPattern, scope, maxResults, false, resourceTypes);
+  }
+
+  private List<ResourceInfo> queryResources(
+      String queryPattern,
+      Scope scope,
+      int maxResults,
+      boolean includePublishedLocal,
+      KnowledgeClass... resourceTypes) {
 
     List<ResourceInfo> ret = new ArrayList<>();
     Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
@@ -2037,6 +2062,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (wanted.contains(KnowledgeClass.RESOURCE)) {
       ret.addAll(getResourcesKbox().queryResources(queryPattern, maxResults));
     }
+
+    filterPublishedLocal(ret, isLocal(), includePublishedLocal);
 
     if (wanted.contains(KnowledgeClass.MODEL)) {}
 
@@ -2062,6 +2089,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       }
     }
     return ret;
+  }
+
+  static void filterPublishedLocal(
+      List<ResourceInfo> resources, boolean localService, boolean includePublishedLocal) {
+    if (localService && !includePublishedLocal) resources.removeIf(ResourceInfo::isPublished);
   }
 
   public ResourceInfo resourceInfo(String urn, Scope scope) {
@@ -2135,6 +2167,34 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return resourcesKbox.putStatus(status);
     }
     return false;
+  }
+
+  @Override
+  public boolean markPublished(
+      String resourceUrn,
+      String authoritativeServiceId,
+      String authoritativeResourceUrn,
+      UserScope scope) {
+    if (!isLocal()
+        || resourceUrn == null
+        || resourceUrn.isBlank()
+        || authoritativeServiceId == null
+        || authoritativeServiceId.isBlank()
+        || authoritativeResourceUrn == null
+        || authoritativeResourceUrn.isBlank()
+        || scope == null) return false;
+    var status = resourcesKbox.getStatus(resourceUrn, null);
+    if (status == null
+        || !allowsRightsUpdate(
+            resourceUrn,
+            status,
+            scope.getUser().getUsername(),
+            isAllowed(CRUDOperation.ADMINISTER, scope))) return false;
+    status.setPublished(true);
+    status.setAuthoritativeServiceId(authoritativeServiceId);
+    status.setAuthoritativeResourceUrn(authoritativeResourceUrn);
+    status.setPublicationTimestamp(System.currentTimeMillis());
+    return resourcesKbox.putStatus(status);
   }
 
   static boolean allowsRightsUpdate(
@@ -2321,9 +2381,40 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Resource resource, SubmissionMode submissionMode, UserScope scope) {
 
     var operation = CRUDOperation.CREATE;
+    boolean editorSubmission =
+        submissionMode == SubmissionMode.PUBLISH && isWorkflowEditor(scope);
 
-    var existingSame = resourcesKbox.getResource(resource.getUrn(), resource.getVersion());
-    var existingPrev = resourcesKbox.getResource(resource.getUrn(), Version.ANY_VERSION);
+    if (submissionMode == SubmissionMode.PUBLISH) {
+      if (isLocal()) {
+        return ResourceSet.empty(
+            Notification.error("Resources can only be published to a remote resources service"));
+      }
+      if (!isAllowed(CRUDOperation.CREATE, scope)) {
+        return ResourceSet.empty(
+            Notification.error("The submitting user does not have CREATE permission"));
+      }
+      if (!editorSubmission
+          && (resource.getMetadata().get(INTENDED_EDITOR_METADATA) == null
+              || resource.getMetadata().get(INTENDED_EDITOR_METADATA).toString().isBlank())) {
+        return ResourceSet.empty(
+            Notification.error("Publication by a non-editor must identify an intended editor"));
+      }
+      if (Utils.Notifications.hasErrors(resource.getNotifications())) {
+        return ResourceSet.empty(
+            Notification.error("A resource with validation errors cannot be published"));
+      }
+    }
+
+    String submittedUrn =
+        submissionMode == SubmissionMode.PUBLISH
+            ? ResourcesService.publicationUrn(resource.getUrn(), serviceName())
+            : resource.getUrn();
+    var existingSame = resourcesKbox.getResource(submittedUrn, resource.getVersion());
+    var existingPrev = resourcesKbox.getResource(submittedUrn, Version.ANY_VERSION);
+    if (submissionMode == SubmissionMode.PUBLISH && existingPrev != null) {
+      return ResourceSet.empty(
+          Notification.error("Resource " + submittedUrn + " is already present"));
+    }
     if (submissionMode == SubmissionMode.REPLACE) {
       var resourceInfo = resourcesKbox.getStatus(resource.getUrn(), null);
       if (!allowsTemporaryUpdate(isLocal(), resourceInfo)) {
@@ -2409,7 +2500,53 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       }
     }
 
-    return resourceManager.ingestResource(resource, adapter, scope);
+    var result =
+        resourceManager.ingestResource(
+            resource, adapter, scope, submissionMode == SubmissionMode.PUBLISH ? serviceName() : null);
+    if (submissionMode == SubmissionMode.PUBLISH
+        && !Utils.Notifications.hasErrors(result.getNotifications())) {
+      String authoritativeUrn =
+          result.getResources().isEmpty() ? null : result.getResources().getFirst().getResourceUrn();
+      var status =
+          authoritativeUrn == null ? null : resourcesKbox.getStatus(authoritativeUrn, null);
+      if (status == null) {
+        return ResourceSet.empty(
+            Notification.error("Published resource was stored without a catalog record"));
+      }
+      status.setStage(ResourceInfo.Stage.REVIEWING);
+      status.setReviewStatus(1);
+      if (!resourcesKbox.putStatus(status)) {
+        return ResourceSet.empty(
+            Notification.error("Could not set the published resource status to under review"));
+      }
+      String workflowId = workspaceManager.getConfiguration().getPublicationReviewWorkflow();
+      if (editorSubmission
+          && workflowId != null
+          && !workflowId.isBlank()) {
+        try {
+          var initial = new Flow.State();
+          initial.setSchemaId("editing");
+          initial.setAssetUrn(authoritativeUrn);
+          initial.setAssetType(KnowledgeClass.RESOURCE);
+          workflowManager.createFlow(workflowId, initial, scope);
+        } catch (RuntimeException workflowFailure) {
+          result
+              .getNotifications()
+              .add(
+                  Notification.warning(
+                      "Resource is under review, but workflow "
+                          + workflowId
+                          + " could not be started: "
+                          + workflowFailure.getMessage()));
+        }
+      }
+    }
+    return result;
+  }
+
+  static boolean isWorkflowEditor(UserScope scope) {
+    var roles = WorkflowParticipant.from(scope).getRoles();
+    return roles.contains(WorkflowRole.EDITOR) || roles.contains(WorkflowRole.ADMIN);
   }
 
   static boolean allowsTemporaryUpdate(boolean localService, ResourceInfo resourceInfo) {

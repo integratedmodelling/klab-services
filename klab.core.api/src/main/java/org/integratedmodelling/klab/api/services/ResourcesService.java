@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
@@ -136,11 +137,39 @@ public interface ResourcesService extends KlabService {
      */
     ADD,
     /**
+     * Publish a locally managed {@link Resource} to a remote service. The target must not already
+     * contain the URN, the caller must have create permission, and successful submissions enter
+     * tier 1 under review.
+     */
+    PUBLISH,
+    /**
      * Add the asset if it's not already present, update it otherwise. Must have create and update
      * permissions.
      */
     CREATE_OR_UPDATE
   }
+
+  /** Metadata key used to nominate an editor when a non-editor publishes a resource. */
+  String INTENDED_EDITOR_METADATA = "klab.publication.intendedEditor";
+
+  /** Replace only the host segment of a resource URN for submission to an authoritative service. */
+  static String publicationUrn(String resourceUrn, String hostServiceName) {
+    int separator = resourceUrn == null ? -1 : resourceUrn.indexOf(':');
+    if (separator < 1) {
+      throw new IllegalArgumentException("A publishable resource must have a valid URN");
+    }
+    return Utils.Urns.sanitizeUrnComponent(hostServiceName) + resourceUrn.substring(separator);
+  }
+
+  /**
+   * Record a successful remote publication in the source service's {@link ResourceInfo}. This is
+   * deliberately separate from {@link #submit} because it changes only the local catalog record.
+   */
+  boolean markPublished(
+      String resourceUrn,
+      String authoritativeServiceId,
+      String authoritativeResourceUrn,
+      UserScope scope);
 
   /**
    * All services publish capabilities and have a call to obtain them.

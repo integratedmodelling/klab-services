@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
@@ -41,6 +42,16 @@ public class ResourceManager {
    * @return
    */
   public ResourceSet ingestResource(Resource resource, Adapter adapter, UserScope scope) {
+    return ingestResource(resource, adapter, scope, null);
+  }
+
+  /**
+   * Ingest a resource, optionally as a publication. A publication validator may replace the
+   * resource and change its catalog or namespace; after validation, the host segment is forced to
+   * the receiving service name and the resulting authoritative URN must be new.
+   */
+  public ResourceSet ingestResource(
+      Resource resource, Adapter adapter, UserScope scope, String publicationHost) {
 
     var ret = new ResourceSet();
 
@@ -121,13 +132,21 @@ public class ResourceManager {
 
       // Establish the proper local name and URN for the new resource
       var currentName = resource.getLocalName();
-      var currentUrn = resource.getUrn();
+      var currentUrn =
+          publicationHost == null
+              ? resource.getUrn()
+              : ResourcesService.publicationUrn(resource.getUrn(), publicationHost);
       boolean replacingExisting =
           resourcesKbox.getResource(currentUrn, Version.ANY_VERSION) != null;
 
+      if (publicationHost != null && replacingExisting) {
+        return ResourceSet.empty(
+            Notification.error("Resource " + currentUrn + " is already present"));
+      }
+
       // Create or sanitize the URN using the UrnManager
       String sanitizedUrn =
-          replacingExisting
+          publicationHost != null || replacingExisting
               ? currentUrn
               : urnManager.createOrSanitizeUrn(
                   resource,

@@ -494,6 +494,9 @@ public interface ServicesAPI {
     /** Set/get the access rights for the passed resource URN */
     String RESOURCE_INFO = "/resourceInfo/{urn}";
 
+    /** Mark the retained local source as published on an authoritative remote service. */
+    String MARK_PUBLISHED = "/resourceInfo/{urn}/publication/{serviceId}";
+
     String PARSE_ASSET = "/parseAsset/{assetClass}";
 
     String MANAGE_PROJECT = API_BASE + "/project/manage/{urn}";

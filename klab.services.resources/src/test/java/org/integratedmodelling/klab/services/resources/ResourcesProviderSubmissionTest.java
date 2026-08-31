@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
@@ -55,6 +56,36 @@ class ResourcesProviderSubmissionTest {
 
     info.setPermissionsOwnerUrn("urn:parent");
     assertFalse(ResourcesProvider.allowsRightsUpdate("urn:test", info, "owner", true));
+  }
+
+  @Test
+  void normalLocalSearchHidesPublishedSourcesUnlessExplicitlyRequested() {
+    var unpublished = new ResourceInfo();
+    unpublished.setUrn("local:test:data:draft");
+    var published = new ResourceInfo();
+    published.setUrn("local:test:data:published");
+    published.setPublished(true);
+    published.setAuthoritativeServiceId("remote-resources");
+
+    var normal = new java.util.ArrayList<>(List.of(unpublished, published));
+    ResourcesProvider.filterPublishedLocal(normal, true, false);
+    assertEquals(List.of(unpublished), normal);
+
+    var optedIn = new java.util.ArrayList<>(List.of(unpublished, published));
+    ResourcesProvider.filterPublishedLocal(optedIn, true, true);
+    assertEquals(List.of(unpublished, published), optedIn);
+
+    var remote = new java.util.ArrayList<>(List.of(unpublished, published));
+    ResourcesProvider.filterPublishedLocal(remote, false, false);
+    assertEquals(List.of(unpublished, published), remote);
+  }
+
+  @Test
+  void publicationReplacesOnlyTheHostUrnComponent() {
+    assertEquals(
+        "remote_resources:catalog:namespace:resource",
+        ResourcesService.publicationUrn(
+            "local-host:catalog:namespace:resource", "Remote Resources"));
   }
 
   private static ResourceImpl resource(String version) {

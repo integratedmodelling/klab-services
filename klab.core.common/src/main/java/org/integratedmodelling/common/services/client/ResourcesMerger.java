@@ -249,6 +249,16 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public boolean markPublished(
+      String resourceUrn,
+      String authoritativeServiceId,
+      String authoritativeResourceUrn,
+      UserScope scope) {
+    return primary()
+        .markPublished(resourceUrn, authoritativeServiceId, authoritativeResourceUrn, scope);
+  }
+
+  @Override
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
     return primary().getCredentialInfo(scope);
   }

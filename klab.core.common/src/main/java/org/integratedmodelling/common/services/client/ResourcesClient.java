@@ -6,6 +6,7 @@ import com.google.common.cache.LoadingCache;
 import java.net.URL;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -174,6 +175,25 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             submissionMode,
             "urn",
             asset.getUrn());
+  }
+
+  @Override
+  public boolean markPublished(
+      String resourceUrn,
+      String authoritativeServiceId,
+      String authoritativeResourceUrn,
+      UserScope scope) {
+    return Boolean.TRUE.equals(
+        client
+            .withScope(scope)
+            .put(
+                ServicesAPI.RESOURCES.MARK_PUBLISHED,
+                Map.of("authoritativeResourceUrn", authoritativeResourceUrn),
+                Boolean.class,
+                "urn",
+                resourceUrn,
+                "serviceId",
+                authoritativeServiceId));
   }
 
   @Override
