@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AssetType;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ProposalStatus;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.OrthogonalityRelation;
 import org.junit.jupiter.api.Test;
 
 class ProposalDocumentTest {
@@ -128,11 +125,12 @@ class ProposalDocumentTest {
     var document = mapper.readValue(YAML, ProposalDocument.class);
 
     assertEquals(ProposalDocument.SCHEMA_RESOURCE, document.getProposalSchema());
-    assertEquals(ProposalStatus.DRAFT, document.getProposal().getStatus());
+    assertEquals(ProposalEnums.ProposalStatus.DRAFT, document.getProposal().getStatus());
     assertEquals("model-1", document.getProposal().getAsset("model-1").getAssetId());
     assertNull(document.getProposal().getAsset("missing"));
-    var model = assertInstanceOf(ModelProposal.class, document.getProposal().getAssets().getFirst());
-    assertEquals(AssetType.MODEL, model.getAssetType());
+    var model =
+        assertInstanceOf(ModelProposal.class, document.getProposal().getAssets().getFirst());
+    assertEquals(ProposalEnums.AssetType.MODEL, model.getAssetType());
     assertEquals("retained", model.getProposalData().get("extension"));
 
     var serialized = mapper.readTree(mapper.writeValueAsBytes(document));
@@ -197,7 +195,8 @@ class ProposalDocumentTest {
 
     assertTrue(concept.isAbstract());
     assertEquals("implicit", concept.getTypeInheritance().getOdoImChain());
-    OrthogonalityRelation relation = concept.getOrthogonality().getRelations().getFirst();
+    ProposalSemantics.OrthogonalityRelation relation =
+        concept.getOrthogonality().getRelations().getFirst();
     assertTrue(relation.getAVariesWithBFixed());
     assertEquals(Boolean.FALSE, relation.getBVariesWithAFixed());
     assertEquals("domain:Subject", concept.getAlignment().getTier1Ancestor());

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

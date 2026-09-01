@@ -1,25 +1,25 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.ArrayList;
 import java.util.List;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AggregationBehavior;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AlignmentAction;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AlignmentRelation;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AmbiguityStatus;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AncestryStatus;
-import org.integratedmodelling.klab.api.review.ProposalEnums.CompositionOutcome;
-import org.integratedmodelling.klab.api.review.ProposalEnums.Dependence;
-import org.integratedmodelling.klab.api.review.ProposalEnums.DiscourseUse;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ObservableKind;
-import org.integratedmodelling.klab.api.review.ProposalEnums.OrthogonalityRelationType;
-import org.integratedmodelling.klab.api.review.ProposalEnums.Perspective;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ReferenceKind;
-import org.integratedmodelling.klab.api.review.ProposalEnums.SalienceLevel;
-import org.integratedmodelling.klab.api.review.ProposalEnums.SemanticFlag;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ValueKind;
+import org.integratedmodelling.common.review.ProposalEnums.AggregationBehavior;
+import org.integratedmodelling.common.review.ProposalEnums.AlignmentAction;
+import org.integratedmodelling.common.review.ProposalEnums.AlignmentRelation;
+import org.integratedmodelling.common.review.ProposalEnums.AmbiguityStatus;
+import org.integratedmodelling.common.review.ProposalEnums.AncestryStatus;
+import org.integratedmodelling.common.review.ProposalEnums.CompositionOutcome;
+import org.integratedmodelling.common.review.ProposalEnums.Dependence;
+import org.integratedmodelling.common.review.ProposalEnums.DiscourseUse;
+import org.integratedmodelling.common.review.ProposalEnums.ObservableKind;
+import org.integratedmodelling.common.review.ProposalEnums.OrthogonalityRelationType;
+import org.integratedmodelling.common.review.ProposalEnums.Perspective;
+import org.integratedmodelling.common.review.ProposalEnums.ReferenceKind;
+import org.integratedmodelling.common.review.ProposalEnums.SalienceLevel;
+import org.integratedmodelling.common.review.ProposalEnums.SemanticFlag;
+import org.integratedmodelling.common.review.ProposalEnums.ValueKind;
 
 /** Typed semantic structures used by concept proposal assets. */
 public final class ProposalSemantics {

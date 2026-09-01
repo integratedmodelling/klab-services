@@ -1,13 +1,13 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.ArrayList;
 import java.util.List;
-import org.integratedmodelling.klab.api.review.ProposalEnums.EvidenceKind;
-import org.integratedmodelling.klab.api.review.ProposalEnums.OntologyRole;
-import org.integratedmodelling.klab.api.review.ProposalEnums.Tier1ContextStatus;
+import org.integratedmodelling.common.review.ProposalEnums.EvidenceKind;
+import org.integratedmodelling.common.review.ProposalEnums.OntologyRole;
+import org.integratedmodelling.common.review.ProposalEnums.Tier1ContextStatus;
 
 /** Source, scope and supplied-ontology context for a proposal. */
 public final class ProposalContext {

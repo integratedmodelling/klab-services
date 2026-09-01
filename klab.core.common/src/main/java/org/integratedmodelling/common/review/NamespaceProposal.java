@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -7,31 +7,23 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.common.review.ProposalEnums.NamespaceKind;
 
-@JsonTypeName("ontology")
+@JsonTypeName("namespace")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class OntologyProposal extends ProposalAsset {
+public class NamespaceProposal extends ProposalAsset {
 
-  private Integer tier;
-  private String domainExpression;
+  private NamespaceKind namespaceKind;
   private List<String> imports = new ArrayList<>();
   private List<String> memberAssetIds = new ArrayList<>();
   private Map<String, Object> proposalData = new LinkedHashMap<>();
 
-  public Integer getTier() {
-    return tier;
+  public NamespaceKind getNamespaceKind() {
+    return namespaceKind;
   }
 
-  public void setTier(Integer value) {
-    this.tier = value;
-  }
-
-  public String getDomainExpression() {
-    return domainExpression;
-  }
-
-  public void setDomainExpression(String value) {
-    this.domainExpression = value;
+  public void setNamespaceKind(NamespaceKind value) {
+    this.namespaceKind = value;
   }
 
   public List<String> getImports() {

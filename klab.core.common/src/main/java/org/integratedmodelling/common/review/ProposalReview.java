@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -7,14 +7,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ActionOperation;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ActionStatus;
-import org.integratedmodelling.klab.api.review.ProposalEnums.FeedbackStance;
-import org.integratedmodelling.klab.api.review.ProposalEnums.FeedbackState;
-import org.integratedmodelling.klab.api.review.ProposalEnums.FeedbackStatus;
-import org.integratedmodelling.klab.api.review.ProposalEnums.GapStatus;
-import org.integratedmodelling.klab.api.review.ProposalEnums.IterationState;
-import org.integratedmodelling.klab.api.review.ProposalEnums.LifecycleState;
+import org.integratedmodelling.common.review.ProposalEnums.ActionOperation;
+import org.integratedmodelling.common.review.ProposalEnums.ActionStatus;
+import org.integratedmodelling.common.review.ProposalEnums.FeedbackStance;
+import org.integratedmodelling.common.review.ProposalEnums.FeedbackState;
+import org.integratedmodelling.common.review.ProposalEnums.FeedbackStatus;
+import org.integratedmodelling.common.review.ProposalEnums.GapStatus;
+import org.integratedmodelling.common.review.ProposalEnums.IterationState;
+import org.integratedmodelling.common.review.ProposalEnums.LifecycleState;
 
 /** Review, revision and apply records shared by all proposal asset types. */
 public final class ProposalReview {

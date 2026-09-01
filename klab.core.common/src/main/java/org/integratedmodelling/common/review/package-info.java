@@ -1,7 +1,7 @@
 /**
  * API beans for versioned, feedback-driven k.LAB asset proposals.
  *
- * <p>{@link org.integratedmodelling.klab.api.review.ProposalDocument} is the serialization root for
+ * <p>{@link ProposalDocument} is the serialization root for
  * documents with media type {@code application/vnd.klab.proposal+yaml}. Consumers should validate
  * input against the schema named by {@code ProposalDocument.SCHEMA_RESOURCE} before mapping it.
  * Schema validation establishes required fields and cross-record structure; these mutable beans do
@@ -11,4 +11,4 @@
  * Objects that the schema deliberately leaves extensible remain ordered {@code Map<String,
  * Object>} values so future asset-specific proposal data and apply payloads survive a round trip.
  */
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;

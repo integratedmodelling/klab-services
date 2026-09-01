@@ -1,23 +1,23 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.ArrayList;
 import java.util.List;
-import org.integratedmodelling.klab.api.review.ProposalContext.Evidence;
-import org.integratedmodelling.klab.api.review.ProposalContext.OntologyContext;
-import org.integratedmodelling.klab.api.review.ProposalContext.RootScopeAlias;
-import org.integratedmodelling.klab.api.review.ProposalContext.Scope;
-import org.integratedmodelling.klab.api.review.ProposalContext.Source;
-import org.integratedmodelling.klab.api.review.ProposalContext.SourcePolicy;
-import org.integratedmodelling.klab.api.review.ProposalEnums.ProposalStatus;
-import org.integratedmodelling.klab.api.review.ProposalReview.Action;
-import org.integratedmodelling.klab.api.review.ProposalReview.ChangeLogEntry;
-import org.integratedmodelling.klab.api.review.ProposalReview.CorpusFeedback;
-import org.integratedmodelling.klab.api.review.ProposalReview.Gap;
-import org.integratedmodelling.klab.api.review.ProposalReview.IterationControl;
-import org.integratedmodelling.klab.api.review.ProposalReview.OrthogonalityReview;
-import org.integratedmodelling.klab.api.review.ProposalReview.Validation;
+import org.integratedmodelling.common.review.ProposalContext.Evidence;
+import org.integratedmodelling.common.review.ProposalContext.OntologyContext;
+import org.integratedmodelling.common.review.ProposalContext.RootScopeAlias;
+import org.integratedmodelling.common.review.ProposalContext.Scope;
+import org.integratedmodelling.common.review.ProposalContext.Source;
+import org.integratedmodelling.common.review.ProposalContext.SourcePolicy;
+import org.integratedmodelling.common.review.ProposalEnums.ProposalStatus;
+import org.integratedmodelling.common.review.ProposalReview.Action;
+import org.integratedmodelling.common.review.ProposalReview.ChangeLogEntry;
+import org.integratedmodelling.common.review.ProposalReview.CorpusFeedback;
+import org.integratedmodelling.common.review.ProposalReview.Gap;
+import org.integratedmodelling.common.review.ProposalReview.IterationControl;
+import org.integratedmodelling.common.review.ProposalReview.OrthogonalityReview;
+import org.integratedmodelling.common.review.ProposalReview.Validation;
 
 /** One immutable revision of a reviewable asset proposal. */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.integratedmodelling.klab.api.review.ProposalDocument;
+import org.integratedmodelling.common.review.ProposalDocument;
 import org.junit.jupiter.api.Test;
 
 class DomainContextProposalSchemaTest {

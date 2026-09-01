@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -7,17 +7,17 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.integratedmodelling.klab.api.review.ProposalEnums.SyntaxStatus;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Alignment;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Ambiguity;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Boundaries;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Clauses;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Derivation;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.NamedComposition;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Orthogonality;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.Predicates;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.SemanticCoordinates;
-import org.integratedmodelling.klab.api.review.ProposalSemantics.TypeInheritance;
+import org.integratedmodelling.common.review.ProposalEnums.SyntaxStatus;
+import org.integratedmodelling.common.review.ProposalSemantics.Alignment;
+import org.integratedmodelling.common.review.ProposalSemantics.Ambiguity;
+import org.integratedmodelling.common.review.ProposalSemantics.Boundaries;
+import org.integratedmodelling.common.review.ProposalSemantics.Clauses;
+import org.integratedmodelling.common.review.ProposalSemantics.Derivation;
+import org.integratedmodelling.common.review.ProposalSemantics.NamedComposition;
+import org.integratedmodelling.common.review.ProposalSemantics.Orthogonality;
+import org.integratedmodelling.common.review.ProposalSemantics.Predicates;
+import org.integratedmodelling.common.review.ProposalSemantics.SemanticCoordinates;
+import org.integratedmodelling.common.review.ProposalSemantics.TypeInheritance;
 
 /** Fully articulated ontology-concept proposal. */
 @JsonTypeName("concept")

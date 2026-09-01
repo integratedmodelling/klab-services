@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.review;
+package org.integratedmodelling.common.review;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.integratedmodelling.klab.api.review.ProposalEnums.AssetType;
-import org.integratedmodelling.klab.api.review.ProposalEnums.Disposition;
-import org.integratedmodelling.klab.api.review.ProposalEnums.EpistemicStatus;
-import org.integratedmodelling.klab.api.review.ProposalReview.Feedback;
-import org.integratedmodelling.klab.api.review.ProposalReview.Lifecycle;
-import org.integratedmodelling.klab.api.review.ProposalReview.NameHistory;
+import org.integratedmodelling.common.review.ProposalEnums.AssetType;
+import org.integratedmodelling.common.review.ProposalEnums.Disposition;
+import org.integratedmodelling.common.review.ProposalEnums.EpistemicStatus;
+import org.integratedmodelling.common.review.ProposalReview.Feedback;
+import org.integratedmodelling.common.review.ProposalReview.Lifecycle;
+import org.integratedmodelling.common.review.ProposalReview.NameHistory;
 
 /** Common identity, evidence, feedback and lifecycle envelope for proposed assets. */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
