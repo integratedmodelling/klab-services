@@ -518,7 +518,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     //    private static final Logger logger = LoggerFactory.getLogger(Maven.class);
 
     private static final String MAVEN_CENTRAL_SEARCH_API =
-        "https://search.maven.org/solrsearch/select";
+        "https://central.sonatype.com/solrsearch/select";
     private static final String MAVEN_CENTRAL_SNAPSHOTS_API =
         "https://central.sonatype.com/repository/maven-snapshots";
     private static final String MAVEN_CENTRAL_RELEASES_URL = "https://repo.maven.apache.org/maven2";
