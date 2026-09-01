@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.review.ProposalReview.Validation;
 /** One immutable revision of a reviewable asset proposal. */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Proposal {
+
   private String id;
   private String revisionId;
   private String title;
@@ -46,56 +47,196 @@ public class Proposal {
   private CorpusFeedback corpusFeedback;
   private List<ChangeLogEntry> changeLog = new ArrayList<>();
 
-  public String getId() { return id; }
-  public void setId(String value) { this.id = value; }
-  public String getRevisionId() { return revisionId; }
-  public void setRevisionId(String value) { this.revisionId = value; }
-  public String getTitle() { return title; }
-  public void setTitle(String value) { this.title = value; }
-  public int getIteration() { return iteration; }
-  public void setIteration(int value) { this.iteration = value; }
-  public String getSupersedesRevision() { return supersedesRevision; }
-  public void setSupersedesRevision(String value) { this.supersedesRevision = value; }
-  public ProposalStatus getStatus() { return status; }
-  public void setStatus(ProposalStatus value) { this.status = value; }
-  public String getGeneratedAt() { return generatedAt; }
-  public void setGeneratedAt(String value) { this.generatedAt = value; }
-  public Scope getScope() { return scope; }
-  public void setScope(Scope value) { this.scope = value; }
-  public SourcePolicy getSourcePolicy() { return sourcePolicy; }
-  public void setSourcePolicy(SourcePolicy value) { this.sourcePolicy = value; }
-  public List<Source> getSources() { return sources; }
-  public void setSources(List<Source> value) { this.sources = value; }
-  public List<OntologyContext> getExistingOntologies() { return existingOntologies; }
-  public void setExistingOntologies(List<OntologyContext> value) { this.existingOntologies = value; }
-  public List<RootScopeAlias> getRootScopeAliases() { return rootScopeAliases; }
-  public void setRootScopeAliases(List<RootScopeAlias> value) { this.rootScopeAliases = value; }
-  public List<Evidence> getEvidence() { return evidence; }
-  public void setEvidence(List<Evidence> value) { this.evidence = value; }
-  public List<ProposalAsset> getAssets() { return assets; }
-  public void setAssets(List<ProposalAsset> value) { this.assets = value; }
-  public List<String> getDependencyOrder() { return dependencyOrder; }
-  public void setDependencyOrder(List<String> value) { this.dependencyOrder = value; }
-  public List<Gap> getUpstreamGaps() { return upstreamGaps; }
-  public void setUpstreamGaps(List<Gap> value) { this.upstreamGaps = value; }
-  public List<Gap> getRootDomainGaps() { return rootDomainGaps; }
-  public void setRootDomainGaps(List<Gap> value) { this.rootDomainGaps = value; }
-  public IterationControl getIterationControl() { return iterationControl; }
-  public void setIterationControl(IterationControl value) { this.iterationControl = value; }
-  public List<Action> getActions() { return actions; }
-  public void setActions(List<Action> value) { this.actions = value; }
-  public OrthogonalityReview getOrthogonalityReview() { return orthogonalityReview; }
-  public void setOrthogonalityReview(OrthogonalityReview value) { this.orthogonalityReview = value; }
-  public Validation getValidation() { return validation; }
-  public void setValidation(Validation value) { this.validation = value; }
-  public CorpusFeedback getCorpusFeedback() { return corpusFeedback; }
-  public void setCorpusFeedback(CorpusFeedback value) { this.corpusFeedback = value; }
-  public List<ChangeLogEntry> getChangeLog() { return changeLog; }
-  public void setChangeLog(List<ChangeLogEntry> value) { this.changeLog = value; }
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String value) {
+    this.id = value;
+  }
+
+  public String getRevisionId() {
+    return revisionId;
+  }
+
+  public void setRevisionId(String value) {
+    this.revisionId = value;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String value) {
+    this.title = value;
+  }
+
+  public int getIteration() {
+    return iteration;
+  }
+
+  public void setIteration(int value) {
+    this.iteration = value;
+  }
+
+  public String getSupersedesRevision() {
+    return supersedesRevision;
+  }
+
+  public void setSupersedesRevision(String value) {
+    this.supersedesRevision = value;
+  }
+
+  public ProposalStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(ProposalStatus value) {
+    this.status = value;
+  }
+
+  public String getGeneratedAt() {
+    return generatedAt;
+  }
+
+  public void setGeneratedAt(String value) {
+    this.generatedAt = value;
+  }
+
+  public Scope getScope() {
+    return scope;
+  }
+
+  public void setScope(Scope value) {
+    this.scope = value;
+  }
+
+  public SourcePolicy getSourcePolicy() {
+    return sourcePolicy;
+  }
+
+  public void setSourcePolicy(SourcePolicy value) {
+    this.sourcePolicy = value;
+  }
+
+  public List<Source> getSources() {
+    return sources;
+  }
+
+  public void setSources(List<Source> value) {
+    this.sources = value;
+  }
+
+  public List<OntologyContext> getExistingOntologies() {
+    return existingOntologies;
+  }
+
+  public void setExistingOntologies(List<OntologyContext> value) {
+    this.existingOntologies = value;
+  }
+
+  public List<RootScopeAlias> getRootScopeAliases() {
+    return rootScopeAliases;
+  }
+
+  public void setRootScopeAliases(List<RootScopeAlias> value) {
+    this.rootScopeAliases = value;
+  }
+
+  public List<Evidence> getEvidence() {
+    return evidence;
+  }
+
+  public void setEvidence(List<Evidence> value) {
+    this.evidence = value;
+  }
+
+  public List<ProposalAsset> getAssets() {
+    return assets;
+  }
+
+  public void setAssets(List<ProposalAsset> value) {
+    this.assets = value;
+  }
+
+  public List<String> getDependencyOrder() {
+    return dependencyOrder;
+  }
+
+  public void setDependencyOrder(List<String> value) {
+    this.dependencyOrder = value;
+  }
+
+  public List<Gap> getUpstreamGaps() {
+    return upstreamGaps;
+  }
+
+  public void setUpstreamGaps(List<Gap> value) {
+    this.upstreamGaps = value;
+  }
+
+  public List<Gap> getRootDomainGaps() {
+    return rootDomainGaps;
+  }
+
+  public void setRootDomainGaps(List<Gap> value) {
+    this.rootDomainGaps = value;
+  }
+
+  public IterationControl getIterationControl() {
+    return iterationControl;
+  }
+
+  public void setIterationControl(IterationControl value) {
+    this.iterationControl = value;
+  }
+
+  public List<Action> getActions() {
+    return actions;
+  }
+
+  public void setActions(List<Action> value) {
+    this.actions = value;
+  }
+
+  public OrthogonalityReview getOrthogonalityReview() {
+    return orthogonalityReview;
+  }
+
+  public void setOrthogonalityReview(OrthogonalityReview value) {
+    this.orthogonalityReview = value;
+  }
+
+  public Validation getValidation() {
+    return validation;
+  }
+
+  public void setValidation(Validation value) {
+    this.validation = value;
+  }
+
+  public CorpusFeedback getCorpusFeedback() {
+    return corpusFeedback;
+  }
+
+  public void setCorpusFeedback(CorpusFeedback value) {
+    this.corpusFeedback = value;
+  }
+
+  public List<ChangeLogEntry> getChangeLog() {
+    return changeLog;
+  }
+
+  public void setChangeLog(List<ChangeLogEntry> value) {
+    this.changeLog = value;
+  }
 
   /** Find an asset by immutable proposal identity. */
   public ProposalAsset getAsset(String assetId) {
     if (assetId == null) return null;
-    return assets.stream().filter(asset -> assetId.equals(asset.getAssetId())).findFirst().orElse(null);
+    return assets.stream()
+        .filter(asset -> assetId.equals(asset.getAssetId()))
+        .findFirst()
+        .orElse(null);
   }
 }

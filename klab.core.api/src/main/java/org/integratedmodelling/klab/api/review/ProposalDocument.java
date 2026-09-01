@@ -15,10 +15,27 @@ public class ProposalDocument {
   private String contextPackVersion = CONTEXT_PACK_VERSION;
   private Proposal proposal;
 
-  public String getProposalSchema() { return proposalSchema; }
-  public void setProposalSchema(String value) { this.proposalSchema = value; }
-  public String getContextPackVersion() { return contextPackVersion; }
-  public void setContextPackVersion(String value) { this.contextPackVersion = value; }
-  public Proposal getProposal() { return proposal; }
-  public void setProposal(Proposal value) { this.proposal = value; }
+  public String getProposalSchema() {
+    return proposalSchema;
+  }
+
+  public void setProposalSchema(String value) {
+    this.proposalSchema = value;
+  }
+
+  public String getContextPackVersion() {
+    return contextPackVersion;
+  }
+
+  public void setContextPackVersion(String value) {
+    this.contextPackVersion = value;
+  }
+
+  public Proposal getProposal() {
+    return proposal;
+  }
+
+  public void setProposal(Proposal value) {
+    this.proposal = value;
+  }
 }
