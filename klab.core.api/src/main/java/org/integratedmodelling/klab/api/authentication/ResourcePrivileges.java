@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.authentication;
 
-import com.jayway.jsonpath.internal.Utils;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.scope.*;
 
