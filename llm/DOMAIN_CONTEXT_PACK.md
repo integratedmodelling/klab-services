@@ -834,21 +834,72 @@ re-ingestable. JSON with the same information model is acceptable. Preserve fiel
 stable IDs between iterations. A field may be `null`; do not omit required fields to hide missing
 analysis.
 
+The canonical Draft 2020-12 JSON Schema is packaged by the Resources Service at:
+
+```text
+classpath:/schemas/llm/domain-context-proposal.schema.json
+```
+
+Validate both JSON proposals and YAML proposals parsed into the equivalent JSON data model against
+that classpath resource. Schema validation is the first gate: it checks structure, required fields,
+enumerations, and action/revision envelopes. It does not replace reference resolution, tier,
+orthogonality, semantic, parser, or Reasoner validation.
+
+### 9.1 Workflow-stage attachment contract
+
+Each serialized proposal is linked to the `Flow.Stage` whose review or apply activity it supports
+as an attachment. The attachment media type is the exact, normative value:
+
+```text
+application/vnd.klab.proposal+yaml
+```
+
+Workflow consumers must use this media type, rather than a filename extension or a free-form
+attachment type, to discover proposal documents. The attachment content is the complete UTF-8 YAML
+proposal and must validate against the classpath schema identified above before any Workflow
+Manager action interprets or applies it. The attachment metadata should retain the filename, size,
+checksum, creator, creation time, and owning flow/stage identifiers supplied by the workflow API.
+The proposal's `proposal.id`, `revision_id`, and iteration remain authoritative inside the payload;
+workflow attachment IDs identify storage/linkage and must not replace those proposal identities.
+
+Treat each proposal revision as immutable. A successive iteration is attached as a new attachment
+with a new checksum and `revision_id`; it must not overwrite the attachment for the revision it
+supersedes. Retaining prior attachments makes the review history auditable and allows future
+Workflow Manager actions to verify revision ancestry, reviewer decisions, preconditions, and apply
+results. Stage transitions or actions may refer to the selected attachment, but attachment linkage
+alone never implies approval or authorization to apply its proposed actions.
+
+The proposal uses one discriminated `assets` array so the envelope can support more than concepts:
+
+| `asset_type` | Schema status | Intended record |
+| --- | --- | --- |
+| `concept` | Fully specified by this pack | Ontology concept articulation described in this document |
+| `ontology` | Common envelope plus initial extension fields | An ontology proposal and its domain/tier/import membership |
+| `namespace` | Common envelope plus initial extension fields | A namespace and its imports/member assets |
+| `model` | Common envelope plus initial extension fields | A model within a namespace, its observables and dependencies |
+
+All asset types share immutable `asset_id`, mutable qualified name, evidence, feedback, lifecycle,
+revision, and typed-action semantics. Ontology, namespace, and model-specific `proposal_data` is an
+explicit extension area until their domain packs define stricter fields. Tightening one of those
+asset schemas requires a new `context_pack_version`; consumers must never reinterpret an old
+revision silently.
+
 Use identifiers consistently:
 
 - `proposal.id` identifies the continuing proposal;
 - `revision_id` identifies one immutable proposal revision;
-- `concept_id` is an opaque immutable identifier that survives renaming, deprecation, and
+- `asset_id` is an opaque immutable identifier that survives renaming, deprecation, and
   replacement review;
 - `qualified_name` is the mutable proposed worldview name; and
-- references to concepts inside the proposal use `concept_id`, while references to supplied
-  ontology concepts use their qualified names and ontology/version context.
+- references to assets inside the proposal use `asset_id`, while references to supplied external
+  assets use their qualified names and namespace/ontology/version context.
 
-Never use a qualified concept name as the sole identity of a proposal record. That makes renames
+Never use a qualified asset name as the sole identity of a proposal record. That makes renames
 ambiguous and prevents safe automated reference updates.
 
 ```yaml
-context_pack_version: "1.2"
+proposal_schema: "classpath:/schemas/llm/domain-context-proposal.schema.json"
+context_pack_version: "1.3"
 proposal:
   id: "domain-slug-v1"
   revision_id: "domain-slug-r1"
@@ -908,11 +959,12 @@ proposal:
       locator: "page, section, paragraph, figure, or axiom"
       source_term: "term used by the source"
       paraphrase: "short source-faithful claim"
-      evidence_kind: "definition | distinction | classification | mechanism | measurement | example | contested_claim"
+      evidence_kind: "definition" # definition | distinction | classification | mechanism | measurement | example | contested_claim
       interpretation: "none, or the agent's explicit interpretation"
 
-  concepts:
-    - concept_id: "concept-0001" # immutable across renames and iterations
+  assets:
+    - asset_id: "concept-0001" # immutable across renames and iterations
+      asset_type: "concept"
       qualified_name: "domain:StableConceptName" # mutable through an approved rename action
       record_version: 1
       record_hash: null # optional hash of canonicalized record for optimistic concurrency checks
@@ -933,7 +985,7 @@ proposal:
         counterexamples: []
       extraction_rationale: "why the domain needs this concept"
       evidence_refs: ["ev-001"]
-      epistemic_status: "explicit | inferred | modeling_choice | contested"
+      epistemic_status: "explicit" # explicit | inferred | modeling_choice | contested
 
       semantic_coordinates:
         kind: "thing" # allowed kinds are listed below
@@ -970,7 +1022,7 @@ proposal:
         composite_of: []
         independently_variable_from: []
         relations:
-          - other_concept: "domain:RelatedConcept"
+          - other_asset_id: "concept-0002"
             relation: "orthogonal" # orthogonal | taxonomic | dependent | derived | compositional | partially_overlapping | redundant | conflicting
             a_varies_with_b_fixed: true
             b_varies_with_a_fixed: true
@@ -1008,10 +1060,10 @@ proposal:
         tier_1_ancestor: "tier1:DomainConcept"
         ancestry_to_tier_1:
           - ref_kind: "internal"
-            concept_id: "concept-0001"
+            asset_id: "concept-0001"
             qualified_name: "domain:StableConceptName"
           - ref_kind: "external"
-            concept_id: null
+            asset_id: null
             qualified_name: "tier1:DomainConcept"
         ancestry_status: "verified" # verified | missing_parent | missing_tier_1_ancestor | unresolved
         contextualized_within: null
@@ -1067,7 +1119,7 @@ proposal:
         introduced_in_iteration: 1
         last_modified_in_iteration: 1
         deleted_in_iteration: null
-        replacement_concept_ids: []
+        replacement_asset_ids: []
 
   dependency_order: ["concept-0001"]
   upstream_gaps: []
@@ -1145,7 +1197,7 @@ existing entry from `root_scope_aliases` and record it in `generalized_scope_ali
 needed alias is absent, emit a `root_domain_gap`; a domain proposal has no action that can create
 an `is core` declaration.
 
-### 9.1 Tier request and blocked-response contract
+### 9.2 Tier request and blocked-response contract
 
 The request must state `requested_tier` and provide an ontology manifest that identifies each
 ontology's tier, domain scope, version, and role. For `requested_tier >= 2`, at least one supplied
@@ -1154,15 +1206,37 @@ ontology must be explicitly identified as `tier_1_mandatory` for the same domain
 If that requirement is not met, return a compact structured response instead of a concept corpus:
 
 ```yaml
+proposal_schema: "classpath:/schemas/llm/domain-context-proposal.schema.json"
+context_pack_version: "1.3"
 proposal:
   id: "domain-slug-tier2-blocked"
+  revision_id: "domain-slug-tier2-blocked-r1"
+  title: "Blocked Tier-2 domain proposal"
+  iteration: 1
+  supersedes_revision: null
   status: "blocked"
+  generated_at: "YYYY-MM-DD"
   scope:
     domain: "plain-language domain"
+    purpose: "specialist articulation requested at Tier 2"
     requested_tier: 2
+    target_community: "the requested specialist community"
     tier_1_context_required: true
     tier_1_context_status: "missing"
-  concepts: []
+    included: []
+    excluded: []
+    spatial_context: null
+    temporal_context: null
+    intended_scales: []
+  source_policy:
+    authority_criteria: []
+    inference_policy: "no articulation without mandatory Tier-1 context"
+  sources: []
+  existing_ontologies: []
+  root_scope_aliases: []
+  evidence: []
+  assets: []
+  dependency_order: []
   upstream_gaps:
     - gap_id: "gap-tier1-context"
       required_tier: 1
@@ -1170,11 +1244,49 @@ proposal:
       evidence_refs: []
       reason: "Tier-2 articulation cannot establish valid domain ancestry without Tier 1."
       status: "open"
+  root_domain_gaps: []
+  iteration_control:
+    current_iteration: 1
+    previous_revision_id: null
+    next_iteration: 2
+    state: "closed"
+    unresolved_feedback_ids: []
+    proposed_action_ids: []
+    applied_action_ids: []
+  actions: []
+  orthogonality_review:
+    hard_unambiguity_gate_passed: false
+    pairwise_review_complete: false
+    matrix: []
+    unresolved_ambiguities: []
+    unresolved_overlaps: []
   validation:
+    schema_valid: true
+    references_resolve: false
+    acyclic: true
     requested_tier_valid: true
     mandatory_tier_1_context_present: false
     tier_ancestry_valid: false
+    orthogonality_reviewed: false
+    internally_unambiguous: false
+    named_composition_reviews_complete: false
+    semantic_review: "blocked"
+    syntax_validation: "not_run"
     warnings: ["missing_tier_1_context"]
+  corpus_feedback:
+    state: "deferred"
+    coverage_comments: []
+    structural_comments: []
+    cross_cutting_issues: []
+    decisions: []
+    requested_changes: []
+  change_log:
+    - iteration: 1
+      revision_id: "domain-slug-tier2-blocked-r1"
+      previous_revision_id: null
+      changes: ["blocked because mandatory Tier-1 context is missing"]
+      feedback_resolved: []
+      actions_applied: []
 ```
 
 An `upstream_gap` discovered after valid context has been supplied uses the same record structure,
@@ -1199,7 +1311,7 @@ A missing generalized-scope alias is reported separately for root-domain governa
 Store these records in `proposal.root_domain_gaps`. They request root-domain governance; they are
 not permission to emit `is core` in the current proposal.
 
-### 9.2 Per-concept feedback records
+### 9.3 Per-concept feedback records
 
 Each comment must remain addressable and auditable:
 
@@ -1223,7 +1335,7 @@ Each comment must remain addressable and auditable:
 A resolution must explain the decision, cite supporting evidence, and name the iteration that
 implemented it. Never erase rejected comments; retain them in the history.
 
-### 9.3 Corpus-level feedback records
+### 9.4 Corpus-level feedback records
 
 Use corpus feedback for missing dimensions, wrong boundaries, systemic categorization problems,
 ordering, naming policy, duplicated concepts, domain placement, and source-policy concerns:
@@ -1237,7 +1349,7 @@ ordering, naming policy, duplicated concepts, domain placement, and source-polic
   area: "coverage | structure | dependency_order | naming | source_policy | alignment"
   stance: "request_change"
   comment: "The proposal models outcomes but omits the agents and processes that produce them."
-  affected_concepts: ["concept-0042"]
+  affected_asset_ids: ["concept-0042"]
   proposed_change: "Repeat extraction phases B and C for agency and process dimensions."
   proposed_action_ids: []
   status: "open"
@@ -1245,14 +1357,14 @@ ordering, naming policy, duplicated concepts, domain placement, and source-polic
   resolved_in_iteration: null
 ```
 
-### 9.4 Successive-iteration protocol
+### 9.5 Successive-iteration protocol
 
 When community feedback is returned with a previous corpus:
 
 1. ingest the previous YAML as an immutable baseline; never edit or replace an earlier revision;
 2. copy it to a new working revision with a new `revision_id`, incremented `iteration`, and
    `supersedes_revision` pointing to the baseline;
-3. preserve `concept_id`, `evidence_id`, and `comment_id` values; change a concept's
+3. preserve `asset_id`, `evidence_id`, and `comment_id` values; change an asset's
    `qualified_name`, not its ID, when renaming it;
 4. ingest new feedback by appending comment records and linking them to the exact revision, target,
    and field reviewed;
@@ -1263,7 +1375,7 @@ When community feedback is returned with a previous corpus:
 7. obtain explicit reviewer decisions for semantic actions, including changes to category,
    definition, parentage, `equals`, tier, endpoints, or lifecycle; reject any domain action that
    attempts to add `is core` and convert the need into a `root_domain_gap`;
-8. apply approved actions to the working revision, update all internal references by `concept_id`,
+8. apply approved actions to the working revision, update all internal references by `asset_id`,
    and record action outcomes without deleting the action requests;
 9. rerun tier ancestry, reference, category, ambiguity, pairwise orthogonality, dependency, naming,
    and ordering validation for every changed concept, its close conceptual neighbors, and all of
@@ -1272,8 +1384,10 @@ When community feedback is returned with a previous corpus:
     preserving the articulated expression even when a jargon name is accepted;
 11. populate `change_log.feedback_resolved` and `change_log.actions_applied`, retain unresolved
     items in `iteration_control`, and set `next_iteration` so further review has an explicit place;
-    and
-12. close the revision only after validation, while reopening corpus-level review whenever a local
+12. serialize and schema-validate the new revision, then link it to the applicable `Flow.Stage` as
+    a new `application/vnd.klab.proposal+yaml` attachment without replacing the prior revision's
+    attachment; and
+13. close the revision only after validation, while reopening corpus-level review whenever a local
     change alters category boundaries, naming policy, partitions, imports, tier ancestry, or
     dependency order elsewhere in the proposal.
 
@@ -1282,24 +1396,24 @@ or evidence needed, and leave the affected field `needs_review` until a recorded
 
 Handle common concept changes as follows:
 
-- **Rename:** preserve `concept_id`; update `qualified_name`; append the previous name and iteration
+- **Rename:** preserve `asset_id`; update `qualified_name`; append the previous name and iteration
   to `name_history`; rewrite display-name and externalized syntax references; and separately decide
   whether the old name should remain as a worldview `equals` alias.
 - **Delete:** never erase the record. Set `lifecycle.state: deleted`, record the iteration and
   rationale, remove it from active output/dependency order, and either redirect or block every
-  dependent reference. Use `replacement_concept_ids` when successors exist.
-- **Expand:** retain the same `concept_id` only when new evidence, boundaries, examples, clauses, or
+  dependent reference. Use `replacement_asset_ids` when successors exist.
+- **Expand:** retain the same `asset_id` only when new evidence, boundaries, examples, clauses, or
   documentation clarify the same intension. Increment `record_version`. If the expansion changes
   identity, category, tier, or extension substantially, use `split`, `merge`, or replacement
   concepts instead of mutating the original silently.
-- **Split:** create new immutable concept IDs, preserve the old record as deprecated or deleted,
+- **Split:** create new immutable asset IDs, preserve the old record as deprecated or deleted,
   map it to all successors, and require reviewers to redirect each dependent reference explicitly.
-- **Merge:** create or select a surviving concept ID, preserve all source records and provenance,
+- **Merge:** create or select a surviving asset ID, preserve all source records and provenance,
   record replacement mappings, and re-run ambiguity and orthogonality review.
-- **Add:** allocate a never-before-used `concept_id`; do not recycle IDs from deleted or rejected
+- **Add:** allocate a never-before-used `asset_id`; do not recycle IDs from deleted or rejected
   records.
 
-### 9.5 Typed actions and partial automation
+### 9.6 Typed actions and partial automation
 
 Use a normalized action envelope so approved feedback can eventually drive tooling. At minimum,
 support `add`, `rename`, `modify`, `expand`, `delete`, `deprecate`, `restore`, `split`, `merge`, and
@@ -1312,7 +1426,7 @@ support `add`, `rename`, `modify`, `expand`, `delete`, `deprecate`, `restore`, `
   requested_in_iteration: 1
   requested_by_feedback_ids: ["fb-concept-004"]
   operation: "rename"
-  target_concept_ids: ["concept-0001"]
+  target_asset_ids: ["concept-0001"]
   status: "proposed" # proposed | needs_review | approved | rejected | applied | failed | superseded
   semantic_review_required: true
   preconditions:
@@ -1325,11 +1439,11 @@ support `add`, `rename`, `modify`, `expand`, `delete`, `deprecate`, `restore`, `
     retain_old_name_as_equals_alias: null # reviewer decision; never infer automatically
     field_patch: {}
     new_concepts: []
-    replacement_concept_ids: []
+    replacement_asset_ids: []
   impact:
     internal_reference_updates: []
     external_reference_warnings: []
-    downstream_concept_ids: []
+    downstream_asset_ids: []
   required_validations:
     - "name_unique"
     - "references_resolve"
@@ -1350,7 +1464,7 @@ support `add`, `rename`, `modify`, `expand`, `delete`, `deprecate`, `restore`, `
 ```
 
 Automation may safely normalize records, check preconditions, apply approved mechanical patches,
-rewrite internal references keyed by `concept_id`, maintain name/lifecycle history, compute impact,
+rewrite internal references keyed by `asset_id`, maintain name/lifecycle history, compute impact,
 and run structural validation. It must not autonomously approve semantic changes. In particular,
 choosing `is` versus `equals`, changing concept kind or tier, resolving ambiguous feedback, or
 deciding whether an expansion preserves identity remains a reviewer action. Creating an `is core`
@@ -1587,7 +1701,7 @@ exponent syntax.
 - Named-composition decisions and their `equals`-versus-`is` rationale are preserved.
 - Each concept and the corpus have feedback containers.
 - Stable concept and feedback IDs survive iteration.
-- Qualified-name changes preserve immutable concept IDs and name history.
+- Qualified-name changes preserve immutable asset IDs and name history.
 - Deleted concepts remain as tombstones with impact and replacement information.
 - Accepted feedback is normalized into typed actions with preconditions, approval, impact, and
   apply results.
@@ -1596,14 +1710,28 @@ exponent syntax.
 
 ### 11.8 Iteration and apply readiness
 
+- Every complete or blocked proposal validates against
+  `classpath:/schemas/llm/domain-context-proposal.schema.json` before `validation.schema_valid` is
+  set to `true`.
+- Every workflow-linked proposal is a `Flow.Stage` attachment whose media type is exactly
+  `application/vnd.klab.proposal+yaml`; consumers do not infer proposal content from filenames.
+- Each attached revision has a unique attachment identity and checksum and retains its internal
+  `proposal.id`, `revision_id`, iteration, and `supersedes_revision`; attaching a new revision does
+  not overwrite or mutate an earlier attachment.
+- A Workflow Manager apply action selects an explicit proposal attachment and independently checks
+  schema validity, revision/action preconditions, reviewer approval, and authorization. Attachment
+  presence by itself is not approval.
+- `proposal_schema` and `context_pack_version` match the schema resource and its declared version.
+- Every record in `assets` matches exactly one `asset_type` subschema; concept-only fields are not
+  used as an untyped substitute for namespace or model proposal data.
 - Proposal IDs remain stable, revision IDs are unique, and `supersedes_revision` forms an acyclic
   revision chain.
-- Concept IDs are unique and immutable; qualified names are unique among active concepts.
+- Asset IDs are unique and immutable; qualified names are unique among active assets.
 - Every feedback and action ID is unique, and every referenced revision, concept, field, evidence
   item, and predecessor exists.
 - Every applied action was approved when semantic review was required and satisfied its base
   revision, record-version/hash, name, and lifecycle preconditions.
-- Rename actions preserve concept IDs, append name history, and update all internal references.
+- Rename actions preserve asset IDs, append name history, and update all internal references.
 - Delete actions retain tombstones and leave no unresolved active dependent reference.
 - Expand actions preserve the concept's intension; identity-changing expansions are represented as
   split, merge, or replacement operations.
@@ -1667,8 +1795,11 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > reviewers can choose a genuine alias, a specialization, or the expression alone. Produce the
 > versioned YAML corpus in dependency order, retain unresolved issues, and support auditable
 > feedback on each concept and on the overall structure. Across iterations, preserve immutable
-> concept IDs and prior revisions; normalize accepted feedback into typed actions for add, rename,
+> asset IDs and prior revisions; normalize accepted feedback into typed actions for add, rename,
 > modify, expand, delete, deprecate, restore, split, merge, or replacement. Keep name and lifecycle
 > history, update internal references, validate impacts, and automate only approved mechanical
-> changes—semantic decisions remain reviewer-controlled. Treat any proposed k.LAB syntax as
-> unverified until it has passed the corresponding parser, adaptation, and Reasoner checks.
+> changes—semantic decisions remain reviewer-controlled. Emit `proposal_schema`, use the
+> discriminated `assets` array, and validate every complete or blocked revision against
+> `classpath:/schemas/llm/domain-context-proposal.schema.json` before semantic review. Treat any
+> proposed k.LAB syntax as unverified until it has passed the corresponding parser, adaptation, and
+> Reasoner checks.

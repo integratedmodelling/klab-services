@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -126,6 +127,92 @@ class WorkflowManagerAuthorizationTest {
     assertEquals(Flow.Status.ACTIVE, reopened.getStatus());
     assertTrue(reopened.getCurrentStateIds().contains(stateId));
     assertEquals(Flow.StateStatus.OPEN, reopened.getStates().get(stateId).getStatus());
+  }
+
+  @Test
+  void stageLifecycleCallbacksObserveCommittedCreationAndPreDeletionState() {
+    var store = new MemoryStore();
+    var events = new ArrayList<String>();
+    var manager =
+        new WorkflowManager(
+            store,
+            new WorkflowStageLifecycleHandler() {
+              @Override
+              public void afterStageCreated(Context context) {
+                events.add(
+                    "created:"
+                        + context.stageSchema().getId()
+                        + ":"
+                        + store
+                            .getFlow(context.flow().getId())
+                            .getStates()
+                            .containsKey(context.stage().getId()));
+              }
+
+              @Override
+              public void beforeStageDeleted(Context context) {
+                events.add(
+                    "deleting:"
+                        + context.stageSchema().getId()
+                        + ":"
+                        + store
+                            .getFlow(context.flow().getId())
+                            .getStates()
+                            .containsKey(context.stage().getId()));
+              }
+            });
+    var admin = scope("admin", "ADMIN");
+    var flow = manager.createFlow("asset-review", initial(), false, admin);
+    var deletable = new Flow.State();
+    deletable.setSchemaId("accepted");
+
+    var created = manager.createState(flow.getId(), deletable, admin);
+    assertTrue(manager.deleteState(flow.getId(), created.getId(), admin));
+
+    assertEquals(
+        List.of("created:editing:true", "created:accepted:true", "deleting:accepted:true"),
+        events);
+    assertFalse(store.getFlow(flow.getId()).getStates().containsKey(created.getId()));
+  }
+
+  @Test
+  void callbackFailuresRespectLifecycleCommitBoundaries() {
+    var store = new MemoryStore();
+    var manager =
+        new WorkflowManager(
+            store,
+            new WorkflowStageLifecycleHandler() {
+              @Override
+              public void afterStageCreated(Context context) throws Exception {
+                throw new Exception("post-create failure");
+              }
+
+              @Override
+              public void beforeStageDeleted(Context context) throws Exception {
+                throw new Exception("pre-delete failure");
+              }
+            });
+    var admin = scope("admin", "ADMIN");
+
+    var flow = manager.createFlow("asset-review", initial(), false, admin);
+    assertTrue(
+        store
+            .getFlow(flow.getId())
+            .getStates()
+            .containsKey(flow.getStates().keySet().iterator().next()));
+    var deletable = new Flow.State();
+    deletable.setSchemaId("accepted");
+    var created = manager.createState(flow.getId(), deletable, admin);
+    var attachment = new Flow.Attachment();
+    attachment.setId("retained-attachment");
+    store.getFlow(flow.getId()).getStates().get(created.getId()).getAttachments().add(attachment);
+    store.attachments.put(attachment.getId(), new byte[] {1});
+
+    assertThrows(
+        KlabIllegalStateException.class,
+        () -> manager.deleteState(flow.getId(), created.getId(), admin));
+    assertTrue(store.getFlow(flow.getId()).getStates().containsKey(created.getId()));
+    assertTrue(store.attachments.containsKey(attachment.getId()));
   }
 
   private Flow.State initial() {

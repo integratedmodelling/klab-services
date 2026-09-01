@@ -145,6 +145,62 @@ The initial implementation commits one source-to-one-target transition at a time
 states support construction of branches; join/consensus transitions are intentionally left for a
 later schema extension.
 
+### Service stage-lifecycle extension
+
+`WorkflowManager` accepts a `WorkflowStageLifecycleHandler` as an optional service extension. The
+workflow API currently represents a stage instance as `Flow.State`; the handler uses stage
+terminology to distinguish the lifecycle task from the state-schema definition. The one-argument
+`WorkflowManager(WorkflowStore)` constructor installs a no-op handler, preserving the default
+behavior. A service that needs lifecycle actions supplies the handler through the two-argument
+constructor:
+
+```java
+var manager =
+    new WorkflowManager(
+        workflowStore,
+        new WorkflowStageLifecycleHandler() {
+          @Override
+          public void afterStageCreated(Context context) throws Exception {
+            // Perform the service-specific post-creation action.
+          }
+
+          @Override
+          public void beforeStageDeleted(Context context) throws Exception {
+            // Perform the service-specific cleanup or deletion guard.
+          }
+        });
+```
+
+The callback contract is:
+
+- `afterStageCreated` runs after the flow aggregate containing the stage has been persisted and its
+  `ResourceInfo` catalog projection has been synchronized. It covers the initial stage created by
+  `createFlow`, a manager-created stage from `createState`, and the target stage created by a
+  transition.
+- A post-creation exception is caught and logged. Creation remains committed: reporting callback
+  failure as a rollback would leave the caller with a false view of durable state.
+- `beforeStageDeleted` runs after authorization, editability, and reference checks succeed, but
+  before any attachment payload or stage record is removed. An exception is wrapped as a
+  `KlabIllegalStateException`, aborting deletion and preserving both the stage and its attachments.
+- Closing a source stage during a transition is not stage deletion and does not invoke
+  `beforeStageDeleted`. Stage update, close, and reopen operations do not currently have lifecycle
+  hooks.
+
+Callbacks run synchronously within the manager's synchronized mutation operation. Their `Context`
+contains snapshots of the flow, stage, workflow, and stage schema plus the initiating `UserScope`.
+Handlers must treat API objects in the context as read-only and use service APIs for mutations;
+they should also keep synchronous work bounded so unrelated workflow mutations are not delayed.
+The stage snapshot lets a deletion handler inspect attachment descriptors while the corresponding
+payloads are still present in `WorkflowStore`.
+
+Initially, the Resources service may implement the interface with hard-coded Java actions. The
+interface deliberately carries no dependency on the action mechanism, so the same handler can
+later resolve and invoke k.Actors behavior loaded through the service. A future k.Actors adapter
+must preserve the lifecycle boundary: a deletion guard must complete before deletion can proceed,
+whereas post-creation work may be dispatched asynchronously only when its effects are not required
+for the creation response. Callback failure should remain observable through service logging and,
+for pre-deletion behavior, through the failed mutation result.
+
 ## YAML configuration
 
 The schema is intentionally data rather than Java code. A minimal definition is:

@@ -9,16 +9,16 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode;
@@ -41,9 +41,18 @@ public class WorkflowManager {
 
   private static final String WORKFLOW_INDEX = "workflows/index.txt";
   private final WorkflowStore kbox;
+  private final WorkflowStageLifecycleHandler stageLifecycleHandler;
 
+  /** Create a manager without service-specific stage actions. */
   public WorkflowManager(WorkflowStore kbox) {
+    this(kbox, WorkflowStageLifecycleHandler.NO_OP);
+  }
+
+  /** Create a manager with the service callback responsible for stage lifecycle actions. */
+  public WorkflowManager(WorkflowStore kbox, WorkflowStageLifecycleHandler stageLifecycleHandler) {
     this.kbox = kbox;
+    this.stageLifecycleHandler =
+        Objects.requireNonNull(stageLifecycleHandler, "stageLifecycleHandler");
     loadBundledWorkflows();
   }
 
@@ -344,6 +353,7 @@ public class WorkflowManager {
     if (!kbox.putFlow(flow))
       throw new KlabIllegalStateException("Cannot persist flow " + flow.getId());
     synchronizeResourceInfo(flow, workflow);
+    notifyStageCreated(flow, initial, workflow, schema, scope);
     return project(flow, workflow, participant);
   }
 
@@ -418,6 +428,7 @@ public class WorkflowManager {
     flow.getStates().put(state.getId(), state);
     if (schema.isOpen()) flow.getCurrentStateIds().add(state.getId());
     persistMutation(flow, workflow);
+    notifyStageCreated(flow, state, workflow, schema, scope);
     return state;
   }
 
@@ -466,6 +477,8 @@ public class WorkflowManager {
                 t -> stateId.equals(t.getSourceStateId()) || stateId.equals(t.getTargetStateId())))
       throw new KlabIllegalStateException(
           "Current or historically referenced states cannot be deleted");
+    notifyStageDeleting(
+        flow, state, workflow, requiredStateSchema(workflow, state.getSchemaId()), scope);
     for (var attachment : state.getAttachments()) kbox.deleteWorkflowAttachment(attachment.getId());
     flow.getStates().remove(stateId);
     persistMutation(flow, workflow);
@@ -537,6 +550,7 @@ public class WorkflowManager {
                 request.getMetadata()));
     if (flow.getCurrentStateIds().isEmpty()) flow.setStatus(Flow.Status.CLOSED);
     persistMutation(flow, workflow);
+    notifyStageCreated(flow, target, workflow, targetSchema, scope);
     return project(flow, workflow, participant);
   }
 
@@ -719,8 +733,7 @@ public class WorkflowManager {
         || kbox.listFlows().stream()
             .anyMatch(
                 flow ->
-                    flow.isPublicRead()
-                        && Objects.equals(flow.getWorkflowId(), workflow.getId()));
+                    flow.isPublicRead() && Objects.equals(flow.getWorkflowId(), workflow.getId()));
   }
 
   private void requireManager(
@@ -775,6 +788,56 @@ public class WorkflowManager {
     ret.setTimestamp(now);
     ret.setMetadata(metadata == null ? Metadata.create() : Metadata.create(metadata));
     return ret;
+  }
+
+  private void notifyStageCreated(
+      Flow flow,
+      Flow.State stage,
+      Workflow workflow,
+      Workflow.StateSchema stageSchema,
+      UserScope scope) {
+    try {
+      stageLifecycleHandler.afterStageCreated(
+          lifecycleContext(flow, stage, workflow, stageSchema, scope));
+    } catch (Exception e) {
+      Logging.INSTANCE.error(
+          "Workflow stage "
+              + stage.getId()
+              + " was created, but its post-creation action failed",
+          e);
+    }
+  }
+
+  private void notifyStageDeleting(
+      Flow flow,
+      Flow.State stage,
+      Workflow workflow,
+      Workflow.StateSchema stageSchema,
+      UserScope scope) {
+    try {
+      stageLifecycleHandler.beforeStageDeleted(
+          lifecycleContext(flow, stage, workflow, stageSchema, scope));
+    } catch (Exception e) {
+      throw new KlabIllegalStateException(
+          new Exception(
+              "Pre-deletion action failed for workflow stage " + stage.getId(), e));
+    }
+  }
+
+  private WorkflowStageLifecycleHandler.Context lifecycleContext(
+      Flow flow,
+      Flow.State stage,
+      Workflow workflow,
+      Workflow.StateSchema stageSchema,
+      UserScope scope) {
+    var flowSnapshot = Utils.Json.parseObject(Utils.Json.asString(flow), Flow.class);
+    var workflowSnapshot = Utils.Json.parseObject(Utils.Json.asString(workflow), Workflow.class);
+    return new WorkflowStageLifecycleHandler.Context(
+        flowSnapshot,
+        flowSnapshot.getStates().get(stage.getId()),
+        workflowSnapshot,
+        workflowSnapshot.getStates().get(stageSchema.getId()),
+        scope);
   }
 
   private void persistMutation(Flow flow, Workflow workflow) {

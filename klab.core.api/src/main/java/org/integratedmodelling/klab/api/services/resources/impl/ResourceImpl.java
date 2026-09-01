@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -207,7 +208,8 @@ public class ResourceImpl implements Resource {
   }
 
   public String toString() {
-    return "(R) " + urn;
+    var uurn = Urn.of(urn);
+    return "\u03c1 " + uurn.getNamespace() + ":" + uurn.getResourceId();
   }
 
 
