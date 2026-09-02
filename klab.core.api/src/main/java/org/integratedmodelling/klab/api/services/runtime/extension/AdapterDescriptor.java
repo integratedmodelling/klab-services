@@ -26,6 +26,7 @@ public class AdapterDescriptor {
   private boolean inspecting;
   private boolean publishing;
   private boolean embeddable;
+  private boolean batchable;
   private List<Adapter.Parameter> parameters;
   private Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases;
   private List<ResourceTransport.Schema> importSchemata;
@@ -51,6 +52,7 @@ public class AdapterDescriptor {
       boolean inspecting,
       boolean publishing,
       boolean embeddable,
+      boolean batchable,
       Data.FillCurve fillCurve,
       int splits,
       long minSplitSize,
@@ -72,6 +74,7 @@ public class AdapterDescriptor {
     this.importSchemata = importSchemata;
     this.exportSchemata = exportSchemata;
     this.embeddable = embeddable;
+    this.batchable = batchable;
     this.parameters = parameters;
     this.splits = splits;
     this.fillCurve = fillCurve;
@@ -236,6 +239,14 @@ public class AdapterDescriptor {
 
   public void setMinSplitSize(long minSplitSize) {
     this.minSplitSize = minSplitSize;
+  }
+
+  public boolean isBatchable() {
+    return batchable;
+  }
+
+  public void setBatchable(boolean batchable) {
+    this.batchable = batchable;
   }
 
   /**

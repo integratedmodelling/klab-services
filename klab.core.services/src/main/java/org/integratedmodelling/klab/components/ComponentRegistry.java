@@ -58,8 +58,8 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.runtime.language.ArgumentMatcher;
-import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.application.web.WebUiConfiguration;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
@@ -402,8 +402,7 @@ public class ComponentRegistry {
         if (coords.length == 3) {
           try {
             var availability =
-                cache.getAvailabilityInfo(
-                    coords[0], coords[1], coords[2], "component", "kar");
+                cache.getAvailabilityInfo(coords[0], coords[1], coords[2], "component", "kar");
             if (availability.status()
                     == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
                 || availability.status()
@@ -752,8 +751,7 @@ public class ComponentRegistry {
         var status =
             switch (availability.status()) {
               case UP_TO_DATE -> Extensions.ComponentUpdateStatus.UP_TO_DATE;
-              case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY,
-                      NEEDS_UPDATE_FROM_REMOTE_REPOSITORY ->
+              case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY, NEEDS_UPDATE_FROM_REMOTE_REPOSITORY ->
                   Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE;
               case UNKNOWN -> Extensions.ComponentUpdateStatus.UNKNOWN;
             };
@@ -801,8 +799,7 @@ public class ComponentRegistry {
   }
 
   static Extensions.ComponentDescriptor applyDependencySourceStatus(
-      Extensions.ComponentDescriptor component,
-      Extensions.ComponentDescriptor sourceDescriptor) {
+      Extensions.ComponentDescriptor component, Extensions.ComponentDescriptor sourceDescriptor) {
     var latestTimestamp =
         Math.max(sourceDescriptor.timestamp(), sourceDescriptor.latestVersionTimestamp());
     var status =
@@ -814,8 +811,7 @@ public class ComponentRegistry {
   }
 
   static boolean isInstalledDependencyUpdateAvailable(
-      Extensions.ComponentDescriptor dependency,
-      Extensions.ComponentDescriptor sourceDescriptor) {
+      Extensions.ComponentDescriptor dependency, Extensions.ComponentDescriptor sourceDescriptor) {
     return dependency != null
         && sourceDescriptor != null
         && dependency.importType() == Extensions.ComponentImportType.DEPENDENCY
@@ -1015,8 +1011,7 @@ public class ComponentRegistry {
     try {
       var pendingDirectory = pendingUpdatesDirectory();
       pendingDirectory.mkdirs();
-      var key =
-          Integer.toUnsignedString(Objects.hash(dependency.id(), dependency.version()), 16);
+      var key = Integer.toUnsignedString(Objects.hash(dependency.id(), dependency.version()), 16);
       var archive = new File(pendingDirectory, key + ".jar");
       var marker = new File(pendingDirectory, key + ".properties");
       Files.copy(stagedArchive.toPath(), archive.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -1027,8 +1022,7 @@ public class ComponentRegistry {
       properties.setProperty(PENDING_UPDATE_SOURCE_SERVICE, dependency.sourceServiceId());
       properties.setProperty(
           PENDING_UPDATE_SOURCE_TIMESTAMP, Long.toString(sourceDescriptor.timestamp()));
-      properties.setProperty(
-          PENDING_UPDATE_TARGET_ARCHIVE, dependency.sourceArchive().getName());
+      properties.setProperty(PENDING_UPDATE_TARGET_ARCHIVE, dependency.sourceArchive().getName());
       try (var output = Files.newOutputStream(marker.toPath())) {
         properties.store(output, null);
       }
@@ -1084,8 +1078,7 @@ public class ComponentRegistry {
     var ret = new HashMap<String, PendingDependencyUpdate>();
     var pendingDirectory = pendingUpdatesDirectory(pluginPath);
     var markers =
-        pendingDirectory.listFiles(
-            file -> file.isFile() && file.getName().endsWith(".properties"));
+        pendingDirectory.listFiles(file -> file.isFile() && file.getName().endsWith(".properties"));
     if (markers == null) {
       return ret;
     }
@@ -1111,8 +1104,7 @@ public class ComponentRegistry {
         }
         var target = new File(pluginPath, targetArchive);
         var replacement = new File(pluginPath, targetArchive + ".pending");
-        Files.copy(
-            archive.toPath(), replacement.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(archive.toPath(), replacement.toPath(), StandardCopyOption.REPLACE_EXISTING);
         try {
           Files.move(
               replacement.toPath(),
@@ -1120,8 +1112,7 @@ public class ComponentRegistry {
               StandardCopyOption.ATOMIC_MOVE,
               StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException e) {
-          Files.move(
-              replacement.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+          Files.move(replacement.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } finally {
           Utils.Files.deleteQuietly(replacement);
         }
@@ -1232,11 +1223,7 @@ public class ComponentRegistry {
       file = cache.install(groupId, artifactId, version, pluginPath);
       if (file != null && file.exists()) {
         return installComponent(
-            file,
-            mavenCoordinates,
-            Extensions.ComponentImportType.MAVEN,
-            service.serviceId(),
-            0L);
+            file, mavenCoordinates, Extensions.ComponentImportType.MAVEN, service.serviceId(), 0L);
       }
     }
     return null;
@@ -2639,8 +2626,7 @@ public class ComponentRegistry {
       if (plugin instanceof KlabComponent component) {
         var file = component.getWrapper().getPluginPath().toFile();
         var pending =
-            pendingDependencyUpdates.get(
-                file.toPath().toAbsolutePath().normalize().toString());
+            pendingDependencyUpdates.get(file.toPath().toAbsolutePath().normalize().toString());
         if (pending == null) {
           registerComponent(component, null, file);
         } else {
@@ -2749,6 +2735,7 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor initializer;
     private Extensions.FunctionDescriptor sanitizer;
     private Extensions.FunctionDescriptor publisher;
+    private List<Extensions.FunctionDescriptor> batchAdapters = new ArrayList<>();
     private List<Adapter.Parameter> parameters = new ArrayList<>();
     private final AdapterDescriptor adapterInfo;
     private String componentUrn;
@@ -2809,6 +2796,11 @@ public class ComponentRegistry {
     }
 
     @Override
+    public boolean isBatchable() {
+      return batchAdapters.size() > 0;
+    }
+
+    @Override
     public Version getVersion() {
       return this.version;
     }
@@ -2841,6 +2833,11 @@ public class ComponentRegistry {
     @Override
     public boolean hasPublisher() {
       return publisher != null;
+    }
+
+    @Override
+    public List<Extensions.FunctionDescriptor> getBatchAdapters() {
+      return batchAdapters;
     }
 
     @Override
@@ -3119,6 +3116,13 @@ public class ComponentRegistry {
               schema.getSchemaId(),
               createServiceImplementation(method, method.getAnnotation(Exporter.class))
                   .getSecond());
+        } else if (method.isAnnotationPresent(ResourceAdapter.BatchIngestor.class)) {
+          var funcData =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.BatchIngestor.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.batchAdapters.add(funcData.getFirst());
         }
       }
 
@@ -3146,6 +3150,7 @@ public class ComponentRegistry {
           hasInspector(),
           hasPublisher(),
           isEmbeddable(),
+          isBatchable(),
           fillCurve,
           splits,
           minSplitSize,

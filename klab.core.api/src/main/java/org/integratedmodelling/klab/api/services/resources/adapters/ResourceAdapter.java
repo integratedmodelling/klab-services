@@ -5,9 +5,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -281,6 +279,23 @@ public @interface ResourceAdapter {
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.TYPE)
   public @interface Contextualizer {}
+
+  /**
+   * Batch ingestion.
+   *
+   * <p>Tags one or more adapter methods that will ingest a URL or a (zipped) folder along with a
+   * submitting scope and possible metadata, and produce a list of resources. The method can also
+   * expose a <code>BiFunction<Resource, SessionScope></code> to use as a callback when each
+   * resource is created, so that the scope can be notified and users kept informed as things
+   * proceed. This method should always be called asynchronously. The normal way of operation is to
+   * open a specific {@link org.integratedmodelling.klab.api.scope.SessionScope} on a runtime at
+   * client side for each call, then use its advertised peer in the ResourcesService to notify
+   * progress, completion, or failure.
+   */
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  public @interface BatchIngestor {}
 
   /**
    * Tags a merging function that will take a {@link Resource} or a {@link

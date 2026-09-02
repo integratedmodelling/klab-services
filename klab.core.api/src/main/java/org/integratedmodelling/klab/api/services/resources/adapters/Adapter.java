@@ -107,6 +107,14 @@ public interface Adapter {
   Version getComponentVersion();
 
   /**
+   * True if the adapter has a callback to handle a URL or a file folder/zip that contains multiple
+   * resource data and produces multiple resources from them.
+   *
+   * @return
+   */
+  boolean isBatchable();
+
+  /**
    * Version. Cannot be null. Multiple versions of the same adapter may coexist in a service.
    *
    * @return
@@ -163,6 +171,8 @@ public interface Adapter {
    * @return
    */
   boolean hasPublisher();
+
+  List<Extensions.FunctionDescriptor> getBatchAdapters();
 
   /**
    * Return the encoder descriptor. If the adapter is operational, the component registry must have
