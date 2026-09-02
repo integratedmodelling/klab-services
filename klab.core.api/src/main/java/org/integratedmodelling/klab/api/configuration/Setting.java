@@ -147,6 +147,10 @@ public enum Setting {
       "Physical identity of the software stack distribution selected by the user",
       String.class,
       ""),
+  START_WITH_LINE_NUMBERS_VISIBLE(
+      Page.EDITOR, "Start all new editors created with line numbers visible.", Boolean.class, true),
+  START_WITH_MINIMAP_VISIBLE(
+      Page.EDITOR, "Start all new editors created with the minimap visible.", Boolean.class, true),
   START_LSP_SERVER_ON_STARTUP(
       Page.EDITOR,
       "Automatically start and restart the k.LAB LSP language server if a software stack is available.",
