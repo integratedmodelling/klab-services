@@ -14,6 +14,7 @@ public class KimAssetImpl implements KimAsset {
     private String deprecation;
     private boolean deprecated;
     private String projectName;
+    private String serviceId;
 
     public KimAssetImpl() {}
 
@@ -52,6 +53,13 @@ public class KimAssetImpl implements KimAsset {
         this.deprecated = deprecated;
     }
 
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
 
     @Override
     public int getOffsetInDocument() {

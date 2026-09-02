@@ -34,8 +34,7 @@ public class ObservationImpl implements Observation {
   /** The catalog name for the URN of a resolved substantial observation. */
   public static final String INDIVIDUALS_CATALOG_NAME = "individuals";
 
-  private static final String INDIVIDUALS_CATALOG_SEPARATOR =
-      ":" + INDIVIDUALS_CATALOG_NAME + ":";
+  private static final String INDIVIDUALS_CATALOG_SEPARATOR = ":" + INDIVIDUALS_CATALOG_NAME + ":";
 
   /**
    * Return the logical identity URN of an observation, removing the context-local catalog prefix
@@ -75,6 +74,7 @@ public class ObservationImpl implements Observation {
   private List<Notification> notifications = new ArrayList<>();
   private ContextualizationData contextualizationData;
   private boolean empty;
+  private String serviceId;
 
   public static class ContextualizationDataImpl implements ContextualizationData {
 
@@ -442,5 +442,14 @@ public class ObservationImpl implements Observation {
 
   public void setParentTransientId(long parentTransientId) {
     this.parentTransientId = parentTransientId;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 }

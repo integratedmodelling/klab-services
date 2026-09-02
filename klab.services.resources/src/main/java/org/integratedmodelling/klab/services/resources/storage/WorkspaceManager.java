@@ -49,6 +49,7 @@ import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
@@ -1280,7 +1281,8 @@ public class WorkspaceManager {
               var errors = new ArrayList<Notification>();
               var source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
               var parsed = ontologyParser.parse(new StringReader(source), errors);
-              var storageUrn = documentUrn(pd.name, ProjectStorage.ResourceType.ONTOLOGY, ontologyUrl);
+              var storageUrn =
+                  documentUrn(pd.name, ProjectStorage.ResourceType.ONTOLOGY, ontologyUrl);
               var ontologyUrn = storageUrn;
               try {
                 if (parsed != null && parsed.getNamespace() != null) {
@@ -1294,8 +1296,7 @@ public class WorkspaceManager {
                     "Ontology resource has errors: " + ontologyUrl,
                     Klab.ErrorCode.RESOURCE_VALIDATION,
                     Klab.ErrorContext.ONTOLOGY);
-                var invalid =
-                    invalidOntology(ontologyUrn, pd.name, source, timestamp, errors);
+                var invalid = invalidOntology(ontologyUrn, pd.name, source, timestamp, errors);
                 cache.put(ontologyUrn, Triple.of(null, invalid, isWorldview));
               } else {
                 cache.put(ontologyUrn, Triple.of(parsed, null, isWorldview));
@@ -1481,8 +1482,7 @@ public class WorkspaceManager {
                 cache.put(
                     namespaceUrn,
                     Pair.of(
-                        null,
-                        invalidNamespace(namespaceUrn, pd.name, source, timestamp, errors)));
+                        null, invalidNamespace(namespaceUrn, pd.name, source, timestamp, errors)));
               } else {
                 cache.put(namespaceUrn, Pair.of(parsed, null));
               }
@@ -1753,13 +1753,7 @@ public class WorkspaceManager {
                     "Observation strategy resource has errors: " + strategyUrl,
                     Klab.ErrorCode.RESOURCE_VALIDATION,
                     Klab.ErrorContext.OBSERVATION_STRATEGY);
-                var document =
-                    invalidStrategies(
-                        strategyUrn,
-                        pd.name,
-                        source,
-                        timestamp,
-                        notams);
+                var document = invalidStrategies(strategyUrn, pd.name, source, timestamp, notams);
                 _observationStrategyDocuments.add(document);
                 _observationStrategyDocumentMap.put(document.getUrn(), document);
                 documentURLs.put(document.getUrn(), strategyUrl);
@@ -1812,8 +1806,7 @@ public class WorkspaceManager {
                   documentURLs.put(document.getUrn(), strategyUrl);
                 } else {
                   var document =
-                      invalidStrategies(
-                          strategyUrn, pd.name, source, timestamp, notifications);
+                      invalidStrategies(strategyUrn, pd.name, source, timestamp, notifications);
                   _observationStrategyDocuments.add(document);
                   _observationStrategyDocumentMap.put(document.getUrn(), document);
                   documentURLs.put(document.getUrn(), strategyUrl);
@@ -1853,6 +1846,8 @@ public class WorkspaceManager {
 
       ret = new ProjectImpl();
       ret.setUrn(projectId);
+      // FIXME NPE on startup
+//      ret.setServiceId(service.serviceId());
 
       // TODO improve metadata with service IDs, load time, stats, any info etc.
       // TODO should only add a file:/ URL if the project is local to the requester (check scope)
@@ -2826,7 +2821,8 @@ public class WorkspaceManager {
       String source,
       long timestamp,
       Collection<Notification> notifications) {
-    return invalidDocument(new KimOntologyImpl(), urn, projectName, source, timestamp, notifications);
+    return invalidDocument(
+        new KimOntologyImpl(), urn, projectName, source, timestamp, notifications);
   }
 
   private KimObservationStrategyDocument invalidStrategies(
@@ -2914,9 +2910,10 @@ public class WorkspaceManager {
           };
 
       if (!errors.get()) {
-        ret =
-            LanguageAdapter.INSTANCE.adaptBehavior(
-                syntax, projectName, notifications, timestamp);
+        ret = LanguageAdapter.INSTANCE.adaptBehavior(syntax, projectName, notifications, timestamp);
+        if (ret instanceof KActorsBehaviorImpl kActorsBehavior) {
+          kActorsBehavior.setServiceId(service.serviceId());
+        }
         validateSemanticAsset(ret);
       }
     }
@@ -2999,6 +2996,10 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptNamespace(syntax, projectName, notifications, timestamp);
+        if (ret instanceof KimNamespaceImpl kActorsBehavior) {
+          kActorsBehavior.setServiceId(service.serviceId());
+        }
+
         validateSemanticAsset(ret);
       } else {
         ret = invalidNamespace(declaredUrn, projectName, input, timestamp, notifications);
@@ -3082,8 +3083,11 @@ public class WorkspaceManager {
 
       if (!errors.get()) {
         ret =
-            LanguageAdapter.INSTANCE.adaptStrategies(
-                syntax, projectName, notifications, timestamp);
+            LanguageAdapter.INSTANCE.adaptStrategies(syntax, projectName, notifications, timestamp);
+        if (ret instanceof KimObservationStrategiesImpl kActorsBehavior) {
+          kActorsBehavior.setServiceId(service.serviceId());
+        }
+
         validateSemanticAsset(ret);
       } else {
         ret = invalidStrategies(declaredUrn, projectName, input, timestamp, notifications);
@@ -3166,8 +3170,11 @@ public class WorkspaceManager {
           };
 
       if (!errors.get()) {
-        ret =
-            LanguageAdapter.INSTANCE.adaptOntology(syntax, projectName, notifications, timestamp);
+        ret = LanguageAdapter.INSTANCE.adaptOntology(syntax, projectName, notifications, timestamp);
+        if (ret instanceof KimOntologyImpl kActorsBehavior) {
+          kActorsBehavior.setServiceId(service.serviceId());
+        }
+
         validateSemanticAsset(ret);
       } else {
         ret = invalidOntology(declaredUrn, projectName, input, timestamp, notifications);
@@ -3251,16 +3258,13 @@ public class WorkspaceManager {
   }
 
   private Object resolveKimReference(
-      String urn,
-      KlabAsset.KnowledgeClass knowledgeClass,
-      KimObservableVisitor.Context context) {
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, KimObservableVisitor.Context context) {
     if (urn == null || urn.isBlank()) {
       return null;
     }
     var document = context == null ? null : context.getDocument();
     return switch (knowledgeClass) {
-      case NAMESPACE ->
-          matchingDocument(document, urn, KimNamespace.class, _namespaceMap);
+      case NAMESPACE -> matchingDocument(document, urn, KimNamespace.class, _namespaceMap);
       case ONTOLOGY -> matchingDocument(document, urn, KimOntology.class, _ontologyMap);
       case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION ->
           matchingDocument(document, urn, KActorsBehavior.class, _behaviorMap);
@@ -3989,8 +3993,7 @@ public class WorkspaceManager {
       var targetExisted =
           !documentUrn.equals(parsed) && fileProjectStorage.locate(parsed, documentType) != null;
       var url =
-          fileProjectStorage.update(
-              documentType, documentUrn, parsed, contents, overwriteExisting);
+          fileProjectStorage.update(documentType, documentUrn, parsed, contents, overwriteExisting);
 
       ret =
           documentUrn.equals(parsed)

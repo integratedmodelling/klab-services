@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
@@ -78,6 +77,7 @@ public class ModelImpl implements Model {
   private Contextualization contextualization;
   private Concept observerType;
   private ResolutionInfo resolutionInfo;
+  private String serviceId;
 
   @Override
   public String getUrn() {
@@ -112,6 +112,15 @@ public class ModelImpl implements Model {
   @Override
   public List<Observable> getDependencies() {
     return this.dependencies;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   @Override

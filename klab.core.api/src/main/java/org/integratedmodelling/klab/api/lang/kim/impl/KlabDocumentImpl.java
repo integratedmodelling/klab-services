@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.api.lang.kim.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -8,119 +11,133 @@ import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 public abstract class KlabDocumentImpl<T extends Statement> implements KlabDocument<T> {
 
-    private String urn;
-    private Version version;
-    private Metadata metadata = Metadata.create();
-    //    private List<Annotation> annotations = new ArrayList<>();
-    private long creationTimestamp;
-    private long lastUpdateTimestamp;
-    private boolean inactive;
-    private List<Notification> notifications = new ArrayList<>();
-    private String projectName;
-    private String sourceCode;
-//    private RepositoryState.Status repositoryStatus = RepositoryState.Status.CLEAN;
+  private String urn;
+  private Version version;
+  private Metadata metadata = Metadata.create();
+  //    private List<Annotation> annotations = new ArrayList<>();
+  private long creationTimestamp;
+  private long lastUpdateTimestamp;
+  private boolean inactive;
+  private List<Notification> notifications = new ArrayList<>();
+  private String projectName;
+  private String sourceCode;
+  private String serviceId;
 
-    @Override
-    public String getUrn() {
-        return this.urn;
-    }
+  //    private RepositoryState.Status repositoryStatus = RepositoryState.Status.CLEAN;
 
-    @Override
-    public Version getVersion() {
-        return this.version;
-    }
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
 
-    @Override
-    public Metadata getMetadata() {
-        return this.metadata;
-    }
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
+  }
 
-    @Override
-    public long getCreationTimestamp() {
-        return this.creationTimestamp;
-    }
+  @Override
+  public String getUrn() {
+    return this.urn;
+  }
 
-    @Override
-    public long getLastUpdateTimestamp() {
-        return this.lastUpdateTimestamp;
-    }
+  @Override
+  public Version getVersion() {
+    return this.version;
+  }
 
-    @Override
-    public boolean isInactive() {
-        return this.inactive;
-    }
+  @Override
+  public Metadata getMetadata() {
+    return this.metadata;
+  }
 
-    @Override
-    public Collection<Notification> getNotifications() {
-        return this.notifications;
-    }
+  @Override
+  public long getCreationTimestamp() {
+    return this.creationTimestamp;
+  }
 
-    @Override
-    public String getProjectName() {
-        return this.projectName;
-    }
+  @Override
+  public long getLastUpdateTimestamp() {
+    return this.lastUpdateTimestamp;
+  }
 
-    @Override
-    public String getSourceCode() {
-        return this.sourceCode;
-    }
+  @Override
+  public boolean isInactive() {
+    return this.inactive;
+  }
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
+  @Override
+  public Collection<Notification> getNotifications() {
+    return this.notifications;
+  }
 
-    public void setVersion(Version version) {
-        this.version = version;
-    }
+  @Override
+  public String getProjectName() {
+    return this.projectName;
+  }
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
-    //
-    //    public void setAnnotations(List<Annotation> annotations) {
-    //        this.annotations = annotations;
-    //    }
+  @Override
+  public String getSourceCode() {
+    return this.sourceCode;
+  }
 
-    public void setCreationTimestamp(long creationTimestamp) {
-        this.creationTimestamp = creationTimestamp;
-    }
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
 
-    public void setLastUpdateTimestamp(long lastUpdateTimestamp) {
-        this.lastUpdateTimestamp = lastUpdateTimestamp;
-    }
+  public void setVersion(Version version) {
+    this.version = version;
+  }
 
-    public void setInactive(boolean inactive) {
-        this.inactive = inactive;
-    }
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
 
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
+  //
+  //    public void setAnnotations(List<Annotation> annotations) {
+  //        this.annotations = annotations;
+  //    }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
+  public void setCreationTimestamp(long creationTimestamp) {
+    this.creationTimestamp = creationTimestamp;
+  }
 
-    public void setSourceCode(String sourceCode) {
-        this.sourceCode = sourceCode;
-    }
+  public void setLastUpdateTimestamp(long lastUpdateTimestamp) {
+    this.lastUpdateTimestamp = lastUpdateTimestamp;
+  }
 
-    public String toString() {
-        return "<" + Utils.Strings.capitalize(KlabAsset.classify(this).name()) + " " + projectName + ":" + urn + ">";
-    }
+  public void setInactive(boolean inactive) {
+    this.inactive = inactive;
+  }
 
-//    @Override
-//    public Repository.Status getRepositoryStatus() {
-//        return repositoryStatus;
-//    }
-//
-//    public void setRepositoryStatus(Repository.Status repositoryStatus) {
-//        this.repositoryStatus = repositoryStatus;
-//    }
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
+  public void setSourceCode(String sourceCode) {
+    this.sourceCode = sourceCode;
+  }
+
+  public String toString() {
+    return "<"
+        + Utils.Strings.capitalize(KlabAsset.classify(this).name())
+        + " "
+        + projectName
+        + ":"
+        + urn
+        + ">";
+  }
+
+  //    @Override
+  //    public Repository.Status getRepositoryStatus() {
+  //        return repositoryStatus;
+  //    }
+  //
+  //    public void setRepositoryStatus(Repository.Status repositoryStatus) {
+  //        this.repositoryStatus = repositoryStatus;
+  //    }
 }

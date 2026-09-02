@@ -119,6 +119,11 @@ public class RuntimeService extends BaseService
         }
 
         @Override
+        public String getServiceId() {
+          return serviceId();
+        }
+
+        @Override
         public Collection<Annotation> getAnnotations() {
           return List.of();
         }

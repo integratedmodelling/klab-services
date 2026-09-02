@@ -50,6 +50,7 @@ public class Flow implements KlabAsset {
     private String createdBy;
     private Instant createdAt;
     private Metadata metadata = Metadata.create();
+    private String serviceId;
 
     @Override
     public String getUrn() {
@@ -130,6 +131,15 @@ public class Flow implements KlabAsset {
       return size;
     }
 
+    @Override
+    public String getServiceId() {
+      return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
+    }
+
     public void setSize(long size) {
       this.size = size;
     }
@@ -177,6 +187,7 @@ public class Flow implements KlabAsset {
     private Metadata metadata = Metadata.create();
     private Instant createdAt;
     private Instant updatedAt;
+    private String serviceId;
 
     @Override
     public String getUrn() {
@@ -300,6 +311,15 @@ public class Flow implements KlabAsset {
     public void setUpdatedAt(Instant updatedAt) {
       this.updatedAt = updatedAt;
     }
+
+    @Override
+    public String getServiceId() {
+      return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
+    }
   }
 
   public static class Transaction implements KlabAsset {
@@ -311,6 +331,7 @@ public class Flow implements KlabAsset {
     private String actor;
     private Instant timestamp;
     private Metadata metadata = Metadata.create();
+    private String serviceId;
 
     @Override
     public String getUrn() {
@@ -385,6 +406,15 @@ public class Flow implements KlabAsset {
 
     public void setMetadata(Map<String, Object> v) {
       metadata = Flow.metadata(v);
+    }
+
+    @Override
+    public String getServiceId() {
+      return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
     }
   }
 
@@ -512,6 +542,7 @@ public class Flow implements KlabAsset {
   private Set<String> currentStateIds = new LinkedHashSet<>();
   private List<Transaction> history = new ArrayList<>();
   private Metadata metadata = Metadata.create();
+  private String serviceId;
 
   public String getId() {
     return id;
@@ -645,6 +676,15 @@ public class Flow implements KlabAsset {
 
   public void setMetadata(Map<String, Object> v) {
     metadata = Flow.metadata(v);
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   @Override

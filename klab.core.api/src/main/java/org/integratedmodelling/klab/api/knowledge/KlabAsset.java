@@ -71,7 +71,7 @@ public interface KlabAsset extends Serializable {
      * language info, etc. When this is used, more information is always supplied so that the actual
      * informational object wanted can be identified and processed correctly.
      *
-     * TODO substitute with something more idiomatic + use DomainObject with a schema
+     * <p>TODO substitute with something more idiomatic + use DomainObject with a schema
      */
     INFORMATION;
 
@@ -219,6 +219,13 @@ public interface KlabAsset extends Serializable {
    * @return
    */
   Metadata getMetadata();
+
+  /**
+   * The ID of the service that hosts this artifact. If no service hosts it, return null.
+   *
+   * @return
+   */
+  String getServiceId();
 
   /**
    * All the annotations proceeding from the k.IM lineage of this artifact (from the model that

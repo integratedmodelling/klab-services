@@ -39,6 +39,7 @@ public class ObservableImpl implements Observable {
   private String name;
   private String namespace;
   private Metadata metadata = Metadata.create();
+  private String serviceId;
 
   transient Knowledge resolving;
   private Set<Concept> genericComponents = new HashSet<>();
@@ -58,6 +59,15 @@ public class ObservableImpl implements Observable {
 
   public void setSpecializedComponents(List<Pair<Concept, Concept>> specializedComponents) {
     this.specializedComponents = specializedComponents;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   public ObservableImpl() {}

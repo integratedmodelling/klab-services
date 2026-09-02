@@ -25,6 +25,7 @@ public class WorldviewImpl implements Worldview {
   private String worldviewId = Utils.Names.newName("wv");
   private List<Annotation> annotations = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
+  private String serviceId;
 
   @Override
   public String getUrn() {
@@ -229,5 +230,14 @@ public class WorldviewImpl implements Worldview {
 
   public void setNotifications(List<Notification> notifications) {
     this.notifications = notifications;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 }

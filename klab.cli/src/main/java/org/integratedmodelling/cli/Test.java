@@ -25,81 +25,91 @@ public class Test implements Runnable {
 
     @Override
     public void run() {
-        /*
-        Generic method to put temporary stuff to test quickly or debug with.
-         */
-       KlabCLI.INSTANCE.modeler().getController().openPanel(DocumentEditorAdvisor.class, new NavigableDocument() {
-           @Override
-           public String getFileExtension() {
-               return null;
-           }
+    /*
+    Generic method to put temporary stuff to test quickly or debug with.
+     */
+    KlabCLI.INSTANCE
+        .modeler()
+        .getController()
+        .openPanel(
+            DocumentEditorAdvisor.class,
+            new NavigableDocument() {
+              @Override
+              public String getFileExtension() {
+                return null;
+              }
 
-           @Override
-           public List<NavigableAsset> getAssetsAt(int offset) {
-               return List.of();
-           }
+              @Override
+              public String getServiceId() {
+                return "";
+              }
 
-           @Override
-           public List<NavigableAsset> getClosestAsset(int offset) {
-               return List.of();
-           }
+              @Override
+              public List<NavigableAsset> getAssetsAt(int offset) {
+                return List.of();
+              }
 
-           @Override
-           public List<Statement> getStatementPath(int offset) {
-               return List.of();
-           }
+              @Override
+              public List<NavigableAsset> getClosestAsset(int offset) {
+                return List.of();
+              }
 
-           @Override
-           public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
+              @Override
+              public List<Statement> getStatementPath(int offset) {
+                return List.of();
+              }
+
+              @Override
+              public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
                 return false;
-           }
+              }
 
-           @Override
-           public List<? extends NavigableAsset> children() {
-               return List.of();
-           }
+              @Override
+              public List<? extends NavigableAsset> children() {
+                return List.of();
+              }
 
-           @Override
-           public NavigableAsset parent() {
-               return null;
-           }
+              @Override
+              public NavigableAsset parent() {
+                return null;
+              }
 
-           @Override
-           public <T extends NavigableAsset> T parent(Class<T> parentClass) {
-               return null;
-           }
+              @Override
+              public <T extends NavigableAsset> T parent(Class<T> parentClass) {
+                return null;
+              }
 
-           @Override
-           public NavigableContainer root() {
-               return null;
-           }
+              @Override
+              public NavigableContainer root() {
+                return null;
+              }
 
-           @Override
-           public Metadata localMetadata() {
-               return null;
-           }
+              @Override
+              public Metadata localMetadata() {
+                return null;
+              }
 
-           @Override
-           public <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> resultClass, KnowledgeClass... assetType) {
-               return null;
-           }
+              @Override
+              public <T extends KlabAsset> T findAsset(
+                  String resourceUrn, Class<T> resultClass, KnowledgeClass... assetType) {
+                return null;
+              }
 
-           @Override
-           public String getUrn() {
-               return null;
-           }
+              @Override
+              public String getUrn() {
+                return null;
+              }
 
-           @Override
-           public Metadata getMetadata() {
-               return null;
-           }
+              @Override
+              public Metadata getMetadata() {
+                return null;
+              }
 
-           @Override
-           public Collection<Annotation> getAnnotations() {
-               return List.of();
-           }
-       });
-
+              @Override
+              public Collection<Annotation> getAnnotations() {
+                return List.of();
+              }
+            });
     }
 
     @CommandLine.Command(name = "run", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {

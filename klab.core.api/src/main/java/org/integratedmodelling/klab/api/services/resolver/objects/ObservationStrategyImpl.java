@@ -18,6 +18,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
   private List<Operation> operations = new ArrayList<>();
   private String documentation;
   List<Annotation> annotations = new ArrayList<>();
+  private String serviceId;
 
   public static class OperationImpl implements Operation {
 
@@ -152,6 +153,15 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
   public void setAnnotations(List<Annotation> annotations) {
     this.annotations = annotations;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   @Override

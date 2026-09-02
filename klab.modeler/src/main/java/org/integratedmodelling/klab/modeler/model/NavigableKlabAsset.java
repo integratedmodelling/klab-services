@@ -275,6 +275,11 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     return localMetadata;
   }
 
+  @Override
+  public String getServiceId() {
+    return delegate.getServiceId();
+  }
+
   public void setLocalMetadata(Metadata localMetadata) {
     this.localMetadata = localMetadata;
   }
@@ -302,8 +307,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       throw new KlabUnimplementedException("A user scope is required to retrieve navigable assets");
     }
     return switch (type) {
-      case RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, ONTOLOGY,
-              OBSERVATION_STRATEGY_DOCUMENT, PROJECT ->
+      case RESOURCE,
+          NAMESPACE,
+          BEHAVIOR,
+          SCRIPT,
+          TESTCASE,
+          APPLICATION,
+          ONTOLOGY,
+          OBSERVATION_STRATEGY_DOCUMENT,
+          PROJECT ->
           service.retrieve(urn, type.getAssetClass(), userScope);
       case COMPONENT -> service.retrieve(urn, KActorsBehavior.class, userScope);
       default ->
@@ -320,7 +332,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
     var operation = change.getOperation() == null ? CRUDOperation.UPDATE : change.getOperation();
     var project =
-        findAsset(change.getResourceUrn(), NavigableProject.class, KlabAsset.KnowledgeClass.PROJECT);
+        findAsset(
+            change.getResourceUrn(), NavigableProject.class, KlabAsset.KnowledgeClass.PROJECT);
 
     switch (operation) {
       case CREATE -> {
@@ -335,7 +348,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             return false;
           }
           var added =
-              addChild(resolveAsset(KnowledgeClass.PROJECT, change.getResourceUrn(), service, scope));
+              addChild(
+                  resolveAsset(KnowledgeClass.PROJECT, change.getResourceUrn(), service, scope));
           if (added instanceof NavigableProject navigableProject
               && change.getRepositoryState() != null) {
             navigableProject.setRepositoryState(change.getRepositoryState());

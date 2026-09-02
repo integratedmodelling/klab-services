@@ -142,6 +142,16 @@ public class ProjectImpl implements Project {
   private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
   private List<Annotation> annotations = new ArrayList<>();
   private RepositoryState repositoryState = new RepositoryState();
+  private String serviceId;
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
+  }
 
   @Override
   public Manifest getManifest() {

@@ -88,6 +88,7 @@ public class Workflow implements KlabAsset {
     private Set<KlabAsset.KnowledgeClass> assetTypes = new LinkedHashSet<>();
     private boolean open = true;
     private Metadata metadata = Metadata.create();
+    private String serviceId;
 
     @Override
     public String getUrn() {
@@ -121,6 +122,15 @@ public class Workflow implements KlabAsset {
 
     public void setCompletionCriteria(String completionCriteria) {
       this.completionCriteria = completionCriteria;
+    }
+
+    @Override
+    public String getServiceId() {
+      return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
     }
 
     public String getInstructions() {
@@ -216,6 +226,7 @@ public class Workflow implements KlabAsset {
     private Set<KlabAsset.KnowledgeClass> sourceAssetTypes = new LinkedHashSet<>();
     private Set<String> sourceMediaTypes = new LinkedHashSet<>();
     private Metadata metadata = Metadata.create();
+    private String serviceId;
 
     @Override
     public String getUrn() {
@@ -233,6 +244,15 @@ public class Workflow implements KlabAsset {
 
     public void setId(String id) {
       this.id = id;
+    }
+
+    @Override
+    public String getServiceId() {
+      return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
     }
 
     public String getDescription() {
@@ -316,6 +336,7 @@ public class Workflow implements KlabAsset {
   private Map<String, StateSchema> states = new LinkedHashMap<>();
   private Map<String, TransitionSchema> transitions = new LinkedHashMap<>();
   private Metadata metadata = Metadata.create();
+  private String serviceId;
 
   /** Return every structural error. An empty result means the schema can be executed. */
   public List<String> validate() {
@@ -487,6 +508,15 @@ public class Workflow implements KlabAsset {
 
   public Map<String, TransitionSchema> getTransitions() {
     return transitions;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   public void setTransitions(Map<String, TransitionSchema> v) {

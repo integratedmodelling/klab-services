@@ -44,6 +44,7 @@ public class ConceptImpl implements Concept {
   private List<Notification> notifications = new ArrayList<>();
   private Contextualization contextualization;
   private int nonSemanticId;
+  private String serviceId;
 
   public ConceptImpl() {}
 
@@ -81,6 +82,15 @@ public class ConceptImpl implements Concept {
 
   public void setQualifier(LogicalConnector qualifier) {
     this.qualifier = qualifier;
+  }
+
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 
   @Override
