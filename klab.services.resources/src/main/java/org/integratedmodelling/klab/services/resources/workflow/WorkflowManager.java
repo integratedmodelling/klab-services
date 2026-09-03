@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.services.resources.workflow;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +10,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -59,8 +57,6 @@ public class WorkflowManager {
   private void loadBundledWorkflows() {
     try (var stream = getClass().getClassLoader().getResourceAsStream(WORKFLOW_INDEX)) {
       if (stream == null) return;
-      var mapper = new ObjectMapper(new YAMLFactory());
-      JacksonConfiguration.configureObjectMapperForKlabTypes(mapper);
       try (var reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
         for (String line :
             reader
@@ -72,7 +68,7 @@ public class WorkflowManager {
               getClass().getClassLoader().getResourceAsStream("workflows/" + line)) {
             if (definition == null)
               throw new KlabIllegalStateException("Missing bundled workflow " + line);
-            Workflow workflow = mapper.readValue(definition, Workflow.class);
+            Workflow workflow = Utils.YAML.load(definition, Workflow.class);
             var errors = workflow.validate();
             if (!errors.isEmpty())
               throw new KlabIllegalStateException(
@@ -320,7 +316,7 @@ public class WorkflowManager {
       throw new KlabIllegalArgumentException(
           "State " + schema.getId() + " does not admit " + initial.getAssetType() + " assets");
     var now = Instant.now();
-    var flow = new Flow();
+    var flow = new FlowImpl();
     flow.setId(UUID.randomUUID().toString());
     if (initial.getOwner() == null || initial.getOwner().isBlank()) {
       initial.setOwner(participant.getIdentity());
@@ -524,7 +520,8 @@ public class WorkflowManager {
     if (flow.getHistory().stream()
         .anyMatch(transaction -> transactionId.equals(transaction.getId())))
       throw new KlabIllegalArgumentException("Duplicate transaction id " + transactionId);
-    var target = request.getTargetState() == null ? new Flow.State() : request.getTargetState();
+    var target =
+        request.getTargetState() == null ? new FlowImpl.StateImpl() : request.getTargetState();
     if (target.getOwner() == null || target.getOwner().isBlank()) {
       target.setOwner(participant.getIdentity());
     }
@@ -576,7 +573,7 @@ public class WorkflowManager {
                     new KlabIllegalArgumentException(
                         "Attachment type " + upload.getType() + " is not admitted"));
     validateAttachmentRule(rule, upload, state);
-    var descriptor = new Flow.Attachment();
+    var descriptor = new FlowImpl.AttachmentImpl();
     descriptor.setId(UUID.randomUUID().toString());
     descriptor.setFlowId(flowId);
     descriptor.setStateId(stateId);
@@ -778,7 +775,7 @@ public class WorkflowManager {
       WorkflowParticipant participant,
       Instant now,
       java.util.Map<String, Object> metadata) {
-    var ret = new Flow.Transaction();
+    var ret = new FlowImpl.TransactionImpl();
     ret.setId(transactionId == null ? UUID.randomUUID().toString() : transactionId);
     ret.setFlowId(flowId);
     ret.setTransitionId(transition);

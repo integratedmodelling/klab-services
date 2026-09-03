@@ -2,693 +2,275 @@ package org.integratedmodelling.klab.api.services.resources.workflow;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.lang.Annotation;
 
 /** Persistent active or closed instance of a {@link Workflow}. */
-public class Flow implements KlabAsset {
+public interface Flow extends KlabAsset {
 
-  @SuppressWarnings("unchecked")
-  private static Metadata metadata(Map<String, Object> value) {
-    if (value instanceof Metadata metadata) return metadata;
-    if (value != null) {
-      Object delegate = value.get("delegate");
-      return Metadata.create(
-          (Map<String, Object>) (delegate instanceof Map<?, ?> nested ? nested : value));
-    }
-    return Metadata.create();
-  }
-
-  public enum Status {
+  enum Status {
     ACTIVE,
     CLOSED
   }
 
-  public enum StateStatus {
+  enum StateStatus {
     OPEN,
     CLOSED
   }
 
-  public static class Attachment implements KlabAsset {
-    private String id;
-    private String flowId;
-    private String stateId;
-    private String type;
-    private String fileName;
-    private String mediaType;
-    private KlabAsset.KnowledgeClass assetType;
-    private long size;
-    private String checksum;
-    private String createdBy;
-    private Instant createdAt;
-    private Metadata metadata = Metadata.create();
-    private String serviceId;
+  interface Attachment extends KlabAsset {
+    String getId();
 
-    @Override
-    public String getUrn() {
-      return WorkflowUrns.flowAttachment(flowId, id);
-    }
+    void setId(String id);
 
-    @Override
-    public Collection<Annotation> getAnnotations() {
-      return List.of();
-    }
+    String getFlowId();
 
-    @Override
-    public Metadata getMetadata() {
-      return metadata;
-    }
+    void setFlowId(String flowId);
 
-    public void setMetadata(Map<String, Object> metadata) {
-      this.metadata = Flow.metadata(metadata);
-    }
+    String getStateId();
 
-    public String getId() {
-      return id;
-    }
+    void setStateId(String stateId);
 
-    public void setId(String id) {
-      this.id = id;
-    }
+    String getType();
 
-    public String getFlowId() {
-      return flowId;
-    }
+    void setType(String type);
 
-    public void setFlowId(String flowId) {
-      this.flowId = flowId;
-    }
+    String getFileName();
 
-    public String getStateId() {
-      return stateId;
-    }
+    void setFileName(String fileName);
 
-    public void setStateId(String stateId) {
-      this.stateId = stateId;
-    }
+    String getMediaType();
 
-    public String getType() {
-      return type;
-    }
+    void setMediaType(String mediaType);
 
-    public void setType(String type) {
-      this.type = type;
-    }
+    KlabAsset.KnowledgeClass getAssetType();
 
-    public String getFileName() {
-      return fileName;
-    }
+    void setAssetType(KlabAsset.KnowledgeClass assetType);
 
-    public void setFileName(String fileName) {
-      this.fileName = fileName;
-    }
+    long getSize();
 
-    public String getMediaType() {
-      return mediaType;
-    }
+    void setSize(long size);
 
-    public void setMediaType(String mediaType) {
-      this.mediaType = mediaType;
-    }
+    void setServiceId(String serviceId);
 
-    public KlabAsset.KnowledgeClass getAssetType() {
-      return assetType;
-    }
+    String getChecksum();
 
-    public void setAssetType(KlabAsset.KnowledgeClass assetType) {
-      this.assetType = assetType;
-    }
+    void setChecksum(String checksum);
 
-    public long getSize() {
-      return size;
-    }
+    String getCreatedBy();
 
-    @Override
-    public String getServiceId() {
-      return serviceId;
-    }
+    void setCreatedBy(String createdBy);
 
-    public void setServiceId(String serviceId) {
-      this.serviceId = serviceId;
-    }
+    Instant getCreatedAt();
 
-    public void setSize(long size) {
-      this.size = size;
-    }
+    void setCreatedAt(Instant createdAt);
 
-    public String getChecksum() {
-      return checksum;
-    }
-
-    public void setChecksum(String checksum) {
-      this.checksum = checksum;
-    }
-
-    public String getCreatedBy() {
-      return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-      this.createdBy = createdBy;
-    }
-
-    public Instant getCreatedAt() {
-      return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-      this.createdAt = createdAt;
-    }
+    void setMetadata(Map<String, Object> metadata);
   }
 
-  public static class State implements KlabAsset {
-    private String id;
-    private String flowId;
-    private String schemaId;
-    private String assetUrn;
-    private KlabAsset.KnowledgeClass assetType;
-    private String permissionsOwnerUrn;
+  interface State extends KlabAsset {
+    String getId();
 
-    /** Identity that owns this stage and may edit it regardless of role-specific assignment. */
-    private String owner;
+    void setId(String id);
 
-    private String title;
-    private StateStatus status = StateStatus.OPEN;
-    private Set<String> assignees = new LinkedHashSet<>();
-    private List<Attachment> attachments = new ArrayList<>();
-    private Metadata metadata = Metadata.create();
-    private Instant createdAt;
-    private Instant updatedAt;
-    private String serviceId;
+    String getFlowId();
 
-    @Override
-    public String getUrn() {
-      return WorkflowUrns.flowState(flowId, id);
-    }
+    void setFlowId(String flowId);
 
-    @Override
-    public Collection<Annotation> getAnnotations() {
-      return List.of();
-    }
+    String getSchemaId();
 
-    public String getId() {
-      return id;
-    }
+    void setSchemaId(String schemaId);
 
-    public void setId(String id) {
-      this.id = id;
-    }
+    String getAssetUrn();
 
-    public String getFlowId() {
-      return flowId;
-    }
+    void setAssetUrn(String assetUrn);
 
-    public void setFlowId(String flowId) {
-      this.flowId = flowId;
-    }
+    KlabAsset.KnowledgeClass getAssetType();
 
-    public String getSchemaId() {
-      return schemaId;
-    }
+    void setAssetType(KlabAsset.KnowledgeClass assetType);
 
-    public void setSchemaId(String schemaId) {
-      this.schemaId = schemaId;
-    }
+    String getPermissionsOwnerUrn();
 
-    public String getAssetUrn() {
-      return assetUrn;
-    }
+    void setPermissionsOwnerUrn(String permissionsOwnerUrn);
 
-    public void setAssetUrn(String assetUrn) {
-      this.assetUrn = assetUrn;
-    }
+    String getOwner();
 
-    public KlabAsset.KnowledgeClass getAssetType() {
-      return assetType;
-    }
+    void setOwner(String owner);
 
-    public void setAssetType(KlabAsset.KnowledgeClass assetType) {
-      this.assetType = assetType;
-    }
+    String getTitle();
 
-    public String getPermissionsOwnerUrn() {
-      return permissionsOwnerUrn;
-    }
+    void setTitle(String title);
 
-    public void setPermissionsOwnerUrn(String permissionsOwnerUrn) {
-      this.permissionsOwnerUrn = permissionsOwnerUrn;
-    }
+    StateStatus getStatus();
 
-    public String getOwner() {
-      return owner;
-    }
+    void setStatus(StateStatus status);
 
-    public void setOwner(String owner) {
-      this.owner = owner;
-    }
+    Set<String> getAssignees();
 
-    public String getTitle() {
-      return title;
-    }
+    void setAssignees(Set<String> assignees);
 
-    public void setTitle(String title) {
-      this.title = title;
-    }
+    List<Attachment> getAttachments();
 
-    public StateStatus getStatus() {
-      return status;
-    }
+    void setAttachments(List<Attachment> attachments);
 
-    public void setStatus(StateStatus status) {
-      this.status = status;
-    }
+    void setMetadata(Map<String, Object> metadata);
 
-    public Set<String> getAssignees() {
-      return assignees;
-    }
+    Instant getCreatedAt();
 
-    public void setAssignees(Set<String> v) {
-      assignees = v == null ? new LinkedHashSet<>() : v;
-    }
+    void setCreatedAt(Instant createdAt);
 
-    public List<Attachment> getAttachments() {
-      return attachments;
-    }
+    Instant getUpdatedAt();
 
-    public void setAttachments(List<Attachment> v) {
-      attachments = v == null ? new ArrayList<>() : v;
-    }
+    void setUpdatedAt(Instant updatedAt);
 
-    @Override
-    public Metadata getMetadata() {
-      return metadata;
-    }
-
-    public void setMetadata(Map<String, Object> v) {
-      metadata = Flow.metadata(v);
-    }
-
-    public Instant getCreatedAt() {
-      return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-      this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-      return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-      this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public String getServiceId() {
-      return serviceId;
-    }
-
-    public void setServiceId(String serviceId) {
-      this.serviceId = serviceId;
-    }
+    void setServiceId(String serviceId);
   }
 
-  public static class Transaction implements KlabAsset {
-    private String id;
-    private String flowId;
-    private String transitionId;
-    private String sourceStateId;
-    private String targetStateId;
-    private String actor;
-    private Instant timestamp;
-    private Metadata metadata = Metadata.create();
-    private String serviceId;
+  interface Transaction extends KlabAsset {
+    String getId();
 
-    @Override
-    public String getUrn() {
-      return WorkflowUrns.flowTransition(flowId, id);
-    }
+    void setId(String id);
 
-    @Override
-    public Collection<Annotation> getAnnotations() {
-      return List.of();
-    }
+    String getFlowId();
 
-    public String getId() {
-      return id;
-    }
+    void setFlowId(String flowId);
 
-    public void setId(String id) {
-      this.id = id;
-    }
+    String getTransitionId();
 
-    public String getFlowId() {
-      return flowId;
-    }
+    void setTransitionId(String transitionId);
 
-    public void setFlowId(String flowId) {
-      this.flowId = flowId;
-    }
+    String getSourceStateId();
 
-    public String getTransitionId() {
-      return transitionId;
-    }
+    void setSourceStateId(String sourceStateId);
 
-    public void setTransitionId(String transitionId) {
-      this.transitionId = transitionId;
-    }
+    String getTargetStateId();
 
-    public String getSourceStateId() {
-      return sourceStateId;
-    }
+    void setTargetStateId(String targetStateId);
 
-    public void setSourceStateId(String sourceStateId) {
-      this.sourceStateId = sourceStateId;
-    }
+    String getActor();
 
-    public String getTargetStateId() {
-      return targetStateId;
-    }
+    void setActor(String actor);
 
-    public void setTargetStateId(String targetStateId) {
-      this.targetStateId = targetStateId;
-    }
+    Instant getTimestamp();
 
-    public String getActor() {
-      return actor;
-    }
+    void setTimestamp(Instant timestamp);
 
-    public void setActor(String actor) {
-      this.actor = actor;
-    }
+    void setMetadata(Map<String, Object> metadata);
 
-    public Instant getTimestamp() {
-      return timestamp;
-    }
-
-    public void setTimestamp(Instant timestamp) {
-      this.timestamp = timestamp;
-    }
-
-    @Override
-    public Metadata getMetadata() {
-      return metadata;
-    }
-
-    public void setMetadata(Map<String, Object> v) {
-      metadata = Flow.metadata(v);
-    }
-
-    @Override
-    public String getServiceId() {
-      return serviceId;
-    }
-
-    public void setServiceId(String serviceId) {
-      this.serviceId = serviceId;
-    }
+    void setServiceId(String serviceId);
   }
 
-  public static class TransitionRequest implements Serializable {
-    private String transactionId;
-    private String transitionId;
-    private String sourceStateId;
-    private State targetState;
-    private long expectedRevision = -1;
-    private Map<String, Object> metadata = new LinkedHashMap<>();
+  interface TransitionRequest extends Serializable {
+    String getTransactionId();
 
-    public String getTransactionId() {
-      return transactionId;
-    }
+    void setTransactionId(String transactionId);
 
-    public void setTransactionId(String transactionId) {
-      this.transactionId = transactionId;
-    }
+    String getTransitionId();
 
-    public String getTransitionId() {
-      return transitionId;
-    }
+    void setTransitionId(String transitionId);
 
-    public void setTransitionId(String transitionId) {
-      this.transitionId = transitionId;
-    }
+    String getSourceStateId();
 
-    public String getSourceStateId() {
-      return sourceStateId;
-    }
+    void setSourceStateId(String sourceStateId);
 
-    public void setSourceStateId(String sourceStateId) {
-      this.sourceStateId = sourceStateId;
-    }
+    State getTargetState();
 
-    public State getTargetState() {
-      return targetState;
-    }
+    void setTargetState(State targetState);
 
-    public void setTargetState(State targetState) {
-      this.targetState = targetState;
-    }
+    long getExpectedRevision();
 
-    public long getExpectedRevision() {
-      return expectedRevision;
-    }
+    void setExpectedRevision(long expectedRevision);
 
-    public void setExpectedRevision(long expectedRevision) {
-      this.expectedRevision = expectedRevision;
-    }
+    Map<String, Object> getMetadata();
 
-    public Map<String, Object> getMetadata() {
-      return metadata;
-    }
-
-    public void setMetadata(Map<String, Object> v) {
-      metadata = v == null ? new LinkedHashMap<>() : v;
-    }
+    void setMetadata(Map<String, Object> metadata);
   }
 
-  public static class AttachmentUpload implements Serializable {
-    private String type;
-    private String fileName;
-    private String mediaType;
-    private KlabAsset.KnowledgeClass assetType;
-    private byte[] content;
+  interface AttachmentUpload extends Serializable {
+    String getType();
 
-    public String getType() {
-      return type;
-    }
+    void setType(String type);
 
-    public void setType(String type) {
-      this.type = type;
-    }
+    String getFileName();
 
-    public String getFileName() {
-      return fileName;
-    }
+    void setFileName(String fileName);
 
-    public void setFileName(String fileName) {
-      this.fileName = fileName;
-    }
+    String getMediaType();
 
-    public String getMediaType() {
-      return mediaType;
-    }
+    void setMediaType(String mediaType);
 
-    public void setMediaType(String mediaType) {
-      this.mediaType = mediaType;
-    }
+    KlabAsset.KnowledgeClass getAssetType();
 
-    public KlabAsset.KnowledgeClass getAssetType() {
-      return assetType;
-    }
+    void setAssetType(KlabAsset.KnowledgeClass assetType);
 
-    public void setAssetType(KlabAsset.KnowledgeClass assetType) {
-      this.assetType = assetType;
-    }
+    byte[] getContent();
 
-    public byte[] getContent() {
-      return content;
-    }
-
-    public void setContent(byte[] content) {
-      this.content = content;
-    }
+    void setContent(byte[] content);
   }
 
-  private String id;
-  private String workflowId;
-  private String workflowVersion;
-  private String assetUrn;
-  private KlabAsset.KnowledgeClass assetType;
-  private String permissionsOwnerUrn;
-  private String owner;
+  String getId();
 
-  /** Whether every identified client may browse the complete flow in read-only mode. */
-  private boolean publicRead;
+  void setId(String id);
 
-  private Status status = Status.ACTIVE;
-  private long revision;
-  private Instant createdAt;
-  private Instant updatedAt;
-  private Map<String, State> states = new LinkedHashMap<>();
-  private Set<String> currentStateIds = new LinkedHashSet<>();
-  private List<Transaction> history = new ArrayList<>();
-  private Metadata metadata = Metadata.create();
-  private String serviceId;
+  String getWorkflowId();
 
-  public String getId() {
-    return id;
-  }
+  void setWorkflowId(String workflowId);
 
-  public void setId(String id) {
-    this.id = id;
-  }
+  String getWorkflowVersion();
 
-  public String getWorkflowId() {
-    return workflowId;
-  }
+  void setWorkflowVersion(String workflowVersion);
 
-  public void setWorkflowId(String workflowId) {
-    this.workflowId = workflowId;
-  }
+  String getAssetUrn();
 
-  public String getWorkflowVersion() {
-    return workflowVersion;
-  }
+  void setAssetUrn(String assetUrn);
 
-  public void setWorkflowVersion(String workflowVersion) {
-    this.workflowVersion = workflowVersion;
-  }
+  KlabAsset.KnowledgeClass getAssetType();
 
-  public String getAssetUrn() {
-    return assetUrn;
-  }
+  void setAssetType(KlabAsset.KnowledgeClass assetType);
 
-  public void setAssetUrn(String assetUrn) {
-    this.assetUrn = assetUrn;
-  }
+  String getPermissionsOwnerUrn();
 
-  public KlabAsset.KnowledgeClass getAssetType() {
-    return assetType;
-  }
+  void setPermissionsOwnerUrn(String permissionsOwnerUrn);
 
-  public void setAssetType(KlabAsset.KnowledgeClass assetType) {
-    this.assetType = assetType;
-  }
+  String getOwner();
 
-  public String getPermissionsOwnerUrn() {
-    return permissionsOwnerUrn;
-  }
+  void setOwner(String owner);
 
-  public void setPermissionsOwnerUrn(String permissionsOwnerUrn) {
-    this.permissionsOwnerUrn = permissionsOwnerUrn;
-  }
+  boolean isPublicRead();
 
-  public String getOwner() {
-    return owner;
-  }
+  void setPublicRead(boolean publicRead);
 
-  public void setOwner(String owner) {
-    this.owner = owner;
-  }
+  Status getStatus();
 
-  public boolean isPublicRead() {
-    return publicRead;
-  }
+  void setStatus(Status status);
 
-  public void setPublicRead(boolean publicRead) {
-    this.publicRead = publicRead;
-  }
+  long getRevision();
 
-  public Status getStatus() {
-    return status;
-  }
+  void setRevision(long revision);
 
-  public void setStatus(Status status) {
-    this.status = status;
-  }
+  Instant getCreatedAt();
 
-  public long getRevision() {
-    return revision;
-  }
+  void setCreatedAt(Instant createdAt);
 
-  public void setRevision(long revision) {
-    this.revision = revision;
-  }
+  Instant getUpdatedAt();
 
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
+  void setUpdatedAt(Instant updatedAt);
 
-  public void setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
-  }
+  Map<String, State> getStates();
 
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
+  void setStates(Map<String, State> states);
 
-  public void setUpdatedAt(Instant updatedAt) {
-    this.updatedAt = updatedAt;
-  }
+  Set<String> getCurrentStateIds();
 
-  public Map<String, State> getStates() {
-    return states;
-  }
+  void setCurrentStateIds(Set<String> stateIds);
 
-  public void setStates(Map<String, State> v) {
-    states = v == null ? new LinkedHashMap<>() : v;
-  }
+  List<Transaction> getHistory();
 
-  public Set<String> getCurrentStateIds() {
-    return currentStateIds;
-  }
+  void setHistory(List<Transaction> history);
 
-  public void setCurrentStateIds(Set<String> v) {
-    currentStateIds = v == null ? new LinkedHashSet<>() : v;
-  }
+  void setMetadata(Map<String, Object> metadata);
 
-  public List<Transaction> getHistory() {
-    return history;
-  }
-
-  public void setHistory(List<Transaction> v) {
-    history = v == null ? new ArrayList<>() : v;
-  }
-
-  @Override
-  public String getUrn() {
-    return WorkflowUrns.flow(id);
-  }
-
-  @Override
-  public Metadata getMetadata() {
-    return metadata;
-  }
-
-  public void setMetadata(Map<String, Object> v) {
-    metadata = Flow.metadata(v);
-  }
-
-  @Override
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
-
-  @Override
-  public Collection<Annotation> getAnnotations() {
-    return List.of();
-  }
+  void setServiceId(String serviceId);
 }

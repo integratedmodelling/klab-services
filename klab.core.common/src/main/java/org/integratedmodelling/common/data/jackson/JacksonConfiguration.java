@@ -3,6 +3,7 @@ package org.integratedmodelling.common.data.jackson;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -13,6 +14,8 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.common.services.resources.workflow.WorkflowImpl;
 import org.integratedmodelling.common.lang.TernaryImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
@@ -53,6 +56,8 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -62,6 +67,20 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 public class JacksonConfiguration {
 
   public static final String CLASS_FIELD = "@CLASS";
+
+  private static Class<?> workflowImplementation(Class<?> type) {
+    if (type == Workflow.class) return WorkflowImpl.class;
+    if (type == Workflow.AttachmentRule.class) return WorkflowImpl.AttachmentRuleImpl.class;
+    if (type == Workflow.StateSchema.class) return WorkflowImpl.StateSchemaImpl.class;
+    if (type == Workflow.TransitionSchema.class) return WorkflowImpl.TransitionSchemaImpl.class;
+    if (type == Flow.class) return FlowImpl.class;
+    if (type == Flow.State.class) return FlowImpl.StateImpl.class;
+    if (type == Flow.Transaction.class) return FlowImpl.TransactionImpl.class;
+    if (type == Flow.Attachment.class) return FlowImpl.AttachmentImpl.class;
+    if (type == Flow.TransitionRequest.class) return FlowImpl.TransitionRequestImpl.class;
+    if (type == Flow.AttachmentUpload.class) return FlowImpl.AttachmentUploadImpl.class;
+    return type;
+  }
 
   @SuppressWarnings("rawtypes")
   static class PolymorphicSerializer<T> extends JsonSerializer<T> {
@@ -193,7 +212,9 @@ public class JacksonConfiguration {
         }
       }
 
-      return ret;
+      // Workflow/flow used to be concrete API classes. Accept their former discriminators after
+      // the API/common split, while all newly serialized values name their implementation class.
+      return workflowImplementation(ret);
     }
 
     private Object deserialize(JsonNode node, JsonParser parser, Class<?> type) throws Exception {
@@ -213,7 +234,8 @@ public class JacksonConfiguration {
       } else if (node.isArray()) {
         return deserializeArray(node, parser, field);
       }
-      return parser.getCodec().treeToValue(node, Object.class);
+      Class<?> targetType = field == null ? Object.class : field.getType();
+      return parser.getCodec().treeToValue(node, targetType);
     }
 
     private Class<?> getGenericType(Field field, int n) {
@@ -447,7 +469,17 @@ public class JacksonConfiguration {
           ExpressionCode.class,
           Federation.class,
           Scheduler.Event.class,
-          DigitalTwin.Configuration.class
+          DigitalTwin.Configuration.class,
+          Workflow.class,
+          Workflow.AttachmentRule.class,
+          Workflow.StateSchema.class,
+          Workflow.TransitionSchema.class,
+          Flow.class,
+          Flow.State.class,
+          Flow.Transaction.class,
+          Flow.Attachment.class,
+          Flow.TransitionRequest.class,
+          Flow.AttachmentUpload.class
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
@@ -455,6 +487,25 @@ public class JacksonConfiguration {
 
     mapper.registerModule(module);
     mapper.registerModule(new ParameterNamesModule());
+    mapper.registerModule(new JavaTimeModule());
+  }
+
+  /** Configure human-authored data formats whose documents do not contain {@value #CLASS_FIELD}. */
+  public static void configureObjectMapperForKlabBeanTypes(ObjectMapper mapper) {
+    var resolver = new SimpleAbstractTypeResolver();
+    resolver.addMapping(Workflow.class, WorkflowImpl.class);
+    resolver.addMapping(Workflow.AttachmentRule.class, WorkflowImpl.AttachmentRuleImpl.class);
+    resolver.addMapping(Workflow.StateSchema.class, WorkflowImpl.StateSchemaImpl.class);
+    resolver.addMapping(Workflow.TransitionSchema.class, WorkflowImpl.TransitionSchemaImpl.class);
+    resolver.addMapping(Flow.class, FlowImpl.class);
+    resolver.addMapping(Flow.State.class, FlowImpl.StateImpl.class);
+    resolver.addMapping(Flow.Transaction.class, FlowImpl.TransactionImpl.class);
+    resolver.addMapping(Flow.Attachment.class, FlowImpl.AttachmentImpl.class);
+    resolver.addMapping(Flow.TransitionRequest.class, FlowImpl.TransitionRequestImpl.class);
+    resolver.addMapping(Flow.AttachmentUpload.class, FlowImpl.AttachmentUploadImpl.class);
+    var module = new SimpleModule();
+    module.setAbstractTypes(resolver);
+    mapper.registerModule(module);
     mapper.registerModule(new JavaTimeModule());
   }
 }

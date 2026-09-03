@@ -5,27 +5,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
-import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.common.services.resources.workflow.WorkflowImpl;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.junit.jupiter.api.Test;
 
 class WorkflowSchemaTest {
 
   private Workflow schema() throws Exception {
-    var mapper = new ObjectMapper(new YAMLFactory());
-    JacksonConfiguration.configureObjectMapperForKlabTypes(mapper);
     try (var stream =
         getClass().getClassLoader().getResourceAsStream("workflows/asset-review.yaml")) {
-      return mapper.readValue(stream, Workflow.class);
+      return org.integratedmodelling.common.utils.Utils.YAML.load(stream, Workflow.class);
     }
   }
 
@@ -34,11 +32,28 @@ class WorkflowSchemaTest {
     var workflow = schema();
     assertTrue(workflow.validate().isEmpty());
 
+    var serialized = org.integratedmodelling.common.utils.Utils.Json.asString(workflow);
+    var clientMapper = new ObjectMapper();
+    var json = clientMapper.readTree(serialized);
+    assertEquals(WorkflowImpl.class.getName(), json.path("@CLASS").asText(), serialized);
+    assertEquals(
+        WorkflowImpl.StateSchemaImpl.class.getName(),
+        json.path("states").path("editing").path("@CLASS").asText(),
+        serialized);
+    assertEquals(
+        WorkflowImpl.TransitionSchemaImpl.class.getName(),
+        json.path("transitions").path("submit").path("@CLASS").asText(),
+        serialized);
+    assertEquals(
+        workflow.getUrn(),
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(serialized, Workflow.class)
+            .getUrn());
+
     var editor = participant(WorkflowRole.EDITOR, false);
-    var state = new Flow.State();
+    var state = new FlowImpl.StateImpl();
     state.setId("draft-1");
     state.setSchemaId("editing");
-    var flow = new Flow();
+    var flow = new FlowImpl();
     flow.getStates().put(state.getId(), state);
     flow.getCurrentStateIds().add(state.getId());
 
@@ -83,23 +98,23 @@ class WorkflowSchemaTest {
     assertEquals("flow-1", coordinates.ownerId());
     assertEquals("state-2", coordinates.artifactId());
 
-    var flow = new Flow();
+    var flow = new FlowImpl();
     flow.setId("flow-1");
     flow.setAssetUrn("project/namespace");
     flow.setAssetType(KlabAsset.KnowledgeClass.NAMESPACE);
     flow.setPermissionsOwnerUrn("project");
     flow.setPublicRead(true);
     flow.getMetadata().put("purpose", "transport-test");
-    var state = new Flow.State();
+    var state = new FlowImpl.StateImpl();
     state.setFlowId(flow.getId());
     state.setId("state-2");
     state.setOwner("editor@example.org");
     flow.getStates().put(state.getId(), state);
-    var transaction = new Flow.Transaction();
+    var transaction = new FlowImpl.TransactionImpl();
     transaction.setFlowId(flow.getId());
     transaction.setId("transaction-3");
     flow.getHistory().add(transaction);
-    var attachment = new Flow.Attachment();
+    var attachment = new FlowImpl.AttachmentImpl();
     attachment.setFlowId(flow.getId());
     attachment.setId("attachment-4");
     state.getAttachments().add(attachment);
@@ -109,6 +124,26 @@ class WorkflowSchemaTest {
     assertEquals("urn:klab:flow-attachment:flow-1:attachment-4", attachment.getUrn());
 
     var serialized = org.integratedmodelling.common.utils.Utils.Json.asString(flow);
+    var clientMapper = new ObjectMapper();
+    var json = clientMapper.readTree(serialized);
+    assertEquals(FlowImpl.class.getName(), json.path("@CLASS").asText(), serialized);
+    assertEquals(
+        FlowImpl.StateImpl.class.getName(),
+        json.path("states").path("state-2").path("@CLASS").asText(),
+        serialized);
+    assertEquals(
+        FlowImpl.TransactionImpl.class.getName(),
+        json.path("history").path(0).path("@CLASS").asText(),
+        serialized);
+    assertEquals(
+        FlowImpl.AttachmentImpl.class.getName(),
+        json.path("states")
+            .path("state-2")
+            .path("attachments")
+            .path(0)
+            .path("@CLASS")
+            .asText(),
+        serialized);
     var reconstructed =
         org.integratedmodelling.common.utils.Utils.Json.parseObject(serialized, Flow.class);
     assertEquals(flow.getUrn(), reconstructed.getUrn());
@@ -117,6 +152,47 @@ class WorkflowSchemaTest {
     assertEquals("project", reconstructed.getPermissionsOwnerUrn());
     assertTrue(reconstructed.isPublicRead());
     assertEquals("editor@example.org", reconstructed.getStates().get("state-2").getOwner());
+
+    var legacyJson = json.deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) legacyJson)
+        .put("@CLASS", Flow.class.getName());
+    ((com.fasterxml.jackson.databind.node.ObjectNode) legacyJson.path("states").path("state-2"))
+        .put("@CLASS", Flow.State.class.getName());
+    var legacyReconstructed =
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            legacyJson.toString(), Flow.class);
+    assertEquals(flow.getUrn(), legacyReconstructed.getUrn());
+  }
+
+  @Test
+  void flowCommandsUseTheSameInterfaceReconstructionConvention() {
+    var state = new FlowImpl.StateImpl();
+    state.setId("state-2");
+    var request = new FlowImpl.TransitionRequestImpl();
+    request.setTransactionId("transaction-3");
+    request.setTransitionId("submit");
+    request.setTargetState(state);
+
+    var serialized = org.integratedmodelling.common.utils.Utils.Json.asString(request);
+    var reconstructed =
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            serialized, Flow.TransitionRequest.class);
+    assertEquals("submit", reconstructed.getTransitionId());
+    assertEquals("state-2", reconstructed.getTargetState().getId());
+
+    var upload = new FlowImpl.AttachmentUploadImpl();
+    upload.setFileName("review.txt");
+    upload.setMediaType("text/plain");
+    upload.setContent("ok".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    var uploadReconstructed =
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            org.integratedmodelling.common.utils.Utils.Json.asString(upload),
+            Flow.AttachmentUpload.class);
+    assertEquals("review.txt", uploadReconstructed.getFileName());
+    assertEquals(
+        "ok",
+        new String(
+            uploadReconstructed.getContent(), java.nio.charset.StandardCharsets.UTF_8));
   }
 
   @Test

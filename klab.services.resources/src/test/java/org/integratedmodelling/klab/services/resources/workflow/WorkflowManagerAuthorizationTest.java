@@ -5,12 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Proxy;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -163,7 +164,7 @@ class WorkflowManagerAuthorizationTest {
             });
     var admin = scope("admin", "ADMIN");
     var flow = manager.createFlow("asset-review", initial(), false, admin);
-    var deletable = new Flow.State();
+    var deletable = new FlowImpl.StateImpl();
     deletable.setSchemaId("accepted");
 
     var created = manager.createState(flow.getId(), deletable, admin);
@@ -200,10 +201,10 @@ class WorkflowManagerAuthorizationTest {
             .getFlow(flow.getId())
             .getStates()
             .containsKey(flow.getStates().keySet().iterator().next()));
-    var deletable = new Flow.State();
+    var deletable = new FlowImpl.StateImpl();
     deletable.setSchemaId("accepted");
     var created = manager.createState(flow.getId(), deletable, admin);
-    var attachment = new Flow.Attachment();
+    var attachment = new FlowImpl.AttachmentImpl();
     attachment.setId("retained-attachment");
     store.getFlow(flow.getId()).getStates().get(created.getId()).getAttachments().add(attachment);
     store.attachments.put(attachment.getId(), new byte[] {1});
@@ -216,7 +217,7 @@ class WorkflowManagerAuthorizationTest {
   }
 
   private Flow.State initial() {
-    var state = new Flow.State();
+    var state = new FlowImpl.StateImpl();
     state.setSchemaId("editing");
     state.setAssetUrn("urn:test:resource");
     state.setAssetType(KlabAsset.KnowledgeClass.RESOURCE);

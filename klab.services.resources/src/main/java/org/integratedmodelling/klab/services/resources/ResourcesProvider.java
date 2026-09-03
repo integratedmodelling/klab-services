@@ -21,6 +21,7 @@ import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -1150,7 +1151,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(
                   urn, knowledgeClass);
           workflowManager.deleteState(coordinates.ownerId(), coordinates.artifactId(), scope);
-          var state = new Flow.State();
+          var state = new FlowImpl.StateImpl();
           state.setFlowId(coordinates.ownerId());
           state.setId(coordinates.artifactId());
           return List.of(workflowResource(state, KnowledgeClass.FLOW_STATE, CRUDOperation.DELETE));
@@ -1161,7 +1162,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns.parse(
                   urn, knowledgeClass);
           workflowManager.deleteAttachment(coordinates.ownerId(), coordinates.artifactId(), scope);
-          var attachment = new Flow.Attachment();
+          var attachment = new FlowImpl.AttachmentImpl();
           attachment.setFlowId(coordinates.ownerId());
           attachment.setId(coordinates.artifactId());
           return List.of(
@@ -2524,7 +2525,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           && workflowId != null
           && !workflowId.isBlank()) {
         try {
-          var initial = new Flow.State();
+          var initial = new FlowImpl.StateImpl();
           initial.setSchemaId("editing");
           initial.setAssetUrn(authoritativeUrn);
           initial.setAssetType(KnowledgeClass.RESOURCE);

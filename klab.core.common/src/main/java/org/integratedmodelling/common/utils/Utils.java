@@ -3047,6 +3047,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     static {
       defaultMapper = new ObjectMapper(new YAMLFactory());
+      JacksonConfiguration.configureObjectMapperForKlabBeanTypes(defaultMapper);
     }
 
     /**

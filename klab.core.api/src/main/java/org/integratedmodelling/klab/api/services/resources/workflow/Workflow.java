@@ -1,544 +1,174 @@
 package org.integratedmodelling.klab.api.services.resources.workflow;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.UserScope;
 
 /**
- * Versioned configuration schema for one kind of workflow.
+ * Versioned configuration contract for one kind of workflow.
  *
- * <p>The object contains no service state and is deliberately executable on clients. Call {@link
- * #validate()} after deserializing configuration and {@link #admittedTransitions(Flow.State,
- * WorkflowParticipant)} to drive a client UI without a server round trip.
+ * <p>Implementations are transport beans supplied by {@code klab.core.common}. The interface stays
+ * in the public API so resources services and external clients share the normal k.LAB polymorphic
+ * serialization convention.
  */
-public class Workflow implements KlabAsset {
+public interface Workflow extends KlabAsset {
 
-  @SuppressWarnings("unchecked")
-  private static Metadata metadata(Map<String, Object> value) {
-    if (value instanceof Metadata metadata) return metadata;
-    if (value != null) {
-      Object delegate = value.get("delegate");
-      return Metadata.create(
-          (Map<String, Object>) (delegate instanceof Map<?, ?> nested ? nested : value));
-    }
-    return Metadata.create();
+  String INIT = "INIT";
+
+  interface AttachmentRule extends Serializable {
+    String getType();
+
+    void setType(String type);
+
+    String getMediaType();
+
+    void setMediaType(String mediaType);
+
+    KlabAsset.KnowledgeClass getAssetType();
+
+    void setAssetType(KlabAsset.KnowledgeClass assetType);
+
+    int getArity();
+
+    void setArity(int arity);
   }
 
-  public static final String INIT = "INIT";
+  interface StateSchema extends KlabAsset {
+    String getId();
 
-  public static class AttachmentRule implements Serializable {
-    private String type;
-    private String mediaType;
-    private KlabAsset.KnowledgeClass assetType;
-    private int arity = -1;
+    void setId(String id);
 
-    public String getType() {
-      return type;
-    }
+    String getDescription();
 
-    public void setType(String type) {
-      this.type = type;
-    }
+    void setDescription(String description);
 
-    public String getMediaType() {
-      return mediaType;
-    }
+    String getCompletionCriteria();
 
-    public void setMediaType(String mediaType) {
-      this.mediaType = mediaType;
-    }
+    void setCompletionCriteria(String completionCriteria);
 
-    public KlabAsset.KnowledgeClass getAssetType() {
-      return assetType;
-    }
+    void setServiceId(String serviceId);
 
-    public void setAssetType(KlabAsset.KnowledgeClass assetType) {
-      this.assetType = assetType;
-    }
+    String getInstructions();
 
-    public int getArity() {
-      return arity;
-    }
+    void setInstructions(String instructions);
 
-    public void setArity(int arity) {
-      this.arity = arity;
-    }
+    Set<WorkflowRole> getManagerRoles();
+
+    void setManagerRoles(Set<WorkflowRole> roles);
+
+    Set<WorkflowRole> getContributorRoles();
+
+    void setContributorRoles(Set<WorkflowRole> roles);
+
+    Set<String> getAdmittedGroups();
+
+    void setAdmittedGroups(Set<String> groups);
+
+    List<AttachmentRule> getAttachments();
+
+    void setAttachments(List<AttachmentRule> attachments);
+
+    Set<KlabAsset.KnowledgeClass> getAssetTypes();
+
+    void setAssetTypes(Set<KlabAsset.KnowledgeClass> assetTypes);
+
+    boolean isOpen();
+
+    void setOpen(boolean open);
+
+    void setMetadata(Map<String, Object> metadata);
+
+    String getWorkflowId();
+
+    void setWorkflowId(String workflowId);
+
+    String getWorkflowVersion();
+
+    void setWorkflowVersion(String workflowVersion);
   }
 
-  public static class StateSchema implements KlabAsset {
-    private String id;
-    private String workflowId;
-    private String workflowVersion;
-    private String description;
-    private String completionCriteria;
-    private String instructions;
-    private Set<WorkflowRole> managerRoles = new LinkedHashSet<>();
-    private Set<WorkflowRole> contributorRoles = new LinkedHashSet<>();
-    private Set<String> admittedGroups = new LinkedHashSet<>();
-    private List<AttachmentRule> attachments = new ArrayList<>();
-    private Set<KlabAsset.KnowledgeClass> assetTypes = new LinkedHashSet<>();
-    private boolean open = true;
-    private Metadata metadata = Metadata.create();
-    private String serviceId;
+  interface TransitionSchema extends KlabAsset {
+    String getId();
 
-    @Override
-    public String getUrn() {
-      return WorkflowUrns.workflowState(workflowId, workflowVersion, id);
-    }
+    void setId(String id);
 
-    @Override
-    public Collection<Annotation> getAnnotations() {
-      return List.of();
-    }
+    void setServiceId(String serviceId);
 
-    public String getId() {
-      return id;
-    }
+    String getDescription();
 
-    public void setId(String id) {
-      this.id = id;
-    }
+    void setDescription(String description);
 
-    public String getDescription() {
-      return description;
-    }
+    Set<String> getSourceStates();
 
-    public void setDescription(String description) {
-      this.description = description;
-    }
+    void setSourceStates(Set<String> sourceStates);
 
-    public String getCompletionCriteria() {
-      return completionCriteria;
-    }
+    String getTargetState();
 
-    public void setCompletionCriteria(String completionCriteria) {
-      this.completionCriteria = completionCriteria;
-    }
+    void setTargetState(String targetState);
 
-    @Override
-    public String getServiceId() {
-      return serviceId;
-    }
+    Set<WorkflowRole> getRoles();
 
-    public void setServiceId(String serviceId) {
-      this.serviceId = serviceId;
-    }
+    void setRoles(Set<WorkflowRole> roles);
 
-    public String getInstructions() {
-      return instructions;
-    }
+    Set<KlabAsset.KnowledgeClass> getSourceAssetTypes();
 
-    public void setInstructions(String instructions) {
-      this.instructions = instructions;
-    }
+    void setSourceAssetTypes(Set<KlabAsset.KnowledgeClass> assetTypes);
 
-    public Set<WorkflowRole> getManagerRoles() {
-      return managerRoles;
-    }
+    Set<String> getSourceMediaTypes();
 
-    public void setManagerRoles(Set<WorkflowRole> v) {
-      managerRoles = v == null ? new LinkedHashSet<>() : v;
-    }
+    void setSourceMediaTypes(Set<String> mediaTypes);
 
-    public Set<WorkflowRole> getContributorRoles() {
-      return contributorRoles;
-    }
+    void setMetadata(Map<String, Object> metadata);
 
-    public void setContributorRoles(Set<WorkflowRole> v) {
-      contributorRoles = v == null ? new LinkedHashSet<>() : v;
-    }
+    String getWorkflowId();
 
-    public Set<String> getAdmittedGroups() {
-      return admittedGroups;
-    }
+    void setWorkflowId(String workflowId);
 
-    public void setAdmittedGroups(Set<String> v) {
-      admittedGroups = v == null ? new LinkedHashSet<>() : v;
-    }
+    String getWorkflowVersion();
 
-    public List<AttachmentRule> getAttachments() {
-      return attachments;
-    }
-
-    public void setAttachments(List<AttachmentRule> v) {
-      attachments = v == null ? new ArrayList<>() : v;
-    }
-
-    public Set<KlabAsset.KnowledgeClass> getAssetTypes() {
-      return assetTypes;
-    }
-
-    public void setAssetTypes(Set<KlabAsset.KnowledgeClass> v) {
-      assetTypes = v == null ? new LinkedHashSet<>() : v;
-    }
-
-    public boolean isOpen() {
-      return open;
-    }
-
-    public void setOpen(boolean open) {
-      this.open = open;
-    }
-
-    @Override
-    public Metadata getMetadata() {
-      return metadata;
-    }
-
-    public void setMetadata(Map<String, Object> v) {
-      metadata = Workflow.metadata(v);
-    }
-
-    public String getWorkflowId() {
-      return workflowId;
-    }
-
-    public void setWorkflowId(String workflowId) {
-      this.workflowId = workflowId;
-    }
-
-    public String getWorkflowVersion() {
-      return workflowVersion;
-    }
-
-    public void setWorkflowVersion(String workflowVersion) {
-      this.workflowVersion = workflowVersion;
-    }
+    void setWorkflowVersion(String workflowVersion);
   }
 
-  public static class TransitionSchema implements KlabAsset {
-    private String id;
-    private String workflowId;
-    private String workflowVersion;
-    private String description;
-    private Set<String> sourceStates = new LinkedHashSet<>();
-    private String targetState;
-    private Set<WorkflowRole> roles = new LinkedHashSet<>();
-    private Set<KlabAsset.KnowledgeClass> sourceAssetTypes = new LinkedHashSet<>();
-    private Set<String> sourceMediaTypes = new LinkedHashSet<>();
-    private Metadata metadata = Metadata.create();
-    private String serviceId;
+  List<String> validate();
 
-    @Override
-    public String getUrn() {
-      return WorkflowUrns.workflowTransition(workflowId, workflowVersion, id);
-    }
+  List<TransitionSchema> admittedTransitions(
+      Flow.State state, WorkflowParticipant participant);
 
-    @Override
-    public Collection<Annotation> getAnnotations() {
-      return List.of();
-    }
+  List<TransitionSchema> admittedTransitions(Flow flow, String stateId, UserScope scope);
 
-    public String getId() {
-      return id;
-    }
+  List<String> validateTransition(
+      Flow flow, String stateId, String transitionId, WorkflowParticipant participant);
 
-    public void setId(String id) {
-      this.id = id;
-    }
+  boolean canAccess(StateSchema state, WorkflowParticipant participant);
 
-    @Override
-    public String getServiceId() {
-      return serviceId;
-    }
+  String getId();
 
-    public void setServiceId(String serviceId) {
-      this.serviceId = serviceId;
-    }
+  void setId(String id);
 
-    public String getDescription() {
-      return description;
-    }
+  String getVersion();
 
-    public void setDescription(String description) {
-      this.description = description;
-    }
+  void setVersion(String version);
 
-    public Set<String> getSourceStates() {
-      return sourceStates;
-    }
+  String getName();
 
-    public void setSourceStates(Set<String> v) {
-      sourceStates = v == null ? new LinkedHashSet<>() : v;
-    }
+  void setName(String name);
 
-    public String getTargetState() {
-      return targetState;
-    }
+  String getDescription();
 
-    public void setTargetState(String targetState) {
-      this.targetState = targetState;
-    }
+  void setDescription(String description);
 
-    public Set<WorkflowRole> getRoles() {
-      return roles;
-    }
+  Map<String, StateSchema> getStates();
 
-    public void setRoles(Set<WorkflowRole> v) {
-      roles = v == null ? new LinkedHashSet<>() : v;
-    }
+  void setStates(Map<String, StateSchema> states);
 
-    public Set<KlabAsset.KnowledgeClass> getSourceAssetTypes() {
-      return sourceAssetTypes;
-    }
+  Map<String, TransitionSchema> getTransitions();
 
-    public void setSourceAssetTypes(Set<KlabAsset.KnowledgeClass> v) {
-      sourceAssetTypes = v == null ? new LinkedHashSet<>() : v;
-    }
+  void setTransitions(Map<String, TransitionSchema> transitions);
 
-    public Set<String> getSourceMediaTypes() {
-      return sourceMediaTypes;
-    }
+  void setServiceId(String serviceId);
 
-    public void setSourceMediaTypes(Set<String> v) {
-      sourceMediaTypes = v == null ? new LinkedHashSet<>() : v;
-    }
-
-    @Override
-    public Metadata getMetadata() {
-      return metadata;
-    }
-
-    public void setMetadata(Map<String, Object> v) {
-      metadata = Workflow.metadata(v);
-    }
-
-    public String getWorkflowId() {
-      return workflowId;
-    }
-
-    public void setWorkflowId(String workflowId) {
-      this.workflowId = workflowId;
-    }
-
-    public String getWorkflowVersion() {
-      return workflowVersion;
-    }
-
-    public void setWorkflowVersion(String workflowVersion) {
-      this.workflowVersion = workflowVersion;
-    }
-  }
-
-  private String id;
-  private String version;
-  private String name;
-  private String description;
-  private Map<String, StateSchema> states = new LinkedHashMap<>();
-  private Map<String, TransitionSchema> transitions = new LinkedHashMap<>();
-  private Metadata metadata = Metadata.create();
-  private String serviceId;
-
-  /** Return every structural error. An empty result means the schema can be executed. */
-  public List<String> validate() {
-    var errors = new ArrayList<String>();
-    if (id == null || id.isBlank()) errors.add("Workflow id is required");
-    if (version == null || version.isBlank()) errors.add("Workflow version is required");
-    if (states.isEmpty()) errors.add("At least one state is required");
-    for (var entry : states.entrySet()) {
-      if (entry.getValue() == null) errors.add("State " + entry.getKey() + " has no schema");
-      else {
-        var state = entry.getValue();
-        state.setWorkflowId(id);
-        state.setWorkflowVersion(version);
-        if (state.getId() == null) state.setId(entry.getKey());
-        else if (!entry.getKey().equals(state.getId()))
-          errors.add("State key/id mismatch: " + entry.getKey());
-        if (state.getManagerRoles().isEmpty() && state.getContributorRoles().isEmpty())
-          errors.add("State " + entry.getKey() + " admits no roles");
-        var attachmentTypes = new LinkedHashSet<String>();
-        for (var attachment : state.getAttachments()) {
-          if (attachment.getType() == null || attachment.getType().isBlank())
-            errors.add("Unnamed attachment rule in " + entry.getKey());
-          else if (!attachmentTypes.add(attachment.getType()))
-            errors.add(
-                "Duplicate attachment type " + attachment.getType() + " in " + entry.getKey());
-          if (attachment.getArity() < -1)
-            errors.add("Invalid attachment arity in " + entry.getKey());
-        }
-      }
-    }
-    for (var entry : transitions.entrySet()) {
-      var transition = entry.getValue();
-      if (transition == null) {
-        errors.add("Transition " + entry.getKey() + " has no schema");
-        continue;
-      }
-      if (transition.getId() == null) transition.setId(entry.getKey());
-      else if (!entry.getKey().equals(transition.getId()))
-        errors.add("Transition key/id mismatch: " + entry.getKey());
-      transition.setWorkflowId(id);
-      transition.setWorkflowVersion(version);
-      if (transition.getSourceStates().isEmpty())
-        errors.add("Transition " + entry.getKey() + " has no source states");
-      if (transition.getRoles().isEmpty())
-        errors.add("Transition " + entry.getKey() + " admits no roles");
-      if (!states.containsKey(transition.getTargetState()))
-        errors.add("Unknown target state in " + entry.getKey());
-      for (String source : transition.getSourceStates()) {
-        if (!INIT.equals(source) && !states.containsKey(source))
-          errors.add("Unknown source state " + source + " in " + entry.getKey());
-      }
-    }
-    if (transitions.values().stream()
-        .noneMatch(t -> t != null && t.getSourceStates().contains(INIT)))
-      errors.add("At least one INIT transition is required");
-    return errors;
-  }
-
-  public List<TransitionSchema> admittedTransitions(
-      Flow.State state, WorkflowParticipant participant) {
-    var ret = new ArrayList<TransitionSchema>();
-    if (state == null || participant == null) return ret;
-    if (!canAccess(states.get(state.getSchemaId()), participant)) return ret;
-    for (var transition : transitions.values()) {
-      if (transition.getSourceStates().contains(state.getSchemaId())
-          && participant.hasAnyRole(transition.getRoles())
-          && participant.canRespondTo(state)
-          && !participant.getDisallowedTransitions().contains(transition.getId()))
-        ret.add(transition);
-    }
-    return ret;
-  }
-
-  /** Convenience overload for clients that hold the complete flow and a live user scope. */
-  public List<TransitionSchema> admittedTransitions(Flow flow, String stateId, UserScope scope) {
-    return flow == null
-        ? List.of()
-        : admittedTransitions(flow.getStates().get(stateId), WorkflowParticipant.from(scope));
-  }
-
-  /**
-   * Validate a transition using only client-side data. The server repeats these checks against its
-   * authoritative aggregate before committing it.
-   */
-  public List<String> validateTransition(
-      Flow flow, String stateId, String transitionId, WorkflowParticipant participant) {
-    var errors = new ArrayList<String>();
-    if (flow == null) {
-      errors.add("Flow is required");
-      return errors;
-    }
-    var state = flow.getStates().get(stateId);
-    if (state == null) {
-      errors.add("Unknown state " + stateId);
-      return errors;
-    }
-    if (!flow.getCurrentStateIds().contains(stateId)) errors.add("State is not current");
-    if (participant == null || !canAccess(states.get(state.getSchemaId()), participant))
-      errors.add("Participant is not permitted to use this workflow state");
-    var transition = transitions.get(transitionId);
-    if (transition == null) errors.add("Unknown transition " + transitionId);
-    else {
-      if (!transition.getSourceStates().contains(state.getSchemaId()))
-        errors.add("Transition does not admit the state schema");
-      if (participant == null || !participant.hasAnyRole(transition.getRoles()))
-        errors.add("Participant role is not admitted");
-      if (participant != null && !participant.canRespondTo(state))
-        errors.add("The group response deadline has elapsed");
-      if (participant != null && participant.getDisallowedTransitions().contains(transitionId))
-        errors.add("Transition is disallowed by group policy");
-    }
-    return errors;
-  }
-
-  public boolean canAccess(StateSchema state, WorkflowParticipant participant) {
-    if (state == null || participant == null) return false;
-    if (participant.getRoles().contains(WorkflowRole.ADMIN)) return true;
-    boolean role =
-        participant.hasAnyRole(state.getManagerRoles())
-            || participant.hasAnyRole(state.getContributorRoles());
-    if (!role) return false;
-    if (state.getAdmittedGroups().contains(WorkflowParticipant.PUBLIC_GROUP)
-        && participant.isKnownRealPerson()
-        && participant.getRoles().contains(WorkflowRole.REVIEWER)) return true;
-    if (!participant.isWorkflowPermitted(this)) return false;
-    if (state.getAdmittedGroups().isEmpty()) return true;
-    return state.getAdmittedGroups().stream().anyMatch(participant.getGroups()::contains);
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getVersion() {
-    return version;
-  }
-
-  public void setVersion(String version) {
-    this.version = version;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public Map<String, StateSchema> getStates() {
-    return states;
-  }
-
-  public void setStates(Map<String, StateSchema> v) {
-    states = v == null ? new LinkedHashMap<>() : v;
-  }
-
-  public Map<String, TransitionSchema> getTransitions() {
-    return transitions;
-  }
-
-  @Override
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
-
-  public void setTransitions(Map<String, TransitionSchema> v) {
-    transitions = v == null ? new LinkedHashMap<>() : v;
-  }
-
-  @Override
-  public String getUrn() {
-    return WorkflowUrns.workflow(id, version);
-  }
-
-  @Override
-  public Metadata getMetadata() {
-    return metadata;
-  }
-
-  public void setMetadata(Map<String, Object> v) {
-    metadata = Workflow.metadata(v);
-  }
-
-  @Override
-  public Collection<Annotation> getAnnotations() {
-    return List.of();
-  }
+  void setMetadata(Map<String, Object> metadata);
 }
