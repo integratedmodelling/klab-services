@@ -4,6 +4,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -121,6 +122,13 @@ public class ArgumentMatcher {
           return null;
         }
         payload.add(observation);
+      } else if (RuntimeAsset.class.equals(parameterType)) {
+        // check for generic RuntimeAsset is strict and comes after all specific ones
+        var runtimeAsset = findArgument(RuntimeAsset.class, furtherArgs);
+        if (runtimeAsset == null) {
+          return null;
+        }
+        payload.add(runtimeAsset);
       }
     }
 

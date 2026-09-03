@@ -572,6 +572,19 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
+  public <T extends RuntimeAsset> T getAsset(String urn, Scope scope, Class<T> resultClass) {
+    if (urn == null || urn.isBlank()) {
+      return null;
+    }
+    try {
+      return runtimeClient.getAsset(urn, resultClass, scope);
+    } catch (Throwable e) {
+      scope.warn("Ignoring unexpected error retrieving a knowledge-graph URN", e);
+      return null;
+    }
+  }
+
+  @Override
   public Collection<Link> getLinks(
       RuntimeAsset asset,
       GraphModel.Relationship.Direction direction,

@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
@@ -75,6 +76,33 @@ import org.neo4j.driver.*;
  * https://github.com/neo4j-contrib/m2 nor in osgeo)
  */
 public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
+
+  private static final Set<String> OBSERVATION_PROPERTIES =
+      Set.of(
+          "_metadata",
+          "name",
+          "type",
+          "urn",
+          "childrenCount",
+          "semantictype",
+          "semantics",
+          "observable",
+          "id",
+          "parentId",
+          "eventTimestamps",
+          "histograms",
+          "histogram",
+          "substantial",
+          "adapterId",
+          "adapterParameters",
+          "fillCurve",
+          "suggestedSplits",
+          "maxBufferSize",
+          "minSplitSize",
+          "dataType",
+          "shape",
+          "latitude",
+          "longitude");
 
   protected Driver driver;
   protected Agent user;
@@ -401,6 +429,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     this.klab = getOrCreateAgent("k.LAB", "AI");
     this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
+    ensureRuntimeIndexes(scope);
+
     var result = query(Queries.FIND_CONTEXT, Map.of("contextId", configuration.getId()), scope);
 
     if (result.records().isEmpty()) {
@@ -460,6 +490,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of("layerName", layerName),
             scope);
       }
+    }
+  }
+
+  private void ensureRuntimeIndexes(Scope scope) {
+    for (var statement :
+        List.of(
+            "CREATE INDEX observation_id IF NOT EXISTS FOR (n:Observation) ON (n.id)",
+            "CREATE INDEX observation_urn IF NOT EXISTS FOR (n:Observation) ON (n.urn)",
+            "CREATE INDEX observation_semantics IF NOT EXISTS FOR (n:Observation) ON (n.semantics)",
+            "CREATE INDEX observation_observable IF NOT EXISTS FOR (n:Observation) ON (n.observable)",
+            "CREATE INDEX cohort_id IF NOT EXISTS FOR (n:Cohort) ON (n.id)",
+            "CREATE INDEX cohort_urn IF NOT EXISTS FOR (n:Cohort) ON (n.urn)",
+            "CREATE INDEX cohort_observable IF NOT EXISTS FOR (n:Cohort) ON (n.observable)",
+            "CREATE INDEX activity_id IF NOT EXISTS FOR (n:Activity) ON (n.id)",
+            "CREATE INDEX activity_urn IF NOT EXISTS FOR (n:Activity) ON (n.urn)",
+            "CREATE INDEX data_id IF NOT EXISTS FOR (n:Data) ON (n.id)",
+            "CREATE INDEX data_urn IF NOT EXISTS FOR (n:Data) ON (n.urn)")) {
+      query(statement, Map.of(), scope);
     }
   }
 
@@ -529,8 +577,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       var cls = requiredClass;
       if (cls == RuntimeAsset.class) {
-        var label = node.asNode().labels().iterator().next();
-        if (label != null) {
+        cls = null;
+        for (var label : node.asNode().labels()) {
           cls =
               switch (label) {
                 case "Observation" -> (Class<T>) Observation.class;
@@ -544,6 +592,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 case "Cohort" -> (Class<T>) Cohort.class;
                 default -> null;
               };
+          if (cls != null) {
+            break;
+          }
         }
         if (cls == null) {
           continue;
@@ -600,6 +651,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentId(node.get("parentId").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
+        restoreObservationMetadata(node, instance);
         if (!node.get("histograms").isNull()) {
           instance.setHistograms(
               Utils.Data.deserializeHistogramMap(node.get("histograms").asString()));
@@ -656,11 +708,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       } else if (Activity.class.isAssignableFrom(cls)) {
         var instance = new ActivityImpl();
-        // TODO
-        instance.setStart(node.get("start").asLong());
-        instance.setEnd(node.get("end").asLong());
-        instance.setObservationUrn(node.get("observationUrn").asString());
-        instance.setName(node.get("name").asString());
+        instance.setStart(node.get("start").asLong(0));
+        instance.setEnd(node.get("end").asLong(0));
+        instance.setObservationUrn(
+            node.get("observationUrn").isNull() ? null : node.get("observationUrn").asString());
+        instance.setName(node.get("name").isNull() ? null : node.get("name").asString());
         instance.setServiceName(
             node.get("serviceName").isNull() ? null : node.get("serviceName").asString());
         instance.setServiceId(
@@ -672,7 +724,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setUrn(node.get("urn").isNull() ? null : node.get("urn").asString());
         instance.setDataflow(
             node.get("dataflow").isNull() ? null : node.get("dataflow").asString());
-        instance.setType(Activity.Type.valueOf(instance.getName()));
+        instance.setType(
+            node.get("type").isNull() ? null : Activity.Type.valueOf(node.get("type").asString()));
+        instance.setOutcome(
+            node.get("outcome").isNull()
+                ? null
+                : Activity.Outcome.valueOf(node.get("outcome").asString()));
+        instance.setCredits(node.get("credits").asLong(0));
+        instance.setSize(node.get("size").asLong(0));
+        instance.setSchedulerTime(node.get("schedulerTime").asList(value -> value.asLong()));
+        instance.setStackTrace(
+            node.get("stackTrace").isNull() ? null : node.get("stackTrace").asString());
+        instance.setTriggeringActivityUrn(
+            node.get("triggeringActivityUrn").isNull()
+                ? null
+                : node.get("triggeringActivityUrn").asString());
+        restoreMetadata(node, instance.getMetadata());
         instance.setDescription(
             node.get("description").isNull()
                 ? "No description"
@@ -729,6 +796,30 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
     }
     return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void restoreObservationMetadata(Value node, ObservationImpl observation) {
+    restoreMetadata(node, observation.getMetadata());
+    // Compatibility with observations stored before metadata received its own serialized field.
+    node.asNode()
+        .asMap()
+        .forEach(
+            (key, value) -> {
+              if (!OBSERVATION_PROPERTIES.contains(key)) {
+                observation.getMetadata().putIfAbsent(key, value);
+              }
+            });
+  }
+
+  @SuppressWarnings("unchecked")
+  private void restoreMetadata(Value node, Metadata metadataTarget) {
+    if (!node.get("_metadata").isNull()) {
+      var metadata = Utils.Json.parseObject(node.get("_metadata").asString(), Map.class);
+      if (metadata != null) {
+        metadataTarget.putAll(metadata);
+      }
+    }
   }
 
   @Override
@@ -941,13 +1032,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private RuntimeAsset retrieveFromGraph(
       Object key, Class<? extends RuntimeAsset> assetClass, Scope scope) {
+    var field = key instanceof String ? "urn" : "id";
     var result =
         assetClass == RuntimeAsset.class
-            ? query("MATCH (n {id: $id}) return n", Map.of("id", key), null)
+            ? query("MATCH (n {" + field + ": $key}) return n", Map.of("key", key), scope)
             : query(
-                "MATCH (n:{assetLabel} {id: $id}) return n"
+                ("MATCH (n:{assetLabel} {" + field + ": $key}) return n")
                     .replace("{assetLabel}", getLabel(assetClass)),
-                Map.of("id", key),
+                Map.of("key", key),
                 scope);
     var adapted = adapt(result, assetClass, scope);
     return adapted.isEmpty() ? null : adapted.getFirst();

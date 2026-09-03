@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -511,6 +512,29 @@ public class RuntimeServerController {
           .getDigitalTwin()
           .getKnowledgeGraph()
           .getAsset(id, contextScope, RuntimeAsset.class);
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @Operation(
+      summary = "Get a knowledge graph asset by URN",
+      description = "Return a runtime asset by canonical URN from the authorized context")
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET_BY_URN)
+  public @ResponseBody RuntimeAsset retrieveAssetByUrn(
+      @RequestParam(name = "urn") String urn, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      var contextId = contextScope.getId();
+      var authorizedUrn =
+          urn.startsWith(contextId + ".")
+                  || urn.startsWith(
+                      contextId + ":" + ObservationImpl.INDIVIDUALS_CATALOG_NAME + ":")
+              ? urn
+              : ObservationImpl.catalogUrn(contextId, urn);
+      return contextScope
+          .getDigitalTwin()
+          .getKnowledgeGraph()
+          .getAsset(authorizedUrn, contextScope, RuntimeAsset.class);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

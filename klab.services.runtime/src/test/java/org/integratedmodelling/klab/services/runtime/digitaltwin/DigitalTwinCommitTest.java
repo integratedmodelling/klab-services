@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,9 +13,22 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.junit.jupiter.api.Test;
 
 class DigitalTwinCommitTest {
+
+  @Test
+  void intermediateCommitKeepsItsTransactionLocalTarget() {
+    var observation = new ObservationImpl();
+    observation.setId(-1);
+
+    assertDoesNotThrow(
+        () ->
+            DigitalTwinImpl.TransactionImpl.finalizeCommittedTarget(
+                false, observation, new ActivityImpl()));
+    assertEquals(-1, observation.getId());
+  }
 
   @Test
   void secondaryObservationAndExistingCohortRemainVisibleInRootCommit() {

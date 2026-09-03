@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -419,6 +420,25 @@ public class RuntimeClient extends BaseServiceClient
     return client
         .withScope(scope)
         .get(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET, assetClass, "id", id);
+  }
+
+  public <T extends RuntimeAsset> T getAsset(String urn, Class<T> assetClass, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET_BY_URN,
+            assetClass,
+            "urn",
+            urn);
+  }
+
+  @Override
+  public <T extends java.io.Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+    if (RuntimeAsset.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(getAsset(urn, assetClass.asSubclass(RuntimeAsset.class), scope));
+    }
+    return null;
   }
 
   public Collection<KnowledgeGraph.LinkInfo> getLinkInfo(

@@ -408,6 +408,9 @@ public interface ServicesAPI {
      */
     String RETRIEVE_KNOWLEDGE_GRAPH_ASSET = API_BASE + "/asset/{id}";
 
+    /** Retrieve a knowledge-graph asset whose stable identity is a URN rather than a numeric ID. */
+    String RETRIEVE_KNOWLEDGE_GRAPH_ASSET_BY_URN = API_BASE + "/asset/urn";
+
     /**
      * GET endpoint to retrieve the links between assets in the knowledge graph, returning only the
      * asset IDs as per {@link org.integratedmodelling.klab.api.data.KnowledgeGraph.LinkInfo}.

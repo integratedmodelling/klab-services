@@ -48,6 +48,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
@@ -708,10 +709,16 @@ public abstract class BaseService implements KlabService {
 
   public RuntimeAsset resolveUrn(String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {
     if (knowledgeClass == KlabAsset.KnowledgeClass.OBSERVATION) {
-      if (scope instanceof ServiceContextScope serviceContextScope
-          && urn.startsWith(serviceContextScope.getId())) {
-        long id = Long.parseLong(urn.substring(serviceContextScope.getId().length() + 1));
-        return serviceContextScope.getObservation(id);
+      if (scope instanceof ServiceContextScope serviceContextScope) {
+        var numericId = ObservationImpl.idFromUrn(serviceContextScope.getId(), urn);
+        if (numericId.isPresent()) {
+          return serviceContextScope.getObservation(numericId.getAsLong());
+        }
+        var canonicalUrn = ObservationImpl.catalogUrn(serviceContextScope.getId(), urn);
+        return serviceContextScope
+            .getDigitalTwin()
+            .getKnowledgeGraph()
+            .getAsset(canonicalUrn, scope, Observation.class);
       }
     }
     return null;

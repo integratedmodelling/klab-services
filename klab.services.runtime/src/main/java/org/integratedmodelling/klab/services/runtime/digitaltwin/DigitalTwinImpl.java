@@ -395,6 +395,8 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (activity instanceof ActivityImpl activity1) {
         activity1.setEnd(System.currentTimeMillis());
+        activity1.setOutcome(Activity.Outcome.SUCCESS);
+        activity1.setName(activity.getType().name().substring(0, 3) + " OK");
       }
 
       // if nothing was done, we just store the HAS_CHILD relationships that point to observations.
@@ -412,6 +414,10 @@ public class DigitalTwinImpl implements DigitalTwin {
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       if (parent == null) {
+        // Reserve the commit identity before storing assets so the durable observation metadata and
+        // the object returned by submit() expose the same finalized lifecycle information.
+        var commitId = knowledgeGraph.nextKey();
+        prepareObservationsForStorage(commitId);
         var kgTransaction = knowledgeGraph.createTransaction(scope);
         var stored = new ArrayList<RuntimeAsset>();
         var linked = new ArrayList<Triple<Long, Long, String>>();
@@ -420,7 +426,14 @@ public class DigitalTwinImpl implements DigitalTwin {
           registerCohortUpdates();
 
           synchronized (graph) {
-            for (var asset : graph.vertexSet()) {
+            var assets = new ArrayList<>(graph.vertexSet());
+            // Observations receive their persistent URNs before activities snapshot the URNs of
+            // the observations they created or resolved.
+            assets.sort(Comparator.comparing(asset -> asset instanceof Activity));
+            for (var asset : assets) {
+              if (asset instanceof ActivityImpl storedActivity) {
+                prepareActivityForStorage(storedActivity);
+              }
               if (setupForStorage(asset, false)) {
                 kgTransaction.store(asset);
                 if (asset.getId() <= 0) {
@@ -475,27 +488,15 @@ public class DigitalTwinImpl implements DigitalTwin {
           return -1;
         }
 
-        var commitId = knowledgeGraph.nextKey();
         var commit = createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
         commitCache.put(commit.getId(), commit);
 
         ret = commit.getId();
       }
 
-      /* Upon successful commit, establish the ID for any target that was passed in the initialization
-       * TODO see if anything else needs to be finalized, like the actuators and the activity */
-      if (target != null && target.getId() < 0) {
-        for (var asset : graph.vertexSet()) {
-          if (asset instanceof ObservationImpl observation
-              && observation.getObservable().equals(target.getObservable())
-              && target instanceof ObservationImpl targetObservation) {
-            targetObservation.setId(asset.getId());
-            break;
-          }
-        }
-      } else if (target != null) {
-        ((ActivityImpl) activity).setObservationUrn(this.target.getUrn());
-      }
+      /* Storage mutates the exact submitted object. Never recover it by observable equality: an
+       * instantiator routinely creates multiple observations with identical semantics. */
+      finalizeCommittedTarget(parent == null, target, (ActivityImpl) activity);
 
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " OK");
@@ -504,6 +505,79 @@ public class DigitalTwinImpl implements DigitalTwin {
       scope.unregisterTransaction(this);
 
       return ret;
+    }
+
+    static void finalizeCommittedTarget(
+        boolean rootCommit, Observation target, ActivityImpl activity) {
+      if (!rootCommit || target == null) {
+        return;
+      }
+      if (target.getId() <= 0) {
+        throw new KlabInternalErrorException(
+            "Committed transaction did not finalize its target observation");
+      }
+      activity.setObservationUrn(target.getUrn());
+    }
+
+    /**
+     * Materialize the public observation identity and a compact provenance summary before Neo4j
+     * takes its property snapshot. Detailed provenance remains represented by Activity links.
+     */
+    private void prepareObservationsForStorage(long commitId) {
+      synchronized (graph) {
+        for (var asset : graph.vertexSet()) {
+          if (!(asset instanceof Observation observation)) {
+            continue;
+          }
+          if (observation instanceof ObservationImpl implementation) {
+            implementation.setName(observation.getName());
+          }
+          var creator = creationActivity(observation);
+          var metadata = observation.getMetadata();
+          metadata.put(Metadata.IM_COMMIT_ID, commitId);
+          metadata.putIfAbsent(Metadata.IM_CONTEXT_ID, scope.getId());
+          metadata.putIfAbsent(Metadata.IM_CREATION_AGENT, scope.getUser().getUsername());
+          if (creator != null) {
+            metadata.putIfAbsent(
+                Metadata.IM_CREATION_ACTIVITY_TYPE,
+                creator.getType() == null ? null : creator.getType().name());
+            metadata.putIfAbsent(Metadata.IM_CREATION_TIMESTAMP, creator.getStart());
+            metadata.putIfAbsent(Metadata.IM_CREATION_SERVICE_ID, creator.getServiceId());
+            metadata.putIfAbsent(
+                Metadata.IM_CREATION_SERVICE_TYPE,
+                creator.getServiceType() == null ? null : creator.getServiceType().name());
+          }
+          metadata.values().removeIf(Objects::isNull);
+        }
+      }
+    }
+
+    private Activity creationActivity(Observation observation) {
+      return graph.incomingEdgesOf(observation).stream()
+          .filter(edge -> edge.relationship == GraphModel.Relationship.CREATED)
+          .map(graph::getEdgeSource)
+          .filter(Activity.class::isInstance)
+          .map(Activity.class::cast)
+          .sorted(
+              Comparator.comparing(
+                  candidate -> candidate.getType() != Activity.Type.SUBMISSION))
+          .findFirst()
+          .orElse(null);
+    }
+
+    private void prepareActivityForStorage(ActivityImpl storedActivity) {
+      graph.outgoingEdgesOf(storedActivity).stream()
+          .filter(
+              edge ->
+                  edge.relationship == GraphModel.Relationship.CREATED
+                      || edge.relationship == GraphModel.Relationship.RESOLVED)
+          .map(graph::getEdgeTarget)
+          .filter(Observation.class::isInstance)
+          .map(Observation.class::cast)
+          .map(Observation::getUrn)
+          .filter(Objects::nonNull)
+          .findFirst()
+          .ifPresent(storedActivity::setObservationUrn);
     }
 
     static CommitImpl createCommit(

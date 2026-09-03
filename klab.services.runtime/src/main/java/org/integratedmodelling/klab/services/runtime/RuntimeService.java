@@ -2252,7 +2252,18 @@ public class RuntimeService extends BaseService
   @Override
   public <T extends Serializable> T retrieveAsset(
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
-    // TODO
+    if (scope instanceof ContextScope && RuntimeAsset.class.isAssignableFrom(assetClass)) {
+      var asset =
+          Observation.class.isAssignableFrom(assetClass)
+              ? resolveUrn(urn, KlabAsset.KnowledgeClass.OBSERVATION, scope)
+              : ((ContextScope) scope)
+                  .getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .getAsset(urn, scope, RuntimeAsset.class);
+      if (asset != null && assetClass.isInstance(asset)) {
+        return assetClass.cast(asset);
+      }
+    }
     return null;
   }
 

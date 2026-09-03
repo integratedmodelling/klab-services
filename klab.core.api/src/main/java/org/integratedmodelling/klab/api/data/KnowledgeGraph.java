@@ -369,6 +369,18 @@ public interface KnowledgeGraph {
   <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass);
 
   /**
+   * Directly retrieve a committed asset by its canonical URN. Unlike numeric-ID parsing this also
+   * supports named substantial observations, whose URNs are stable catalog identities and do not
+   * end in an ID.
+   *
+   * @param urn canonical graph URN
+   * @param scope authorized scope
+   * @param resultClass expected asset class
+   * @return the asset, or null if it is absent or has a different class
+   */
+  <T extends RuntimeAsset> T getAsset(String urn, Scope scope, Class<T> resultClass);
+
+  /**
    * Retrieve all links from the graph or the current transaction that match the arguments. This one
    * is the generic way to retrieve anything from the graph when a single link is involved.
    *

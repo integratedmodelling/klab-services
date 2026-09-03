@@ -56,6 +56,37 @@ public class ObservationImpl implements Observation {
     return urn == null ? null : contextId + INDIVIDUALS_CATALOG_SEPARATOR + logicalUrn(urn);
   }
 
+  /**
+   * Extract the numeric ID from the canonical URN of an anonymous observation. Named substantial
+   * observations deliberately use the {@code :individuals:} catalog and therefore have no ID
+   * suffix.
+   */
+  public static OptionalLong idFromUrn(String contextId, String urn) {
+    if (contextId == null || urn == null) {
+      return OptionalLong.empty();
+    }
+    var prefix = contextId + ".";
+    if (!urn.startsWith(prefix)) {
+      return OptionalLong.empty();
+    }
+    var suffix = urn.substring(prefix.length());
+    try {
+      return suffix.isEmpty() ? OptionalLong.empty() : OptionalLong.of(Long.parseLong(suffix));
+    } catch (NumberFormatException ignored) {
+      return OptionalLong.empty();
+    }
+  }
+
+  /** Resolve the mandatory display name without confusing it with the observed concept's name. */
+  public static String nameFromIdentity(String urn) {
+    var identity = logicalUrn(urn);
+    if (identity == null || identity.isBlank()) {
+      return null;
+    }
+    var separator = identity.lastIndexOf(':');
+    return separator < 0 ? identity : identity.substring(separator + 1);
+  }
+
   private Observable observable;
   private Geometry geometry;
   private Metadata metadata = Metadata.create();
@@ -333,7 +364,11 @@ public class ObservationImpl implements Observation {
   }
 
   public String getName() {
-    return name;
+    if (name != null && !name.isBlank()) {
+      return name;
+    }
+    var identityName = nameFromIdentity(urn);
+    return identityName == null && observable != null ? observable.codeName() : identityName;
   }
 
   public void setName(String name) {

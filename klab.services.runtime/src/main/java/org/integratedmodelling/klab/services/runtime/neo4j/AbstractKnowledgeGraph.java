@@ -67,6 +67,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     return retrieve(id, resultClass, scope);
   }
 
+  @Override
+  public <T extends RuntimeAsset> T getAsset(String urn, Scope scope, Class<T> resultClass) {
+    return retrieve(urn, resultClass, scope);
+  }
+
   /**
    * Define all properties for the passed asset.
    *
@@ -79,7 +84,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     if (asset != null) {
       switch (asset) {
         case Observation observation -> {
-          ret.putAll(sanitizeMetadata(observation.getMetadata()));
+          var metadata = sanitizeMetadata(observation.getMetadata());
+          ret.putAll(metadata);
+          ret.put("_metadata", Utils.Json.asString(metadata));
           ret.put(
               "name",
               observation.getName() == null
@@ -123,12 +130,16 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           }
         }
         case Agent agent -> {
-          ret.putAll(sanitizeMetadata(agent.getMetadata()));
+          var metadata = sanitizeMetadata(agent.getMetadata());
+          ret.putAll(metadata);
+          ret.put("_metadata", Utils.Json.asString(metadata));
           ret.put("name", agent.getName());
           // TODO
         }
         case Cohort cohort -> {
-          ret.putAll(sanitizeMetadata(cohort.getMetadata()));
+          var metadata = sanitizeMetadata(cohort.getMetadata());
+          ret.putAll(metadata);
+          ret.put("_metadata", Utils.Json.asString(metadata));
           ret.put("observable", cohort.getObservable().getUrn());
           ret.put("childrenCount", cohort.getChildrenCount());
           ret.put("urn", cohort.getObservable().getUrn() + "_cohort");
@@ -148,7 +159,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("strategy", actuator.getStrategyUrn());
         }
         case Activity activity -> {
-          ret.putAll(sanitizeMetadata(activity.getMetadata()));
+          var metadata = sanitizeMetadata(activity.getMetadata());
+          ret.putAll(metadata);
+          ret.put("_metadata", Utils.Json.asString(metadata));
           ret.put("credits", activity.getCredits());
           ret.put("description", activity.getDescription());
           ret.put("end", activity.getEnd());
@@ -162,12 +175,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("urn", activity.getUrn());
           ret.put("observationUrn", activity.getObservationUrn());
           ret.put("serviceName", activity.getServiceName());
+          ret.put("serviceId", activity.getServiceId());
           ret.put(
               "serviceType",
               activity.getServiceType() == null ? null : activity.getServiceType().name());
           ret.put("dataflow", activity.getDataflow());
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put("stackTrace", activity.getStackTrace());
+          ret.put("triggeringActivityUrn", activity.getTriggeringActivityUrn());
         }
         case ShardImpl buffer -> {
           ret.put("id", buffer.getId());

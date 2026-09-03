@@ -211,6 +211,24 @@ public interface Metadata extends Parameters<String> {
 
   String IM_COMMIT = "im:commit";
 
+  /** Context that owns a finalized runtime observation. */
+  String IM_CONTEXT_ID = "im:context-id";
+
+  /** Type of the activity that created a finalized runtime observation. */
+  String IM_CREATION_ACTIVITY_TYPE = "im:creation-activity-type";
+
+  /** Start timestamp of the activity that created a finalized runtime observation. */
+  String IM_CREATION_TIMESTAMP = "im:creation-timestamp";
+
+  /** Runtime service that created a finalized observation. */
+  String IM_CREATION_SERVICE_ID = "im:creation-service-id";
+
+  /** Type of service that created a finalized observation. */
+  String IM_CREATION_SERVICE_TYPE = "im:creation-service-type";
+
+  /** User or runtime agent on whose behalf the observation was created. */
+  String IM_CREATION_AGENT = "im:creation-agent";
+
   /** Proportional coverage of the requested geometry in an observation query result. */
   String IM_QUERY_COVERAGE = "im:query-coverage";
 
