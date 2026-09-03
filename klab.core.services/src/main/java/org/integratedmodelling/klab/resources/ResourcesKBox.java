@@ -23,7 +23,7 @@ import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;

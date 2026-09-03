@@ -21,7 +21,7 @@ import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;

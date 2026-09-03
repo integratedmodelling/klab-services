@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;

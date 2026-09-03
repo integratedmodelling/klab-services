@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 
 /** Persistent active or closed instance of a {@link Workflow}. */
 public interface Flow extends KlabAsset {
@@ -126,6 +127,10 @@ public interface Flow extends KlabAsset {
     void setUpdatedAt(Instant updatedAt);
 
     void setServiceId(String serviceId);
+
+    static Flow.State create() {
+      return new FlowImpl.StateImpl();
+    }
   }
 
   interface Transaction extends KlabAsset {
@@ -186,6 +191,10 @@ public interface Flow extends KlabAsset {
     Map<String, Object> getMetadata();
 
     void setMetadata(Map<String, Object> metadata);
+
+    static TransitionRequest create() {
+      return new FlowImpl.TransitionRequestImpl();
+    }
   }
 
   interface AttachmentUpload extends Serializable {
@@ -208,6 +217,10 @@ public interface Flow extends KlabAsset {
     byte[] getContent();
 
     void setContent(byte[] content);
+
+    static AttachmentUpload create() {
+      return new FlowImpl.AttachmentUploadImpl();
+    }
   }
 
   String getId();

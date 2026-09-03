@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;

@@ -1,4 +1,4 @@
-package org.integratedmodelling.common.services.resources.workflow;
+package org.integratedmodelling.klab.api.services.resources.workflow.impl;
 
 import java.time.Instant;
 import java.util.ArrayList;
