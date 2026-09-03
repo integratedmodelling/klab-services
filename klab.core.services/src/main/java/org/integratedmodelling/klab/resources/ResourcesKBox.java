@@ -8,9 +8,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Arrays;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.common.mapper.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
@@ -23,9 +23,11 @@ import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.resources.workflow.FlowImpl;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
@@ -50,7 +52,7 @@ public class ResourcesKBox implements WorkflowStore {
   private ObjectRepository<ResourceInfo> resourceMetadata;
   private ObjectRepository<ResourceImpl> resources;
   private ObjectRepository<WorkflowRecord> workflows;
-  private ObjectRepository<Flow> flows;
+  private ObjectRepository<FlowImpl> flows;
   private ObjectRepository<WorkflowAttachmentPayload> workflowAttachments;
   private boolean local;
 
@@ -291,7 +293,10 @@ public class ResourcesKBox implements WorkflowStore {
 
   /** Persist the complete flow aggregate atomically in Nitrite. */
   public boolean putFlow(Flow flow) {
-    return flows.update(flow, true).getAffectedCount() == 1;
+    if (flow instanceof FlowImpl flow1) {
+      return flows.update(flow1, true).getAffectedCount() == 1;
+    }
+    throw new KlabIllegalStateException("unexpected flow type");
   }
 
   public Flow getFlow(String id) {
@@ -299,7 +304,7 @@ public class ResourcesKBox implements WorkflowStore {
   }
 
   public List<Flow> listFlows() {
-    return flows.find().toList();
+    return flows.find().toList().stream().map(f -> (Flow) f).toList();
   }
 
   /**
@@ -307,9 +312,9 @@ public class ResourcesKBox implements WorkflowStore {
    *
    * <p>Second-class assets normally have no {@link ResourceInfo}. Opening their first flow creates
    * one; subsequent flow changes update only the entry keyed by that flow's permanent URN. Existing
-   * permissions are deliberately preserved because they belong to the containing first-class
-   * asset. The top-level stage is the most recently updated flow's summary, while every individual
-   * flow summary remains available in {@link ResourceInfo#getFlows()}.
+   * permissions are deliberately preserved because they belong to the containing first-class asset.
+   * The top-level stage is the most recently updated flow's summary, while every individual flow
+   * summary remains available in {@link ResourceInfo#getFlows()}.
    */
   @Override
   public synchronized boolean updateResourceInfoForFlow(
@@ -336,7 +341,8 @@ public class ResourcesKBox implements WorkflowStore {
     }
     var reference = new ResourceInfo.FlowReference();
     reference.setFlowUrn(flow.getUrn());
-    reference.setWorkflowUrn(WorkflowUrns.workflow(flow.getWorkflowId(), flow.getWorkflowVersion()));
+    reference.setWorkflowUrn(
+        WorkflowUrns.workflow(flow.getWorkflowId(), flow.getWorkflowVersion()));
     reference.setStatus(flow.getStatus());
     reference.setCurrentStateUrns(
         flow.getCurrentStateIds().stream()
@@ -345,7 +351,8 @@ public class ResourcesKBox implements WorkflowStore {
     reference.setStage(stage == null ? ResourceInfo.Stage.REVIEWING : stage);
     reference.setReviewStatus(reviewStatus);
     reference.setUpdatedAt(
-        (flow.getUpdatedAt() == null ? java.time.Instant.now() : flow.getUpdatedAt()).toEpochMilli());
+        (flow.getUpdatedAt() == null ? java.time.Instant.now() : flow.getUpdatedAt())
+            .toEpochMilli());
     info.getFlows().put(reference.getFlowUrn(), reference);
 
     // The aggregate status is intentionally a latest-update summary; the map above is authoritative
@@ -431,30 +438,63 @@ public class ResourcesKBox implements WorkflowStore {
   public static class WorkflowRecord {
     private String storageId;
     private Workflow workflow;
+
     public WorkflowRecord() {}
-    public String getStorageId() { return storageId; }
-    public void setStorageId(String storageId) { this.storageId = storageId; }
-    public Workflow getWorkflow() { return workflow; }
-    public void setWorkflow(Workflow workflow) { this.workflow = workflow; }
+
+    public String getStorageId() {
+      return storageId;
+    }
+
+    public void setStorageId(String storageId) {
+      this.storageId = storageId;
+    }
+
+    public Workflow getWorkflow() {
+      return workflow;
+    }
+
+    public void setWorkflow(Workflow workflow) {
+      this.workflow = workflow;
+    }
   }
 
   private static class WorkflowDecorator implements EntityDecorator<WorkflowRecord> {
-    public Class<WorkflowRecord> getEntityType() { return WorkflowRecord.class; }
-    public EntityId getIdField() { return new EntityId("storageId"); }
-    public List<EntityIndex> getIndexFields() { return List.of(new EntityIndex(IndexType.UNIQUE, "storageId")); }
-    public String getEntityName() { return "workflows"; }
+    public Class<WorkflowRecord> getEntityType() {
+      return WorkflowRecord.class;
+    }
+
+    public EntityId getIdField() {
+      return new EntityId("storageId");
+    }
+
+    public List<EntityIndex> getIndexFields() {
+      return List.of(new EntityIndex(IndexType.UNIQUE, "storageId"));
+    }
+
+    public String getEntityName() {
+      return "workflows";
+    }
   }
 
-  private static class FlowDecorator implements EntityDecorator<Flow> {
-    public Class<Flow> getEntityType() { return Flow.class; }
-    public EntityId getIdField() { return new EntityId("id"); }
+  private static class FlowDecorator implements EntityDecorator<FlowImpl> {
+    public Class<FlowImpl> getEntityType() {
+      return FlowImpl.class;
+    }
+
+    public EntityId getIdField() {
+      return new EntityId("id");
+    }
+
     public List<EntityIndex> getIndexFields() {
       return List.of(
           new EntityIndex(IndexType.UNIQUE, "id"),
           new EntityIndex(IndexType.NON_UNIQUE, "workflowId"),
           new EntityIndex(IndexType.NON_UNIQUE, "status"));
     }
-    public String getEntityName() { return "workflowFlows"; }
+
+    public String getEntityName() {
+      return "workflowFlows";
+    }
   }
 
   /** Internal blob record. It is intentionally absent from the public API. */
@@ -463,27 +503,61 @@ public class ResourcesKBox implements WorkflowStore {
     private String flowId;
     private String stateId;
     private byte[] content;
+
     public WorkflowAttachmentPayload() {}
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getFlowId() { return flowId; }
-    public void setFlowId(String flowId) { this.flowId = flowId; }
-    public String getStateId() { return stateId; }
-    public void setStateId(String stateId) { this.stateId = stateId; }
-    public byte[] getContent() { return content; }
-    public void setContent(byte[] content) { this.content = content; }
+
+    public String getId() {
+      return id;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
+
+    public String getFlowId() {
+      return flowId;
+    }
+
+    public void setFlowId(String flowId) {
+      this.flowId = flowId;
+    }
+
+    public String getStateId() {
+      return stateId;
+    }
+
+    public void setStateId(String stateId) {
+      this.stateId = stateId;
+    }
+
+    public byte[] getContent() {
+      return content;
+    }
+
+    public void setContent(byte[] content) {
+      this.content = content;
+    }
   }
 
   private static class WorkflowAttachmentDecorator
       implements EntityDecorator<WorkflowAttachmentPayload> {
-    public Class<WorkflowAttachmentPayload> getEntityType() { return WorkflowAttachmentPayload.class; }
-    public EntityId getIdField() { return new EntityId("id"); }
+    public Class<WorkflowAttachmentPayload> getEntityType() {
+      return WorkflowAttachmentPayload.class;
+    }
+
+    public EntityId getIdField() {
+      return new EntityId("id");
+    }
+
     public List<EntityIndex> getIndexFields() {
       return List.of(
           new EntityIndex(IndexType.UNIQUE, "id"),
           new EntityIndex(IndexType.NON_UNIQUE, "flowId"),
           new EntityIndex(IndexType.NON_UNIQUE, "stateId"));
     }
-    public String getEntityName() { return "workflowAttachments"; }
+
+    public String getEntityName() {
+      return "workflowAttachments";
+    }
   }
 }
