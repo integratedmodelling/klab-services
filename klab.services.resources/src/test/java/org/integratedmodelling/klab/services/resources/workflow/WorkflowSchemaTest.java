@@ -53,6 +53,9 @@ class WorkflowSchemaTest {
     var state = new FlowImpl.StateImpl();
     state.setId("draft-1");
     state.setSchemaId("editing");
+    var candidate = new FlowImpl.AttachmentImpl();
+    candidate.setType("candidate");
+    state.getAttachments().add(candidate);
     var flow = new FlowImpl();
     flow.getStates().put(state.getId(), state);
     flow.getCurrentStateIds().add(state.getId());
@@ -65,6 +68,17 @@ class WorkflowSchemaTest {
     assertTrue(workflow.validateTransition(flow, state.getId(), "submit", editor).isEmpty());
     assertFalse(
         workflow.validateTransition(flow, state.getId(), "reject-peer-review", editor).isEmpty());
+    assertTrue(workflow.getStates().get("editing").getAttachments().getFirst().isRequired());
+    assertFalse(
+        workflow.getStates().get("editing").getAttachments().get(1).isRequired());
+    assertEquals(
+        Set.of(
+            KlabAsset.KnowledgeClass.RESOURCE,
+            KlabAsset.KnowledgeClass.PROJECT,
+            KlabAsset.KnowledgeClass.COMPONENT),
+        workflow.getAssetTypes());
+    assertTrue(workflow.admitsAsset(KlabAsset.KnowledgeClass.RESOURCE));
+    assertFalse(workflow.admitsAsset(KlabAsset.KnowledgeClass.NAMESPACE));
   }
 
   @Test
@@ -80,12 +94,12 @@ class WorkflowSchemaTest {
   void workflowArtifactsHaveStableCrudClassesAndUrns() throws Exception {
     var workflow = schema();
     assertTrue(workflow.validate().isEmpty());
-    assertEquals("urn:klab:workflow:asset-review@1.0", workflow.getUrn());
+    assertEquals("urn:klab:workflow:asset-review@1.1", workflow.getUrn());
     assertEquals(
-        "urn:klab:workflow-state:asset-review@1.0:editing",
+        "urn:klab:workflow-state:asset-review@1.1:editing",
         workflow.getStates().get("editing").getUrn());
     assertEquals(
-        "urn:klab:workflow-transition:asset-review@1.0:submit",
+        "urn:klab:workflow-transition:asset-review@1.1:submit",
         workflow.getTransitions().get("submit").getUrn());
     assertEquals(KlabAsset.KnowledgeClass.WORKFLOW, KlabAsset.classify(workflow));
     assertEquals(
@@ -109,6 +123,7 @@ class WorkflowSchemaTest {
     state.setFlowId(flow.getId());
     state.setId("state-2");
     state.setOwner("editor@example.org");
+    state.setDescription("Review evidence");
     flow.getStates().put(state.getId(), state);
     var transaction = new FlowImpl.TransactionImpl();
     transaction.setFlowId(flow.getId());
@@ -152,6 +167,7 @@ class WorkflowSchemaTest {
     assertEquals("project", reconstructed.getPermissionsOwnerUrn());
     assertTrue(reconstructed.isPublicRead());
     assertEquals("editor@example.org", reconstructed.getStates().get("state-2").getOwner());
+    assertEquals("Review evidence", reconstructed.getStates().get("state-2").getDescription());
 
     var legacyJson = json.deepCopy();
     ((com.fasterxml.jackson.databind.node.ObjectNode) legacyJson)
@@ -193,6 +209,17 @@ class WorkflowSchemaTest {
         "ok",
         new String(
             uploadReconstructed.getContent(), java.nio.charset.StandardCharsets.UTF_8));
+
+    var initialization = Flow.InitializationRequest.create();
+    initialization.setInitialState(state);
+    initialization.setAttachments(java.util.List.of(upload));
+    initialization.setTransition(request);
+    var initializationReconstructed =
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            org.integratedmodelling.common.utils.Utils.Json.asString(initialization),
+            Flow.InitializationRequest.class);
+    assertEquals("state-2", initializationReconstructed.getInitialState().getId());
+    assertEquals("review.txt", initializationReconstructed.getAttachments().getFirst().getFileName());
   }
 
   @Test

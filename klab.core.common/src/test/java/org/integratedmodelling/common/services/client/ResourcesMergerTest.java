@@ -84,6 +84,31 @@ class ResourcesMergerTest {
   }
 
   @Test
+  void queryKeepsTheFirstAssetForEachUrn() {
+    var scope = mock(Scope.class);
+    var primary = mock(ResourcesService.class);
+    var secondary = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
+    var first = mock(KlabAsset.class);
+    var duplicate = mock(KlabAsset.class);
+    var unique = mock(KlabAsset.class);
+    when(first.getUrn()).thenReturn("duplicate");
+    when(duplicate.getUrn()).thenReturn("duplicate");
+    when(unique.getUrn()).thenReturn("unique");
+    when(primary.query(any(), eq(KnowledgeClass.MODEL), eq(KlabAsset.class), eq(userScope)))
+        .thenReturn(List.of(first));
+    when(secondary.query(any(), eq(KnowledgeClass.MODEL), eq(KlabAsset.class), eq(userScope)))
+        .thenReturn(List.of(duplicate, unique));
+    doReturn(List.of(primary, secondary)).when(scope).getServices(ResourcesService.class);
+
+    var merged =
+        new ResourcesMerger(scope)
+            .query(null, KnowledgeClass.MODEL, KlabAsset.class, userScope);
+
+    assertEquals(List.of(first, unique), merged);
+  }
+
+  @Test
   void mergePrioritizesLocalityThenVersionThenTimestampAndCopiesTopLevelState() {
     var remoteNewer = result("duplicate", "remote", false, "3.0.0", 30);
     remoteNewer.setWorkspace("workspace");

@@ -51,6 +51,18 @@ public class WorkflowController {
   }
 
   @Operation(
+      summary = "Initialize a flow atomically",
+      description =
+          "Validate the initial stage, attachments, and first transition before persisting anything")
+  @PostMapping(ServicesAPI.RESOURCES.FLOW_INITIALIZATION)
+  public Flow initializeFlow(
+      @RequestParam String workflowId,
+      @RequestBody Flow.InitializationRequest request,
+      Principal principal) {
+    return resourcesServer.klabService().initializeFlow(workflowId, request, userScope(principal));
+  }
+
+  @Operation(
       summary = "List flows",
       description = "List flows visible to the caller, optionally including closed flows")
   @GetMapping(ServicesAPI.RESOURCES.FLOWS)
@@ -63,6 +75,14 @@ public class WorkflowController {
   @GetMapping(ServicesAPI.RESOURCES.FLOW)
   public Flow getFlow(@PathVariable String flowId, Principal principal) {
     return resourcesServer.klabService().getFlow(flowId, userScope(principal));
+  }
+
+  @Operation(
+      summary = "Delete a flow",
+      description = "Delete a flow and its attachments as its editor/creator or an administrator")
+  @DeleteMapping(ServicesAPI.RESOURCES.FLOW)
+  public boolean deleteFlow(@PathVariable String flowId, Principal principal) {
+    return resourcesServer.klabService().deleteFlow(flowId, userScope(principal));
   }
 
   @Operation(summary = "Reopen a flow", description = "Reopen a closed flow as an administrator")

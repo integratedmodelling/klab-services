@@ -126,7 +126,12 @@ public class ResourcesMerger implements ResourcesService {
             .toList();
     CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
     var merged = new LinkedHashSet<T>();
+
     responses.stream().map(CompletableFuture::join).forEach(merged::addAll);
+    if (!merged.isEmpty() && merged.stream().allMatch(a -> a instanceof KlabAsset)) {
+      var urns = new HashSet<String>();
+      return merged.stream().filter(asset -> urns.add(((KlabAsset) asset).getUrn())).toList();
+    }
     return List.copyOf(merged);
   }
 
@@ -146,8 +151,19 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public Flow initializeFlow(
+      String workflowId, Flow.InitializationRequest request, UserScope scope) {
+    return primary().initializeFlow(workflowId, request, scope);
+  }
+
+  @Override
   public Flow getFlow(String flowId, UserScope scope) {
     return primary().getFlow(flowId, scope);
+  }
+
+  @Override
+  public boolean deleteFlow(String flowId, UserScope scope) {
+    return primary().deleteFlow(flowId, scope);
   }
 
   @Override
@@ -166,7 +182,8 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope) {
+  public Flow.State updateFlowState(
+      String flowId, String stateId, Flow.State state, UserScope scope) {
     return primary().updateFlowState(flowId, stateId, state, scope);
   }
 

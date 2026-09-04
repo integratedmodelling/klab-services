@@ -78,8 +78,14 @@ public interface ResourcesService extends KlabService {
   /** Instantiate a workflow through its mandatory INIT transition. */
   Flow createFlow(String workflowId, Flow.State initialState, UserScope scope);
 
+  /** Validate and persist a new flow together with its first successful stage transition. */
+  Flow initializeFlow(String workflowId, Flow.InitializationRequest request, UserScope scope);
+
   /** Retrieve the caller-specific projection of a flow. */
   Flow getFlow(String flowId, UserScope scope);
+
+  /** Delete a complete flow when requested by its editor/creator or an administrator. */
+  boolean deleteFlow(String flowId, UserScope scope);
 
   /** Reopen a closed flow. This operation is restricted to workflow administrators. */
   default Flow reopenFlow(String flowId, UserScope scope) {

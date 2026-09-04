@@ -34,6 +34,11 @@ public interface Workflow extends KlabAsset {
     int getArity();
 
     void setArity(int arity);
+
+    /** Whether at least one attachment matching this rule is required to complete the stage. */
+    boolean isRequired();
+
+    void setRequired(boolean required);
   }
 
   interface StateSchema extends KlabAsset {
@@ -159,6 +164,19 @@ public interface Workflow extends KlabAsset {
   String getDescription();
 
   void setDescription(String description);
+
+  /**
+   * Asset knowledge classes for which a new flow may be opened. An empty set preserves the legacy
+   * meaning that the workflow is applicable to any k.LAB asset.
+   */
+  Set<KlabAsset.KnowledgeClass> getAssetTypes();
+
+  void setAssetTypes(Set<KlabAsset.KnowledgeClass> assetTypes);
+
+  /** Cheap client-side applicability check; the Resources service repeats it on creation. */
+  default boolean admitsAsset(KlabAsset.KnowledgeClass assetType) {
+    return assetType != null && (getAssetTypes().isEmpty() || getAssetTypes().contains(assetType));
+  }
 
   Map<String, StateSchema> getStates();
 

@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
@@ -299,6 +300,12 @@ public class ResourcesKBox implements WorkflowStore {
     throw new KlabIllegalStateException("unexpected flow type");
   }
 
+  @Override
+  public boolean deleteFlow(String id) {
+    var flow = flows.getById(id);
+    return flow != null && flows.remove(flow).getAffectedCount() == 1;
+  }
+
   public Flow getFlow(String id) {
     return flows.getById(id);
   }
@@ -363,6 +370,34 @@ public class ResourcesKBox implements WorkflowStore {
             .orElse(reference);
     info.setStage(latest.getStage());
     info.setReviewStatus(latest.getReviewStatus());
+    return putStatus(info);
+  }
+
+  @Override
+  public synchronized boolean removeResourceInfoForFlow(Flow flow) {
+    if (flow == null || flow.getAssetUrn() == null) return false;
+    var info = resourceMetadata.getById(flow.getAssetUrn());
+    if (info == null) return true;
+    info.getFlows().remove(flow.getUrn());
+    if (info.getFlows().isEmpty()) {
+      boolean firstClass =
+          java.util.Set.of(
+                  KlabAsset.KnowledgeClass.COMPONENT,
+                  KlabAsset.KnowledgeClass.PROJECT,
+                  KlabAsset.KnowledgeClass.WORKSPACE,
+                  KlabAsset.KnowledgeClass.RESOURCE)
+              .contains(info.getKnowledgeClass());
+      if (!firstClass) return resourceMetadata.remove(info).getAffectedCount() == 1;
+      info.setStage(ResourceInfo.Stage.STAGING);
+      info.setReviewStatus(0);
+    } else {
+      var latest =
+          info.getFlows().values().stream()
+              .max(java.util.Comparator.comparingLong(ResourceInfo.FlowReference::getUpdatedAt))
+              .orElseThrow();
+      info.setStage(latest.getStage());
+      info.setReviewStatus(latest.getReviewStatus());
+    }
     return putStatus(info);
   }
 

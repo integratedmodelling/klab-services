@@ -22,6 +22,9 @@ public interface WorkflowStore {
 
   boolean putFlow(Flow flow);
 
+  /** Remove an aggregate when an atomic initialization cannot complete. */
+  boolean deleteFlow(String id);
+
   Flow getFlow(String id);
 
   List<Flow> listFlows();
@@ -34,4 +37,7 @@ public interface WorkflowStore {
 
   /** Create/update the asset's ResourceInfo flow catalog without changing its permissions. */
   boolean updateResourceInfoForFlow(Flow flow, ResourceInfo.Stage stage, int reviewStatus);
+
+  /** Remove a deleted flow from its target asset's compact flow catalog. */
+  boolean removeResourceInfoForFlow(Flow flow);
 }

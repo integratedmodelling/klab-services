@@ -368,11 +368,9 @@ public enum ResourceTransport {
               ? scope
                   .getService(ResourcesService.class)
                   .resolve(
-                      "export-schema:" + mediaType,
-                      KlabAsset.KnowledgeClass.INFORMATION,
-                      userScope)
+                      "export-schema:" + mediaType, KlabAsset.KnowledgeClass.INFORMATION, userScope)
               : ResourceSet.empty();
-      if (!result.isEmpty() && service.loadResources(result, scope)) {
+      if (result != null && !result.isEmpty() && service.loadResources(result, scope)) {
         // do it again
         serviceCapabilities = service.capabilities(scope);
         for (var schemaId : serviceCapabilities.getExportSchemata().keySet()) {

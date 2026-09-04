@@ -79,6 +79,7 @@ public class JacksonConfiguration {
     if (type == Flow.Attachment.class) return FlowImpl.AttachmentImpl.class;
     if (type == Flow.TransitionRequest.class) return FlowImpl.TransitionRequestImpl.class;
     if (type == Flow.AttachmentUpload.class) return FlowImpl.AttachmentUploadImpl.class;
+    if (type == Flow.InitializationRequest.class) return FlowImpl.InitializationRequestImpl.class;
     return type;
   }
 
@@ -479,7 +480,8 @@ public class JacksonConfiguration {
           Flow.Transaction.class,
           Flow.Attachment.class,
           Flow.TransitionRequest.class,
-          Flow.AttachmentUpload.class
+          Flow.AttachmentUpload.class,
+          Flow.InitializationRequest.class
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
@@ -503,6 +505,7 @@ public class JacksonConfiguration {
     resolver.addMapping(Flow.Attachment.class, FlowImpl.AttachmentImpl.class);
     resolver.addMapping(Flow.TransitionRequest.class, FlowImpl.TransitionRequestImpl.class);
     resolver.addMapping(Flow.AttachmentUpload.class, FlowImpl.AttachmentUploadImpl.class);
+    resolver.addMapping(Flow.InitializationRequest.class, FlowImpl.InitializationRequestImpl.class);
     var module = new SimpleModule();
     module.setAbstractTypes(resolver);
     mapper.registerModule(module);

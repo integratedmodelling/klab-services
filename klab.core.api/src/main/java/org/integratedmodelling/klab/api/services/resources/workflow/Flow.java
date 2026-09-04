@@ -11,6 +11,11 @@ import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImp
 /** Persistent active or closed instance of a {@link Workflow}. */
 public interface Flow extends KlabAsset {
 
+  /** Create an empty client-side flow bean, suitable for a provisional first stage. */
+  static Flow create() {
+    return new FlowImpl();
+  }
+
   enum Status {
     ACTIVE,
     CLOSED
@@ -103,6 +108,10 @@ public interface Flow extends KlabAsset {
     String getTitle();
 
     void setTitle(String title);
+
+    String getDescription();
+
+    void setDescription(String description);
 
     StateStatus getStatus();
 
@@ -220,6 +229,32 @@ public interface Flow extends KlabAsset {
 
     static AttachmentUpload create() {
       return new FlowImpl.AttachmentUploadImpl();
+    }
+  }
+
+  /**
+   * Atomic first-stage submission. The flow does not exist persistently until the initial state,
+   * its attachments, and the requested transition have all passed validation.
+   */
+  interface InitializationRequest extends Serializable {
+    State getInitialState();
+
+    void setInitialState(State initialState);
+
+    List<AttachmentUpload> getAttachments();
+
+    void setAttachments(List<AttachmentUpload> attachments);
+
+    TransitionRequest getTransition();
+
+    void setTransition(TransitionRequest transition);
+
+    boolean isPublicRead();
+
+    void setPublicRead(boolean publicRead);
+
+    static InitializationRequest create() {
+      return new FlowImpl.InitializationRequestImpl();
     }
   }
 

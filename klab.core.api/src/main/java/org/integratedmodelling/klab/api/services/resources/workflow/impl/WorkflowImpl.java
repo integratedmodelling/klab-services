@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -42,6 +43,7 @@ public class WorkflowImpl implements Workflow {
     private String mediaType;
     private KlabAsset.KnowledgeClass assetType;
     private int arity = -1;
+    private boolean required;
 
     public String getType() {
       return type;
@@ -73,6 +75,14 @@ public class WorkflowImpl implements Workflow {
 
     public void setArity(int arity) {
       this.arity = arity;
+    }
+
+    public boolean isRequired() {
+      return required;
+    }
+
+    public void setRequired(boolean required) {
+      this.required = required;
     }
   }
 
@@ -335,6 +345,7 @@ public class WorkflowImpl implements Workflow {
   private String version;
   private String name;
   private String description;
+  private Set<KlabAsset.KnowledgeClass> assetTypes = new LinkedHashSet<>();
   private Map<String, Workflow.StateSchema> states = new LinkedHashMap<>();
   private Map<String, Workflow.TransitionSchema> transitions = new LinkedHashMap<>();
   private Metadata metadata = Metadata.create();
@@ -366,6 +377,8 @@ public class WorkflowImpl implements Workflow {
                 "Duplicate attachment type " + attachment.getType() + " in " + entry.getKey());
           if (attachment.getArity() < -1)
             errors.add("Invalid attachment arity in " + entry.getKey());
+          if (attachment.isRequired() && attachment.getArity() == 0)
+            errors.add("Required attachment cannot have zero arity in " + entry.getKey());
         }
       }
     }
@@ -449,6 +462,13 @@ public class WorkflowImpl implements Workflow {
         errors.add("The group response deadline has elapsed");
       if (participant != null && participant.getDisallowedTransitions().contains(transitionId))
         errors.add("Transition is disallowed by group policy");
+      var schema = states.get(state.getSchemaId());
+      if (schema != null)
+        for (var rule : schema.getAttachments())
+          if (rule.isRequired()
+              && state.getAttachments().stream()
+                  .noneMatch(attachment -> Objects.equals(rule.getType(), attachment.getType())))
+            errors.add("Stage requires an attachment of type '" + rule.getType() + "'");
     }
     return errors;
   }
@@ -498,6 +518,14 @@ public class WorkflowImpl implements Workflow {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public Set<KlabAsset.KnowledgeClass> getAssetTypes() {
+    return assetTypes;
+  }
+
+  public void setAssetTypes(Set<KlabAsset.KnowledgeClass> assetTypes) {
+    this.assetTypes = assetTypes == null ? new LinkedHashSet<>() : assetTypes;
   }
 
   public Map<String, Workflow.StateSchema> getStates() {

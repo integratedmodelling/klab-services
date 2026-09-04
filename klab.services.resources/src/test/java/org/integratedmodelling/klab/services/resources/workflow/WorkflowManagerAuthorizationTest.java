@@ -14,6 +14,7 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -72,6 +73,31 @@ class WorkflowManagerAuthorizationTest {
     assertEquals(1, visible.size());
     assertEquals(
         "asset-review", createFlow(manager, initial(), false, wildcard).getWorkflowId());
+  }
+
+  @Test
+  void workflowAssetTypeIsEnforcedBeforeCreatingAFlow() {
+    var manager = manager(new MemoryStore());
+    var inadmissible = initial();
+    inadmissible.setAssetType(KlabAsset.KnowledgeClass.NAMESPACE);
+
+    var failure =
+        assertThrows(
+            InvocationTargetException.class,
+            () ->
+                invokeRaw(
+                    manager,
+                    "createFlow",
+                    new Class<?>[] {
+                      String.class, Flow.State.class, boolean.class, UserScope.class
+                    },
+                    "asset-review",
+                    inadmissible,
+                    false,
+                    scope("editor", "EDITOR")));
+
+    assertTrue(failure.getCause() instanceof KlabIllegalArgumentException);
+    assertTrue(failure.getCause().getMessage().contains("Workflow asset-review does not admit"));
   }
 
   @Test
@@ -216,6 +242,63 @@ class WorkflowManagerAuthorizationTest {
     assertTrue(store.attachments.containsKey(attachment.getId()));
   }
 
+  @Test
+  void firstStageIsPersistedOnlyAfterAValidAtomicSubmission() {
+    var store = new MemoryStore();
+    var manager = new WorkflowManager(store);
+    var editor = scope("editor", "EDITOR");
+    var request = Flow.InitializationRequest.create();
+    request.setInitialState(initial());
+    var transition = Flow.TransitionRequest.create();
+    transition.setSourceStateId("temporary");
+    transition.setTransitionId("submit");
+    transition.setTargetState(Flow.State.create());
+    request.setTransition(transition);
+
+    // The server replaces no caller IDs: point the request at the initial state's generated ID by
+    // assigning one before validation, just as the IDE's provisional flow does.
+    request.getInitialState().setId("temporary");
+    assertThrows(
+        KlabIllegalStateException.class,
+        () -> manager.initializeFlow("asset-review", request, editor));
+    assertTrue(store.listFlows().isEmpty());
+    assertTrue(store.attachments.isEmpty());
+
+    var upload = Flow.AttachmentUpload.create();
+    upload.setType("candidate");
+    upload.setFileName("candidate.json");
+    upload.setMediaType("application/json");
+    upload.setAssetType(KlabAsset.KnowledgeClass.RESOURCE);
+    upload.setContent(new byte[] {1, 2, 3});
+    request.setAttachments(List.of(upload));
+    var flow = manager.initializeFlow("asset-review", request, editor);
+
+    assertEquals(1, store.listFlows().size());
+    assertEquals(1, store.attachments.size());
+    assertEquals(2, flow.getHistory().size());
+  }
+
+  @Test
+  void editorCreatorCanDeleteTheCompleteFlowButAnotherEditorCannot() {
+    var store = new MemoryStore();
+    var manager = new WorkflowManager(store);
+    var creator = scope("creator", "EDITOR");
+    var flow = manager.createFlow("asset-review", initial(), false, creator);
+    var stored = store.getFlow(flow.getId());
+    var state = stored.getStates().values().iterator().next();
+    var attachment = new FlowImpl.AttachmentImpl();
+    attachment.setId("delete-with-flow");
+    state.getAttachments().add(attachment);
+    store.attachments.put(attachment.getId(), new byte[] {1});
+
+    assertThrows(
+        KlabResourceAccessException.class,
+        () -> manager.deleteFlow(flow.getId(), scope("another-editor", "EDITOR")));
+    assertTrue(manager.deleteFlow(flow.getId(), creator));
+    assertTrue(store.listFlows().isEmpty());
+    assertTrue(store.attachments.isEmpty());
+  }
+
   private Flow.State initial() {
     var state = new FlowImpl.StateImpl();
     state.setSchemaId("editing");
@@ -356,6 +439,11 @@ class WorkflowManagerAuthorizationTest {
     }
 
     @Override
+    public boolean deleteFlow(String id) {
+      return flows.remove(id) != null;
+    }
+
+    @Override
     public Flow getFlow(String id) {
       return flows.get(id);
     }
@@ -385,6 +473,11 @@ class WorkflowManagerAuthorizationTest {
     @Override
     public boolean updateResourceInfoForFlow(
         Flow flow, ResourceInfo.Stage stage, int reviewStatus) {
+      return true;
+    }
+
+    @Override
+    public boolean removeResourceInfoForFlow(Flow flow) {
       return true;
     }
   }

@@ -447,6 +447,7 @@ public interface ServicesAPI {
 
     String WORKFLOW = API_BASE + "/workflows/{workflowId}";
     String FLOWS = API_BASE + "/flows";
+    String FLOW_INITIALIZATION = API_BASE + "/flows/initialize";
     String FLOW = API_BASE + "/flows/{flowId}";
     String FLOW_REOPEN = API_BASE + "/flows/{flowId}/reopen";
     String FLOW_STATES = API_BASE + "/flows/{flowId}/states";

@@ -52,8 +52,26 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public Flow initializeFlow(
+      String workflowId, Flow.InitializationRequest request, UserScope scope) {
+    return client.withScope(scope)
+        .post(
+            ServicesAPI.RESOURCES.FLOW_INITIALIZATION,
+            request,
+            Flow.class,
+            "workflowId",
+            workflowId);
+  }
+
+  @Override
   public Flow getFlow(String flowId, UserScope scope) {
     return client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW, Flow.class, "flowId", flowId);
+  }
+
+  @Override
+  public boolean deleteFlow(String flowId, UserScope scope) {
+    client.withScope(scope).delete(ServicesAPI.RESOURCES.FLOW, "flowId", flowId);
+    return true;
   }
 
   @Override

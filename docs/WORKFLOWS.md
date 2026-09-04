@@ -8,7 +8,7 @@ are ordinary API beans, so a client can render tasks, inspect history, and pre-v
 without maintaining a second workflow engine. The server remains authoritative for authorization,
 concurrency, persistence, and attachments.
 
-The first bundled definition is `asset-review`, which supports editing, peer review, optional
+The first bundled definition is `asset-review` (currently schema version `1.1`), which supports editing, peer review, optional
 public community review, acceptance, rejection, and requests for changes. Definitions live under
 `klab.services.resources/src/main/resources/workflows`; `index.txt` lists definitions imported at
 service startup.
@@ -18,7 +18,10 @@ service startup.
 ### Workflow
 
 `org.integratedmodelling.klab.api.services.resources.workflow.Workflow` is a versioned schema. It
-contains keyed state and transition schemas plus provenance metadata.
+contains keyed state and transition schemas plus provenance metadata. Its top-level `assetTypes`
+set lists the `KlabAsset.KnowledgeClass` values on which a new flow may be opened. An empty set is
+unrestricted for compatibility with existing workflow definitions. This whole-workflow constraint
+is checked before the initial state's more specific asset constraint.
 
 A state schema defines:
 
@@ -26,7 +29,8 @@ A state schema defines:
 - manager and contributor roles;
 - an optional group allow-list, where `PUBLIC` has the special meaning described below;
 - admitted attachment rules, each with a logical type, media type, optional
-  `KlabAsset.KnowledgeClass`, and arity (`-1` means unlimited);
+  `KlabAsset.KnowledgeClass`, arity (`-1` means unlimited), and `required` flag. `required`
+  defaults to `false`; declaring an attachment rule never makes it mandatory by itself;
 - the k.LAB asset classes managed in that state;
 - whether the state is open or terminal;
 - arbitrary metadata that is copied through the schema and can carry provenance vocabulary.
@@ -37,7 +41,7 @@ A transition schema defines:
 - one or more source state-schema IDs, or the reserved source `INIT`;
 - one target state-schema ID;
 - roles permitted to perform the transition;
-- optional required source attachment asset classes and media types;
+- optional admitted source attachment asset classes and media types;
 - arbitrary provenance metadata.
 
 `Workflow.validate()` performs structural validation. `admittedTransitions(...)` and
@@ -49,19 +53,22 @@ Resources service always repeats validation using its authoritative schema and f
 `org.integratedmodelling.klab.api.services.resources.workflow.Flow` is a persistent aggregate. It
 records its workflow ID and exact version, the target asset URN and knowledge class, owner, status,
 optimistic revision, timestamps, metadata, all states, current-state IDs, a `publicRead` flag, and
-append-only transaction history. Flow creation resolves the target first and rejects a missing asset or an
-asset class not admitted by the initial state schema.
+append-only transaction history. Flow creation resolves the target first and rejects a missing
+asset or an asset class not admitted by the workflow or by the initial state schema.
 
 Each flow state has a unique instance ID and points to a state-schema ID. It contains its mutable
-`owner` identity, title, open/closed status, optional explicit assignees, attachment descriptors, metadata, and
-timestamps. Attachment bytes are deliberately excluded, keeping routine flow retrieval cheap.
+`owner` identity, title, description, open/closed status, optional explicit assignees, attachment
+descriptors, metadata, and timestamps. Attachment bytes are deliberately excluded, keeping routine
+flow retrieval cheap.
 
 Each transaction records the transition event, source and target state IDs, actor identity,
 timestamp, and request metadata. The initial transaction has no source state and records the
 authorized schema transition whose source is `INIT`.
 
-A flow is closed automatically when no open current states remain. Closed flows remain queryable
-and are never deleted by normal workflow operations.
+A flow is closed automatically when no open current states remain. Closed flows remain queryable.
+The editor who created a flow may explicitly delete the complete aggregate while they still hold
+the `EDITOR` role and workflow permission; `ADMIN` may do the same. This is a deliberate,
+confirmation-gated exception to the normal append-only lifecycle.
 
 ### Caller-specific projections
 
@@ -124,11 +131,16 @@ so forbidden workflows are not offered optimistically.
 ## Lifecycle and invariants
 
 1. A client retrieves a workflow schema and chooses a state reached by an authorized `INIT`
-   transition.
-2. `createFlow` creates the first state and INIT history entry in one flow aggregate.
+   transition. Interactive clients keep this first stage provisional while it is edited.
+2. `initializeFlow` validates the initial state, attachment payloads, and first outgoing transition
+   in memory. Only after every check succeeds are the payloads, INIT entry, first transition, and
+   resulting aggregate persisted. A validation error leaves no Flow or attachment record.
+   `createFlow` remains the lower-level operation for trusted integrations that intentionally need
+   a persistent initial task before its first transition.
 3. State CRUD may maintain task metadata. A state's schema and attachment descriptors cannot be
    changed through update. Current or historically referenced states cannot be deleted.
 4. Attachment upload validates type, media type, asset class, and arity before storing bytes.
+   Completion requires only rules explicitly marked `required: true`.
 5. A transition must originate at a current state, match the source schema, pass role/group/group
    constraint checks, and satisfy required attachment inputs.
 6. The source state closes, the target state is created, history is appended, and the aggregate
@@ -209,6 +221,7 @@ The schema is intentionally data rather than Java code. A minimal definition is:
 id: example-review
 version: "1.0"
 name: Example review
+assetTypes: [RESOURCE]
 states:
   draft:
     description: Prepare the asset.
@@ -220,6 +233,7 @@ states:
       - type: candidate
         mediaType: application/*
         arity: 1
+        required: true
     assetTypes: [RESOURCE]
     open: true
   published:
@@ -339,8 +353,10 @@ All routes require the normal authenticated Resources-service user role:
 | --- | --- | --- |
 | `GET` | `/api/v1/workflows/{workflowId}` | Current workflow schema. |
 | `POST` | `/api/v1/flows?workflowId=...` | Create a flow from a `Flow.State` body. |
+| `POST` | `/api/v1/flows/initialize?workflowId=...` | Atomically submit a provisional state, attachment uploads, and its first transition. |
 | `GET` | `/api/v1/flows?includeClosed=false` | Caller-accessible flow projections. |
 | `GET` | `/api/v1/flows/{flowId}` | One caller-specific flow projection. |
+| `DELETE` | `/api/v1/flows/{flowId}` | Permanently delete the caller-created flow as `EDITOR`, or any flow as `ADMIN`. |
 | `POST` | `/api/v1/flows/{flowId}/reopen` | Reopen the latest actionable stage; workflow `ADMIN` only. |
 | `POST` | `/api/v1/flows/{flowId}/states` | Create a manager-authorized state. |
 | `PUT` or `POST` | `/api/v1/flows/{flowId}/states/{stateId}` | Update task data. `POST` is retained for the current Java HTTP helper. |
@@ -436,7 +452,8 @@ the per-flow catalog held in `ResourceInfo.flows`.
 `klab-ide` provides a generic JavaFX `WorkflowEditor` hosted as an auxiliary tab of the
 `WorkspaceEditor` that owns the target asset. Its header reports flow status, start time, revision,
 and public-read mode; its stage browser exposes the caller's projection, or the complete flow when
-`publicRead` is true. A new flow focuses its INIT stage. An existing private flow focuses the first
+`publicRead` is true. A new flow is a client-side draft focused on its INIT stage and is not stored
+until its first successful confirmation. An existing private flow focuses the first
 open stage assigned to the caller, then falls back to the first visible current stage.
 
 Install a `WorkflowUIProvider` on `WorkspaceView` to supply two callbacks: the workflow definitions
@@ -444,19 +461,35 @@ that may be started for an `(asset, UserScope)`, and an optional specialized sta
 from the workflow, flow, state, and state schema. The specialized editor returns its JavaFX node,
 a live validity predicate, a metadata exporter, and a read-only callback. Calling the supplied
 `validationChanged` runnable refreshes confirmation-button enablement. Returning `null` selects the
-generic metadata browser.
+generic stage editor, which provides persisted title and description fields alongside metadata.
 
-The common shell renders instructions, admitted attachment rules through `UploadBox`, cancel and
-delete controls, and one confirmation button per client-admitted transition. Confirmation first
-saves the specialized editor's export as `Flow.State.metadata`, then submits the transition with an
-optimistic revision. A private open stage is editable only by workflow `ADMIN`, its `owner`, or an
+The common shell renders instructions, labels attachment rules as required or optional, queues
+draft uploads locally, and provides cancel/delete controls plus one confirmation button per
+client-admitted transition. A persisted editable stage also provides **Update stage**, which saves
+its title, description, and specialized-editor metadata without performing a transition. The
+button is enabled only while the specialized editor reports valid contents; stages that fail the
+same access/ownership checks used by the service are rendered read-only. The first confirmation sends one atomic initialization request;
+subsequent confirmations save the specialized editor's export as `Flow.State.metadata`, then submit
+the transition with an optimistic revision. Failed actions remain in the editor with a prominent
+inline explanation, allowing correction and retry; cancelling a draft closes it without cleanup
+because nothing has been stored. A private open stage is editable only by workflow `ADMIN`, its `owner`, or an
 assigned participant with `EDITOR`; public-read and closed flows are browsers. Only `ADMIN` sees the
 reopen action on a closed flow.
 
+For a persisted flow, the global **Flow** menu offers **Delete flow…** only to its `EDITOR` creator
+or an `ADMIN`. Confirmation permanently removes every state, transaction, attachment payload, and
+the corresponding entry in `ResourceInfo.flows`. When the last flow on a second-class asset is
+removed, its flow-only `ResourceInfo` is removed as well; first-class resource information is
+retained and reset to its non-reviewing status.
+
 The workspace-tree context menu contains a separated **Workflows** section only when content exists.
 It uses human-readable workflow names and provides **Start workflow**, **Open flows**, and **Closed
-flows** submenus. Accessible flows are filtered by exact target asset URN, and multiple flows on the
-same asset are shown independently. Both this menu and the corresponding workflow controls in
+flows** submenus. **Start workflow** intersects the provider callback, the caller's
+`workflow.permitted` grants, and the workflow's top-level `assetTypes`; a disallowed asset therefore
+never receives the action, and the service repeats the check if a client attempts creation directly.
+Accessible flows are filtered by exact target asset URN, and multiple flows on the
+same asset are shown independently. Assets with one or more accessible flows carry a small blue dot
+to the right of their label in the workspace tree. Both this menu and the corresponding workflow controls in
 `ResourceEditor` intersect the provider callback's results with `workflow.permitted`; direct start
 callbacks repeat the check, and `WorkflowEditor` derives editability from `Workflow.canAccess`.
 

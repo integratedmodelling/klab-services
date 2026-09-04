@@ -4,10 +4,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+
+import org.integratedmodelling.common.services.client.ResourcesMerger;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 /**
  * The scopes at client side do not provide service clients directly, but through the service
@@ -16,6 +19,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
 
   private final EngineImpl engine;
+  private ResourcesMerger mergerService;
 
   public AbstractClientScope(
       Identity identity, boolean isSender, boolean isReceiver, EngineImpl engine) {
@@ -36,6 +40,20 @@ public abstract class AbstractClientScope extends AbstractReactiveScopeImpl {
 
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass) {
+
+    // use a merger service for resources if there are multiple services, creating as
+    // needed
+    if (ResourcesService.class.isAssignableFrom(serviceClass)) {
+      if (this.mergerService == null) {
+        if (getServices(serviceClass).size() > 1) {
+          this.mergerService = new ResourcesMerger(this);
+        }
+      }
+      if (this.mergerService != null) {
+        return (T) this.mergerService;
+      }
+      // single-service fallback
+    }
     return getServices(serviceClass).stream()
         .filter(s -> s.status().isOperational())
         .findAny()

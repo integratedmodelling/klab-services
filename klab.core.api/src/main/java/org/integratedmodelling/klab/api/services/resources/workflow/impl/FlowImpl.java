@@ -173,6 +173,7 @@ public class FlowImpl implements Flow {
     private String owner;
 
     private String title;
+    private String description;
     private Flow.StateStatus status = Flow.StateStatus.OPEN;
     private Set<String> assignees = new LinkedHashSet<>();
     private List<Flow.Attachment> attachments = new ArrayList<>();
@@ -253,6 +254,14 @@ public class FlowImpl implements Flow {
 
     public void setTitle(String title) {
       this.title = title;
+    }
+
+    public String getDescription() {
+      return description;
+    }
+
+    public void setDescription(String description) {
+      this.description = description;
     }
 
     public Flow.StateStatus getStatus() {
@@ -512,6 +521,45 @@ public class FlowImpl implements Flow {
 
     public void setContent(byte[] content) {
       this.content = content;
+    }
+  }
+
+  public static class InitializationRequestImpl implements Flow.InitializationRequest {
+    private Flow.State initialState;
+    private List<Flow.AttachmentUpload> attachments = new ArrayList<>();
+    private Flow.TransitionRequest transition;
+    private boolean publicRead;
+
+    public Flow.State getInitialState() {
+      return initialState;
+    }
+
+    public void setInitialState(Flow.State initialState) {
+      this.initialState = initialState;
+    }
+
+    public List<Flow.AttachmentUpload> getAttachments() {
+      return attachments;
+    }
+
+    public void setAttachments(List<Flow.AttachmentUpload> attachments) {
+      this.attachments = attachments == null ? new ArrayList<>() : attachments;
+    }
+
+    public Flow.TransitionRequest getTransition() {
+      return transition;
+    }
+
+    public void setTransition(Flow.TransitionRequest transition) {
+      this.transition = transition;
+    }
+
+    public boolean isPublicRead() {
+      return publicRead;
+    }
+
+    public void setPublicRead(boolean publicRead) {
+      this.publicRead = publicRead;
     }
   }
 

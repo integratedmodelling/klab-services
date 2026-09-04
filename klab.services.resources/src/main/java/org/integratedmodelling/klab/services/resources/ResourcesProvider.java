@@ -211,6 +211,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workflowManager.createFlow(workflowId, initialState, scope);
   }
 
+  @Override
+  public Flow initializeFlow(
+      String workflowId, Flow.InitializationRequest request, UserScope scope) {
+    if (request == null) throw new KlabIllegalArgumentException("An initialization request is required");
+    validateFlowTarget(request.getInitialState(), scope);
+    return workflowManager.initializeFlow(workflowId, request, scope);
+  }
+
   /** Resolve the target before creating persistent workflow/catalog records for it. */
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void validateFlowTarget(Flow.State initialState, UserScope scope) {
@@ -285,6 +293,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public Flow getFlow(String flowId, UserScope scope) {
     return workflowManager.getFlow(flowId, scope);
+  }
+
+  @Override
+  public boolean deleteFlow(String flowId, UserScope scope) {
+    return workflowManager.deleteFlow(flowId, scope);
   }
 
   @Override
