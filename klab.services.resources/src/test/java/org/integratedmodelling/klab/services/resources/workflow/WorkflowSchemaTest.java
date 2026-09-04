@@ -118,16 +118,21 @@ class WorkflowSchemaTest {
     flow.setAssetType(KlabAsset.KnowledgeClass.NAMESPACE);
     flow.setPermissionsOwnerUrn("project");
     flow.setPublicRead(true);
+    flow.setCreatedAt(java.time.Instant.parse("2026-09-04T12:00:00Z"));
+    flow.setUpdatedAt(java.time.Instant.parse("2026-09-04T12:01:00Z"));
     flow.getMetadata().put("purpose", "transport-test");
     var state = new FlowImpl.StateImpl();
     state.setFlowId(flow.getId());
     state.setId("state-2");
     state.setOwner("editor@example.org");
     state.setDescription("Review evidence");
+    state.setCreatedAt(java.time.Instant.parse("2026-09-04T12:00:00Z"));
+    state.setUpdatedAt(java.time.Instant.parse("2026-09-04T12:01:00Z"));
     flow.getStates().put(state.getId(), state);
     var transaction = new FlowImpl.TransactionImpl();
     transaction.setFlowId(flow.getId());
     transaction.setId("transaction-3");
+    transaction.setTimestamp(java.time.Instant.parse("2026-09-04T12:01:00Z"));
     flow.getHistory().add(transaction);
     var attachment = new FlowImpl.AttachmentImpl();
     attachment.setFlowId(flow.getId());
@@ -168,6 +173,9 @@ class WorkflowSchemaTest {
     assertTrue(reconstructed.isPublicRead());
     assertEquals("editor@example.org", reconstructed.getStates().get("state-2").getOwner());
     assertEquals("Review evidence", reconstructed.getStates().get("state-2").getDescription());
+    assertEquals(flow.getCreatedAt(), reconstructed.getCreatedAt());
+    assertEquals(flow.getUpdatedAt(), reconstructed.getUpdatedAt());
+    assertEquals(transaction.getTimestamp(), reconstructed.getHistory().getFirst().getTimestamp());
 
     var legacyJson = json.deepCopy();
     ((com.fasterxml.jackson.databind.node.ObjectNode) legacyJson)

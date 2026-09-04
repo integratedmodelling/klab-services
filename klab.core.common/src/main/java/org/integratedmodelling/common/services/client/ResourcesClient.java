@@ -55,7 +55,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   public Flow initializeFlow(
       String workflowId, Flow.InitializationRequest request, UserScope scope) {
     return client.withScope(scope)
-        .post(
+        .postRequired(
             ServicesAPI.RESOURCES.FLOW_INITIALIZATION,
             request,
             Flow.class,

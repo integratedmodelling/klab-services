@@ -1697,6 +1697,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public <T> T post(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
+        return post(false, apiRequest, payload, resultClass, parameters);
+      }
+
+      /**
+       * POST variant for commands whose caller must distinguish failure from a legitimate null
+       * result. Server and transport errors are reported to the scope as usual and then propagated.
+       */
+      public <T> T postRequired(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+        return post(true, apiRequest, payload, resultClass, parameters);
+      }
+
+      private <T> T post(
+          boolean propagateFailure,
+          String apiRequest,
+          Object payload,
+          Class<T> resultClass,
+          Object... parameters) {
+
         var options = new Options();
         var params = makeKeyMap(options, parameters);
         var apiCall = substituteTemplateParameters(apiRequest, params);
@@ -1760,8 +1780,20 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
             Logging.INSTANCE.error(Maps.debugPrint(log));
             Logging.INSTANCE.error("============ END OF REPORT  ==============");
-            // TODO do something with the error response (which should be better and
-            //  contain a stack trace)
+            if (propagateFailure) {
+              var detail = log.get("detail");
+              if (detail == null) detail = log.get("message");
+              if (detail == null && log.get("body") instanceof Map<?, ?> errorBody) {
+                detail = errorBody.get("detail");
+                if (detail == null) detail = errorBody.get("message");
+              }
+              throw new KlabServiceAccessException(
+                  detail == null
+                      ? (response.body() == null || response.body().isBlank()
+                          ? "POST " + apiCall + " failed with HTTP " + response.statusCode()
+                          : response.body())
+                      : detail.toString());
+            }
           }
 
         } catch (Throwable e) {
@@ -1769,6 +1801,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {
             //                        e.printStackTrace();
+          }
+          if (propagateFailure) {
+            if (e instanceof KlabServiceAccessException serviceFailure) throw serviceFailure;
+            throw new KlabServiceAccessException(e);
           }
         }
 

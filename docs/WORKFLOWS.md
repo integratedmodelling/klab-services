@@ -460,14 +460,21 @@ Install a `WorkflowUIProvider` on `WorkspaceView` to supply two callbacks: the w
 that may be started for an `(asset, UserScope)`, and an optional specialized stage editor selected
 from the workflow, flow, state, and state schema. The specialized editor returns its JavaFX node,
 a live validity predicate, a metadata exporter, and a read-only callback. Calling the supplied
-`validationChanged` runnable refreshes confirmation-button enablement. Returning `null` selects the
+`validationChanged` runnable refreshes Update and Submit enablement. Returning `null` selects the
 generic stage editor, which provides persisted title and description fields alongside metadata.
 
-The common shell renders instructions, labels attachment rules as required or optional, queues
-draft uploads locally, and provides cancel/delete controls plus one confirmation button per
-client-admitted transition. A persisted editable stage also provides **Update stage**, which saves
-its title, description, and specialized-editor metadata without performing a transition. The
-button is enabled only while the specialized editor reports valid contents; stages that fail the
+The common shell renders instructions and an attachment-rule selector. Each choice identifies its
+logical type, required/optional status, admitted media type, optional asset class, and arity; the
+upload prompt follows the selected rule. Uploaded attachment descriptors record the detected
+concrete media type, while wildcard media types in the workflow remain admission constraints. Draft
+uploads are queued locally.
+
+The action bar uses compact, tooltip-labelled icons for stage update and deletion. Admitted
+transitions appear in one expandable selector, initially set to the non-functional
+`-- Choose the next stage --` entry, followed by a single **Submit** button. Submit is enabled only
+after the user deliberately selects an admitted transition and the specialized editor reports valid
+contents. A persisted editable stage also provides the update action, which saves its title,
+description, and specialized-editor metadata without performing a transition. Stages that fail the
 same access/ownership checks used by the service are rendered read-only. The first confirmation sends one atomic initialization request;
 subsequent confirmations save the specialized editor's export as `Flow.State.metadata`, then submit
 the transition with an optimistic revision. Failed actions remain in the editor with a prominent
@@ -475,6 +482,11 @@ inline explanation, allowing correction and retry; cancelling a draft closes it 
 because nothing has been stored. A private open stage is editable only by workflow `ADMIN`, its `owner`, or an
 assigned participant with `EDITOR`; public-read and closed flows are browsers. Only `ADMIN` sees the
 reopen action on a closed flow.
+
+Atomic initialization uses a fail-fast HTTP command: a non-success response or an unreadable
+response body is propagated to the editor instead of being represented as a null Flow. The editor
+does not clear its provisional state or invoke initialization callbacks until it receives a valid
+Flow, so the user can correct and resubmit the same draft.
 
 For a persisted flow, the global **Flow** menu offers **Delete flow…** only to its `EDITOR` creator
 or an `ADMIN`. Confirmation permanently removes every state, transaction, attachment payload, and
