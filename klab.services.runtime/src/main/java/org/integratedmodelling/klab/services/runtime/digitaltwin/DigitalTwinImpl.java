@@ -53,7 +53,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
-  private Configuration configuration;
+  private final Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
   private Cache<Long, KnowledgeGraph.Commit> commitCache =
@@ -815,7 +815,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       UserScope userScope,
       KnowledgeGraphNeo4j database) {
     this.rootScope = scope;
-    var configuration =
+    this.configuration =
         DigitalTwin.Configuration.builder(scope.getConfiguration())
             .id(scopeId)
             .serviceId(service.serviceId())
@@ -866,7 +866,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public boolean isClient() {
-    return true;
+    return false;
   }
 
   @Override

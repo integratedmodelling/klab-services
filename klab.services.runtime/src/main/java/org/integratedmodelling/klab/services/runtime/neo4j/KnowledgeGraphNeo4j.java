@@ -2236,10 +2236,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
       link.setProperties(p);
-      // source is the passed asset; target is the opposite node
-      link.setSource(asset);
       var targetAsset = getAsset(targetId, scope, RuntimeAsset.class);
-      link.setTarget(targetAsset);
+      // Selection direction does not change the orientation of the stored relationship.
+      if (direction == GraphModel.Relationship.Direction.INCOMING) {
+        link.setSource(targetAsset);
+        link.setTarget(asset);
+      } else {
+        link.setSource(asset);
+        link.setTarget(targetAsset);
+      }
       ret.add(link);
     }
 

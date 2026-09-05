@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -206,23 +205,9 @@ public class SchedulerImpl implements Scheduler {
         continue;
       }
 
-      var affectingRelationship =
-          scope
-              .getDigitalTwin()
-              .getKnowledgeGraph()
-              .getLinks(
-                  affecting.source(),
-                  GraphModel.Relationship.Direction.OUTGOING,
-                  scope,
-                  GraphModel.Relationship.AFFECTS)
-              .stream()
-              .findFirst()
-              .orElseThrow(
-                  () ->
-                      new KlabIllegalStateException(
-                          "Inconsistent AFFECT relationship in knowledge graph"));
+      // Sequence belongs to this dependency edge, not an arbitrary edge from its source.
       var sequence =
-          affectingRelationship.properties().get(/* TODO use formal property */ "sequence", 0);
+          affecting.properties().get(/* TODO use formal property */ "sequence", 0);
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())

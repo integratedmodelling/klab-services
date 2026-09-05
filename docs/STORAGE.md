@@ -11,6 +11,10 @@ and a `Storage` owns time-indexed groups of non-overlapping `Shard` objects. A s
 primitive buffer. Contextualizers never receive the buffer itself: they access it sequentially
 through a typed `Storage.Scanner`.
 
+See [DIGITALTWINS](DIGITALTWINS.md) for the owning twin and scheduler lifecycle,
+[KNOWLEDGE_GRAPH](KNOWLEDGE_GRAPH.md) for descriptor transactions, and
+[DISTRIBUTED_TWINS](DISTRIBUTED_TWINS.md) for the proposed connected-twin storage facade.
+
 ## Core contract
 
 The three layers of the storage contract are:
@@ -66,8 +70,9 @@ use `D1_LINEAR`. Split policy is applied to the event-local geometry when shards
 
 ## Creating and finding storage
 
-Each `ServiceContextScope` owns a `StorageManagerImpl`. The manager indexes storage by observation
-ID:
+The hosting `DigitalTwinImpl` owns a `StorageManagerImpl`, created with its service context.
+Focused and peer scopes must not be assumed to own independent storage. The manager indexes
+storage by observation ID within the twin:
 
 - `createStorage(observation)` creates it lazily from the observation's attributed strategy;
 - `getStorage(observation)` returns an existing entry or reconstructs one from contextualization
@@ -168,6 +173,35 @@ count, and a big-endian primitive payload. Reads validate the header and exact f
 backward-compatible reader accepts the original headerless native-endian format when its length is
 exactly valid. Knowledge-graph `HAS_DATA` relationships retain shard descriptors; the files retain
 the primitive payload.
+
+### Graph atomicity and recovery boundary
+
+The scheduler flushes successful quality storage before submitting its shard descriptors to the
+knowledge-graph transaction. This ordering does not make the graph and filesystem a single atomic
+transaction. A later graph failure can leave persisted files, and assigning a persistent observation
+ID rekeys storage before graph commit. Rollback does not generally restore those in-memory IDs or
+previous buffer contents. In particular, atomic file replacement prevents a torn file, but does
+not preserve a previous data version after an unsuccessful graph update.
+
+Recovery should treat committed descriptors as the visibility boundary, use staged/versioned data
+with a publish step, and collect unreferenced files after a suitable retention period. Retries must
+not assume that a positive in-memory observation ID proves the matching graph node was committed.
+The lifecycle review in [DIGITALTWINS](DIGITALTWINS.md) also identifies an unconditional disposal
+path; the existence of persistence policies alone does not guarantee safe context closure.
+
+### Connected twins: proposed contract
+
+Current managers use local observation IDs and local files. They cannot directly serve a union of
+independent twins with overlapping numeric IDs. A connected twin needs an origin-aware read-only
+provider for imported observations and ordinary local storage for its own outputs. Cache keys must
+include source twin/generation, observation, revision, time slice, shard, and representation.
+
+Read source shards through authenticated, versioned data requests; do not send filesystem paths
+or primitive buffers as graph-change messages. Pin data versions to the source revisions recorded
+in output provenance. If the requested version has expired, fail explicitly rather than substitute
+current bytes. Geometry, units, fill curves, and keyed dictionaries still require supported
+mediation. These facilities are planned in [DISTRIBUTED_TWINS](DISTRIBUTED_TWINS.md), not implemented
+by the existing storage manager.
 
 ## Concurrency and failure behavior
 
