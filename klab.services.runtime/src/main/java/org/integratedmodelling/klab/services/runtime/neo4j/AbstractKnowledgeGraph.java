@@ -193,7 +193,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               GraphModel.Fields.SERVICE_TYPE,
               activity.getServiceType() == null ? null : activity.getServiceType().name());
           ret.put(GraphModel.Fields.DATAFLOW, activity.getDataflow());
-          ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
+          ret.put(GraphModel.Fields.OUTCOME, activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put(GraphModel.Fields.STACK_TRACE, activity.getStackTrace());
           ret.put(GraphModel.Fields.TRIGGERING_ACTIVITY_URN, activity.getTriggeringActivityUrn());
         }

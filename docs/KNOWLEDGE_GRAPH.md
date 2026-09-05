@@ -65,26 +65,115 @@ asset number equality, and identity equality are three different tests.
 
 ## Reads and queries
 
-The API provides direct ID/URN retrieval, `query(...)`, `getLinks(...)`, and compact `getLinkInfo(...)`.
-Queries can describe a source or target, relationship, restrictions, ordering, pagination,
-depth, and Boolean combinations. The Neo4j compiler currently implements a one-hop relationship
-query with equality restrictions. Other operators have empty switch branches; AND/OR/NOT do
-not produce an executable statement; depth, limit, offset, and ordering are not applied by that
-compiler. Some invalid/unsupported queries return an empty list after error logging.
+The revised `query(Class, scope)` supports whole-context searches without an anchor,
+typed predicates, directed multi-hop traversal, Boolean composition, and ordered pagination.
+`run(scope)` returns distinct assets; `peek(scope)` returns the first result as an Optional.
+The builder is mutable. Supported results include observations, cohorts, activities, agents,
+plans, actuators, storage shards, Links and RuntimeAsset root marker classes.
+`RuntimeAsset.class` searches runtime nodes; geometry descriptors are not RuntimeAssets.
 
-Callers must distinguish “no matching observation” from “unsupported query” and “database
-unavailable.” Otherwise resolution can silently proceed with incomplete knowledge. Implement
-missing operations or reject them explicitly before advertising the query capability.
+### GraphModel contract
 
-`getLinks` combines transaction-local links for assets in the current transaction with persisted
-links. A correct returned link must retain database orientation for both incoming and outgoing
-requests. Looking up incoming links changes which links are selected, not their direction.
-This review corrected the persisted path to honor this invariant; see KG-1 below.
+Use `GraphModel.Fields` for property names, `GraphModel.Labels` for database labels and
+`GraphModel.Relationship` for edges. Record field constants alias the shared vocabulary.
+Legacy spellings remain distinct: centralization does not migrate existing property names.
+Property names are validated against `Fields.ALL`; caller values are bound parameters.
+Arbitrary Cypher and undeclared metadata properties are not accepted.
 
-Numeric retrieval uses an asset cache. It can return mutable objects, including cohorts whose
-geometry is recomputed for the requesting scope. Cache identity, result type, access control,
-and scope-dependent projections must be handled separately. Authorizing a context at an HTTP
-endpoint is insufficient if a subsequent lookup can fetch an unrelated graph asset by number.
+### Query operations
+
+| Operation | Behavior |
+|---|---|
+| `where(field, EQUALS, value)` | Typed equality; null means an absent property. Repeated predicates are AND. |
+| `LT`, `LE`, `GT`, `GE` | Strict/inclusive comparisons; combine for numeric ranges. |
+| `LIKE` | Case-sensitive pattern: `%` any sequence, `_` one character; other characters literal. |
+| `BEFORE`, `AFTER` | Strict timestamp comparison using epoch milliseconds or an ISO-8601 instant string. |
+| `source(asset)` / `target(asset)` | Outgoing traversal from / incoming traversal toward the anchor. A class can be a typed wildcard anchor. |
+| `along(type, field, value, ...)` | Edge type and optional equality properties, applied to every traversed edge. Omit for any edge type. |
+| `depth(n)` / `hops(min,max)` | Inclusive lengths 1..n / min..max. Default 1; maximum 64; zero includes the anchor. |
+| `and`, `or`, `not` | Intersection, union, complement within the context and result type. |
+| `order(Order.ascending(field), ...)` | Multiple sort keys; String keys mean ascending. |
+| `offset(n)` / `limit(n)` | Nonnegative offset; limit -1 unlimited, zero no rows. Apply after Boolean composition. |
+| `between(source,target,type)` | Return Links with direction and properties; exactly one hop. Parallel links remain separate. |
+| `id(n)` | Identity lookup within context/result type; ignores other selection predicates. |
+
+Boolean children must have the same result type and cannot carry pagination or ordering.
+Sorting adds a Neo4j element-identity tie-breaker. Pagination is deterministic in an unchanged
+graph, not a snapshot across concurrent writes. Trees are limited to 128 query nodes; database
+execution has a 30-second transaction timeout. Unbounded results are materialized in memory.
+
+### Java examples
+
+Given an existing `ContextScope scope` and `Observation collective`:
+
+```java
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import static org.integratedmodelling.klab.api.data.KnowledgeGraph.Query.Operator.*;
+import static org.integratedmodelling.klab.api.digitaltwin.GraphModel.Fields.*;
+
+KnowledgeGraph graph = scope.getDigitalTwin().getKnowledgeGraph();
+
+var page = graph.query(Observation.class, scope)
+    .where(SIZE, GE, 10L).where(SIZE, LT, 100L)
+    .order(KnowledgeGraph.Query.Order.descending(SIZE))
+    .offset(20).limit(20).run(scope);
+
+// The direct-child query used by ServiceContextScope.getChildrenOf.
+var children = graph.query(RuntimeAsset.class, scope)
+    .source(collective).along(GraphModel.Relationship.HAS_CHILD).run(scope);
+
+var descendants = graph.query(Observation.class, scope)
+    .source(collective).along(GraphModel.Relationship.HAS_CHILD)
+    .hops(2, 4).run(scope);
+var ancestors = graph.query(Observation.class, scope)
+    .target(collective).along(GraphModel.Relationship.HAS_CHILD)
+    .depth(4).run(scope);
+
+var named = graph.query(Observation.class, scope).where(NAME, LIKE, "river%");
+var recent = graph.query(Observation.class, scope)
+    .where(UPDATED, AFTER, "2026-01-01T00:00:00Z");
+var unresolved = graph.query(Observation.class, scope).where(RESOLVED, EQUALS, false);
+var selected = named.or(recent).and(unresolved.not()).limit(100).run(scope);
+
+var links = graph.query(KnowledgeGraph.Link.class, scope)
+    .source(collective).along(GraphModel.Relationship.HAS_CHILD).run(scope);
+// With both endpoints known:
+// graph.query(KnowledgeGraph.Link.class, scope)
+//     .between(collective, child, GraphModel.Relationship.HAS_CHILD).run(scope);
+```
+
+### Transport and failure modes
+
+The endpoint accepts serialized `KnowledgeGraphQuery`: `resultType` selects the result;
+`type` is QUERY, AND, OR or NOT; Boolean nodes have `children`. Leaves contain typed
+`criteria` records (field, operator, argument), optional source/target descriptors (type,
+numeric id or urn), relationship, minimumDepth and depth. Outer queries carry ordering
+records (field, direction), offset and limit. Legacy string-valued `assetQueryCriteria`
+remain readable; new callers should retain JSON numbers and booleans.
+
+Only a successful query with no matches returns an empty list. `QueryException` provides
+machine-readable codes; HTTP responses use ProblemDetail with a `code` property:
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| INVALID_QUERY | 400 | Invalid field, bounds, shape, value or scope. |
+| UNSUPPORTED_QUERY | 422 | Recognized feature with no implementation. |
+| ACCESS_DENIED | 403 | Access rejected; the client also maps 401 here. |
+| BACKEND_UNAVAILABLE | 503 | Database/transport unavailable; includes gateway failures on the client. |
+| EXECUTION_FAILED | 500 | Execution or materialization failed. |
+
+Spatial `INTERSECT`, `COVERS`, `NEAREST` are explicitly unsupported: geometry/CRS, distance
+and ranking semantics still need design. They are never silently ignored. Arbitrary
+projections, aggregates, path results and semantic reasoning are outside this API.
+
+Context visibility is checked through directed structural/provenance reachability, bounded
+at 64 edges, for results and intermediate nodes. This does not replace HTTP authorization
+or repair the separate primitive lookup/mutation issues in KG-3. `getLinks` also includes
+transaction-local links; general queries read committed database state. Numeric retrieval
+has its own mutable asset cache.
 
 ## Writes, provenance, and commit visibility
 
@@ -143,8 +232,7 @@ have correct orientation, making the bug dependent on persistence and cache stat
 
 The code now sets source=m/target=n for incoming traversal and source=n/target=m for outgoing,
 preserving properties. `KnowledgeGraphLinkDirectionTest` exercises both result-adaptation paths
-using a fake database result. It is not a live Neo4j test and has not run because of upstream
-build failures. Still test both directions on persisted nodes, compare transaction-local and
+using a fake database result. Those tests pass; they are not live database tests. Still test both directions on persisted nodes, compare transaction-local and
 persisted traversal, and execute the resulting two-node dependency graph in integration.
 
 ### KG-2: key allocation races across contextualized instances (high)
@@ -153,7 +241,7 @@ persisted traversal, and execute the resulting two-node dependency graph in inte
 separate database queries. Contextualized graphs are separate objects sharing the driver.
 Two can read N, both calculate N+1, and both return N+1; the conditional update does not check
 whether it actually changed a row. Concurrent first use can also create multiple statistics
-nodes. `configureDatabase()` currently installs no constraints or indexes.
+nodes. Context initialization installs lookup indexes, but does not establish allocator uniqueness.
 
 Use a transactionally locked allocator or an appropriate unique identity strategy, plus a
 uniqueness constraint and retry semantics. Test concurrent allocations from two context
@@ -173,12 +261,23 @@ for shared agents/catalog assets. Test cross-context reads, writes, links, URN a
 lookups, and cache hits under two users. Never treat federation membership as unrestricted
 access to every observation.
 
-### KG-4: query features silently disappear (high)
+### KG-4: silently ignored query features (fixed)
 
-`compileQuery` ignores non-equality restrictions and the advertised pagination/depth/order
-features. Boolean query branches do not build statements. A “before time T” restriction can
-be lost instead of rejected. Add capability validation and fail explicitly for unsupported
-forms; create contract tests for every public operator and combination.
+The replacement compiler implements ranges, hop bounds, ordering, pagination and Boolean
+composition. It retains typed values across transport, corrects reversed AND/OR builders,
+and preserves composed result types. Unsupported requests fail explicitly.
+
+### Query visibility follow-up
+
+The initial replacement compiler omitted `TRIGGERED` and `CONTEXTUALIZED` from context
+reachability. A child query returned no rows when a collective was reachable through a nested
+creation/contextualization activity. An embedded Neo4j test reproduced that failure; both edge
+types are now included. A read-only production-data check on collective observation 223
+confirmed the same path: the former filter returned zero children, while the corrected
+compiled query returned all 11 children (232 through 242). This verifies query selection,
+not the final GeoJSON serialization after restarting the runtime. Cross-context `AFFECTS` edges do not confer ownership. Negation also
+normalizes an absent-property comparison to false before complementing it, so missing fields
+do not incorrectly disappear from NOT results.
 
 ### KG-5: failed or unmatched mutations can appear successful (high)
 
@@ -199,12 +298,10 @@ commit partial work. Calling `fail` afterward cannot undo a committed transactio
 signaling inside the resource lifetime or require explicit commit with rollback on close.
 Inject an application failure after a successful store and assert no partial graph survives.
 
-### KG-7: relationship URNs are interpolated into Cypher (medium/high)
+### KG-7: interpolated relationship endpoints (fixed)
 
-The special `between` query path concatenates source/target URNs inside quoted Cypher strings.
-Other lookup paths use parameters. A quote-bearing URN can break syntax; potential injection
-depends on whether untrusted identifiers reach this path. Parameterize both identifiers and
-test quote/backslash inputs without executing unintended graph operations.
+Both endpoint identities are bound parameters in the replacement compiler, including
+quote-bearing URNs. Caller values are never concatenated into Cypher source.
 
 ### KG-8: rollback and cache coherence are incomplete (high for retry/recovery)
 
@@ -223,8 +320,7 @@ shutdown; test disconnect/reconnect and root/agent traversal.
 
 ## Implementation and test checklist
 
-Verify the KG-1 correction and fix KG-2, KG-3, KG-5, and KG-6 before broadening graph federation. Make unsupported queries
-explicit before building a federated planner on them. Add source-qualified identity and durable
+Verify the KG-1 correction and fix KG-2, KG-3, KG-5, and KG-6 before broadening graph federation. Preserve explicit failures when building a federated planner. Add source-qualified identity and durable
 revision/change records through a versioned schema migration, not ad hoc extra cache keys.
 
 Relevant existing tests are `DigitalTwinCommitTest`, `ClientKnowledgeGraphTest`, and the file
@@ -233,9 +329,10 @@ Neo4j-backed contract suite covering two contexts, permissions, all mutation out
 both directions, cache invalidation, and crash/retry boundaries. A mock-only test cannot prove
 database locking or rollback behavior.
 
-The reactor-test attempt and its upstream compilation blocker are recorded in
-[DIGITALTWINS](DIGITALTWINS.md#verification-and-source-map). This documentation does not claim
-the remaining defects have been fixed or that integration tests passed.
+The focused reactor build now passes through the runtime server, including compiler, actuator
+serialization, link direction, commit, scheduler and storage regression tests: 30 tests pass,
+including three embedded Neo4j execution cases. These checks
+do not establish production permissions, allocator safety or crash recovery.
 
 [api]: ../klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/KnowledgeGraph.java
 [model]: ../klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/GraphModel.java

@@ -15,9 +15,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  *
  * <p>Group custom properties use the {@value #ROLES_PROPERTY}, {@value
  * #PERMITTED_WORKFLOWS_PROPERTY}, {@value #DISALLOWED_TRANSITIONS_PROPERTY}, and {@value
- * #MAX_RESPONSE_HOURS_PROPERTY} keys. Values that contain several items are comma separated.
- * Public review additionally requires the identity data flag {@value
- * #KNOWN_REAL_PERSON_PROPERTY}.
+ * #MAX_RESPONSE_HOURS_PROPERTY} keys. Values that contain several items are comma separated. Public
+ * review additionally requires the identity data flag {@value #KNOWN_REAL_PERSON_PROPERTY}.
  */
 public class WorkflowParticipant implements Serializable {
 
@@ -50,13 +49,16 @@ public class WorkflowParticipant implements Serializable {
             && !user.isAnonymous()
             && ret.email != null
             && !ret.email.isBlank()
-            && Boolean.parseBoolean(
-                String.valueOf(user.getData().get(KNOWN_REAL_PERSON_PROPERTY)));
+            && Boolean.parseBoolean(String.valueOf(user.getData().get(KNOWN_REAL_PERSON_PROPERTY)));
 
-    Collection<Group> userGroups = user.getGroups() == null ? java.util.List.of() : user.getGroups();
+    Collection<Group> userGroups =
+        user.getGroups() == null ? java.util.List.of() : user.getGroups();
     for (Group group : userGroups) {
       ret.groups.add(group.getId());
-      var properties = group.getCustomProperties() == null ? java.util.List.<CustomProperty>of() : group.getCustomProperties();
+      var properties =
+          group.getCustomProperties() == null
+              ? java.util.List.<CustomProperty>of()
+              : group.getCustomProperties();
       for (CustomProperty property : properties) {
         if (property == null || property.getKey() == null || property.getValue() == null) {
           continue;
@@ -96,8 +98,8 @@ public class WorkflowParticipant implements Serializable {
   }
 
   /**
-   * Whether group policy admits this workflow. Administrators and the {@code *} wildcard bypass
-   * the explicit allow-list. Entries may use the stable workflow ID, {@code id@version}, complete
+   * Whether group policy admits this workflow. Administrators and the {@code *} wildcard bypass the
+   * explicit allow-list. Entries may use the stable workflow ID, {@code id@version}, complete
    * workflow URN, or human-readable workflow name.
    */
   public boolean isWorkflowPermitted(Workflow workflow) {
@@ -127,14 +129,38 @@ public class WorkflowParticipant implements Serializable {
         || Instant.now().isBefore(state.getCreatedAt().plus(maxResponseHours, ChronoUnit.HOURS));
   }
 
-  public String getIdentity() { return identity; }
-  public void setIdentity(String identity) { this.identity = identity; }
-  public String getEmail() { return email; }
-  public void setEmail(String email) { this.email = email; }
-  public Set<String> getGroups() { return groups; }
-  public void setGroups(Set<String> groups) { this.groups = groups == null ? new LinkedHashSet<>() : groups; }
-  public Set<WorkflowRole> getRoles() { return roles; }
-  public void setRoles(Set<WorkflowRole> roles) { this.roles = roles == null ? new LinkedHashSet<>() : roles; }
+  public String getIdentity() {
+    return identity;
+  }
+
+  public void setIdentity(String identity) {
+    this.identity = identity;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public Set<String> getGroups() {
+    return groups;
+  }
+
+  public void setGroups(Set<String> groups) {
+    this.groups = groups == null ? new LinkedHashSet<>() : groups;
+  }
+
+  public Set<WorkflowRole> getRoles() {
+    return roles;
+  }
+
+  public void setRoles(Set<WorkflowRole> roles) {
+    this.roles = roles == null ? new LinkedHashSet<>() : roles;
+  }
+
   public Set<String> getPermittedWorkflows() {
     return permittedWorkflows;
   }
@@ -142,10 +168,28 @@ public class WorkflowParticipant implements Serializable {
   public void setPermittedWorkflows(Set<String> value) {
     this.permittedWorkflows = value == null ? new LinkedHashSet<>() : value;
   }
-  public Set<String> getDisallowedTransitions() { return disallowedTransitions; }
-  public void setDisallowedTransitions(Set<String> value) { this.disallowedTransitions = value == null ? new LinkedHashSet<>() : value; }
-  public Long getMaxResponseHours() { return maxResponseHours; }
-  public void setMaxResponseHours(Long maxResponseHours) { this.maxResponseHours = maxResponseHours; }
-  public boolean isKnownRealPerson() { return knownRealPerson; }
-  public void setKnownRealPerson(boolean knownRealPerson) { this.knownRealPerson = knownRealPerson; }
+
+  public Set<String> getDisallowedTransitions() {
+    return disallowedTransitions;
+  }
+
+  public void setDisallowedTransitions(Set<String> value) {
+    this.disallowedTransitions = value == null ? new LinkedHashSet<>() : value;
+  }
+
+  public Long getMaxResponseHours() {
+    return maxResponseHours;
+  }
+
+  public void setMaxResponseHours(Long maxResponseHours) {
+    this.maxResponseHours = maxResponseHours;
+  }
+
+  public boolean isKnownRealPerson() {
+    return knownRealPerson;
+  }
+
+  public void setKnownRealPerson(boolean knownRealPerson) {
+    this.knownRealPerson = knownRealPerson;
+  }
 }

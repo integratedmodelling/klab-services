@@ -19,11 +19,23 @@ public final class WorkflowUrns {
   }
 
   public static String workflowState(String workflowId, String version, String stateId) {
-    return ROOT + "workflow-state:" + component(workflowId) + "@" + component(version) + ":" + component(stateId);
+    return ROOT
+        + "workflow-state:"
+        + component(workflowId)
+        + "@"
+        + component(version)
+        + ":"
+        + component(stateId);
   }
 
   public static String workflowTransition(String workflowId, String version, String transitionId) {
-    return ROOT + "workflow-transition:" + component(workflowId) + "@" + component(version) + ":" + component(transitionId);
+    return ROOT
+        + "workflow-transition:"
+        + component(workflowId)
+        + "@"
+        + component(version)
+        + ":"
+        + component(transitionId);
   }
 
   public static String flow(String id) {
@@ -44,16 +56,20 @@ public final class WorkflowUrns {
 
   public static Coordinates parse(String urn, KlabAsset.KnowledgeClass knowledgeClass) {
     if (urn == null) throw invalid(urn);
-    String prefix = ROOT + switch (knowledgeClass) {
-      case WORKFLOW -> "workflow:";
-      case WORKFLOW_STATE -> "workflow-state:";
-      case WORKFLOW_TRANSITION -> "workflow-transition:";
-      case FLOW -> "flow:";
-      case FLOW_STATE -> "flow-state:";
-      case FLOW_TRANSITION -> "flow-transition:";
-      case FLOW_ATTACHMENT -> "flow-attachment:";
-      default -> throw new KlabIllegalArgumentException(knowledgeClass + " is not a workflow asset class");
-    };
+    String prefix =
+        ROOT
+            + switch (knowledgeClass) {
+              case WORKFLOW -> "workflow:";
+              case WORKFLOW_STATE -> "workflow-state:";
+              case WORKFLOW_TRANSITION -> "workflow-transition:";
+              case FLOW -> "flow:";
+              case FLOW_STATE -> "flow-state:";
+              case FLOW_TRANSITION -> "flow-transition:";
+              case FLOW_ATTACHMENT -> "flow-attachment:";
+              default ->
+                  throw new KlabIllegalArgumentException(
+                      knowledgeClass + " is not a workflow asset class");
+            };
     if (!urn.startsWith(prefix)) throw invalid(urn);
     String body = urn.substring(prefix.length());
     if (knowledgeClass == KlabAsset.KnowledgeClass.WORKFLOW) {

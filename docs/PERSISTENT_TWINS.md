@@ -162,8 +162,7 @@ Focused tests include `StorageReconstructionTest` (partition order/completeness/
 `ActuatorPersistenceTest` (structured call/data preservation and legacy behavior),
 `StorageManagerImplTest`, `KnowledgeGraphLinkDirectionTest`, `DigitalTwinCommitTest`, and
 `TimeEmitterTest`. The normal filesystem sandbox produced unresolved-class build failures;
-the same offline production compile succeeded outside that sandbox. Focused tests are run
-there as well; consult the change report for the final result.
+the same offline production compile and the focused tests succeeded outside that sandbox.
 
 Required integration coverage still includes a real service restart with an unread quality,
 multiple time slices, legacy/corrupt shards, persisted leaf re-execution, unavailable plugins,

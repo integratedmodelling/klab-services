@@ -212,28 +212,17 @@ never dispose either source twin.
 
 ## Verification and source map
 
-The review traced the API, service/client scopes, twin transaction implementation, Neo4j backend,
-client graph, scheduler, emitter, and AMQP transport. The standalone Java 21 emitter reproduction
-above executed successfully and demonstrated the truncated registration range. No live Neo4j
-integration test was run. `KnowledgeGraphNeo4jContractTest` is commented out, so its presence
-does not establish coverage.
+The review traced the API, scopes, twin transactions, Neo4j backend, client graph, scheduler,
+emitter and AMQP transport. The original sandboxed build attempts failed during upstream
+compilation. Subsequent offline builds outside that sandbox compile through the runtime server
+and run the focused scheduler, commit, storage, actuator and query regression suites.
 
-The focused reactor command attempted during this review was:
-
-```powershell
-.\mvnw.cmd -o -pl klab.services.runtime -am "-Dtest=TimeEmitterTest,DigitalTwinCommitTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
-```
-
-It stopped in `klab.core.api` test compilation, including unresolved `Data.FillCurve` references
-in existing tests, before the selected runtime tests ran. Git ownership warnings also appeared.
-No passing reactor-test claim is made. A subsequent production compile with
-`-o -pl klab.services.runtime -am -Dmaven.test.skip=true compile` also stopped upstream, in
-`klab.core.common`, with unresolved API types including `Scope` and
-`ExternalAuthenticationCredentials`. The changed runtime classes were not reached.
-`KnowledgeGraphLinkDirectionTest` was added to exercise incoming/outgoing persisted-result
-adaptation with a fake query result; it has not run because of these build blockers.
-Restore upstream compilation, then run it alongside the selected tests and add the remaining
-graph/scheduler integration regression cases above.
+`KnowledgeGraphLinkDirectionTest` verifies adaptation using fake results. The added
+`Neo4jQueryExecutionTest` executes child queries against isolated embedded Neo4j, including
+nested provenance and foreign-context exclusion. `KnowledgeGraphNeo4jContractTest` remains
+commented out. Restart, production authorization, allocation concurrency and complete scheduler
+execution still need integration coverage. See [KNOWLEDGE_GRAPH](KNOWLEDGE_GRAPH.md) for the
+implemented query contract and [PERSISTENT_TWINS](PERSISTENT_TWINS.md) for restart work.
 
 [dt]: ../klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/DigitalTwin.java
 [impl]: ../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java

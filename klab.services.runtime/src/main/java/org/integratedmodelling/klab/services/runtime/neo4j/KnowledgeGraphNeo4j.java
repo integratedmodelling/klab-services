@@ -737,9 +737,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setType(
             node.get(GraphModel.Fields.TYPE).isNull() ? null : Activity.Type.valueOf(node.get(GraphModel.Fields.TYPE).asString()));
         instance.setOutcome(
-            node.get("outcome").isNull()
+            node.get(GraphModel.Fields.OUTCOME).isNull()
                 ? null
-                : Activity.Outcome.valueOf(node.get("outcome").asString()));
+                : Activity.Outcome.valueOf(node.get(GraphModel.Fields.OUTCOME).asString()));
         instance.setCredits(node.get(GraphModel.Fields.CREDITS).asLong(0));
         instance.setSize(node.get(GraphModel.Fields.SIZE).asLong(0));
         instance.setSchedulerTime(node.get(GraphModel.Fields.SCHEDULER_TIME).asList(value -> value.asLong()));
@@ -958,11 +958,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         query(
             """
-            CALL spatial.bbox($layerName, $lowerLeft, $upperRight) YIELD node
-            MATCH (:Cohort {id: $cohortId})-[:HAS_MEMBER]->(node:Observation)
-            WHERE node.shape IS NOT NULL
-            RETURN node.shape AS shape
-            """,
+            CALL spatial.bbox($%s, $%s, $%s) YIELD node
+            MATCH (:%s {%s: $%s})-[:%s]->(node:%s)
+            WHERE node.%s IS NOT NULL
+            RETURN node.%s AS %s
+            """.formatted(GraphModel.Fields.LAYER_NAME, GraphModel.Fields.LOWER_LEFT,
+                GraphModel.Fields.UPPER_RIGHT, GraphModel.Labels.COHORT, GraphModel.Fields.ID,
+                GraphModel.Fields.COHORT_ID, GraphModel.Relationship.HAS_MEMBER.name(),
+                GraphModel.Labels.OBSERVATION, GraphModel.Fields.SHAPE, GraphModel.Fields.SHAPE,
+                GraphModel.Fields.SHAPE),
             Map.of(
                 GraphModel.Fields.LAYER_NAME,
                 getShapeLayerName(),
@@ -2041,7 +2045,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String query =
         (("MATCH (n:{label} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) MATCH ")
                 + pattern
-                + (" RETURN " + GraphModel.Fields.TYPE + "(r) AS " + GraphModel.Fields.RTYPE + ", " + GraphModel.Fields.PROPERTIES + "(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
+                + (" RETURN type(r) AS " + GraphModel.Fields.RTYPE + ", properties(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
             .replace("{label}", sourceLabel);
 
     var result = query(query, Map.of(GraphModel.Fields.ID, sourceKey), scope);
@@ -2174,7 +2178,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String query =
         (("MATCH (n:{label} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) MATCH ")
                 + pattern
-                + (" RETURN " + GraphModel.Fields.TYPE + "(r) AS " + GraphModel.Fields.RTYPE + ", " + GraphModel.Fields.PROPERTIES + "(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
+                + (" RETURN type(r) AS " + GraphModel.Fields.RTYPE + ", properties(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
             .replace("{label}", sourceLabel);
 
     var result = query(query, Map.of(GraphModel.Fields.ID, idValue), scope);

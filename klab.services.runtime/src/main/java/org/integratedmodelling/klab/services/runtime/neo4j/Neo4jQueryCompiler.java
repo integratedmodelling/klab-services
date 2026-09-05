@@ -32,6 +32,10 @@ public final class Neo4jQueryCompiler {
               GraphModel.Relationship.HAS_DATA,
               GraphModel.Relationship.HAS_GEOMETRY,
               GraphModel.Relationship.HAS_ACTIVITY,
+              // Nested DigitalTwin transactions attach activities through TRIGGERED, and
+              // contextualization activities reach their observations through CONTEXTUALIZED.
+              GraphModel.Relationship.TRIGGERED,
+              GraphModel.Relationship.CONTEXTUALIZED,
               GraphModel.Relationship.HAS_PLAN,
               GraphModel.Relationship.CONTEXTUALIZED_BY,
               GraphModel.Relationship.HAS_AGENT,
@@ -166,7 +170,7 @@ public final class Neo4jQueryCompiler {
           query.getChildren().stream().map(child -> "(" + predicate(child, links) + ")").toList();
       clauses.add(
           query.getType() == KnowledgeGraphQuery.QueryType.NOT
-              ? "NOT " + children.getFirst()
+              ? "NOT coalesce(" + children.getFirst() + ", false)"
               : String.join(
                   query.getType() == KnowledgeGraphQuery.QueryType.AND ? " AND " : " OR ",
                   children));

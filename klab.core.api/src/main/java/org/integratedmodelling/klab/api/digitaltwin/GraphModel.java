@@ -22,6 +22,7 @@ public interface GraphModel {
     String NAME = "name";
     String URN = "urn";
     String TYPE = "type";
+    String OUTCOME = "outcome";
     String SEMANTIC_TYPE = "semanticType";
     String SEMANTICTYPE = "semantictype";
     String SEMANTICS = "semantics";
@@ -361,16 +362,16 @@ public interface GraphModel {
   }
 
   record Link(long sourceId, long targetId, LinkType type) {
-    public static final String SOURCE_ID_FIELD = "sourceId";
-    public static final String TARGET_ID_FIELD = "targetId";
-    public static final String TYPE_FIELD = "type";
+    public static final String SOURCE_ID_FIELD = Fields.SOURCE_ID;
+    public static final String TARGET_ID_FIELD = Fields.TARGET_ID;
+    public static final String TYPE_FIELD = Fields.TYPE;
   }
 
   record Context(long id, long created, String name, Persistence expiration, String user) {
-    public static final String ID_FIELD = "id";
-    public static final String NAME_FIELD = "name";
-    public static final String EXPIRATION_FIELD = "expiration";
-    public static final String USER_FIELD = "user";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String NAME_FIELD = Fields.NAME;
+    public static final String EXPIRATION_FIELD = Fields.EXPIRATION;
+    public static final String USER_FIELD = Fields.USER;
   }
 
   record Data(
@@ -383,33 +384,33 @@ public interface GraphModel {
       String histogramJson,
       Persistence persistence,
       boolean offloaded) {
-    public static final String ID_FIELD = "id";
-    public static final String FILL_CURVE_FIELD = "fillCurve";
-    public static final String SIZE_FIELD = "size";
-    public static final String TYPE_FIELD = "type";
-    public static final String VALUE_TYPE_FIELD = "valueType";
-    public static final String OFFSET_FIELD = "offset";
-    public static final String HISTOGRAM_JSON_FIELD = "histogramJson";
-    public static final String PERSISTENCE_FIELD = "persistence";
-    public static final String OFFLOADED_FIELD = "offloaded";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String FILL_CURVE_FIELD = Fields.FILL_CURVE;
+    public static final String SIZE_FIELD = Fields.SIZE;
+    public static final String TYPE_FIELD = Fields.TYPE;
+    public static final String VALUE_TYPE_FIELD = Fields.VALUE_TYPE;
+    public static final String OFFSET_FIELD = Fields.OFFSET;
+    public static final String HISTOGRAM_JSON_FIELD = Fields.HISTOGRAM_JSON;
+    public static final String PERSISTENCE_FIELD = Fields.PERSISTENCE;
+    public static final String OFFLOADED_FIELD = Fields.OFFLOADED;
   }
 
   record Geometry(long id, String definition, long size) {
-    public static final String ID_FIELD = "id";
-    public static final String DEFINITION_FIELD = "definition";
-    public static final String SIZE_FIELD = "size";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String DEFINITION_FIELD = Fields.DEFINITION;
+    public static final String SIZE_FIELD = Fields.SIZE;
   }
 
   record Cohort(long id, String observable, String behaviorUrn) {
-    public static final String ID_FIELD = "id";
-    public static final String OBSERVABLE_FIELD = "observable";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String OBSERVABLE_FIELD = Fields.OBSERVABLE;
     public static final String BEHAVIOR_URN = "behaviorUrn";
   }
 
   record Agent(long id, AgentType type, String name) {
-    public static final String ID_FIELD = "id";
-    public static final String TYPE_FIELD = "type";
-    public static final String NAME_FIELD = "name";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String TYPE_FIELD = Fields.TYPE;
+    public static final String NAME_FIELD = Fields.NAME;
   }
 
   record Observation(
@@ -423,33 +424,33 @@ public interface GraphModel {
       long updated,
       boolean resolved,
       int nChildren) {
-    public static final String ID_FIELD = "id";
-    public static final String NAME_FIELD = "name";
-    public static final String URN_FIELD = "urn";
-    public static final String OBSERVATION_TYPE_FIELD = "type";
-    public static final String SEMANTIC_TYPE_FIELD = "semanticType";
-    public static final String OBSERVABLE_FIELD = "observable";
-    public static final String SEMANTICS_FIELD = "semantics";
-    public static final String UPDATE_TIMESTAMP_FIELD = "updated";
-    public static final String RESOLVED_FIELD = "resolved";
-    public static final String N_CHILDREN_FIELD = "nChildren";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String NAME_FIELD = Fields.NAME;
+    public static final String URN_FIELD = Fields.URN;
+    public static final String OBSERVATION_TYPE_FIELD = Fields.TYPE;
+    public static final String SEMANTIC_TYPE_FIELD = Fields.SEMANTIC_TYPE;
+    public static final String OBSERVABLE_FIELD = Fields.OBSERVABLE;
+    public static final String SEMANTICS_FIELD = Fields.SEMANTICS;
+    public static final String UPDATE_TIMESTAMP_FIELD = Fields.UPDATED;
+    public static final String RESOLVED_FIELD = Fields.RESOLVED;
+    public static final String N_CHILDREN_FIELD = Fields.N_CHILDREN;
   }
 
   record Dataflow(long id) {
-    public static final String ID_FIELD = "id";
+    public static final String ID_FIELD = Fields.ID;
   }
 
   record Actuator(
       long id, long observationId, String semantics, String strategy, List<String> computation) {
-    public static final String ID_FIELD = "id";
-    public static final String OBSERVATION_ID_FIELD = "observationId";
-    public static final String SEMANTICS_FIELD = "semantics";
-    public static final String STRATEGY_FIELD = "strategy";
-    public static final String COMPUTATION_FIELD = "computation";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String OBSERVATION_ID_FIELD = Fields.OBSERVATION_ID;
+    public static final String SEMANTICS_FIELD = Fields.SEMANTICS;
+    public static final String STRATEGY_FIELD = Fields.STRATEGY;
+    public static final String COMPUTATION_FIELD = Fields.COMPUTATION;
   }
 
   record ProvenanceNode(String id) {
-    public static final String ID_FIELD = "id";
+    public static final String ID_FIELD = Fields.ID;
   }
 
   record Activity(
@@ -465,18 +466,18 @@ public interface GraphModel {
       ActivityType type,
       ActivityOutcome outcome,
       String observationUrn) {
-    public static final String ID_FIELD = "id";
-    public static final String URN_FIELD = "urn";
-    public static final String SIZE_FIELD = "size";
-    public static final String CREDITS_FIELD = "credits";
-    public static final String START_FIELD = "start";
-    public static final String END_FIELD = "end";
-    public static final String DESCRIPTION_FIELD = "description";
-    public static final String SERVICE_TYPE_FIELD = "serviceType";
-    public static final String SERVICE_NAME_FIELD = "serviceName";
-    public static final String TYPE_FIELD = "type";
-    public static final String OUTCOME_FIELD = "outcome";
-    public static final String OBSERVATION_URN_FIELD = "observationUrn";
+    public static final String ID_FIELD = Fields.ID;
+    public static final String URN_FIELD = Fields.URN;
+    public static final String SIZE_FIELD = Fields.SIZE;
+    public static final String CREDITS_FIELD = Fields.CREDITS;
+    public static final String START_FIELD = Fields.START;
+    public static final String END_FIELD = Fields.END;
+    public static final String DESCRIPTION_FIELD = Fields.DESCRIPTION;
+    public static final String SERVICE_TYPE_FIELD = Fields.SERVICE_TYPE;
+    public static final String SERVICE_NAME_FIELD = Fields.SERVICE_NAME;
+    public static final String TYPE_FIELD = Fields.TYPE;
+    public static final String OUTCOME_FIELD = Fields.OUTCOME;
+    public static final String OBSERVATION_URN_FIELD = Fields.OBSERVATION_URN;
   }
 
   /**

@@ -145,8 +145,22 @@ public interface KnowledgeGraph {
   }
 
   /**
-   * Simple query interface. Get a new query; if necessary combine it with other queries, and run it
-   * to get the contents of the knowledge graph.
+   * A mutable, typed runtime-graph query. With no anchor, searches the owning context for all
+   * assets of the requested type. Results are distinct assets, not paths. Use {@link GraphModel.Fields}
+   * constants for properties and {@link GraphModel.Relationship} for edges. Values are bound
+   * parameters and retain their JSON scalar types.
+   *
+   * <p>Example: {@code graph.query(Observation.class, scope).source(parent)
+   * .along(GraphModel.Relationship.HAS_CHILD).hops(1, 4)
+   * .where(GraphModel.Fields.SIZE, Operator.GE, 10L)
+   * .order(Order.descending(GraphModel.Fields.SIZE)).limit(20).run(scope)}.
+   *
+   * <p>AND, OR and NOT operate within the same context and result type. Apply ordering and
+   * pagination to the combined query, not its children. No matches returns an empty list;
+   * invalid, unsupported, unavailable or failed queries throw {@link QueryException}.
+   * Neo4j bounds traversal at 64 hops and query trees at 128 nodes; pagination is deterministic
+   * only while the graph is unchanged. Geometry descriptors, projections and aggregates are
+   * not runtime-asset query results.
    *
    * @param <T>
    */
@@ -162,6 +176,12 @@ public interface KnowledgeGraph {
     /** Typed, JSON-serializable property predicate. Values are parameters, never query source. */
     record Criterion(String field, Operator operator, Object argument) {}
 
+    /**
+     * EQUALS accepts null to match property absence. LT/LE/GT/GE compare typed properties;
+     * combine comparisons for ranges. LIKE is case-sensitive with SQL-style % and _ wildcards.
+     * BEFORE/AFTER compare epoch milliseconds or ISO-8601 instant strings strictly.
+     * INTERSECT/COVERS/NEAREST currently throw UNSUPPORTED_QUERY pending a geometry/CRS contract.
+     */
     enum Operator {
       EQUALS,
       LT,
@@ -188,16 +208,18 @@ public interface KnowledgeGraph {
      */
     Query<T> id(long id);
 
+    /** Traverse outgoing edges from an asset, root marker, scope, or typed class wildcard. */
     Query<T> source(Object startingPoint);
 
+    /** Traverse incoming edges toward an anchor; returns the source-side assets. */
     Query<T> target(Object startingPoint);
 
+    /** Select an edge type; optional field/value pairs must match every edge in the path. */
     Query<T> along(GraphModel.Relationship relationship, Object... parameters);
 
     /**
-     * Find the (assumed unique) relationship between <code>source</code> and <code>target</code> of
-     * the passed type, and adapt the result to the query target class, which should normally be a
-     * {@link java.util.Map} where the relationship properties are recorded.
+     * Find directed relationships between the endpoints. Requires {@link Link} results and
+     * exactly one hop. Preserves properties and orientation; parallel links remain separate.
      *
      * @param source
      * @param target
@@ -205,6 +227,7 @@ public interface KnowledgeGraph {
      */
     Query<T> between(Object source, Object target, GraphModel.Relationship relationship);
 
+    /** Inclusive path lengths 1 through depth; equivalent to hops(1, depth). Default is 1. */
     Query<T> depth(int depth);
 
     /** Inclusive path length bounds; zero includes the anchor itself. Maximum supported is 64. */
@@ -212,12 +235,16 @@ public interface KnowledgeGraph {
       throw new UnsupportedOperationException("Hop ranges are not supported");
     }
 
+    /** Maximum returned rows, after ordering and offset. -1 is unlimited; zero returns none. */
     Query<T> limit(long n);
 
+    /** Skip a nonnegative number of sorted results. Not a snapshot across concurrent writes. */
     Query<T> offset(long n);
 
+    /** Add an AND predicate on a declared GraphModel field. See {@link Operator} for values. */
     Query<T> where(String field, Operator operator, Object argument);
 
+    /** Ordered {@link Order} records or field-name constants (ascending). */
     Query<T> order(Object... criteria);
 
     List<T> run(Scope scope);
@@ -234,7 +261,11 @@ public interface KnowledgeGraph {
     }
   }
 
-  /** Query failures are never represented as an empty result list. */
+  /**
+   * Query failures are never represented as an empty result list. The HTTP endpoint maps
+   * INVALID_QUERY to 400, UNSUPPORTED_QUERY to 422, ACCESS_DENIED to 403,
+   * BACKEND_UNAVAILABLE to 503 and EXECUTION_FAILED to 500, with a ProblemDetail code property.
+   */
   class QueryException extends RuntimeException {
     public enum Code { INVALID_QUERY, UNSUPPORTED_QUERY, ACCESS_DENIED, BACKEND_UNAVAILABLE, EXECUTION_FAILED }
     private final Code code;
