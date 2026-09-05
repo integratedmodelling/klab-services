@@ -148,6 +148,19 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           // TODO
         }
         case ActuatorImpl actuator -> {
+          ret.put("actuatorSchemaVersion", 1);
+          ret.put("id", actuator.getId());
+          ret.put("name", actuator.getName());
+          ret.put("type", actuator.getType() == null ? null : actuator.getType().name());
+          ret.put("actuatorType", actuator.getActuatorType() == null ? null : actuator.getActuatorType().name());
+          ret.put("childrenCount", Math.max(actuator.getChildrenCount(), actuator.getChildren().size()));
+          ret.put("coverage", actuator.getCoverage() == null ? null : actuator.getCoverage().encode());
+          ret.put("dataJson", Utils.Json.asString(actuator.getData()));
+          ret.put("computationJson", actuator.getComputation().stream().map(Utils.Json::asString).toList());
+          ret.put("annotationsJson", actuator.getAnnotations().stream().map(Utils.Json::asString).toList());
+          ret.put("shardingStrategyJson", actuator.getShardingStrategy() == null ? null : Utils.Json.asString(actuator.getShardingStrategy()));
+          ret.put("resolvedGeometry", actuator.getResolvedGeometry() == null ? null : actuator.getResolvedGeometry().encode());
+          ret.put("resolvedCoverage", actuator.getResolvedCoverage());
           ret.put("semantics", actuator.getObservation().getObservable().getUrn());
           ret.put(
               "computation",

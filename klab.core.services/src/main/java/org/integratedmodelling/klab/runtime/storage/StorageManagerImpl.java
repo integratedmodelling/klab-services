@@ -78,8 +78,7 @@ public class StorageManagerImpl implements StorageManager {
     this.propertyFile =
         ServiceConfiguration.INSTANCE.getFileWithTemplate(
             "storage.properties", NEXT_ID_PROPERTY + "=0");
-    // TODO should have a cache of existing storages and create the storage lazy proxies for the
-    //  existing ones.
+    // Descriptors are reconstructed on demand; primitive buffers remain unloaded until scanned.
     readConfiguration();
   }
 
@@ -156,7 +155,7 @@ public class StorageManagerImpl implements StorageManager {
   public Storage getStorage(Observation observation) {
 
     var ret = this.storage.get(observation.getId());
-    if (ret == null && hasExistingData()) {
+    if (ret == null && observation.getId() > 0) {
       ret = this.storage.computeIfAbsent(observation.getId(), id -> reconstructStorage(observation));
     }
 
@@ -174,7 +173,9 @@ public class StorageManagerImpl implements StorageManager {
     if (contextualizationData == null) return null;
     var shardingStrategy = contextualizationData.getNativeShardingStrategy();
     if (shardingStrategy == null) return null;
-    return new StorageImpl(observation, shardingStrategy, contextScope, this);
+    var restored = new StorageImpl(observation, shardingStrategy, contextScope, this);
+    // The graph, not the presence of an unrelated .dat file, defines existing storage.
+    return restored.allShards().isEmpty() ? null : restored;
   }
 
   @Override

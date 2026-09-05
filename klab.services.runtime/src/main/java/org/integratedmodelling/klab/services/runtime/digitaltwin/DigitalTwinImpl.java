@@ -871,7 +871,14 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public void dispose() {
+    ((SchedulerImpl) scheduler).close();
     this.knowledgeGraph.deleteContext();
     this.storageManager.clear();
+  }
+
+  /** Release process-local resources without deleting a persistent context or its data files. */
+  public void shutdown() {
+    ((SchedulerImpl) scheduler).close();
+    ((StorageManagerImpl) storageManager).close();
   }
 }

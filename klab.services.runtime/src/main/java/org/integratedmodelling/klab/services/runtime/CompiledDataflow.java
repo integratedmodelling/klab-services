@@ -297,6 +297,21 @@ public class CompiledDataflow {
     return true;
   }
 
+  /** Recompile an already-bound leaf without allocating observations or changing native storage. */
+  public DigitalTwin.Executor restoreLeafExecutor(Actuator actuator) {
+    if (!actuator.getChildren().isEmpty() || actuator.getChildrenCount() > 0
+        || actuator.getObservation() == null || actuator.getComputation().isEmpty()) {
+      throw new KlabInternalErrorException("Incomplete or non-leaf persisted actuator " + actuator.getId());
+    }
+    actuatorObservations.put(actuator, actuator.getObservation());
+    var operation = new ExecutorImpl(actuator);
+    if (!operation.isOperational()) {
+      throw new KlabInternalErrorException("Cannot recompile persisted actuator " + actuator.getId());
+    }
+    operations.put(actuator.getId(), operation);
+    return operation;
+  }
+
   /**
    * Harmonize the sharding strategy along quality dependency chains, compatibly with runtime
    * settings and pre-defined sharding.

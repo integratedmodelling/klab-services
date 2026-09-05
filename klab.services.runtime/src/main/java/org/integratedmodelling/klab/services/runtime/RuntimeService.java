@@ -332,6 +332,9 @@ public class RuntimeService extends BaseService
             scope.getId());
         scope.close();
         Logging.INSTANCE.info("Context " + scope.getId() + " closed upon service shutdown");
+      } else if (scope.getDigitalTwin() instanceof DigitalTwinImpl twin) {
+        // A service shutdown releases mappings/timers but is not an explicit persistent-twin delete.
+        twin.shutdown();
       }
     }
 

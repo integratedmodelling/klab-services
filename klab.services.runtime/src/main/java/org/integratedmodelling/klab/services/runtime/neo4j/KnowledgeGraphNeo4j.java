@@ -749,7 +749,41 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         ret.add((T) instance);
       } else if (Actuator.class.isAssignableFrom(cls)) {
         var instance = new ActuatorImpl();
-        // TODO
+        instance.setId(node.get("id").asLong());
+        instance.setParentId(node.get("parentId").asLong(-1));
+        instance.setName(node.get("name").asString(null));
+        instance.setStrategyUrn(node.get("strategy").asString(null));
+        instance.setChildrenCount(node.get("childrenCount").asInt(0));
+        if (!node.get("type").isNull()) {
+          instance.setType(org.integratedmodelling.klab.api.knowledge.Artifact.Type.valueOf(node.get("type").asString()));
+        }
+        if (!node.get("actuatorType").isNull()) {
+          instance.setActuatorType(Actuator.Type.valueOf(node.get("actuatorType").asString()));
+        }
+        if (!node.get("coverage").isNull()) {
+          instance.setCoverage(Geometry.create(node.get("coverage").asString()));
+        }
+        if (!node.get("resolvedGeometry").isNull()) {
+          instance.setResolvedGeometry(Geometry.create(node.get("resolvedGeometry").asString()));
+        }
+        instance.setResolvedCoverage(node.get("resolvedCoverage").asDouble(0));
+        // Legacy textual computations are not a lossless executable representation. Leave them
+        // unavailable rather than fabricating runnable calls from incomplete historical nodes.
+        if (node.get("actuatorSchemaVersion").asInt(0) == 1) {
+          if (!node.get("dataJson").isNull()) {
+            instance.setData(org.integratedmodelling.klab.api.collections.Parameters.create(
+                Utils.Json.parseObject(node.get("dataJson").asString(), Map.class)));
+          }
+          instance.setComputation(node.get("computationJson").asList(value ->
+              Utils.Json.parseObject(value.asString(), org.integratedmodelling.klab.api.lang.ServiceCall.class)));
+          if (!node.get("annotationsJson").isNull()) {
+            instance.setAnnotations(node.get("annotationsJson").asList(value ->
+                Utils.Json.parseObject(value.asString(), org.integratedmodelling.klab.api.lang.Annotation.class)));
+          }
+          if (!node.get("shardingStrategyJson").isNull()) {
+            instance.setShardingStrategy(Utils.Json.parseObject(node.get("shardingStrategyJson").asString(), Data.ShardingStrategy.class));
+          }
+        }
         ret.add((T) instance);
       } else if (Plan.class.isAssignableFrom(cls)) {
         var instance = new PlanImpl();
@@ -2145,6 +2179,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
     // LinkInfo carries long IDs, so string-keyed assets such as agents cannot use this endpoint.
     return null;
+  }
+
+  @Override
+  public List<Observation> getScheduledObservations(ContextScope scope) {
+    if (!Objects.equals(rootContextId, scope.getId())) {
+      throw new KlabIllegalArgumentException("Scheduler registry requires its owning context");
+    }
+    var result = query(
+        "MATCH (c:Context {id: $contextId})-[:HAS_CHILD|HAS_MEMBER*1..]->(o:Observation) "
+            + "WHERE o.`klab.scheduler.registered` = true RETURN DISTINCT o",
+        Map.of("contextId", rootContextId), scope);
+    if (result == null) {
+      throw new KlabStorageException("Cannot restore scheduler registry for " + rootContextId);
+    }
+    return adapt(result, Observation.class, scope);
   }
 
   @Override

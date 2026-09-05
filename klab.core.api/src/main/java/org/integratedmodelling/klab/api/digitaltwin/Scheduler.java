@@ -48,6 +48,12 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  */
 public interface Scheduler {
 
+  /** Durable observation metadata flag; written only by a successful scheduler submission. */
+  String REGISTRATION_METADATA_KEY = "klab.scheduler.registered";
+
+  /** Distinguishes executable observations from acknowledged inputs after a cache miss/restart. */
+  String EXECUTION_METADATA_KEY = "klab.scheduler.executionRequired";
+
   /** Execute a step in the contextualization. */
   @FunctionalInterface
   interface Executor {

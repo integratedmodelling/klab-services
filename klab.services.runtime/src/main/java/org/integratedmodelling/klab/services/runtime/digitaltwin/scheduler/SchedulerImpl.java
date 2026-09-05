@@ -1,8 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.cache.Cache;
 import java.util.*;
 import java.util.concurrent.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -12,6 +11,8 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -23,10 +24,14 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
+import org.integratedmodelling.klab.services.runtime.CompiledDataflow;
+import org.integratedmodelling.klab.services.runtime.RuntimeService;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.Disposables;
 
 /**
  * Reactive scheduler/event bus stub for testing, to evolve into the actual scheduler.
@@ -36,7 +41,7 @@ import reactor.core.publisher.Sinks;
  * be removed (init only, recompute, event-specific etc). The DT should be able to reconstruct the
  * necessary ones from the recorded actuators without a need for the dataflow being there.
  */
-public class SchedulerImpl implements Scheduler {
+public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   private final ServiceContextScope rootScope;
   private long epochStart = 0L;
@@ -45,6 +50,8 @@ public class SchedulerImpl implements Scheduler {
   private KnowledgeGraph knowledgeGraph;
   private TimeEmitter timeEmitter;
   private Event initializationEvent;
+  private final reactor.core.Disposable.Composite subscriptions = Disposables.composite();
+  private boolean hasTimeBounds;
 
   /*
    * The event processor is a fully replayable multicast with synchronized behavior.
@@ -58,17 +65,8 @@ public class SchedulerImpl implements Scheduler {
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
-      CacheBuilder.newBuilder()
-          .maximumSize(200)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
-                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Observation key) {
-                  // TODO reconstruct the executor from actuator in the knowledge graph.
-                  return (g, e, s) -> true;
-                }
-              });
+  private final Cache<Observation, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
+      CacheBuilder.newBuilder().maximumSize(200).build();
 
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
@@ -82,8 +80,14 @@ public class SchedulerImpl implements Scheduler {
     // The INIT event is created before anything happens and applies to every new observation
     // registered.
     post(this.initializationEvent = Event.initialization(), rootScope);
-    // TODO read the existing context state from the knowledge graph and rebuild all relevant past
-    //  events
+    // Restore committed registrations without rerunning initialization or changing timestamps.
+    // Clock replay/resumption still needs a durable event-completion cursor and execution policy.
+    for (var observation : knowledgeGraph.getScheduledObservations(rootScope)) {
+      var time = register(observation.getGeometry());
+      subscriptions.add(subscribe(new Registration(observation,
+          SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
+          time.getFirst(), time.getSecond(), time.getThird(), rootScope)));
+    }
   }
 
   @Override
@@ -110,26 +114,32 @@ public class SchedulerImpl implements Scheduler {
       } else if (observation.getObservable().is(SemanticType.PROCESS)) {
         // TODO PROCESS! Time events will affect it
       }
-      // TODO store the disposable that this returns so that we can remove it upon termination
-      var subscription =
-          processor
-              .asFlux()
-              .filter(event -> event.getType() != Event.Type.INITIALIZATION)
-              .filterWhen(event -> Mono.just(checkApplies(registration, event)))
-              .subscribe(e -> handleEvent(registration, e));
+      var subscription = subscribe(registration);
       var initialized = initialize(observation, serviceContextScope);
       if (!initialized) {
         subscription.dispose();
+      } else {
+        subscriptions.add(subscription);
+        observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
+        scope.getCurrentTransaction().update(observation);
       }
       return initialized;
     }
     return false;
   }
 
+  private reactor.core.Disposable subscribe(Registration registration) {
+    return processor.asFlux()
+        .filter(event -> event.getType() != Event.Type.INITIALIZATION)
+        .filterWhen(event -> Mono.just(checkApplies(registration, event)))
+        .subscribe(event -> handleEvent(registration, event));
+  }
+
   @Override
   public void registerExecutor(
       Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor) {
     executors.put(observation, executor);
+    observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, true);
   }
 
   @Override
@@ -257,6 +267,12 @@ public class SchedulerImpl implements Scheduler {
      * The actual execution for self
      */
     var executor = executors.getIfPresent(observation);
+    if (executor == null && observation.getId() > 0) {
+      executor = restoreExecutor(observation, scope);
+      if (executor != null) {
+        executors.put(observation, executor);
+      }
+    }
     if (executor != null) {
       var ret = execute(executor, observation, geometry, causingEvent, scope);
 
@@ -269,6 +285,48 @@ public class SchedulerImpl implements Scheduler {
     }
 
     return true;
+  }
+
+  private TriFunction<Geometry, Event, ContextScope, Boolean> restoreExecutor(
+      Observation observation, ServiceContextScope scope) {
+    var implementations = knowledgeGraph.getLinks(observation,
+        GraphModel.Relationship.Direction.OUTGOING, scope, GraphModel.Relationship.CONTEXTUALIZED_BY);
+    if (implementations.isEmpty()) {
+      if (Boolean.TRUE.equals(observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY))) {
+        throw new KlabIllegalStateException("Missing persisted execution plan for " + observation.getUrn());
+      }
+      return null; // An acknowledged/input observation need not have executable computation.
+    }
+    if (implementations.size() != 1) {
+      throw new KlabUnimplementedException("Restoring multiple actuators requires coverage selection for " + observation.getUrn());
+    }
+    var link = implementations.iterator().next();
+    if (!(link.target() instanceof ActuatorImpl actuator) || actuator.getComputation().isEmpty()
+        || actuator.getActuatorType() == null || actuator.getType() == null) {
+      throw new KlabIllegalStateException("No restorable actuator definition for " + observation.getUrn());
+    }
+    if (actuator.getChildrenCount() > 0 || !knowledgeGraph.getLinks(actuator,
+        GraphModel.Relationship.Direction.OUTGOING, scope, GraphModel.Relationship.HAS_CHILD).isEmpty()) {
+      throw new KlabUnimplementedException("Restoring actuator input bindings is not implemented for " + observation.getUrn());
+    }
+    var coverage = actuator.getCoverage();
+    if (coverage != null && !coverage.isUniversal()
+        && !GeometryRepository.INSTANCE.scale(coverage).encode().equals(
+            GeometryRepository.INSTANCE.scale(observation.getGeometry()).encode())) {
+      throw new KlabUnimplementedException("Restoring partial-coverage actuators is not implemented for " + observation.getUrn());
+    }
+    actuator.setObservation(observation);
+    var compiled = new CompiledDataflow(scope.getService(RuntimeService.class), observation, scope);
+    var restored = compiled.restoreLeafExecutor(actuator);
+    return restored::run;
+  }
+
+  @Override
+  public void close() {
+    timeEmitter.close();
+    subscriptions.dispose();
+    processor.tryEmitComplete();
+    executors.invalidateAll();
   }
 
   private boolean execute(
@@ -345,14 +403,19 @@ public class SchedulerImpl implements Scheduler {
    * @param time
    */
   private Triple<Long, Long, Time.Resolution> notifyTime(Time time) {
+    if (time.getStart() == null || time.getEnd() == null) {
+      // Open extents need an explicit clock/catch-up policy; don't turn missing bounds into zero.
+      return Triple.of(0L, 0L, time.getResolution());
+    }
     long tStart = time.getStart().getMilliseconds();
     long tEnd = time.getEnd().getMilliseconds();
-    if (this.epochStart == 0 || this.epochStart > tStart) {
+    if (!hasTimeBounds || this.epochStart > tStart) {
       this.epochStart = tStart;
     }
-    if (this.epochEnd == 0 || this.epochEnd < tEnd) {
+    if (!hasTimeBounds || this.epochEnd < tEnd) {
       this.epochEnd = tEnd;
     }
+    hasTimeBounds = true;
     /* ensure that all events are there */
     //    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
     //      // if anything has changed, notify the scope listeners

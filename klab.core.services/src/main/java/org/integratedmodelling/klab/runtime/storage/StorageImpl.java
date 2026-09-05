@@ -160,8 +160,9 @@ public class StorageImpl implements Storage {
               .source(observation)
               .along(GraphModel.Relationship.HAS_DATA)
               .run(contextScope)) {
-        if (shard.getGeometry() == null && shard instanceof ShardImpl shardImpl) {
-          shardImpl.setGeometry(GeometryRepository.INSTANCE.geometry(observation.getGeometry()));
+        if (shard.getGeometry() == null) {
+          throw new KlabIllegalStateException(
+              "Cannot reconstruct storage without shard geometry: " + shard.getUrn());
         }
         var time = TimeInstant.create(shard.getTimestamp());
         var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry()).at(time);
@@ -179,10 +180,26 @@ public class StorageImpl implements Storage {
                 .toList();
         shards.computeIfAbsent(new ComparableLongList(key), k -> new ArrayList<>()).add(shard);
       }
+      for (var group : shards.values()) {
+        validateRestoredShards(group, nativeShardingStrategy.getDataType());
+      }
     }
+  }
 
-    // TODO prepare shard descriptors from any existing shards in the knowledge graph! If there is a
-    // different sharding strategy, adopt that as native and create mediators.
+  /** Database traversal order is unspecified; scanner order must follow the native partition. */
+  static void validateRestoredShards(List<Shard> group, Type nativeType) {
+    group.sort(Comparator.comparingInt(Shard::getShardIndex));
+    for (int index = 0; index < group.size(); index++) {
+      var shard = group.get(index);
+      if (shard.getShardCount() != group.size()
+          || shard.getShardIndex() != index
+          || shard.getNativeType() != nativeType
+          || shard.getShardingStrategy() == null
+          || shard.getShardingStrategy().getDataType() != nativeType) {
+        throw new KlabIllegalStateException(
+            "Incomplete or inconsistent persisted shard group at " + shard.getUrn());
+      }
+    }
   }
 
   // used only for testing, won't work for anything else
@@ -229,6 +246,10 @@ public class StorageImpl implements Storage {
 
   @Override
   public List<Shard> getNativeShards(Scheduler.Event event) {
+    return getNativeShards(event, true);
+  }
+
+  private List<Shard> getNativeShards(Scheduler.Event event, boolean create) {
 
     var time = event.getTime();
     if (time.size() != 1) {
@@ -250,7 +271,16 @@ public class StorageImpl implements Storage {
                         : /* TODO use the index for any further dimension, unused for now */ 0L)
             .toList();
 
-    return shards.computeIfAbsent(new ComparableLongList(key), k -> createShards(scale, timeStart));
+    var storageKey = new ComparableLongList(key);
+    if (!create) {
+      var existing = shards.get(storageKey);
+      if (existing == null) {
+        throw new KlabIllegalStateException(
+            "No available storage slice for observation " + observation.getId() + " at " + timeStart);
+      }
+      return existing;
+    }
+    return shards.computeIfAbsent(storageKey, k -> createShards(scale, timeStart));
   }
 
   private synchronized List<Shard> createShards(Scale scale, long timeStart) {
@@ -299,7 +329,7 @@ public class StorageImpl implements Storage {
 
     if (this.nativeShardingStrategy.equals(shardingStrategy)) {
       var ret = new ArrayList<T>();
-      for (var shard : getNativeShards(locator)) {
+      for (var shard : getNativeShards(locator, !readOnly)) {
         var scanner = getNativeScanner(shard, readOnly, !readOnly);
         ret.add(ScannerAdapters.adaptType(scanner, scannerClass));
       }

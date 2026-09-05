@@ -252,6 +252,14 @@ public interface KnowledgeGraph {
   }
 
   /**
+   * Restore the committed scheduler registry for this context. Implementations must preserve
+   * observation geometry and event timestamps and must not initialize or execute observations.
+   */
+  default List<Observation> getScheduledObservations(ContextScope scope) {
+    throw new UnsupportedOperationException("Scheduler registry restoration is not supported");
+  }
+
+  /**
    * Create a transaction which will make changes in the knowledge graph when closed.
    *
    * @return a new transaction
