@@ -1985,6 +1985,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       public <T> List<T> postCollection(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return postCollectionInternal(apiRequest, payload, resultClass, false, parameters);
+      }
+
+      /** HTTP/transport errors must not be confused with a successful empty collection. */
+      public <T> List<T> postCollectionOrThrow(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return postCollectionInternal(apiRequest, payload, resultClass, true, parameters);
+      }
+
+      public static class RequestFailure extends RuntimeException {
+        private final int status;
+        public RequestFailure(int status, String message, Throwable cause) {
+          super(message, cause);
+          this.status = status;
+        }
+        public int getStatus() { return status; }
+      }
+
+      private <T> List<T> postCollectionInternal(
+          String apiRequest, Object payload, Class<T> resultClass, boolean strict, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -2033,8 +2053,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
+          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              "Collection request failed", null);
 
         } catch (Throwable e) {
+          if (strict) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            if (e instanceof RequestFailure failure) throw failure;
+            throw new RequestFailure(0, "Collection request failed", e);
+          }
           if (scope != null) {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {

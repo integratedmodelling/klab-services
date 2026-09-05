@@ -1,5 +1,8 @@
 # The digital-twin knowledge graph
 
+See [PERSISTENT_TWINS](PERSISTENT_TWINS.md) for the subsequent actuator representation,
+committed scheduler registry, bounded executor restoration, and remaining restart requirements.
+
 This document describes the runtime graph as reviewed on 2026-09-05. It accompanies
 [DIGITALTWINS](DIGITALTWINS.md), [STORAGE](STORAGE.md), and [PROVENANCE](PROVENANCE.md).
 The distributed design in [DISTRIBUTED_TWINS](DISTRIBUTED_TWINS.md) is proposed work;

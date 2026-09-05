@@ -28,6 +28,8 @@ import java.security.cert.CertPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.Plan;
 
 /**
  * Client-side knowledge graph query, serializable to be ingested by the runtime's REST digital twin
@@ -55,6 +57,8 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     PROVENANCE,
     ACTUATOR,
     ACTIVITY,
+    AGENT,
+    PLAN,
     OBSERVATION,
     SEMANTICS,
     OBSERVABLE,
@@ -82,6 +86,8 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case Observation ignored -> AssetType.OBSERVATION;
         case Actuator ignored -> AssetType.ACTUATOR;
         case Activity ignored -> AssetType.ACTIVITY;
+        case Agent ignored -> AssetType.AGENT;
+        case Plan ignored -> AssetType.PLAN;
         case Observable ignored -> AssetType.OBSERVABLE;
         case KimObservable ignored -> AssetType.OBSERVABLE;
         case Cohort ignored -> AssetType.COHORT;
@@ -98,6 +104,11 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     }
 
     public static AssetType classify(Class<?> asset) {
+      if (RuntimeAsset.ContextAsset.class.isAssignableFrom(asset)) return AssetType.SCOPE;
+      if (RuntimeAsset.DataflowAsset.class.isAssignableFrom(asset) || Dataflow.class.isAssignableFrom(asset)) return AssetType.DATAFLOW;
+      if (RuntimeAsset.ProvenanceAsset.class.isAssignableFrom(asset) || Provenance.class.isAssignableFrom(asset)) return AssetType.PROVENANCE;
+      if (Agent.class.isAssignableFrom(asset)) return AssetType.AGENT;
+      if (Plan.class.isAssignableFrom(asset)) return AssetType.PLAN;
       if (Observation.class.isAssignableFrom(asset)) {
         return AssetType.OBSERVATION;
       }
@@ -139,11 +150,13 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
     public Class<?> getAssetClass() {
       return switch (this) {
-        case SCOPE -> ContextScope.class;
-        case DATAFLOW -> Dataflow.class;
-        case PROVENANCE -> Provenance.class;
+        case SCOPE -> RuntimeAsset.ContextAsset.class;
+        case DATAFLOW -> RuntimeAsset.DataflowAsset.class;
+        case PROVENANCE -> RuntimeAsset.ProvenanceAsset.class;
         case ACTUATOR -> Actuator.class;
         case ACTIVITY -> Activity.class;
+        case AGENT -> Agent.class;
+        case PLAN -> Plan.class;
         case OBSERVATION -> Observation.class;
         case SEMANTICS -> Concept.class;
         case OBSERVABLE -> Observable.class;
@@ -159,6 +172,10 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
     private AssetType type;
     private String urn;
+    private Long id;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public AssetType getType() {
       return type;
@@ -186,6 +203,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private List<Triple<String, String, String>> assetQueryCriteria = new ArrayList<>();
   private Parameters<String> relationshipQueryCriteria = Parameters.create();
   private int depth = 1;
+  private int minimumDepth = 1;
+  private List<Criterion> criteria = new ArrayList<>();
+  private List<Order> ordering = new ArrayList<>();
   private long limit = -1;
   private long offset = 0;
   private long id = -1;
@@ -216,7 +236,14 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   private Asset makeAsset(Object startingPoint) {
     var ret = new Asset();
+    if (startingPoint instanceof Class<?> cls) {
+      ret.type = AssetType.classify(cls);
+      return ret;
+    }
     ret.type = AssetType.classify(startingPoint);
+    if (startingPoint instanceof RuntimeAsset asset && asset.getId() > 0) {
+      ret.id = asset.getId();
+    }
     if (ret.type != AssetType.SCOPE
         && ret.type != AssetType.DATAFLOW
         && ret.type != AssetType.PROVENANCE) {
@@ -227,7 +254,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             case Activity ignored -> ignored.getUrn();
             case Observable ignored -> ignored.getUrn();
             case KimObservable ignored -> ignored.getUrn();
-            case Cohort ignored -> ignored.getObservable().getUrn() + "_cohort";
+            case Cohort ignored -> ignored.getUrn();
+            case Agent ignored -> ignored.getName();
+            case Plan ignored -> ignored.getId() + "";
             case Concept ignored -> ignored.getUrn();
             case KimConcept ignored -> ignored.getUrn();
             case ServiceSideScope ignored ->
@@ -242,7 +271,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             case Storage.Shard ignored -> ignored.getId() + "";
             default -> null;
           };
-      if (ret.urn == null) {
+      if (ret.urn == null && ret.id == null) {
         throw new KlabIllegalStateException("Unresolved asset passed to a query: " + startingPoint);
       }
     }
@@ -274,6 +303,14 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   @Override
   public KnowledgeGraph.Query<T> depth(int depth) {
     this.depth = depth;
+    this.minimumDepth = 1;
+    return this;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> hops(int minimum, int maximum) {
+    this.minimumDepth = minimum;
+    this.depth = maximum;
     return this;
   }
 
@@ -291,13 +328,18 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   @Override
   public KnowledgeGraph.Query<T> where(String field, Operator operator, Object argument) {
-    this.assetQueryCriteria.add(Triple.of(field, operator.name(), Utils.Data.asString(argument)));
+    this.criteria.add(new Criterion(field, operator, argument));
     return this;
   }
 
   @Override
   public KnowledgeGraph.Query<T> order(Object... criteria) {
-    // TODO
+    for (var criterion : criteria) {
+      if (criterion instanceof Order order) this.ordering.add(order);
+      else if (criterion instanceof String field) this.ordering.add(Order.ascending(field));
+      else throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
+          "Ordering requires field names or Query.Order values");
+    }
     return this;
   }
 
@@ -309,6 +351,10 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
    */
   @Override
   public List<T> run(Scope scope) {
+    if (scope instanceof ContextScope context && context.getDigitalTwin() != null && resultType != null) {
+      return context.getDigitalTwin().getKnowledgeGraph().query(this,
+          (Class<T>) resultType.getAssetClass(), scope);
+    }
     throw new KlabIllegalStateException(
         "The client-side knowledge graph query must be sent to a runtime service to be run");
   }
@@ -321,21 +367,41 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   @Override
   public KnowledgeGraph.Query<T> or(KnowledgeGraph.Query<T> query) {
-    var ret = new KnowledgeGraphQuery<>();
-    ret.type = QueryType.AND;
-    ret.children.add((KnowledgeGraphQuery<RuntimeAsset>) this);
-    ret.children.add((KnowledgeGraphQuery<RuntimeAsset>) query);
-    return (KnowledgeGraph.Query<T>) ret;
+    return combine(QueryType.OR, query);
   }
 
   @Override
   public KnowledgeGraph.Query<T> and(KnowledgeGraph.Query<T> query) {
-    var ret = new KnowledgeGraphQuery<>();
-    ret.type = QueryType.OR;
-    ret.children.add((KnowledgeGraphQuery<RuntimeAsset>) this);
-    ret.children.add((KnowledgeGraphQuery<RuntimeAsset>) query);
-    return (KnowledgeGraph.Query<T>) ret;
+    return combine(QueryType.AND, query);
   }
+
+  private KnowledgeGraphQuery<T> combine(QueryType operator, KnowledgeGraph.Query<T> other) {
+    if (!(other instanceof KnowledgeGraphQuery<T> child) || child.resultType != resultType) {
+      throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
+          "Combined queries must have the same result type");
+    }
+    var ret = new KnowledgeGraphQuery<T>(resultType);
+    ret.type = operator;
+    ret.children.add(this);
+    ret.children.add(child);
+    return ret;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> not() {
+    var ret = new KnowledgeGraphQuery<T>(resultType);
+    ret.type = QueryType.NOT;
+    ret.children.add(this);
+    return ret;
+  }
+
+  public int getMinimumDepth() { return minimumDepth; }
+  public void setMinimumDepth(int value) { minimumDepth = value; }
+  public List<Criterion> getCriteria() { return criteria; }
+  public void setCriteria(List<Criterion> value) { criteria = value; }
+  public List<Order> getOrdering() { return ordering; }
+  public void setOrdering(List<Order> value) { ordering = value; }
+  public void setId(long value) { id = value; }
 
   public Asset getSource() {
     return source;

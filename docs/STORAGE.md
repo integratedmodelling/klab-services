@@ -1,5 +1,9 @@
 # Storage in the k.LAB runtime
 
+The [persistent-twin restoration guide](PERSISTENT_TWINS.md) describes restart behavior. Restored
+shard groups now require complete, ordered, type-consistent descriptors with geometry. Lazy reads
+report missing slices/files explicitly and never allocate replacement values in a read-only scan.
+
 This document is the central implementation guide for observation storage in k.LAB. It describes
 how a quality receives a storage contract, how that contract becomes shards and primitive buffers,
 how contextualizers access the buffers, and how data is finalized and persisted. The public API is

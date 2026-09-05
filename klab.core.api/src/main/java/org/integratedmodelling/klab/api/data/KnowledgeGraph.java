@@ -152,6 +152,16 @@ public interface KnowledgeGraph {
    */
   interface Query<T extends RuntimeAsset> {
 
+    enum SortDirection { ASC, DESC }
+
+    record Order(String field, SortDirection direction) {
+      public static Order ascending(String field) { return new Order(field, SortDirection.ASC); }
+      public static Order descending(String field) { return new Order(field, SortDirection.DESC); }
+    }
+
+    /** Typed, JSON-serializable property predicate. Values are parameters, never query source. */
+    record Criterion(String field, Operator operator, Object argument) {}
+
     enum Operator {
       EQUALS,
       LT,
@@ -197,6 +207,11 @@ public interface KnowledgeGraph {
 
     Query<T> depth(int depth);
 
+    /** Inclusive path length bounds; zero includes the anchor itself. Maximum supported is 64. */
+    default Query<T> hops(int minimum, int maximum) {
+      throw new UnsupportedOperationException("Hop ranges are not supported");
+    }
+
     Query<T> limit(long n);
 
     Query<T> offset(long n);
@@ -212,6 +227,20 @@ public interface KnowledgeGraph {
     Query<T> or(Query<T> query);
 
     Query<T> and(Query<T> query);
+
+    /** Complement within the authorized context and this query's result type. */
+    default Query<T> not() {
+      throw new UnsupportedOperationException("Query negation is not supported");
+    }
+  }
+
+  /** Query failures are never represented as an empty result list. */
+  class QueryException extends RuntimeException {
+    public enum Code { INVALID_QUERY, UNSUPPORTED_QUERY, ACCESS_DENIED, BACKEND_UNAVAILABLE, EXECUTION_FAILED }
+    private final Code code;
+    public QueryException(Code code, String message) { super(message); this.code = code; }
+    public QueryException(Code code, String message, Throwable cause) { super(message, cause); this.code = code; }
+    public Code getCode() { return code; }
   }
 
   interface Transaction extends Closeable {

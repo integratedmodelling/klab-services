@@ -13,10 +13,234 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  *
  * <p>All graphs retrieved from the runtime API follow this schema and the relationship types can be
  * used to filter graph requests.
- *
- * <p>TODO use this in the KnowledgeGraph implementation
  */
 public interface GraphModel {
+
+  /** Physical property names, including legacy spellings retained for existing databases. */
+  interface Fields {
+    String ID = "id";
+    String NAME = "name";
+    String URN = "urn";
+    String TYPE = "type";
+    String SEMANTIC_TYPE = "semanticType";
+    String SEMANTICTYPE = "semantictype";
+    String SEMANTICS = "semantics";
+    String OBSERVABLE = "observable";
+    String UPDATED = "updated";
+    String RESOLVED = "resolved";
+    String N_CHILDREN = "nChildren";
+    String PARENT_ID = "parentId";
+    String CHILDREN_COUNT = "childrenCount";
+    String DEFINITION = "definition";
+    String SIZE = "size";
+    String CREDITS = "credits";
+    String START = "start";
+    String END = "end";
+    String DESCRIPTION = "description";
+    String SERVICE_TYPE = "serviceType";
+    String SERVICE_NAME = "serviceName";
+    String SERVICE_ID = "serviceId";
+    String OBSERVATION_URN = "observationUrn";
+    String OBSERVATION_ID = "observationId";
+    String STRATEGY = "strategy";
+    String COMPUTATION = "computation";
+    String ACTUATOR_SCHEMA_VERSION = "actuatorSchemaVersion";
+    String ACTUATOR_TYPE = "actuatorType";
+    String COVERAGE = "coverage";
+    String RESOLVED_COVERAGE = "resolvedCoverage";
+    String RESOLVED_GEOMETRY = "resolvedGeometry";
+    String DATA_JSON = "dataJson";
+    String COMPUTATION_JSON = "computationJson";
+    String ANNOTATIONS_JSON = "annotationsJson";
+    String SHARDING_STRATEGY_JSON = "shardingStrategyJson";
+    String ADAPTER_ID = "adapterId";
+    String ADAPTER_PARAMETERS = "adapterParameters";
+    String EVENT_TIMESTAMPS = "eventTimestamps";
+    String HISTOGRAM = "histogram";
+    String HISTOGRAMS = "histograms";
+    String FILL_CURVE = "fillCurve";
+    String SUGGESTED_SPLITS = "suggestedSplits";
+    String MAX_BUFFER_SIZE = "maxBufferSize";
+    String MIN_SPLIT_SIZE = "minSplitSize";
+    String DATA_TYPE = "dataType";
+    String NATIVE_TYPE = "nativeType";
+    String SHARD_COUNT = "shardCount";
+    String SHARD_INDEX = "shardIndex";
+    String TIMESTAMP = "timestamp";
+    String PERSISTENCE = "persistence";
+    String OFFLOADED = "offloaded";
+    String OFFSET = "offset";
+    String HISTOGRAM_JSON = "histogramJson";
+    String VALUE_TYPE = "valueType";
+    String CREATED = "created";
+    String RIGHTS = "rights";
+    String FEDERATION = "federation";
+    String LAST_UPDATE = "lastUpdate";
+    String EXPIRATION = "expiration";
+    String EXPIRATION_TYPE = "expirationType";
+    String USER = "user";
+    String USERNAME = "username";
+    String NEXT_ID = "nextId";
+    String LAST_ACTIVITY = "lastActivity";
+    String SCHEDULER_TIME = "schedulerTime";
+    String STACK_TRACE = "stackTrace";
+    String TRIGGERING_ACTIVITY_URN = "triggeringActivityUrn";
+    String SUBSTANTIAL = "substantial";
+    String GEOMETRY = "geometry";
+    String SHAPE = "shape";
+    String LATITUDE = "latitude";
+    String LONGITUDE = "longitude";
+    String LOWER_LEFT = "lowerLeft";
+    String UPPER_RIGHT = "upperRight";
+    String BEHAVIOR_URN = "behaviorUrn";
+    String METADATA = "_metadata";
+    String SEQUENCE = "sequence";
+    String RANK = "rank";
+    String CONTEXT_ID = "contextId";
+    String ACTIVITY_ID = "activityId";
+    String COHORT_ID = "cohortId";
+    String ASSET_ID = "assetId";
+    String SOURCE_ID = "sourceId";
+    String TARGET_ID = "targetId";
+    String ROOT_ACTIVITY_ID = "rootActivityId";
+    String PROVENANCE_ID = "provenanceId";
+    String SESSION_ID = "sessionId";
+    String GEOMETRY_KEY = "geometryKey";
+    String LAYER_NAME = "layerName";
+    String AGENT_NAME = "agentName";
+    String START_TIME = "startTime";
+    String PROPERTIES = "properties";
+    String KEY = "key";
+    String MID = "mid";
+    String RTYPE = "rtype";
+    String RPROPS = "rprops";
+    String EXISTS = "exists";
+    String DATAFLOW = "dataflow";
+    String OBSERVATION_COUNT = "observationCount";
+    String SCHEDULER_REGISTERED =
+        org.integratedmodelling.klab.api.digitaltwin.Scheduler.REGISTRATION_METADATA_KEY;
+    String EXECUTION_REQUIRED =
+        org.integratedmodelling.klab.api.digitaltwin.Scheduler.EXECUTION_METADATA_KEY;
+    Set<String> ALL =
+        Set.of(
+            ID,
+            NAME,
+            URN,
+            TYPE,
+            SEMANTIC_TYPE,
+            SEMANTICTYPE,
+            SEMANTICS,
+            OBSERVABLE,
+            UPDATED,
+            RESOLVED,
+            N_CHILDREN,
+            PARENT_ID,
+            CHILDREN_COUNT,
+            DEFINITION,
+            SIZE,
+            CREDITS,
+            START,
+            END,
+            DESCRIPTION,
+            SERVICE_TYPE,
+            SERVICE_NAME,
+            SERVICE_ID,
+            OBSERVATION_URN,
+            OBSERVATION_ID,
+            STRATEGY,
+            COMPUTATION,
+            ACTUATOR_SCHEMA_VERSION,
+            ACTUATOR_TYPE,
+            COVERAGE,
+            RESOLVED_COVERAGE,
+            RESOLVED_GEOMETRY,
+            DATA_JSON,
+            COMPUTATION_JSON,
+            ANNOTATIONS_JSON,
+            SHARDING_STRATEGY_JSON,
+            ADAPTER_ID,
+            ADAPTER_PARAMETERS,
+            EVENT_TIMESTAMPS,
+            HISTOGRAM,
+            HISTOGRAMS,
+            FILL_CURVE,
+            SUGGESTED_SPLITS,
+            MAX_BUFFER_SIZE,
+            MIN_SPLIT_SIZE,
+            DATA_TYPE,
+            NATIVE_TYPE,
+            SHARD_COUNT,
+            SHARD_INDEX,
+            TIMESTAMP,
+            PERSISTENCE,
+            OFFLOADED,
+            OFFSET,
+            HISTOGRAM_JSON,
+            VALUE_TYPE,
+            CREATED,
+            RIGHTS,
+            FEDERATION,
+            LAST_UPDATE,
+            EXPIRATION,
+            EXPIRATION_TYPE,
+            USER,
+            USERNAME,
+            NEXT_ID,
+            LAST_ACTIVITY,
+            SCHEDULER_TIME,
+            STACK_TRACE,
+            TRIGGERING_ACTIVITY_URN,
+            SUBSTANTIAL,
+            GEOMETRY,
+            SHAPE,
+            LATITUDE,
+            LONGITUDE,
+            LOWER_LEFT,
+            UPPER_RIGHT,
+            BEHAVIOR_URN,
+            METADATA,
+            SEQUENCE,
+            RANK,
+            CONTEXT_ID,
+            ACTIVITY_ID,
+            COHORT_ID,
+            ASSET_ID,
+            SOURCE_ID,
+            TARGET_ID,
+            ROOT_ACTIVITY_ID,
+            PROVENANCE_ID,
+            SESSION_ID,
+            GEOMETRY_KEY,
+            LAYER_NAME,
+            AGENT_NAME,
+            START_TIME,
+            PROPERTIES,
+            KEY,
+            MID,
+            RTYPE,
+            RPROPS,
+            EXISTS,
+            DATAFLOW,
+            OBSERVATION_COUNT,
+            SCHEDULER_REGISTERED,
+            EXECUTION_REQUIRED);
+  }
+
+  /** Persistent labels; transport enum names must not be used as database labels. */
+  interface Labels {
+    String ACTIVITY = "Activity";
+    String ACTUATOR = "Actuator";
+    String AGENT = "Agent";
+    String COHORT = "Cohort";
+    String CONTEXT = "Context";
+    String DATA = "Data";
+    String DATAFLOW = "Dataflow";
+    String GEOMETRY = "Geometry";
+    String OBSERVATION = "Observation";
+    String PLAN = "Plan";
+    String PROVENANCE = "Provenance";
+    String STATISTICS = "Statistics";
+  }
 
   // TODO queries may belong to a Queries interface here.
 
@@ -97,6 +321,7 @@ public interface GraphModel {
    * defined.
    */
   enum Relationship {
+    HAS_AGENT,
     AFFECTS,
     CONTEXTUALIZED_BY,
     CONTEXTUALIZED,

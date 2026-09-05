@@ -59,7 +59,8 @@ class ActuatorPersistenceTest {
     assertEquals("test.function", call.getUrn());
     assertEquals(7, call.getParameters().get("value", 0));
     assertEquals("quoted \"value\"", call.getParameters().get("label"));
-    assertEquals(List.of(1, 2), call.getParameters().get("__internal"));
+    assertEquals(List.of(1L, 2L), ((List<?>) call.getParameters().get("__internal"))
+        .stream().map(value -> ((Number) value).longValue()).toList());
   }
 
   @Test

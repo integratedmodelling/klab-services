@@ -480,6 +480,9 @@ public class RuntimeServerController {
       value = {
         @ApiResponse(responseCode = "200", description = "Query executed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid query"),
+        @ApiResponse(responseCode = "422", description = "Unsupported query operation"),
+        @ApiResponse(responseCode = "503", description = "Knowledge graph unavailable"),
+        @ApiResponse(responseCode = "500", description = "Query execution failed"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
   @PostMapping(ServicesAPI.RUNTIME.QUERY)
@@ -489,7 +492,7 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       // TODO we may want to cache other RuntimeAssets too
-      if (query.getId() != Observation.UNASSIGNED_ID
+      if (query.getId() < Observation.UNASSIGNED_ID
           && contextScope instanceof ServiceContextScope serviceContextScope
           && query.getResultType() == KnowledgeGraphQuery.AssetType.OBSERVATION) {
         var ret = serviceContextScope.getObservation(query.getId());
@@ -498,6 +501,21 @@ public class RuntimeServerController {
       return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @ExceptionHandler(KnowledgeGraph.QueryException.class)
+  public org.springframework.http.ResponseEntity<org.springframework.http.ProblemDetail> queryFailure(
+      KnowledgeGraph.QueryException failure) {
+    var status = switch (failure.getCode()) {
+      case INVALID_QUERY -> org.springframework.http.HttpStatus.BAD_REQUEST;
+      case UNSUPPORTED_QUERY -> org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+      case ACCESS_DENIED -> org.springframework.http.HttpStatus.FORBIDDEN;
+      case BACKEND_UNAVAILABLE -> org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+      case EXECUTION_FAILED -> org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+    };
+    var problem = org.springframework.http.ProblemDetail.forStatusAndDetail(status, failure.getMessage());
+    problem.setProperty("code", failure.getCode().name());
+    return org.springframework.http.ResponseEntity.status(status).body(problem);
   }
 
   @Operation(

@@ -86,134 +86,134 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case Observation observation -> {
           var metadata = sanitizeMetadata(observation.getMetadata());
           ret.putAll(metadata);
-          ret.put("_metadata", Utils.Json.asString(metadata));
+          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));
           ret.put(
-              "name",
+              GraphModel.Fields.NAME,
               observation.getName() == null
                   ? observation.getObservable().codeName()
                   : observation.getName());
-          ret.put("type", observation.getObservable().getArtifactType().name());
-          ret.put("urn", observation.getUrn());
-          ret.put("childrenCount", observation.getChildrenCount());
+          ret.put(GraphModel.Fields.TYPE, observation.getObservable().getArtifactType().name());
+          ret.put(GraphModel.Fields.URN, observation.getUrn());
+          ret.put(GraphModel.Fields.CHILDREN_COUNT, observation.getChildrenCount());
           ret.put(
-              "semantictype",
+              GraphModel.Fields.SEMANTICTYPE,
               SemanticType.fundamentalType(observation.getObservable().getSemantics().getType())
                   .name());
-          ret.put("semantics", observation.getObservable().getSemantics().getUrn());
-          ret.put("observable", observation.getObservable().getUrn());
-          ret.put("id", observation.getId());
-          ret.put("parentId", observation.getParentId());
-          ret.put("eventTimestamps", observation.getEventTimestamps());
+          ret.put(GraphModel.Fields.SEMANTICS, observation.getObservable().getSemantics().getUrn());
+          ret.put(GraphModel.Fields.OBSERVABLE, observation.getObservable().getUrn());
+          ret.put(GraphModel.Fields.ID, observation.getId());
+          ret.put(GraphModel.Fields.PARENT_ID, observation.getParentId());
+          ret.put(GraphModel.Fields.EVENT_TIMESTAMPS, observation.getEventTimestamps());
           if (!observation.getHistograms().isEmpty()) {
             ret.put(
-                "histograms", Utils.Data.serializeHistogramMap(observation.getHistograms()));
+                GraphModel.Fields.HISTOGRAMS, Utils.Data.serializeHistogramMap(observation.getHistograms()));
           }
           if (observation instanceof ObservationImpl observation1) {
-            ret.put("substantial", observation1.isSubstantialQuality());
+            ret.put(GraphModel.Fields.SUBSTANTIAL, observation1.isSubstantialQuality());
           }
           if (observation.getContextualizationData()
               instanceof ObservationImpl.ContextualizationDataImpl data) {
-            ret.put("adapterId", data.getAdapterId());
+            ret.put(GraphModel.Fields.ADAPTER_ID, data.getAdapterId());
             ret.put(
-                "adapterParameters",
+                GraphModel.Fields.ADAPTER_PARAMETERS,
                 data.getParameters() == null ? null : Utils.Json.asString(data.getParameters()));
 
             var shardingStrategy =
                 observation.getContextualizationData().getNativeShardingStrategy();
             if (shardingStrategy != null) {
-              ret.put("fillCurve", shardingStrategy.getCurve().name());
-              ret.put("suggestedSplits", shardingStrategy.getSuggestedSplits());
-              ret.put("maxBufferSize", shardingStrategy.getMaxBufferSize());
-              ret.put("minSplitSize", shardingStrategy.getMinSplitSize());
-              ret.put("dataType", shardingStrategy.getDataType().name());
+              ret.put(GraphModel.Fields.FILL_CURVE, shardingStrategy.getCurve().name());
+              ret.put(GraphModel.Fields.SUGGESTED_SPLITS, shardingStrategy.getSuggestedSplits());
+              ret.put(GraphModel.Fields.MAX_BUFFER_SIZE, shardingStrategy.getMaxBufferSize());
+              ret.put(GraphModel.Fields.MIN_SPLIT_SIZE, shardingStrategy.getMinSplitSize());
+              ret.put(GraphModel.Fields.DATA_TYPE, shardingStrategy.getDataType().name());
             }
           }
         }
         case Agent agent -> {
           var metadata = sanitizeMetadata(agent.getMetadata());
           ret.putAll(metadata);
-          ret.put("_metadata", Utils.Json.asString(metadata));
-          ret.put("name", agent.getName());
+          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));
+          ret.put(GraphModel.Fields.NAME, agent.getName());
           // TODO
         }
         case Cohort cohort -> {
           var metadata = sanitizeMetadata(cohort.getMetadata());
           ret.putAll(metadata);
-          ret.put("_metadata", Utils.Json.asString(metadata));
-          ret.put("observable", cohort.getObservable().getUrn());
-          ret.put("childrenCount", cohort.getChildrenCount());
-          ret.put("urn", cohort.getObservable().getUrn() + "_cohort");
-          ret.put("id", cohort.getId());
-          ret.put("geometry", cohort.getGeometry().encode());
+          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));
+          ret.put(GraphModel.Fields.OBSERVABLE, cohort.getObservable().getUrn());
+          ret.put(GraphModel.Fields.CHILDREN_COUNT, cohort.getChildrenCount());
+          ret.put(GraphModel.Fields.URN, cohort.getObservable().getUrn() + "_cohort");
+          ret.put(GraphModel.Fields.ID, cohort.getId());
+          ret.put(GraphModel.Fields.GEOMETRY, cohort.getGeometry().encode());
           // TODO
         }
         case ActuatorImpl actuator -> {
-          ret.put("actuatorSchemaVersion", 1);
-          ret.put("id", actuator.getId());
-          ret.put("name", actuator.getName());
-          ret.put("type", actuator.getType() == null ? null : actuator.getType().name());
-          ret.put("actuatorType", actuator.getActuatorType() == null ? null : actuator.getActuatorType().name());
-          ret.put("childrenCount", Math.max(actuator.getChildrenCount(), actuator.getChildren().size()));
-          ret.put("coverage", actuator.getCoverage() == null ? null : actuator.getCoverage().encode());
-          ret.put("dataJson", Utils.Json.asString(actuator.getData()));
-          ret.put("computationJson", actuator.getComputation().stream().map(Utils.Json::asString).toList());
-          ret.put("annotationsJson", actuator.getAnnotations().stream().map(Utils.Json::asString).toList());
-          ret.put("shardingStrategyJson", actuator.getShardingStrategy() == null ? null : Utils.Json.asString(actuator.getShardingStrategy()));
-          ret.put("resolvedGeometry", actuator.getResolvedGeometry() == null ? null : actuator.getResolvedGeometry().encode());
-          ret.put("resolvedCoverage", actuator.getResolvedCoverage());
-          ret.put("semantics", actuator.getObservation().getObservable().getUrn());
+          ret.put(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION, 1);
+          ret.put(GraphModel.Fields.ID, actuator.getId());
+          ret.put(GraphModel.Fields.NAME, actuator.getName());
+          ret.put(GraphModel.Fields.TYPE, actuator.getType() == null ? null : actuator.getType().name());
+          ret.put(GraphModel.Fields.ACTUATOR_TYPE, actuator.getActuatorType() == null ? null : actuator.getActuatorType().name());
+          ret.put(GraphModel.Fields.CHILDREN_COUNT, Math.max(actuator.getChildrenCount(), actuator.getChildren().size()));
+          ret.put(GraphModel.Fields.COVERAGE, actuator.getCoverage() == null ? null : actuator.getCoverage().encode());
+          ret.put(GraphModel.Fields.DATA_JSON, Utils.Json.asString(actuator.getData()));
+          ret.put(GraphModel.Fields.COMPUTATION_JSON, actuator.getComputation().stream().map(Utils.Json::asString).toList());
+          ret.put(GraphModel.Fields.ANNOTATIONS_JSON, actuator.getAnnotations().stream().map(Utils.Json::asString).toList());
+          ret.put(GraphModel.Fields.SHARDING_STRATEGY_JSON, actuator.getShardingStrategy() == null ? null : Utils.Json.asString(actuator.getShardingStrategy()));
+          ret.put(GraphModel.Fields.RESOLVED_GEOMETRY, actuator.getResolvedGeometry() == null ? null : actuator.getResolvedGeometry().encode());
+          ret.put(GraphModel.Fields.RESOLVED_COVERAGE, actuator.getResolvedCoverage());
+          ret.put(GraphModel.Fields.SEMANTICS, actuator.getObservation().getObservable().getUrn());
           ret.put(
-              "computation",
+              GraphModel.Fields.COMPUTATION,
               // TODO skip any recursive resolution calls and prepare for linking later
               actuator.getComputation().stream()
                   .map(call -> call.encode(KlabLanguage.KLAB_EXPRESSION_LANGUAGE))
                   .toList());
-          ret.put("parentId", actuator.getParentId());
-          ret.put("strategy", actuator.getStrategyUrn());
+          ret.put(GraphModel.Fields.PARENT_ID, actuator.getParentId());
+          ret.put(GraphModel.Fields.STRATEGY, actuator.getStrategyUrn());
         }
         case Activity activity -> {
           var metadata = sanitizeMetadata(activity.getMetadata());
           ret.putAll(metadata);
-          ret.put("_metadata", Utils.Json.asString(metadata));
-          ret.put("credits", activity.getCredits());
-          ret.put("description", activity.getDescription());
-          ret.put("end", activity.getEnd());
-          ret.put("start", activity.getStart());
-          ret.put("schedulerTime", activity.getSchedulerTime());
-          ret.put("size", activity.getSize());
-          ret.put("type", activity.getType().name());
-          ret.put("name", activity.getName());
-          ret.put("id", activity.getId());
-          ret.put("parentId", activity.getParentId());
-          ret.put("urn", activity.getUrn());
-          ret.put("observationUrn", activity.getObservationUrn());
-          ret.put("serviceName", activity.getServiceName());
-          ret.put("serviceId", activity.getServiceId());
+          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));
+          ret.put(GraphModel.Fields.CREDITS, activity.getCredits());
+          ret.put(GraphModel.Fields.DESCRIPTION, activity.getDescription());
+          ret.put(GraphModel.Fields.END, activity.getEnd());
+          ret.put(GraphModel.Fields.START, activity.getStart());
+          ret.put(GraphModel.Fields.SCHEDULER_TIME, activity.getSchedulerTime());
+          ret.put(GraphModel.Fields.SIZE, activity.getSize());
+          ret.put(GraphModel.Fields.TYPE, activity.getType().name());
+          ret.put(GraphModel.Fields.NAME, activity.getName());
+          ret.put(GraphModel.Fields.ID, activity.getId());
+          ret.put(GraphModel.Fields.PARENT_ID, activity.getParentId());
+          ret.put(GraphModel.Fields.URN, activity.getUrn());
+          ret.put(GraphModel.Fields.OBSERVATION_URN, activity.getObservationUrn());
+          ret.put(GraphModel.Fields.SERVICE_NAME, activity.getServiceName());
+          ret.put(GraphModel.Fields.SERVICE_ID, activity.getServiceId());
           ret.put(
-              "serviceType",
+              GraphModel.Fields.SERVICE_TYPE,
               activity.getServiceType() == null ? null : activity.getServiceType().name());
-          ret.put("dataflow", activity.getDataflow());
+          ret.put(GraphModel.Fields.DATAFLOW, activity.getDataflow());
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
-          ret.put("stackTrace", activity.getStackTrace());
-          ret.put("triggeringActivityUrn", activity.getTriggeringActivityUrn());
+          ret.put(GraphModel.Fields.STACK_TRACE, activity.getStackTrace());
+          ret.put(GraphModel.Fields.TRIGGERING_ACTIVITY_URN, activity.getTriggeringActivityUrn());
         }
         case ShardImpl buffer -> {
-          ret.put("id", buffer.getId());
-          ret.put("persistence", buffer.getPersistence().name());
-          ret.put("nativeType", buffer.getNativeType().name());
-          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
-          ret.put("size", buffer.getGeometry().size());
-          ret.put("shardIndex", buffer.getShardIndex());
-          ret.put("timestamp", buffer.getTimestamp());
-          ret.put("shardCount", buffer.getShardCount());
-          ret.put("urn", buffer.getUrn());
+          ret.put(GraphModel.Fields.ID, buffer.getId());
+          ret.put(GraphModel.Fields.PERSISTENCE, buffer.getPersistence().name());
+          ret.put(GraphModel.Fields.NATIVE_TYPE, buffer.getNativeType().name());
+          ret.put(GraphModel.Fields.FILL_CURVE, buffer.getShardingStrategy().getCurve().name());
+          ret.put(GraphModel.Fields.SIZE, buffer.getGeometry().size());
+          ret.put(GraphModel.Fields.SHARD_INDEX, buffer.getShardIndex());
+          ret.put(GraphModel.Fields.TIMESTAMP, buffer.getTimestamp());
+          ret.put(GraphModel.Fields.SHARD_COUNT, buffer.getShardCount());
+          ret.put(GraphModel.Fields.URN, buffer.getUrn());
           if (buffer.getHistogram() != null) {
-            ret.put("histogram", Utils.Json.asString(buffer.getHistogram()));
+            ret.put(GraphModel.Fields.HISTOGRAM, Utils.Json.asString(buffer.getHistogram()));
           }
-          ret.put("suggestedSplits", buffer.getShardingStrategy().getSuggestedSplits());
-          ret.put("maxBufferSize", buffer.getShardingStrategy().getMaxBufferSize());
-          ret.put("minSplitSize", buffer.getShardingStrategy().getMinSplitSize());
-          ret.put("dataType", buffer.getShardingStrategy().getDataType().name());
+          ret.put(GraphModel.Fields.SUGGESTED_SPLITS, buffer.getShardingStrategy().getSuggestedSplits());
+          ret.put(GraphModel.Fields.MAX_BUFFER_SIZE, buffer.getShardingStrategy().getMaxBufferSize());
+          ret.put(GraphModel.Fields.MIN_SPLIT_SIZE, buffer.getShardingStrategy().getMinSplitSize());
+          ret.put(GraphModel.Fields.DATA_TYPE, buffer.getShardingStrategy().getDataType().name());
         }
         default ->
             throw new KlabInternalErrorException(

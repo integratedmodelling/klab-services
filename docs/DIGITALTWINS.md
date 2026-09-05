@@ -1,5 +1,9 @@
 # Digital twins in k.LAB
 
+The subsequent [persistent-twin restoration guide](PERSISTENT_TWINS.md) records the implemented
+lazy storage, actuator restoration, scheduler registry, and shutdown improvements. Its status
+supersedes the corresponding initial-review findings below.
+
 This is a concept and implementation guide based on the source reviewed on 2026-09-05.
 It distinguishes the public contract, current behavior, and work still required. See
 [KLAB](KLAB.md), [architecture](ARCHITECTURE.md), [scopes](SCOPES.md),

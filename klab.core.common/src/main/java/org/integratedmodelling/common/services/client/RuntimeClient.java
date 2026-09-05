@@ -354,13 +354,29 @@ public class RuntimeClient extends BaseServiceClient
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
     if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery1) {
+      if (knowledgeGraphQuery1.getResultType() == null) {
+        throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
+            "Missing query result type");
+      }
+      try {
       return (List<T>)
           client
               .withScope(scope)
-              .postCollection(
+              .postCollectionOrThrow(
                   ServicesAPI.RUNTIME.QUERY,
                   knowledgeGraphQuery,
                   knowledgeGraphQuery1.getResultType().getAssetClass());
+      } catch (org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure failure) {
+        var code = switch (failure.getStatus()) {
+          case 400 -> KnowledgeGraph.QueryException.Code.INVALID_QUERY;
+          case 422 -> KnowledgeGraph.QueryException.Code.UNSUPPORTED_QUERY;
+          case 401, 403 -> KnowledgeGraph.QueryException.Code.ACCESS_DENIED;
+          case 0, 502, 503, 504 -> KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE;
+          default -> KnowledgeGraph.QueryException.Code.EXECUTION_FAILED;
+        };
+        throw new KnowledgeGraph.QueryException(code,
+            "Knowledge graph request failed (HTTP " + failure.getStatus() + ")", failure);
+      }
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
   }

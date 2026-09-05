@@ -2243,13 +2243,18 @@ public class RuntimeService extends BaseService
     if (scope instanceof ContextScope contextScope) {
       var knowledgeGraph = contextScope.getDigitalTwin().getKnowledgeGraph();
       if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
+        if (qc.getResultType() == null) {
+          throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
+              "Missing result type");
+        }
         return knowledgeGraph.query(
             knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), scope);
       }
-      throw new KlabUnimplementedException(
-          "Not ready to compile arbitrary KG query implementations");
+      throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.UNSUPPORTED_QUERY,
+          "Unsupported query representation");
     }
-    return List.of();
+    throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
+        "A context scope is required");
   }
 
   @Override
