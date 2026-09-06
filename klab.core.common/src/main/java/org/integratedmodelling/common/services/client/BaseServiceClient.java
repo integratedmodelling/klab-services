@@ -102,6 +102,19 @@ public abstract class BaseServiceClient implements KlabService {
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
+    if (infoClass == java.awt.image.BufferedImage.class) {
+      var bytes = client.withScope(scope).accepting(List.of("image/png"))
+          .getBytes(ServicesAPI.INFO, "urn", urn, "knowledgeClass", objectClass);
+      if (bytes == null) return null;
+      try {
+        var image = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));
+        if (image == null) throw new KlabInternalErrorException("Service returned an invalid PNG image");
+        return infoClass.cast(image);
+      } catch (java.io.IOException e) {
+        throw new KlabInternalErrorException(e);
+      }
+    }
+
     return client
         .withScope(scope)
         .get(

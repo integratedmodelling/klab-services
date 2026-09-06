@@ -262,3 +262,17 @@ Browser tests run from `klab.core.services/src/main/webui` with `npm run test:fl
 an installed Chrome. The test harness runs locally with fixture responses; it checks browser
 and Java ELK geometry, metadata inspection, URL changes, error recovery, multiple instances and
 the Resources workflow selector without requiring a live Resources service or user credentials.
+
+
+## IDE workflow preview
+
+`klab-ide`'s `WorkflowEditor` includes a workflow-diagram toolbar button immediately before the
+optional Delete button. It opens an owner-modal window, requests the workflow's PNG from the
+editor's ResourcesService using `info(workflow.getUrn(), WORKFLOW, BufferedImage.class, scope)`,
+and fits the image to the resizable window. Loading runs off the JavaFX application thread;
+closing the dialog cancels the request. Missing images and service errors are shown in the dialog.
+
+`BaseServiceClient` negotiates `image/png` for `BufferedImage` information requests and decodes
+the binary response with ImageIO. Authentication, service headers, scope headers and request
+timeouts are retained. A missing image returns null; failed requests and invalid images raise
+an error. The IDE uses its existing JavaFX Swing dependency for BufferedImage conversion.

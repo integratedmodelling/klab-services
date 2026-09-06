@@ -2225,6 +2225,33 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
       }
 
+      /** GET binary content using the same authentication, scope headers and timeout as JSON requests. */
+      public byte[] getBytes(String apiRequest, Object... parameters) {
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        var request = HttpRequest.newBuilder().GET()
+            .uri(URI.create(uri + apiCall + encodeParameters(params)))
+            .timeout(Duration.ofSeconds(timeoutSeconds));
+        if (authorization != null) request.header(HttpHeaders.AUTHORIZATION, authorization);
+        headers.forEach(request::header);
+        if (forcedAcceptHeader != null) request.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+        responseHeaders.clear();
+        try {
+          var response = client.send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
+          parseHeaders(response);
+          if (response.statusCode() == 404) return null;
+          if (response.statusCode() < 200 || response.statusCode() >= 300)
+            throw new KlabServiceAccessException("Binary request failed (HTTP " + response.statusCode() + ")");
+          return response.body();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new KlabServiceAccessException(e);
+        } catch (IOException e) {
+          throw new KlabServiceAccessException(e);
+        }
+      }
+
       /**
        * GET helper that sets all headers and automatically handles JSON marshalling.
        *
