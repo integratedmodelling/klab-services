@@ -1,6 +1,6 @@
 # k.LAB services
 
-`klab-services` is the Java 21 reference implementation of k.LAB's distributed semantic-modelling and digital-twin service stack.
+`klab-services` is the Java 21 reference implementation of k.LAB's distributed semantic-modelling and digital-twin service stack, version 1.0. The version of k.LAB in daily use is still 0.11, in the separate [klab](https://github.com/integratedmodelling/klab) repository, currently in maintenance-only mode. Version 1.0 is used in pilot projects and will become the official k.LAB release as soon as practical.
 
 k.LAB accepts an observation request expressed as meaning in context -
 conceptually, `observe <observable> in <context>` - and turns it into a
