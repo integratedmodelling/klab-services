@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import java.awt.image.BufferedImage;
+import org.integratedmodelling.klab.services.application.flowchart.FlowChartService;
+import org.springframework.http.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -95,7 +98,7 @@ public class KlabServiceController {
   @Operation(
       summary = "Get asset information",
       description = "Return typed information for an asset identified by URN and knowledge class")
-  @GetMapping(ServicesAPI.INFO)
+  @GetMapping(value = ServicesAPI.INFO, params = "infoClass", produces = MediaType.APPLICATION_JSON_VALUE)
   public <T> T info(
       @PathVariable(name = "urn") String urn,
       @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
@@ -104,6 +107,24 @@ public class KlabServiceController {
     if (principal instanceof EngineAuthorization authorization
         && authorization.getScope() instanceof UserScope userScope) {
       return instance.klabService().info(urn, objectClass, loadClass(infoClass), userScope);
+    }
+    throw new KlabAuthorizationException("No valid scope in service INFO request");
+  }
+
+  @Operation(summary = "Render asset information as PNG",
+      description = "Layout an adaptable process using ELK and return a headless PNG rendering")
+  @GetMapping(value = ServicesAPI.INFO, produces = MediaType.IMAGE_PNG_VALUE)
+  public ResponseEntity<byte[]> infoImage(
+      @PathVariable(name = "urn") String urn,
+      @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      var image = instance.klabService().info(urn, objectClass, BufferedImage.class, userScope);
+      return image == null ? ResponseEntity.notFound().build()
+          : ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)
+              .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+              .body(FlowChartService.encodePng(image));
     }
     throw new KlabAuthorizationException("No valid scope in service INFO request");
   }

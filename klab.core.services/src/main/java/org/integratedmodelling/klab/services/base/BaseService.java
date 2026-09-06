@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.base;
 
+import java.awt.image.BufferedImage;
+import org.integratedmodelling.klab.api.documentation.FlowChart;
+import org.integratedmodelling.klab.services.application.flowchart.FlowChartService;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
@@ -245,10 +248,33 @@ public abstract class BaseService implements KlabService {
     return ret;
   }
 
+  private final FlowChartService flowCharts = new FlowChartService();
+
+  /** Register additional process adapters here during service initialization. */
+  public FlowChartService flowCharts() { return flowCharts; }
+
+  /** Resolve a process through the same visibility checks as ordinary information requests. */
+  protected Object flowChartSource(String urn, KlabAsset.KnowledgeClass objectClass, UserScope scope) {
+    var common = commonInformationObjects(objectClass, scope).stream()
+        .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
+        .findFirst().orElse(null);
+    if (common != null) return common;
+    if (objectClass == KlabAsset.KnowledgeClass.COMPONENT
+        || objectClass == KlabAsset.KnowledgeClass.INFORMATION
+        || objectClass == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION) return null;
+    return info(urn, objectClass, objectClass.getAssetClass(), scope);
+  }
+
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
     Objects.requireNonNull(infoClass, "The requested info class cannot be null");
+    if (infoClass == FlowChart.class || infoClass == BufferedImage.class) {
+      // Resolve through the service's normal typed information path, retaining its access checks.
+      var source = flowChartSource(urn, objectClass, scope);
+      if (source == null) return null;
+      return infoClass.cast(infoClass == FlowChart.class ? flowCharts.layout(source) : flowCharts.image(source));
+    }
 
     if (ServiceCapabilities.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
       return infoClass.cast(capabilities(scope));
@@ -320,7 +346,9 @@ public abstract class BaseService implements KlabService {
 
   protected boolean isCommonInformationClass(
       KlabAsset.KnowledgeClass objectClass, Class<?> infoClass) {
-    return DomainObject.class.isAssignableFrom(infoClass)
+    return infoClass == FlowChart.class
+        || infoClass == BufferedImage.class
+        || DomainObject.class.isAssignableFrom(infoClass)
         || AdapterDescriptor.class.isAssignableFrom(infoClass)
         || Extensions.ComponentDescriptor.class.isAssignableFrom(infoClass)
         || Extensions.FunctionDescriptor.class.isAssignableFrom(infoClass)

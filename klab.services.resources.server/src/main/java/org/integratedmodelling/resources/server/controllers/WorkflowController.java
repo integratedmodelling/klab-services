@@ -1,5 +1,8 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import org.integratedmodelling.klab.api.documentation.FlowChart;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
@@ -34,6 +37,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class WorkflowController {
 
   @Autowired private ResourcesServer resourcesServer;
+
+  @Operation(summary = "List known workflows", description = "List workflow schemas visible to the caller")
+  @GetMapping(ServicesAPI.RESOURCES.WORKFLOWS)
+  public List<Workflow> listWorkflows(Principal principal) {
+    return resourcesServer.klabService().list(Workflow.class, userScope(principal));
+  }
+
+  @Operation(summary = "Get a workflow diagram", description = "Return an ELK-layout FlowChart")
+  @GetMapping(value = ServicesAPI.RESOURCES.WORKFLOW + "/flowchart", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<FlowChart> flowchart(@PathVariable String workflowId, Principal principal) {
+    var workflow = getWorkflow(workflowId, principal);
+    return workflow == null ? ResponseEntity.notFound().build()
+        : ResponseEntity.ok().header("Cache-Control", "private, no-store")
+            .body(resourcesServer.klabService().flowCharts().layout(workflow));
+  }
+
+  @Operation(summary = "Render a workflow diagram", description = "Return an ELK-layout PNG")
+  @GetMapping(value = ServicesAPI.RESOURCES.WORKFLOW + "/flowchart.png", produces = MediaType.IMAGE_PNG_VALUE)
+  public ResponseEntity<byte[]> flowchartImage(@PathVariable String workflowId, Principal principal) {
+    var workflow = getWorkflow(workflowId, principal);
+    return workflow == null ? ResponseEntity.notFound().build()
+        : ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).header("Cache-Control", "private, no-store")
+            .body(resourcesServer.klabService().flowCharts().png(workflow));
+  }
 
   @Operation(summary = "Get a workflow", description = "Return a workflow definition by identifier")
   @GetMapping(ServicesAPI.RESOURCES.WORKFLOW)

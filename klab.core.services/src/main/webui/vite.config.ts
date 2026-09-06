@@ -67,6 +67,7 @@ export default defineConfig({
   base: "./",
   plugins: [dashboardExtensions(), vue()],
   resolve: {
+    dedupe: ["vue", "quasar"],
     alias: { "@klab-dashboard": path.resolve(rootDirectory, "src") },
   },
   build: {
@@ -80,6 +81,8 @@ export default defineConfig({
         "klab-webui-api": path.resolve(rootDirectory, "src/plugin-api.ts"),
       },
       output: {
+        assetFileNames: (asset) => asset.names.includes("FlowChartViewer.css")
+          ? "assets/flowchart-viewer.css" : "assets/[name]-[hash][extname]",
         entryFileNames: (chunk) =>
           chunk.name === "klab-webui-api"
             ? "assets/klab-webui-api.js"

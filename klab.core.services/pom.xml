@@ -154,6 +154,17 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Headless workflow layout. Rendering uses Java2D and needs no browser. -->
+        <dependency>
+            <groupId>org.eclipse.elk</groupId>
+            <artifactId>org.eclipse.elk.graph.json</artifactId>
+            <version>0.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.elk</groupId>
+            <artifactId>org.eclipse.elk.alg.layered</artifactId>
+            <version>0.12.0</version>
+        </dependency>
         <dependency>
             <groupId>org.dizitart</groupId>
             <artifactId>nitrite</artifactId>

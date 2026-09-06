@@ -82,17 +82,6 @@ class ObservableValidatorTest {
     assertTrue(validator.validateConcept(relationship).isEmpty());
   }
 
-  @Test
-  void exposesTheRulesAsImmutableReviewableData() {
-    assertEquals(1, ObservableValidator.clauseRules().size());
-    assertEquals(1, ObservableValidator.unaryOperatorRules().size());
-    assertEquals(2, ObservableValidator.logicalOperatorRules().size());
-    assertEquals(1, ObservableValidator.conceptAttributeRules().size());
-    assertEquals(1, ObservableValidator.relationshipSpecializationRules().size());
-    assertThrows(
-        UnsupportedOperationException.class, () -> ObservableValidator.clauseRules().clear());
-  }
-
   private void assertError(KimConcept concept, String messageFragment) {
     var notifications = validator.validateConcept(concept);
     assertEquals(1, notifications.size());

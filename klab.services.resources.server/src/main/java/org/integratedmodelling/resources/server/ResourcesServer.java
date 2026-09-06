@@ -43,7 +43,9 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
             "Browse and inspect resources exposed by this service.",
             "resources-workspace",
             100,
-            false);
+            false)
+        .page("workflows", "Workflows", "Browse workflow definitions and process diagrams.",
+            "resources-workflows", 110, true);
   }
 
   @Override
