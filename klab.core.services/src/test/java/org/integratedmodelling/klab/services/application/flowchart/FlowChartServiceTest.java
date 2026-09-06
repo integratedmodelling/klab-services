@@ -41,7 +41,10 @@ class FlowChartServiceTest {
     var chart = service.layout(original);
     assertEquals(before, mapper.writeValueAsString(original));
     assertTrue(chart.getRoot().getWidth() > 100);
-    assertEquals(5, chart.getRoot().getChildren().size());
+    assertEquals(4, chart.getRoot().getChildren().size());
+    assertEquals(3, chart.getRoot().getPorts().size());
+    assertEquals(FlowChart.Role.INPUT, chart.getRoot().getPorts().getFirst().getRole());
+    assertEquals(FlowChart.Role.OUTPUT, chart.getRoot().getPorts().getLast().getRole());
     assertTrue(chart.getRoot().getEdges().stream().allMatch(edge -> !edge.getSections().isEmpty()));
     assertEquals("review", chart.getRoot().getMetadata().get("workflowId"));
     assertTrue(chart.getRoot().getMetadata().containsKey("nullable"));

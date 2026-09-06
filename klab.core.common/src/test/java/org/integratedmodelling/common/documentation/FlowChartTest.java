@@ -90,14 +90,25 @@ class FlowChartTest {
   }
 
   @Test
-  void workflowProjectionPreservesAlternativesInitAndDisconnectedStates() throws Exception {
+  void workflowProjectionUsesRootPortsForInitializationAndTerminalStates() throws Exception {
     var workflow = workflow();
     workflow.getMetadata().put("extension", new ArrayList<>(List.of("original")));
     var chart = FlowChart.adapt(workflow, new WorkflowFlowChartAdapter());
-    assertEquals(4, chart.getRoot().getChildren().size());
-    assertEquals(3, chart.getRoot().getEdges().size());
+    assertEquals(3, chart.getRoot().getChildren().size());
+    assertEquals(2, chart.getRoot().getPorts().size());
+    assertEquals(FlowChart.Role.INPUT, chart.getRoot().getPorts().get(0).getRole());
+    assertEquals("submit", chart.getRoot().getPorts().get(0).getMetadata().get("transitionId"));
+    assertEquals(FlowChart.Role.OUTPUT, chart.getRoot().getPorts().get(1).getRole());
+    assertEquals("isolated", chart.getRoot().getPorts().get(1).getMetadata().get("stateId"));
+    assertEquals(4, chart.getRoot().getEdges().size());
     assertTrue(chart.getRoot().getEdges().stream().allMatch(e -> e.getSources().size() == 1));
     assertEquals("submit", chart.getRoot().getEdges().getFirst().getMetadata().get("transitionId"));
+    assertEquals(
+        chart.getRoot().getPorts().getFirst().getId(),
+        chart.getRoot().getEdges().getFirst().getSources().getFirst());
+    assertEquals(
+        chart.getRoot().getPorts().getLast().getId(),
+        chart.getRoot().getEdges().getLast().getTargets().getFirst());
     var mapper = new ObjectMapper();
     var restored = mapper.readValue(mapper.writeValueAsString(chart), FlowChart.class);
     restored.validate();

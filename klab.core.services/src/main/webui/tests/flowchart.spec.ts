@@ -7,8 +7,8 @@ for (const server of [false, true]) test(`renders ${server ? "Java" : "browser"}
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   await page.route("**/chart", route => route.fulfill({ json: server ? chart : raw }));
   await page.goto(`/tests/flowchart.html${server ? "?server" : ""}`);
-  await expect(page.locator(".flowchart-canvas .sprotty-node")).toHaveCount(6);
-  await expect(page.locator(".flowchart-canvas .sprotty-edge")).toHaveCount(4);
+  await expect(page.locator(".flowchart-canvas .sprotty-node")).toHaveCount(5);
+  await expect(page.locator(".flowchart-canvas .sprotty-edge")).toHaveCount(6);
   await expect(page.locator(".flowchart-canvas")).toContainText("Resource review");
   await page.locator(".flowchart-inspector select").selectOption("state:6:Review");
   await expect(page.locator(".flowchart-inspector pre")).toContainText("Work on Review");

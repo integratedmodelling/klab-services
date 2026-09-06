@@ -113,15 +113,24 @@ FlowChart chart = FlowChart.adapt(workflow, new WorkflowFlowChartAdapter());
 ```
 
 Every workflow state becomes a child with input and output ports, including disconnected states.
-Map keys are authoritative state and transition identifiers. A synthetic `INIT` node is included
-when an initial transition exists. Each transition source gets a separate binary link to the
-target, preserving alternative origins rather than implying simultaneous synchronization.
-Self-transitions and cycles are retained. State keys are length-prefixed in graph IDs to avoid
-collisions with port suffixes; link IDs follow sorted transition/source order. Original schema
-IDs remain in metadata. Adding a transition may renumber link IDs.
+Map keys are authoritative state and transition identifiers. Each transition sourced from `INIT`
+creates an input port on the root and connects that port directly to the transition's target
+state. Each state that is not the source of any transition is terminal: its output connects to a
+corresponding output port on the root. This makes the root the external workflow interface while
+states remain the internal process structure. A disconnected state is terminal and therefore has
+an output unless a transition names it as a source.
+
+Each transition source gets a separate binary link to the target, preserving alternative origins
+rather than implying simultaneous synchronization. Self-transitions and cycles are retained.
+State, input-port, and output-port IDs are length-prefixed to avoid collisions with arbitrary
+schema keys; ordinary link IDs follow sorted transition/source order. Terminal links use stable
+state-derived IDs. Original schema IDs remain in metadata. Adding an ordinary transition may
+renumber ordinary link IDs.
 
 Root metadata includes workflow ID, version, description, asset types, and source metadata under
-`properties`. State metadata includes description, instructions, completion criteria, open flag,
+`properties`. Root input ports carry `workflowInput`, transition, and target-state metadata. Root
+output ports and their links carry `workflowOutput` and terminal-state metadata. State metadata
+includes description, instructions, completion criteria, open flag,
 roles, admitted groups, asset types, attachment rules, and `properties`. Link metadata includes
 transition ID, source/target state, description, roles, admitted source asset/media types, and
 `properties`. Source metadata is recursively copied; enum values become names and collections
