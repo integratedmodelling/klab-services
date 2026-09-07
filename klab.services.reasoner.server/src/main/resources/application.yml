@@ -14,3 +14,9 @@ application:
       description: "Reasoning services for k.LAB"
       contactName: "Integrated Modelling Partnership"
       contactEmail: "info@integratedmodelling.org"
+klab:
+   webui:
+      keycloak:
+         url: "https://login.integratedmodelling.org"
+         realm: "im"
+         clientId: "klab-dashboard"

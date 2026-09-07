@@ -54,7 +54,7 @@ pipeline {
                             )
                         ]) {
                             sh '''
-                                ./mvnw --settings "$MAVEN_SETTINGS_XML" clean source:jar "$MAVEN_PHASE" -DskipTests -U $JIB_ARGS
+                                ./mvnw --settings "$MAVEN_SETTINGS_XML" clean source:jar "$MAVEN_PHASE" -Pwebui -DskipTests -U $JIB_ARGS
                             '''
                         }
                     }
@@ -81,7 +81,7 @@ pipeline {
         }
         stage('Update services') {
             when {
-                expression { env.JIB != '' }
+                expression { env.JIB_ARGS != '' }
             }
             steps {
                 script {
