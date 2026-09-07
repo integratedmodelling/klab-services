@@ -1,0 +1,6 @@
+klab:
+  webui:
+    keycloak:
+      url: "https://login.integratedmodelling.org"
+      realm: "im"
+      clientId: "klab-dashboard"
