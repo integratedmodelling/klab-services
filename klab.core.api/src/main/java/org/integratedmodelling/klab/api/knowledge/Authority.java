@@ -8,6 +8,12 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+/**
+ * Authorities are built from components and are unique to the reasoner. The @Authority annotation
+ * tags classes and methods so that an Authority object can be built by the ComponentRegistry. When
+ * an authority is referenced, the Reasoner looks up a service in the scope that provides it;
+ * failing that, it looks for a component that provides it and installs it.
+ */
 public interface Authority {
 
   /**
@@ -233,7 +239,7 @@ public interface Authority {
    * Write the documentation for the passed identity in the passed media type, which will be one of
    * those returned in the capabilities.
    *
-   * FIXME move to a DomainObject with a documentation schema
+   * <p>FIXME move to a DomainObject with a documentation schema
    *
    * @param identityId
    * @param mediaType

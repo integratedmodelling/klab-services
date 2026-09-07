@@ -380,6 +380,101 @@ observables from which it emerges and the detection or recognition criteria if t
 provides them. Current worldview syntax permits `configuration` declarations and `emerges from`
 clauses, but operational support must still be validated.
 
+### 4.8 Contextualization: the operational consequence of meaning
+
+**Contextualization** is the observation process through which a reusable
+observable becomes an observation for an observer in a spatial, temporal, and
+semantic frame. It includes creating and explaining entities, attributing
+predicates, assigning quality values, and evolving processes. Observation need
+not mean direct perception or measurement: resources and models can mediate it.
+Keep three questions separate: *what does the observable mean?*, *what kind of
+activity realizes that meaning?*, and *which method can perform that activity
+here?* The ontology constrains the first two; a Description/model supplies the
+method, whose applicability depends on context.
+
+The primary activity is classified by
+[`Contextualization.java`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Contextualization.java),
+following ODO-IM's Description categories. Use its case definitions as the
+semantic contract below. The full composed observable, its inherency, and its
+collective status matter; do not assign one immutable activity to every lexical
+domain term. Examples are conceptual or illustrative, subject to supplied
+worldview declarations and validation.
+
+| Semantic coordinates of the request | Contextualization | Required interpretation and contextual commitments | Illustrative domain question |
+|---|---|---|---|
+| Collective countable substantial: subject, agent, or event | `INSTANTIATION` | Create zero or more instances; resolve each through `ACKNOWLEDGEMENT`. Identify instance boundaries and context. | Which trees occur here? Which flood episodes occurred during this interval? |
+| Individual substantial, including a relationship | `ACKNOWLEDGEMENT` | Explain the individual observation according to its semantics. | What contextual information realizes this identified flood episode? |
+| Collective relationship or bond | `CONNECTION` | Observe endpoints and instantiate connections; acknowledge each connection. Preserve direction for relationships and non-directionality for bonds. | Which cities are connected by roads? |
+| Detected emergent configuration | `DETECTION` | Contextualize a configuration submitted by the semantic engine after detecting its existence. Quality-based configurations are local to the quality-bearing observation; relationship-based ones are global to the digital twin and may evolve under the same observer. | What road network emerges from these connections? |
+| Process: dependent occurrent | `SIMULATION` | Resolve without initialization before computation; merge its schedule with the digital twin and contextualize at relevant time transitions. | How does evapotranspiration evolve? |
+| Measurable physical quality | `MEASURE` | Produce a physical quantity with a Unit providing the scale; identify bearer and intensive/extensive semantics. | What is the air temperature, in degrees Celsius? |
+| Numeric quality other than measurement or value | `QUANTIFICATION` | Produce a number without a Unit, possibly with a range or proxy scale. | How many trees are present (`count of`)? What is the probability of flooding? |
+| Value or monetary value quality | `VALUATION` | Produce absolute or relative value with a Currency, which may be a monetary unit or bounded rank. Identify valuation perspective and reference where applicable. | What is the monetary property value or non-monetary preference value? |
+| Categorical quality / `type of` reification | `CATEGORIZATION` | Produce a concept consistent with the declared value space; keep that quality distinct from the predicate it reifies. | What is the type of this tree? |
+| Presence quality | `VERIFICATION` | Produce presence/absence of a substantial; process presence is shorthand for presence of any event subsuming it. | Is a tree present here? |
+| Abstract predicate, directly abstract or qualified with `any`, inherent to substantials | `CLASSIFICATION` | Attribute concrete traits or roles and trigger `CHARACTERIZATION` after each successful resolution. | Resolve an abstract species predicate for each tree. |
+| Concrete trait or role attributed to a substantial | `CHARACTERIZATION` | Explain that predicate within the observation: `PREDICATE of SUBSTANTIAL`. | Explain the deciduous trait attributed to this tree. |
+| Concrete trait or role attributed to a quality | `TRANSFORMATION` | Transform the quality to express the predicate: `PREDICATE of QUALITY`. | Express a numeric quality under a normalization trait defined by the worldview. |
+| Non-functional, abstract, or inconsistent observable unable to produce an observation | `VOID` | No productive observation activity. Preserve useful abstract ontology concepts, but do not present them as directly executable requests. | A bare predicate with no inherent observable. |
+
+#### Collective activities and contextual availability
+
+The enum marks only `INSTANTIATION`, `CONNECTION`, and `CLASSIFICATION` as
+collective. Here collective means creating zero or more target observations or
+predicate attributions, not merely handling a raster, a list, or many time
+steps. An activity is not complete until its results are resolved. The required
+follow-ups (`ACKNOWLEDGEMENT` for instances/connections; `CHARACTERIZATION` for
+classifications) are implementation responsibilities, not observation strategies
+to be invented in an ontology proposal.
+
+For `ABSTRACT_PREDICATE of each SUBSTANTIAL`, resolve the collective substantials
+before classification. Without `each`, use substantials already available in
+the observation context. Attribution enriches their semantics without switching
+cohorts; an individual identity may support new cohorts collecting its bearers.
+Connection uses the analogous collective/existing-instance distinction for
+connected substantials. State whether a domain example requires discovering
+instances or can operate on those already contextualized.
+
+#### Use activity distinctions to test conceptual boundaries
+
+For one domain, compare *flood episodes* (`INSTANTIATION`), *one identified flood*
+(`ACKNOWLEDGEMENT`), *water movement* (`SIMULATION`), *water depth* (`MEASURE`),
+*flood probability* (`QUANTIFICATION`), *flood presence* (`VERIFICATION`), and
+*flood damage value* (`VALUATION`, if articulated as a value quality). Related
+subject matter does not make these equivalent meanings. Conversely, two
+different meanings can require the same activity; contextualization type alone
+does not prove semantic equivalence or orthogonality.
+
+Distinguish a concept-valued quality (`CATEGORIZATION`) from adding a predicate
+to a substantial's semantics (`CLASSIFICATION`) and explaining that predicate
+(`CHARACTERIZATION`). Distinguish `PREDICATE of QUALITY` (`TRANSFORMATION`) from
+measuring an already predicate-qualified quality. Do not infer these activities
+from everyday words such as “classification,” “transformation,” or “simulation”
+in a paper: a machine-learning classifier may implement a categorical quality,
+and a numerical simulation may supply a measured physical quality.
+
+For each representative composed request, explain the expected activity, its
+bearer/endpoints/context, result kind, and any collective-to-singular follow-up
+in the existing rationale or accompanying narrative. Include an alternative
+formulation when changing the semantic head or collective status changes the
+activity. This is an analysis requirement, not a new proposal-schema field or
+a demand to supply executable models for every concept.
+
+#### Semantic contract versus current dispatch
+
+The revised case comments are richer than the present dispatch helper.
+`forSemantics(KimConcept)` maps predicates without inherency to `VOID`, predicates
+inherent to qualities to `TRANSFORMATION`, and other predicates to
+`CLASSIFICATION` or `CHARACTERIZATION` according to the inherent observable's
+collective flag. It does not explicitly test abstractness or `any` there.
+The general type dispatch checks class, presence, physical intensive/extensive
+quality, value, generic quality, relationship, configuration, process, countable,
+and nothing, in that order; it is not a complete abstractness or consistency
+validator. Do not treat a returned enum as proof of executable support or
+silently redefine the semantic categories to match these implementation limits.
+Keep semantic justification, parser/Reasoner validation, and runtime validation
+separate in proposal reports.
+
 ## 5. The four observable-refining predicate types
 
 Predicates specialize an observable's meaning but normally cannot be directly supported as
@@ -780,7 +875,9 @@ For each candidate:
 13. compare it with related candidates using the independent-variation and non-redundancy tests;
 14. when a domain term names an otherwise compositional meaning, assess its citation support and
     domain centrality, preserve the full expression, and require `equals`-versus-`is` review; and
-15. assign confidence separately to extraction, category attribution, upper alignment,
+15. relate representative composed observables to the contextualization activities in Section 4.8,
+    recording contextual requirements and contrasting requests where the activity changes;
+16. assign confidence separately to extraction, category attribution, upper alignment,
     unambiguity, and orthogonality.
 
 Do not force uncertain candidates into the ontology. Use `needs_review`, `defer`, or
@@ -1640,6 +1737,9 @@ exponent syntax.
 - Roles are contingent; identities are classificatory; attributes are accidental; realms are
   physical/contextual.
 - `type of` reifications remain separate from their identity taxonomies.
+- Representative observation requests have justified contextualization types, contextual
+  requirements, and collective follow-ups; categorization, classification, characterization,
+  and transformation are distinguished as in Section 4.8.
 
 ### 11.4 Orthogonality and ambiguity
 
@@ -1750,7 +1850,8 @@ Accompany the structured corpus with a concise report containing:
 3. declaration-keyword inheritance assumptions, root-domain generalized-scope aliases reused, and
    any `root_domain_gap` reports;
 4. the dominant structural and functional perspectives in the domain;
-5. coverage by observable and predicate category;
+5. coverage by observable and predicate category, with representative contextualization mappings,
+   examples, and their bearer, endpoint, scale, or temporal requirements;
 6. a dependency-ordered walkthrough of proposed concepts;
 7. concepts reused from supplied upper/Tier-1/intervening ontologies and newly proposed concepts;
 8. upstream gaps that require a broader-tier governance decision;
@@ -1784,7 +1885,10 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > configurations, and the four refining predicate dimensions: identity, realm, attribute, and
 > role. For every candidate, assign perspective, dependence arity, bearer/participants/endpoints,
 > value kind, upper alignment, predicates, clauses, evidence, rationale, alternatives, and separate
-> confidence scores. Internal unambiguity is a hard gate: split, qualify, or defer every candidate
+> confidence scores. Relate representative composed requests to the contextualization categories
+> in Section 4.8; distinguish instance creation, explanation, quality values, predicate attribution,
+> transformation, and temporal simulation, with their contextual requirements and follow-ups.
+> Internal unambiguity is a hard gate: split, qualify, or defer every candidate
 > with more than one interpretation. Subject to source faithfulness, maximize orthogonality by
 > testing plausible concept pairs for independent variation and recording every taxonomic,
 > dependent, derived, compositional, overlapping, redundant, or conflicting relation. Prefer reuse,

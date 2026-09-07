@@ -42,6 +42,95 @@ resource still has a physical URN, but its k.IM models state which observables
 it can contribute to. Discovery by meaning can then find resources the
 requester did not know by name.
 
+### 1.1 Observing means contextualizing
+
+**Contextualization** is k.LAB's observation process: realizing an observable's
+meaning for an observer in a particular spatial, temporal, and semantic context.
+It can identify entities, establish connections, assign values, explain a
+predicate, or simulate change. It need not be a direct instrumental measurement.
+Data retrieval and computation are possible means of observation; the observable
+specifies what their result must mean.
+
+The context supplies the frame in which the request makes sense: which entities
+are present, which bearer a quality describes, which endpoints a relationship
+connects, and which scale and time apply. A model supplies a method; the
+observable determines the **kind of observation activity** that method must
+fulfil. In ODO-IM this activity is a Description. Different methods can fulfil
+the same activity, and one request can require several dependent activities.
+
+### 1.2 From observable meaning to contextualization type
+
+The following table follows the definitions in
+[`Contextualization.java`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Contextualization.java).
+Examples are illustrative expressions or descriptions, assuming compatible
+worldview declarations; they are not a tested model catalogue.
+
+| Observable or request | Contextualization | What the activity does | Example |
+|---|---|---|---|
+| Collective countable substantials, including subjects, agents, and events | `INSTANTIATION` | Creates zero or more instances and triggers acknowledgement of each. | `each earth:Terrestrial earth:Region`; identifying individual flood episodes in a time interval. |
+| An individual substantial, including an individual relationship | `ACKNOWLEDGEMENT` | Explains the individual so that its observation fulfils its stated semantics. | Contextualizing one identified region or flood episode. |
+| Collective relationships or bonds | `CONNECTION` | Observes the connected substantials and creates connections; each connection requires acknowledgement. | Establishing road connections between cities. |
+| A configuration whose emergence has been detected | `DETECTION` | Contextualizes the configuration submitted to the digital twin by the semantic engine. | `infrastructure:RoadNetwork`. |
+| A process | `SIMULATION` | Resolves the process, merges its schedule with the digital twin's, and contextualizes it as relevant time transitions occur. | Simulating evapotranspiration through time. |
+| A measurable physical quality | `MEASURE` | Assigns a physical quantity with a unit providing its scale. | `climate:AirTemperature in degC`. |
+| A numeric quality that is not a measurement or value | `QUANTIFICATION` | Assigns a number without a Unit; a range or proxy scale may apply. | `count of biology:Tree`; `probability of hydrology:FloodEvent`. |
+| A monetary or non-monetary value quality | `VALUATION` | Assigns value, absolute or relative to another concept, with a Currency: a monetary unit or bounded rank. | `economy:PropertyValue in EUR@2025/m/m`; a non-monetary preference valuation. |
+| A categorical quality, including a `type of` reification | `CATEGORIZATION` | Assigns a concept consistent with the declared value space. | `type of biology:Tree`. |
+| A boolean presence quality | `VERIFICATION` | Establishes presence or absence of a substantial. | `presence of biology:Tree`. |
+| An abstract predicate, directly abstract or qualified with `any`, applied to substantials | `CLASSIFICATION` | Finds and attributes concrete traits or roles, then triggers characterization of each successful attribution. | Abstract `Species of each Tree`: determine the concrete species predicate for each tree. |
+| A concrete predicate attributed to a substantial | `CHARACTERIZATION` | Explains the attributed trait or role within that observation. | Concrete `Deciduous of Tree`: explain that trait for the tree. |
+| A concrete predicate attributed to a quality | `TRANSFORMATION` | Transforms the quality so that it expresses the trait or role. | A normalization trait applied to a numeric quality, where the worldview defines that trait and its transformation. |
+| A non-functional, abstract, or inconsistent request that cannot produce an observation | `VOID` | Produces nothing. | A bare predicate without an inherent observable. |
+
+The predicate examples use schematic names to make the semantic distinctions
+visible. `Predicate of Bearer` requests an activity about that predicate;
+`Predicate Bearer` qualifies the bearer being requested. They are not
+interchangeable. Likewise, a `type of` quality has a concept as its **value**;
+classification instead adds a concrete predicate to the substantial's
+**semantics**.
+
+### 1.3 Creation, explanation, and time
+
+`INSTANTIATION`, `CONNECTION`, and `CLASSIFICATION` are collective activities in
+the enum's sense: they create zero or more target observations or predicate
+attributions. Completion includes resolving their results. The contract requires
+`INSTANTIATION` and `CONNECTION` to trigger `ACKNOWLEDGEMENT`, and
+`CLASSIFICATION` to trigger `CHARACTERIZATION`; these follow-ups belong to the
+implementation, not to user-authored observation strategies. The other types
+are resolution activities: they explain an observation or characteristic.
+Neither acknowledgement nor classification is defined by producing a numeric
+data array.
+
+For classification, `ABSTRACT_PREDICATE of each SUBSTANTIAL` first resolves the
+collective substantials. Without `each`, classification uses substantials
+already in the observation context. Attributed predicates do not move them to
+different cohorts, although an individual identity can support new cohorts
+collecting its bearers. Connection follows the same distinction for its
+endpoints: resolve a requested collective or use existing contextual instances.
+
+A bounded event and a process are different requests. Identifying flood episodes
+instantiates countable events; simulating water movement contextualizes a
+process. The process contract says it is resolved but not initialized before
+computation starts; its execution follows the merged digital-twin schedule.
+Requesting the probability or presence of a flood changes the semantic head to
+a quality, hence `QUANTIFICATION` or `VERIFICATION`. Presence of a process is
+accepted as shorthand for presence of any event subsuming that process.
+
+A configuration is also distinct from its constituents. A configuration built
+from detected qualities is local to the observation holding those qualities.
+One built from relationships is global to the digital twin and can change as
+new observations are made under the same observer.
+
+**Contract and implementation:** the table describes the revised enum comments.
+Its current `forSemantics(KimConcept)` predicate branch dispatches by inherency:
+no bearer gives `VOID`, a quality bearer gives `TRANSFORMATION`, and otherwise
+the bearer's collective flag selects `CLASSIFICATION` or `CHARACTERIZATION`.
+That branch does not explicitly test predicate abstractness or `any`. The
+general dispatch also does not itself reject every abstract or inconsistent
+expression. Thus a selected enum value alone does not establish that a request
+is valid or that all documented lifecycle behavior is implemented. Worldview
+validation and executable strategies remain necessary.
+
 ## 2. Concepts and predicates
 
 A worldview concept is written as `namespace.path:ConceptName`:

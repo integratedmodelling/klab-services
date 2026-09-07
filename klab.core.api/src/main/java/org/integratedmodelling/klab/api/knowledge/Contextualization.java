@@ -24,64 +24,93 @@ public enum Contextualization {
    */
   VOID(false, "void", Artifact.Type.VOID, "nothing"),
   /**
-   * The activity that contextualizes countable substantials. Example: <code>
+   * The activity that contextualizes a collective observation of countable substantials. Example:
+   * <code>
    * each earth:Terrestrial earth:Region</code>. Triggers the corresponding ACKNOWLEDGEMENT.
    */
   INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiator"),
   /**
-   * The activity that contextualizes a detected configuration (aka EMERGENCE) that has been built
-   * by the semantic engine detecting its.
+   * The activity that contextualizes a detected configuration (aka EMERGENCE) that has been
+   * submitted to the DigitalTwin by the semantic engine detecting its existence. A Configuration
+   * built from detected qualities will be local to the Observation holding the qualities; one built
+   * from Relationships will be global to the DigitalTwin and may change as new observations are
+   * made under the same observer.
    *
    * <p>Example: <code>infrastructure:RoadNetwork</code>
    */
   DETECTION(false, "configuration", Artifact.Type.CONFIGURATION, "detector"),
-  /** The activity that contextualizes a process */
+  /**
+   * The activity that contextualizes a process. The Process is an occurrent, so it is resolved but
+   * not initialized before computation starts; its schedule will be merged with the Digital Twin's,
+   * and contextualization will be scheduled as time progresses and when the generated time
+   * transitions affect it.
+   */
   SIMULATION(false, "process", Artifact.Type.PROCESS, "simulator"),
   /**
-   * The activity that contextualizes a measurable physical property with units providing the scale
+   * The activity that contextualizes a measurable physical property with units providing the scale.
    */
   MEASURE(false, "number", Artifact.Type.QUANTITY, "quantifier"),
-  /** The observation activity that contextualizes a numeric quality that is not a measurement */
+  /**
+   * The observation activity that contextualizes a numeric quality that is not a measurement, so
+   * does not have a Unit (although it may have a range, or be a magnitude or other proxy that
+   * describes a measured quality that does)
+   */
   QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantifier"),
-  /** The activity that contextualizes a numeric quality that quantifies value, monetary or not */
+  /**
+   * The activity that contextualizes a numeric quality that quantifies value, monetary or not. The
+   * value semantics can be absolute or relative to another concept. Values always have a Currency,
+   * which may be a bounded rank or a monetary unit.
+   */
   VALUATION(false, "number", Artifact.Type.QUANTITY, "valuator"),
   /**
    * The activity that contextualizes a categorical quality (a category linked to a concept, i.e., a
-   * <code>type of Concept</code>).
+   * <code>type of Concept</code>). The resulting observation reifies a predicate in context, and
+   * will always have a concept consistent with the definition as its value.
    */
   CATEGORIZATION(false, "concept", Artifact.Type.CONCEPT, "categorizer"),
-  /** The activity that contextualizes a boolean quality (presence/absence) */
+  /**
+   * The activity that contextualizes a boolean quality, which in semantic terms corresponds to
+   * presence or absence of a substantial. Presence of a process is accepted as a semantic shortcut
+   * to "any event that subsumes the process".
+   */
   VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verifier"),
   /**
-   * The contextualization that scans a group of substantials to attribute a concrete trait or role
-   * to each of them (if it is a quality, it will produce a transforming state for successive
-   * subsetting of another observation). Equivalent to INSTANTIATION of a concrete t/a given the
-   * abstract form and an inherent observable. This is specified as <code>
-   * ABSTRACT_TRAIT of each SUBSTANTIAL</code>. Triggers CHARACTERIZATION after each successful
-   * resolution.
+   * CLASSIFICATION of an ABSTRACT PREDICATE (either directly abstract or qualified with <code>any
+   * </code>) is the contextualization that scans one or more substantials to attribute a concrete
+   * trait or role to each of them. Equivalent to INSTANTIATION of a concrete t/a given the abstract
+   * form and an inherent observable. This is specified as <code>
+   * ABSTRACT_PREDICATE of [each] SUBSTANTIAL</code>. Using a collective inherent forces k.LAB to
+   * resolve the collective substantials before the contextualization is triggered; not using <code>
+   * each</code> will only classify the substantials in the context of the observation. The
+   * substantials acquire the concrete predicate in their semantics, but do not switch cohorts; if
+   * the predicate is an <code>individual identity</code>, new cohorts may be built to collect the
+   * observables (e.g. Countries collecting all Regions that adopt Country). Triggers
+   * CHARACTERIZATION after each successful resolution.
    */
   CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classifier"),
   /**
    * The contextualization of a concrete trait or role after it has been attributed to an
    * observation through {@link #CLASSIFICATION}. Explains the trait within the observation. This is
-   * specified as <code>TRAIT of SUBSTANTIAL</code>.
+   * specified as <code>PREDICATE of SUBSTANTIAL</code>.
    */
   CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterizer"),
   /**
    * The contextualization of a concrete trait or role that has been attributed to a quality
    * observation. Transforms the quality so that it expresses the trait. This is specified as <code>
-   * TRAIT of QUALITY</code>.
+   * PREDICATE of QUALITY</code>.
    */
   TRANSFORMATION(false, "resolve", Artifact.Type.NUMBER, "transformer"),
-
   /**
    * Acknowledgement is the contextualization (explanation) of an individual substantial. Triggered
    * by INSTANTIATION.
    */
   ACKNOWLEDGEMENT(false, "void", Artifact.Type.VOID, "explainer"),
   /**
-   * Instantiation of relationships, requiring the "connected" countables to be observed as well.
-   * Triggers ACKNOWLEDGEMENT for each observed relationship.
+   * Instantiation of relationships and bonds, requiring the "connected" countables to be observed
+   * as well. Uses the same rules as CLASSIFICATION w.r.t. the collective/individual nature of the
+   * substantials, triggering instantiation vs. using the substantials existing in the context of
+   * the observation at the time of contextualization. Relationships are substantials, so
+   * ACKNOWLEDGEMENT is triggered at for each observed relationship.
    */
   CONNECTION(true, "object", Artifact.Type.RELATIONSHIP, "connector");
 
