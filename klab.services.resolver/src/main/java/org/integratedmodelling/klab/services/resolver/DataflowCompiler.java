@@ -238,24 +238,28 @@ public class DataflowCompiler {
         observationActuator
             .getChildren()
             .addAll(
-                compileObservation(dependentObservation, coverage, observationStrategy, localName));
+                compileObservation(dependentObservation, coverage, observationStrategy, edge.localName));
       } else if (child instanceof Observable observable) {
         observationActuator
             .getChildren()
             .add(
                 compileReference(
-                    resolutionGraph.getResolved(edge.observationId), coverage, localName));
+                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
       }
     }
 
     for (var contextualizer : model.getComputation()) {
 
       Map<String, Object> overriddenParameters = new HashMap<>();
+      // Named prerequisite ports are bound to child actuator names, not to producer graph IDs.
+      for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
+        if (edge.localName != null) overriddenParameters.put(edge.localName, Identifier.create(edge.localName));
+      }
       // If there is a link from the strategy, the contextualizer carries the transformation
       //  localName to be matched with any input tags from the prototype
       if (contextualizer.getServiceCall() != null) {
         var prototype = resolutionGraph.getServiceInfo(contextualizer.getServiceCall().getUrn());
-        if (prototype != null) {
+        if (prototype != null && localName != null) {
           prototype.listInputs().stream()
               .filter(
                   a -> a.getTags().contains(ServiceInfo.Tag.INPUT) || a.getName().equals(localName))

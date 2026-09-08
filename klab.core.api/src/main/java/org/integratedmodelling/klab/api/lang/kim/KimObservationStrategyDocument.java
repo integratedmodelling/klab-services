@@ -1,9 +1,15 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-/**
- * No scoping or other namespace considerations here so far, so this is for now a simple container for
- * transport; all available strategies are lumped together and sorted by rank in the reasoner.
- */
-public interface KimObservationStrategyDocument extends KlabDocument<KimObservationStrategy> {
+import java.util.List;
+import java.util.Map;
 
+/** Strategy document header and ordered strategies; executable dataflows have a separate contract. */
+public interface KimObservationStrategyDocument extends KlabDocument<KimObservationStrategy> {
+  /** Portable schema generation, independent of getVersion() in the authored source. */
+  int getModelVersion();
+  KimObservationPlan.Source getSource();
+  /** Explicit using declarations, in source order. */
+  List<String> getImports();
+  /** Unevaluated coverage specification. Values use ordinary k.LAB literal/semantic beans. */
+  Map<String, Object> getCoverage();
 }

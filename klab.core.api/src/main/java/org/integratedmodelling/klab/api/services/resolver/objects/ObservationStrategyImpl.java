@@ -2,12 +2,13 @@ package org.integratedmodelling.klab.api.services.resolver.objects;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 
 public class ObservationStrategyImpl implements ObservationStrategy {
 
@@ -22,15 +23,21 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
   public static class OperationImpl implements Operation {
 
-    private KimObservationStrategy.Operation.Type type;
+    private ObservationStrategy.Operation.Type type;
     private Observable observable;
     private List<Contextualizable> contextualizables = new ArrayList<>();
     private List<List<Operation>> contextualStrategies = new ArrayList<>();
     private String id;
     private String transformationTarget;
+    private Map<String, String> inputs = new LinkedHashMap<>();
 
     @Override
-    public KimObservationStrategy.Operation.Type getType() {
+    public Map<String, String> getInputs() { return inputs; }
+
+    public void setInputs(Map<String, String> inputs) { this.inputs = inputs; }
+
+    @Override
+    public ObservationStrategy.Operation.Type getType() {
       return this.type;
     }
 
@@ -52,7 +59,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
       this.observable = observable;
     }
 
-    public void setType(KimObservationStrategy.Operation.Type type) {
+    public void setType(ObservationStrategy.Operation.Type type) {
       this.type = type;
     }
 

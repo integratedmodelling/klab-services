@@ -17,15 +17,10 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
       return List.of();
     }
 
-    default List<Notification> validateFilter(
-        KimObservationStrategy.Filter filter, Context context) {
+    default List<Notification> validatePlanNode(KimObservationPlan.Node node, Context context) {
       return List.of();
     }
 
-    default List<Notification> validateOperation(
-        KimObservationStrategy.Operation operation, Context context) {
-      return List.of();
-    }
   }
 
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
@@ -47,6 +42,8 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
   public void visit(KimObservationStrategyDocument document) {
     var context = beginDocument(document);
     addNotifications(strategyValidator.validateDocument(document, context));
+    visitValue(document.getMetadata(), context);
+    visitValue(document.getCoverage(), context);
     for (var strategy : safe(document.getStatements())) visitStatement(strategy, context);
   }
 
@@ -57,30 +54,23 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
 
   private void visitStrategy(KimObservationStrategy strategy, Context context) {
     addNotifications(strategyValidator.validateStrategy(strategy, context));
-    for (var group : safe(strategy.getFilters())) {
-      for (var filter : safe(group)) visitFilter(filter, context);
-    }
-    if (strategy.getMacroVariables() != null) {
-      strategy.getMacroVariables().values().forEach(filter -> visitFilter(filter, context));
-    }
-    for (var operation : safe(strategy.getOperations())) visitOperation(operation, context);
+    visitPlanNode(strategy.getSelection(), context);
+    for (var setup : safe(strategy.getSetup())) visitPlanNode(setup, context);
+    visitPlanNode(strategy.getPlan(), context);
   }
 
-  private void visitFilter(KimObservationStrategy.Filter filter, Context context) {
-    if (filter == null || !enter(filter)) return;
-    var filterContext = child(context, filter);
-    addNotifications(strategyValidator.validateFilter(filter, filterContext));
-    visitConcept(filter.getMatch(), filterContext);
-    for (var function : safe(filter.getFunctions())) visitServiceCall(function, filterContext);
-    visitValue(filter.getLiteral(), filterContext);
-  }
-
-  private void visitOperation(KimObservationStrategy.Operation operation, Context context) {
-    if (operation == null || !enter(operation)) return;
-    var operationContext = child(context, operation);
-    addNotifications(strategyValidator.validateOperation(operation, operationContext));
-    visitObservable(operation.getObservable(), operationContext);
-    for (var function : safe(operation.getFunctions()))
-      visitServiceCall(function, operationContext);
+  private void visitPlanNode(KimObservationPlan.Node node, Context context) {
+    if (node == null || !enter(node)) return;
+    var nodeContext = child(context, node);
+    addNotifications(strategyValidator.validatePlanNode(node, nodeContext));
+    if (node instanceof KimObservationPlan.ClosedObservable value)
+      visitObservable(value.getObservable(), nodeContext);
+    else if (node instanceof KimObservationPlan.MatchAlternative value)
+      visitObservable(value.getObservable(), nodeContext);
+    else if (node instanceof KimObservationPlan.StrategyTarget value)
+      visitObservable(value.getObservable(), nodeContext);
+    // Strategy calls have ordered arguments and remain their own node kind. They must not be
+    // flattened into ServiceCall parameter maps or executed during semantic traversal.
+    for (var child : safe(node.children())) visitPlanNode(child, nodeContext);
   }
 }

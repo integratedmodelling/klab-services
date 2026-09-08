@@ -6,19 +6,33 @@ and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observa
 for contextualization categories and [Resolution](RESOLUTION.md) for the broader Resolver trace,
 transport, transactions, and existing tests.
 
-**Status, 2026-09-08:** initial end-to-end source audit and design proposal complete; design awaits
-review. No grammar, Java implementation, or worldview strategies were changed for this proposal.
+**Status:** the initial source audit/design proposal is complete. The maintainer has generated
+the draft grammar on `klab-languages/feature/observation-revision`. The first reported logical-pattern
+parse failure was reproduced in the generated lexer. Observation-local overrides then caused
+ANTLR unreachable-token errors, so they were removed. With maintainer approval, the three
+affected shared Observable identifier ranges are now corrected. The maintainer confirms that
+the dependent languages and the new sample compile. See [grammar revision 0.3](grammar/README.md).
+Typed Java syntax snapshots and an adapter are implemented in `klab-languages`, with real-parser
+tests. Initial strategy semantic beans and Resources/LanguageAdapter adaptation are now implemented
+in `klab-services`. Initial structural matching, guarded setup, producer lowering and tier-0
+resolution are implemented (S3c). Full lexical validation and the broader composition runtime
+remain pending; no deployed worldview strategies were migrated. See the S3 progress record below.
 The [running compatibility example](OBSERVATION_STRATEGIES_EXAMPLE.md) preserves the maintainer's
 eight currently used strategies, compares each with this design, and supplies a proposed translation
-and stable acceptance cases. Use it throughout S1–S10; it is not yet an executable test suite.
+and stable acceptance cases. Its tier-0 source is now exercised through the service boundaries;
+the remaining cases are acceptance specifications for subsequent stages.
 The [running Observation.xtext sketch](grammar/Observation.xtext) and its
-[integration notes](grammar/README.md) make the proposed syntax concrete for review. Revision 0.1
-is not generator-validated; it is kept here rather than installed into the active language project.
-“Current” below means source-inspected behavior, not a successful live integration test.
+[integration notes](grammar/README.md) make the proposed syntax concrete for review. The running
+copy tracks active grammar corrections and separates maintainer generation reports from tested
+behavior; it is not itself installed into the active language project.
+Section 2 retains the pre-revision source audit as a baseline. The current authored-bean boundary
+and its validation evidence are recorded in S3a; S3c supersedes the historical Reasoner/runtime
+audit for the initial producer subset. Source inspection does not imply a successful live integration test.
 The proposal also covers a strategy-local pattern language and the executable dataflow persistence
 form, including provenance reconstruction through a builder. Sections 4–8 are proposed contracts.
-Their syntax is deliberately provisional and is not accepted
-by the current grammar. Section 9 supplies staged implementation tasks and continuation prompts.
+Their syntax remains provisional; the three running syntax fixtures now parse and adapt with
+the generated grammar. This does not establish their semantic or runtime behavior.
+Section 9 supplies staged implementation tasks and continuation prompts.
 
 ## 1. Two levels of control
 
@@ -1014,7 +1028,7 @@ grammar parses.
 | S0 | Complete: source audit and initial proposal | Current source | Sections 1–8 and this ledger; no implementation claim |
 | S1 | Pending review | S0 | Approved pattern, plan, executable-source, reconstruction, and Resource contracts with fixtures |
 | S2 | Pending | S1 | Reliable structural matching/captures, external matcher contract, setup, rank, and semantic lifecycle classification baseline |
-| S3 | Pending | S1; align with S2 | Observation-local patterns/expressions, named-plan API, separate dataflow AST, validators, versioned transport |
+| S3 | In progress: semantic adaptation and initial tier-0 Reasoner/Resolver boundary implemented; complete validation and composition pending | S1; align with S2 | Observation-local patterns/expressions, named-plan API, separate dataflow AST, validators, versioned transport |
 | S4 | Pending | S2–S3 | Correct candidate coverage, graph identities, failure isolation, termination |
 | S5 | Pending | S4 | Direct resolution and quality transformation through typed composition |
 | S6 | Pending | S5 | Substantial predicate composition and mandatory lifecycle completion |
@@ -1071,6 +1085,235 @@ Preserve structural matching and full observable expressions. Update the source 
 evidence, stage status, and next prompt.”
 
 ### S3 — Add named plans through every language and service layer
+
+**Progress, 2026-09-08:** the maintainer reports successful compilation of the shared-grammar
+consumers and the Observation sample. The new
+[`ObservationSyntax` API](../../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/api/ObservationSyntax.java)
+and [`ObservationSyntaxAdapter`](../../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/ObservationSyntaxAdapter.java)
+cover all 68 generated node types and 15 enums. Both live alongside the grammar in the Observation
+module, retaining their Java packages (`org.integratedmodelling.languages.api` and
+`org.integratedmodelling.languages`). Observation exports the API package. Every syntax node implements `ParsedObject`, and both
+document types also implement `ParsedDocument`. No shared grammar or existing shared adapter
+behavior was changed for this step.
+
+The syntax adapter copies ordered declarations, match alternatives, tuple bindings, arguments, patterns,
+plans, definitions, and executable continuations. It reuses `ObservableSyntaxImpl`,
+`ParsedLiteralImpl`, and shared map/number parsing. Graph and declaration cross-references become
+typed `SymbolReference<T>` source occurrences, with names and spans; adaptation neither resolves
+EMF proxies nor retains graph targets. Lexical visibility, undefined names, type compatibility,
+and replay/adaptive legality still require validation. The commented legacy implementations and
+their old public APIs are preserved; the new API is an explicit migration boundary.
+
+`getSourceCode()` preserves the source fragment, including document comments;
+`encode()` returns a stable token-normalized encoding of the parsed snapshot. It is not a builder
+or serializer for newly synthesized dataflows. Existing shared literal/observable contracts remain
+in force, including their mutable properties. Java serialization was checked on a valid strategy
+snapshot; this is not the versioned JSON transport contract. In particular, the inherited URI is
+transient, and inherited diagnostic records may contain EMF objects. Portable semantic beans must
+copy source locations and diagnostics into transport-safe records explicitly.
+
+**Verification:** compiled the new code and current generated Observation/Observable Java with
+JDK 21 targeting Java 17, using cached Xtext 2.36, Guice 5.1, and ANTLR 3.2. Seven Java contract tests
+pass through a standalone runner, including an audit that every concrete Observation node rule
+is exercised. The eight-strategy corpus, arbitrary-context fixture, and dataflow fixture all
+parse, adapt, and reparse their normalized encodings. Tests cover source spans, detached snapshots,
+serialization, unresolved references without forced linking, patterns, ports, and continuations.
+The obsolete starter Xtend test now names `ObservationDocument` and uses a valid document.
+Full Tycho/Xtext regeneration, the Xtend test launcher, and service/runtime integration were not
+run for this syntax-bean step. The copied fixtures in the Observation test project must stay
+coordinated with this repository's running examples.
+
+#### S3a — Initial strategy semantic boundary
+
+The maintainer installed the revised language artifacts and authorized an initial, non-operational
+semantic model. The implemented boundary is now:
+
+`ObservationSyntax.StrategyDocument → LanguageAdapter.adaptStrategies → KimObservationStrategyDocument`
+
+[`KimObservationStrategy`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/lang/kim/KimObservationStrategy.java)
+replaces legacy filters, macro maps, and implicit operations with selection, ordered setup, and a
+plan. [`KimObservationPlan`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/lang/kim/KimObservationPlan.java)
+contains the typed nested contracts; its implementation classes are ordinary mutable, no-argument
+beans in `KimObservationPlanImpl`. The 47 strategy-plan forms include 42 concrete language variants;
+portable source records and graph-symbol occurrences are additional bean types.
+
+| Concern | Semantic representation | Initial behavior |
+|---|---|---|
+| Document header | `KimObservationStrategyDocument`: authored version, imports, coverage, metadata, source, project, timestamp | Preserved; ontology dependencies collected from adapted semantic expressions |
+| Strategy | `KimObservationStrategy`: type, rank, namespace, name/URN, description, source, selection, setup, plan | Transportable independently of its containing document |
+| Selection | `StrategySelection` and `MatchAlternative` | Alternatives remain OR; each guard list is AND; no matching is performed |
+| Patterns | Distinct node, boolean, collection, semantic, capture, logical, and operator interfaces | Ordered tree retained; activity constraints reuse API `Contextualization` |
+| Setup/expressions | `LetSetup`, `EnsureSetup`, tuple bindings, variable/call/scalar/closed-observable variants | No tuple keys encoded as strings; calls retain ordered arguments and remain unevaluated; scalar booleans and pattern flags become nullable `Boolean` values |
+| Plans | Producer, reference, input port, merge, context/member block, yield variants | Names, context variables, optional fallback, composition kind and terminal/named output preserved |
+| Graph symbols | `SymbolReference` with name and source | No parser proxy or runtime graph; undefined names survive for later lexical validation |
+| Locations/diagnostics | `Source` with string URI, code fragment, offset, length, service notifications | No EMF objects or syntax callback references on the wire; fragments may include trivia outside the semantic token span |
+
+`LanguageAdapter` delegates the exhaustive node copying to `ObservationPlanAdapter`, while reusing
+the existing observable/literal conversion methods. That shared observable boundary now copies
+units, currencies, optionality, and numeric ranges, which were previously omitted. The document visitor now traverses nested
+selection/setup/plan observables. Strategy calls remain distinct from `ServiceCall`: traversal does
+not invent service signatures or flatten duplicate/named arguments. Resources parser entry points
+use the new document root and explicitly reject executable documents in strategy-only ingestion.
+
+**JSON contract:** all new source/node interfaces, including abstract families, are registered in
+[`JacksonConfiguration`](../klab.core.common/src/main/java/org/integratedmodelling/common/data/jackson/JacksonConfiguration.java).
+The existing interface serializer/deserializer and `@CLASS` protocol are retained. No Jackson
+annotations or dependencies were added to the API or bean classes; no global deserializer changes
+were needed. `modelVersion = 2` identifies this transport model, separately from the version written
+in the source document. This preserves the serialization mechanism, not the old filters/operations
+wire schema: old strategy JSON needs explicit migration or regeneration. Version rejection and
+migration policy remain a subsequent validation task.
+
+Metadata and coverage objects use string keys; adaptation rejects numeric keys rather than
+silently converting potentially colliding keys. Their values use existing literal/semantic beans.
+This stage does not broaden all existing `KimObservable` semantics: for example, independently
+declared observer semantics still need a shared API decision. Original source remains available.
+
+**Verification:** the Maven reactor compiled API, common, core-services, Resources, resolver, and
+modeler against the maintainer-installed Observation artifact. All 12 selected tests passed:
+two interface-registration/serialization tests, four real-parser adaptation tests, five semantic
+visitor tests, and one Resources semantic-validation test. The populated corpus covers every
+concrete plan variant, source locations, headers, dependencies, tuple bindings, scalar values,
+logical remainders, context blocks, graph references, and interface-root JSON reconstruction.
+Only fields declared as sets are compared without order; argument, pattern, setup, and plan lists
+must retain order. No serialization annotations, new dependencies, or shared Jackson behavior
+changes were introduced. The command used was:
+
+```powershell
+mvn -o -pl klab.services.resources,klab.modeler,klab.services.resolver -am `
+  '-Dtest=ObservationPlanSerializationTest,ObservationStrategyAdaptationTest,KimVisitorsTest,WorkspaceManagerSemanticValidationTest' `
+  '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+The relevant tests are `ObservationPlanSerializationTest`, `ObservationStrategyAdaptationTest`,
+`KimVisitorsTest`, and `WorkspaceManagerSemanticValidationTest`. Resources test fixtures under
+`src/test/resources/observation` mirror the running strategy/context examples and add pattern/tuple
+cases from the language syntax tests. Keep these copies synchronized. No live Reasoner/Resolver
+resolution or dataflow execution was tested; modeler/resolver compilation does not imply migration
+of the authored-plan execution contract.
+
+**S3a historical integration limit:** this stage initially left `ObservationReasoner` on the old
+Filter/Operation API. S3c below replaces that consumer and implements the initial producer subset.
+The operational enum belongs to `ObservationStrategy.Operation`, independently of the authored AST.
+
+#### S3b — Executable dataflow semantic API proposal (not implemented)
+
+Use a distinct `KimObservationDataflowDocument`, rather than putting executable declarations in
+`KimObservationStrategiesImpl` or treating a persisted source document as runtime `Dataflow`.
+Keep all implementations annotation-free and register every public interface in
+`JacksonConfiguration`, just as for strategies. A starting interface outline is:
+
+```java
+interface KimObservationDataflowDocument
+    extends KlabDocument<KimObservationDataflow.Declaration> {
+  int getModelVersion();
+  KimObservationPlan.Source getSource();
+  KimObservationDataflow.Mode getMode(); // REPLAY or ADAPTIVE
+  List<KimObservationDataflow.Requirement> getRequirements();
+  Map<String, Object> getCoverage();
+}
+```
+
+`KimObservationDataflow` would group these typed interfaces and their local enum vocabularies:
+
+| Interface family | Fields to retain from `ObservationSyntax` |
+|---|---|
+| `Requirement` | Kind, identity, version, checksum, source |
+| `Declaration extends KlabStatement` | Local name/URN and portable source; project/namespace from the containing document |
+| `ObservationDefinition` | Closed `KimObservable`, identity, named context reference, geometry, metadata, definition links, optional stored value |
+| `ValueDefinition` | Declared type and `StoredValue` |
+| `StoredValue` | Separate `InlineValue` (adapted common literal) and `PayloadValue` (resource, checksum, media type) |
+| `ExecutionObservation` | Observable, named context, strategy provenance ID, geometry, metadata, ordered computations |
+| `ExecutionApply` | Implementation ID, version, ordered named arguments, explicit output port |
+| `ExecutionValue` | Separate port-reference, stored-value, and closed-observable variants; no free strategy variables |
+| `ExecutionReference` | Observation identity, asserted observable, local name |
+| `ExecutionMerge` | Two named inputs, composition kind/version, options, asserted output observable, local name |
+| `ExecutionContinuation` | Input declaration, single/each cardinality, bound variable, closed request, explicit captures, reusable `KimObservationPlan.PlanBody` |
+
+Execution references should be source-located symbol occurrences, not object links. Keep execution
+values separate from strategy expressions: a captured literal/observable/reference is closed data;
+an unevaluated strategy variable or call requires the explicit continuation boundary.
+
+The future `LanguageAdapter.adaptObservationDocument(...)` should dispatch by the syntax root to
+`adaptStrategies(...)` or a new `adaptDataflow(...)`, returning a `KlabDocument<?>`. The dataflow
+adapter should reuse common literal/observable conversion and the plan adapter for continuation
+bodies. A separate validator must reject continuations in replay mode, undefined references,
+incompatible ports and captures, missing implementation versions, and invalid payload descriptors.
+Reconstruction from provenance will produce the same semantic document through a builder;
+source generation and Resource persistence then become separate tested transformations.
+
+#### S3c — Initial tier-0 Reasoner and Resolver integration
+
+`ObservationReasoner` now consumes `KimObservationPlan` directly. It selects comma-separated
+alternatives by disjunction, evaluates each alternative's guards conjunctively, and only then
+executes ordered `ensure`/`let` setup. `$this` and `$context` are always defined; the latter is null
+without a context observation. Captures cannot replace reserved variables. Failed branches discard
+their captures; `not` never exports captures. Tuple bindings require the exact destination arity.
+Registration replaces strategies by namespace plus URN, and initialization preserves ascending
+rank order. Compiled beans retain rank, namespace, documentation, metadata and annotations.
+
+| Initial supported construct | Behavior and boundary |
+|---|---|
+| `node` | Kind/`one_of`, collective and abstract flags, contextualization activity, head, direct predicates, direct roles and direct inherent |
+| `all`, `either`, `not`, `capture`, `same` | Transactional captures; `same` requires an existing binding |
+| `any`, `absent`, presence and scalar tests | Absence is distinct from `false`; absent collections are empty collections |
+| Collections and logical operands | `contains`, `every`, exact unordered collections; canonical URN ordering or unordered backtracking for logical operands; remainder is the remaining semantic expression, not a list |
+| Semantic tests and ordinary observable alternatives | Explicit `is` invokes semantic subsumption; exact compares URNs; ordinary observable alternatives retain `SyntacticMatcher` and its historical limits |
+| Tier-0 setup | `context.exists`, `request.fully_specified`, concrete/abstract/collective checks, relationship source/target extraction, and `collective` |
+| `resolve`/`observe ... to name` | Concrete target observables and graph IDs are recorded in operational beans; the Reasoner performs no observation resolution |
+| `observe ... with inputs(port = graph)` | Earlier recursive-resolution graphs are prerequisites, bound to model inputs by port name |
+| Terminal result | The final producer, optionally selected by a final `yield`; earlier producers must be consumed explicitly |
+
+This initial lowering accepts recursive producers followed by a final observe, or a single
+recursive producer. Intermediate observe, resolve inputs, arbitrary context blocks, member loops,
+fallback, graph references and merges remain unsupported. Negation flags, clause/operator projections,
+value-operator patterns and unimplemented/external functors also fail explicitly. A matching but
+unsupported strategy produces a scope warning and is omitted from candidates; it never contributes
+a partially lowered plan. Full document-wide validation, extension-functor dispatch and capability
+negotiation remain subsequent work. Version-2 authored beans are required at selection.
+
+The operational transport remains `ObservationStrategy` / `ObservationStrategy.Operation` through
+their existing registrations in `JacksonConfiguration`. `Operation.getInputs()` is an ordered
+port-to-graph-name map on a mutable no-argument bean. There are no Jackson annotations or new
+dependencies in these beans. Graph IDs are local to one candidate, not identifiers of runtime
+observations, and the last output is implicit in this initial execution subset.
+
+The Resolver holds earlier recursive results in a per-strategy table. Their coverage cannot resolve
+the requested output. Explicit inputs are attached to the selected model and intersect its coverage;
+the dataflow carries child actuator names and contextualizer argument identifiers for the ports.
+The resolution graph now permits parallel edges, including source and target ports referencing the
+same observation. Direct model contributions accumulate before completeness is tested. Accepted
+strategies are merged into the requested observation before the next strategy is tested. General
+partial-strategy completion and rollback still need the S4 contract and dedicated tests.
+
+`ObservationPipelineTest` uses the running source fixture, real Xtext/syntax/semantic adaptation,
+interface JSON transport, Reasoner selection/lowering, Resolver graph assembly and DataflowCompiler.
+Model search, ontology services and existing endpoint observations are service doubles; it does not
+run a deployed worldview or execute runtime contextualizers. It checks all four tier-0 forms,
+recursive strategy selection for missing endpoints, and rejects a relationship when only its
+endpoints resolve. Compiled strategies travel both individually and as `List<ObservationStrategy>`;
+every populated operation also round-trips through its own interface. `ObservationPatternMatcherTest` covers
+capture isolation, absence/false, reserved names, `same`, canonical remainders and backtracking.
+
+**Validation (2026-09-08):** the full 18-project reactor compiled main and test sources and passed
+20 focused tests, including the existing Resolver query, concurrency, transport and dataflow tests:
+
+```powershell
+mvn -o '-Dtest=ObservationPipelineTest,ObservationPatternMatcherTest,ObservationPlanSerializationTest,ObservationStrategyAdaptationTest,ResolutionCompilerQueryTest,ResolutionGraphConcurrencyTest,DataflowCompilerTest,ResolverTransportSerializationTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+The existing dataflow coverage test used universal geometry with an expected fraction of 0.75,
+although universal coverage is defined as 1. Its fixture now uses a temporal extent to test actual
+fractional coverage. No coverage semantics were changed for that correction. The complete test
+suite and a live distributed/runtime execution were not run.
+
+**Next bounded prompt:** “Continue S3/S4 from the initial tier-0 pipeline. Run the fixture against
+a deployed worldview and record any failures. Add document-wide lexical validation and typed
+functor dispatch, then complete syntax projections for negation, clauses and operators. Validate
+model input compatibility and prevent duplicate resolution of explicit inputs. Add recursion guards,
+candidate rollback and complementary partial-coverage tests before introducing intermediate observe
+graphs and typed binary merges. Preserve interface-based Jackson transport and update this ledger
+after each bounded stage. Keep persisted dataflow semantics at proposal level.”
 
 Change Observation.xtext and its syntax APIs/implementations in `klab-languages`, then API beans,
 starting from the reviewed [grammar sketch](grammar/Observation.xtext) and its fixture set,
@@ -1269,7 +1512,7 @@ The grammar and syntax implementation listed in Section 2.1 are in the sibling r
 | Adaptation | [LanguageAdapter.java](../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java): `adaptStrategies`, `adaptStrategy` |
 | Validation seam | [KimObservationStrategyDocumentVisitor.java](../klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/language/KimObservationStrategyDocumentVisitor.java) |
 | Worldview registration | [ReasonerService.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java): `computeObservationStrategies`, `registerStrategy` call sites |
-| Selection and setup | [ObservationReasoner.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ObservationReasoner.java): `computeMatchingStrategies`, `matchFilter`, `contextualizeStrategy` |
+| Selection and setup | [ObservationReasoner.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ObservationReasoner.java): `computeMatchingStrategies`, selection/setup/lowering; `ObservationPatternMatcher` for structural matching |
 | Structural matching | [SyntacticMatcher.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/SyntacticMatcher.java): `doMatch`, `matchConcepts` |
 | Setup library | [TypeFunctors.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/functors/TypeFunctors.java) |
 | Resolver entry | [ResolverService.java](../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java): `resolve` |

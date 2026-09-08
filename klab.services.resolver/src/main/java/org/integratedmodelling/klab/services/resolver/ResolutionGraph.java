@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.AbstractBaseGraph;
-import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DirectedMultigraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.w3.xlink.XlinkFactory;
 
@@ -53,8 +53,9 @@ public class ResolutionGraph {
   private Resolvable target;
   private Coverage targetCoverage;
   private ContextScope rootScope;
-  private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
-      new DefaultDirectedGraph<>(ResolutionEdge.class);
+  // Two ports may reference the same observation (e.g. both relationship endpoints).
+  private DirectedMultigraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
+      new DirectedMultigraph<>(ResolutionEdge.class);
   private ResolutionGraph parent;
   private final AtomicLong internalObservationId = new AtomicLong(-1);
   private Map<Long, Observation> observations;

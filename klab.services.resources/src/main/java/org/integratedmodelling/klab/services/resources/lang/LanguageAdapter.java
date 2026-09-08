@@ -83,6 +83,13 @@ public enum LanguageAdapter {
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
     ret.setUrn(observableSyntax.encode());
     ret.setNamespace(namespace);
+    ret.setUnit(observableSyntax.getUnit());
+    ret.setCurrency(observableSyntax.getCurrency());
+    ret.setOptional(observableSyntax.isOptional());
+    if (observableSyntax.getRange() != null && observableSyntax.getRange().size() == 2) {
+      ret.setRange(new NumericRangeImpl(
+          observableSyntax.getRange().get(0), observableSyntax.getRange().get(1), false, false));
+    }
     for (var annotation : observableSyntax.getAnnotations()) {
       ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, documentClass));
     }
@@ -1121,24 +1128,82 @@ public enum LanguageAdapter {
     return ret;
   }
 
+  /** Adapt a strategy document only. Executable dataflows require a separate document contract. */
   public KimObservationStrategyDocument adaptStrategies(
-      ObservationStrategiesSyntax definition,
+      ObservationSyntax.StrategyDocument definition,
       String projectName,
       Collection<Notification> notifications,
       long timestamp) {
-
-    KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
-    ret.setUrn(definition.getUrn());
-    ret.getNotifications().addAll(notifications);
+    var ret = new KimObservationStrategiesImpl();
+    ret.setUrn(definition.getName());
+    ret.setVersion(Version.create(definition.getVersion()));
     ret.setSourceCode(definition.getSourceCode());
+    ret.setSource(adaptObservationSource(definition, definition.getName(), projectName));
     ret.setProjectName(projectName);
     ret.setLastUpdateTimestamp(timestamp);
-
-    // we don't add source code here as each strategy has its own
+    ret.setImports(new ArrayList<>(definition.getImports()));
+    if (notifications != null) ret.getNotifications().addAll(notifications);
+    ret.getNotifications().addAll(ret.getSource().getNotifications());
+    adaptObservationMap(definition.getMetadata(), definition.getName(), projectName)
+        .forEach(ret.getMetadata()::put);
+    ret.setCoverage(adaptObservationMap(definition.getCoverage(), definition.getName(), projectName));
     for (var strategy : definition.getStrategies()) {
-      ret.getStatements().add(adaptStrategy(strategy, definition.getUrn(), projectName));
+      var adapted = adaptStrategy(strategy, definition.getName(), projectName);
+      ret.getStatements().add(adapted);
+      ret.getNotifications().addAll(adapted.getNotifications());
     }
+    // Collect ontology references from the adapted semantics, never from token matching.
+    var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
+        new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator(), null);
+    visitor.visit(ret);
+    visitor.getReferences().stream()
+        .filter(ref -> ref.knowledgeClass() == KlabAsset.KnowledgeClass.CONCEPT && ref.urn().contains(":"))
+        .forEach(ref -> ret.getReferencedNamespaces().add(ref.urn().substring(0, ref.urn().indexOf(':'))));
     return ret;
+  }
+
+  private Map<String, Object> adaptObservationMap(ParsedLiteral map, String namespace, String projectName) {
+    var result = new LinkedHashMap<String, Object>();
+    if (map != null) {
+      var value = (Map<?, ?>) adaptValue(map, namespace, projectName,
+          KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
+      for (var entry : value.entrySet()) {
+        // Metadata and coverage are JSON objects; reject non-string keys rather than coerce collisions.
+        if (!(entry.getKey() instanceof String key))
+          throw new KlabIllegalArgumentException("Observation metadata/coverage keys must be strings");
+        result.put(key, entry.getValue());
+      }
+    }
+    return result;
+  }
+
+  private KimObservationPlan.Source adaptObservationSource(
+      ObservationSyntax.Node syntax, String namespace, String projectName) {
+    var source = new KimObservationPlanImpl.SourceImpl();
+    source.setUri(syntax.uri() == null ? null : syntax.uri().toString());
+    source.setCode(syntax.getSourceCode());
+    source.setOffset(syntax.getCodeOffset());
+    source.setLength(syntax.getCodeLength());
+    for (var diagnostic : syntax.getNotifications()) {
+      var message = diagnostic.message();
+      var level = switch (message.level()) {
+        case DEBUG -> Notification.Level.Debug;
+        case INFO -> Notification.Level.Info;
+        case WARNING -> Notification.Level.Warning;
+        case ERROR -> Notification.Level.Error;
+      };
+      var notification = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl(message.message(), level);
+      var lexical = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+      lexical.setDocumentUrn(namespace);
+      lexical.setProjectUrn(projectName);
+      lexical.setDocumentType(KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
+      lexical.setType(KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY);
+      lexical.setOffsetInDocument(source.getOffset());
+      lexical.setLength(source.getLength());
+      notification.setLexicalContext(lexical);
+      source.getNotifications().add(notification);
+    }
+    return source;
   }
 
   private ServiceCall adaptServiceCall(
@@ -1172,12 +1237,10 @@ public enum LanguageAdapter {
   }
 
   private KimObservationStrategy adaptStrategy(
-      ObservationStrategySyntax strategy, String namespace, String projectName) {
-
+      ObservationSyntax.StrategyDeclaration strategy, String namespace, String projectName) {
     var ret = new KimObservationStrategyImpl();
-
     ret.setRank(strategy.getRank());
-    ret.setType(KimObservationStrategy.Type.valueOf(strategy.getType().name()));
+    ret.setType(strategy.isIdentification() ? KimObservationStrategy.Type.IDENTIFICATION : KimObservationStrategy.Type.OBSERVATION);
     ret.setNamespace(namespace);
     ret.setUrn(strategy.getName());
     ret.setDescription(strategy.getDescription());
@@ -1187,139 +1250,21 @@ public enum LanguageAdapter {
     ret.setDeprecated(strategy.getDeprecation() != null);
     ret.setProjectName(projectName);
     ret.setDocumentClass(KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
-
-    // these are multiple 'for' statements
-    for (var filter : strategy.getFilters()) {
-
-      List<KimObservationStrategy.Filter> filters = new ArrayList<>();
-
-      // and these are comma-separated filters in a 'for'
-      for (var match : filter.getMatch()) {
-
-        var f = new KimObservationStrategyImpl.FilterImpl();
-        f.setNegated(match.isNegated());
-        if (match.getObservable() != null /* which it should */) {
-          f.setMatch(
-              adaptSemantics(
-                  match.getObservable(),
-                  namespace,
-                  projectName,
-                  KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
-        }
-
-        if (match.getTypePattern() != null) {
-          match
-              .getTypePattern()
-              .forEach(
-                  type ->
-                      f.getTypePattern()
-                          .add(KimObservationStrategy.Filter.SemanticPattern.valueOf(type.name())));
-        } else if (match.getTypeTest() != null) {
-          f.setTypeTest(
-              adaptServiceCall(
-                  match.getTypeTest(),
-                  namespace,
-                  projectName,
-                  KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
-        }
-
-        for (var condition : match.getConditions()) {
-          f.getFunctions()
-              .add(
-                  adaptServiceCall(
-                      condition,
-                      namespace,
-                      projectName,
-                      KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
-        }
-
-        f.setConnectorToPrevious(
-            match.getConnectorToPrevious() == SemanticSyntax.Quantifier.ALL
-                ? LogicalConnector.INTERSECTION
-                : LogicalConnector.UNION);
-
-        filters.add(f);
-      }
-
-      ret.getFilters().add(filters);
-    }
-    for (var operation : strategy.getOperations()) {
-      var o = new KimObservationStrategyImpl.OperationImpl();
-      if (operation.getType() != null) {
-        o.setType(KimObservationStrategy.Operation.Type.valueOf(operation.getType().name()));
-      }
-
-      o.setLocalId(operation.getId());
-      o.setTransformationTarget(operation.getTransformationTarget());
-
-      if (operation.getObservable() != null) {
-        o.setObservable(
-            adaptObservable(
-                operation.getObservable(),
-                strategy.getName(),
-                projectName,
-                KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
-      } else if (operation.getReference() != null) {
-        System.out.println("HEY HOSTIAZZA");
-      }
-
-      if (!operation.getFunctions().isEmpty()) {
-        o.getFunctions()
-            .addAll(
-                operation.getFunctions().stream()
-                    .map(
-                        f ->
-                            adaptServiceCall(
-                                f,
-                                namespace,
-                                projectName,
-                                KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY))
-                    .toList());
-      }
-      //      if (!operation.getDeferredStrategies().isEmpty()) {
-      //        o.getDeferredStrategies()
-      //            .addAll(
-      //                operation.getDeferredStrategies().stream()
-      //                    .map(s -> adaptStrategy(s, namespace, projectName))
-      //                    .toList());
-      //      }
-      ret.getOperations().add(o);
-    }
-
-    for (var let : strategy.getMacroVariables().keySet()) {
-      var f = new KimObservationStrategyImpl.FilterImpl();
-      String key = null;
-      if (let.isIdentifier()) {
-        key = let.toString();
-      } else if (let.getPod() instanceof List<?> list) {
-        key = Utils.Strings.join(list, ",");
-      }
-      if (key == null) {
-        ret.getNotifications()
-            .add(Notification.error("unrecognized argument for let statement", let));
-        continue;
-      }
-
-      var filter = strategy.getMacroVariables().get(let);
-      if (filter.getObservable() != null) {
-        f.setMatch(
-            adaptSemantics(
-                filter.getObservable(),
-                namespace,
-                projectName,
-                KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
-      }
-      for (var condition : filter.getConditions()) {
-        f.getFunctions()
-            .add(
-                adaptServiceCall(
-                    condition,
-                    namespace,
-                    projectName,
-                    KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
-      }
-      ret.getMacroVariables().put(key, f);
-    }
+    ret.setSource(adaptObservationSource(strategy, namespace, projectName));
+    ret.getNotifications().addAll(ret.getSource().getNotifications());
+    for (var annotation : strategy.getAnnotations())
+      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, ret.getDocumentClass()));
+    var adapter = new ObservationPlanAdapter(
+        observable -> adaptObservable(observable, namespace, projectName, ret.getDocumentClass()),
+        node -> {
+          var source = adaptObservationSource(node, namespace, projectName);
+          ret.getNotifications().addAll(source.getNotifications());
+          return source;
+        });
+    ret.setSelection((KimObservationPlan.StrategySelection) adapter.adapt(strategy.getSelection()));
+    for (var setup : strategy.getSetup())
+      ret.getSetup().add((KimObservationPlan.StrategySetup) adapter.adapt(setup));
+    ret.setPlan((KimObservationPlan.PlanBody) adapter.adapt(strategy.getBody()));
     return ret;
   }
 

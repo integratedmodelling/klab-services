@@ -48,6 +48,9 @@ Worldview projects also supply [observation strategy documents](docs/OBSERVATION
 the observation grammar in the sibling `klab-languages` repository. These guide how the Reasoner
 and Resolver select and combine methods for a request; k.IM models provide the concrete methods.
 The observation grammar also defines a separate dataflow form for execution plans.
+The initial tier-0 strategy pipeline now supports structural matching, guarded setup, and named
+observe/resolve producers with interface-based JSON transport. The implementation limits and
+next testing stages are recorded in OBSERVATION's S3c progress entry.
 
 The [current proposal](docs/OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
 isolates strategy patterns from the shared observable grammar while retaining ordinary observable

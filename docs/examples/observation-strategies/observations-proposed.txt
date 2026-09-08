@@ -1,4 +1,4 @@
-// DESIGN FIXTURE: not accepted by today's grammar; not an executable strategy document.
+// DESIGN FIXTURE: parser/syntax-adapter tested; semantic and runtime behavior still proposed.
 // Companion contract: ../../OBSERVATION_STRATEGIES_EXAMPLE.md
 // The original eight strategy names and ranks are retained for traceability.
 // Version 2.0 is a proposed migration marker, not a released language version.

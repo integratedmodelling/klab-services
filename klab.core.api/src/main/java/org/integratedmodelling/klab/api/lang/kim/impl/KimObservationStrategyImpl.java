@@ -3,10 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim.impl;
 import java.util.*;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationPlan;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -24,9 +21,11 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
   private Scope scope = Scope.PUBLIC;
   private String namespace;
   private String projectName;
-  private List<Operation> operations = new ArrayList<>();
-  private Map<String, Filter> macroVariables = new LinkedHashMap<>();
-  private List<List<Filter>> filters = new ArrayList<>();
+  private int modelVersion = 2;
+  private KimObservationPlan.Source source;
+  private KimObservationPlan.StrategySelection selection;
+  private List<KimObservationPlan.StrategySetup> setup = new ArrayList<>();
+  private KimObservationPlan.PlanBody plan;
   private int rank;
   private KnowledgeClass documentClass = KnowledgeClass.OBSERVATION_STRATEGY;
   private Type type;
@@ -93,20 +92,16 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     return this.rank;
   }
 
-  @Override
-  public List<List<Filter>> getFilters() {
-    return this.filters;
-  }
-
-  @Override
-  public Map<String, Filter> getMacroVariables() {
-    return this.macroVariables;
-  }
-
-  @Override
-  public List<Operation> getOperations() {
-    return this.operations;
-  }
+  @Override public int getModelVersion() { return modelVersion; }
+  public void setModelVersion(int modelVersion) { this.modelVersion = modelVersion; }
+  @Override public KimObservationPlan.Source getSource() { return source; }
+  public void setSource(KimObservationPlan.Source source) { this.source = source; }
+  @Override public KimObservationPlan.StrategySelection getSelection() { return selection; }
+  public void setSelection(KimObservationPlan.StrategySelection selection) { this.selection = selection; }
+  @Override public List<KimObservationPlan.StrategySetup> getSetup() { return setup; }
+  public void setSetup(List<KimObservationPlan.StrategySetup> setup) { this.setup = setup; }
+  @Override public KimObservationPlan.PlanBody getPlan() { return plan; }
+  public void setPlan(KimObservationPlan.PlanBody plan) { this.plan = plan; }
 
   public void setMetadata(Metadata metadata) {
     this.metadata = metadata;
@@ -150,18 +145,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
   public void setNamespace(String namespace) {
     this.namespace = namespace;
-  }
-
-  public void setOperations(List<Operation> operations) {
-    this.operations = operations;
-  }
-
-  public void setMacroVariables(Map<String, Filter> macroVariables) {
-    this.macroVariables = macroVariables;
-  }
-
-  public void setFilters(List<List<Filter>> filters) {
-    this.filters = filters;
   }
 
   public void setRank(int rank) {
@@ -222,141 +205,4 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     return Objects.hash(urn, namespace);
   }
 
-  public static class FilterImpl implements Filter {
-
-    private boolean negated;
-    private KimConcept match;
-    private List<ServiceCall> functions = new ArrayList<>();
-    private Object literal;
-    private LogicalConnector connectorToPrevious;
-    private List<SemanticPattern> typePattern = new ArrayList<>();
-    private ServiceCall typeTest;
-
-    @Override
-    public boolean isNegated() {
-      return this.negated;
-    }
-
-    @Override
-    public KimConcept getMatch() {
-      return this.match;
-    }
-
-    @Override
-    public Object getLiteral() {
-      return this.literal;
-    }
-
-    @Override
-    public List<ServiceCall> getFunctions() {
-      return functions;
-    }
-
-    public void setFunctions(List<ServiceCall> functions) {
-      this.functions = functions;
-    }
-
-    public void setNegated(boolean negated) {
-      this.negated = negated;
-    }
-
-    public void setMatch(KimConcept match) {
-      this.match = match;
-    }
-
-    public void setLiteral(Object literal) {
-      this.literal = literal;
-    }
-
-    public LogicalConnector getConnectorToPrevious() {
-      return connectorToPrevious;
-    }
-
-    public void setConnectorToPrevious(LogicalConnector connectorToPrevious) {
-      this.connectorToPrevious = connectorToPrevious;
-    }
-
-    @Override
-    public ServiceCall getTypeTest() {
-      return typeTest;
-    }
-
-    public void setTypeTest(ServiceCall typeTest) {
-      this.typeTest = typeTest;
-    }
-
-    @Override
-    public List<SemanticPattern> getTypePattern() {
-      return typePattern;
-    }
-
-    public void setTypePattern(List<SemanticPattern> typePattern) {
-      this.typePattern = typePattern;
-    }
-  }
-
-  public static class OperationImpl implements Operation {
-
-    private Type type;
-    private KimObservable observable;
-    private String transformationTarget;
-    private String localId;
-    private List<ServiceCall> functions = new ArrayList<>();
-
-    //    private List<KimObservationStrategy> deferredStrategies = new ArrayList<>();
-
-    @Override
-    public Type getType() {
-      return this.type;
-    }
-
-    @Override
-    public KimObservable getObservable() {
-      return this.observable;
-    }
-
-    @Override
-    public List<ServiceCall> getFunctions() {
-      return this.functions;
-    }
-
-    //    @Override
-    //    public List<KimObservationStrategy> getDeferredStrategies() {
-    //      return this.deferredStrategies;
-    //    }
-    //
-    public void setType(Type type) {
-      this.type = type;
-    }
-
-    public void setObservable(KimObservable observable) {
-      this.observable = observable;
-    }
-
-    public void setFunctions(List<ServiceCall> functions) {
-      this.functions = functions;
-    }
-
-    //    public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
-    //      this.deferredStrategies = deferredStrategies;
-    //    }
-
-    @Override
-    public String getTransformationTarget() {
-      return transformationTarget;
-    }
-
-    public void setTransformationTarget(String transformationTarget) {
-      this.transformationTarget = transformationTarget;
-    }
-
-    @Override
-    public String getLocalId() {
-      return localId;
-    }
-
-    public void setLocalId(String localId) {
-      this.localId = localId;
-    }
-  }
 }

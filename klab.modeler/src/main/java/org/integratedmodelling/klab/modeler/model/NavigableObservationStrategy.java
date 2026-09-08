@@ -2,9 +2,9 @@ package org.integratedmodelling.klab.modeler.model;
 
 import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationPlan;
 
 import java.util.List;
-import java.util.Map;
 
 public class NavigableObservationStrategy extends NavigableKlabStatement<KimObservationStrategy>
     implements KimObservationStrategy {
@@ -23,20 +23,11 @@ public class NavigableObservationStrategy extends NavigableKlabStatement<KimObse
     return delegate.getRank();
   }
 
-  @Override
-  public List<List<Filter>> getFilters() {
-    return delegate.getFilters();
-  }
-
-  @Override
-  public Map<String, Filter> getMacroVariables() {
-    return delegate.getMacroVariables();
-  }
-
-  @Override
-  public List<Operation> getOperations() {
-    return delegate.getOperations();
-  }
+  @Override public int getModelVersion() { return delegate.getModelVersion(); }
+  @Override public KimObservationPlan.Source getSource() { return delegate.getSource(); }
+  @Override public KimObservationPlan.StrategySelection getSelection() { return delegate.getSelection(); }
+  @Override public List<KimObservationPlan.StrategySetup> getSetup() { return delegate.getSetup(); }
+  @Override public KimObservationPlan.PlanBody getPlan() { return delegate.getPlan(); }
 
   @Override
   public Type getType() {

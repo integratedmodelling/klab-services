@@ -1,10 +1,18 @@
 # Running Observation.xtext sketch
 
-[Observation.xtext](Observation.xtext) is revision **0.1** of the proposed Observation language.
+[Observation.xtext](Observation.xtext) is revision **0.3** of the proposed Observation language.
 It is reviewable Xtext source kept beside the design, not the active grammar in `klab-languages`.
-It has not been run through the Xtext generator or used to parse the example documents. Treat
-inferred Ecore types, lexer behavior, parser decisions, scoping, and serializer behavior as
-unverified until S3 supplies that evidence. No generated sources or active sibling files changed.
+The maintainer has now inserted the proposed grammar into `feature/observation-revision` in
+`klab-languages` and now reports successful compilation of its dependent languages and sample.
+The initial logical-pattern failure and identifier correction are recorded below as history.
+Revision 0.3 removes the conflicting local
+identifier overrides and corrects three ranges in shared Observable, as authorized by the
+maintainer. Generated sources have not been edited by the agent. The new syntax adapter and seven
+contract tests pass with the generated parser, including all concrete syntax node types and the
+three running fixtures. The initial strategy semantic API and LanguageAdapter boundary are also
+implemented, retaining interface-based Jackson registration. See the
+[S3 progress record](../OBSERVATION.md#s3--add-named-plans-through-every-language-and-service-layer)
+for exact evidence and remaining scoping, Reasoner, dataflow, and execution work.
 
 The design authority is [OBSERVATION.md](../OBSERVATION.md), with the eight-strategy baseline in
 [OBSERVATION_STRATEGIES_EXAMPLE.md](../OBSERVATION_STRATEGIES_EXAMPLE.md). The intended first parser
@@ -117,8 +125,72 @@ semantics remain S1 review items. Successful parsing of a signature does not app
 
 ## Revision and validation protocol
 
+### Revision 0.3: shared range correction, local overrides removed
+
+The maintainer reported ANTLR error 208 for unreachable `RULE_LOWERCASE_ID` and
+`RULE_UPPERCASE_ID` in both the runtime and IDE generated grammars. The local overrides changed
+terminal precedence: the broad mixed-case identifiers could now win before the inherited
+lowercase/uppercase tokens. This approach is withdrawn, not worked around with more terminals.
+
+The active Observation grammar and this sketch no longer redeclare those terminals. Instead,
+`CAMELCASE_ID`, `BACKCASE_ID`, and `LOWERCASE_ID_TRAILING_COLON` in shared Observable now use
+`('A'..'Z' | 'a'..'z' | '_' | '0'..'9')*` after their unchanged initial letter. This preserves
+identifier rule ordering, letters, digits, and underscores, while excluding the punctuation
+accidentally admitted by `'A'..'z'`. No other shared rules were changed.
+
+Regenerate the Observable language dependency and its consumers: Observation, Worldview, Kim,
+and KActors, including IDE/web artifacts where applicable. The maintainer will retest the stack.
+Verify the logical remainder cases plus ordinary lowercase, uppercase, mixed-case, digit-suffixed,
+and underscore-bearing identifiers, concept/authority references, units, metadata, and literals.
+The expected change is at punctuation boundaries, not valid identifier spellings. No claim of
+successful regeneration or full-stack parsing is made from source inspection alone.
+
+### Revision 0.2: logical remainder diagnosis and superseded local fix
+
+The generated parser already distinguishes an additional operand from `rest …` using lookahead.
+A standalone probe of the generated lexer reproduced the real problem:
+
+```text
+input:  logical(or, operands = canonical [capture first as any, rest remaining])
+tokens: ... 'rest', RULE_BACKCASE_ID("remaining]"), ')'
+```
+
+The shared `Observable.xtext` used `'A'..'z'` in `CAMELCASE_ID`, `BACKCASE_ID`, and
+`LOWERCASE_ID_TRAILING_COLON`. That ASCII interval admits `[`, backslash, `]`, `^`, underscore,
+and backtick as well as letters. The lexer therefore consumes `remaining]` as one identifier,
+leaving the parser without a closing bracket. `rest tail]` reproduces the same error; changing
+the remainder variable name does not fix it. Adding whitespace before `]` avoids this particular
+lexical error but is not an acceptable syntax requirement.
+
+Revision 0.2 attempted to override those three terminals locally with this continuation set:
+
+```xtext
+('A'..'Z' | 'a'..'z' | '_' | '0'..'9')*
+```
+
+Their initial-letter constraints and the trailing colon on `LOWERCASE_ID_TRAILING_COLON` are
+unchanged. Underscores and digits remain accepted; bracket/backslash/caret/backtick punctuation
+does not. The initially attempted shared correction was withdrawn to avoid changing other host
+languages. Inspection confirms Worldview, Kim, and KActors inherit Observable directly, not
+Observation; none of their grammar files or the shared grammar has a diff from this fix.
+Those local overrides would also affect ordinary observable expressions *inside Observation*, so the retest scope included
+concept/authority references, units, metadata, and bracketed literals in strategy/dataflow source.
+No change to `LogicalPattern`, `RemainderCapture`, generated Ecore classes, or
+`ObservationStrategySyntaxImpl` was needed for this fix.
+
+The original revision-0.2 instruction was to regenerate **Observation**, including the IDE/web parser/lexer
+artifacts used for retesting. Check [lexer-regressions.txt](lexer-regressions.txt), the three logical
+strategies in the eight-strategy fixture, and their generated ASTs. In particular confirm one
+explicit operand, `remainder.name == "remaining"`, and the expected logical connector/order.
+The lexer probe establishes the old failure; only regeneration and parsing can establish the fix.
+The active Java syntax adapters remain the maintainer's next step, retaining `ParsedObject`
+inheritance and source locations as in the existing language APIs.
+
+### Revision 0.1: initial sketch
+
 Revision 0.1 was checked by source comparison, rule/reference inventory, and fixture/name review.
-**No Xtext generation, parser execution, Ecore validation, or runtime test has been performed.**
+**No agent-run Xtext generation, parser execution, Ecore validation, or runtime test was performed
+for revision 0.1.** See revision 0.2 for the subsequent maintainer report and lexer reproduction.
 The static checks are only an editing aid. This file is not registered in a build or installed
 as a language. Keep revision history here as S1/S3 change it; keep the eight-strategy translation,
 context example, and executable example synchronized with every surface change.
@@ -129,7 +201,13 @@ captures, invalid names, terminal misuse, strict replay definitions/computations
 continuations rejected under replay. Verify encode/parse equivalence separately from graph
 execution and provenance reconstruction.
 
-**Continuation prompt:** “Review docs/grammar/Observation.xtext revision 0.1 as part of S1,
+**Continuation prompt:** “Continue S3 from KimObservationStrategy, KimObservationPlan, and their
+LanguageAdapter translations. Implement lexical/structural validation and model-version admission,
+then extend the initial tier-0 Reasoner/Resolver implementation recorded in OBSERVATION S3c. Preserve interface-based Jackson registration
+without API annotations or dependencies. Keep the syntax and populated JSON regression corpora
+coordinated; extend resolver composition progressively and leave executable dataflow semantics for their later stages.”
+
+The original integration prompt remains applicable to broader S3 work: “Review the grammar as part of S1,
 alongside OBSERVATION.md and EX00–EX09. Resolve syntax/AST/validator decisions without changing
 the active grammar. When S3 is authorized, generate it in an isolated klab-languages worktree,
 add parser and scoping fixtures, migrate adapters, and record actual generation/test evidence.”

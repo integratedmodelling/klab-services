@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -184,11 +186,12 @@ public class ResolutionCompiler {
       //      }
 
       var strategyResolution = resolve(strategy, scaleToResolve, ret, /* cScope */ scope);
-      var cov = strategyResolution.checkCoverage(strategyResolution);
+      var cov = ret.checkCoverage(strategyResolution);
       if (!cov.isRelevant()) {
         continue;
       }
       strategyGraphs.add(strategyResolution);
+      ret.merge(strategyResolution);
       if (cov.isComplete()) {
         complete = true;
         break;
@@ -196,22 +199,21 @@ public class ResolutionCompiler {
     }
 
     if (complete) {
-      for (var strategyGraph : strategyGraphs) {
-        ret.merge(strategyGraph);
-      }
       return ret;
     }
 
     return ResolutionGraph.empty();
   }
 
-  private ResolutionGraph resolve(
+  ResolutionGraph resolve(
       ObservationStrategy observationStrategy,
       Scale scaleToCover,
       ResolutionGraph graph,
       ContextScope scope) {
 
     var ret = graph.createChild(observationStrategy, scaleToCover);
+    Map<String, ResolutionGraph> produced = new LinkedHashMap<>();
+    boolean namedPlan = observationStrategy.getOperations().stream().allMatch(o -> o.getId() != null);
 
     for (var operation : observationStrategy.getOperations()) {
 
@@ -226,15 +228,17 @@ public class ResolutionCompiler {
                   contextualizedScope.getSecond(),
                   ret,
                   contextualizedScope.getFirst());
-          var cov = ret.checkCoverage(observableResolution);
-          if (!cov.isRelevant()) {
+          if (observableResolution.isEmpty() || !observableResolution.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
           }
-          ret.merge(observableResolution, operation.getId());
+          if (namedPlan) {
+            produced.put(operation.getId(), observableResolution);
+            if (operation == observationStrategy.getOperations().getLast()) ret.merge(observableResolution);
+          } else ret.merge(observableResolution, operation.getId());
         }
         case OBSERVE -> {
-          boolean complete = false;
-          List<ResolutionGraph> modelGraphs = new ArrayList<>();
+          boolean acceptedModel = false;
+          // Each producer accumulates its own output coverage, independently of prerequisites.
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
           var contextObservable =
@@ -254,27 +258,36 @@ public class ResolutionCompiler {
                   contextualizedScope.getSecond())) {
 
             var modelResolution = resolve(model, scaleToCover, ret, scope);
+            if (modelResolution.isEmpty()) continue;
+            for (var input : operation.getInputs().entrySet()) {
+              var prerequisite = produced.get(input.getValue());
+              if (prerequisite == null || prerequisite.isEmpty()) {
+                scope.error("Unknown strategy graph input " + input.getValue());
+                return ResolutionGraph.empty();
+              }
+              modelResolution.merge(prerequisite, input.getKey());
+            }
             var cov = ret.checkCoverage(modelResolution);
             if (!cov.isRelevant()) {
               continue;
             }
-            modelGraphs.add(modelResolution);
+            ret.merge(modelResolution, operation.getTransformationTarget());
+            acceptedModel = true;
             if (cov.isComplete()) {
-              complete = true;
               break;
             }
           }
 
-          if (complete) {
-            for (var modelGraph : modelGraphs) {
-              ret.merge(modelGraph, operation.getTransformationTarget());
-            }
-          } else {
+          if (!acceptedModel || !ret.getCoverage().isComplete()) {
+            return ResolutionGraph.empty();
+          }
+          if (namedPlan && operation != observationStrategy.getOperations().getLast()) {
+            scope.error("Intermediate observe producers require graph composition support");
             return ResolutionGraph.empty();
           }
         }
         case APPLY -> {
-          if (operation.getType() == KimObservationStrategy.Operation.Type.APPLY
+          if (operation.getType() == org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.Type.APPLY
               && !operation.getContextualizables().isEmpty()) {
             /**
              * We ask the runtime to resolve all the contextualizables as a single operation. This

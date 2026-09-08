@@ -140,34 +140,32 @@ class KimVisitorsTest {
   }
 
   @Test
-  void strategyTraversalCoversFiltersOperationsAndServiceCalls() {
+  void strategyTraversalCoversSelectionAndNestedPlanObservables() {
     var filterConcept = concept("demo:Filter");
     var operationConcept = concept("demo:Operation");
+    var match = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.MatchAlternativeImpl();
+    var filterObservable = new KimObservableImpl();
+    filterObservable.setSemantics(filterConcept);
+    match.setObservable(filterObservable);
+    var selection = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.StrategySelectionImpl();
+    selection.getAlternatives().add(match);
+    var target = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.StrategyTargetImpl();
     var operationObservable = new KimObservableImpl();
     operationObservable.setSemantics(operationConcept);
-    var filter = new KimObservationStrategyImpl.FilterImpl();
-    filter.setMatch(filterConcept);
-    filter.setFunctions(List.of(new ServiceCallImpl("demo.filter")));
-    var operation = new KimObservationStrategyImpl.OperationImpl();
-    operation.setObservable(operationObservable);
-    operation.setFunctions(List.of(new ServiceCallImpl("demo.operation")));
+    target.setObservable(operationObservable);
+    var producer = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.GraphProducerImpl();
+    producer.setTarget(target);
+    var plan = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.PlanBodyImpl();
+    plan.getSteps().add(producer);
     var strategy = new KimObservationStrategyImpl();
-    strategy.setFilters(List.of(List.of(filter)));
-    strategy.setOperations(List.of(operation));
+    strategy.setSelection(selection);
+    strategy.setPlan(plan);
     var document = new KimObservationStrategiesImpl();
     document.setStatements(List.of(strategy));
-
     var visitor = new KimObservationStrategyDocumentVisitor();
     visitor.visit(document);
-
     assertEquals(List.of(filterConcept, operationConcept), visitor.getConcepts());
-    assertEquals(2, visitor.getServiceCalls().size());
-    assertEquals(
-        Set.of("demo.filter", "demo.operation"),
-        visitor.getReferences().stream()
-            .filter(ref -> ref.knowledgeClass() == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION)
-            .map(KimObservableVisitor.Reference::urn)
-            .collect(java.util.stream.Collectors.toSet()));
+    assertTrue(visitor.getServiceCalls().isEmpty(), "Plan calls remain unevaluated typed expressions");
   }
 
   private static KimConceptImpl concept(String name) {

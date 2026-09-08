@@ -13,8 +13,10 @@ recommendations, not current behavior.
 
 The companion [Observation strategies](OBSERVATION.md) adds a source audit dated 2026-09-08
 covering grammar/adaptation, Reasoner matching and setup, and the proposed named-graph composition
-contract. It is the running design and implementation ledger for strategy changes; its proposed
-syntax is not currently implemented. The
+contract. It is the running design and implementation ledger for strategy changes. The revised
+syntax and initial strategy semantic beans/LanguageAdapter boundary are implemented and tested
+through interface-based JSON transport. The Reasoner now matches and lowers the initial tier-0
+producer subset; see OBSERVATION S3c for its supported patterns and explicit limitations. The
 [observable guide](OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type) defines the
 semantic contextualization activities that strategies serve. This document remains the broader
 Resolver/runtime trace; individual sections have been updated after the original inspection date.
@@ -268,10 +270,8 @@ Reasoner.computeObservationStrategies(observation, scope)
 ```
 
 Strategies are tried in returned order. Each is resolved into its own child graph. Irrelevant
-coverage is discarded. The loop stops at the first strategy graph considered complete.
-
-Only after a complete strategy is found are the retained strategy graphs merged into the
-observation graph. If no strategy completes, the method returns a new empty graph, discarding the
+coverage is discarded. Accepted results are merged before checking cumulative observation coverage.
+The loop stops when that coverage is complete. If the request remains incomplete, it returns an empty graph, discarding the
 partially built graph and its query reference from the result.
 
 `Observation.ContextualizationData` branches remain in this method but are TODOs. In the standard
@@ -281,15 +281,15 @@ resolver, so these TODOs primarily affect alternative/direct resolver use.
 ## 6. Strategy operations
 
 For strategy selection, functor behavior, matching gaps, and the replacement composition design,
-see [OBSERVATION.md, Sections 2–5](OBSERVATION.md#2-current-source-trace). In particular, current
+see [OBSERVATION.md](OBSERVATION.md), especially the current S3c record (Section 2 is historical). In particular, current
 `ResolutionGraph.merge` assembles graph structure and coverage; it is not the proposed typed
-binary `merge` language operation. Strategy `as` IDs and transformation-target strings currently
-provide edge/input bindings rather than named, typed graph results.
+binary `merge` language operation. Operational `id` fields now identify producer graphs; `inputs`
+maps consumer ports to earlier producer names. Legacy transformation-target strings are retained
+for old consumers but the new Reasoner does not lower merges to that convention.
 
 The [running strategy comparison](OBSERVATION_STRATEGIES_EXAMPLE.md) preserves the currently
 used eight-strategy document and translates its intended behavior into the proposed contracts.
-Comma-separated match alternatives are confirmed disjunctions; the syntax adapter's intersection
-mapping must not be taken as the intended language rule. The comparison also makes endpoint
+Comma-separated match alternatives are disjunctions in the revised adapter and matcher. The comparison also makes endpoint
 prerequisites, no-model acknowledgement, and boolean/categorical composition explicit review gates.
 
 Each `ObservationStrategy` creates a child graph initialized at zero coverage. Operations are
@@ -305,8 +305,9 @@ processed in declaration order.
 3. The observable is queried against runtime knowledge.
 4. If needed, an unresolved observation is registered for the missing geometry.
 5. That observation is recursively resolved.
-6. Relevant results are merged into the strategy graph with the operation ID as the edge's local
-   name.
+6. Complete prerequisite results are kept under the operation ID in a strategy-local graph table.
+   They contribute output coverage only if selected as the final producer. Legacy unnamed plans
+   retain their earlier immediate-merge behavior.
 
 `contextualizeScope(...)` currently does not alter the scale for collective semantics or use the
 `resolutionSoFar` argument.
@@ -320,8 +321,13 @@ processed in declaration order.
 3. ingest returned namespace documents into runtime `Model` objects;
 4. rank models with `PrioritizerImpl`;
 5. try models in sorted order;
-6. retain relevant models and stop when coverage is complete;
-7. merge accepted model graphs with `operation.getTransformationTarget()` as the local name.
+6. attach named prerequisite graphs by input port, intersecting model coverage;
+7. merge each relevant model before testing cumulative output completeness.
+
+The initial named-plan subset requires observe to be the final producer. Endpoint coverage cannot
+complete its output in the absence of a model. Input edges retain port names through DataflowCompiler,
+including parallel ports referencing the same observation. Full model-input type validation and
+candidate rollback remain pending; see S3c's continuation prompt.
 
 The notifications carried by the `ResourceSet` are currently not copied into resolver output.
 

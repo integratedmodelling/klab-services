@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 
 /**
  * The operational side of the observation strategy, coming from the reasoner after the matching to
@@ -23,13 +23,16 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
    */
   interface Operation {
 
+    /** Executable producers; APPLY is retained for existing contextualizer consumers. */
+    enum Type { RESOLVE, OBSERVE, APPLY }
+
     /**
      * The type of operation to perform - either observation of the observable (looking for a
      * model), recursive resolution of a different observable, or application of a contextualizable.
      *
      * @return
      */
-    KimObservationStrategy.Operation.Type getType();
+    Type getType();
 
     /**
      * The observable for OBSERVE and RESOLVE types, computed from the patterns in the syntactic
@@ -64,6 +67,9 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
      * @return
      */
     String getId();
+
+    /** Input port to earlier producer graph name, scoped to this strategy. */
+    Map<String, String> getInputs();
 
     /**
      * Transformation target for OBSERVE operations that were defined as 'transform TT through

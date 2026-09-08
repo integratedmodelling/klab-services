@@ -19,8 +19,13 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 class DataflowCompilerTest {
+
+  @BeforeAll
+  static void configure() { ServiceConfiguration.injectInstantiators(); }
 
   @Test
   void compilesTheRootNodeAndPreservesResolutionMetadata() throws Exception {
@@ -35,7 +40,8 @@ class DataflowCompilerTest {
     when(rootObservable.is(SemanticType.COUNTABLE)).thenReturn(false);
     when(rootObservable.getName()).thenReturn("resolvedRoot");
 
-    var rootScale = new ScaleImpl(Geometry.UNIVERSAL);
+    // Universal geometry is fully covered by definition; use an extent for fractional coverage.
+    var rootScale = new ScaleImpl(Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}"));
     var root = new ObservationImpl();
     root.setId(42L);
     root.setName("root");

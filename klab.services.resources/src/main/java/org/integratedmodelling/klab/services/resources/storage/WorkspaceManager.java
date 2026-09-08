@@ -83,7 +83,7 @@ import org.integratedmodelling.languages.kim.Model;
 import org.integratedmodelling.languages.observable.ConceptExpression;
 import org.integratedmodelling.languages.observable.ObservableSemantics;
 import org.integratedmodelling.languages.observable.ObservableSequence;
-import org.integratedmodelling.languages.observation.Strategies;
+import org.integratedmodelling.languages.observation.ObservationDocument;
 import org.integratedmodelling.languages.services.KActorsGrammarAccess;
 import org.integratedmodelling.languages.services.KimGrammarAccess;
 import org.integratedmodelling.languages.services.ObservableGrammarAccess;
@@ -100,7 +100,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 /**
  * Singleton that separates out all the logics in managing workspaces up to and not including the
  * loading of the actual knowledge into k.LAB beans. It is the only object that can parse the k.LAB
- * languages and knows about them.
+ * languages and knows about them.KimO
  */
 public class WorkspaceManager {
 
@@ -740,7 +740,26 @@ public class WorkspaceManager {
     return List.of();
   }
 
-  class StrategyParser extends Parser<Strategies> {
+  private ObservationSyntax.StrategyDocument adaptStrategySyntax(
+      ObservationDocument parsed, List<Notification> notifications) {
+    if (!(parsed instanceof org.integratedmodelling.languages.observation.StrategyDocument)) {
+      notifications.add(Notification.error(
+          "Expected a strategies document; executable dataflow adaptation is not implemented"));
+      return null;
+    }
+    return (ObservationSyntax.StrategyDocument) new ObservationSyntaxAdapter() {
+      @Override protected void logWarning(ParsedObject target, EObject object,
+          EStructuralFeature feature, String message) {
+        notifications.add(makeNotification(target, object, feature, message, Notification.Level.Warning));
+      }
+      @Override protected void logError(ParsedObject target, EObject object,
+          EStructuralFeature feature, String message) {
+        notifications.add(makeNotification(target, object, feature, message, Notification.Level.Error));
+      }
+    }.adapt(parsed, languageValidationScope);
+  }
+
+  class StrategyParser extends Parser<ObservationDocument> {
 
     @Inject ObservationGrammarAccess grammarAccess;
 
@@ -776,9 +795,8 @@ public class WorkspaceManager {
      * @param strategyUrl
      * @return the parsed semantic expression, or null if the parser cannot make sense of it.
      */
-    public ObservationStrategiesSyntax parseStrategies(URL strategyUrl, String projectName) {
-
-      List<Notification> errors = new ArrayList<>();
+    public ObservationSyntax.StrategyDocument parseStrategies(
+        URL strategyUrl, String projectName, List<Notification> errors) {
 
       try (var input = strategyUrl.openStream()) {
         var result = parse(input, errors);
@@ -798,31 +816,13 @@ public class WorkspaceManager {
           return null;
         }
 
-        if (result instanceof Strategies strategies) {
-          return new ObservationStrategiesSyntaxImpl(strategies, languageValidationScope) {
-
-            @Override
-            protected void logWarning(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              getNotifications()
-                  .add(
-                      new Notification(
-                          object,
-                          new LanguageValidationScope.ValidationMessage(
-                              message, -1, LanguageValidationScope.Level.WARNING)));
-            }
-
-            @Override
-            protected void logError(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              getNotifications()
-                  .add(
-                      new Notification(
-                          object,
-                          new LanguageValidationScope.ValidationMessage(
-                              message, -1, LanguageValidationScope.Level.ERROR)));
-            }
-          };
+        if (result instanceof ObservationDocument strategies) {
+          var syntax = adaptStrategySyntax(strategies, errors);
+          if (errors.stream().anyMatch(n -> n.getLevel().severity >= Notification.Level.Error.severity)) {
+            scope.error("Observation strategy resource has adaptation errors: " + strategyUrl);
+            return null;
+          }
+          return syntax;
         }
       } catch (IOException e) {
         scope.error(
@@ -1741,8 +1741,8 @@ public class WorkspaceManager {
               var strategyUrn =
                   documentUrn(pd.name, ProjectStorage.ResourceType.STRATEGY, strategyUrl);
               try {
-                if (parsed != null && parsed.getPreamble() != null) {
-                  strategyUrn = parsed.getPreamble().getName();
+                if (parsed != null && parsed.getName() != null) {
+                  strategyUrn = parsed.getName();
                 }
               } catch (Throwable ignored) {
                 // Use the file-derived URN below.
@@ -1760,43 +1760,9 @@ public class WorkspaceManager {
               } else {
                 List<Notification> notifications = new ArrayList<>();
                 var syntax =
-                    new ObservationStrategiesSyntaxImpl(parsed, this.languageValidationScope) {
+                    adaptStrategySyntax(parsed, notifications);
 
-                      @Override
-                      protected void logWarning(
-                          ParsedObject target,
-                          EObject object,
-                          EStructuralFeature feature,
-                          String message) {
-                        notifications.add(
-                            makeNotification(
-                                target,
-                                object,
-                                feature,
-                                message,
-                                org.integratedmodelling.klab.api.services.runtime.Notification.Level
-                                    .Warning));
-                      }
-
-                      @Override
-                      protected void logError(
-                          ParsedObject target,
-                          EObject object,
-                          EStructuralFeature feature,
-                          String message) {
-                        notifications.add(
-                            makeNotification(
-                                target,
-                                object,
-                                feature,
-                                message,
-                                org.integratedmodelling.klab.api.services.runtime.Notification.Level
-                                    .Error));
-                        errors.set(true);
-                      }
-                    };
-
-                if (!errors.get()) {
+                if (syntax != null && notifications.stream().noneMatch(n -> n.getLevel().severity >= Notification.Level.Error.severity)) {
                   var document =
                       LanguageAdapter.INSTANCE.adaptStrategies(
                           syntax, pd.name, notifications, timestamp);
@@ -1916,7 +1882,7 @@ public class WorkspaceManager {
     return ret;
   }
 
-  List<ObservationStrategySyntax> getStrategies() {
+  List<ObservationSyntax.StrategyDeclaration> getStrategies() {
     return null;
   }
 
@@ -3029,8 +2995,8 @@ public class WorkspaceManager {
     KimObservationStrategyDocument ret = null;
     var declaredUrn = fallbackUrn;
     try {
-      if (parsed != null && parsed.getPreamble() != null) {
-        declaredUrn = parsed.getPreamble().getName();
+      if (parsed != null && parsed.getName() != null) {
+        declaredUrn = parsed.getName();
       }
     } catch (Throwable ignored) {
       // Keep the storage-derived URN when the declaration itself is incomplete.
@@ -3052,36 +3018,9 @@ public class WorkspaceManager {
 
       List<Notification> notifications = new ArrayList<>();
       var syntax =
-          new ObservationStrategiesSyntaxImpl(parsed, this.languageValidationScope) {
+          adaptStrategySyntax(parsed, notifications);
 
-            @Override
-            protected void logWarning(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level
-                          .Warning));
-            }
-
-            @Override
-            protected void logError(
-                ParsedObject target, EObject object, EStructuralFeature feature, String message) {
-              notifications.add(
-                  makeNotification(
-                      target,
-                      object,
-                      feature,
-                      message,
-                      org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
-              errors.set(true);
-            }
-          };
-
-      if (!errors.get()) {
+      if (syntax != null && notifications.stream().noneMatch(n -> n.getLevel().severity >= Notification.Level.Error.severity)) {
         ret =
             LanguageAdapter.INSTANCE.adaptStrategies(syntax, projectName, notifications, timestamp);
         if (ret instanceof KimObservationStrategiesImpl kActorsBehavior) {
@@ -3853,7 +3792,8 @@ public class WorkspaceManager {
           }
         } else {
           for (var strategyUrl : pd.storage.listResources(ProjectStorage.ResourceType.STRATEGY)) {
-            var parsed = strategyParser.parseStrategies(strategyUrl, pd.name);
+            var notifications = new ArrayList<Notification>();
+            var parsed = strategyParser.parseStrategies(strategyUrl, pd.name, notifications);
             if (parsed == null) {
               _worldview.setEmpty(true);
               return _worldview;
@@ -3867,7 +3807,7 @@ public class WorkspaceManager {
                 .add(
                     validateSemanticAsset(
                         LanguageAdapter.INSTANCE.adaptStrategies(
-                            parsed, pd.name, new ArrayList<>(), timestamp)));
+                            parsed, pd.name, notifications, timestamp)));
           }
         }
       }
@@ -3973,7 +3913,6 @@ public class WorkspaceManager {
             case STRATEGY ->
                 strategyParser
                     .parse(new StringReader(contents), notifications)
-                    .getPreamble()
                     .getName();
             default -> throw new KlabUnimplementedException("parsing new " + documentType);
           };

@@ -1,651 +1,230 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import com.google.common.collect.Sets;
 import java.util.*;
-import org.integratedmodelling.common.lang.ContextualizableImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.objects.IdentificationStrategyImpl;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.utilities.Utils;
 
-/**
- * Specialized functions to infer observation strategies. Kept separately for clarity as this is a
- * crucial k.LAB component, although they are part of the reasoner services.
- */
+/** Select and instantiate portable observation plans. Matching never executes a resolution. */
 public class ObservationReasoner {
+  private final Reasoner reasoner;
+  private final Function<KimObservable, Observable> declare;
+  private final ObservationPatternMatcher matcher;
+  private final List<KimObservationStrategy> strategies = new CopyOnWriteArrayList<>();
 
-  private static Set<String> defaultVariables = Set.of("this", "context");
-
-  private ReasonerService reasoner;
-  private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
-
-  private class QuickSemanticFilter {
-
-    public Set<SemanticType> semanticTypesWhitelist = EnumSet.noneOf(SemanticType.class);
-    public Set<SemanticType> semanticTypesBlacklist = EnumSet.noneOf(SemanticType.class);
-    // any predefined variables used in patterns
-    public Set<String> fixedVariablesUsed = new HashSet<>();
-    public Set<String> customVariablesUsed = new HashSet<>();
-    public List<List<KimObservationStrategy.Filter.SemanticPattern>> typePatterns =
-        new ArrayList<>();
-    public boolean collectiveConstraints;
-    public boolean collectiveOnly;
-    public boolean nonCollectiveOnly;
-
-    /**
-     * Quick match to quickly weed out the non-matching classes and minimize the need for inference
-     * and pattern instantiation.
-     *
-     * @param observable
-     * @param scope
-     * @return
-     */
-    public boolean match(Observable observable, ContextScope scope) {
-      if (!semanticTypesWhitelist.isEmpty()) {
-        if (Sets.intersection(observable.getSemantics().getType(), semanticTypesWhitelist)
-            .isEmpty()) {
-          return false;
-        }
-      }
-      if (!semanticTypesBlacklist.isEmpty()) {
-        if (!Sets.intersection(observable.getSemantics().getType(), semanticTypesBlacklist)
-            .isEmpty()) {
-          return false;
-        }
-      }
-      if (collectiveConstraints) {
-        if ((collectiveOnly && !observable.getSemantics().isCollective())
-            || (nonCollectiveOnly && observable.getSemantics().isCollective())) {
-          return false;
-        }
-      }
-
-      boolean patternMatch = typePatterns.isEmpty();
-      for (var pattern : typePatterns) {
-        if (matchesPattern(observable.getSemantics(), pattern)) {
-          patternMatch = true;
-          break;
-        }
-      }
-
-      return patternMatch;
-    }
-
-    private boolean matchesPattern(
-        Concept semantics, List<KimObservationStrategy.Filter.SemanticPattern> semanticPattern) {
-      for (var rule : semanticPattern) {
-        switch (rule) {
-          case QUALITY -> {
-            if (!semantics.is(SemanticType.QUALITY)) {
-              return false;
-            }
-          }
-          case TYPE -> {
-            if (!semantics.is(SemanticType.CLASS)) {
-              return false;
-            }
-          }
-          case MEASUREMENT -> {
-            if (!semantics.is(SemanticType.INTENSIVE) && !semantics.is(SemanticType.EXTENSIVE)) {
-              return false;
-            }
-          }
-          case QUANTITY -> {
-            if (!semantics.is(SemanticType.QUANTIFIABLE)) {
-              return false;
-            }
-          }
-          case PRIORITY -> {
-            if (!semantics.is(SemanticType.PRIORITY)) {
-              return false;
-            }
-          }
-          case PRESENCE -> {
-            if (!semantics.is(SemanticType.PRESENCE)) {
-              return false;
-            }
-          }
-          case PREDICATE -> {
-            if (reasoner.directTraits(semantics).isEmpty()) {
-              return false;
-            }
-          }
-          case ROLE -> {
-            if (reasoner.directRoles(semantics).isEmpty()) {
-              return false;
-            }
-          }
-          case ATTRIBUTE -> {
-            if (reasoner.directAttributes(semantics).isEmpty()) {
-              return false;
-            }
-          }
-          case IDENTITY -> {
-            if (reasoner.directIdentities(semantics).isEmpty()) {
-              return false;
-            }
-          }
-          case AGENT -> {
-            if (!semantics.is(SemanticType.AGENT)) {
-              return false;
-            }
-          }
-          case RELATIONSHIP -> {
-            if (!semantics.is(SemanticType.RELATIONSHIP)) {
-              return false;
-            }
-          }
-          case SUBJECT -> {
-            if (!semantics.is(SemanticType.SUBJECT)) {
-              return false;
-            }
-          }
-          case PROCESS -> {
-            if (!semantics.is(SemanticType.PROCESS)) {
-              return false;
-            }
-          }
-          case EVENT -> {
-            if (!semantics.is(SemanticType.EVENT)) {
-              return false;
-            }
-          }
-          case CONFIGURATION -> {
-            if (!semantics.is(SemanticType.CONFIGURATION)) {
-              return false;
-            }
-          }
-          case INSTANTIATION -> {
-            if (semantics.getDescriptionType() != Contextualization.INSTANTIATION) {
-              return false;
-            }
-          }
-          case DETECTION -> {
-            if (semantics.getDescriptionType() != Contextualization.DETECTION) {
-              return false;
-            }
-          }
-          case SIMULATION -> {
-            if (semantics.getDescriptionType() != Contextualization.SIMULATION) {
-              return false;
-            }
-          }
-          case MEASURE -> {
-            if (semantics.getDescriptionType() != Contextualization.MEASURE) {
-              return false;
-            }
-          }
-          case QUANTIFICATION -> {
-            if (semantics.getDescriptionType() != Contextualization.QUANTIFICATION) {
-              return false;
-            }
-          }
-          case VALUATION -> {
-            if (semantics.getDescriptionType() != Contextualization.VALUATION) {
-              return false;
-            }
-          }
-          case CATEGORIZATION -> {
-            if (semantics.getDescriptionType() != Contextualization.CATEGORIZATION) {
-              return false;
-            }
-          }
-          case VERIFICATION -> {
-            if (semantics.getDescriptionType() != Contextualization.VERIFICATION) {
-              return false;
-            }
-          }
-          case CLASSIFICATION -> {
-            if (semantics.getDescriptionType() != Contextualization.CLASSIFICATION) {
-              return false;
-            }
-          }
-          case CHARACTERIZATION -> {
-            if (semantics.getDescriptionType() != Contextualization.CHARACTERIZATION) {
-              return false;
-            }
-          }
-          case TRANSFORMATION -> {
-            if (semantics.getDescriptionType() != Contextualization.TRANSFORMATION) {
-              return false;
-            }
-          }
-          case ACKNOWLEDGEMENT -> {
-            if (semantics.getDescriptionType() != Contextualization.ACKNOWLEDGEMENT) {
-              return false;
-            }
-          }
-          case CONNECTION -> {
-            if (semantics.getDescriptionType() != Contextualization.CONNECTION) {
-              return false;
-            }
-          }
-        }
-      }
-      return true;
-    }
+  public ObservationReasoner(ReasonerService reasoner) {
+    this(reasoner, reasoner::declareObservable);
+    reasoner.getComponentRegistry().loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
   }
 
-  /**
-   * We precompute the non-contextual applicable info for each strategy to quickly weed out those
-   * that are certain to not apply.
-   */
-  private Map<String, QuickSemanticFilter> quickFilters = new HashMap<>();
-
-  public ObservationReasoner(ReasonerService reasonerService) {
-    this.reasoner = reasonerService;
-    // ensure the core functor library is read. Plugins may add more.
-    reasonerService
-        .getComponentRegistry()
-        .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
+  public ObservationReasoner(Reasoner reasoner, Function<KimObservable, Observable> declare) {
+    this.reasoner = reasoner;
+    this.declare = declare;
+    this.matcher = new ObservationPatternMatcher(reasoner, declare);
   }
 
-  /**
-   * Compile and return a list of matching, contextualized observation strategies that match the
-   * observable and scope, in order of rank and cost, for the resolver to resolve.
-   *
-   * @param observation
-   * @param scope
-   * @return
-   */
   public List<ObservationStrategy> computeMatchingStrategies(
       Observation observation, ContextScope scope, boolean isResolution) {
-
-    var observable = observation.getObservable();
-    List<ObservationStrategy> ret = new ArrayList<>();
-
-    for (var strategy : observationStrategies) {
-
-      if (isResolution && strategy.getType() != KimObservationStrategy.Type.OBSERVATION) {
-        continue;
-      }
-
-      var filter = quickFilters.get(strategy.getUrn());
-
-      if (filter.fixedVariablesUsed.contains("context") && scope.getContextObservation() == null) {
-        continue;
-      }
-
-      if (filter.match(observable, scope)) {
-
-        Map<String, Object> patternVariableValues = new HashMap<>();
-        for (var variable : filter.fixedVariablesUsed) {
-          patternVariableValues.put(
-              variable,
-              switch (variable) {
-                case "this" -> observable;
-                case "context" -> scope.getContextObservation().getObservable();
-                default ->
-                    throw new KlabUnimplementedException("predefined pattern variable " + variable);
-              });
+    List<ObservationStrategy> result = new ArrayList<>();
+    for (var strategy : strategies) {
+      if (strategy.getType() != (isResolution ? KimObservationStrategy.Type.OBSERVATION
+          : KimObservationStrategy.Type.IDENTIFICATION)) continue;
+      try {
+        var variables = select(strategy, observation.getObservable(), scope);
+        if (variables != null && setup(strategy, variables, scope)) {
+          result.add(lower(strategy, variables, scope));
         }
-
-        for (var variable : strategy.getMacroVariables().keySet()) {
-          var functor = strategy.getMacroVariables().get(variable);
-          if (functor.getLiteral() != null) {
-            patternVariableValues.put(variable, Utils.Data.asString(functor.getLiteral()));
-          } else if (functor.getMatch() != null) {
-            // can't happen for now, parser won't accept. Should be a pattern to be useful.
-          } else if (!functor.getFunctions().isEmpty()) {
-            for (var function : functor.getFunctions()) {
-              var value =
-                  matchFunction(function, observable, scope, Object.class, patternVariableValues);
-              String[] varNames = variable.split(",");
-              if (value instanceof Collection<?> collection) {
-                // must be string with same amount of return values
-                if (varNames.length != collection.size()) {
-                  scope.error("wrong number of return values from " + function);
-                }
-                int i = 0;
-                for (var o : collection) {
-                  patternVariableValues.put(varNames[i++], o);
-                }
-              } else {
-                // set pattern var
-                if (varNames.length != 1) {
-                  scope.error("wrong number of return values from " + function);
-                }
-                patternVariableValues.put(variable, value);
-              }
-            }
-          }
-        }
-
-        /*
-         * A null match to the required macro variables means no match
-         */
-        if (!strategy.getMacroVariables().isEmpty() && patternVariableValues.containsValue(null)) {
-          continue;
-        }
-
-        // at least a matching filter is necessary
-        boolean match = false;
-        for (var filterList : strategy.getFilters()) {
-          for (var matching : filterList) {
-            if (matchFilter(matching, observation, scope, patternVariableValues)) {
-              match = true;
-              break;
-            }
-          }
-          if (match) {
-            break;
-          }
-        }
-
-        if (!match) {
-          continue;
-        }
-
-        /*
-          if we get here, the strategy definition is a match: compile the observation strategy
-          operations for the observable and scope
-        */
-        ret.add(contextualizeStrategy(observation, strategy, patternVariableValues, scope));
+      } catch (IllegalArgumentException | UnsupportedOperationException e) {
+        scope.warn("Strategy " + strategy.getNamespace() + ":" + strategy.getUrn()
+            + " is unavailable: " + e.getMessage());
       }
     }
-
-    return ret;
+    return result;
   }
 
-  private ObservationStrategy contextualizeStrategy(
-      Observation observation,
-      KimObservationStrategy strategy,
-      Map<String, Object> patternVariableValues,
+  private Map<String, Object> select(KimObservationStrategy strategy, Observable observable,
       ContextScope scope) {
-
-    var os = new ObservationStrategyImpl();
-    os.setDocumentation(strategy.getDescription()); // TODO compile template
-    os.setUrn(strategy.getUrn());
-
-    if (observation.getContextualizationData() != null
-        && observation.getContextualizationData().getAdapterId() != null) {
-      var op = new ObservationStrategyImpl.OperationImpl();
-      op.setType(KimObservationStrategy.Operation.Type.APPLY);
-      op.getContextualizables()
-          .add(new ContextualizableImpl(observation.getContextualizationData()));
-      os.getOperations().add(op);
+    if (strategy.getModelVersion() != 2 || strategy.getSelection() == null)
+      throw new IllegalArgumentException("Expected a version-2 selection");
+    for (var alternative : strategy.getSelection().getAlternatives()) {
+      Map<String, Object> variables = new LinkedHashMap<>();
+      variables.put("this", observable);
+      variables.put("context", scope.getContextObservation() == null ? null
+          : scope.getContextObservation().getObservable());
+      boolean matches;
+      if (alternative.getPattern() != null) {
+        var pattern = alternative.getPattern();
+        var subject = pattern.getSubject() == null ? observable
+            : evaluate(pattern.getSubject(), variables, scope);
+        matches = matcher.match(pattern.getExpression(), subject, variables);
+      } else if (alternative.getObservable() != null) {
+        matches = reasoner.match(observable, declare.apply(alternative.getObservable()));
+      } else if (alternative.getMatcher() != null) {
+        matches = Boolean.TRUE.equals(evaluate(alternative.getMatcher().getCall(), variables, scope));
+      } else throw new IllegalArgumentException("Empty match alternative");
+      if (matches && checks(alternative.getGuards(), variables, scope)) return variables;
     }
-    for (var operation : strategy.getOperations()) {
-
-      var op = new ObservationStrategyImpl.OperationImpl();
-      op.setType(operation.getType());
-      op.setId(operation.getLocalId());
-      op.setTransformationTarget(operation.getTransformationTarget());
-
-      if (operation.getObservable() != null) {
-        op.setObservable(
-            operation.getObservable().getPatternVariables().isEmpty()
-                ? reasoner.declareObservable(operation.getObservable())
-                : reasoner.declareObservable(operation.getObservable(), patternVariableValues));
-      }
-      for (var function : operation.getFunctions()) {
-        op.getContextualizables().add(new ContextualizableImpl(function));
-      }
-//      for (var deferred : operation.getDeferredStrategies()) {
-//        op.getContextualizables()
-//            .add(
-//                new ContextualizableImpl(
-//                    ServiceCallImpl.create(
-//                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
-//                        "strategy",
-//                        contextualizeStrategy(
-//                            observation, deferred, patternVariableValues, scope))));
-//      }
-      os.getOperations().add(op);
-    }
-    return os;
+    return null;
   }
 
-  private Object matchFunction(
-      ServiceCall function,
-      Semantics observable,
-      ContextScope scope,
-      Class<Object> objectClass,
-      Map<String, Object> patternVariableValues) {
-
-    var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
-
-    // complete arguments if empty or using previously instantiated variables
-    if (function.getParameters().isEmpty()) {
-      function = function.withUnnamedParameters(observable);
-    } else
-      for (var key : function.getParameters().keySet()) {
-        // substitute parameters and set them as unnamed
-        function =
-            function.withUnnamedParameters(
-                patternVariableValues.getOrDefault(key.substring(1), key));
-      }
-    return languageService.execute(function, scope, Object.class, scope, observable);
+  private boolean checks(List<StrategyCall> calls, Map<String, Object> variables, ContextScope scope) {
+    for (var call : calls) if (!Boolean.TRUE.equals(evaluate(call, variables, scope))) return false;
+    return true;
   }
 
-  private boolean matchFilter(
-      KimObservationStrategy.Filter filter,
-      Observation observation,
-      ContextScope scope,
-      Map<String, Object> patternVariableValues) {
-
-    boolean ret = true;
-    if (filter.getMatch() != null) {
-      var semantics =
-          filter.getMatch().isPattern()
-              ? reasoner.declareConcept(filter.getMatch(), patternVariableValues)
-              : reasoner.declareConcept(filter.getMatch());
-      ret = semantics != null && reasoner.match(observation.getObservable(), semantics);
-    } else if (!filter.getTypePattern().isEmpty()) {
-      for (var pattern : filter.getTypePattern()) {
-        if (ret) {
-          switch (pattern) {
-            case QUALITY -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.QUALITY)) {
-                ret = false;
-              }
-            }
-            case TYPE -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.CLASS)) {
-                ret = false;
-              }
-            }
-            case MEASUREMENT -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.INTENSIVE)
-                  && !observation.getObservable().getSemantics().is(SemanticType.EXTENSIVE)) {
-                ret = false;
-              }
-            }
-            case QUANTITY -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.QUANTIFIABLE)) {
-                ret = false;
-              }
-            }
-            case PRIORITY -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.PRIORITY)) {
-                ret = false;
-              }
-            }
-            case PRESENCE -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.PRESENCE)) {
-                ret = false;
-              }
-            }
-            case PREDICATE -> {
-              if (reasoner.directTraits(observation.getObservable().getSemantics()).isEmpty()) {
-                ret = false;
-              }
-            }
-            case ROLE -> {
-              if (reasoner.directRoles(observation.getObservable().getSemantics()).isEmpty()) {
-                ret = false;
-              }
-            }
-            case ATTRIBUTE -> {
-              if (reasoner.directAttributes(observation.getObservable().getSemantics()).isEmpty()) {
-                ret = false;
-              }
-            }
-            case IDENTITY -> {
-              if (reasoner.directIdentities(observation.getObservable().getSemantics()).isEmpty()) {
-                ret = false;
-              }
-            }
-            case AGENT -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.AGENT)) {
-                ret = false;
-              }
-            }
-            case RELATIONSHIP -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.RELATIONSHIP)) {
-                ret = false;
-              }
-            }
-            case SUBJECT -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.SUBJECT)) {
-                ret = false;
-              }
-            }
-            case PROCESS -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.PROCESS)) {
-                ret = false;
-              }
-            }
-            case EVENT -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.EVENT)) {
-                ret = false;
-              }
-            }
-            case CONFIGURATION -> {
-              if (!observation.getObservable().getSemantics().is(SemanticType.CONFIGURATION)) {
-                ret = false;
-              }
-            }
-              //          default -> {
-              //            throw new IllegalArgumentException("Unknown type pattern: " + pattern);
-              //          }
+  private boolean setup(KimObservationStrategy strategy, Map<String, Object> variables, ContextScope scope) {
+    for (var setup : strategy.getSetup()) {
+      if (setup instanceof EnsureSetup ensure) {
+        if (!checks(ensure.getChecks(), variables, scope)) return false;
+      } else if (setup instanceof LetSetup let) {
+        for (var binding : let.getBindings()) {
+          Object value = evaluate(binding.getValue(), variables, scope);
+          List<?> values = binding.getNames().size() == 1 ? Collections.singletonList(value)
+              : value instanceof List<?> tuple ? tuple : List.of();
+          if (values.size() != binding.getNames().size()) throw new IllegalArgumentException("Tuple arity mismatch");
+          for (int i = 0; i < values.size(); i++) {
+            String name = name(binding.getNames().get(i));
+            if (variables.containsKey(name)) throw new IllegalArgumentException("Duplicate/reserved variable $" + name);
+            variables.put(name, values.get(i));
           }
         }
-      }
+      } else throw new UnsupportedOperationException("Setup " + setup.getClass().getSimpleName());
     }
-    if (ret && !filter.getFunctions().isEmpty()) {
-      for (var function : filter.getFunctions()) {
-        var value =
-            matchFunction(
-                function, observation.getObservable(), scope, Object.class, patternVariableValues);
-        ret = value instanceof Boolean bool && bool;
-      }
+    return true;
+  }
+
+  static String name(String spelling) {
+    if (spelling == null || spelling.isBlank()) throw new IllegalArgumentException("Missing variable name");
+    return spelling.startsWith("$") ? spelling.substring(1) : spelling;
+  }
+
+  private Object evaluate(StrategyExpression expression, Map<String, Object> variables, ContextScope scope) {
+    if (expression instanceof StrategyVariable variable) {
+      String name = name(variable.getSpelling());
+      if (!variables.containsKey(name)) throw new IllegalArgumentException("Unbound variable $" + name);
+      return variables.get(name);
     }
-    return filter.isNegated() != ret;
+    if (expression instanceof ClosedObservable closed) return declare.apply(closed.getObservable());
+    if (expression instanceof StrategyScalar scalar) return ObservationPatternMatcher.scalar(scalar);
+    if (expression instanceof StrategyCall call) {
+      List<Object> args = new ArrayList<>();
+      for (var argument : call.getArguments()) {
+        if (argument.getName() != null) throw new UnsupportedOperationException("Named functor arguments");
+        args.add(evaluate(argument.getValue(), variables, scope));
+      }
+      if (call.getFunction().equals("context.exists")) {
+        if (!args.isEmpty()) throw new IllegalArgumentException("context.exists takes no arguments");
+        return scope.getContextObservation() != null;
+      }
+      if (args.isEmpty()) args.add(variables.get("this"));
+      if (args.size() != 1 || !(args.getFirst() instanceof Semantics semantics))
+        throw new IllegalArgumentException("Expected one semantic argument to " + call.getFunction());
+      return switch (call.getFunction()) {
+        case "request.fully_specified" -> !semantics.isAbstract() && !semantics.isGeneric()
+            && !semantics.is(SemanticType.NOTHING)
+            && (!(semantics instanceof Observable o) || o.getGenericComponents().isEmpty());
+        case "type.concrete" -> !semantics.isAbstract();
+        case "type.abstract" -> semantics.isAbstract();
+        case "type.collective" -> semantics.asConcept().isCollective();
+        case "relationship.source", "type.relationship.source" -> reasoner.relationshipSource(semantics);
+        case "relationship.target", "type.relationship.target" -> reasoner.relationshipTarget(semantics);
+        case "collective", "type.arity.collective" -> semantics instanceof Observable o
+            ? o.builder(scope).collective(true).buildObservable()
+            : reasoner.resolveObservable(semantics.asConcept().collective().getUrn());
+        default -> throw new UnsupportedOperationException("Functor " + call.getFunction());
+      };
+    }
+    throw new IllegalArgumentException("Missing or unknown expression");
   }
 
-  /**
-   * An integer from 0 to 100, used to rank strategies <em>in context</em> among groups of
-   * strategies with the same rank. Only called on strategies that match the observable.
-   *
-   * @return
-   */
-  public int getCost(ObservationStrategy strategy, Observable observable, ContextScope scope) {
-    return 0;
+  private Observable target(StrategyTarget target, Map<String, Object> variables, ContextScope scope) {
+    Object value = target.getObservable() == null ? evaluate(target.getExpression(), variables, scope)
+        : declare.apply(target.getObservable());
+    if (value instanceof Observable observable) return observable;
+    if (value instanceof Concept concept) {
+      var observable = reasoner.resolveObservable(concept.getUrn());
+      if (observable != null) return observable;
+    }
+    throw new IllegalArgumentException("Producer target is not an observable");
   }
 
-  /**
-   * Release the named namespace, i.e. remove all strategies it contains.
-   *
-   * @param strategyNamespace
-   */
-  public void releaseNamespace(String strategyNamespace) {
-    var filtered =
-        observationStrategies.stream()
-            .filter(o -> !o.getNamespace().equals(strategyNamespace))
-            .toList();
-    observationStrategies.clear();
-    observationStrategies.addAll(filtered);
+  /** Initial execution subset: producers with explicit prerequisite inputs, and a final yield. */
+  private ObservationStrategy lower(KimObservationStrategy strategy, Map<String, Object> variables,
+      ContextScope scope) {
+    var result = new ObservationStrategyImpl();
+    result.setUrn(strategy.getUrn());
+    result.setNamespace(strategy.getNamespace());
+    result.setRank(strategy.getRank());
+    result.setDocumentation(strategy.getDescription());
+    result.setMetadata(strategy.getMetadata());
+    result.setServiceId(strategy.getServiceId());
+    result.setAnnotations(strategy.getAnnotations());
+    Set<String> names = new HashSet<>();
+    Set<String> consumed = new HashSet<>();
+    String last = null;
+    boolean yielded = false;
+    if (strategy.getPlan() == null) throw new IllegalArgumentException("Missing plan");
+    for (var step : strategy.getPlan().getSteps()) {
+      if (yielded) throw new IllegalArgumentException("Steps after yield");
+      if (step instanceof GraphProducer producer) {
+        if (producer.getContext() != null || producer.getFallback() != null)
+          throw new UnsupportedOperationException("Explicit context or fallback");
+        var operation = new ObservationStrategyImpl.OperationImpl();
+        if (!result.getOperations().isEmpty()
+            && result.getOperations().getLast().getType() == ObservationStrategy.Operation.Type.OBSERVE)
+          throw new UnsupportedOperationException("Intermediate observe producers");
+        operation.setType(ObservationStrategy.Operation.Type.valueOf(producer.getMode().name()));
+        operation.setObservable(target(producer.getTarget(), variables, scope));
+        operation.setId(producer.getName());
+        for (var input : producer.getInputs()) {
+          String graph = input.getGraph().getName();
+          if (!names.contains(graph)) throw new IllegalArgumentException("Unknown/forward graph " + graph);
+          if (operation.getInputs().putIfAbsent(input.getPort(), graph) != null)
+            throw new IllegalArgumentException("Duplicate input port " + input.getPort());
+          consumed.add(graph);
+        }
+        if (operation.getType() == ObservationStrategy.Operation.Type.RESOLVE && !operation.getInputs().isEmpty())
+          throw new UnsupportedOperationException("Inputs on recursive resolve");
+        if (producer.getName() == null || !names.add(producer.getName()))
+          throw new IllegalArgumentException("Missing or duplicate graph name");
+        last = producer.getName();
+        result.getOperations().add(operation);
+      } else if (step instanceof PlanYield yield) {
+        if (!Objects.equals(last, yield.getGraph().getName()))
+          throw new UnsupportedOperationException("Yield must select the final producer");
+        yielded = true;
+      } else throw new UnsupportedOperationException("Plan step " + step.getClass().getSimpleName());
+    }
+    if (last == null) throw new IllegalArgumentException("Empty plan");
+    consumed.add(last);
+    if (!consumed.containsAll(names)) throw new IllegalArgumentException("Unconsumed graphs require explicit composition");
+    return result;
   }
 
-  /** Add a new strategy or substitute the existing version of the same. */
-  public void registerStrategy(KimObservationStrategy observationStrategy) {
-    observationStrategies.add(observationStrategy);
-    quickFilters.put(observationStrategy.getUrn(), computeInfo(observationStrategy));
+  public int getCost(ObservationStrategy strategy, Observable observable, ContextScope scope) { return 0; }
+  public void releaseNamespace(String namespace) {
+    strategies.removeIf(s -> Objects.equals(s.getNamespace(), namespace));
   }
-
+  public void registerStrategy(KimObservationStrategy strategy) {
+    strategies.removeIf(s -> Objects.equals(s.getNamespace(), strategy.getNamespace())
+        && Objects.equals(s.getUrn(), strategy.getUrn()));
+    strategies.add(strategy);
+  }
   public void initializeStrategies() {
-    observationStrategies.sort(
-        new Comparator<KimObservationStrategy>() {
-          @Override
-          public int compare(KimObservationStrategy o1, KimObservationStrategy o2) {
-            return Integer.compare(o1.getRank(), o2.getRank());
-          }
-        });
+    strategies.sort(Comparator.comparingInt(KimObservationStrategy::getRank));
   }
-
-  private QuickSemanticFilter computeInfo(KimObservationStrategy observationStrategy) {
-
-    Set<String> variables = new HashSet<>();
-    QuickSemanticFilter ret = new QuickSemanticFilter();
-
-    int nCollective = 0;
-    int nNoncollective = 0;
-
-    for (var filter : observationStrategy.getFilters()) {
-      for (var match : filter) {
-        // TODO negation is much more complicated
-        if (match.getMatch() != null) {
-          if (match.isNegated()) {
-            ret.semanticTypesBlacklist.add(
-                SemanticType.fundamentalType(match.getMatch().getType()));
-          } else {
-            ret.semanticTypesWhitelist.add(
-                SemanticType.fundamentalType(match.getMatch().getType()));
-          }
-          if (match.getMatch().isCollective()) {
-            nCollective++;
-          } else {
-            nNoncollective++;
-          }
-          variables.addAll(match.getMatch().getPatternVariables());
-        } else if (!match.getTypePattern().isEmpty()) {
-          ret.typePatterns.add(match.getTypePattern());
-        }
-      }
-    }
-
-    for (var operation : observationStrategy.getOperations()) {
-      if (operation.getObservable() != null) {
-        variables.addAll(operation.getObservable().getPatternVariables());
-      }
-    }
-
-    if ((nCollective == 0 && nNoncollective > 0) || (nCollective > 0 && nNoncollective == 0)) {
-      ret.collectiveConstraints = true;
-      ret.collectiveOnly = nCollective > 0;
-      ret.nonCollectiveOnly = nNoncollective > 0;
-    }
-
-    ret.fixedVariablesUsed.addAll(variables);
-    ret.fixedVariablesUsed.retainAll(defaultVariables);
-    ret.customVariablesUsed.addAll(variables);
-    ret.customVariablesUsed.removeAll(defaultVariables);
-
-    return ret;
-  }
-
-  public IdentificationStrategy computeIdentificationStrategy(
-      Observable observable, ContextScope scope) {
-    // bit of a stretch, but no harm done
-    // TODO check this - won't be called for the time being
-    var observation =
-        scope
-            .observation(observable)
-            .geometry(Geometry.UNIVERSAL)
-            .identity("dummy", "name")
-            .register();
-
-    var strategies = computeMatchingStrategies(observation, scope, false);
-    return strategies.isEmpty() ? null : new IdentificationStrategyImpl(strategies.getFirst());
+  public IdentificationStrategy computeIdentificationStrategy(Observable observable, ContextScope scope) {
+    var observation = scope.observation(observable).geometry(Geometry.UNIVERSAL).identity("dummy", "name").register();
+    var matches = computeMatchingStrategies(observation, scope, false);
+    return matches.isEmpty() ? null : new IdentificationStrategyImpl(matches.getFirst());
   }
 }

@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.modeler.model;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationPlan;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -25,6 +25,11 @@ public class NavigableObservationStrategies
       KimObservationStrategyDocument document, NavigableKlabAsset<?> parent) {
     super(document, parent);
   }
+
+  @Override public int getModelVersion() { return delegate.getModelVersion(); }
+  @Override public KimObservationPlan.Source getSource() { return delegate.getSource(); }
+  @Override public List<String> getImports() { return delegate.getImports(); }
+  @Override public Map<String, Object> getCoverage() { return delegate.getCoverage(); }
 
   @Override
   protected List<NavigableAsset> createChildren() {

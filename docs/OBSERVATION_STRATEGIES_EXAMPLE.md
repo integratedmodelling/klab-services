@@ -11,16 +11,20 @@ The baseline files are:
   with its names, ranks, comments, and spelling, including unresolved TODOs.
 - [Proposed translation](examples/observation-strategies/observations-proposed.txt), a design fixture
   covering all eight named strategies. Its `.txt` extension prevents it from masquerading as a
-  deployable document; neither its syntax nor its functors are implemented by this proposal.
+  deployable document. Its syntax now parses and adapts in the Observation regression suite;
+  its strategy semantic beans also round-trip through the registered Jackson interfaces.
+  The tier-0 forms also exercise initial Reasoner/Resolver lowering and dataflow compilation in
+  `ObservationPipelineTest`, with external services replaced by doubles. Rank-1 composition and
+  live runtime execution remain pending; see OBSERVATION S3c.
 - [Draft Observation.xtext](grammar/Observation.xtext) and [grammar notes](grammar/README.md),
-  maintained alongside the translation. Revision 0.1 uses `field = value` and
-  `capture name as pattern`; no generator-backed parser result is claimed.
+  maintained alongside the translation. Revision 0.3 uses `field = value` and
+  `capture name as pattern`; the generated parser passes the translation and its normalized
+  encode/reparse check. See the S3 progress record for syntax-bean validation evidence.
 
 **Confirmed by the maintainer:** commas between match alternatives mean **disjunction**. Do not
 reinterpret `for Subject, Agent, Relationship` as requiring all three categories. The existing
-syntax adapter's comma-to-`ALL` mapping conflicts with this intent; the current Reasoner evaluator
-can mask that discrepancy by accepting any successful filter. Preserve OR intentionally in the
-new AST/evaluator, rather than preserving the accidental disagreement. Commas inside argument
+legacy syntax adapter's comma-to-`ALL` mapping conflicted with this intent. The revised AST and
+Reasoner implement OR deliberately. Commas inside argument
 lists or a list of guard checks are separators, not automatically disjunctions; those productions
 need their own explicit contracts. The meaning of the legacy semicolon match connector remains
 an S1 decision, not something established by the comma clarification.

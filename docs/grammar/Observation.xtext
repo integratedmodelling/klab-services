@@ -1,9 +1,11 @@
 /*
- * RUNNING DESIGN DRAFT, revision 0.1. Not generator-validated or deployed.
+ * RUNNING DESIGN DRAFT, revision 0.3. See README.md for generation evidence.
  * See README.md in this directory and ../OBSERVATION.md.
  * Intended destination after review: the existing Observation.xtext in klab-languages.
  * This is a replacement AST sketch, not a drop-in compatible generated-model change.
  * No anonymous legacy deferral, implicit strategy apply, or implicit transform stack.
+ * Requires corrected ASCII identifier ranges in shared Observable.xtext.
+ * Do not override identifier terminals here: this changes lexer precedence.
  */
 grammar org.integratedmodelling.languages.Observation
     with org.integratedmodelling.languages.Observable
