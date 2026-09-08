@@ -141,18 +141,87 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    */
   interface Queries {
 
-    String REMOVE_CONTEXT = ("match (n:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + "})-[*]->(c) detach delete n, c");
-    String FIND_CONTEXT = ("MATCH (ctx:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + "}) RETURN ctx");
-    String CREATE_WITH_PROPERTIES = ("CREATE (n:{" + GraphModel.Fields.TYPE + "}) SET n = $" + GraphModel.Fields.PROPERTIES + " RETURN n");
+    String REMOVE_CONTEXT =
+        ("match (n:"
+            + GraphModel.Labels.CONTEXT
+            + " {"
+            + GraphModel.Fields.ID
+            + ": $"
+            + GraphModel.Fields.CONTEXT_ID
+            + "})-[*]->(c) detach delete n, c");
+    String FIND_CONTEXT =
+        ("MATCH (ctx:"
+            + GraphModel.Labels.CONTEXT
+            + " {"
+            + GraphModel.Fields.ID
+            + ": $"
+            + GraphModel.Fields.CONTEXT_ID
+            + "}) RETURN ctx");
+    String CREATE_WITH_PROPERTIES =
+        ("CREATE (n:{"
+            + GraphModel.Fields.TYPE
+            + "}) SET n = $"
+            + GraphModel.Fields.PROPERTIES
+            + " RETURN n");
     String CREATE_WITH_SHAPE =
-        ("CREATE (n:{" + GraphModel.Fields.TYPE + "}) SET n = $" + GraphModel.Fields.PROPERTIES + " WITH n CALL spatial.addNode($" + GraphModel.Fields.LAYER_NAME + ", n) YIELD node RETURN node");
-    String UPDATE_PROPERTIES = ("MATCH (n:{" + GraphModel.Fields.TYPE + "} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) SET n += $" + GraphModel.Fields.PROPERTIES + " RETURN n");
-    String UPDATE_PROPERTIES_GENERIC = ("MATCH (n {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) SET n += $" + GraphModel.Fields.PROPERTIES + " RETURN n");
+        ("CREATE (n:{"
+            + GraphModel.Fields.TYPE
+            + "}) SET n = $"
+            + GraphModel.Fields.PROPERTIES
+            + " WITH n CALL spatial.addNode($"
+            + GraphModel.Fields.LAYER_NAME
+            + ", n) YIELD node RETURN node");
+    String UPDATE_PROPERTIES =
+        ("MATCH (n:{"
+            + GraphModel.Fields.TYPE
+            + "} {"
+            + GraphModel.Fields.ID
+            + ": $"
+            + GraphModel.Fields.ID
+            + "}) SET n += $"
+            + GraphModel.Fields.PROPERTIES
+            + " RETURN n");
+    String UPDATE_PROPERTIES_GENERIC =
+        ("MATCH (n {"
+            + GraphModel.Fields.ID
+            + ": $"
+            + GraphModel.Fields.ID
+            + "}) SET n += $"
+            + GraphModel.Fields.PROPERTIES
+            + " RETURN n");
     String[] INITIALIZATION_QUERIES =
         new String[] {
-          ("MATCH (klab:" + GraphModel.Labels.AGENT + " {" + GraphModel.Fields.NAME + ": 'k.LAB'}), (" + GraphModel.Fields.USER + ":" + GraphModel.Labels.AGENT + " {" + GraphModel.Fields.NAME + ": $" + GraphModel.Fields.USERNAME + "}) CREATE // main context ")
+          ("MATCH (klab:"
+                  + GraphModel.Labels.AGENT
+                  + " {"
+                  + GraphModel.Fields.NAME
+                  + ": 'k.LAB'}), ("
+                  + GraphModel.Fields.USER
+                  + ":"
+                  + GraphModel.Labels.AGENT
+                  + " {"
+                  + GraphModel.Fields.NAME
+                  + ": $"
+                  + GraphModel.Fields.USERNAME
+                  + "}) CREATE // main context ")
               + "node\n"
-              + ("\t(ctx:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + ", " + GraphModel.Fields.NAME + ": $" + GraphModel.Fields.NAME + ", " + GraphModel.Fields.USER + ": $" + GraphModel.Fields.USERNAME + ", " + GraphModel.Fields.CREATED + ": ")
+              + ("\t(ctx:"
+                  + GraphModel.Labels.CONTEXT
+                  + " {"
+                  + GraphModel.Fields.ID
+                  + ": $"
+                  + GraphModel.Fields.CONTEXT_ID
+                  + ", "
+                  + GraphModel.Fields.NAME
+                  + ": $"
+                  + GraphModel.Fields.NAME
+                  + ", "
+                  + GraphModel.Fields.USER
+                  + ": $"
+                  + GraphModel.Fields.USERNAME
+                  + ", "
+                  + GraphModel.Fields.CREATED
+                  + ": ")
               + ("$" + GraphModel.Fields.TIMESTAMP + ", ")
               + (GraphModel.Fields.RIGHTS + ": $" + GraphModel.Fields.RIGHTS + ", ")
               + (GraphModel.Fields.FEDERATION + ": $" + GraphModel.Fields.FEDERATION + ", ")
@@ -160,18 +229,60 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + (GraphModel.Fields.LAST_UPDATE + ": $" + GraphModel.Fields.LAST_UPDATE + ", ")
               + (GraphModel.Fields.EXPIRATION + ": $" + GraphModel.Fields.EXPIRATION_TYPE + "}),\n")
               + "\t// main provenance and dataflow nodes\n"
-              + ("\t(prov:" + GraphModel.Labels.PROVENANCE + " {" + GraphModel.Fields.NAME + ": '" + GraphModel.Labels.PROVENANCE + "', " + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + " + '.PROVENANCE'}), ")
+              + ("\t(prov:"
+                  + GraphModel.Labels.PROVENANCE
+                  + " {"
+                  + GraphModel.Fields.NAME
+                  + ": '"
+                  + GraphModel.Labels.PROVENANCE
+                  + "', "
+                  + GraphModel.Fields.ID
+                  + ": $"
+                  + GraphModel.Fields.CONTEXT_ID
+                  + " + '.PROVENANCE'}), ")
               + ("(df:" + GraphModel.Labels.DATAFLOW + " ")
-              + ("{" + GraphModel.Fields.NAME + ": '" + GraphModel.Labels.DATAFLOW + "', " + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + " + '.DATAFLOW'}),\n")
+              + ("{"
+                  + GraphModel.Fields.NAME
+                  + ": '"
+                  + GraphModel.Labels.DATAFLOW
+                  + "', "
+                  + GraphModel.Fields.ID
+                  + ": $"
+                  + GraphModel.Fields.CONTEXT_ID
+                  + " + '.DATAFLOW'}),\n")
               + ("\t(ctx)-[:" + GraphModel.Relationship.HAS_PROVENANCE.name() + "]->(prov),\n")
               + ("\t(ctx)-[:" + GraphModel.Relationship.HAS_DATAFLOW.name() + "]->(df),\n")
-              + ("\t(prov)-[:" + GraphModel.Relationship.HAS_AGENT.name() + "]->(" + GraphModel.Fields.USER + "),\n")
+              + ("\t(prov)-[:"
+                  + GraphModel.Relationship.HAS_AGENT.name()
+                  + "]->("
+                  + GraphModel.Fields.USER
+                  + "),\n")
               + ("\t(prov)-[:" + GraphModel.Relationship.HAS_AGENT.name() + "]->(klab),\n")
               + "\t// ACTIVITY that created the whole thing\n"
-              + ("\t(creation:" + GraphModel.Labels.ACTIVITY + " {" + GraphModel.Fields.START + ": $" + GraphModel.Fields.TIMESTAMP + ", " + GraphModel.Fields.END + ": $" + GraphModel.Fields.TIMESTAMP + ", " + GraphModel.Fields.TYPE + ": ")
-              + ("'CONTEXT_INITIALIZATION', " + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ACTIVITY_ID + "}),\n")
+              + ("\t(creation:"
+                  + GraphModel.Labels.ACTIVITY
+                  + " {"
+                  + GraphModel.Fields.START
+                  + ": $"
+                  + GraphModel.Fields.TIMESTAMP
+                  + ", "
+                  + GraphModel.Fields.END
+                  + ": $"
+                  + GraphModel.Fields.TIMESTAMP
+                  + ", "
+                  + GraphModel.Fields.TYPE
+                  + ": ")
+              + ("'CONTEXT_INITIALIZATION', "
+                  + GraphModel.Fields.ID
+                  + ": $"
+                  + GraphModel.Fields.ACTIVITY_ID
+                  + "}),\n")
               + "\t// created by user\n"
-              + ("\t(creation)-[:" + GraphModel.Relationship.BY_AGENT.name() + "]->(" + GraphModel.Fields.USER + "),\n")
+              + ("\t(creation)-[:"
+                  + GraphModel.Relationship.BY_AGENT.name()
+                  + "]->("
+                  + GraphModel.Fields.USER
+                  + "),\n")
               + ("\t(ctx)<-[:" + GraphModel.Relationship.CREATED.name() + "]-(creation),\n")
               + ("(prov)-[:" + GraphModel.Relationship.HAS_CHILD.name() + "]->(creation)")
         };
@@ -433,7 +544,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     ensureRuntimeIndexes(scope);
 
-    var result = query(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()), scope);
+    var result =
+        query(
+            Queries.FIND_CONTEXT,
+            Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()),
+            scope);
 
     if (result.records().isEmpty()) {
 
@@ -479,7 +594,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       String layerName = getShapeLayerName(configuration.getId());
       var layerCheck =
           query(
-              ("CALL spatial.layers() YIELD " + GraphModel.Fields.NAME + " WHERE " + GraphModel.Fields.NAME + " = $" + GraphModel.Fields.LAYER_NAME + " RETURN count(" + GraphModel.Fields.NAME + ") > 0 AS " + GraphModel.Fields.EXISTS),
+              ("CALL spatial.layers() YIELD "
+                  + GraphModel.Fields.NAME
+                  + " WHERE "
+                  + GraphModel.Fields.NAME
+                  + " = $"
+                  + GraphModel.Fields.LAYER_NAME
+                  + " RETURN count("
+                  + GraphModel.Fields.NAME
+                  + ") > 0 AS "
+                  + GraphModel.Fields.EXISTS),
               Map.of(GraphModel.Fields.LAYER_NAME, layerName),
               scope);
       boolean layerExists =
@@ -488,7 +612,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               && layerCheck.records().getFirst().get(GraphModel.Fields.EXISTS).asBoolean(false);
       if (!layerExists) {
         query(
-            ("CALL spatial.addLayer($" + GraphModel.Fields.LAYER_NAME + ", 'WKB', '" + GraphModel.Fields.SHAPE + "')"),
+            ("CALL spatial.addLayer($"
+                + GraphModel.Fields.LAYER_NAME
+                + ", 'WKB', '"
+                + GraphModel.Fields.SHAPE
+                + "')"),
             Map.of(GraphModel.Fields.LAYER_NAME, layerName),
             scope);
       }
@@ -498,17 +626,61 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private void ensureRuntimeIndexes(Scope scope) {
     for (var statement :
         List.of(
-            ("CREATE INDEX observation_id IF NOT EXISTS FOR (n:" + GraphModel.Labels.OBSERVATION + ") ON (n." + GraphModel.Fields.ID + ")"),
-            ("CREATE INDEX observation_urn IF NOT EXISTS FOR (n:" + GraphModel.Labels.OBSERVATION + ") ON (n." + GraphModel.Fields.URN + ")"),
-            ("CREATE INDEX observation_semantics IF NOT EXISTS FOR (n:" + GraphModel.Labels.OBSERVATION + ") ON (n." + GraphModel.Fields.SEMANTICS + ")"),
-            ("CREATE INDEX observation_observable IF NOT EXISTS FOR (n:" + GraphModel.Labels.OBSERVATION + ") ON (n." + GraphModel.Fields.OBSERVABLE + ")"),
-            ("CREATE INDEX cohort_id IF NOT EXISTS FOR (n:" + GraphModel.Labels.COHORT + ") ON (n." + GraphModel.Fields.ID + ")"),
-            ("CREATE INDEX cohort_urn IF NOT EXISTS FOR (n:" + GraphModel.Labels.COHORT + ") ON (n." + GraphModel.Fields.URN + ")"),
-            ("CREATE INDEX cohort_observable IF NOT EXISTS FOR (n:" + GraphModel.Labels.COHORT + ") ON (n." + GraphModel.Fields.OBSERVABLE + ")"),
-            ("CREATE INDEX activity_id IF NOT EXISTS FOR (n:" + GraphModel.Labels.ACTIVITY + ") ON (n." + GraphModel.Fields.ID + ")"),
-            ("CREATE INDEX activity_urn IF NOT EXISTS FOR (n:" + GraphModel.Labels.ACTIVITY + ") ON (n." + GraphModel.Fields.URN + ")"),
-            ("CREATE INDEX data_id IF NOT EXISTS FOR (n:" + GraphModel.Labels.DATA + ") ON (n." + GraphModel.Fields.ID + ")"),
-            ("CREATE INDEX data_urn IF NOT EXISTS FOR (n:" + GraphModel.Labels.DATA + ") ON (n." + GraphModel.Fields.URN + ")"))) {
+            ("CREATE INDEX observation_id IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.OBSERVATION
+                + ") ON (n."
+                + GraphModel.Fields.ID
+                + ")"),
+            ("CREATE INDEX observation_urn IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.OBSERVATION
+                + ") ON (n."
+                + GraphModel.Fields.URN
+                + ")"),
+            ("CREATE INDEX observation_semantics IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.OBSERVATION
+                + ") ON (n."
+                + GraphModel.Fields.SEMANTICS
+                + ")"),
+            ("CREATE INDEX observation_observable IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.OBSERVATION
+                + ") ON (n."
+                + GraphModel.Fields.OBSERVABLE
+                + ")"),
+            ("CREATE INDEX cohort_id IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.COHORT
+                + ") ON (n."
+                + GraphModel.Fields.ID
+                + ")"),
+            ("CREATE INDEX cohort_urn IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.COHORT
+                + ") ON (n."
+                + GraphModel.Fields.URN
+                + ")"),
+            ("CREATE INDEX cohort_observable IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.COHORT
+                + ") ON (n."
+                + GraphModel.Fields.OBSERVABLE
+                + ")"),
+            ("CREATE INDEX activity_id IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.ACTIVITY
+                + ") ON (n."
+                + GraphModel.Fields.ID
+                + ")"),
+            ("CREATE INDEX activity_urn IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.ACTIVITY
+                + ") ON (n."
+                + GraphModel.Fields.URN
+                + ")"),
+            ("CREATE INDEX data_id IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.DATA
+                + ") ON (n."
+                + GraphModel.Fields.ID
+                + ")"),
+            ("CREATE INDEX data_urn IF NOT EXISTS FOR (n:"
+                + GraphModel.Labels.DATA
+                + ") ON (n."
+                + GraphModel.Fields.URN
+                + ")"))) {
       query(statement, Map.of(), scope);
     }
   }
@@ -517,7 +689,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         adapt(
             query(
-                ("MATCH (a:" + GraphModel.Labels.AGENT + " {" + GraphModel.Fields.NAME + ": $" + GraphModel.Fields.AGENT_NAME + "}) RETURN a"),
+                ("MATCH (a:"
+                    + GraphModel.Labels.AGENT
+                    + " {"
+                    + GraphModel.Fields.NAME
+                    + ": $"
+                    + GraphModel.Fields.AGENT_NAME
+                    + "}) RETURN a"),
                 Map.of(GraphModel.Fields.AGENT_NAME, name),
                 userScope),
             Agent.class,
@@ -546,7 +724,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
     query(
         ("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")"),
-        Map.of(GraphModel.Fields.LAYER_NAME, getShapeLayerName(contextScope.getConfiguration().getId())),
+        Map.of(
+            GraphModel.Fields.LAYER_NAME,
+            getShapeLayerName(contextScope.getConfiguration().getId())),
         userScope);
     query(
         Queries.REMOVE_CONTEXT,
@@ -635,7 +815,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var instance = new CohortImpl();
         var reasoner = scope.getService(Reasoner.class);
 
-        instance.setObservable(reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
+        instance.setObservable(
+            reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
         instance.setUrn(node.get(GraphModel.Fields.URN).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
@@ -643,7 +824,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (!node.get(GraphModel.Fields.GEOMETRY).isNull()) {
           // TODO remove - this is a backward-compatibility check when the code is still tentative
           instance.setGeometry(
-              GeometryRepository.INSTANCE.get(node.get(GraphModel.Fields.GEOMETRY).asString(), Geometry.class));
+              GeometryRepository.INSTANCE.get(
+                  node.get(GraphModel.Fields.GEOMETRY).asString(), Geometry.class));
         }
 
         ret.add((T) instance);
@@ -654,17 +836,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var reasoner = scope.getService(Reasoner.class);
 
         instance.setName(node.get(GraphModel.Fields.NAME).asString());
-        instance.setObservable(reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
+        instance.setObservable(
+            reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
         instance.setUrn(node.get(GraphModel.Fields.URN).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
         instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
-        instance.setEventTimestamps(node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
+        instance.setEventTimestamps(
+            node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
         restoreObservationMetadata(node, instance);
         if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
           instance.setHistograms(
-              Utils.Data.deserializeHistogramMap(node.get(GraphModel.Fields.HISTOGRAMS).asString()));
+              Utils.Data.deserializeHistogramMap(
+                  node.get(GraphModel.Fields.HISTOGRAMS).asString()));
         } else if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
           // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
           // be recovered, so retain it under the initialization timestamp until the observation is
@@ -672,7 +857,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           instance.setHistograms(
               Map.of(
                   0L,
-                  Utils.Json.parseObject(node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
+                  Utils.Json.parseObject(
+                      node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
         }
         //        var instanceUrn = node.get(GraphModel.Fields.URN).asString();
         //        if (instanceUrn != null) {
@@ -683,18 +869,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         cData.setServiceUrl(service.getUrl());
         cData.setServiceId(serviceId);
         cData.setAdapterId(
-            node.get(GraphModel.Fields.ADAPTER_ID).isNull() ? null : node.get(GraphModel.Fields.ADAPTER_ID).asString());
+            node.get(GraphModel.Fields.ADAPTER_ID).isNull()
+                ? null
+                : node.get(GraphModel.Fields.ADAPTER_ID).asString());
         if (!node.get(GraphModel.Fields.ADAPTER_PARAMETERS).isNull()) {
           var params =
-              Utils.Json.parseObject(node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
+              Utils.Json.parseObject(
+                  node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
           cData.getParameters().putAll(params);
         }
 
         // sharding strategy, if any.
         if (!node.get(GraphModel.Fields.FILL_CURVE).isNull()) {
           var shardingStrategy = new Data.ShardingStrategy();
-          shardingStrategy.setDataType(Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
-          shardingStrategy.setCurve(Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
+          shardingStrategy.setDataType(
+              Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
+          shardingStrategy.setCurve(
+              Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
           shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
           shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
           shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
@@ -705,7 +896,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         var gResult =
             query(
-                ("MATCH (o:" + GraphModel.Labels.OBSERVATION + ")-[:" + GraphModel.Relationship.HAS_GEOMETRY.name() + "]->(g:" + GraphModel.Labels.GEOMETRY + ") WHERE o." + GraphModel.Fields.ID)
+                ("MATCH (o:"
+                        + GraphModel.Labels.OBSERVATION
+                        + ")-[:"
+                        + GraphModel.Relationship.HAS_GEOMETRY.name()
+                        + "]->(g:"
+                        + GraphModel.Labels.GEOMETRY
+                        + ") WHERE o."
+                        + GraphModel.Fields.ID)
                     + (" = $" + GraphModel.Fields.ID + " RETURN g"),
                 Map.of(GraphModel.Fields.ID, node.get(GraphModel.Fields.ID).asLong()),
                 scope);
@@ -721,30 +919,49 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setStart(node.get(GraphModel.Fields.START).asLong(0));
         instance.setEnd(node.get(GraphModel.Fields.END).asLong(0));
         instance.setObservationUrn(
-            node.get(GraphModel.Fields.OBSERVATION_URN).isNull() ? null : node.get(GraphModel.Fields.OBSERVATION_URN).asString());
-        instance.setName(node.get(GraphModel.Fields.NAME).isNull() ? null : node.get(GraphModel.Fields.NAME).asString());
+            node.get(GraphModel.Fields.OBSERVATION_URN).isNull()
+                ? null
+                : node.get(GraphModel.Fields.OBSERVATION_URN).asString());
+        instance.setName(
+            node.get(GraphModel.Fields.NAME).isNull()
+                ? null
+                : node.get(GraphModel.Fields.NAME).asString());
         instance.setServiceName(
-            node.get(GraphModel.Fields.SERVICE_NAME).isNull() ? null : node.get(GraphModel.Fields.SERVICE_NAME).asString());
+            node.get(GraphModel.Fields.SERVICE_NAME).isNull()
+                ? null
+                : node.get(GraphModel.Fields.SERVICE_NAME).asString());
         instance.setServiceId(
-            node.get(GraphModel.Fields.SERVICE_ID).isNull() ? null : node.get(GraphModel.Fields.SERVICE_ID).asString());
+            node.get(GraphModel.Fields.SERVICE_ID).isNull()
+                ? null
+                : node.get(GraphModel.Fields.SERVICE_ID).asString());
         instance.setServiceType(
             node.get(GraphModel.Fields.SERVICE_TYPE).isNull()
                 ? null
                 : KlabService.Type.valueOf(node.get(GraphModel.Fields.SERVICE_TYPE).asString()));
-        instance.setUrn(node.get(GraphModel.Fields.URN).isNull() ? null : node.get(GraphModel.Fields.URN).asString());
+        instance.setUrn(
+            node.get(GraphModel.Fields.URN).isNull()
+                ? null
+                : node.get(GraphModel.Fields.URN).asString());
         instance.setDataflow(
-            node.get(GraphModel.Fields.DATAFLOW).isNull() ? null : node.get(GraphModel.Fields.DATAFLOW).asString());
+            node.get(GraphModel.Fields.DATAFLOW).isNull()
+                ? null
+                : node.get(GraphModel.Fields.DATAFLOW).asString());
         instance.setType(
-            node.get(GraphModel.Fields.TYPE).isNull() ? null : Activity.Type.valueOf(node.get(GraphModel.Fields.TYPE).asString()));
+            node.get(GraphModel.Fields.TYPE).isNull()
+                ? null
+                : Activity.Type.valueOf(node.get(GraphModel.Fields.TYPE).asString()));
         instance.setOutcome(
             node.get(GraphModel.Fields.OUTCOME).isNull()
                 ? null
                 : Activity.Outcome.valueOf(node.get(GraphModel.Fields.OUTCOME).asString()));
         instance.setCredits(node.get(GraphModel.Fields.CREDITS).asLong(0));
         instance.setSize(node.get(GraphModel.Fields.SIZE).asLong(0));
-        instance.setSchedulerTime(node.get(GraphModel.Fields.SCHEDULER_TIME).asList(value -> value.asLong()));
+        instance.setSchedulerTime(
+            node.get(GraphModel.Fields.SCHEDULER_TIME).asList(value -> value.asLong()));
         instance.setStackTrace(
-            node.get(GraphModel.Fields.STACK_TRACE).isNull() ? null : node.get(GraphModel.Fields.STACK_TRACE).asString());
+            node.get(GraphModel.Fields.STACK_TRACE).isNull()
+                ? null
+                : node.get(GraphModel.Fields.STACK_TRACE).asString());
         instance.setTriggeringActivityUrn(
             node.get(GraphModel.Fields.TRIGGERING_ACTIVITY_URN).isNull()
                 ? null
@@ -765,32 +982,51 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setStrategyUrn(node.get(GraphModel.Fields.STRATEGY).asString(null));
         instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt(0));
         if (!node.get(GraphModel.Fields.TYPE).isNull()) {
-          instance.setType(org.integratedmodelling.klab.api.knowledge.Artifact.Type.valueOf(node.get(GraphModel.Fields.TYPE).asString()));
+          instance.setType(
+              org.integratedmodelling.klab.api.knowledge.Artifact.Type.valueOf(
+                  node.get(GraphModel.Fields.TYPE).asString()));
         }
         if (!node.get(GraphModel.Fields.ACTUATOR_TYPE).isNull()) {
-          instance.setActuatorType(Actuator.Type.valueOf(node.get(GraphModel.Fields.ACTUATOR_TYPE).asString()));
+          instance.setActuatorType(
+              Actuator.Type.valueOf(node.get(GraphModel.Fields.ACTUATOR_TYPE).asString()));
         }
         if (!node.get(GraphModel.Fields.COVERAGE).isNull()) {
           instance.setCoverage(Geometry.create(node.get(GraphModel.Fields.COVERAGE).asString()));
         }
         if (!node.get(GraphModel.Fields.RESOLVED_GEOMETRY).isNull()) {
-          instance.setResolvedGeometry(Geometry.create(node.get(GraphModel.Fields.RESOLVED_GEOMETRY).asString()));
+          instance.setResolvedGeometry(
+              Geometry.create(node.get(GraphModel.Fields.RESOLVED_GEOMETRY).asString()));
         }
         instance.setResolvedCoverage(node.get(GraphModel.Fields.RESOLVED_COVERAGE).asDouble(0));
         // Legacy textual computations are not a lossless executable representation. Leave them
         // unavailable rather than fabricating runnable calls from incomplete historical nodes.
         if (node.get(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION).asInt(0) == 1) {
           if (!node.get(GraphModel.Fields.DATA_JSON).isNull()) {
-            instance.setData(Utils.Json.parseObject(node.get(GraphModel.Fields.DATA_JSON).asString(), Parameters.class));
+            instance.setData(
+                Utils.Json.parseObject(
+                    node.get(GraphModel.Fields.DATA_JSON).asString(), Parameters.class));
           }
-          instance.setComputation(node.get(GraphModel.Fields.COMPUTATION_JSON).asList(value ->
-              Utils.Json.parseObject(value.asString(), org.integratedmodelling.klab.api.lang.ServiceCall.class)));
+          instance.setComputation(
+              node.get(GraphModel.Fields.COMPUTATION_JSON)
+                  .asList(
+                      value ->
+                          Utils.Json.parseObject(
+                              value.asString(),
+                              org.integratedmodelling.klab.api.lang.ServiceCall.class)));
           if (!node.get(GraphModel.Fields.ANNOTATIONS_JSON).isNull()) {
-            instance.setAnnotations(node.get(GraphModel.Fields.ANNOTATIONS_JSON).asList(value ->
-                Utils.Json.parseObject(value.asString(), org.integratedmodelling.klab.api.lang.Annotation.class)));
+            instance.setAnnotations(
+                node.get(GraphModel.Fields.ANNOTATIONS_JSON)
+                    .asList(
+                        value ->
+                            Utils.Json.parseObject(
+                                value.asString(),
+                                org.integratedmodelling.klab.api.lang.Annotation.class)));
           }
           if (!node.get(GraphModel.Fields.SHARDING_STRATEGY_JSON).isNull()) {
-            instance.setShardingStrategy(Utils.Json.parseObject(node.get(GraphModel.Fields.SHARDING_STRATEGY_JSON).asString(), Data.ShardingStrategy.class));
+            instance.setShardingStrategy(
+                Utils.Json.parseObject(
+                    node.get(GraphModel.Fields.SHARDING_STRATEGY_JSON).asString(),
+                    Data.ShardingStrategy.class));
           }
         }
         ret.add((T) instance);
@@ -804,12 +1040,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       } else if (Geometry.class.isAssignableFrom(cls)) {
         // TODO use a cache storing scales
         ret.add(
-            (T) GeometryRepository.INSTANCE.get(node.get(GraphModel.Fields.DEFINITION).asString(), Geometry.class));
+            (T)
+                GeometryRepository.INSTANCE.get(
+                    node.get(GraphModel.Fields.DEFINITION).asString(), Geometry.class));
       } else if (Storage.Shard.class.isAssignableFrom(cls)) {
 
         var shardingStrategy = new Data.ShardingStrategy();
-        shardingStrategy.setDataType(Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
-        shardingStrategy.setCurve(Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
+        shardingStrategy.setDataType(
+            Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
+        shardingStrategy.setCurve(
+            Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
         shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
         shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
         shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
@@ -818,19 +1058,30 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setUrn(node.get(GraphModel.Fields.URN).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setShardCount(node.get(GraphModel.Fields.SHARD_COUNT).asInt());
-        instance.setNativeType(Storage.Type.valueOf(node.get(GraphModel.Fields.NATIVE_TYPE).asString()));
+        instance.setNativeType(
+            Storage.Type.valueOf(node.get(GraphModel.Fields.NATIVE_TYPE).asString()));
         instance.setTimestamp(node.get(GraphModel.Fields.TIMESTAMP).asLong());
         instance.setShardIndex(node.get(GraphModel.Fields.SHARD_INDEX).asInt());
-        instance.setPersistence(Persistence.valueOf(node.get(GraphModel.Fields.PERSISTENCE).asString()));
+        instance.setPersistence(
+            Persistence.valueOf(node.get(GraphModel.Fields.PERSISTENCE).asString()));
         if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
           instance.setHistogram(
-              Utils.Json.parseObject(node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class));
+              Utils.Json.parseObject(
+                  node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class));
         }
         instance.setShardingStrategy(shardingStrategy);
 
         var gResult =
             query(
-                ("MATCH (o:" + GraphModel.Labels.DATA + ")-[:" + GraphModel.Relationship.HAS_GEOMETRY.name() + "]->(g:" + GraphModel.Labels.GEOMETRY + ") WHERE o." + GraphModel.Fields.URN) + (" = $" + GraphModel.Fields.URN + " RETURN g"),
+                ("MATCH (o:"
+                        + GraphModel.Labels.DATA
+                        + ")-[:"
+                        + GraphModel.Relationship.HAS_GEOMETRY.name()
+                        + "]->(g:"
+                        + GraphModel.Labels.GEOMETRY
+                        + ") WHERE o."
+                        + GraphModel.Fields.URN)
+                    + (" = $" + GraphModel.Fields.URN + " RETURN g"),
                 Map.of(GraphModel.Fields.URN, node.get(GraphModel.Fields.URN).asString()),
                 scope);
 
@@ -861,7 +1112,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @SuppressWarnings("unchecked")
   private void restoreMetadata(Value node, Metadata metadataTarget) {
     if (!node.get(GraphModel.Fields.METADATA).isNull()) {
-      var metadata = Utils.Json.parseObject(node.get(GraphModel.Fields.METADATA).asString(), Map.class);
+      var metadata =
+          Utils.Json.parseObject(node.get(GraphModel.Fields.METADATA).asString(), Map.class);
       if (metadata != null) {
         metadataTarget.putAll(metadata);
       }
@@ -886,7 +1138,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
       var result =
           query(
-              ("MATCH (o:" + GraphModel.Labels.OBSERVATION + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "})-[:" + GraphModel.Relationship.HAS_GEOMETRY.name() + "]->(g:" + GraphModel.Labels.GEOMETRY + ") RETURN g"),
+              ("MATCH (o:"
+                  + GraphModel.Labels.OBSERVATION
+                  + " {"
+                  + GraphModel.Fields.ID
+                  + ": $"
+                  + GraphModel.Fields.ID
+                  + "})-[:"
+                  + GraphModel.Relationship.HAS_GEOMETRY.name()
+                  + "]->(g:"
+                  + GraphModel.Labels.GEOMETRY
+                  + ") RETURN g"),
               Map.of(GraphModel.Fields.ID, observation.getId()),
               scope);
       if (result != null && !result.records().isEmpty()) {
@@ -962,11 +1224,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             MATCH (:%s {%s: $%s})-[:%s]->(node:%s)
             WHERE node.%s IS NOT NULL
             RETURN node.%s AS %s
-            """.formatted(GraphModel.Fields.LAYER_NAME, GraphModel.Fields.LOWER_LEFT,
-                GraphModel.Fields.UPPER_RIGHT, GraphModel.Labels.COHORT, GraphModel.Fields.ID,
-                GraphModel.Fields.COHORT_ID, GraphModel.Relationship.HAS_MEMBER.name(),
-                GraphModel.Labels.OBSERVATION, GraphModel.Fields.SHAPE, GraphModel.Fields.SHAPE,
-                GraphModel.Fields.SHAPE),
+            """
+                .formatted(
+                    GraphModel.Fields.LAYER_NAME,
+                    GraphModel.Fields.LOWER_LEFT,
+                    GraphModel.Fields.UPPER_RIGHT,
+                    GraphModel.Labels.COHORT,
+                    GraphModel.Fields.ID,
+                    GraphModel.Fields.COHORT_ID,
+                    GraphModel.Relationship.HAS_MEMBER.name(),
+                    GraphModel.Labels.OBSERVATION,
+                    GraphModel.Fields.SHAPE,
+                    GraphModel.Fields.SHAPE,
+                    GraphModel.Fields.SHAPE),
             Map.of(
                 GraphModel.Fields.LAYER_NAME,
                 getShapeLayerName(),
@@ -1025,21 +1295,51 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         scope == null
             ? query(
-                ("match (c:" + GraphModel.Labels.CONTEXT + ")<-[:" + GraphModel.Relationship.CREATED.name() + "]-(a:" + GraphModel.Labels.ACTIVITY + ") return c." + GraphModel.Fields.ID + " as " + GraphModel.Fields.CONTEXT_ID + ", a." + GraphModel.Fields.START + " as ")
+                ("match (c:"
+                        + GraphModel.Labels.CONTEXT
+                        + ")<-[:"
+                        + GraphModel.Relationship.CREATED.name()
+                        + "]-(a:"
+                        + GraphModel.Labels.ACTIVITY
+                        + ") return c."
+                        + GraphModel.Fields.ID
+                        + " as "
+                        + GraphModel.Fields.CONTEXT_ID
+                        + ", a."
+                        + GraphModel.Fields.START
+                        + " as ")
                     + GraphModel.Fields.START_TIME,
                 Map.of(),
                 scope)
             : query(
-                ("match (c:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.USER + ": $" + GraphModel.Fields.USERNAME + "})<-[:" + GraphModel.Relationship.CREATED.name() + "]-(a:" + GraphModel.Labels.ACTIVITY + ") return c")
+                ("match (c:"
+                        + GraphModel.Labels.CONTEXT
+                        + " {"
+                        + GraphModel.Fields.USER
+                        + ": $"
+                        + GraphModel.Fields.USERNAME
+                        + "})<-[:"
+                        + GraphModel.Relationship.CREATED.name()
+                        + "]-(a:"
+                        + GraphModel.Labels.ACTIVITY
+                        + ") return c")
                     + ("." + GraphModel.Fields.NAME + " as")
-                    + (" contextName, c." + GraphModel.Fields.ID + " as " + GraphModel.Fields.CONTEXT_ID + ", a." + GraphModel.Fields.START + " as " + GraphModel.Fields.START_TIME),
+                    + (" contextName, c."
+                        + GraphModel.Fields.ID
+                        + " as "
+                        + GraphModel.Fields.CONTEXT_ID
+                        + ", a."
+                        + GraphModel.Fields.START
+                        + " as "
+                        + GraphModel.Fields.START_TIME),
                 Map.of(GraphModel.Fields.USERNAME, scope.getUser().getUsername()),
                 scope);
 
     for (var record : result.records()) {
       ContextInfo info = new ContextInfo();
       info.setCreationTime(record.get(GraphModel.Fields.START_TIME).asLong());
-      info.setIdleTimeMs(System.currentTimeMillis() - record.get(GraphModel.Fields.LAST_UPDATE).asLong());
+      info.setIdleTimeMs(
+          System.currentTimeMillis() - record.get(GraphModel.Fields.LAST_UPDATE).asLong());
       info.setConfiguration(
           DigitalTwin.Configuration.builder()
               .url(
@@ -1085,9 +1385,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var field = key instanceof String ? GraphModel.Fields.URN : GraphModel.Fields.ID;
     var result =
         assetClass == RuntimeAsset.class
-            ? query("MATCH (n {" + field + (": $" + GraphModel.Fields.KEY + "}) return n"), Map.of(GraphModel.Fields.KEY, key), scope)
+            ? query(
+                "MATCH (n {" + field + (": $" + GraphModel.Fields.KEY + "}) return n"),
+                Map.of(GraphModel.Fields.KEY, key),
+                scope)
             : query(
-                ("MATCH (n:{assetLabel} {" + field + (": $" + GraphModel.Fields.KEY + "}) return n"))
+                ("MATCH (n:{assetLabel} {"
+                        + field
+                        + (": $" + GraphModel.Fields.KEY + "}) return n"))
                     .replace("{assetLabel}", getLabel(assetClass)),
                 Map.of(GraphModel.Fields.KEY, key),
                 scope);
@@ -1222,7 +1527,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var parameters =
         storeSpatialData
-            ? Map.<String, Object>of(GraphModel.Fields.PROPERTIES, props, GraphModel.Fields.LAYER_NAME, getShapeLayerName())
+            ? Map.<String, Object>of(
+                GraphModel.Fields.PROPERTIES,
+                props,
+                GraphModel.Fields.LAYER_NAME,
+                getShapeLayerName())
             : Map.<String, Object>of(GraphModel.Fields.PROPERTIES, props);
     var result = query(transaction, query, parameters, scope);
     if (result != null && result.hasNext()) {
@@ -1245,7 +1554,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       // KLAB-DEBUG-GUARD: preserve the current no-ID-assignment path when CREATE produces no
       // record, but identify it before the caller records the asset as stored.
       Logging.INSTANCE.warn(
-          ("KLAB-DEBUG-GUARD: " + "KG" + " CREATE returned no node record: class={} generatedId={} " + GraphModel.Fields.ASSET_ID + "={}"),
+          ("KLAB-DEBUG-GUARD: "
+              + "KG"
+              + " CREATE returned no node record: class={} generatedId={} "
+              + GraphModel.Fields.ASSET_ID
+              + "={}"),
           asset.getClass().getName(),
           ret,
           asset.getId());
@@ -1268,7 +1581,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(null, additionalProperties);
     var query =
         ("MATCH (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)"
-                + ("-[r:{relationshipLabel}]->(c) SET r = $" + GraphModel.Fields.PROPERTIES + " RETURN r"))
+                + ("-[r:{relationshipLabel}]->(c) SET r = $"
+                    + GraphModel.Fields.PROPERTIES
+                    + " RETURN r"))
             .replace("{sourceQuery}", sourceQuery)
             .replace("{targetQuery}", targetQuery)
             .replace("{relationshipLabel}", relationship.name())
@@ -1278,7 +1593,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     query(
         transaction,
         query,
-        Map.of(GraphModel.Fields.SOURCE_ID, getId(source), GraphModel.Fields.TARGET_ID, getId(destination), GraphModel.Fields.PROPERTIES, props),
+        Map.of(
+            GraphModel.Fields.SOURCE_ID,
+            getId(source),
+            GraphModel.Fields.TARGET_ID,
+            getId(destination),
+            GraphModel.Fields.PROPERTIES,
+            props),
         scope);
   }
 
@@ -1294,14 +1615,26 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var exists =
         transaction == null
             ? query(
-                ("MATCH (n:{assetLabel} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ASSET_ID + "})-[:{relationship}]->(g:" + GraphModel.Labels.GEOMETRY + ") RETURN g")
+                ("MATCH (n:{assetLabel} {"
+                        + GraphModel.Fields.ID
+                        + ": $"
+                        + GraphModel.Fields.ASSET_ID
+                        + "})-[:{relationship}]->(g:"
+                        + GraphModel.Labels.GEOMETRY
+                        + ") RETURN g")
                     .replace("{assetLabel}", getLabel(asset))
                     .replace("{relationship}", relationship),
                 Map.of(GraphModel.Fields.ASSET_ID, getId(asset)),
                 userScope)
             : query(
                 transaction,
-                ("MATCH (n:{assetLabel} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ASSET_ID + "})-[:{relationship}]->(g:" + GraphModel.Labels.GEOMETRY + ") RETURN g")
+                ("MATCH (n:{assetLabel} {"
+                        + GraphModel.Fields.ID
+                        + ": $"
+                        + GraphModel.Fields.ASSET_ID
+                        + "})-[:{relationship}]->(g:"
+                        + GraphModel.Labels.GEOMETRY
+                        + ") RETURN g")
                     .replace("{assetLabel}", getLabel(asset))
                     .replace("{relationship}", relationship),
                 Map.of(GraphModel.Fields.ASSET_ID, getId(asset)),
@@ -1317,7 +1650,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     double coverage = geometry instanceof Coverage cov ? cov.getCoverage() : 1.0;
 
     // the idea is that looking up the size before the monster string can be faster.
-    var query = ("MATCH (g:" + GraphModel.Labels.GEOMETRY + ") WHERE g." + GraphModel.Fields.DEFINITION + " = $" + GraphModel.Fields.DEFINITION + " RETURN g");
+    var query =
+        ("MATCH (g:"
+            + GraphModel.Labels.GEOMETRY
+            + ") WHERE g."
+            + GraphModel.Fields.DEFINITION
+            + " = $"
+            + GraphModel.Fields.DEFINITION
+            + " RETURN g");
     var result =
         transaction == null
             ? query(query, Map.of(GraphModel.Fields.DEFINITION, encoded), userScope)
@@ -1327,14 +1667,54 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       // TODO more geometry data (bounding box, time boundaries etc.)
       if (transaction == null) {
         query(
-            ("CREATE (g:" + GraphModel.Labels.GEOMETRY + " {" + GraphModel.Fields.SIZE + ": $" + GraphModel.Fields.SIZE + ", " + GraphModel.Fields.DEFINITION + ": $" + GraphModel.Fields.DEFINITION + ", " + GraphModel.Fields.KEY + ": $" + GraphModel.Fields.KEY + "}) RETURN g"),
-            Map.of(GraphModel.Fields.SIZE, geometry.size(), GraphModel.Fields.DEFINITION, encoded, GraphModel.Fields.KEY, geometry.key()),
+            ("CREATE (g:"
+                + GraphModel.Labels.GEOMETRY
+                + " {"
+                + GraphModel.Fields.SIZE
+                + ": $"
+                + GraphModel.Fields.SIZE
+                + ", "
+                + GraphModel.Fields.DEFINITION
+                + ": $"
+                + GraphModel.Fields.DEFINITION
+                + ", "
+                + GraphModel.Fields.KEY
+                + ": $"
+                + GraphModel.Fields.KEY
+                + "}) RETURN g"),
+            Map.of(
+                GraphModel.Fields.SIZE,
+                geometry.size(),
+                GraphModel.Fields.DEFINITION,
+                encoded,
+                GraphModel.Fields.KEY,
+                geometry.key()),
             userScope);
       } else {
         query(
             transaction,
-            ("CREATE (g:" + GraphModel.Labels.GEOMETRY + " {" + GraphModel.Fields.SIZE + ": $" + GraphModel.Fields.SIZE + ", " + GraphModel.Fields.DEFINITION + ": $" + GraphModel.Fields.DEFINITION + ", " + GraphModel.Fields.KEY + ": $" + GraphModel.Fields.KEY + "}) RETURN g"),
-            Map.of(GraphModel.Fields.SIZE, geometry.size(), GraphModel.Fields.DEFINITION, encoded, GraphModel.Fields.KEY, geometry.key()),
+            ("CREATE (g:"
+                + GraphModel.Labels.GEOMETRY
+                + " {"
+                + GraphModel.Fields.SIZE
+                + ": $"
+                + GraphModel.Fields.SIZE
+                + ", "
+                + GraphModel.Fields.DEFINITION
+                + ": $"
+                + GraphModel.Fields.DEFINITION
+                + ", "
+                + GraphModel.Fields.KEY
+                + ": $"
+                + GraphModel.Fields.KEY
+                + "}) RETURN g"),
+            Map.of(
+                GraphModel.Fields.SIZE,
+                geometry.size(),
+                GraphModel.Fields.DEFINITION,
+                encoded,
+                GraphModel.Fields.KEY,
+                geometry.key()),
             userScope);
       }
     }
@@ -1346,21 +1726,55 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var rel =
         transaction == null
             ? query(
-                (("MATCH (n:{assetLabel}), (g:" + GraphModel.Labels.GEOMETRY + ") WHERE n." + GraphModel.Fields.ID + " = $" + GraphModel.Fields.ASSET_ID + " AND g." + GraphModel.Fields.DEFINITION + " = $" + GraphModel.Fields.GEOMETRY_KEY)
+                (("MATCH (n:{assetLabel}), (g:"
+                            + GraphModel.Labels.GEOMETRY
+                            + ") WHERE n."
+                            + GraphModel.Fields.ID
+                            + " = $"
+                            + GraphModel.Fields.ASSET_ID
+                            + " AND g."
+                            + GraphModel.Fields.DEFINITION
+                            + " = $"
+                            + GraphModel.Fields.GEOMETRY_KEY)
                         + " CREATE (n)" // b
-                        + ("-[r:{relationship}]->(g) SET r = $" + GraphModel.Fields.PROPERTIES + " RETURN r"))
+                        + ("-[r:{relationship}]->(g) SET r = $"
+                            + GraphModel.Fields.PROPERTIES
+                            + " RETURN r"))
                     .replace("{assetLabel}", getLabel(asset))
                     .replace("{relationship}", relationship),
-                Map.of(GraphModel.Fields.ASSET_ID, getId(asset), GraphModel.Fields.GEOMETRY_KEY, encoded, GraphModel.Fields.PROPERTIES, properties),
+                Map.of(
+                    GraphModel.Fields.ASSET_ID,
+                    getId(asset),
+                    GraphModel.Fields.GEOMETRY_KEY,
+                    encoded,
+                    GraphModel.Fields.PROPERTIES,
+                    properties),
                 userScope)
             : query(
                 transaction,
-                (("MATCH (n:{assetLabel}), (g:" + GraphModel.Labels.GEOMETRY + ") WHERE n." + GraphModel.Fields.ID + " = $" + GraphModel.Fields.ASSET_ID + " AND g." + GraphModel.Fields.DEFINITION + " = $" + GraphModel.Fields.GEOMETRY_KEY)
+                (("MATCH (n:{assetLabel}), (g:"
+                            + GraphModel.Labels.GEOMETRY
+                            + ") WHERE n."
+                            + GraphModel.Fields.ID
+                            + " = $"
+                            + GraphModel.Fields.ASSET_ID
+                            + " AND g."
+                            + GraphModel.Fields.DEFINITION
+                            + " = $"
+                            + GraphModel.Fields.GEOMETRY_KEY)
                         + " CREATE (n)"
-                        + ("-[r:{relationship}]->(g) SET r = $" + GraphModel.Fields.PROPERTIES + " RETURN r"))
+                        + ("-[r:{relationship}]->(g) SET r = $"
+                            + GraphModel.Fields.PROPERTIES
+                            + " RETURN r"))
                     .replace("{assetLabel}", getLabel(asset))
                     .replace("{relationship}", relationship),
-                Map.of(GraphModel.Fields.ASSET_ID, getId(asset), GraphModel.Fields.GEOMETRY_KEY, encoded, GraphModel.Fields.PROPERTIES, properties),
+                Map.of(
+                    GraphModel.Fields.ASSET_ID,
+                    getId(asset),
+                    GraphModel.Fields.GEOMETRY_KEY,
+                    encoded,
+                    GraphModel.Fields.PROPERTIES,
+                    properties),
                 userScope);
   }
 
@@ -1390,7 +1804,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(null, additionalProperties);
     var query =
         ("match (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)"
-                + ("-[r:{relationshipLabel}]->(c) SET r = $" + GraphModel.Fields.PROPERTIES + " RETURN r"))
+                + ("-[r:{relationshipLabel}]->(c) SET r = $"
+                    + GraphModel.Fields.PROPERTIES
+                    + " RETURN r"))
             .replace("{sourceQuery}", sourceQuery)
             .replace("{targetQuery}", targetQuery)
             .replace("{relationshipLabel}", relationship.name())
@@ -1399,7 +1815,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     query(
         query,
-        Map.of(GraphModel.Fields.SOURCE_ID, getId(source), GraphModel.Fields.TARGET_ID, getId(destination), GraphModel.Fields.PROPERTIES, props),
+        Map.of(
+            GraphModel.Fields.SOURCE_ID,
+            getId(source),
+            GraphModel.Fields.TARGET_ID,
+            getId(destination),
+            GraphModel.Fields.PROPERTIES,
+            props),
         scope);
   }
 
@@ -1411,7 +1833,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Observation ignored2 -> name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
           case Cohort ignored2 -> name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
           case Actuator ignored1 -> name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
-          case Storage.Shard ignored -> name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
+          case Storage.Shard ignored ->
+              name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
           case Agent ignored -> name + ("." + GraphModel.Fields.NAME + " = $") + queryVariable;
           default -> null;
         };
@@ -1419,7 +1842,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (ret == null) {
       ret =
           switch (asset.classify()) {
-            case DATAFLOW, PROVENANCE, DATA, CONTEXT -> name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
+            case DATAFLOW, PROVENANCE, DATA, CONTEXT ->
+                name + ("." + GraphModel.Fields.ID + " = $") + queryVariable;
             default -> throw new KlabIllegalStateException("Unexpected value: " + asset.classify());
           };
     }
@@ -1484,7 +1908,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public RuntimeAsset dataflow() {
     if (userScope == null) {
       throw new KlabIllegalStateException(
-          "Access to context node in a non-contexual knowledge graph");
+          "Access to context node in a non-contextual knowledge graph");
     }
     return dataflowNode;
   }
@@ -1493,7 +1917,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public RuntimeAsset provenance() {
     if (userScope == null) {
       throw new KlabIllegalStateException(
-          "Access to context node in a non-contexual knowledge graph");
+          "Access to context node in a non-contextual knowledge graph");
     }
     return provenanceNode;
   }
@@ -1502,21 +1926,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public RuntimeAsset scope() {
     if (userScope == null) {
       throw new KlabIllegalStateException(
-          "Access to context node in a non-contexual knowledge graph");
+          "Access to context node in a non-contextual knowledge graph");
     }
     return contextNode;
   }
 
-  private String encodeGeometry(Geometry observationGeometry) {
-
-    /*
-     * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are resolved.
-     * TODO we should cache the geometries and scales, then reuse them.
-     */
-    var ret = GeometryRepository.INSTANCE.scale(observationGeometry).encode(ShapeImpl.wkbEncoder);
-
-    return ret;
-  }
+//  private String encodeGeometry(Geometry observationGeometry) {
+//
+//    /*
+//     * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are resolved.
+//     * TODO we should cache the geometries and scales, then reuse them.
+//     */
+//    var ret = GeometryRepository.INSTANCE.scale(observationGeometry).encode(ShapeImpl.wkbEncoder);
+//
+//    return ret;
+//  }
 
   private String getLabel(Object target) {
 
@@ -1637,18 +2061,50 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public synchronized long nextKey() {
     var ret = -1L;
     var lastActivity = System.currentTimeMillis();
-    var result = query(("MATCH (n:" + GraphModel.Labels.STATISTICS + ") return n." + GraphModel.Fields.NEXT_ID), Map.of(), userScope);
+    var result =
+        query(
+            ("MATCH (n:"
+                + GraphModel.Labels.STATISTICS
+                + ") return n."
+                + GraphModel.Fields.NEXT_ID),
+            Map.of(),
+            userScope);
     if (result != null) {
       if (result.records().isEmpty()) {
         ret = 1;
-        query(("CREATE (n:" + GraphModel.Labels.STATISTICS + " {" + GraphModel.Fields.NEXT_ID + ": 1})"), Map.of(), userScope);
+        query(
+            ("CREATE (n:"
+                + GraphModel.Labels.STATISTICS
+                + " {"
+                + GraphModel.Fields.NEXT_ID
+                + ": 1})"),
+            Map.of(),
+            userScope);
       } else {
         var id = result.records().getFirst().get(result.keys().getFirst()).asLong();
         ret = id + 1;
         query(
-            ("MATCH (n:" + GraphModel.Labels.STATISTICS + ") WHERE n." + GraphModel.Fields.NEXT_ID + " = $" + GraphModel.Fields.ID + " SET n." + GraphModel.Fields.NEXT_ID + " = $" + GraphModel.Fields.NEXT_ID + ", n." + GraphModel.Fields.LAST_ACTIVITY + " = ")
+            ("MATCH (n:"
+                    + GraphModel.Labels.STATISTICS
+                    + ") WHERE n."
+                    + GraphModel.Fields.NEXT_ID
+                    + " = $"
+                    + GraphModel.Fields.ID
+                    + " SET n."
+                    + GraphModel.Fields.NEXT_ID
+                    + " = $"
+                    + GraphModel.Fields.NEXT_ID
+                    + ", n."
+                    + GraphModel.Fields.LAST_ACTIVITY
+                    + " = ")
                 + ("$" + GraphModel.Fields.LAST_ACTIVITY),
-            Map.of(GraphModel.Fields.ID, id, GraphModel.Fields.NEXT_ID, ret, GraphModel.Fields.LAST_ACTIVITY, lastActivity),
+            Map.of(
+                GraphModel.Fields.ID,
+                id,
+                GraphModel.Fields.NEXT_ID,
+                ret,
+                GraphModel.Fields.LAST_ACTIVITY,
+                lastActivity),
             userScope);
       }
     }
@@ -1680,10 +2136,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var query = assetQuery("a", GraphModel.Labels.ACTIVITY, queryParameters.keySet());
     if (rootActivity != null) {
-      query.append(("<-[*]-(r:" + GraphModel.Labels.ACTIVITY + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ROOT_ACTIVITY_ID + "})"));
+      query.append(
+          ("<-[*]-(r:"
+              + GraphModel.Labels.ACTIVITY
+              + " {"
+              + GraphModel.Fields.ID
+              + ": $"
+              + GraphModel.Fields.ROOT_ACTIVITY_ID
+              + "})"));
       queryParameters.put(GraphModel.Fields.ROOT_ACTIVITY_ID, rootActivity.getId());
     } else {
-      query.append(("<-[*]-(p:" + GraphModel.Labels.PROVENANCE + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.PROVENANCE_ID + "})"));
+      query.append(
+          ("<-[*]-(p:"
+              + GraphModel.Labels.PROVENANCE
+              + " {"
+              + GraphModel.Fields.ID
+              + ": $"
+              + GraphModel.Fields.PROVENANCE_ID
+              + "})"));
       queryParameters.put(GraphModel.Fields.PROVENANCE_ID, scope.getId() + ".PROVENANCE");
     }
 
@@ -1716,7 +2186,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     Map<String, Object> queryParameters = new LinkedHashMap<>();
     var query =
         new StringBuilder(
-            getScopeQuery(scope, queryParameters) + ("-[:" + GraphModel.Relationship.HAS_PROVENANCE.name() + "]->") + ("(p:" + GraphModel.Labels.PROVENANCE + ")"));
+            getScopeQuery(scope, queryParameters)
+                + ("-[:" + GraphModel.Relationship.HAS_PROVENANCE.name() + "]->")
+                + ("(p:" + GraphModel.Labels.PROVENANCE + ")"));
 
     if (queriables != null) {
       for (var parameter : queriables) {
@@ -1725,12 +2197,28 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         } else if (parameter instanceof Activity rootActivity) {
         } else if (parameter instanceof Long id) {
           queryParameters.put(GraphModel.Fields.ID, id);
-          query = new StringBuilder(("MATCH (a:" + GraphModel.Labels.AGENT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}"));
+          query =
+              new StringBuilder(
+                  ("MATCH (a:"
+                      + GraphModel.Labels.AGENT
+                      + " {"
+                      + GraphModel.Fields.ID
+                      + ": $"
+                      + GraphModel.Fields.ID
+                      + "}"));
         } else if (parameter instanceof Observation observation) {
           // define start node as the one with the observation URN
         } else if (parameter instanceof String name) {
           queryParameters.put(GraphModel.Fields.NAME, name);
-          query = new StringBuilder(("MATCH (a:" + GraphModel.Labels.AGENT + " {" + GraphModel.Fields.NAME + ": $" + GraphModel.Fields.NAME + "}"));
+          query =
+              new StringBuilder(
+                  ("MATCH (a:"
+                      + GraphModel.Labels.AGENT
+                      + " {"
+                      + GraphModel.Fields.NAME
+                      + ": $"
+                      + GraphModel.Fields.NAME
+                      + "}"));
         }
       }
     }
@@ -1748,11 +2236,26 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       for (var parameter : queriables) {
         if (parameter instanceof Observable observable) {
           queryParameters.put(GraphModel.Fields.SEMANTICS, observable.getSemantics().getUrn());
-          query.append(("MATCH (o:" + GraphModel.Labels.OBSERVATION + " {" + GraphModel.Fields.SEMANTICS + ": $" + GraphModel.Fields.SEMANTICS + "}"));
+          query.append(
+              ("MATCH (o:"
+                  + GraphModel.Labels.OBSERVATION
+                  + " {"
+                  + GraphModel.Fields.SEMANTICS
+                  + ": $"
+                  + GraphModel.Fields.SEMANTICS
+                  + "}"));
         } else if (parameter instanceof Activity rootActivity) {
         } else if (parameter instanceof Long id) {
           queryParameters.put(GraphModel.Fields.ID, id);
-          query = new StringBuilder(("MATCH (o:" + GraphModel.Labels.OBSERVATION + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}"));
+          query =
+              new StringBuilder(
+                  ("MATCH (o:"
+                      + GraphModel.Labels.OBSERVATION
+                      + " {"
+                      + GraphModel.Fields.ID
+                      + ": $"
+                      + GraphModel.Fields.ID
+                      + "}"));
         } else if (parameter instanceof Observation observation) {
           // define start node as the one with the observation URN
         } else if (parameter instanceof String urn) {
@@ -1776,12 +2279,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         } else if (parameter instanceof Activity rootActivity) {
         } else if (parameter instanceof Long id) {
           queryParameters.put(GraphModel.Fields.ID, id);
-          query = new StringBuilder(("MATCH (n:" + GraphModel.Labels.ACTUATOR + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "})"));
+          query =
+              new StringBuilder(
+                  ("MATCH (n:"
+                      + GraphModel.Labels.ACTUATOR
+                      + " {"
+                      + GraphModel.Fields.ID
+                      + ": $"
+                      + GraphModel.Fields.ID
+                      + "})"));
         } else if (parameter instanceof Observation observation) {
           // define start node as the one with the observation URN
         } else if (parameter instanceof String name) {
           queryParameters.put(GraphModel.Fields.NAME, name);
-          query.append(("MATCH (n:" + GraphModel.Labels.ACTUATOR + " {" + GraphModel.Fields.NAME + ": $" + GraphModel.Fields.NAME + "})"));
+          query.append(
+              ("MATCH (n:"
+                  + GraphModel.Labels.ACTUATOR
+                  + " {"
+                  + GraphModel.Fields.NAME
+                  + ": $"
+                  + GraphModel.Fields.NAME
+                  + "})"));
         }
       }
     }
@@ -1793,12 +2311,29 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private String getScopeQuery(ContextScope scope, Map<String, Object> parameters) {
 
     var scopeData = ContextScope.parseScopeId(ContextScope.getScopeId(scope));
-    var ret = new StringBuilder(("MATCH (c:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + "})"));
+    var ret =
+        new StringBuilder(
+            ("MATCH (c:"
+                + GraphModel.Labels.CONTEXT
+                + " {"
+                + GraphModel.Fields.ID
+                + ": $"
+                + GraphModel.Fields.CONTEXT_ID
+                + "})"));
     parameters.put(GraphModel.Fields.CONTEXT_ID, scopeData.scopeId());
 
     if (scopeData.observationPath() != null) {
       for (var observationId : scopeData.observationPath()) {
-        ret.append(("-[:" + GraphModel.Relationship.HAS_CHILD.name() + "]->(" + GraphModel.Labels.OBSERVATION + " {" + GraphModel.Fields.ID + ": ")).append(observationId).append("})");
+        ret.append(
+                ("-[:"
+                    + GraphModel.Relationship.HAS_CHILD.name()
+                    + "]->("
+                    + GraphModel.Labels.OBSERVATION
+                    + " {"
+                    + GraphModel.Fields.ID
+                    + ": "))
+            .append(observationId)
+            .append("})");
       }
     }
     if (scopeData.observerId() != Observation.UNASSIGNED_ID) {
@@ -1831,12 +2366,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         switch (scope) {
           case ContextScope contextScope ->
               query(
-                  ("match(c:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + "}) return c"),
+                  ("match(c:"
+                      + GraphModel.Labels.CONTEXT
+                      + " {"
+                      + GraphModel.Fields.ID
+                      + ": $"
+                      + GraphModel.Fields.CONTEXT_ID
+                      + "}) return c"),
                   Map.of(GraphModel.Fields.CONTEXT_ID, contextScope.getId()),
                   scope);
           case SessionScope sessionScope ->
               query(
-                  ("match (c:" + GraphModel.Labels.CONTEXT + ") WHERE c." + GraphModel.Fields.ID + " STARTS WITH $" + GraphModel.Fields.SESSION_ID + " return c"),
+                  ("match (c:"
+                      + GraphModel.Labels.CONTEXT
+                      + ") WHERE c."
+                      + GraphModel.Fields.ID
+                      + " STARTS WITH $"
+                      + GraphModel.Fields.SESSION_ID
+                      + " return c"),
                   Map.of(GraphModel.Fields.SESSION_ID, sessionScope.getId() + "."),
                   scope);
           case UserScope userScope -> {
@@ -1845,11 +2392,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             params.put(GraphModel.Fields.USER, userScope.getUser().getUsername());
             if (federation != null) params.put(GraphModel.Fields.FEDERATION, federation);
             yield query(
-                ("MATCH (c:" + GraphModel.Labels.CONTEXT + ") WHERE c." + GraphModel.Fields.USER + " = $" + GraphModel.Fields.USER + " OR c." + GraphModel.Fields.FEDERATION + " = $" + GraphModel.Fields.FEDERATION + " RETURN c"),
+                ("MATCH (c:"
+                    + GraphModel.Labels.CONTEXT
+                    + ") WHERE c."
+                    + GraphModel.Fields.USER
+                    + " = $"
+                    + GraphModel.Fields.USER
+                    + " OR c."
+                    + GraphModel.Fields.FEDERATION
+                    + " = $"
+                    + GraphModel.Fields.FEDERATION
+                    + " RETURN c"),
                 params,
                 scope);
           }
-          case ServiceScope serviceScope -> query(("match(c:" + GraphModel.Labels.CONTEXT + ") return c"), Map.of(), scope);
+          case ServiceScope serviceScope ->
+              query(("match(c:" + GraphModel.Labels.CONTEXT + ") return c"), Map.of(), scope);
 
           default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
         };
@@ -1860,7 +2418,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       ContextInfo contextInfo = new ContextInfo();
       //      contextInfo.setId(context.get(GraphModel.Fields.ID).toString());
       contextInfo.setCreationTime((Long) context.get(GraphModel.Fields.CREATED));
-      contextInfo.setIdleTimeMs(System.currentTimeMillis() - (Long) context.get(GraphModel.Fields.LAST_UPDATE));
+      contextInfo.setIdleTimeMs(
+          System.currentTimeMillis() - (Long) context.get(GraphModel.Fields.LAST_UPDATE));
 
       //      contextInfo.setName(context.get(GraphModel.Fields.NAME).toString());
       //      contextInfo.setUser(context.get(GraphModel.Fields.USER).toString());
@@ -1880,7 +2439,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               .owner(context.get(GraphModel.Fields.USER).toString())
               .description(context.get(GraphModel.Fields.DESCRIPTION).toString())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
-              .persistence(Persistence.valueOf(context.get(GraphModel.Fields.EXPIRATION).toString()))
+              .persistence(
+                  Persistence.valueOf(context.get(GraphModel.Fields.EXPIRATION).toString()))
               .timeout(
                   scope
                       .getService(RuntimeService.class)
@@ -1933,28 +2493,42 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public <T extends RuntimeAsset> List<T> query(
       Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (!(graphQuery instanceof KnowledgeGraphQuery<?> query)) {
-      throw new QueryException(QueryException.Code.UNSUPPORTED_QUERY, "Unsupported query representation");
+      throw new QueryException(
+          QueryException.Code.UNSUPPORTED_QUERY, "Unsupported query representation");
     }
-    if (!(scope instanceof ContextScope context) || !Objects.equals(rootContextId, context.getId())) {
-      throw new QueryException(QueryException.Code.INVALID_QUERY, "Query requires the owning context scope");
+    if (!(scope instanceof ContextScope context)
+        || !Objects.equals(rootContextId, context.getId())) {
+      throw new QueryException(
+          QueryException.Code.INVALID_QUERY, "Query requires the owning context scope");
     }
     var statement = Neo4jQueryCompiler.compile(query, rootContextId);
     if (!isOnline()) {
-      throw new QueryException(QueryException.Code.BACKEND_UNAVAILABLE, "Knowledge graph is unavailable");
+      throw new QueryException(
+          QueryException.Code.BACKEND_UNAVAILABLE, "Knowledge graph is unavailable");
     }
     try (var session = driver.session();
-        var transaction = session.beginTransaction(
-            TransactionConfig.builder().withTimeout(Duration.ofSeconds(30)).build())) {
+        var transaction =
+            session.beginTransaction(
+                TransactionConfig.builder().withTimeout(Duration.ofSeconds(30)).build())) {
       var result = transaction.run(statement.cypher(), statement.parameters());
       var keys = result.keys();
       var records = result.list();
       var summary = result.consume();
       transaction.commit();
-      EagerResult eager = new EagerResult() {
-        public List<String> keys() { return keys; }
-        public List<org.neo4j.driver.Record> records() { return records; }
-        public org.neo4j.driver.summary.ResultSummary summary() { return summary; }
-      };
+      EagerResult eager =
+          new EagerResult() {
+            public List<String> keys() {
+              return keys;
+            }
+
+            public List<org.neo4j.driver.Record> records() {
+              return records;
+            }
+
+            public org.neo4j.driver.summary.ResultSummary summary() {
+              return summary;
+            }
+          };
       if (Link.class.isAssignableFrom(resultClass)) {
         var links = new ArrayList<T>();
         for (var record : records) {
@@ -1964,8 +2538,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           link.setProperties(Parameters.create(relationship.asMap()));
           link.setSource(queryEndpoint(record.get(1), context));
           link.setTarget(queryEndpoint(record.get(2), context));
-          link.setSequence(link.properties().get(GraphModel.Fields.SEQUENCE,
-              link.properties().get(GraphModel.Fields.RANK, 0)));
+          link.setSequence(
+              link.properties()
+                  .get(
+                      GraphModel.Fields.SEQUENCE,
+                      link.properties().get(GraphModel.Fields.RANK, 0)));
           links.add((T) link);
         }
         return links;
@@ -1974,9 +2551,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     } catch (QueryException e) {
       throw e;
     } catch (org.neo4j.driver.exceptions.ServiceUnavailableException e) {
-      throw new QueryException(QueryException.Code.BACKEND_UNAVAILABLE, "Knowledge graph is unavailable", e);
+      throw new QueryException(
+          QueryException.Code.BACKEND_UNAVAILABLE, "Knowledge graph is unavailable", e);
     } catch (RuntimeException e) {
-      throw new QueryException(QueryException.Code.EXECUTION_FAILED, "Knowledge graph query failed", e);
+      throw new QueryException(
+          QueryException.Code.EXECUTION_FAILED, "Knowledge graph query failed", e);
     }
   }
 
@@ -1990,7 +2569,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       throw new QueryException(QueryException.Code.UNSUPPORTED_QUERY, "Unsupported graph root");
     }
     var asset = getAsset(key.asLong(), scope, RuntimeAsset.class);
-    if (asset == null) throw new QueryException(QueryException.Code.EXECUTION_FAILED, "Cannot materialize query endpoint");
+    if (asset == null)
+      throw new QueryException(
+          QueryException.Code.EXECUTION_FAILED, "Cannot materialize query endpoint");
     return asset;
   }
 
@@ -2045,7 +2626,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String query =
         (("MATCH (n:{label} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) MATCH ")
                 + pattern
-                + (" RETURN type(r) AS " + GraphModel.Fields.RTYPE + ", properties(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
+                + (" RETURN type(r) AS "
+                    + GraphModel.Fields.RTYPE
+                    + ", properties(r) AS "
+                    + GraphModel.Fields.RPROPS
+                    + ", m."
+                    + GraphModel.Fields.ID
+                    + " AS "
+                    + GraphModel.Fields.MID))
             .replace("{label}", sourceLabel);
 
     var result = query(query, Map.of(GraphModel.Fields.ID, sourceKey), scope);
@@ -2117,10 +2705,26 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (!Objects.equals(rootContextId, scope.getId())) {
       throw new KlabIllegalArgumentException("Scheduler registry requires its owning context");
     }
-    var result = query(
-        ("MATCH (c:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.CONTEXT_ID + "})-[:" + GraphModel.Relationship.HAS_CHILD.name() + "|" + GraphModel.Relationship.HAS_MEMBER.name() + "*1..]->(o:" + GraphModel.Labels.OBSERVATION + ") ")
-            + ("WHERE o.`" + GraphModel.Fields.SCHEDULER_REGISTERED + "` = true RETURN DISTINCT o"),
-        Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId), scope);
+    var result =
+        query(
+            ("MATCH (c:"
+                    + GraphModel.Labels.CONTEXT
+                    + " {"
+                    + GraphModel.Fields.ID
+                    + ": $"
+                    + GraphModel.Fields.CONTEXT_ID
+                    + "})-[:"
+                    + GraphModel.Relationship.HAS_CHILD.name()
+                    + "|"
+                    + GraphModel.Relationship.HAS_MEMBER.name()
+                    + "*1..]->(o:"
+                    + GraphModel.Labels.OBSERVATION
+                    + ") ")
+                + ("WHERE o.`"
+                    + GraphModel.Fields.SCHEDULER_REGISTERED
+                    + "` = true RETURN DISTINCT o"),
+            Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId),
+            scope);
     if (result == null) {
       throw new KlabStorageException("Cannot restore scheduler registry for " + rootContextId);
     }
@@ -2178,7 +2782,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String query =
         (("MATCH (n:{label} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) MATCH ")
                 + pattern
-                + (" RETURN type(r) AS " + GraphModel.Fields.RTYPE + ", properties(r) AS " + GraphModel.Fields.RPROPS + ", m." + GraphModel.Fields.ID + " AS " + GraphModel.Fields.MID))
+                + (" RETURN type(r) AS "
+                    + GraphModel.Fields.RTYPE
+                    + ", properties(r) AS "
+                    + GraphModel.Fields.RPROPS
+                    + ", m."
+                    + GraphModel.Fields.ID
+                    + " AS "
+                    + GraphModel.Fields.MID))
             .replace("{label}", sourceLabel);
 
     var result = query(query, Map.of(GraphModel.Fields.ID, idValue), scope);

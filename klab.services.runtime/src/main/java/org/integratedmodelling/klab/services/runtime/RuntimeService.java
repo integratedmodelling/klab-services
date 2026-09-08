@@ -333,7 +333,8 @@ public class RuntimeService extends BaseService
         scope.close();
         Logging.INSTANCE.info("Context " + scope.getId() + " closed upon service shutdown");
       } else if (scope.getDigitalTwin() instanceof DigitalTwinImpl twin) {
-        // A service shutdown releases mappings/timers but is not an explicit persistent-twin delete.
+        // A service shutdown releases mappings/timers but is not an explicit persistent-twin
+        // delete.
         twin.shutdown();
       }
     }
@@ -2244,17 +2245,17 @@ public class RuntimeService extends BaseService
       var knowledgeGraph = contextScope.getDigitalTwin().getKnowledgeGraph();
       if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
         if (qc.getResultType() == null) {
-          throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
-              "Missing result type");
+          throw new KnowledgeGraph.QueryException(
+              KnowledgeGraph.QueryException.Code.INVALID_QUERY, "Missing result type");
         }
         return knowledgeGraph.query(
             knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), scope);
       }
-      throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.UNSUPPORTED_QUERY,
-          "Unsupported query representation");
+      throw new KnowledgeGraph.QueryException(
+          KnowledgeGraph.QueryException.Code.UNSUPPORTED_QUERY, "Unsupported query representation");
     }
-    throw new KnowledgeGraph.QueryException(KnowledgeGraph.QueryException.Code.INVALID_QUERY,
-        "A context scope is required");
+    throw new KnowledgeGraph.QueryException(
+        KnowledgeGraph.QueryException.Code.INVALID_QUERY, "A context scope is required");
   }
 
   @Override

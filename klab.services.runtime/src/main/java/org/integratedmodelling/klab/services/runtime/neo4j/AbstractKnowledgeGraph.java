@@ -106,7 +106,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(GraphModel.Fields.EVENT_TIMESTAMPS, observation.getEventTimestamps());
           if (!observation.getHistograms().isEmpty()) {
             ret.put(
-                GraphModel.Fields.HISTOGRAMS, Utils.Data.serializeHistogramMap(observation.getHistograms()));
+                GraphModel.Fields.HISTOGRAMS,
+                Utils.Data.serializeHistogramMap(observation.getHistograms()));
           }
           if (observation instanceof ObservationImpl observation1) {
             ret.put(GraphModel.Fields.SUBSTANTIAL, observation1.isSubstantialQuality());
@@ -151,15 +152,35 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION, 1);
           ret.put(GraphModel.Fields.ID, actuator.getId());
           ret.put(GraphModel.Fields.NAME, actuator.getName());
-          ret.put(GraphModel.Fields.TYPE, actuator.getType() == null ? null : actuator.getType().name());
-          ret.put(GraphModel.Fields.ACTUATOR_TYPE, actuator.getActuatorType() == null ? null : actuator.getActuatorType().name());
-          ret.put(GraphModel.Fields.CHILDREN_COUNT, Math.max(actuator.getChildrenCount(), actuator.getChildren().size()));
-          ret.put(GraphModel.Fields.COVERAGE, actuator.getCoverage() == null ? null : actuator.getCoverage().encode());
+          ret.put(
+              GraphModel.Fields.TYPE,
+              actuator.getType() == null ? null : actuator.getType().name());
+          ret.put(
+              GraphModel.Fields.ACTUATOR_TYPE,
+              actuator.getActuatorType() == null ? null : actuator.getActuatorType().name());
+          ret.put(
+              GraphModel.Fields.CHILDREN_COUNT,
+              Math.max(actuator.getChildrenCount(), actuator.getChildren().size()));
+          ret.put(
+              GraphModel.Fields.COVERAGE,
+              actuator.getCoverage() == null ? null : actuator.getCoverage().encode());
           ret.put(GraphModel.Fields.DATA_JSON, Utils.Json.asString(actuator.getData()));
-          ret.put(GraphModel.Fields.COMPUTATION_JSON, actuator.getComputation().stream().map(Utils.Json::asString).toList());
-          ret.put(GraphModel.Fields.ANNOTATIONS_JSON, actuator.getAnnotations().stream().map(Utils.Json::asString).toList());
-          ret.put(GraphModel.Fields.SHARDING_STRATEGY_JSON, actuator.getShardingStrategy() == null ? null : Utils.Json.asString(actuator.getShardingStrategy()));
-          ret.put(GraphModel.Fields.RESOLVED_GEOMETRY, actuator.getResolvedGeometry() == null ? null : actuator.getResolvedGeometry().encode());
+          ret.put(
+              GraphModel.Fields.COMPUTATION_JSON,
+              actuator.getComputation().stream().map(Utils.Json::asString).toList());
+          ret.put(
+              GraphModel.Fields.ANNOTATIONS_JSON,
+              actuator.getAnnotations().stream().map(Utils.Json::asString).toList());
+          ret.put(
+              GraphModel.Fields.SHARDING_STRATEGY_JSON,
+              actuator.getShardingStrategy() == null
+                  ? null
+                  : Utils.Json.asString(actuator.getShardingStrategy()));
+          ret.put(
+              GraphModel.Fields.RESOLVED_GEOMETRY,
+              actuator.getResolvedGeometry() == null
+                  ? null
+                  : actuator.getResolvedGeometry().encode());
           ret.put(GraphModel.Fields.RESOLVED_COVERAGE, actuator.getResolvedCoverage());
           ret.put(GraphModel.Fields.SEMANTICS, actuator.getObservation().getObservable().getUrn());
           ret.put(
@@ -193,7 +214,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               GraphModel.Fields.SERVICE_TYPE,
               activity.getServiceType() == null ? null : activity.getServiceType().name());
           ret.put(GraphModel.Fields.DATAFLOW, activity.getDataflow());
-          ret.put(GraphModel.Fields.OUTCOME, activity.getOutcome() == null ? null : activity.getOutcome().name());
+          ret.put(
+              GraphModel.Fields.OUTCOME,
+              activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put(GraphModel.Fields.STACK_TRACE, activity.getStackTrace());
           ret.put(GraphModel.Fields.TRIGGERING_ACTIVITY_URN, activity.getTriggeringActivityUrn());
         }
@@ -210,8 +233,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (buffer.getHistogram() != null) {
             ret.put(GraphModel.Fields.HISTOGRAM, Utils.Json.asString(buffer.getHistogram()));
           }
-          ret.put(GraphModel.Fields.SUGGESTED_SPLITS, buffer.getShardingStrategy().getSuggestedSplits());
-          ret.put(GraphModel.Fields.MAX_BUFFER_SIZE, buffer.getShardingStrategy().getMaxBufferSize());
+          ret.put(
+              GraphModel.Fields.SUGGESTED_SPLITS,
+              buffer.getShardingStrategy().getSuggestedSplits());
+          ret.put(
+              GraphModel.Fields.MAX_BUFFER_SIZE, buffer.getShardingStrategy().getMaxBufferSize());
           ret.put(GraphModel.Fields.MIN_SPLIT_SIZE, buffer.getShardingStrategy().getMinSplitSize());
           ret.put(GraphModel.Fields.DATA_TYPE, buffer.getShardingStrategy().getDataType().name());
         }

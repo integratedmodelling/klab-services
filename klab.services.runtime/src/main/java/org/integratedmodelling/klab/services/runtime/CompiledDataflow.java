@@ -68,16 +68,15 @@ public class CompiledDataflow {
   /// strategies and any sharding logic. These may be executed in parallel or sequentially. Sharding
   /// is always parallel and implemented inside each individual executor.
   ///
-  ///  Four possible execution strategies corresponding to different subclasses:
-  ///  - Call a function from a prototype
-  ///  - Call a local adapter
-  ///  - Invoke a remote adapter and ingest the outputs into local storage
-  ///  - Distribute a scalar operation like an expression computation or a table lookup over the
-  ///    geometry
+  /// Four possible execution strategies corresponding to different subclasses:
+  /// - Call a function from a prototype
+  /// - Call a local adapter
+  /// - Invoke a remote adapter and ingest the outputs into local storage
+  /// - Distribute a scalar operation like an expression computation or a table lookup over the
+  ///   geometry
   ///
   /// As the only parameter for the execution is the event, the executors must store the
   /// observation, the scope, and any target sharding strategy
-  ///
   public interface ContextualExecutor {
 
     /**
@@ -88,14 +87,15 @@ public class CompiledDataflow {
      */
     boolean validate();
 
-    ///  Main executor method
+    /// Main executor method
+    ///
     /// @return true if successful. A `false` return value will stop contextualization.
     boolean execute(
         Scheduler.Event event,
         ServiceContextScope contextScope,
         RuntimeService.ContextualizationScope contextualizationScope);
 
-    ///  If [#execute] has returned false, the cause should be here.
+    /// If [#execute] has returned false, the cause should be here.
     Throwable getCause();
   }
 
@@ -299,14 +299,18 @@ public class CompiledDataflow {
 
   /** Recompile an already-bound leaf without allocating observations or changing native storage. */
   public DigitalTwin.Executor restoreLeafExecutor(Actuator actuator) {
-    if (!actuator.getChildren().isEmpty() || actuator.getChildrenCount() > 0
-        || actuator.getObservation() == null || actuator.getComputation().isEmpty()) {
-      throw new KlabInternalErrorException("Incomplete or non-leaf persisted actuator " + actuator.getId());
+    if (!actuator.getChildren().isEmpty()
+        || actuator.getChildrenCount() > 0
+        || actuator.getObservation() == null
+        || actuator.getComputation().isEmpty()) {
+      throw new KlabInternalErrorException(
+          "Incomplete or non-leaf persisted actuator " + actuator.getId());
     }
     actuatorObservations.put(actuator, actuator.getObservation());
     var operation = new ExecutorImpl(actuator);
     if (!operation.isOperational()) {
-      throw new KlabInternalErrorException("Cannot recompile persisted actuator " + actuator.getId());
+      throw new KlabInternalErrorException(
+          "Cannot recompile persisted actuator " + actuator.getId());
     }
     operations.put(actuator.getId(), operation);
     return operation;
@@ -419,7 +423,8 @@ public class CompiledDataflow {
       var observation =
           actuator.getActuatorType() == Actuator.Type.REFERENCE
               ? actuator.getObservation()
-              : observationMap.computeIfAbsent(actuator.getId(), id -> requireObservation(actuator));
+              : observationMap.computeIfAbsent(
+                  actuator.getId(), id -> requireObservation(actuator));
       actuatorObservations.put(actuator, observation);
     }
     for (var child : actuator.getChildren()) {
@@ -794,8 +799,7 @@ public class CompiledDataflow {
               "Contextualization of " + observation.getObservable());
 
       var executionScope = contextScope.executing(contextualization, observation);
-      var contextualizationScope =
-          new ContextualizationScopeImpl(observation, event);
+      var contextualizationScope = new ContextualizationScopeImpl(observation, event);
 
       Throwable failure = null;
       boolean ret = true;

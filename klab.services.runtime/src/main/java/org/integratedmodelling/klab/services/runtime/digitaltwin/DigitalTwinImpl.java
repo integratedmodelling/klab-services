@@ -401,12 +401,12 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       // if nothing was done, we just store the HAS_CHILD relationships that point to observations.
       // TODO/CHECK the logics here may require some attention
-//      var trivial = false;
-//      synchronized (graph) {
-//        trivial =
-//            contextualizers.isEmpty()
-//                && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
-//      }
+      //      var trivial = false;
+      //      synchronized (graph) {
+      //        trivial =
+      //            contextualizers.isEmpty()
+      //                && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
+      //      }
 
       var ret = Transaction.INTERMEDIATE_COMMIT_ID;
 
@@ -451,11 +451,11 @@ public class DigitalTwinImpl implements DigitalTwin {
             for (var edge : graph.edgeSet()) {
               var source = graph.getEdgeSource(edge);
               var target = graph.getEdgeTarget(edge);
-//              if (trivial
-//                  && !(target instanceof Observation)
-//                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
-//                continue;
-//              }
+              //              if (trivial
+              //                  && !(target instanceof Observation)
+              //                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+              //                continue;
+              //              }
               var relationshipData = getRelationshipData(edge);
               // KLAB-DEBUG-GUARD: links are intentionally still submitted and advertised; expose
               // unassigned endpoints without changing the existing commit behavior.
@@ -488,7 +488,8 @@ public class DigitalTwinImpl implements DigitalTwin {
           return -1;
         }
 
-        var commit = createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
+        var commit =
+            createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
         commitCache.put(commit.getId(), commit);
 
         ret = commit.getId();
@@ -559,8 +560,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           .filter(Activity.class::isInstance)
           .map(Activity.class::cast)
           .sorted(
-              Comparator.comparing(
-                  candidate -> candidate.getType() != Activity.Type.SUBMISSION))
+              Comparator.comparing(candidate -> candidate.getType() != Activity.Type.SUBMISSION))
           .findFirst()
           .orElse(null);
     }
@@ -601,10 +601,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       commit
           .getAddedCohorts()
           .addAll(
-              stored.stream()
-                  .filter(a -> a instanceof Cohort)
-                  .map(RuntimeAsset::getId)
-                  .toList());
+              stored.stream().filter(a -> a instanceof Cohort).map(RuntimeAsset::getId).toList());
       commit.getAddedLinks().addAll(linked);
       /*
        * Cohorts are durable context-catalog assets and may have been created in a short
@@ -621,9 +618,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           .map(
               id ->
                   Triple.of(
-                      RuntimeAsset.CONTEXT_ASSET_ID,
-                      id,
-                      GraphModel.Relationship.HAS_CHILD.name()))
+                      RuntimeAsset.CONTEXT_ASSET_ID, id, GraphModel.Relationship.HAS_CHILD.name()))
           .forEach(commit.getAddedLinks()::add);
       commit
           .getModifiedAssets()
@@ -690,19 +685,21 @@ public class DigitalTwinImpl implements DigitalTwin {
         case Actuator actuator -> !trivial;
         case Activity activity -> {
           var ret = activity.getId() < 0 && !trivial;
-//          if (ret
-//              && activity.getType() == Activity.Type.RESOLUTION
-//              && activity.getMetadata().containsKey(Metadata.IM_RESOLUTION_GRAPH)) {
-//            ret =
-//                // don't store resolutions that produced nothing, i.e. just the observation is in
-//                // the graph
-//                activity
-//                        .getMetadata()
-//                        .get(Metadata.IM_RESOLUTION_GRAPH, GraphModel.KnowledgeGraph.class)
-//                        .getNodes()
-//                        .size()
-//                    > 1;
-//          }
+          //          if (ret
+          //              && activity.getType() == Activity.Type.RESOLUTION
+          //              && activity.getMetadata().containsKey(Metadata.IM_RESOLUTION_GRAPH)) {
+          //            ret =
+          //                // don't store resolutions that produced nothing, i.e. just the
+          // observation is in
+          //                // the graph
+          //                activity
+          //                        .getMetadata()
+          //                        .get(Metadata.IM_RESOLUTION_GRAPH,
+          // GraphModel.KnowledgeGraph.class)
+          //                        .getNodes()
+          //                        .size()
+          //                    > 1;
+          //          }
           yield ret;
         }
         case Storage.Shard shard -> shard.getId() < 0;

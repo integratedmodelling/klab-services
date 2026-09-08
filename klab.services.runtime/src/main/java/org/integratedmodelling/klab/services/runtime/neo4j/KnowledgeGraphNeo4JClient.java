@@ -56,19 +56,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   }
 
   private void configureDatabase() {
-
-    // TODO if the DB is new, add all the indices! So far the DB is unindexed.
-
-    //        IndexDefinition usernamesIndex;
-    //        try ( Transaction tx = graphDb.beginTx() )
-    //        {
-    //            Schema schema = tx.schema();
-    //            usernamesIndex = schema.indexFor(Label.label( "User" ) )
-    //                                   .on( "username" )
-    //                                   .withName( "usernames" )
-    //                                   .create();
-    //            tx.commit();
-    //        }
+    // TODO what's left
   }
 
   @Override
@@ -82,7 +70,6 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
 
     var ret = new KnowledgeGraphNeo4JClient(this, digitalTwinConfig.getId(), userScope.getUser());
 
-    // TODO pass the
     ret.initializeContext(digitalTwinConfig, userScope);
 
     return ret;

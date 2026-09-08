@@ -60,7 +60,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
    */
   private final Sinks.Many<Event> processor;
 
-  /*
+  /*¶
    * Executors are loaded upon dataflow validation/compilation before registering the observations,
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
