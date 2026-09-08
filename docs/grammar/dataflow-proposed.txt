@@ -1,0 +1,31 @@
+// Strict replay syntax fixture; component IDs and versions are illustrative.
+// The observation-language validator must verify actual implementation signatures.
+dataflow replay_example version 2.0 mode replay
+requires {
+  worldview "example.worldview" version "1.0";
+  component "example.constant" version "1.0";
+};
+
+define observation region {
+  observable {{ earth:Region }};
+  identity "example:region:one";
+};
+
+define value supplied_temperature type "number" as literal 20;
+
+observe temperature as {{ climate:AirTemperature in degC }} within region {
+  apply "example.constant" version "1.0"
+    (input = ref supplied_temperature) output value;
+};
+
+// Add approved geometry, payload, and validity-envelope fields for a runnable fixture.
+// An adaptive document can instead declare a named continuation; this example is
+// in a comment so the file still contains exactly one document:
+// continuation future_temperature
+//   bind single region as target_context
+//   request {{ climate:AirTemperature in degC }}
+// {
+//   resolve $this within $target_context to resolved_temperature
+//   yield resolved_temperature
+// };
+// Such a node MUST be rejected in mode replay and requires mode adaptive.

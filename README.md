@@ -19,6 +19,13 @@ The services are used through an Engine process, which authenticates a human use
 
 For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md). For a code-oriented trace of the service stack, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+To follow the central observation process, start with the
+[observable-to-contextualization mapping](docs/OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type),
+then read [observation strategies](docs/OBSERVATION.md) for worldview strategy selection,
+recursive resolution, current implementation gaps, and the staged proposal for explicit graph
+composition. [Resolver internals](docs/RESOLUTION.md) covers coverage, dataflow compilation,
+transport, and runtime integration. Proposed strategy syntax is distinguished from implemented behavior.
+
 ## User-facing languages
 
 The semantic commons is instrumented through three languages, all sharing one common
@@ -36,6 +43,18 @@ models to annotate resources and outputs, and to specify dependencies. In value 
 k.Actors uses only this literal form. Together the languages separate shared
 meaning, ways of producing observations, and behavior after observations enter
 a digital twin.
+
+Worldview projects also supply [observation strategy documents](docs/OBSERVATION.md), parsed by
+the observation grammar in the sibling `klab-languages` repository. These guide how the Reasoner
+and Resolver select and combine methods for a request; k.IM models provide the concrete methods.
+The observation grammar also defines a separate dataflow form for execution plans.
+
+The [current proposal](docs/OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
+isolates strategy patterns from the shared observable grammar while retaining ordinary observable
+matches. Its [persistence design](docs/OBSERVATION.md#72-provenance-to-dataflow-builder) reconstructs
+executable Dataflows from committed provenance through a builder, encodes submitted inputs with
+`define`, and packages observation-language source as a semantically annotated Resource. This
+reconstruction and replication path is planned; the current source encoder is incomplete.
 
 ## Repository layout
 
@@ -82,6 +101,9 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 - [Semantic modeling](docs/SEMANTIC_MODELING.md) and [ODO-IM](docs/ODO_IM.md): the conceptual knowledge model
 - [Resources](docs/RESOURCES.md): resource service contract
 - [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
+- [Observation strategies](docs/OBSERVATION.md): end-to-end strategy trace, named-graph composition proposal, scenario walkthroughs, and staged implementation prompts
+- [Running strategy example](docs/OBSERVATION_STRATEGIES_EXAMPLE.md): supplied strategy corpus, comparative translation, and required compatibility cases
+- [Draft observation grammar](docs/grammar/README.md): evolving Observation.xtext sketch, strategy/context/dataflow fixtures, and integration requirements
 - [Scopes](docs/SCOPES.md): identity, propagation and digital-twin lifetime
 - [Storage](docs/STORAGE.md) and [provenance](docs/PROVENANCE.md): runtime state and traceability
 - [Agent compiler](docs/AGENT_COMPILER.md): k.Actors runtime and behavior execution internals

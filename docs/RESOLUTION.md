@@ -11,6 +11,14 @@ marked **implemented** describe code that runs now. Statements marked **incomple
 describe code that exists but does not yet fulfill the apparent contract. “Should” is reserved for
 recommendations, not current behavior.
 
+The companion [Observation strategies](OBSERVATION.md) adds a source audit dated 2026-09-08
+covering grammar/adaptation, Reasoner matching and setup, and the proposed named-graph composition
+contract. It is the running design and implementation ledger for strategy changes; its proposed
+syntax is not currently implemented. The
+[observable guide](OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type) defines the
+semantic contextualization activities that strategies serve. This document remains the broader
+Resolver/runtime trace; individual sections have been updated after the original inspection date.
+
 ## 1. Executive summary
 
 Resolution is a planning phase between runtime observation registration and runtime
@@ -272,6 +280,18 @@ resolver, so these TODOs primarily affect alternative/direct resolver use.
 
 ## 6. Strategy operations
 
+For strategy selection, functor behavior, matching gaps, and the replacement composition design,
+see [OBSERVATION.md, Sections 2–5](OBSERVATION.md#2-current-source-trace). In particular, current
+`ResolutionGraph.merge` assembles graph structure and coverage; it is not the proposed typed
+binary `merge` language operation. Strategy `as` IDs and transformation-target strings currently
+provide edge/input bindings rather than named, typed graph results.
+
+The [running strategy comparison](OBSERVATION_STRATEGIES_EXAMPLE.md) preserves the currently
+used eight-strategy document and translates its intended behavior into the proposed contracts.
+Comma-separated match alternatives are confirmed disjunctions; the syntax adapter's intersection
+mapping must not be taken as the intended language rule. The comparison also makes endpoint
+prerequisites, no-model acknowledgement, and boolean/categorical composition explicit review gates.
+
 Each `ObservationStrategy` creates a child graph initialized at zero coverage. Operations are
 processed in declaration order.
 
@@ -429,11 +449,10 @@ Each child has its own JGraphT graph, target, coverage, notification list, and p
 `__RESOLUTION_GRAPH__` scope-data key. It also reloads persistent submitted resources into that
 graph's `localResources`.
 
-What survives:
-
-- submitted local resources;
-- any observation/service-info entries added through child graphs because their maps are shared;
-- the latest root dependency set.
+What survives between attempts is the context catalog of submitted local resources. Each
+`createAttempt()` snapshots that catalog and owns fresh observation/service-info maps,
+dependencies, graph structure, and synthetic IDs. Child graphs share metadata within that attempt;
+they do not publish it back to the context catalog.
 
 What does not currently become reusable resolution state:
 
@@ -445,7 +464,9 @@ What does not currently become reusable resolution state:
 - local submitted resources are stored but not converted into immediate models.
 
 Consequently, the current implementation effectively resolves afresh on each call, apart from
-runtime knowledge queries and incidental shared metadata.
+runtime knowledge queries and the submitted-resource catalog. Candidate branches within one
+attempt still share metadata and requirements; candidate-level acceptance/rollback is a separate
+requirement in [the strategy proposal](OBSERVATION.md#52-coverage-fallback-and-speculative-state).
 
 ## 9. Dataflow compilation
 
@@ -612,6 +633,14 @@ syntactic definitions use the same observation language that represents the reso
 plan. Strategy knowledge can be extended together with semantic ontologies, allowing a worldview
 or project to add new resolution behavior without hard-coding it into the resolver.
 
+The coordinated proposal in [OBSERVATION.md, Section 7.1](OBSERVATION.md#71-observation-language-as-planning-and-execution-source)
+retains these two forms with distinct ASTs and validators. Strategy-local patterns and model search
+belong to `strategies`; selected executable computations and submitted-object definitions belong
+to `dataflow`. Replacing implicit strategy `apply` does not remove dataflow `apply`: the latter
+must retain explicitly bound contextualizer calls. The proposed dedicated pattern language in
+[Section 4.5](OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
+is owned by Observation, preserving ordinary observable matches and simplifying the shared grammar.
+
 The grammar already gives a dataflow document explicit slots for:
 
 - name, documentation, imports, and version;
@@ -650,7 +679,18 @@ The runtime must eventually be able to extract the provenance/dataflow subgraph 
 assemble its incremental resolution fragments, close references over the selected knowledge graph,
 and serialize the result in the observation language. This workflow must bypass semantic
 resolution when replayed: it reconstructs the already chosen plan and graph rather than asking the
-resolver to discover those choices again.
+resolver to discover those choices again. This is the proposed **strict replay** mode. A reusable
+**adaptive** plan may instead retain explicitly declared context-bound continuations that invoke
+resolution later; that is a different contract and must never be selected silently during replay.
+See [OBSERVATION.md, Section 7.4](OBSERVATION.md#74-replay-versus-a-reusable-adaptive-plan).
+
+The proposed implementation uses a snapshot-scoped builder: select knowledge-graph roots, scan
+committed observation/activity provenance, assemble incremental fragments, close references,
+validate executable bindings and submitted definitions, and build portable Dataflow beans before
+serializing source. It must fail explicitly when provenance cannot supply a required computation
+or input. The existing `DataflowGraph` stub is an access point, not an implemented builder.
+The full contract and Resource packaging path are in
+[OBSERVATION.md, Sections 7.2–7.3](OBSERVATION.md#72-provenance-to-dataflow-builder).
 
 Reference closure needs an explicit rule:
 
@@ -673,11 +713,12 @@ preserving at least:
 - identity and relationships required by downstream references;
 - the submitted value or a lossless resource-backed representation of it.
 
-At source level these explicitly submitted objects, including roots, are defined in k.IM through
-`define` statements. The reconstruction artifact must encode the corresponding definitions. The
-observation grammar already has a `DefinitionBody`/`define ... as ...` facility, making it the
-natural integration point, although the exact division between the dataflow document and a sibling
-definitions document remains a design choice. The encoder/adaptor contract must ensure that the
+The proposed reconstruction source uses dataflow `define` statements for these explicitly
+submitted objects, including roots. The observation grammar already has a
+`DefinitionBody`/`define ... as ...` facility, making it the natural integration point. Keep required
+definitions in the dataflow package, with explicit versioned imports where needed; a sibling k.IM
+document must not be an implicit prerequisite. k.IM may annotate or expose the persisted Resource.
+S1 must define the supported typed object records. The encoder/adaptor contract must ensure that the
 definition carries enough information to rebuild the runtime object. Large or externally stored
 values may be represented through resource references, but the exported artifact must still be
 complete: it must carry or declare every value needed for reconstruction.
@@ -1096,6 +1137,13 @@ Focused verification commands:
 ```
 
 ## 15. Suggested improvement sequence
+
+The strategy-specific sequence is now maintained in
+[OBSERVATION.md, Section 9](OBSERVATION.md#9-progressive-implementation-ledger-and-continuation-prompts),
+including review, matching/setup fixes, typed graph plans, coverage and candidate isolation,
+Dataflow lowering, lifecycle follow-ups, scoped member resolution, logical operations, and
+contextual aggregation. Use that ledger for strategy implementation; the broader recommendations
+below also cover resolver state and transport work.
 
 1. Define invariant-rich test fixtures for graphs, coverage, and actuator trees.
 2. Make all failure exits produce structured resolver notifications.

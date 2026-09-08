@@ -1,0 +1,383 @@
+/*
+ * RUNNING DESIGN DRAFT, revision 0.1. Not generator-validated or deployed.
+ * See README.md in this directory and ../OBSERVATION.md.
+ * Intended destination after review: the existing Observation.xtext in klab-languages.
+ * This is a replacement AST sketch, not a drop-in compatible generated-model change.
+ * No anonymous legacy deferral, implicit strategy apply, or implicit transform stack.
+ */
+grammar org.integratedmodelling.languages.Observation
+    with org.integratedmodelling.languages.Observable
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+import "http://www.integratedmodelling.org/languages/Observable" as observable
+generate observation "http://www.integratedmodelling.org/languages/Observation/v2"
+
+ObservationDocument:
+    StrategyDocument | ExecutableDocument;
+
+// Observation-local override: ordinary observables are closed, while variables
+// enter only through StrategyExpression. Preserve selectors and authority syntax.
+// Verify inherited rule dispatch and inferred return types when generating Xtext.
+ConceptReference returns observable::ConceptReference:
+    (negated?='not' | generic=('any' | 'all' | 'no'))? name=CONCEPT_DECLARATION |
+    name=AUTHORITY_CONCEPT;
+
+StrategyDocument:
+    'strategies' name=ObservationName
+    ('version' version=VersionNumber)
+    ('using' imports+=ObservationName (',' imports+=ObservationName)*)?
+    ('metadata' metadata=Map)?
+    ('coverage' coverage=Map)? ';'
+    strategies+=StrategyDeclaration*;
+
+StrategyDeclaration:
+    ('observation' | identification?='identification')?
+    'strategy' rank=INT 'named' name=ObservationName
+    description=STRING?
+    selection=StrategySelection
+    setup+=StrategySetup*
+    body=PlanBody ';';
+
+// Commas HERE are confirmed disjunctions. There is no legacy ';' match connector.
+// The comma list in `if` is a conjunction of guards, not a list of match alternatives.
+StrategySelection:
+    'for' alternatives+=MatchAlternative (',' alternatives+=MatchAlternative)*;
+
+MatchAlternative:
+    (pattern=PatternBlock | matcher=ExternalMatcher | observable=ObservableSemantics)
+    ('if' guards+=StrategyCall (',' guards+=StrategyCall)*)?;
+
+PatternBlock:
+    'pattern' ('on' subject=StrategyVariable)? '{' expression=PatternExpression '}';
+
+ExternalMatcher:
+    'matcher' call=StrategyCall;
+
+StrategySetup:
+    LetSetup | EnsureSetup;
+
+LetSetup:
+    'let' bindings+=SemanticBinding (',' bindings+=SemanticBinding)*;
+
+SemanticBinding:
+    names+=ObservationLocalName (',' names+=ObservationLocalName)*
+    '=' value=StrategyExpression;
+
+EnsureSetup:
+    'ensure' checks+=StrategyCall (',' checks+=StrategyCall)*;
+
+// `$name` belongs to the strategy-expression adapter, not an observable capture.
+// The inherited PATTERN_VARIABLE terminal is reused only as a lexical token here.
+// The local ConceptReference override removes the competing inherited observable
+// variable alternative. Also validate closed values after adaptation/transport.
+StrategyExpression:
+    StrategyVariable | StrategyCall | ClosedObservable | StrategyScalar;
+
+StrategyVariable:
+    spelling=PATTERN_VARIABLE;
+
+StrategyCall:
+    function=ObservationCallableName '(' (arguments+=StrategyArgument
+    (',' arguments+=StrategyArgument)*)? ')';
+
+StrategyArgument:
+    (name=ObservationLocalName '=')? value=StrategyExpression;
+
+ClosedObservable:
+    '{{' observable=ObservableSemantics '}}';
+
+StrategyScalar:
+    {StrategyScalar} (text=STRING | number=Number | booleanValue=ObservationBoolean);
+
+ObservationBoolean returns ecore::EString:
+    'true' | 'false';
+
+// Bare observables remain available in producers. Calls require parentheses.
+StrategyTarget:
+    expression=StrategyExpression | observable=ObservableSemantics;
+
+PlanBody:
+    {PlanBody} steps+=PlanStep+;
+
+// Named producers/merges/blocks define graph symbols. An unnamed merge is terminal.
+// The custom scope provider exposes only prior named steps and outer read-only graphs.
+PlanStep:
+    GraphProducer | GraphReference | GraphMerge | ContextPlan | MemberPlan | PlanYield;
+
+GraphProducer:
+    mode=ProducerMode target=StrategyTarget
+    ('within' context=StrategyVariable)?
+    ('with' 'inputs' '(' inputs+=GraphInput (',' inputs+=GraphInput)* ')')?
+    ('optional' 'otherwise' fallback=StrategyExpression)?
+    'to' name=ObservationLocalName;
+
+enum ProducerMode:
+    OBSERVE='observe' | RESOLVE='resolve';
+
+GraphInput:
+    port=ObservationLocalName '=' graph=[PlanStep|ObservationLocalName];
+
+GraphReference:
+    'reference' observation=StrategyVariable 'to' name=ObservationLocalName;
+
+GraphMerge:
+    'merge' left=[PlanStep|ObservationLocalName] ',' right=[PlanStep|ObservationLocalName]
+    'using' operator=CompositionKind
+    ('with' '(' options+=StrategyArgument (',' options+=StrategyArgument)* ')')?
+    'yielding' target=StrategyTarget
+    ('into' name=ObservationLocalName)?;
+
+enum CompositionKind:
+    TRANSFORM='transform' | ATTRIBUTE='attribute' | SELECT='select' |
+    LOGICAL_UNION='logical-union' | LOGICAL_INTERSECTION='logical-intersection' |
+    MOSAIC='mosaic' | AGGREGATE='aggregate';
+
+ContextPlan:
+    'within' contextGraph=[PlanStep|ObservationLocalName]
+    'as' variable=ObservationLocalName '{' body=PlanBody '}'
+    'into' name=ObservationLocalName;
+
+MemberPlan:
+    'for' 'each' variable=ObservationLocalName 'in' collection=[PlanStep|ObservationLocalName]
+    '{' body=PlanBody '}' 'into' name=ObservationLocalName;
+
+PlanYield:
+    'yield' graph=[PlanStep|ObservationLocalName];
+
+// Dedicated pattern AST. '=' avoids inherited name-with-colon lexer terminals.
+PatternExpression:
+    NodePattern | BooleanPattern | NotPattern | CapturePattern | SamePattern |
+    PresencePattern | CollectionPattern | ExactCollectionPattern | SemanticPatternTest |
+    LogicalPattern | ValueOperatorPattern | ScalarPattern | AnyPattern | AbsentPattern;
+
+NodePattern:
+    'node' '{' fields+=PatternField* '}';
+
+PatternField:
+    KindPatternField | ActivityPatternField | FlagPatternField | ChildPatternField;
+
+KindPatternField:
+    'kind' '=' value=KindConstraint ';';
+
+KindConstraint:
+    kinds+=PatternKind | 'one_of' '(' kinds+=PatternKind (',' kinds+=PatternKind)+ ')';
+
+enum PatternKind:
+    SUBJECT='subject' | AGENT='agent' | EVENT='event' | PROCESS='process' |
+    RELATIONSHIP='relationship' | CONFIGURATION='configuration' | QUALITY='quality' |
+    PREDICATE='predicate' | ATTRIBUTE='attribute' | IDENTITY='identity' |
+    ROLE='role' | REALM='realm';
+
+ActivityPatternField:
+    'activity' '=' activity=ObservationActivity ';';
+
+enum ObservationActivity:
+    VOID='VOID' | INSTANTIATION='INSTANTIATION' | ACKNOWLEDGEMENT='ACKNOWLEDGEMENT' |
+    CONNECTION='CONNECTION' | DETECTION='DETECTION' | SIMULATION='SIMULATION' |
+    MEASURE='MEASURE' | QUANTIFICATION='QUANTIFICATION' | VALUATION='VALUATION' |
+    CATEGORIZATION='CATEGORIZATION' | VERIFICATION='VERIFICATION' |
+    CLASSIFICATION='CLASSIFICATION' | CHARACTERIZATION='CHARACTERIZATION' |
+    TRANSFORMATION='TRANSFORMATION';
+
+FlagPatternField:
+    flag=PatternFlag '=' value=ObservationBoolean ';';
+
+enum PatternFlag:
+    COLLECTIVE='collective' | ABSTRACT='abstract' | NEGATED='negated';
+
+ChildPatternField:
+    child=PatternChild '=' value=PatternExpression ';';
+
+enum PatternChild:
+    HEAD='head' | PREDICATES='predicates' | ROLES='roles' | INHERENT='inherent' |
+    CLAUSES='clauses' | SEMANTIC_OPERATOR='semantic_operator' |
+    VALUE_OPERATORS='value_operators';
+
+BooleanPattern:
+    mode=PatternBooleanMode '(' operands+=PatternExpression
+    (',' operands+=PatternExpression)+ ')';
+
+enum PatternBooleanMode:
+    ALL='all' | EITHER='either';
+
+NotPattern:
+    'not' '(' operand=PatternExpression ')';
+
+CapturePattern:
+    'capture' name=ObservationLocalName 'as' operand=PatternExpression;
+
+SamePattern:
+    'same' '(' name=ObservationLocalName ')';
+
+// `same` is name-based: capture sets across either branches need a typed scope.
+PresencePattern:
+    'present' '(' operand=PatternExpression ')';
+
+CollectionPattern:
+    quantifier=CollectionQuantifier '(' element=PatternExpression ')';
+
+enum CollectionQuantifier:
+    CONTAINS='contains' | EVERY='every';
+
+ExactCollectionPattern:
+    'exactly' '[' (elements+=PatternExpression (',' elements+=PatternExpression)*)? ']';
+
+AnyPattern: {AnyPattern} 'any';
+AbsentPattern: {AbsentPattern} 'absent';
+
+ScalarPattern:
+    'literal' '(' value=StrategyScalar ')';
+
+SemanticPatternTest:
+    'semantic' '(' relation=SemanticMatchRelation ',' observable=ClosedObservable ')';
+
+enum SemanticMatchRelation:
+    EXACT='exact' | IS='is';
+
+LogicalPattern:
+    'logical' '(' connector=LogicalPatternConnector ',' 'operands' '='
+    ordering=OperandOrdering '[' operands+=PatternExpression
+    (',' operands+=PatternExpression)* (',' remainder=RemainderCapture)? ']' ')';
+
+enum LogicalPatternConnector:
+    AND='and' | OR='or';
+
+enum OperandOrdering:
+    CANONICAL='canonical' | UNORDERED='unordered';
+
+RemainderCapture:
+    'rest' name=ObservationLocalName;
+
+ValueOperatorPattern:
+    'operator' '(' operator=ObservationOperatorName
+    (',' slots+=OperatorPatternSlot)* ')';
+
+OperatorPatternSlot:
+    slot=OperatorSlotName '=' pattern=PatternExpression;
+
+enum OperatorSlotName:
+    OPERAND='operand' | CONDITION='condition' | COMPARISON='comparison' |
+    PARAMETERS='parameters';
+
+// Quoted operator IDs permit an evolving semantic/value-operator registry.
+// No reflection: validate operator name and slot types against that registry.
+ObservationOperatorName returns ecore::EString:
+    ObservationName | STRING | 'whose' | 'where' | 'when';
+
+// EXECUTABLE DOCUMENT: an independent AST, not a StrategyBody in disguise.
+ExecutableDocument:
+    'dataflow' name=ObservationName 'version' version=VersionNumber
+    'mode' mode=ExecutionMode
+    ('requires' '{' requirements+=ExecutionRequirement* '}')?
+    ('metadata' metadata=Map)? ('coverage' coverage=Map)? ';'
+    declarations+=ExecutionDeclaration+;
+
+enum ExecutionMode:
+    REPLAY='replay' | ADAPTIVE='adaptive';
+
+ExecutionRequirement:
+    kind=RequirementKind identity=STRING ('version' version=STRING)?
+    ('checksum' checksum=STRING)? ';';
+
+enum RequirementKind:
+    WORLDVIEW='worldview' | RESOURCE='resource' | COMPONENT='component' |
+    NAMESPACE='namespace' | CAPABILITY='capability' | OBSERVATION='observation';
+
+ExecutionDeclaration:
+    ObservationDefinition | ValueDefinition | ExecutionObservation | ExecutionReference |
+    ExecutionMerge | ExecutionContinuation;
+
+ObservationDefinition:
+    'define' 'observation' name=ObservationLocalName '{'
+      'observable' observable=ClosedObservable ';'
+      'identity' identity=STRING ';'
+      ('within' context=[ExecutionDeclaration|ObservationLocalName] ';')?
+      ('geometry' geometry=STRING ';')?
+      ('metadata' metadata=Map ';')?
+      ('links' '{' links+=DefinitionLink* '}')?
+      ('value' value=StoredValue ';')?
+    '}' ';';
+
+DefinitionLink:
+    role=STRING 'to' target=[ExecutionDeclaration|ObservationLocalName] ';';
+
+ValueDefinition:
+    'define' 'value' name=ObservationLocalName 'type' type=STRING
+    'as' value=StoredValue ';';
+
+StoredValue:
+    InlineStoredValue | PayloadStoredValue;
+
+InlineStoredValue:
+    'literal' value=Literal;
+
+PayloadStoredValue:
+    'payload' resource=STRING 'checksum' checksum=STRING 'media' mediaType=STRING;
+
+ExecutionObservation:
+    'observe' name=ObservationLocalName 'as' observable=ClosedObservable
+    ('within' context=[ExecutionDeclaration|ObservationLocalName])?
+    ('using' strategy=STRING)?
+    '{' ('geometry' geometry=STRING ';')?
+        ('metadata' metadata=Map ';')?
+        computations+=ExecutionApply*
+    '}' ';';
+
+// `apply` is executable; all ports are explicit. It performs no model search.
+ExecutionApply:
+    'apply' implementation=STRING 'version' version=STRING
+    '(' (arguments+=ExecutionArgument (',' arguments+=ExecutionArgument)*)? ')'
+    'output' port=ObservationLocalName ';';
+
+ExecutionArgument:
+    name=ObservationLocalName '=' value=ExecutionValue;
+
+ExecutionValue:
+    ExecutionPortReference | StoredValue | ClosedObservable;
+
+ExecutionPortReference:
+    'ref' node=[ExecutionDeclaration|ObservationLocalName]
+    ('output' port=ObservationLocalName)?;
+
+ExecutionReference:
+    'reference' name=ObservationLocalName 'to' identity=STRING
+    'as' observable=ClosedObservable ';';
+
+ExecutionMerge:
+    'merge' left=[ExecutionDeclaration|ObservationLocalName] ','
+    right=[ExecutionDeclaration|ObservationLocalName]
+    'using' operator=CompositionKind 'version' version=STRING
+    ('with' '(' options+=ExecutionArgument (',' options+=ExecutionArgument)* ')')?
+    'yielding' observable=ClosedObservable 'into' name=ObservationLocalName ';';
+
+// Explicit adaptive node; validator MUST reject it in replay mode.
+// Closed captures are rebound into the enclosed typed strategy plan.
+// This is not the eliminated anonymous `then { strategy }` facility.
+ExecutionContinuation:
+    'continuation' name=ObservationLocalName
+    'bind' cardinality=ContinuationCardinality
+    input=[ExecutionDeclaration|ObservationLocalName] 'as' variable=ObservationLocalName
+    'request' request=ClosedObservable
+    ('capture' '(' captures+=ContinuationCapture (',' captures+=ContinuationCapture)* ')')?
+    '{' body=PlanBody '}' ';';
+
+enum ContinuationCardinality:
+    SINGLE='single' | EACH='each';
+
+ContinuationCapture:
+    name=ObservationLocalName '=' value=ExecutionValue;
+
+// Parser datatype rules, not competing broad lexer terminals.
+// Quoted callable names are an escape hatch for keyword/terminal collisions.
+ObservationName returns ecore::EString:
+    LOWERCASE_ID | NAMESPACE_PATH;
+
+ObservationCallableName returns ecore::EString:
+    ObservationName | STRING | 'collective' | 'inherent';
+
+// Some useful variable names are also pattern/dataflow keywords. Restrict dots in
+// the validator; NAMESPACE_PATH overlaps plain lowercase identifiers in the base lexer.
+ObservationLocalName returns ecore::EString:
+    ObservationName | 'subject' | 'agent' | 'event' | 'process' | 'relationship' |
+    'configuration' | 'quality' | 'predicate' | 'attribute' | 'identity' | 'role' |
+    'realm' | 'head' | 'predicates' | 'roles' | 'inherent' | 'value' | 'observation';

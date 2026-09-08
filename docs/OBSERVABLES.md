@@ -473,6 +473,14 @@ They are query selectors, not new concepts. Pattern variables require
 substitution before an expression becomes concrete; `KimObservable` exposes
 the pattern and variable collection.
 
+This describes the current shared grammar. The
+[observation-strategy proposal](OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
+recommends moving structural patterns, captures, and variable-based construction into the
+Observation language, with a delimited `pattern { … }` form and typed constructors. Ordinary
+observables remain valid strategy matches. That proposal has not changed the grammar; ordinary
+selectors, logical observables, and semantic literals retain their meanings. Pattern-level
+boolean tests must be distinguished from `and`/`or` in the observable itself.
+
 ## 8. Semantic literals in host languages
 
 Where a host grammar expects a value, wrap observable semantics in double

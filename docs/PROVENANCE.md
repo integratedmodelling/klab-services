@@ -26,4 +26,23 @@ commonly adopted in day-to-day scientific practice;
 
 ## How provenance is collected and propagated
 
+In the current service architecture, Runtime records observation and activity relationships while
+resolving and contextualizing requests. A resolution's encoded dataflow is useful diagnostic
+metadata, but the current encoder does not yet produce a complete replay artifact. See
+[Resolution](RESOLUTION.md#103-reconstruction-export-and-external-execution) for the source trace.
+
+The proposed [provenance-to-dataflow builder](OBSERVATION.md#72-provenance-to-dataflow-builder)
+selects a committed knowledge-graph snapshot, follows executable dependencies, assembles the
+recorded computation fragments, closes references, and creates a validated portable Dataflow.
+Submitted objects without producing computations become typed `define` inputs. The resulting
+observation-language source and payload manifest can then be registered and annotated as a
+Resource for persistence and replication. These are planned capabilities, not completed export
+behavior.
+
+Reconstruction requires actual input/output bindings, context identities, computation parameters
+and versions, support/mediation, and completed continuation results. Generic activity labels and
+timestamps cannot replace that evidence. Missing provenance must yield an explicit incomplete
+export rather than an invented method. Strict replay fixes recorded choices; an adaptive plan
+explicitly permits later resolution and records the new choices as additional provenance.
+
 ## How to add provenance for resources

@@ -1,0 +1,107 @@
+/***
+ * First-tier k.LAB observation strategies. These are the leaves of the 
+ * tree in the observation strategy, resolving using the literal concepts and matching the exact observable. 
+ * They contain the obvious "observe" statements for their observables, but if the latter
+ * depend on instantiatable collectives (like relationships) they will force the observation 
+ * of their contextual dependents too.
+ * 
+ * The only predefined variable for the observable pattern are `$this`, substituted by the
+ * observable being resolved, and  `$context` for the observable of the context observation. 
+ * Any other should be extracted using `let` and an extractor
+ * functor. `$this` is also the implicit argument of any functor invoked without 
+ * arguments.
+ * 
+ * TODO it must be illegal to define $this and $context using let
+ */
+strategies observations
+	version 1.0;
+	
+/*
+ * TODO also enable enum values instead of full observable (and color-code)
+ * COUNTABLE, ENUMERABLE, QUANTIFIABLE, QUALITY, OCCURRENT, SUBSTANTIAL
+ * + the various qualities w/operators, PERCENTAGE, MASS etc
+ */	
+
+strategy 0 named substantial.direct
+	"Resolving a substantial is just a matter of finding models for it, and is optional because
+     the substantial can be acknowledged even without resolution."
+   for 
+   		imod:Subject if type.concrete, 
+   		imod:Agent if type.concrete, 
+   		imod:Relationship if type.concrete
+   observe $this optional;
+
+/**
+ * By adding $context we ensure there is no resolution of a dependent without a
+ * context observation.
+ */
+strategy 0 named dependent.direct
+   "As a first attempt, any concrete quality is just observed as it is."
+   for 
+   	  imod:Quality if type.concrete, 
+   	  imod:Process if type.concrete
+   observe $this;
+
+strategy 0 named countables.direct
+   "Basic default strategy for any concrete collective countable except relationships: instantiate, then defer resolution of each 
+    individual observation. This will match any predicates and operators since no restriction
+    is specified on the observable."
+   for 
+      each imod:Subject if type.concrete, 
+      each imod:Agent if type.concrete,
+      each imod:Event if type.concrete
+   observe $this // NO NEED TO DEFER - that's standard behavior, every new observation is resolved
+   // TODO not accepted resolve change in each $observable if context.occurrent
+;
+
+// TODO strategies for abstract observables, expanding the observables and merging
+
+strategy 0 named relationships.direct
+   "Default strategy for relationship is equal to other countables but adds the resolution of target and source subjects"
+   for each imod:Relationship if type.concrete
+   let 
+      source = type.relationship.source,
+      target = type.relationship.target
+   resolve each $source
+   resolve each $target
+   observe $this;
+ 
+/***
+ * Second-tier strategies will use "resolve" for partial resolutions and various merging strategies. 
+ * These may fail while being completed and after causing observations to be made.
+ */      
+strategy 1 named countable.union
+   "Countables in OR can be resolved in stages and merged"
+   for 
+   		each (imod:Subject or imod:Subject) if type.concrete, 
+   		each (imod:Event or imod:Event) if type.concrete, 
+   		each (imod:Agent or imod:Agent) if type.concrete, 
+   		each (imod:Relationship or imod:Relationship) if type.concrete
+   let first, second = type.operator.splitfirst
+   resolve $first
+   resolve $second
+   apply observations.objects.union($first, $second);
+
+// next two should apply to booleans and categories   
+strategy 1 named enumerable.quality.union
+   "Types in OR can be resolved in stages and merged"
+   for imod:Quality or imod:Quality if type.categorical, type.concrete
+   let first, second = type.operator.splitfirst
+   resolve $first
+   resolve $second
+   apply observations.values.union($first, $second);
+   
+strategy 1 named enumerable.quality.intersection
+   "Types in AND: split first operand, resolve operand and reminder, then merge qualities"
+   for odo:EnumerableQuality and odo:EnumerableQuality
+   let first, second = type.operator.splitfirst
+   resolve $first
+   resolve $second
+   apply observations.values.intersection($first, $second);
+
+strategy 1 named quality.split.predicate
+   "Split a predicate from a quality and apply it through a transformer model after resolution"
+   for PREDICATE QUALITY
+   let predicate, quality = type.predicates.splitfirst
+   resolve $quality as rawquality
+   transform rawquality through $predicate of $quality;
