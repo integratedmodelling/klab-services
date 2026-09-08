@@ -1,0 +1,101 @@
+// DESIGN FIXTURE: parser/syntax-adapter tested; semantic and runtime behavior still proposed.
+// Companion contract: ../../OBSERVATION_STRATEGIES_EXAMPLE.md
+// The original eight strategy names and ranks are retained for traceability.
+// Version 2.0 is a proposed migration marker, not a released language version.
+strategies observations
+  version 2.0;
+
+strategy 0 named substantial.direct
+  for pattern {
+    node { kind = one_of(subject, agent, relationship); collective = false; abstract = false; }
+  }
+  ensure request.fully_specified($this)
+  observe $this to direct
+;
+// No-solution is handled by the semantic lifecycle after alternatives are exhausted.
+// It is not an empty successful graph. Review which individual kinds permit acknowledgement.
+
+strategy 0 named dependent.direct
+  for pattern {
+    node { kind = one_of(quality, process); abstract = false; }
+  }
+  ensure context.exists(), request.fully_specified($this)
+  observe $this to direct
+;
+
+strategy 0 named countables.direct
+  for pattern {
+    node { kind = one_of(subject, agent, event); collective = true; abstract = false; }
+  }
+  ensure request.fully_specified($this)
+  observe $this to direct
+;
+// Instantiation outcomes are acknowledged by the semantic lifecycle, not an authored loop.
+
+strategy 0 named relationships.direct
+  for pattern {
+    node { kind = relationship; collective = true; abstract = false; }
+  }
+  ensure request.fully_specified($this)
+  let source = relationship.source($this), target = relationship.target($this)
+  resolve collective($source) to sources
+  resolve collective($target) to targets
+  observe $this with inputs(source = sources, target = targets) to connections
+;
+// Endpoint roles bind separate producer graphs, not a guessed Cartesian product.
+// This explicit prerequisite form is a reviewed exception to a single-producer rank-zero rule.
+
+strategy 1 named countable.union
+  for pattern {
+    all(
+      node { collective = true; abstract = false; },
+      logical(or, operands = canonical [capture first as any, rest remaining])
+    )
+  }
+  ensure operands.same_countable_family($first, $remaining)
+  let left = collective($first), right = collective($remaining)
+  resolve $left to left_graph
+  resolve $right to right_graph
+  merge left_graph, right_graph using logical-union yielding $this
+;
+
+strategy 1 named enumerable.quality.union
+  for pattern {
+    all(
+      node { kind = quality; abstract = false; },
+      logical(or, operands = canonical [capture first as any, rest remaining])
+    )
+  }
+  ensure context.exists(), operands.enumerable_compatible($first, $remaining)
+  resolve $first to left_graph
+  resolve $remaining to right_graph
+  merge left_graph, right_graph using logical-union yielding $this
+;
+// Dispatch only a reviewed boolean or categorical signature. No generic numeric union.
+
+strategy 1 named enumerable.quality.intersection
+  for pattern {
+    all(
+      node { kind = quality; abstract = false; },
+      logical(and, operands = canonical [capture first as any, rest remaining])
+    )
+  }
+  ensure context.exists(), operands.enumerable_compatible($first, $remaining)
+  resolve $first to left_graph
+  resolve $remaining to right_graph
+  merge left_graph, right_graph using logical-intersection yielding $this
+;
+// Replaces the supplied odo:EnumerableQuality alias with a typed value-space check.
+
+strategy 1 named quality.split.predicate
+  for pattern {
+    node { kind = quality; predicates = contains(any); }
+  }
+  let predicate, quality = predicates.split_first($this)
+  ensure context.exists(), predicate.concrete($predicate), transform.applicable($predicate, $quality)
+  resolve $quality to rawquality
+  observe inherent($predicate, $quality) to transformer
+  merge rawquality, transformer using transform yielding $this
+;
+// The transformer graph declares an open base-input port, bound by transform.
+// Missing/ambiguous ports reject the candidate; recursive resolution must make progress.

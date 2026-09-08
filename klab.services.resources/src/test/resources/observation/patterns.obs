@@ -1,0 +1,17 @@
+strategies patterns version 2.0 using example.domain metadata { label: "patterns" };
+identification strategy 2 named complete "all pattern forms"
+  for pattern on $context { either(
+    node { kind = one_of(subject, agent); activity = INSTANTIATION;
+           collective = false; abstract = true; negated = false;
+           head = semantic(exact, {{ earth:Region }});
+           predicates = contains(capture predicate as any);
+           roles = every(present(any)); inherent = absent;
+           clauses = exactly [same(predicate), not(absent)];
+           semantic_operator = literal("test");
+           value_operators = operator(whose, operand = any, condition = any,
+                                       comparison = literal(3), parameters = exactly []); },
+    logical(and, operands = unordered [semantic(is, {{ earth:Region }}), literal(true)])
+  ) }, matcher example.match($this, flag = true), earth:Region
+  if example.concrete(), example.valid()
+  observe earth:Region optional otherwise fallback($this) to result
+;

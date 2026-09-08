@@ -1,0 +1,13 @@
+// retain the full document
+strategies example version 2.0;
+strategy 1 named countable.union
+  for pattern {
+    all(node { collective = true; abstract = false; },
+        logical(or, operands = canonical [capture first as any, rest remaining]))
+  }
+  ensure operands.same_countable_family($first, $remaining)
+  let first, remaining = split($this), empty = "", disabled = false, amount = 12
+  resolve collective($first) to left_graph
+  resolve collective($remaining) to right_graph
+  merge left_graph, missing_graph using logical-union yielding $this
+;

@@ -1,0 +1,30 @@
+// Draft grammar fixture. The functors and context choice require semantic validation.
+strategies contexts
+  version 2.0;
+
+strategy 1 named context.independent
+  for matcher example.requires_independent_context($this, $context)
+  let context_observable = example.context_for($this)
+  resolve $context_observable to context_graph
+  within context_graph as target_context {
+    resolve $this within $target_context to result
+    yield result
+  } into contextual_result
+  yield contextual_result
+;
+// This is admissible only if the incoming request is for that independently bound
+// context. Otherwise a validated mapping back to the requested context is required.
+// Recursion keys include context identity; repeated requests without progress fail.
+
+strategy 1 named context.members
+  for matcher example.requires_member_contexts($this, $context)
+  let contexts = example.member_contexts($this), target = example.member_target($this)
+  resolve $contexts to members
+  for each member in members {
+    resolve $target within $member to result
+    yield result
+  } into results
+  reference $context to original_context
+  merge original_context, results using aggregate
+    with (reducer = "example.approved_reducer") yielding $this
+;

@@ -1,0 +1,26 @@
+// Parser/lexer retest cases for revision 0.3, not a complete document.
+// Regenerate Observable and its consumers, including Observation runtime/IDE/web.
+// Keep no space before ']' in the boundary cases.
+
+// Valid: one explicit operand and a remainder capture named remaining.
+logical(or, operands = canonical [capture first as any, rest remaining])
+logical(and, operands = canonical [capture first as any, rest remaining])
+logical(or, operands = unordered [any, rest tail])
+
+// Valid: two explicit operands and a remainder; preserve its underscore/digits.
+logical(or, operands = canonical [any, any, rest tail_2])
+
+// Valid: ordinary exact list with a name ending immediately before ']'.
+exactly [same(first)]
+
+// Lexer boundary checks: ']' must be its own token, never part of these identifiers.
+remaining]
+tail_2]
+Tree]
+
+// Control: spaces before ']' must not change the parsed AST.
+logical(or, operands = canonical [capture first as any, rest remaining ])
+
+// Negative parser cases: absent name and misplaced remainder must remain errors.
+logical(or, operands = canonical [any, rest ])
+logical(or, operands = canonical [rest remaining, any])
