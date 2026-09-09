@@ -1,6 +1,6 @@
 # Observation grammar reference and extension history
 
-[Observation.xtext](Observation.xtext) is the revision **0.3** reference for the accepted language
+[Observation.xtext](Observation.xtext) is the revision **0.4** reference for the accepted language
 baseline (2026-09-09). It is reviewable Xtext source kept beside the design, not the active grammar
 in `klab-languages`. See the [language guide](../OBSERVATION.md#language-guide) for graph naming,
 implicit output, unary semantic-operator patterns and the distinction between parsing and execution.
@@ -23,6 +23,16 @@ fixture is [observations-proposed.txt](../examples/observation-strategies/observ
 [Context blocks](contexts-proposed.txt) and [dataflow source](dataflow-proposed.txt) supply additional
 draft forms. The received legacy source remains untouched.
 
+Revision 0.4 makes `to name` optional on graph producers. An unnamed producer is terminal;
+name graphs consumed by inputs or explicit `yield`. No shared grammar rule changes.
+The Observation parser was regenerated and installed locally with Maven. Other installations
+need regeneration before using the unnamed spelling.
+Verification: Observation-only Maven generation and installation succeeded; 11 services tests
+(`ObservationPipelineTest` and `ObservationStrategyAdaptationTest`) passed against the installed
+parser, covering unnamed parsing, null-name transport and compiled resolution. The sibling
+syntax-adapter regression is included for the next full languages test run. Existing ANTLR
+ambiguity warnings remain; generation reported no errors.
+
 ## Scope of the sketch
 
 | Concern | Rules | Status/interpretation |
@@ -31,7 +41,7 @@ draft forms. The received legacy source remains untouched.
 | Selection | `StrategySelection`, `MatchAlternative` | Comma-separated alternatives mean OR; bare observables retained; patterns and external matchers have distinct entry keywords |
 | Structured patterns | `PatternBlock`, `PatternExpression`, field/capture/logical/operator rules | Dedicated Observation-owned AST with typed kinds, flags, activities, captures, scalar tests, and operand ordering |
 | Setup | `LetSetup`, `EnsureSetup`, `StrategyExpression` | Ordered tuples/calls and conjunctive pure guards; variable references are separate from closed observables |
-| Graph values | `GraphProducer`, `GraphInput`, `GraphReference`, `GraphMerge`, `PlanYield` | Named producers, ports, two-input merge, terminal result, and typed optional fallback |
+| Graph values | `GraphProducer`, `GraphInput`, `GraphReference`, `GraphMerge`, `PlanYield` | Producers with optional terminal names, ports, two-input merge, terminal result, and typed optional fallback |
 | Arbitrary contexts | `ContextPlan`, `MemberPlan` | Singular and collection graph-bound scopes; deferred execution is determined by availability, not an anonymous strategy body |
 | Submitted inputs | `ObservationDefinition`, `ValueDefinition`, `StoredValue` | Typed object/value records, identities/links, geometry, literal or resource-backed payload |
 | Execution | `ExecutionObservation`, `ExecutionApply`, `ExecutionMerge`, `ExecutionReference` | Selected implementations with explicit argument/port bindings; no implicit model lookup |

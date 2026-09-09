@@ -60,7 +60,7 @@ strategy 0 named dependent.direct
     node { kind = one_of(quality, process); abstract = false; }
   }
   ensure context.exists(), request.fully_specified($this)
-  observe $this to direct
+  observe $this
 ;
 ```
 
@@ -120,37 +120,33 @@ Negation flags, clause/operator projections and external matcher dispatch remain
 Unsupported matching or plan constructs cause a diagnostic and omit the candidate, rather than
 silently broadening a pattern or executing a partial plan.
 
-### Producers and the final result: why `to direct` is not dangling
+### Producers and the final result: optional graph names
 
-Every producer currently has a mandatory graph name:
+A terminal producer can return its graph without naming it:
 
 ```text
-observe $this to direct
+observe $this
 ```
 
-This means **produce the graph named `direct` and return it as the strategy result if it is the
-final producer**. The strategy boundary implicitly consumes that final graph. Thus it is not an
-unused result, and `direct` is not the name of an observation created at runtime. There is no
-special significance to that spelling; a stable descriptive name is useful when a plan grows
-additional bindings and when explaining its structure.
-
-An explicit return is equivalent in the current execution subset:
+Use `to name` when another operation needs the graph as an input, or when an explicit
+handoff is desired:
 
 ```text
 observe $this to direct
 yield direct
 ```
 
-Prefer the shorter first form for direct strategies. `yield` is useful for making the terminal
-result conspicuous, but currently it must name the final producer. It cannot yet select an
-arbitrary earlier graph. Statements after `yield` are invalid. `yielding $this` in a merge is
-different: it asserts output semantics; it does not name a graph.
+A named final producer also returns implicitly, so existing `observe $this to direct`
+strategies remain valid. Names identify plan graphs, not runtime observations.
+An unnamed producer must be the final statement. Currently `yield` must select the final
+named producer; it cannot select an arbitrary earlier graph. Statements after a terminal
+result are invalid. `yielding $this` on a merge instead asserts output semantics.
 
-The mandatory `to name` gives producers one uniform syntactic/bean shape. It is redundant for
-a terminal producer, as the maintainer observed. An optional-name terminal shorthand such as
-`observe $this` would be reasonable future sugar, but **is not accepted by the current grammar**.
-The accepted baseline retains the explicit name and implicit final return; no grammar change
-or new `yield` requirement is introduced by this clarification.
+The optional `to name` changes only Observation's `GraphProducer` rule. Syntax and semantic
+beans preserve an absent name as null; lowering assigns a collision-free internal operation
+ID, preserving interface-based JSON transport and the Resolver protocol. The Observation
+parser has been regenerated and installed locally; other installations need the updated parser.
+Other grammar forms retain their existing naming requirements.
 
 Earlier producers must contribute through explicit input bindings:
 
@@ -158,10 +154,10 @@ Earlier producers must contribute through explicit input bindings:
 let source = relationship.source($this), target = relationship.target($this)
 resolve collective($source) to sources
 resolve collective($target) to targets
-observe $this with inputs(source = sources, target = targets) to connections
+observe $this with inputs(source = sources, target = targets)
 ```
 
-Here `connections` is implicitly returned. `sources` and `targets` are consumed by the final
+Here the unnamed final graph is implicitly returned. `sources` and `targets` are consumed by the final
 producer's named ports. Unconnected preceding graphs are invalid; producing several graphs does
 not silently union their coverage. Endpoint graphs alone cannot resolve a relationship without
 an explanatory model. The current runtime supports these recursive prerequisites followed by a
@@ -611,7 +607,7 @@ do not select the first `INPUT` tag. Every node and binding occurrence has its o
 when two nodes refer to the same model or observable.
 
 Producers may accept already produced graphs through explicit ports, for example
-`observe $this with inputs(source = sources, target = targets) to connections`. This is the
+`observe $this with inputs(source = sources, target = targets)`. This is the
 proposed translation of the supplied relationship strategy: two named endpoint graphs become
 dependencies of one final producer, with no implicit graph union or arbitrary pair generation.
 This general input-binding form does not change the two-operand limit on semantic merge. Validate

@@ -168,6 +168,20 @@ class ObservationStrategyAdaptationTest {
     assertEquals("remaining", ((KimObservationPlan.LogicalPattern) pattern.getOperands().get(1)).getRemainder().getName());
   }
 
+  @Test void unnamedProducersPreserveNullNamesAcrossTransport() throws Exception {
+    var document = adapt("""
+        strategies anonymous version 2.0;
+        strategy 0 named direct for imod:Quality observe $this;
+        strategy 0 named recursive for imod:Quality resolve $this;
+        """);
+    var mapper = JacksonConfiguration.newObjectMapper();
+    document = mapper.readValue(mapper.writerFor(KimObservationStrategyDocument.class)
+        .writeValueAsString(document), KimObservationStrategyDocument.class);
+    for (var strategy : document.getStatements()) {
+      assertNull(((KimObservationPlan.GraphProducer) strategy.getPlan().getSteps().getFirst()).getName());
+    }
+  }
+
   @Test void retainsHeaderLiteralsAndSemanticDependencies() throws Exception {
     var document = adapt("""
         strategies headers version 3.1 using example.defaults, example.special

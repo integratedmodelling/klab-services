@@ -212,7 +212,7 @@ public class ObservationReasoner {
     boolean yielded = false;
     if (strategy.getPlan() == null) throw new IllegalArgumentException("Missing plan");
     for (var step : strategy.getPlan().getSteps()) {
-      if (yielded) throw new IllegalArgumentException("Steps after yield");
+      if (yielded) throw new IllegalArgumentException("Steps after terminal result");
       if (step instanceof GraphProducer producer) {
         if (producer.getContext() != null || producer.getFallback() != null)
           throw new UnsupportedOperationException("Explicit context or fallback");
@@ -223,7 +223,6 @@ public class ObservationReasoner {
           throw new UnsupportedOperationException("Intermediate observe producers");
         operation.setType(ObservationStrategy.Operation.Type.valueOf(producer.getMode().name()));
         operation.setObservable(target(producer.getTarget(), variables, scope));
-        operation.setId(producer.getName());
         for (var input : producer.getInputs()) {
           String graph = input.getGraph().getName();
           if (!names.contains(graph))
@@ -235,9 +234,18 @@ public class ObservationReasoner {
         if (operation.getType() == ObservationStrategy.Operation.Type.RESOLVE
             && !operation.getInputs().isEmpty())
           throw new UnsupportedOperationException("Inputs on recursive resolve");
-        if (producer.getName() == null || !names.add(producer.getName()))
-          throw new IllegalArgumentException("Missing or duplicate graph name");
-        last = producer.getName();
+        String graphName = producer.getName();
+        if (graphName == null) {
+          // The source result is anonymous. Keep a collision-free operational ID so
+          // the Resolver's named-plan protocol and JSON representation stay unchanged.
+          graphName = "__result";
+          while (names.contains(graphName)) graphName += "_";
+          yielded = true;
+        } else if (graphName.isBlank() || !names.add(graphName)) {
+          throw new IllegalArgumentException("Empty or duplicate graph name");
+        }
+        operation.setId(graphName);
+        last = graphName;
         result.getOperations().add(operation);
       } else if (step instanceof PlanYield yield) {
         if (!Objects.equals(last, yield.getGraph().getName()))

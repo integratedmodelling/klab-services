@@ -111,7 +111,7 @@ GraphProducer:
     ('within' context=StrategyVariable)?
     ('with' 'inputs' '(' inputs+=GraphInput (',' inputs+=GraphInput)* ')')?
     ('optional' 'otherwise' fallback=StrategyExpression)?
-    'to' name=ObservationLocalName;
+    ('to' name=ObservationLocalName)?;
 
 enum ProducerMode:
     OBSERVE='observe' | RESOLVE='resolve';

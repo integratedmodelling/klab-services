@@ -105,6 +105,12 @@ class ObservationPipelineTest {
     }
   }
 
+  @Test void unnamedTerminalProducersCrossBothServiceBoundaries() throws Exception {
+    exercise(SemanticType.QUALITY, false, true, true, true);
+    exercise(SemanticType.RELATIONSHIP, true, true, true, true);
+    exercise(SemanticType.RELATIONSHIP, true, false, true, true);
+  }
+
   @Test void endpointCoverageCannotResolveARelationshipWithoutAModel() throws Exception {
     exercise(SemanticType.RELATIONSHIP, true, false);
   }
@@ -261,6 +267,11 @@ class ObservationPipelineTest {
   }
 
   private void exercise(SemanticType kind, boolean collective, boolean modelAvailable, boolean endpointsExist) throws Exception {
+    exercise(kind, collective, modelAvailable, endpointsExist, false);
+  }
+
+  private void exercise(SemanticType kind, boolean collective, boolean modelAvailable,
+      boolean endpointsExist, boolean unnamed) throws Exception {
     var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     var observable = observable(kind, collective);
     var requested = observation(observable, -2L, geometry);
@@ -284,7 +295,19 @@ class ObservationPipelineTest {
     when(reasoner.relationshipTarget(any())).thenReturn(endpoint);
     when(reasoner.resolveObservable("each test:SUBJECT")).thenReturn(observable(SemanticType.SUBJECT, true));
     var strategyReasoner = new ObservationReasoner(reasoner, ignored -> { throw new AssertionError("No closed observables in tier zero"); });
-    document().getStatements().stream().filter(s -> s.getRank() == 0).forEach(strategyReasoner::registerStrategy);
+    var strategies = document();
+    if (unnamed) {
+      for (var strategy : strategies.getStatements()) {
+        if (strategy.getRank() != 0) continue;
+        var terminal = (org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.GraphProducerImpl)
+            strategy.getPlan().getSteps().getLast();
+        terminal.setName(null);
+      }
+      var transport = JacksonConfiguration.newObjectMapper();
+      strategies = transport.readValue(transport.writerFor(KimObservationStrategyDocument.class)
+          .writeValueAsString(strategies), KimObservationStrategyDocument.class);
+    }
+    strategies.getStatements().stream().filter(s -> s.getRank() == 0).forEach(strategyReasoner::registerStrategy);
     strategyReasoner.initializeStrategies();
     var matching = strategyReasoner.computeMatchingStrategies(requested, scope, true);
     assertEquals(1, matching.size(), kind.toString());

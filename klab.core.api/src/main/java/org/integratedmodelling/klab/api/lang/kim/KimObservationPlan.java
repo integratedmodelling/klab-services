@@ -143,6 +143,7 @@ public interface KimObservationPlan {
     StrategyVariable getContext();
     List<GraphInput> getInputs();
     StrategyExpression getFallback();
+    /** Null for an unnamed terminal producer, whose result is returned implicitly. */
     String getName();
   }
 
