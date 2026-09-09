@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -112,6 +113,149 @@ class ObservationPipelineTest {
     exercise(SemanticType.RELATIONSHIP, true, true, false);
   }
 
+  @Test void substantialModelDependenciesInheritTheirOwnerAndLexicalConstraints() throws Exception {
+    for (boolean collective : List.of(false, true)) {
+      for (boolean nested : List.of(false, true)) {
+        new DependencyContextFixture(collective, nested).run();
+      }
+    }
+  }
+
+  /** Scope doubles derive immutable context/constraint snapshots, just as service scopes do. */
+  private static class DependencyContextFixture {
+    final Geometry geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
+    final Reasoner reasoner = mock(Reasoner.class);
+    final RuntimeService runtime = mock(RuntimeService.class);
+    final Parameters<String> data = Parameters.create();
+    final java.util.concurrent.atomic.AtomicLong ids = new java.util.concurrent.atomic.AtomicLong(-10);
+    final Map<String, Model> models = new HashMap<>();
+    final List<String> selected = new ArrayList<>();
+    final Observable owner;
+    final Observable freshwater = named(SemanticType.SUBJECT, true, "Freshwater");
+    final Observable elevation = named(SemanticType.QUALITY, false, "Elevation");
+    final Observable slope = named(SemanticType.QUALITY, false, "Slope");
+    final Observation requested;
+    final Observation outer;
+    final ContextScope initial;
+
+    DependencyContextFixture(boolean collective, boolean nested) throws Exception {
+      owner = named(SemanticType.SUBJECT, collective, "Region");
+      requested = observation(owner, -2, geometry);
+      outer = nested ? observation(named(SemanticType.SUBJECT, false, "Outer"), 25, geometry) : null;
+      initial = scope(outer, Map.of(ResolutionConstraint.Type.Scenarios,
+          ResolutionConstraint.of(ResolutionConstraint.Type.Scenarios, "baseline")));
+      var key = ResolverService.class.getDeclaredField("RESOLUTION_GRAPH_KEY");
+      key.setAccessible(true);
+      data.put((String) key.get(null), ResolutionGraph.create(initial));
+      var strategyReasoner = new ObservationReasoner(reasoner, ignored -> { throw new AssertionError(); });
+      document().getStatements().stream().filter(s -> s.getRank() == 0).forEach(strategyReasoner::registerStrategy);
+      strategyReasoner.initializeStrategies();
+      var mapper = JacksonConfiguration.newObjectMapper();
+      var listType = mapper.getTypeFactory().constructCollectionType(List.class, ObservationStrategy.class);
+      when(reasoner.computeObservationStrategies(any(), any())).thenAnswer(invocation -> {
+        Observation target = invocation.getArgument(0);
+        ContextScope current = invocation.getArgument(1);
+        if (target.getObservable().is(SemanticType.QUALITY)) {
+          assertSame(requested, current.getContextObservation());
+          assertConstraint(current, ResolutionConstraint.Type.ResolutionNamespace, "private.example");
+          assertConstraint(current, ResolutionConstraint.Type.ResolutionProject, "example.project");
+        }
+        var strategies = strategyReasoner.computeMatchingStrategies(target, current, true);
+        assertEquals(1, strategies.size(), target.getObservable().getUrn());
+        selected.add(strategies.getFirst().getUrn());
+        return mapper.readValue(mapper.writerFor(listType).writeValueAsString(strategies), listType);
+      });
+      var requirements = new ResourceSet(); requirements.setEmpty(false);
+      when(runtime.resolveContextualizables(any(), any())).thenAnswer(i -> {
+        ContextScope current = i.getArgument(1);
+        assertNotNull(current.getContextObservation());
+        assertConstraint(current, ResolutionConstraint.Type.Scenarios, "baseline");
+        assertTrue(current.getResolutionConstraints().stream().anyMatch(c -> c.getType() == ResolutionConstraint.Type.Geometry));
+        return requirements;
+      });
+      for (var observable : List.of(owner, freshwater, elevation, slope)) {
+        var model = mock(Model.class);
+        when(model.getNamespace()).thenReturn(observable == freshwater ? "freshwater.example" : "private.example");
+        when(model.getProjectName()).thenReturn(observable == freshwater ? "freshwater.project" : "example.project");
+        when(model.getCoverage()).thenReturn(geometry);
+        when(model.getAnnotations()).thenReturn(List.of());
+        when(model.getDependencies()).thenReturn(observable == owner ? List.of(freshwater, elevation, slope) : List.of());
+        var computation = new ContextualizableImpl();
+        computation.setServiceCall(new ServiceCallImpl("test.compute"));
+        when(model.getComputation()).thenReturn(List.of(computation));
+        models.put(observable.getUrn(), model);
+      }
+    }
+
+    private static Observable named(SemanticType kind, boolean collective, String name) {
+      var result = (ObservableImpl) observable(kind, collective);
+      result.setUrn((collective ? "each " : "") + "test:" + name);
+      ((ConceptImpl) result.getSemantics()).setUrn(result.getUrn());
+      result.setName(name.toLowerCase());
+      return result;
+    }
+
+    private ContextScope scope(Observation context, Map<ResolutionConstraint.Type, ResolutionConstraint> constraints) {
+      var result = mock(ContextScope.class);
+      when(result.getId()).thenReturn("dependency-context");
+      when(result.getData()).thenReturn(data);
+      when(result.getContextObservation()).thenReturn(context);
+      when(result.getResolutionConstraints()).thenReturn(new ArrayList<>(constraints.values()));
+      when(result.getService(Reasoner.class)).thenReturn(reasoner);
+      when(result.getService(RuntimeService.class)).thenReturn(runtime);
+      when(result.within(nullable(Observation.class))).thenAnswer(i -> scope(i.getArgument(0), constraints));
+      when(result.withResolutionConstraints(any(ResolutionConstraint[].class))).thenAnswer(i -> {
+        var merged = new EnumMap<ResolutionConstraint.Type, ResolutionConstraint>(ResolutionConstraint.Type.class);
+        merged.putAll(constraints);
+        for (var constraint : (ResolutionConstraint[]) i.getRawArguments()[0]) {
+          if (constraint != null && !constraint.empty()) merged.put(constraint.getType(), constraint);
+        }
+        return scope(context, merged);
+      });
+      when(result.observation(any(Observable.class))).thenAnswer(i -> {
+        Observable target = i.getArgument(0);
+        assertSame(target.getSemantics().isCollective() ? null : requested, context);
+        assertConstraint(result, ResolutionConstraint.Type.ResolutionNamespace, "private.example");
+        return new Observation.NaiveBuilder(target, result) {
+          @Override public Observation register() { return observation(target, ids.getAndDecrement(), geometry); }
+        };
+      });
+      return result;
+    }
+
+    private static void assertConstraint(ContextScope scope, ResolutionConstraint.Type type, String expected) {
+      var constraint = scope.getResolutionConstraints().stream().filter(c -> c.getType() == type).findFirst().orElseThrow();
+      assertEquals(List.of(expected), constraint.payload(String.class));
+    }
+
+    void run() {
+      var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
+        @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale scale) {
+          assertConstraint(s, ResolutionConstraint.Type.Scenarios, "baseline");
+          assertTrue(s.getResolutionConstraints().stream().anyMatch(c -> c.getType() == ResolutionConstraint.Type.Geometry));
+          if (o.getUrn().equals(owner.getUrn())) assertSame(outer == null ? null : outer.getObservable().getSemantics(), context);
+          else {
+            assertConstraint(s, ResolutionConstraint.Type.ResolutionNamespace, "private.example");
+            assertConstraint(s, ResolutionConstraint.Type.ResolutionProject, "example.project");
+            if (o.is(SemanticType.QUALITY)) assertSame(owner.getSemantics(), context);
+          }
+          return List.of(models.get(o.getUrn()));
+        }
+        @Override QueryMatch query(Observable o, Scale scale, ContextScope s) {
+          return new QueryMatch(null, null, scale, null, Coverage.create(scale, 0));
+        }
+      };
+      var graph = compiler.resolve(requested, initial);
+      assertFalse(graph.isEmpty());
+      assertTrue(graph.getCoverage().isComplete());
+      assertEquals(2, Collections.frequency(selected, "dependent.direct"));
+      var flow = new DataflowCompiler(requested, graph, initial).compile();
+      assertEquals(3, flow.getComputation().getFirst().getChildren().size());
+      assertSame(outer, initial.getContextObservation());
+      assertEquals(1, initial.getResolutionConstraints().size(), "Derived model scopes must not mutate their parent");
+    }
+  }
+
   private void exercise(SemanticType kind, boolean collective, boolean modelAvailable) throws Exception {
     exercise(kind, collective, modelAvailable, true);
   }
@@ -123,6 +267,7 @@ class ObservationPipelineTest {
     var scope = mock(ContextScope.class);
     when(scope.getId()).thenReturn("test-context");
     when(scope.within(isNull())).thenReturn(scope);
+    when(scope.within(any(Observation.class))).thenReturn(scope);
     var nextId = new java.util.concurrent.atomic.AtomicLong(-10);
     when(scope.observation(any(Observable.class))).thenAnswer(invocation -> {
       Observable target = invocation.getArgument(0);

@@ -178,14 +178,7 @@ public class ResolutionCompiler {
     for (ObservationStrategy strategy :
         scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
 
-      // FIXME why? - this seems wrong, may be forgetting sth
-      //      var cScope = scope;
-      //      if (observation.getObservable().is(SemanticType.COUNTABLE)
-      //          && !observation.getObservable().getSemantics().isCollective()) {
-      //        cScope = cScope.within(observation);
-      //      }
-
-      var strategyResolution = resolve(strategy, scaleToResolve, ret, /* cScope */ scope);
+      var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation);
       var cov = ret.checkCoverage(strategyResolution);
       if (!cov.isRelevant()) {
         continue;
@@ -210,6 +203,15 @@ public class ResolutionCompiler {
       Scale scaleToCover,
       ResolutionGraph graph,
       ContextScope scope) {
+    return resolve(observationStrategy, scaleToCover, graph, scope, null);
+  }
+
+  private ResolutionGraph resolve(
+      ObservationStrategy observationStrategy,
+      Scale scaleToCover,
+      ResolutionGraph graph,
+      ContextScope scope,
+      Observation explainedObservation) {
 
     var ret = graph.createChild(observationStrategy, scaleToCover);
     Map<String, ResolutionGraph> produced = new LinkedHashMap<>();
@@ -257,7 +259,18 @@ public class ResolutionCompiler {
                   contextualizedScope.getFirst(),
                   contextualizedScope.getSecond())) {
 
-            var modelResolution = resolve(model, scaleToCover, ret, scope);
+            // Select strategies and models in the requesting context. Only the model's
+            // computation/dependencies enter the substantial it explains; otherwise a
+            // root substantial would incorrectly be its own context during model lookup.
+            var modelScope = contextualizedScope.getFirst();
+            if (explainedObservation != null
+                && SemanticType.isEnumerableSubstantial(
+                    explainedObservation.getObservable().getSemantics().getType())
+                && java.util.Objects.equals(
+                    operation.getObservable().getUrn(), explainedObservation.getObservable().getUrn())) {
+              modelScope = modelScope.within(explainedObservation);
+            }
+            var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope);
             if (modelResolution.isEmpty()) continue;
             for (var input : operation.getInputs().entrySet()) {
               var prerequisite = produced.get(input.getValue());
