@@ -448,13 +448,10 @@ public class SemanticMatcher {
       return -50;
     }
 
-    /**
-     * Previously returning the distance, which does not work unless the core observables are the
-     * same (differentiated by predicates only) - which for example makes identities under 'type of'
-     * be compatible no matter the identity.
-     */
-    int hierarchyDistance = assertedDistance(to, from);
-    return hierarchyDistance;
+    // Compare the stripped heads here. Independently constructed modified expressions are
+    // asserted siblings even when their fillers specialize one another; the remaining semantic
+    // distance checks compare those modifiers separately.
+    return assertedDistance(core2, core1);
   }
 
   private int distance(Concept from, Concept to, boolean acceptAbsent) {

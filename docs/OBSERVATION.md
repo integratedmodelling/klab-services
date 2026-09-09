@@ -15,7 +15,7 @@ The decisions embodied by this baseline are accepted, not awaiting another S1 ap
 extends this baseline; it must preserve its working examples and interface-based JSON contracts.
 
 Acceptance does not mean that every construct in the grammar already executes. In particular,
-typed merges, general scoped plans, operator decomposition and persisted dataflow reconstruction
+general typed merges, scoped plans, operator decomposition and persisted dataflow reconstruction
 remain extension work. The maintainer's live confirmation covers previous working behavior;
 agent-run tests cover the cases recorded in S3c and its context-propagation follow-up.
 The acceptance check passed 13 focused tests in the Resources/Reasoner/Resolver reactor, including
@@ -31,6 +31,81 @@ The following guide describes the implemented language first. Sections 1–8 ret
 historical source audit and extension designs; Section 9 tracks implementation. Where older audit
 text differs from this guide or S3c, the accepted baseline takes precedence. An unimplemented
 design is explicitly identified below; its presence in the grammar is not an execution guarantee.
+
+## Tier 1 predicate transformation: initial executable subset
+
+The `quality.split.predicate` strategy now has an initial compilation path. Previously its
+`node { kind = quality; predicates = contains(any); }` pattern could match, but setup threw
+`UnsupportedOperationException` for `predicates.split_first`; the selection loop caught it and
+returned no compiled strategy. Even bypassing setup encountered unsupported `inherent` construction
+and `GraphMerge` lowering. Availability warnings now identify selection, setup or lowering.
+
+The path for `data:Normalized geography:Elevation` is:
+
+| Stage | Decision or result |
+|---|---|
+| Selection | Requires a quality and at least one direct trait. Roles have their own pattern field. |
+| Setup | `predicates.split_first` chooses a direct trait by canonical URN order and removes it using the observable builder, preserving the observable wrapper. An unchanged remainder is rejected to prevent recursion without progress. |
+| Guards | Requires an existing context, a concrete predicate and a concrete quality base. `transform.applicable` checks semantic category eligibility; it does not search for models or promise runtime availability. |
+| Producers | Recursively resolve the unqualified quality; directly look for a model of the predicate inhering in that quality. The inherited requesting context and lexical constraints continue into both paths. |
+| Composition | Validate `resolve base`, `observe transformer`, then a terminal `merge base, transformer using transform yielding $this`. Check contextualization, inherent, graph identities and reconstruction of the requested observable. |
+| Resolver | Require the base and transformer to resolve independently. Base coverage cannot substitute for a missing transformer. Require one service-call contextualizer with exactly one base input tagged `INPUT` or named for the base graph. Missing/ambiguous ports reject that model. |
+| Dataflow | Bind the transformer input to the named base child, including a reference to an already-observed base. |
+
+This is a bounded lowering into the existing compiled operation's `transformationTarget` field,
+not a general graph-merge interpreter. The source retains the explicit two-graph merge; the portable
+compiled plan contains RESOLVE and OBSERVE with their linkage. The existing interface-based Jackson
+configuration remains the transport contract. Named merge results, chained merges, other merge
+operators and multi-contextualizer transformer pipelines remain pending. This does not complete S5's
+runtime/numerical acceptance criteria.
+
+For the staging normalization example, the transformer must also be available to the Runtime and
+advertise its base input. WCS access, model discovery in a live worldview, and numerical normalization
+need integration testing; the regression suite uses service and ontology doubles.
+
+Verification (2026-09-09): 13 tests passed across `PredicateTransformationTest`,
+`ObservationPipelineTest`, `DataflowCompilerTest` and `ResolverTransportSerializationTest`.
+They cover rank-zero-first fallback, source adaptation and JSON transport, fresh and existing
+base observations, missing transformers, missing contexts, reversed merge inputs and ambiguous
+or missing input ports. The seven-module Maven reactor compiled successfully.
+
+**Next integration prompt:** “Run the staging predicate-split namespace with the live worldview,
+WCS resource and a registered normalization contextualizer declaring its base input. Verify
+model visibility, base/transformer execution order and numerical results. Record the evidence here;
+then extend S5 to named/chained merge results and richer typed graph ports without broadening
+unsupported merge operators implicitly.”
+
+### Follow-up: real semantic-builder boundary
+
+The first transformation tests doubled `Reasoner.buildObservable`; they did not exercise the
+portable builder's dispatch into `SemanticsBuilder`. Further source tracing found that both
+`ReasonerService.buildObservable` and `buildConcept` ignored `baseConcept`, so concept-backed
+constructors such as `inherent` passed a null observable into the builder. Both entry points now
+select the supplied base representation and reject a missing base explicitly.
+
+The same test exposed an overload-resolution defect in `ObservableBuildStrategy.Operation`:
+a single concept selected the fixed-arity `Object` constructor instead of the concept-varargs
+constructor. Consequently `of(quality)` put its argument in `pod` and left `concepts` empty.
+An explicit single-concept overload now preserves the expected operation representation.
+
+Builder initialization now copies the top-level semantic syntax before removing predicates or
+adding inherence. Resources may return cached syntax objects; editing those objects directly could
+change subsequent declarations or attempts. Collection-based predicate removal now delegates to
+the implemented removal path. The existing syntax-copy constructor also preserves the authority
+term correctly. None of these changes adds a transport annotation or bean dependency.
+
+`RealSemanticBuilderTest` exercises real builder dispatch and mutation with Resources and OWL
+storage doubled, rather than replacing the whole build operation. Ordinary pattern misses and
+false guards now emit debug messages identifying the strategy and observable; guard messages name
+the failed functor. Unsupported-operation warnings still identify selection/setup/lowering.
+A transformer-model mismatch is a later Resolver query failure and cannot explain an empty
+strategy list before that query. Live worldview and model-subsumption behavior remains to be verified.
+
+Verification: the seven-module reactor compiled and all 13 tests in `RealSemanticBuilderTest`,
+`PredicateTransformationTest` and `ObservationPipelineTest` passed. The real-builder regression
+selects and lowers the corpus strategy twice against the same Resources syntax objects, and
+checks that the transformer has TRANSFORMATION contextualization. This confirms builder and
+selection behavior with controlled ontology storage; it does not assert a live-worldview result.
 
 ## Language guide
 
@@ -162,7 +237,8 @@ producer's named ports. Unconnected preceding graphs are invalid; producing seve
 not silently union their coverage. Endpoint graphs alone cannot resolve a relationship without
 an explanatory model. The current runtime supports these recursive prerequisites followed by a
 final observe, and a single recursive producer. It does not support intermediate observe results,
-resolve inputs, context/member blocks, fallback, references or typed merges yet. These grammar
+resolve inputs, context/member blocks, fallback or references yet. The bounded terminal quality
+transformation merge described above is now supported; other typed merges remain pending. These grammar
 forms are extension contracts, not available execution shortcuts.
 
 ### Unary semantic operators: `presence of` and `count of`
@@ -1520,7 +1596,8 @@ rank order. Compiled beans retain rank, namespace, documentation, metadata and a
 
 This initial lowering accepts recursive producers followed by a final observe, or a single
 recursive producer. Intermediate observe, resolve inputs, arbitrary context blocks, member loops,
-fallback, graph references and merges remain unsupported. Negation flags, clause/operator projections,
+fallback, graph references and general merges remain unsupported. The terminal quality
+transformation subset documented above is the first supported merge lowering. Negation flags, clause/operator projections,
 value-operator patterns and unimplemented/external functors also fail explicitly. A matching but
 unsupported strategy produces a scope warning and is omitted from candidates; it never contributes
 a partially lowered plan. Full document-wide validation, extension-functor dispatch and capability

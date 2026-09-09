@@ -50,7 +50,8 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
     if (concept instanceof KimConceptImpl kimConcept) {
-      ret.syntax = kimConcept;
+      // Isolate mutable builder state from Resources caches and other builders.
+      ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
       return ret;
     }
     throw new KlabInternalErrorException("Unexpected concept syntax implementation");
@@ -61,9 +62,10 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax =
-        reasoner.serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
+        scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
-      ret.syntax = kimConcept;
+      // Isolate mutable builder state from Resources caches and other builders.
+      ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
       return ret;
     }
     throw new KlabInternalErrorException("Unexpected concept syntax implementation");
@@ -77,7 +79,8 @@ public class SemanticsBuilder implements Observable.Builder {
     var syntax =
         scope.getService(ResourcesService.class).declareConcept(observable.getSemantics().getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
-      ret.syntax = kimConcept;
+      // Isolate mutable builder state from Resources caches and other builders.
+      ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
       ret.unit = observable.getUnit();
       ret.currency = observable.getCurrency();
       ret.statedName = observable.getStatedName();
@@ -159,8 +162,7 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder without(Collection<Concept> concepts) {
-    // TODO
-    return this;
+    return without(concepts.toArray(new Concept[0]));
   }
 
   @Override

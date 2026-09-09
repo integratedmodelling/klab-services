@@ -272,6 +272,20 @@ public class ResolutionCompiler {
             }
             var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope);
             if (modelResolution.isEmpty()) continue;
+            if (operation.getTransformationTarget() != null) {
+              // Until composed contextualizer pipelines expose their graph ports, accept only
+              // one contextualizer with exactly one declared base-input port.
+              if (model.getComputation().size() != 1
+                  || model.getComputation().getFirst().getServiceCall() == null) continue;
+              var prototype = modelResolution.getServiceInfo(
+                  model.getComputation().getFirst().getServiceCall().getUrn());
+              if (prototype == null || prototype.listInputs().stream().filter(input ->
+                  input.getTags().contains(org.integratedmodelling.klab.api.lang.ServiceInfo.Tag.INPUT)
+                      || input.getName().equals(operation.getTransformationTarget())).count() != 1) {
+                scope.warn("Transformer model requires exactly one declared base-input port: " + model.getUrn());
+                continue;
+              }
+            }
             for (var input : operation.getInputs().entrySet()) {
               var prerequisite = produced.get(input.getValue());
               if (prerequisite == null || prerequisite.isEmpty()) {
@@ -293,6 +307,18 @@ public class ResolutionCompiler {
 
           if (!acceptedModel || !ret.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
+          }
+          if (operation.getTransformationTarget() != null) {
+            var base = produced.get(operation.getTransformationTarget());
+            if (base == null || base.isEmpty() || !base.getCoverage().isComplete()
+                || operation.getObservable().getContextualization()
+                    != org.integratedmodelling.klab.api.knowledge.Contextualization.TRANSFORMATION) {
+              scope.error("Invalid transformation input graph " + operation.getTransformationTarget());
+              return ResolutionGraph.empty();
+            }
+            // Attach the base only after the transformer has independently resolved. Its graph
+            // name binds the transformer's INPUT parameter during dataflow compilation.
+            ret.merge(base, operation.getTransformationTarget());
           }
           if (namedPlan && operation != observationStrategy.getOperations().getLast()) {
             scope.error("Intermediate observe producers require graph composition support");

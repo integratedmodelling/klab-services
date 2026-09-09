@@ -94,6 +94,44 @@ class SemanticMatcherTest {
     assertTrue(matcher.semanticDistance(candidate, target) < 0);
   }
 
+  @Test
+  void modifiedPredicatesCompareHeadsBeforeTheirInherentFillers() {
+    var graph = new FakeOperations();
+    Concept normalized = predicate("Normalized");
+    Concept quality = concept("Quality");
+    ((ConceptImpl) quality).setUrn("odo:Quality"); // Canonical result of the im:Quality alias.
+    Concept elevation = concept("Elevation");
+    Concept region = concept("TerrestrialRegion");
+    Concept general = predicate("Normalized of odo:Quality");
+    Concept specific = predicate("Normalized of geography:Elevation");
+    Concept incompatible = predicate("Normalized of earth:Region");
+    graph.parents.put(elevation, List.of(quality));
+    for (Concept expression : List.of(general, specific, incompatible)) {
+      graph.parents.put(expression, List.of(normalized));
+      graph.heads.put(expression, normalized);
+    }
+    graph.directInherent.put(general, quality);
+    graph.directInherent.put(specific, elevation);
+    graph.directInherent.put(incompatible, region);
+    graph.inherent.putAll(graph.directInherent);
+
+    var matcher = new SemanticMatcher(graph);
+    assertEquals(-1, matcher.assertedDistance(specific, general));
+    assertTrue(matcher.semanticDistance(general, specific) >= 0);
+    assertTrue(matcher.semanticDistance(general, specific, region) >= 0);
+    assertTrue(matcher.semanticDistance(specific, general, region) < 0);
+    assertTrue(matcher.semanticDistance(general, incompatible, region) < 0);
+  }
+
+  @Test
+  void differentObservableHeadsRemainIncompatibleDespiteSubsumption() {
+    var graph = new FakeOperations();
+    Concept quality = concept("Quality");
+    Concept elevation = concept("Elevation");
+    graph.parents.put(elevation, List.of(quality));
+    assertTrue(new SemanticMatcher(graph).semanticDistance(quality, elevation) < 0);
+  }
+
   private static Concept concept(String name) {
     var ret = new ConceptImpl();
     ret.setUrn("test:" + name);
@@ -112,6 +150,8 @@ class SemanticMatcherTest {
   private static final class FakeOperations implements SemanticMatcher.Operations {
     private final Map<Concept, Collection<Concept>> parents = new HashMap<>();
     private final Map<Concept, Concept> inherent = new HashMap<>();
+    private final Map<Concept, Concept> directInherent = new HashMap<>();
+    private final Map<Concept, Concept> heads = new HashMap<>();
     private long revision;
 
     @Override
@@ -136,7 +176,7 @@ class SemanticMatcherTest {
 
     @Override
     public Concept directInherent(Semantics concept) {
-      return null;
+      return directInherent.get(concept.asConcept());
     }
 
     @Override
@@ -186,7 +226,7 @@ class SemanticMatcherTest {
 
     @Override
     public Concept withoutModifiers(Concept concept, Scope scope) {
-      return concept;
+      return heads.getOrDefault(concept, concept);
     }
 
     @Override

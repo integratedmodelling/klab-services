@@ -73,7 +73,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.caused = other.caused;
     this.compresent = other.compresent;
     this.comparisonConcept = other.comparisonConcept;
-    this.authorityTerm = other.authority;
+    this.authorityTerm = other.authorityTerm;
     this.authority = other.authority;
     this.semanticModifier = other.semanticModifier;
     this.collective = other.collective;

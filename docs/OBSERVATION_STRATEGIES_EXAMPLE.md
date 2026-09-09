@@ -6,6 +6,11 @@ behavior, including dependent context propagation. That state and its implemente
 are the accepted baseline. The original comparison below preserves the migration rationale;
 unimplemented rank-1 composition remains extension work, not part of the live parity claim.
 
+The first executable rank-1 subset now covers `quality.split.predicate`: terminal two-input
+quality transformation lowering, with model input-port validation and existing-base reference
+compilation. See [the implementation boundary](OBSERVATION.md#tier-1-predicate-transformation-initial-executable-subset).
+Other rank-1 merges and numerical runtime acceptance remain pending.
+
 The baseline files are:
 
 - [Supplied version 1.0 source](examples/observation-strategies/observations-1.0.source.txt), retained
@@ -15,7 +20,7 @@ The baseline files are:
   deployable document. Its syntax now parses and adapts in the Observation regression suite;
   its strategy semantic beans also round-trip through the registered Jackson interfaces.
   The tier-0 forms also exercise initial Reasoner/Resolver lowering and dataflow compilation in
-  `ObservationPipelineTest`, with external services replaced by doubles. Rank-1 composition and
+  `ObservationPipelineTest`, with external services replaced by doubles. General rank-1 composition and
   complete runtime coverage remain pending; see OBSERVATION S3c. The maintainer has separately
   confirmed the working baseline with live tests.
 - [Draft Observation.xtext](grammar/Observation.xtext) and [grammar notes](grammar/README.md),

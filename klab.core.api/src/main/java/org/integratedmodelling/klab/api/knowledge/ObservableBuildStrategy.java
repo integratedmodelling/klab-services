@@ -93,6 +93,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
       this.pod = value;
     }
 
+    /** A single concept must not select the fixed-arity Object/POD overload. */
+    public Operation(OperationType type, Concept concept) {
+      this.type = type;
+      this.concepts.add(concept);
+    }
+
     public Operation(OperationType type, Concept... concepts) {
       this.type = type;
       this.concepts.addAll(Arrays.asList(concepts));

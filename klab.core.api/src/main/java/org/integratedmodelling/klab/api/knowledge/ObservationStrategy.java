@@ -72,8 +72,8 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
     Map<String, String> getInputs();
 
     /**
-     * Transformation target for OBSERVE operations that were defined as 'transform TT through
-     * OBSERVABLE'.
+     * Base graph consumed by a terminal transform merge lowered to this OBSERVE operation.
+     * Also supports the legacy 'transform TT through OBSERVABLE' representation.
      *
      * @return
      */

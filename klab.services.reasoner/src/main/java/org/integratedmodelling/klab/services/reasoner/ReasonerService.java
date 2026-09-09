@@ -2731,16 +2731,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
-    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this, scope);
+    Observable.Builder ret = createSemanticBuilder(builder, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildConcept();
   }
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-    Observable.Builder ret = SemanticsBuilder.create(builder.getBaseObservable(), this, scope);
+    Observable.Builder ret = createSemanticBuilder(builder, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildObservable();
+  }
+
+  private Observable.Builder createSemanticBuilder(ObservableBuildStrategy builder, Scope scope) {
+    if (builder.getBaseObservable() != null)
+      return SemanticsBuilder.create(builder.getBaseObservable(), this, scope);
+    if (builder.getBaseConcept() != null)
+      return SemanticsBuilder.create(builder.getBaseConcept(), this, scope);
+    throw new IllegalArgumentException("Observable builder requires a base concept or observable");
   }
 
   private Observable.Builder defineBuilder(

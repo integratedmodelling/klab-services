@@ -203,9 +203,9 @@ public class DataflowCompiler {
             .addAll(
                 compileObservation(
                     childObservation, coverage, observationStrategy, edge.localName));
-        // TODO if this observation is the target of a transformation, it must carry the internal ID
-        // from the strategy
-        //   so that we can link it to the transformation
+      } else if (child instanceof Observable) {
+        observationActuator.getChildren().add(
+            compileReference(resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
       }
     }
 

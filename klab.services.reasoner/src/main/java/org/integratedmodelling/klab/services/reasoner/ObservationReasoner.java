@@ -43,9 +43,12 @@ public class ObservationReasoner {
           != (isResolution
               ? KimObservationStrategy.Type.OBSERVATION
               : KimObservationStrategy.Type.IDENTIFICATION)) continue;
+      String phase = "selection";
       try {
         var variables = select(strategy, observation.getObservable(), scope);
+        phase = "setup";
         if (variables != null && setup(strategy, variables, scope)) {
+          phase = "lowering";
           result.add(lower(strategy, variables, scope));
         }
       } catch (IllegalArgumentException | UnsupportedOperationException e) {
@@ -54,7 +57,7 @@ public class ObservationReasoner {
                 + strategy.getNamespace()
                 + ":"
                 + strategy.getUrn()
-                + " is unavailable: "
+                + " is unavailable during " + phase + ": "
                 + e.getMessage());
       }
     }
@@ -87,14 +90,22 @@ public class ObservationReasoner {
         matches =
             Boolean.TRUE.equals(evaluate(alternative.getMatcher().getCall(), variables, scope));
       } else throw new IllegalArgumentException("Empty match alternative");
-      if (matches && checks(alternative.getGuards(), variables, scope)) return variables;
+      if (matches && checks(alternative.getGuards(), variables, scope, strategy.getUrn())) return variables;
+      if (!matches) scope.debug("Observation strategy pattern did not match: " + strategy.getUrn()
+          + "; observable=" + observable.getUrn() + "; types=" + observable.getSemantics().getType());
     }
     return null;
   }
 
   private boolean checks(
-      List<StrategyCall> calls, Map<String, Object> variables, ContextScope scope) {
-    for (var call : calls) if (!Boolean.TRUE.equals(evaluate(call, variables, scope))) return false;
+      List<StrategyCall> calls, Map<String, Object> variables, ContextScope scope, String strategyUrn) {
+    for (var call : calls) {
+      if (!Boolean.TRUE.equals(evaluate(call, variables, scope))) {
+        scope.debug("Observation strategy " + strategyUrn + " guard rejected: " + call.getFunction()
+            + "; observable=" + variables.get("this") + "; context=" + variables.get("context"));
+        return false;
+      }
+    }
     return true;
   }
 
@@ -102,7 +113,7 @@ public class ObservationReasoner {
       KimObservationStrategy strategy, Map<String, Object> variables, ContextScope scope) {
     for (var setup : strategy.getSetup()) {
       if (setup instanceof EnsureSetup ensure) {
-        if (!checks(ensure.getChecks(), variables, scope)) return false;
+        if (!checks(ensure.getChecks(), variables, scope, strategy.getUrn())) return false;
       } else if (setup instanceof LetSetup let) {
         for (var binding : let.getBindings()) {
           Object value = evaluate(binding.getValue(), variables, scope);
@@ -153,6 +164,15 @@ public class ObservationReasoner {
           throw new IllegalArgumentException("context.exists takes no arguments");
         return scope.getContextObservation() != null;
       }
+      if (call.getFunction().equals("inherent") || call.getFunction().equals("transform.applicable")) {
+        if (args.size() != 2 || !(args.get(0) instanceof Semantics predicate)
+            || !(args.get(1) instanceof Semantics base))
+          throw new IllegalArgumentException("Expected predicate and base arguments to " + call.getFunction());
+        if (call.getFunction().equals("transform.applicable"))
+          return predicate.is(SemanticType.PREDICATE) && !predicate.isAbstract()
+              && base.is(SemanticType.QUALITY) && !base.isAbstract();
+        return new ObservableBuildStrategy(predicate.asConcept(), scope).of(base.asConcept()).buildObservable();
+      }
       if (args.isEmpty()) args.add(variables.get("this"));
       if (args.size() != 1 || !(args.getFirst() instanceof Semantics semantics))
         throw new IllegalArgumentException(
@@ -164,6 +184,17 @@ public class ObservationReasoner {
                 && !semantics.is(SemanticType.NOTHING)
                 && (!(semantics instanceof Observable o) || o.getGenericComponents().isEmpty());
         case "type.concrete" -> !semantics.isAbstract();
+        case "predicate.concrete" -> semantics.is(SemanticType.PREDICATE) && !semantics.isAbstract();
+        case "predicates.split_first" -> {
+          var predicate = reasoner.directTraits(semantics).stream()
+              .sorted(Comparator.comparing(Concept::getUrn)).findFirst()
+              .orElseThrow(() -> new IllegalArgumentException("No direct predicate to split"));
+          var original = Observable.promote(semantics);
+          var remainder = original.builder(scope).without(predicate).buildObservable();
+          if (remainder == null || Objects.equals(remainder.getUrn(), original.getUrn()))
+            throw new IllegalArgumentException("Predicate split did not reduce the observable");
+          yield List.of(predicate, remainder);
+        }
         case "type.abstract" -> semantics.isAbstract();
         case "type.collective" -> semantics.asConcept().isCollective();
         case "relationship.source", "type.relationship.source" ->
@@ -247,6 +278,39 @@ public class ObservationReasoner {
         operation.setId(graphName);
         last = graphName;
         result.getOperations().add(operation);
+      } else if (step instanceof GraphMerge merge) {
+        // The first executable composition is a quality plus a transformer model.
+        // Lower its explicit two-graph contract into the existing transformation linkage.
+        if (merge.getOperator() != CompositionKind.TRANSFORM || merge.getName() != null
+            || !merge.getOptions().isEmpty() || result.getOperations().size() != 2)
+          throw new UnsupportedOperationException("Only terminal two-producer transform merges are executable");
+        var base = result.getOperations().get(0);
+        var transformer = result.getOperations().get(1);
+        var output = target(merge.getTarget(), variables, scope);
+        if (base.getType() != ObservationStrategy.Operation.Type.RESOLVE
+            || transformer.getType() != ObservationStrategy.Operation.Type.OBSERVE
+            || !base.getId().equals(merge.getLeft().getName())
+            || !transformer.getId().equals(merge.getRight().getName())
+            || !transformer.getInputs().isEmpty()
+            || !base.getObservable().is(SemanticType.QUALITY)
+            || transformer.getObservable().getContextualization() != Contextualization.TRANSFORMATION
+            || !Objects.equals(reasoner.directInherent(transformer.getObservable()), base.getObservable().asConcept())
+            || !Objects.equals(output.getUrn(), ((Observable) variables.get("this")).getUrn()))
+          throw new IllegalArgumentException("Invalid transform graph pairing or output");
+        boolean reconstructsOutput = reasoner.directTraits(output).stream().anyMatch(predicate -> {
+          var remainder = output.builder(scope).without(predicate).buildObservable();
+          var expectedTransformer = new ObservableBuildStrategy(predicate, scope)
+              .of(base.getObservable().asConcept()).buildObservable();
+          return remainder != null && expectedTransformer != null
+              && Objects.equals(remainder.getUrn(), base.getObservable().getUrn())
+              && Objects.equals(expectedTransformer.getUrn(), transformer.getObservable().getUrn());
+        });
+        if (!reconstructsOutput)
+          throw new IllegalArgumentException("Transform graphs do not reconstruct the yielded observable");
+        ((ObservationStrategyImpl.OperationImpl) transformer).setTransformationTarget(base.getId());
+        consumed.add(base.getId());
+        consumed.add(transformer.getId());
+        yielded = true;
       } else if (step instanceof PlanYield yield) {
         if (!Objects.equals(last, yield.getGraph().getName()))
           throw new UnsupportedOperationException("Yield must select the final producer");
