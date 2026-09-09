@@ -1216,6 +1216,9 @@ replay, Resource persistence, or reconstruction from provenance.
 
 ### 7.2 Provenance-to-dataflow builder
 
+The staged implementation, current graph evidence and initial semantic API are documented in
+[DATAFLOW.md](DATAFLOW.md).
+
 Make reconstruction a first-class builder workflow rather than another string encoder or a
 wrapper around the most recent resolution fragment:
 
@@ -1232,7 +1235,9 @@ selected knowledge-graph roots + consistent committed snapshot
 Proposed builder inputs are selection roots, snapshot/revision, replay mode, external-reference
 policy, and payload export policy. Builder output is either a complete validated artifact or an
 explicit report of missing provenance/dependencies; it must not invent computations from model
-names or infer execution order from timestamps. An interactive partial diagnostic export may be
+names. Use activity start timestamps to order submission roots, then causal and executable dependency
+edges to reconstruct each plan; timestamp ties need additional evidence when order matters.
+An interactive partial diagnostic export may be
 useful, but must be marked non-executable. Keep the builder independent of source formatting so
 the Resolver compiler and provenance reconstruction can share the same executable validation.
 
