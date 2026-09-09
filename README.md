@@ -48,11 +48,13 @@ Worldview projects also supply [observation strategy documents](docs/OBSERVATION
 the observation grammar in the sibling `klab-languages` repository. These guide how the Reasoner
 and Resolver select and combine methods for a request; k.IM models provide the concrete methods.
 The observation grammar also defines a separate dataflow form for execution plans.
-The initial tier-0 strategy pipeline now supports structural matching, guarded setup, and named
-observe/resolve producers with interface-based JSON transport. The implementation limits and
-next testing stages are recorded in OBSERVATION's S3c progress entry.
+The accepted observation-strategy baseline restores the previous working behavior, including
+dependent-model context propagation (maintainer-confirmed 2026-09-09). The
+[language guide](docs/OBSERVATION.md#language-guide) documents structural matching, guarded setup,
+named producers and implicit final output. Interface-based JSON transport is preserved; S3c and
+the implementation ledger distinguish working capabilities from subsequent extensions.
 
-The [current proposal](docs/OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
+The [pattern language](docs/OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
 isolates strategy patterns from the shared observable grammar while retaining ordinary observable
 matches. Its [persistence design](docs/OBSERVATION.md#72-provenance-to-dataflow-builder) reconstructs
 executable Dataflows from committed provenance through a builder, encodes submitted inputs with

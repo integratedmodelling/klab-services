@@ -1,9 +1,10 @@
 # Running strategy compatibility example
 
-This is the comparative companion to [the observation proposal](OBSERVATION.md). The maintainer
-supplied the only strategy document currently used and reports that its simpler strategies work,
-while others may not. Treat that as usage evidence, not a claim that every clause works in the
-inspected checkout. No supplied strategy was executed during this documentation stage.
+This is the comparative companion to the [observation language guide](OBSERVATION.md#language-guide).
+On 2026-09-09 the maintainer confirmed that the revised implementation matches the previous working
+behavior, including dependent context propagation. That state and its implemented design decisions
+are the accepted baseline. The original comparison below preserves the migration rationale;
+unimplemented rank-1 composition remains extension work, not part of the live parity claim.
 
 The baseline files are:
 
@@ -15,7 +16,8 @@ The baseline files are:
   its strategy semantic beans also round-trip through the registered Jackson interfaces.
   The tier-0 forms also exercise initial Reasoner/Resolver lowering and dataflow compilation in
   `ObservationPipelineTest`, with external services replaced by doubles. Rank-1 composition and
-  live runtime execution remain pending; see OBSERVATION S3c.
+  complete runtime coverage remain pending; see OBSERVATION S3c. The maintainer has separately
+  confirmed the working baseline with live tests.
 - [Draft Observation.xtext](grammar/Observation.xtext) and [grammar notes](grammar/README.md),
   maintained alongside the translation. Revision 0.3 uses `field = value` and
   `capture name as pattern`; the generated parser passes the translation and its normalized

@@ -1,7 +1,10 @@
-# Running Observation.xtext sketch
+# Observation grammar reference and extension history
 
-[Observation.xtext](Observation.xtext) is revision **0.3** of the proposed Observation language.
-It is reviewable Xtext source kept beside the design, not the active grammar in `klab-languages`.
+[Observation.xtext](Observation.xtext) is the revision **0.3** reference for the accepted language
+baseline (2026-09-09). It is reviewable Xtext source kept beside the design, not the active grammar
+in `klab-languages`. See the [language guide](../OBSERVATION.md#language-guide) for graph naming,
+implicit output, unary semantic-operator patterns and the distinction between parsing and execution.
+The implemented decisions are accepted; the generation narrative below is historical.
 The maintainer has now inserted the proposed grammar into `feature/observation-revision` in
 `klab-languages` and now reports successful compilation of its dependent languages and sample.
 The initial logical-pattern failure and identifier correction are recorded below as history.

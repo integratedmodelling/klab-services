@@ -23,6 +23,39 @@ import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.junit.jupiter.api.Test;
 
 class ObservationStrategyAdaptationTest {
+  @Test void languageGuideUnaryPatternsAndExplicitYieldAdapt() {
+    var document = adapt("""
+        strategies guide version 2.0;
+        strategy 1 named presence.direct
+          for presence of earth:Region
+          observe $this to direct;
+        strategy 1 named count.direct
+          for count of earth:Region
+          observe $this to direct
+          yield direct;
+        strategy 1 named presence.projected
+          for pattern {
+            node {
+              semantic_operator = operator("presence",
+                operand = capture entity as semantic(is, {{ earth:Region }}));
+            }
+          }
+          observe $this to direct;
+        """);
+    assertEquals(3, document.getStatements().size());
+    assertNotNull(document.getStatements().get(0).getSelection().getAlternatives().getFirst().getObservable());
+    assertNotNull(document.getStatements().get(1).getSelection().getAlternatives().getFirst().getObservable());
+    assertInstanceOf(KimObservationPlan.PlanYield.class, document.getStatements().get(1).getPlan().getSteps().getLast());
+    var node = (KimObservationPlan.NodePattern) document.getStatements().get(2)
+        .getSelection().getAlternatives().getFirst().getPattern().getExpression();
+    var field = (KimObservationPlan.ChildPatternField) node.getFields().getFirst();
+    assertEquals(KimObservationPlan.PatternChild.SEMANTIC_OPERATOR, field.getChild());
+    var operator = (KimObservationPlan.ValueOperatorPattern) field.getValue();
+    // Operator projection is unevaluated: the current datatype retains quoted spelling.
+    assertEquals("\"presence\"", operator.getOperator());
+    assertInstanceOf(KimObservationPlan.CapturePattern.class, operator.getSlots().getFirst().getPattern());
+  }
+
   private final IParser parser = new ObservationStandaloneSetup()
       .createInjectorAndDoEMFRegistration().getInstance(IParser.class);
   private final LanguageValidationScope scope = new LanguageValidationScope() {

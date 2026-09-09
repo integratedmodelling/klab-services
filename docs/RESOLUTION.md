@@ -13,7 +13,9 @@ recommendations, not current behavior.
 
 The companion [Observation strategies](OBSERVATION.md) adds a source audit dated 2026-09-08
 covering grammar/adaptation, Reasoner matching and setup, and the proposed named-graph composition
-contract. It is the running design and implementation ledger for strategy changes. The revised
+contract. Its language guide and accepted baseline supersede the historical audit where noted.
+The maintainer confirmed feature parity with the previous working version on 2026-09-09, including
+the dependent-context correction. It is the running design and implementation ledger for strategy changes. The revised
 syntax and initial strategy semantic beans/LanguageAdapter boundary are implemented and tested
 through interface-based JSON transport. The Reasoner now matches and lowers the initial tier-0
 producer subset; see OBSERVATION S3c for its supported patterns and explicit limitations. The
@@ -330,6 +332,18 @@ including parallel ports referencing the same observation. Full model-input type
 candidate rollback remain pending; see S3c's continuation prompt.
 
 The notifications carried by the `ResourceSet` are currently not copied into resolver output.
+
+**Context propagation correction (2026-09-09):** strategy selection and model lookup retain the
+requesting scope. When the selected model explains the requested substantial, its computation and
+dependencies run in a derived scope `within(explainedObservation)`. This includes collective
+substantials as contexts for their shared dependency plan; it does not implement per-member plans.
+Quality/process models retain their existing context. Model resolution receives the producer's
+geometry-constrained scope and then adds the model's namespace/project constraints. A collective
+dependency's registration clears context only in its derived scope, so subsequent qualities still
+refer to the original substantial and its explanatory model's lexical constraints.
+
+This fixes the case where a Region model's Elevation/Slope dependencies failed the new
+`context.exists()` guard. The guard remains necessary; the Resolver must supply the context.
 
 ### 6.3 `APPLY`
 

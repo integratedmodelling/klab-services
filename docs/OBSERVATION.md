@@ -1,4 +1,4 @@
-# Observation strategies: resolution contracts and implementation plan
+# Observation strategies: language guide and accepted baseline
 
 This is the running design document for observation strategies in k.LAB. It connects the
 semantic observation process to strategy selection, graph construction, dataflow compilation,
@@ -6,7 +6,257 @@ and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observa
 for contextualization categories and [Resolution](RESOLUTION.md) for the broader Resolver trace,
 transport, transactions, and existing tests.
 
-**Status:** the initial source audit/design proposal is complete. The maintainer has generated
+## Accepted baseline
+
+The maintainer confirmed on **2026-09-09** that the revised implementation is feature-equal with
+the previous working version, including the corrected context propagation for dependent models.
+This is the accepted starting point for `develop` in `klab-services` and `klab-languages`.
+The decisions embodied by this baseline are accepted, not awaiting another S1 approval. New work
+extends this baseline; it must preserve its working examples and interface-based JSON contracts.
+
+Acceptance does not mean that every construct in the grammar already executes. In particular,
+typed merges, general scoped plans, operator decomposition and persisted dataflow reconstruction
+remain extension work. The maintainer's live confirmation covers previous working behavior;
+agent-run tests cover the cases recorded in S3c and its context-propagation follow-up.
+The acceptance check passed 13 focused tests in the Resources/Reasoner/Resolver reactor, including
+the language guide's ordinary unary patterns, projected operator syntax and explicit `yield`
+(`ObservationStrategyAdaptationTest.languageGuideUnaryPatternsAndExplicitYieldAdapt`). These
+syntax checks do not claim operator-projection execution. The check used:
+
+```powershell
+mvn -o -pl klab.services.resources -am '-Dtest=ObservationPipelineTest,ObservationStrategyAdaptationTest,ResolutionCompilerQueryTest,ResolverTransportSerializationTest,DataflowCompilerTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+The following guide describes the implemented language first. Sections 1–8 retain the architecture,
+historical source audit and extension designs; Section 9 tracks implementation. Where older audit
+text differs from this guide or S3c, the accepted baseline takes precedence. An unimplemented
+design is explicitly identified below; its presence in the grammar is not an execution guarantee.
+
+## Language guide
+
+### Purpose and lifecycle
+
+An observation strategy describes how k.LAB can explain an observation request. It is maintained
+with a worldview, rather than written by ordinary model users. It complements k.IM models:
+`observe` finds models, while `resolve` asks the resolution system to explain another observation,
+possibly by applying more strategies. Semantic observables determine the contextualization activity;
+a strategy chooses an explanatory plan within that activity.
+
+Resources parses and adapts strategy source to portable `KimObservationStrategy` beans. The
+Reasoner matches the request, evaluates setup and emits an operational `ObservationStrategy`.
+The Resolver attempts that plan and builds its resolution graph; the DataflowCompiler then
+produces executable actuators and computations. Source names and documentation help explain
+those choices in provenance. A named graph in source is a planning result, not a persisted
+observation, and parsing a strategy does not execute its actions.
+
+### A complete direct strategy
+
+```text
+strategies observations version 2.0;
+
+strategy 0 named dependent.direct
+  "Find models for a concrete quality or process in its context."
+  for pattern {
+    node { kind = one_of(quality, process); abstract = false; }
+  }
+  ensure context.exists(), request.fully_specified($this)
+  observe $this to direct
+;
+```
+
+The document name identifies the strategy namespace. The strategy name should remain stable for
+diagnostics and provenance. Lower numeric ranks are tried first; rank zero is the direct
+whole-observable model lookup tier, with worldview-specific exceptions deliberately reviewed.
+The quoted description explains the strategy's purpose. A semicolon terminates the strategy,
+not each plan instruction. The authored `version 2.0` and the transport bean's `modelVersion = 2`
+are distinct version fields.
+
+`for` selects applicable requests. `ensure` checks all its conditions. In this example an absent
+context rejects the strategy; a Region model must supply the Region as the context for its
+Elevation and Slope dependencies. The Resolver performs that handoff after selecting the Region
+model and preserves geometry and lexical namespace/project constraints. No guard needs to be
+removed to resolve dependent observations.
+
+### Names, setup and matching
+
+| Form | Meaning in the accepted baseline |
+|---|---|
+| `$this` | The requested observable, including its observable-level information |
+| `$context` | The observable of the context observation; null when no context exists |
+| `capture item as any` | Bind a structural component as `$item` after its pattern matches |
+| `let source = relationship.source($this)` | Evaluate a semantic expression after selection and bind `$source` |
+| `let first, remaining = ...` | Tuple binding; the returned tuple must have exactly two elements |
+| `{{ presence of earth:Region }}` | A closed observable used as an expression value |
+| `direct`, `sources` | Graph symbols; these do not use `$` |
+
+Reserved variables cannot be rebound. Setup is evaluated in source order, after a successful
+match. Captures are local to a candidate: a failed alternative does not leak bindings, and
+`not(...)` exports none. Use `same(item)` to test equality with an existing capture. The initial
+functor implementation is deliberately small: context existence, fully specified/concrete/abstract/
+collective checks, relationship endpoints and collective conversion. An arbitrary function name
+does not imply an available extension implementation.
+
+Ordinary observable matches remain available, for example `for presence of earth:Region`.
+They use `SyntacticMatcher`, which compares expression structure and uses semantic checks for
+components. They are not a single semantic `is` test on the entire request. Dedicated patterns
+use `for pattern { ... }`, optionally `pattern on $context { ... }`.
+
+| Pattern | Meaning / current support |
+|---|---|
+| `node { kind = quality; abstract = false; }` | Conjunctive field tests; omitted fields impose no restriction |
+| `one_of(subject, agent)` | Alternatives for a node's kind |
+| `all(p, q)`, `either(p, q)`, `not(p)` | Conjunction, disjunction and negation with isolated captures |
+| `any`, `absent`, `present(p)` | Existing value, absence, or a present value satisfying a pattern; false is not absence |
+| `contains(p)`, `every(p)`, `exactly [p, q]` | Collection membership tests; exact collections use unordered matching |
+| `semantic(is, {{ earth:Region }})` | Explicit semantic subsumption test |
+| `semantic(exact, {{ earth:Region }})` | Exact URN comparison in this initial matcher |
+| `logical(or, operands = canonical [capture first as any, rest remaining])` | Canonical operand decomposition; the remainder is a semantic expression |
+| `logical(and, operands = unordered [p, q])` | Unordered logical matching with backtracking |
+
+Commas between `for` alternatives mean **OR**. Commas between guard/ensure calls mean **AND**;
+commas inside argument lists simply separate arguments. `node` currently supports kind,
+collectivity, abstractness, activity, head, direct predicates, direct roles and direct inherence.
+Negation flags, clause/operator projections and external matcher dispatch remain unimplemented.
+Unsupported matching or plan constructs cause a diagnostic and omit the candidate, rather than
+silently broadening a pattern or executing a partial plan.
+
+### Producers and the final result: why `to direct` is not dangling
+
+Every producer currently has a mandatory graph name:
+
+```text
+observe $this to direct
+```
+
+This means **produce the graph named `direct` and return it as the strategy result if it is the
+final producer**. The strategy boundary implicitly consumes that final graph. Thus it is not an
+unused result, and `direct` is not the name of an observation created at runtime. There is no
+special significance to that spelling; a stable descriptive name is useful when a plan grows
+additional bindings and when explaining its structure.
+
+An explicit return is equivalent in the current execution subset:
+
+```text
+observe $this to direct
+yield direct
+```
+
+Prefer the shorter first form for direct strategies. `yield` is useful for making the terminal
+result conspicuous, but currently it must name the final producer. It cannot yet select an
+arbitrary earlier graph. Statements after `yield` are invalid. `yielding $this` in a merge is
+different: it asserts output semantics; it does not name a graph.
+
+The mandatory `to name` gives producers one uniform syntactic/bean shape. It is redundant for
+a terminal producer, as the maintainer observed. An optional-name terminal shorthand such as
+`observe $this` would be reasonable future sugar, but **is not accepted by the current grammar**.
+The accepted baseline retains the explicit name and implicit final return; no grammar change
+or new `yield` requirement is introduced by this clarification.
+
+Earlier producers must contribute through explicit input bindings:
+
+```text
+let source = relationship.source($this), target = relationship.target($this)
+resolve collective($source) to sources
+resolve collective($target) to targets
+observe $this with inputs(source = sources, target = targets) to connections
+```
+
+Here `connections` is implicitly returned. `sources` and `targets` are consumed by the final
+producer's named ports. Unconnected preceding graphs are invalid; producing several graphs does
+not silently union their coverage. Endpoint graphs alone cannot resolve a relationship without
+an explanatory model. The current runtime supports these recursive prerequisites followed by a
+final observe, and a single recursive producer. It does not support intermediate observe results,
+resolve inputs, context/member blocks, fallback, references or typed merges yet. These grammar
+forms are extension contracts, not available execution shortcuts.
+
+### Unary semantic operators: `presence of` and `count of`
+
+These are **semantic operators**, distinct from value operators such as `whose`, arithmetic and
+comparisons. `presence of earth:Region` produces a boolean quality about Region observations;
+`count of earth:Region` produces a numeric quality. Their operand is `earth:Region`, while the
+whole expression is the requested quality. Do not infer the operand from the quality's `head`
+alone, or confuse the pattern helper `present(...)` with the semantic operator `presence of`.
+
+There are two matching routes:
+
+1. **Ordinary observable pattern, existing code path:** `for presence of earth:Region` goes to
+   `SyntacticMatcher`. That matcher checks the semantic modifier, then recursively matches its
+   operand and any comparison operand. Thus unary concept patterns were not excluded by the
+   new language. This is a source-supported path, with the inherited matcher's limits; it is
+   not evidence of a completed Tier-1 presence/count strategy. This route does not capture `X`
+   as a named setup variable.
+2. **Dedicated operator projection, next implementation:** the grammar has `semantic_operator`
+   and `operator(...)` forms, but `ObservationPatternMatcher` currently rejects that projection.
+   Its `ValueOperatorPattern` bean name is historical; semantic and value operator families
+   must be distinguished by their projection and registry contract, not conflated by that name.
+
+The following expresses the intended structural match; **it parses as design syntax but does
+not execute in the baseline**. The quoted registry identifier `presence` still needs its formal
+mapping to the semantic operator enum:
+
+```text
+for pattern {
+  node {
+    semantic_operator = operator("presence",
+      operand = capture entity as semantic(is, {{ earth:Region }}));
+  }
+}
+```
+
+The current adapter retains the quoted spelling (`"presence"`) in the operator field. The
+operator extension must define identifier normalization/decoding as part of registry lookup.
+
+Once implemented, the Tier-1 plan should have this meaning:
+
+```text
+match presence/count of X and bind X
+resolve collective(X) in the requested context and support -> instances
+apply the registered presence/count dereifier to instances -> the requested quality
+return that quality's graph
+```
+
+This is a plan sketch, not new accepted executable syntax. `resolve` allows strategies to explain
+the collection; `observe` would restrict that step to model lookup. A dereifier is a typed unary
+operation consuming the collection produced at execution time. It must not count planning graph
+nodes, provisional observations or submitted models. Keep binary merge binary; no artificial
+second graph is needed. A typed unary node is already allowed for in Section 5.1, but its strategy
+surface and operational beans still require implementation. Do not reuse the old underspecified
+strategy `apply` clause or rename a collection result as a quality.
+
+The contract must preserve the original request's context, geometry, time and observable modifiers.
+Presence of a member is positive evidence; false/zero requires adequate observation support and
+an explicit completeness policy. An unresolved or incompletely observed collection is not an
+observed empty collection. Counting must define member identity/deduplication and spatial/temporal
+support; it counts members at the applicable support, not the number of instantiation events.
+
+**Next bounded operator prompt:** “Extend the accepted baseline with unary semantic-operator
+patterns. Add positive/negative tests for ordinary presence/count patterns and implement typed
+semantic_operator projection/capture without changing shared Observable grammar. Preserve operand
+and whole-observable information. Then specify a registered unary dereifier node and its syntax,
+portable interface beans and Jackson registration. Implement Tier-1 collection-to-presence/count
+plans only after identity, support and empty/unknown/completeness policies have tests. Record
+each stage here; do not infer a second graph or use planning-time collection sizes.”
+
+### Extending and documenting strategies for provenance
+
+Use stable strategy and graph names and a description that explains why the strategy applies.
+Keep pattern selection, semantic decomposition, model search and runtime computation distinct in
+documentation. Record implemented capability and rejection behavior alongside every new construct.
+An extension must cross grammar/syntax beans, LanguageAdapter, semantic beans, matching/lowering,
+Resolver and DataflowCompiler as appropriate, with populated interface-JSON regression tests.
+No Jackson annotations or dependencies belong in portable API beans.
+
+For provenance, distinguish **source plan** (candidate logic), **selected operational plan**
+(concrete observables and input bindings), and **executed dataflow** (actual computations and
+outcomes). The baseline retains strategy URN, namespace, rank, description and operational bindings;
+it does not yet persist a complete capture/matching proof or reconstruct executable source from
+provenance. That builder and the separate `dataflow`/`define`/`apply` document form remain the
+Section 7/S10 extension. Do not present a named planning graph as execution evidence.
+
+<details>
+<summary>Historical migration summary (superseded by the accepted baseline above)</summary>
+
+**Historical status:** the initial source audit/design proposal is complete. The maintainer has generated
 the draft grammar on `klab-languages/feature/observation-revision`. The first reported logical-pattern
 parse failure was reproduced in the generated lexer. Observation-local overrides then caused
 ANTLR unreachable-token errors, so they were removed. With maintainer approval, the three
@@ -33,6 +283,8 @@ form, including provenance reconstruction through a builder. Sections 4–8 are 
 Their syntax remains provisional; the three running syntax fixtures now parse and adapt with
 the generated grammar. This does not establish their semantic or runtime behavior.
 Section 9 supplies staged implementation tasks and continuation prompts.
+
+</details>
 
 ## 1. Two levels of control
 
@@ -322,9 +574,10 @@ Graph names are bare identifiers here; `$name` denotes semantic/setup variables.
 distinguishes the two namespaces. The user's suggested `$graph1` spelling is also possible if
 the type checker distinguishes graph and semantic values, but is not needed for the core design.
 
-A merge without `into` is terminal and returns its result. Alternatively `yield graph_name`
-returns an existing graph. Exactly one output is required. A single producer with no composition
-implicitly returns its graph; two producers without composition are invalid. Reject duplicate
+A merge without `into` is terminal and returns its result in the extension design. Alternatively
+`yield graph_name` returns an existing graph (currently restricted to the final producer).
+Exactly one output is required. The final producer implicitly returns its graph when all preceding
+graphs feed it through explicit inputs; disconnected producers are invalid. Reject duplicate
 definitions, forward references, cycles, statements after a terminal result, and unused graph
 producers. Inputs may be reused by several nodes, but every produced node must reach the output.
 These rules permit a DAG without making source order the execution scheduler.
@@ -1026,18 +1279,23 @@ grammar parses.
 | Stage | Status | Prerequisite | Deliverable |
 |---|---|---|---|
 | S0 | Complete: source audit and initial proposal | Current source | Sections 1–8 and this ledger; no implementation claim |
-| S1 | Pending review | S0 | Approved pattern, plan, executable-source, reconstruction, and Resource contracts with fixtures |
-| S2 | Pending | S1 | Reliable structural matching/captures, external matcher contract, setup, rank, and semantic lifecycle classification baseline |
+| S1 | Accepted for the implemented baseline, 2026-09-09; future capability-specific contracts remain extension work | S0 | Observation-local language, named producers/implicit output, transport and context propagation; preserve accepted decisions |
+| S2 | In progress: implemented structural subset, setup and rank accepted; operator projections and extension dispatch pending | S1 | Reliable structural matching/captures, external matcher contract, setup, rank, and semantic lifecycle classification baseline |
 | S3 | In progress: semantic adaptation and initial tier-0 Reasoner/Resolver boundary implemented; complete validation and composition pending | S1; align with S2 | Observation-local patterns/expressions, named-plan API, separate dataflow AST, validators, versioned transport |
-| S4 | Pending | S2–S3 | Correct candidate coverage, graph identities, failure isolation, termination |
-| S5 | Pending | S4 | Direct resolution and quality transformation through typed composition |
+| S4 | In progress: tier-0 graph/context propagation accepted; full coverage, rollback and termination contracts pending | S2–S3 | Correct candidate coverage, graph identities, failure isolation, termination |
+| S5 | Direct resolution accepted; typed transformation pending | S4 | Direct resolution and quality transformation through typed composition |
 | S6 | Pending | S5 | Substantial predicate composition and mandatory lifecycle completion |
 | S7 | Pending | S6 | Arbitrary observed-context binding, scoped continuations, value operators, and `whose` |
 | S8 | Pending | S7 | Logical union/intersection with value-space contracts |
 | S9 | Pending | S7–S8 | Context bridges, per-inherent resolution, and validated aggregation |
 | S10 | Pending; substeps S10a–S10c below | S5–S9 | Builder-based reconstruction, source/Resource persistence, migration, and integrated validation |
 
-### S1 — Review and freeze the first contract
+### S1 — Accepted baseline and historical review scope
+
+The implemented baseline decisions are accepted by the maintainer. The review scope and original
+prompt below are historical guidance for unimplemented extensions, not a request to reopen the
+baseline. Operator registry signatures, dereifier execution policies and remaining composition/
+persistence capabilities still need their own implementation contracts and tests.
 
 Produce a decision record for Section 8, typed operation and matcher signatures, and positive/negative
 fixtures for all five scenarios plus pattern captures/logical matching and reconstruction/persistence.
@@ -1307,8 +1565,25 @@ although universal coverage is defined as 1. Its fixture now uses a temporal ext
 fractional coverage. No coverage semantics were changed for that correction. The complete test
 suite and a live distributed/runtime execution were not run.
 
-**Next bounded prompt:** “Continue S3/S4 from the initial tier-0 pipeline. Run the fixture against
-a deployed worldview and record any failures. Add document-wide lexical validation and typed
+**Context propagation follow-up (2026-09-09):** the first tests supplied an existing context to
+dependent requests, missing the transition from a substantial's explanatory model to its quality
+dependencies. The Resolver now enters the explained substantial for model computation/dependencies,
+after model lookup, carrying the producer geometry and model namespace/project constraints forward.
+It leaves the requesting scope unchanged, including after collective dependency registration. The
+new `ObservationPipelineTest` case covers root/nested and singular/collective owners, a collective
+dependency with different lexical constraints, and two subsequent qualities that must select
+`dependent.direct` in the original owner's context. External services remain doubles.
+Validation: the Resources/Reasoner/Resolver reactor and its prerequisites compiled; eight focused
+tests passed with the command below. The regression also checks geometry at runtime contextualizer
+validation, unchanged requesting scopes, and dataflow compilation. Live service execution remains
+for the maintainer's retest.
+
+```powershell
+mvn -o -pl klab.services.resources -am '-Dtest=ObservationPipelineTest,ResolutionCompilerQueryTest,ResolverTransportSerializationTest,DataflowCompilerTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+**Next bounded prompt:** “Continue S2–S4 from the accepted, maintainer-tested baseline. Use the
+language guide's unary-operator prompt for presence/count work. Add document-wide lexical validation and typed
 functor dispatch, then complete syntax projections for negation, clauses and operators. Validate
 model input compatibility and prevent duplicate resolution of explicit inputs. Add recursion guards,
 candidate rollback and complementary partial-coverage tests before introducing intermediate observe
