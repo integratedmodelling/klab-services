@@ -178,7 +178,9 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         if (!exceptions.isEmpty()) {
           cause = exceptions.getFirst();
         } else if (cause == null) {
-          cause = new KlabIllegalStateException("Execution failed");
+          cause =
+              new KlabIllegalStateException(
+                  "Execution failed: one or more executors returned false");
         }
       }
 
