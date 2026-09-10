@@ -40,8 +40,7 @@ onMounted(async () => {
   try {
     config.value = await serviceApi.get<DashboardConfiguration>("public/ui/config");
     document.title = config.value.title;
-    // Authentication is optional and must not block public telemetry.
-    void initializeAuthentication(config.value.authentication);
+    await initializeAuthentication(config.value.authentication);
     await refresh();
     refreshTimer = window.setInterval(refresh, 10_000);
   } catch (reason) {
