@@ -131,7 +131,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return getShapeLayerName(rootContextId);
   }
 
-  private String getShapeLayerName(String contextId) {
+  private static String getShapeLayerName(String contextId) {
     return "shape_" + Utils.Paths.getLast(contextId, '.');
   }
 
@@ -141,14 +141,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    */
   interface Queries {
 
+    // Ownership edges only: causal/reference edges must never authorize deletion.
+    // Agents and geometries are shared and are retained for separate orphan collection.
+    String DELETION_OWNERSHIP =
+        "HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_DATA|HAS_ACTIVITY|"
+            + "TRIGGERED|CONTEXTUALIZED|HAS_PLAN|CONTEXTUALIZED_BY|CREATED|RESOLVED";
     String REMOVE_CONTEXT =
-        ("match (n:"
-            + GraphModel.Labels.CONTEXT
-            + " {"
-            + GraphModel.Fields.ID
-            + ": $"
-            + GraphModel.Fields.CONTEXT_ID
-            + "})-[*]->(c) detach delete n, c");
+        "MATCH (ctx:Context {id:$contextId}) "
+            + "OPTIONAL MATCH (ctx)-[:" + DELETION_OWNERSHIP + "*1..]->(owned) "
+            + "WHERE NOT owned:Agent AND NOT owned:Geometry AND NOT owned:Context "
+            + "AND NOT EXISTS { MATCH (other:Context)-[:" + DELETION_OWNERSHIP
+            + "*1..]->(owned) WHERE other <> ctx } "
+            + "WITH ctx, collect(DISTINCT owned) AS assets "
+            + "FOREACH (asset IN assets | DETACH DELETE asset) DETACH DELETE ctx";
     String FIND_CONTEXT =
         ("MATCH (ctx:"
             + GraphModel.Labels.CONTEXT
@@ -305,6 +310,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.transaction =
           this.session.beginTransaction(
               TransactionConfig.builder().withTimeout(Duration.ZERO).build());
+      try {
+        lockContext(transaction, rootContextId);
+      } catch (RuntimeException e) {
+        try {
+          transaction.close();
+        } finally {
+          session.close();
+        }
+        throw e;
+      }
     }
 
     @Override
@@ -519,18 +534,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       String query,
       Map<String, Object> parameters,
       Scope scope) {
-    if (isOnline()) {
-      try {
-        return transaction.run(query, parameters);
-      } catch (Throwable t) {
-        if (scope != null) {
-          scope.error(t.getMessage(), t);
-        } else {
-          Logging.INSTANCE.error(t);
-        }
-      }
+    if (!isOnline()) {
+      throw new KlabStorageException("Knowledge graph is offline");
     }
-    return null;
+    return transaction.run(query, parameters);
   }
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
@@ -544,82 +551,98 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     ensureRuntimeIndexes(scope);
 
-    var result =
-        query(
-            Queries.FIND_CONTEXT,
-            Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()),
-            scope);
+    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+      var result =
+          transaction.run(
+              Queries.FIND_CONTEXT,
+              Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()));
 
-    if (result.records().isEmpty()) {
+      boolean newContext = !result.hasNext();
+      if (!newContext) {
+        lockContext(transaction, configuration.getId());
+      }
+      if (newContext) {
 
-      long timestamp = System.currentTimeMillis();
-      var activityId = nextKey();
+        long timestamp = System.currentTimeMillis();
+        var activityId = nextKey();
 
-      var federation = Klab.INSTANCE.getFederationData(scope.getUser());
-      var rights = configuration.getAccessRights();
-      if (rights == null) {
-        rights = ResourcePrivileges.create(scope);
+        var federation = Klab.INSTANCE.getFederationData(scope.getUser());
+        var rights = configuration.getAccessRights();
+        if (rights == null) {
+          rights = ResourcePrivileges.create(scope);
+        }
+
+        for (var query : Queries.INITIALIZATION_QUERIES) {
+          transaction.run(
+              query,
+              Map.of(
+                  GraphModel.Fields.CONTEXT_ID,
+                  configuration.getId(),
+                  GraphModel.Fields.NAME,
+                  configuration.getName(),
+                  GraphModel.Fields.RIGHTS,
+                  rights.toString(),
+                  GraphModel.Fields.TIMESTAMP,
+                  timestamp,
+                  GraphModel.Fields.FEDERATION,
+                  (federation == null ? "" : federation.getId()),
+                  GraphModel.Fields.DESCRIPTION,
+                  (configuration.getDescription() == null
+                      ? "No description given"
+                      : configuration.getDescription()),
+                  GraphModel.Fields.LAST_UPDATE,
+                  System.currentTimeMillis(),
+                  GraphModel.Fields.USERNAME,
+                  scope.getUser().getUsername(),
+                  GraphModel.Fields.EXPIRATION_TYPE,
+                  configuration.getPersistence().name(),
+                  GraphModel.Fields.ACTIVITY_ID,
+                  activityId)).consume();
+        }
+
       }
 
-      for (var query : Queries.INITIALIZATION_QUERIES) {
-        query(
-            query,
-            Map.of(
-                GraphModel.Fields.CONTEXT_ID,
-                configuration.getId(),
-                GraphModel.Fields.NAME,
-                configuration.getName(),
-                GraphModel.Fields.RIGHTS,
-                rights.toString(),
-                GraphModel.Fields.TIMESTAMP,
-                timestamp,
-                GraphModel.Fields.FEDERATION,
-                (federation == null ? "" : federation.getId()),
-                GraphModel.Fields.DESCRIPTION,
-                (configuration.getDescription() == null
-                    ? "No description given"
-                    : configuration.getDescription()),
-                GraphModel.Fields.LAST_UPDATE,
-                System.currentTimeMillis(),
-                GraphModel.Fields.USERNAME,
-                scope.getUser().getUsername(),
-                GraphModel.Fields.EXPIRATION_TYPE,
-                configuration.getPersistence().name(),
-                GraphModel.Fields.ACTIVITY_ID,
-                activityId),
-            scope);
-      }
+      ensureSpatialLayer(transaction, configuration.getId(), newContext);
+      transaction.commit();
+    }
+  }
 
-      // create spatial layers only if they don't already exist
-      String layerName = getShapeLayerName(configuration.getId());
-      var layerCheck =
-          query(
-              ("CALL spatial.layers() YIELD "
-                  + GraphModel.Fields.NAME
-                  + " WHERE "
-                  + GraphModel.Fields.NAME
-                  + " = $"
-                  + GraphModel.Fields.LAYER_NAME
-                  + " RETURN count("
-                  + GraphModel.Fields.NAME
-                  + ") > 0 AS "
-                  + GraphModel.Fields.EXISTS),
-              Map.of(GraphModel.Fields.LAYER_NAME, layerName),
-              scope);
-      boolean layerExists =
-          layerCheck != null
-              && !layerCheck.records().isEmpty()
-              && layerCheck.records().getFirst().get(GraphModel.Fields.EXISTS).asBoolean(false);
-      if (!layerExists) {
-        query(
-            ("CALL spatial.addLayer($"
+  static void ensureSpatialLayer(org.neo4j.driver.Transaction transaction,
+      String contextId, boolean newContext) {
+    // Existing twins must not silently acquire an empty spatial index.
+    // Validate the layer on every reopen, in the same transaction as initialization.
+    String layerName = getShapeLayerName(contextId);
+    var layerCheck =
+        transaction.run(
+            ("CALL spatial.layers() YIELD "
+                + GraphModel.Fields.NAME
+                + " WHERE "
+                + GraphModel.Fields.NAME
+                + " = $"
                 + GraphModel.Fields.LAYER_NAME
-                + ", 'WKB', '"
-                + GraphModel.Fields.SHAPE
-                + "')"),
-            Map.of(GraphModel.Fields.LAYER_NAME, layerName),
-            scope);
+                + " RETURN count("
+                + GraphModel.Fields.NAME
+                + ") > 0 AS "
+                + GraphModel.Fields.EXISTS),
+            Map.of(GraphModel.Fields.LAYER_NAME, layerName));
+    boolean layerExists = layerCheck.single().get(GraphModel.Fields.EXISTS).asBoolean();
+    if (newContext && layerExists) {
+      throw new KlabStorageException("Spatial layer already exists for new context " + contextId
+          + "; refusing to reuse a potentially foreign index");
+    }
+    if (!layerExists) {
+      if (!newContext) {
+        throw new KlabStorageException("Missing spatial layer " + layerName
+            + " for existing context " + contextId
+            + "; explicit spatial-index recovery is required");
       }
+      transaction.run(
+          ("CALL spatial.addLayer($"
+              + GraphModel.Fields.LAYER_NAME
+              + ", 'WKB', '"
+              + GraphModel.Fields.SHAPE
+              + "')"),
+          Map.of(GraphModel.Fields.LAYER_NAME, layerName)).consume();
     }
   }
 
@@ -711,27 +734,38 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return agent;
   }
 
+  /** Lock the durable context for the full write transaction, including commit/rollback. */
+  static void lockContext(org.neo4j.driver.Transaction transaction, String contextId) {
+    var result = transaction.run(
+        "MATCH (ctx:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID
+            + ": $contextId}) SET ctx." + GraphModel.Fields.ID + " = ctx."
+            + GraphModel.Fields.ID + " RETURN ctx",
+        Map.of("contextId", contextId));
+    if (!result.hasNext()) {
+      throw new KlabStorageException("Context no longer exists: " + contextId);
+    }
+    result.consume();
+  }
+
   @Override
   public void deleteContext() {
-    query(
-        ("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")"),
-        Map.of(GraphModel.Fields.LAYER_NAME, getShapeLayerName(rootContextId)),
-        userScope);
-    query(Queries.REMOVE_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId), userScope);
+    deleteContextAtomically(rootContextId);
   }
 
   @Override
   public void deleteContext(ContextInfo contextScope, ServiceScope serviceScope) {
-    query(
-        ("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")"),
-        Map.of(
-            GraphModel.Fields.LAYER_NAME,
-            getShapeLayerName(contextScope.getConfiguration().getId())),
-        userScope);
-    query(
-        Queries.REMOVE_CONTEXT,
-        Map.of(GraphModel.Fields.CONTEXT_ID, contextScope.getConfiguration().getId()),
-        serviceScope);
+    deleteContextAtomically(contextScope.getConfiguration().getId());
+  }
+
+  private void deleteContextAtomically(String contextId) {
+    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+      lockContext(transaction, contextId);
+      transaction.run("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")",
+          Map.of(GraphModel.Fields.LAYER_NAME, getShapeLayerName(contextId))).consume();
+      transaction.run(Queries.REMOVE_CONTEXT,
+          Map.of(GraphModel.Fields.CONTEXT_ID, contextId)).consume();
+      transaction.commit();
+    }
   }
 
   /**

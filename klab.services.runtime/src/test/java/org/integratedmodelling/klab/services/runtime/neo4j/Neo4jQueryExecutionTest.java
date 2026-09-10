@@ -30,6 +30,35 @@ class Neo4jQueryExecutionTest {
         + "-[:CONTEXTUALIZED]->(parent)");
   }
 
+  @Test
+  void contextDeletionPreservesSharedAndForeignAssets() {
+    try (var database = Neo4jBuilders.newInProcessBuilder().withDisabledServer()
+        .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled, false).build()) {
+      var db = database.defaultDatabaseService();
+      db.executeTransactionally("""
+          CREATE (ctx:Context {id:'delete-me'})-[:HAS_PROVENANCE]->(:Provenance),
+                 (other:Context {id:'keep-me'})-[:HAS_CHILD]->(foreign:Observation),
+                 (ctx)-[:AFFECTS]->(foreign),
+                 (ctx)-[:HAS_CHILD]->(shared:Observation), (other)-[:HAS_CHILD]->(shared),
+                 (ctx)-[:HAS_AGENT]->(agent:Agent), (other)-[:HAS_AGENT]->(agent),
+                 (ctx)-[:HAS_GEOMETRY]->(geometry:Geometry),
+                 (other)-[:HAS_GEOMETRY]->(geometry)
+          """);
+      db.executeTransactionally(KnowledgeGraphNeo4j.Queries.REMOVE_CONTEXT,
+          java.util.Map.of("contextId", "delete-me"));
+      long remaining = db.executeTransactionally("MATCH (n) RETURN count(n) AS n",
+          java.util.Map.of(), result -> (Long) result.next().get("n"));
+      assertEquals(5, remaining);
+      // An empty context must also be deleted (the old variable-length MATCH skipped it).
+      db.executeTransactionally("CREATE (:Context {id:'empty'})");
+      db.executeTransactionally(KnowledgeGraphNeo4j.Queries.REMOVE_CONTEXT,
+          java.util.Map.of("contextId", "empty"));
+      long empty = db.executeTransactionally("MATCH (c:Context {id:'empty'}) RETURN count(c) AS n",
+          java.util.Map.of(), result -> (Long) result.next().get("n"));
+      assertEquals(0, empty);
+    }
+  }
+
   private void assertChildren(String ownership) {
     try (var database = Neo4jBuilders.newInProcessBuilder().withDisabledServer()
         .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled, false).build()) {

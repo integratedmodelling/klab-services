@@ -60,7 +60,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   }
 
   @Override
-  public KnowledgeGraph contextualize(
+  public synchronized KnowledgeGraph contextualize(
       DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
 
     // idempotence

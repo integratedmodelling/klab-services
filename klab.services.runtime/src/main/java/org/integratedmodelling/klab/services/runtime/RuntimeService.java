@@ -234,10 +234,15 @@ public class RuntimeService extends BaseService
     return true;
   }
 
-  private void dtScheduledMaintenance() {
+  // Share the service monitor with declaration through durable creation and scope registration.
+  private synchronized void dtScheduledMaintenance() {
     //    for (var session : getSessionInfo(serviceScope())) {
     for (var context : getContextInfo(serviceScope())) {
-      checkForOrphanContext(context);
+      try {
+        checkForOrphanContext(context);
+      } catch (RuntimeException e) {
+        Logging.INSTANCE.error("Context maintenance failed for " + context.getConfiguration().getId(), e);
+      }
     }
     //    }
   }
@@ -278,42 +283,40 @@ public class RuntimeService extends BaseService
 
       final boolean horphan = orphan;
       if (orphan || timeout) {
-        executorService.submit(
-            () -> {
-              Utils.DebugFile.println(
-                  "Orphan context "
-                      + context.getConfiguration().getName()
-                      + "/"
-                      + context.getConfiguration().getId()
-                      + " being removed due to "
-                      + (horphan ? "being orphaned" : "inactivity"));
 
-              Logging.INSTANCE.info(
-                  "Orphan context "
-                      + context.getConfiguration().getName()
-                      + "/"
-                      + context.getConfiguration().getId()
-                      + " being removed due to "
-                      + (horphan ? "being orphaned" : "inactivity"));
-              if (existingScope != null) {
-                existingScope.close();
-              } else {
-                // yank it off the knowledge graph
-                knowledgeGraph.deleteContext(context, serviceScope());
-                StorageManagerImpl.removeStorage(context, this);
-              }
-            });
+        Utils.DebugFile.println(
+            "Orphan context "
+                + context.getConfiguration().getName()
+                + "/"
+                + context.getConfiguration().getId()
+                + " being removed due to "
+                + (horphan ? "being orphaned" : "inactivity"));
+
+        Logging.INSTANCE.info(
+            "Orphan context "
+                + context.getConfiguration().getName()
+                + "/"
+                + context.getConfiguration().getId()
+                + " being removed due to "
+                + (horphan ? "being orphaned" : "inactivity"));
+        if (existingScope != null) {
+          existingScope.close();
+        } else {
+          // yank it off the knowledge graph
+          knowledgeGraph.deleteContext(context, serviceScope());
+          StorageManagerImpl.removeStorage(context, this);
+        }
+
       } else if (reinit) {
-        executorService.submit(
-            () -> {
-              Logging.INSTANCE.info(
-                  "Reinitializing context "
-                      + context.getConfiguration().getName()
-                      + "/"
-                      + context.getConfiguration().getId()
-                      + " due to inactivity");
-              existingScope.reinitialize();
-            });
+
+        Logging.INSTANCE.info(
+            "Reinitializing context "
+                + context.getConfiguration().getName()
+                + "/"
+                + context.getConfiguration().getId()
+                + " due to inactivity");
+        existingScope.reinitialize();
+
       }
     }
   }
@@ -392,7 +395,7 @@ public class RuntimeService extends BaseService
    * @return
    */
   @Override
-  public DigitalTwin.Configuration declareContextScope(
+  public synchronized DigitalTwin.Configuration declareContextScope(
       ContextScope contextScope, SessionScope sessionScope, UserScope userScope) {
 
     if (!serviceId().equals(contextScope.getHostServiceId())) {
