@@ -10,6 +10,23 @@ import org.junit.jupiter.api.Test;
 class HistogramUtilsTest {
 
   @Test
+  void missingCellsSurviveHistogramTransportIncludingAllNoData() {
+    var dynamic = com.dynatrace.dynahist.Histogram.createDynamic(
+        OpenTelemetryExponentialBucketsLayout.create(1));
+    var allMissing = Utils.Data.adaptHistogram(dynamic, 3);
+    assertTrue(allMissing.isEmpty());
+    assertEquals(3, allMissing.getMissingCount());
+    dynamic.addValue(2);
+    var mixed = Utils.Data.adaptHistogram(dynamic, 3);
+    assertEquals(2, mixed.getMissingCount());
+    var restored = Utils.Data.deserializeHistogramMap(
+        Utils.Data.serializeHistogramMap(Map.of(1L, mixed, 2L, allMissing)));
+    assertEquals(2, restored.get(1L).getMissingCount());
+    assertEquals(3, restored.get(2L).getMissingCount());
+    assertEquals(0, Utils.Data.adaptHistogram(null, 3).getMissingCount());
+  }
+
+  @Test
   void constantHistogramIsNotReportedAsEmpty() {
     var dynamic =
         com.dynatrace.dynahist.Histogram.createDynamic(

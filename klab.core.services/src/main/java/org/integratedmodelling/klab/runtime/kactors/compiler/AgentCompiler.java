@@ -75,7 +75,9 @@ public class AgentCompiler {
   public interface Resolver {
 
     default KActorsBehavior resolveBehavior(String urn, UserScope scope) {
-      if (scope == null) {
+      // Java actors (including produced proxies) are registry entries, not Resources documents.
+      // Do not issue a document request whose absent body would be parsed as KActorsBehavior.
+      if (scope == null || CORE_AGENT_URN.equals(urn) || resolveActor(urn, scope) != null) {
         return null;
       }
       var resources = scope.getService(ResourcesService.class);
@@ -1308,6 +1310,17 @@ public class AgentCompiler {
       Resolver resolver,
       UserScope scope) {
     var constraints = javaArgumentConstraints(resolved.javaMethod());
+    if (resolved.javaMethod() != null && resolved.javaMethod().isVarArgs() && !constraints.isEmpty()) {
+      var expanded = new ArrayList<>(constraints);
+      var tail = expanded.removeLast();
+      int count = Math.max(0, ordinaryArgumentValues(arguments).size() - expanded.size());
+      Class<?> component = resolved.javaMethod().getParameterTypes()[resolved.javaMethod().getParameterCount() - 1].getComponentType();
+      for (int i = 0; i < count; i++) {
+        expanded.add(new JavaArgumentConstraint(tail.name(), true, tail.observation(), tail.actor(),
+            tail.constant(), component, tail.requiredAgentUrn()));
+      }
+      constraints = expanded;
+    }
     if (constraints.isEmpty()) {
       return List.of();
     }
@@ -1396,6 +1409,14 @@ public class AgentCompiler {
       Object literal = literalValue(supplied);
       if (literal != UNKNOWN_LITERAL) {
         Class<?> expected = constraint.javaType();
+        if (expected != null && expected.isEnum() && literal != null) {
+          try {
+            org.integratedmodelling.klab.runtime.kactors.JavaArgumentConversions.enumValue(literal, expected);
+          } catch (IllegalArgumentException e) {
+            notifications.add(argumentError(verb, context, label + ": " + e.getMessage()));
+          }
+          continue;
+        }
         if (expected != null && literal != null && !boxed(expected).isInstance(literal)) {
           notifications.add(
               argumentError(
@@ -1516,8 +1537,10 @@ public class AgentCompiler {
       return directArityMatches(resolved.javaMethod(), ordinaryArgumentValues(arguments).size());
     }
     int supplied = ordinaryArgumentValues(arguments).size();
-    long required = constraints.stream().filter(argument -> !argument.optional()).count();
-    return supplied >= required && supplied <= constraints.size();
+    boolean varargs = resolved.javaMethod() != null && resolved.javaMethod().isVarArgs();
+    long required = constraints.stream().limit(constraints.size() - (varargs ? 1 : 0))
+        .filter(argument -> !argument.optional()).count();
+    return supplied >= required && (varargs || supplied <= constraints.size());
   }
 
   private static List<JavaArgumentConstraint> javaArgumentConstraints(Method method) {
@@ -2739,7 +2762,7 @@ public class AgentCompiler {
       case KActorsStatement.Do loop -> emitDo(loop, code, context, awaitCompletion);
       case KActorsStatement.For loop -> emitFor(loop, code, context, awaitCompletion);
       case KActorsStatement.Assert assertion -> emitAssert(assertion, code, context);
-      case KActorsStatement.Assert.Assertion assertion -> emitAssertion(assertion, code, context);
+      case KActorsStatement.Assert.Assertion assertion -> emitAssertion(assertion, null, code, context);
       default -> code.add("// TODO unsupported statement $L\n", statement.getType());
     }
   }
@@ -3067,12 +3090,13 @@ public class AgentCompiler {
   private void emitAssert(
       KActorsStatement.Assert assertion, CodeBlock.Builder code, CompilationContext context) {
     for (var item : assertion.getAssertions()) {
-      emitAssertion(item, code, context);
+      emitAssertion(item, assertion.getMetadata(), code, context);
     }
   }
 
   private void emitAssertion(
       KActorsStatement.Assert.Assertion assertion,
+      Metadata statementMetadata,
       CodeBlock.Builder code,
       CompilationContext context) {
     CodeBlock actual;
@@ -3088,11 +3112,26 @@ public class AgentCompiler {
     CodeBlock expectedSupplier =
         assertion.getValue() == null ? CodeBlock.of("null") : CodeBlock.of("() -> $L", expected);
     code.addStatement(
-        "assertValue(() -> $L, $L, $L, $L)",
+        "assertValue(() -> $L, $L, $L, $L, $L, $L)",
         actual,
         expectedSupplier,
         assertionLiteral(assertion),
-        context.scope());
+        context.scope(),
+        assertionMessage(assertion, statementMetadata, "success", context),
+        assertionMessage(assertion, statementMetadata, "fail", context));
+  }
+
+  private CodeBlock assertionMessage(KActorsStatement.Assert.Assertion assertion,
+      Metadata statementMetadata, String key, CompilationContext context) {
+    Object message = statementMetadata == null ? null : statementMetadata.get(key);
+    if (statementMetadata != null && statementMetadata.containsKey(":" + key))
+      message = statementMetadata.get(":" + key);
+    if (assertion.getMetadata() != null) {
+      if (assertion.getMetadata().containsKey(key)) message = assertion.getMetadata().get(key);
+      if (assertion.getMetadata().containsKey(":" + key)) message = assertion.getMetadata().get(":" + key);
+    }
+    return message == null ? CodeBlock.of("null")
+        : CodeBlock.of("() -> resolveDeferred($L)", argumentValue(message, context));
   }
 
   private CodeBlock assertionLiteral(KActorsStatement.Assert.Assertion assertion) {

@@ -1691,7 +1691,7 @@ public class ComponentRegistry {
     for (Method method : cls.getDeclaredMethods()) {
       if (Modifier.isPublic(method.getModifiers())
           && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
-        var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
+        var serviceInfo = createVerbPrototype(ret.urn + ".", method.getAnnotation(Verb.class));
         ret.verbs.add(createFunctionDescriptor(serviceInfo, cls, method));
       } else if (method.isAnnotationPresent(AgentAdapter.class)) {
         var serviceInfo = createAgentAdapterPrototype(ret.urn, method);
@@ -2300,7 +2300,7 @@ public class ComponentRegistry {
     // TODO finish the descriptor - needs fires/returns, type, etc.
     // TODO needs arguments
 
-    ret.setName(annotation.name());
+    ret.setName(namespacePrefix + annotation.name());
     ret.setDescription(annotation.description());
     ret.setFunctionType(ServiceInfo.FunctionType.VERB);
 

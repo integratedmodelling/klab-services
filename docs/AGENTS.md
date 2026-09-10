@@ -973,6 +973,9 @@ same user to be created.
 
 ### 10.6. Test cases
 
+See [Testing k.LAB](TESTING.md) for the Inspector assertion contract, data policies, examples,
+regression checks, and proposals for asset capture and project submission gates.
+
 A `testcase` groups `@test` actions. It runs in its own session like applications and scripts. After
 inherited and local initialization and the optional `main` action have run, every local action
 annotated with `@test` runs automatically in source declaration order. Supplier tests are joined

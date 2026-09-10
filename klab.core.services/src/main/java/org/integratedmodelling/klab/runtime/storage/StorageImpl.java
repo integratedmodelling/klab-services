@@ -395,7 +395,7 @@ public class StorageImpl implements Storage {
     }
     ret.rebuildHistogram();
     if (shard instanceof ShardImpl shardImpl) {
-      shardImpl.setHistogram(Utils.Data.adaptHistogram(ret.histogram));
+      shardImpl.setHistogram(Utils.Data.adaptHistogram(ret.histogram, ret.data.count()));
     }
     return ret;
   }
@@ -471,13 +471,17 @@ public class StorageImpl implements Storage {
     temporalHistograms()
         .forEach(
             (timestamp, histogram) ->
-                ret.put(timestamp, Utils.Data.adaptHistogram(histogram)));
+                ret.put(timestamp, Utils.Data.adaptHistogram(histogram,
+                    allShards().stream().filter(s -> s.getTimestamp() == timestamp)
+                        .mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum())));
     return Collections.unmodifiableMap(ret);
   }
 
   @Override
   public Histogram getHistogram() {
-    return Utils.Data.adaptHistogram(histogram());
+    var histogram = histogram();
+    return Utils.Data.adaptHistogram(histogram,
+        allShards().stream().mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum());
   }
 
   @Override
@@ -493,7 +497,7 @@ public class StorageImpl implements Storage {
       var storage = shardStorage.get(scanner.shard().getUrn());
       if (storage.histogram != null) {
         var dynaHistogram = storage.histogram;
-        histogram = Utils.Data.adaptHistogram(dynaHistogram);
+        histogram = Utils.Data.adaptHistogram(dynaHistogram, storage.data.count());
       }
       baseScanner.shard.setHistogram(histogram);
     }

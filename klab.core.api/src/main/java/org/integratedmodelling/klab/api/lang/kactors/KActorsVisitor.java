@@ -1442,7 +1442,9 @@ public class KActorsVisitor {
         } else {
           executionType = target.executionType();
           staticAction = target.statement().isStatic();
-          actionAccumulators.get(pending.context().action).localCallees.add(target.name());
+          if (!pending.valueRequired()) {
+            actionAccumulators.get(pending.context().action).localCallees.add(target.name());
+          }
         }
       } else if (!isImported(recipient)
           && !pending.context().knownVariables.containsKey(recipient)) {
@@ -1516,6 +1518,9 @@ public class KActorsVisitor {
       }
       if (executionType != null
           && executionType != Verb.Type.FUNCTION
+          // Value-position calls are awaited before execution continues. They do not make
+          // their enclosing action reactive or require it to return an asynchronous result.
+          && !pending.valueRequired()
           && pending.context().action != null) {
         actionAccumulators.get(pending.context().action).calledActionTypes.add(executionType);
       }

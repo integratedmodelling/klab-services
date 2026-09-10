@@ -942,6 +942,76 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void assertionMessagesFollowOutcomeAndPreserveOriginalFailures() {
+    var testCase = new StubTestCase(mock(org.integratedmodelling.klab.api.scope.SessionScope.class));
+    var scope = (TestCaseBase.TestCaseScope) ((AgentScope) testCase.rootScope()).withId(50);
+    scope.beforeAction("messages", List.of(AnnotationImpl.create("test", "name", "Messages")));
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+    assertion.setSourceCode("actual is expected");
+    var unused = new AtomicInteger();
+    testCase.evaluate(scope, assertion, () -> true, () -> "Passed message",
+        () -> { unused.incrementAndGet(); return "unused"; });
+    var failure = assertThrows(AssertionError.class,
+        () -> testCase.evaluate(scope, assertion, () -> false,
+            () -> { unused.incrementAndGet(); return "unused"; }, () -> "Failed message"));
+    var original = new IllegalStateException("evaluation broke");
+    assertSame(original, assertThrows(IllegalStateException.class,
+        () -> testCase.evaluate(scope, assertion, () -> { throw original; },
+            null, () -> "Evaluation failed")));
+    testCase.evaluate(scope, assertion, () -> true, () -> { throw new IllegalStateException("bad message"); }, null);
+    testCase.evaluate(scope, assertion, () -> true, null, null);
+    var entries = testCase.report().getChildren().getFirst().getChildren();
+    assertEquals(5, entries.size());
+    assertEquals("Passed message", entries.get(0).description());
+    assertEquals("Failed message", entries.get(1).description());
+    assertTrue(entries.get(1).get("stacktrace", String.class).contains(failure.getMessage()));
+    assertEquals("Evaluation failed", entries.get(2).description());
+    assertTrue(entries.get(3).get("outcome", false));
+    assertTrue(entries.get(3).get("messageError", String.class).contains("bad message"));
+    assertNull(entries.get(4).description());
+    assertEquals(0, unused.get());
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var transported = mapper.convertValue(mapper.valueToTree(entries.get(1)), DomainObject.class);
+    assertEquals("Failed message", transported.description());
+  }
+
+  @Test
+  void inspectorReceivesNoDataFlagsThroughTheRealVerbInvocationPath() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    var histogram = new org.integratedmodelling.klab.api.data.impl.HistogramImpl();
+    histogram.setMissingCount(3);
+    var inspector = org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Inspector.class;
+    assertEquals(false, agent.function(inspector, "present", root));
+    var observation = mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    when(observation.getResolvedCoverage()).thenReturn(1.0);
+    assertEquals(true, agent.function(inspector, "resolved", root, observation));
+    assertEquals(true, agent.function(inspector, "resolved", root, observation, 1));
+    assertEquals(true, agent.function(inspector, "viable", root,
+        agent.withMetadata(new Object[] {histogram}, Metadata.create("nodata", true))));
+    assertEquals(false, agent.function(inspector, "viable", root,
+        agent.withMetadata(new Object[] {histogram}, Metadata.create("data", true))));
+    assertEquals(false, agent.function(inspector, "viable", root,
+        agent.withMetadata(new Object[] {histogram}, Metadata.create("nodata", false))));
+  }
+
+  @Test
+  void enumArgumentsMatchConstantsByNameIgnoringCase() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    for (String name : List.of("HAS_CHILD", "has_child", "HaS_ChIlD")) {
+      assertEquals(org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.HAS_CHILD,
+          agent.function(TestActor.class, "relationship", root, Constant.create(name)));
+      assertEquals(org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.HAS_CHILD,
+          agent.function(TestActor.class, "relationship", root, name));
+      assertEquals(false, agent.function(CoreActorLibrary.Inspector.class, "linked", root,
+          null, null, null, Constant.create(name)));
+    }
+    assertThrows(RuntimeException.class,
+        () -> agent.function(TestActor.class, "relationship", root, Constant.create("NO_SUCH_LINK")));
+  }
+
+  @Test
   void javaVerbVarargsAcceptZeroOrMoreValuesAndNegotiateOnlySuppliedSlots() {
     var agent = new ReactiveRuntimeAgent();
     var root = (AgentScope) agent.rootScope();
@@ -980,8 +1050,9 @@ class RuntimeAgentBaseTest {
                 "0.s",
                 "negotiated payload")
             .join());
-    assertEquals(List.of(Quantity.class), negotiatedSignatures.get(0));
-    assertEquals(List.of(Quantity.class, Object.class), negotiatedSignatures.get(1));
+    // Method selection and execution may both negotiate; validate the requested signatures.
+    assertEquals(List.of(List.of(Quantity.class), List.of(Quantity.class, Object.class)),
+        negotiatedSignatures.stream().distinct().toList());
   }
 
   @Test
@@ -1090,6 +1161,14 @@ class RuntimeAgentBaseTest {
           + metadata.get("enabled")
           + ":"
           + metadata.get("disabled");
+    }
+
+    @Verb(name = "relationship", executionType = Verb.Type.FUNCTION)
+    public static org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship relationship(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "relationship", description = "Relationship enum")
+        org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship relationship) {
+      return relationship;
     }
 
     @Verb(name = "metadataVarargs", executionType = Verb.Type.FUNCTION)
@@ -1750,6 +1829,11 @@ class RuntimeAgentBaseTest {
       return report;
     }
 
+    private void evaluate(AgentScope scope, KActorsStatement.Assert.Assertion assertion,
+        Supplier<Object> actual, Supplier<Object> success, Supplier<Object> failure) {
+      assertValue(actual, null, assertion, scope, success, failure);
+    }
+
     private void record(
         AgentScope scope,
         KActorsStatement.Assert.Assertion assertion,
@@ -1883,6 +1967,7 @@ class RuntimeAgentBaseTest {
     private DomainObject report() {
       return report;
     }
+
 
     @Override
     public Verb.Type getAgentExecutionMode() {

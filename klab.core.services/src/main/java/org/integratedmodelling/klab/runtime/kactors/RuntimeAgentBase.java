@@ -2364,6 +2364,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         source = supplied.length;
       } else if (source < supplied.length) {
         ret[target] = coerceArgument(supplied[source++], parameter);
+      } else if (!parameter.isPrimitive()
+          && method.getParameters()[target].isAnnotationPresent(Verb.Argument.class)
+          && method.getParameters()[target].getAnnotation(Verb.Argument.class).optional()) {
+        ret[target] = null;
       } else {
         throw new IllegalArgumentException("Not enough arguments for " + method);
       }
@@ -2468,8 +2472,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (target == boolean.class && value instanceof Boolean) {
       return value;
     }
-    if (target.isEnum() && value instanceof CharSequence text) {
-      return Enum.valueOf((Class<? extends Enum>) target, text.toString());
+    if (target.isEnum()) {
+      return JavaArgumentConversions.enumValue(value, target);
     }
     if (target == String.class) {
       return value.toString();
@@ -2511,17 +2515,46 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       Supplier<Object> expected,
       KActorsStatement.Assert.Assertion assertion,
       AgentScope scope) {
+    assertValue(actual, expected, assertion, scope, null, null);
+  }
+
+  /** Evaluate only the outcome-selected message, in the assertion's lexical scope. */
+  protected void assertValue(
+      Supplier<Object> actual, Supplier<Object> expected,
+      KActorsStatement.Assert.Assertion assertion, AgentScope scope,
+      Supplier<Object> successMessage, Supplier<Object> failureMessage) {
     try {
       assertValue(actual.get(), expected == null ? null : expected.get(), expected != null);
     } catch (RuntimeException | Error failure) {
       try {
-        assertionEvaluated(scope, assertion, false, failure);
+        reportAssertion(scope, assertion, false, failure, failureMessage);
       } catch (RuntimeException | Error callbackFailure) {
         failure.addSuppressed(callbackFailure);
       }
       throw failure;
     }
-    assertionEvaluated(scope, assertion, true, null);
+    reportAssertion(scope, assertion, true, null, successMessage);
+  }
+
+  private void reportAssertion(AgentScope scope, KActorsStatement.Assert.Assertion assertion,
+      boolean success, Throwable failure, Supplier<Object> message) {
+    String description = null;
+    Throwable messageFailure = null;
+    if (message != null) {
+      try {
+        Object value = resolveDeferred(message.get());
+        description = value == null ? null : value.toString();
+      } catch (RuntimeException | Error error) {
+        messageFailure = error;
+      }
+    }
+    assertionEvaluated(scope, assertion, success, failure, description, messageFailure);
+  }
+
+  /** Message formatting errors are report diagnostics and never replace the assertion outcome. */
+  protected void assertionEvaluated(AgentScope scope, KActorsStatement.Assert.Assertion assertion,
+      boolean success, Throwable exception, String description, Throwable messageFailure) {
+    assertionEvaluated(scope, assertion, success, exception);
   }
 
   /** Hook specialized runtime scopes use to collect assertion results. */

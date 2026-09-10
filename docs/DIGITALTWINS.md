@@ -230,3 +230,149 @@ implemented query contract and [PERSISTENT_TWINS](PERSISTENT_TWINS.md) for resta
 [scheduler-api]: ../klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/Scheduler.java
 [scheduler]: ../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/scheduler/SchedulerImpl.java
 [emitter]: ../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/scheduler/TimeEmitter.java
+
+## The `core.context` k.Actors actor
+
+The Context actor is an authorized proxy to a `ContextScope` and its digital twin. Import
+`core.context as context`. Its verbs expose graph queries, existing storage, scheduler information,
+and cohort membership without silently starting resolution or scheduling work. Pair it with
+[`core.inspector`](TESTING.md) to assert the resulting assets.
+
+### Creating, borrowing, and focusing contexts
+
+| Verb | Contract |
+| --- | --- |
+| `context.new` | Create a twin in the calling agent's session. Default name `Unnamed context`, persistence `ONE_OFF`, and access rights derived from the session. Accepts a positional name/Persistence or `:name`, `:description`, `:persistence`. Persistence constants match enum names ignoring case. |
+| `context.current` | Borrow the calling agent's existing context; fail explicitly if it has none. |
+| `context.wrap(scope)` | Borrow an existing `ContextScope`. No new twin, registration, or ownership transfer. |
+| `ctx.focus(:within observation)` | Return a separate proxy focused within an observation. The original proxy is unchanged. |
+| `ctx.focus(:source observation :target observation)` | Return a proxy using `ContextScope.between` for subsequent relationship submission. Both endpoints are required. |
+| `ctx.close` | Explicitly close the underlying scope according to its persistence policy. This affects other proxies to that context too; it does not merely discard the wrapper. |
+
+Creation through `context.new` in a testcase registers the new context with testcase cleanup.
+Borrowed and focused proxies do not independently register or close their underlying twins.
+Creating a proxy does not confer authorization to access another user's context. No verb here
+opens an arbitrary context ID or remote URL.
+
+`ctx.submit(...)` remains the observation submission supplier. It accepts observation definitions,
+URN literals, semantic literals or resolved `Observable` values, and geometry. `:within` selects a
+focused scope; `:source` and `:target` together select a relationship scope. These alternatives are
+mutually exclusive and malformed or incomplete focus options fail instead of being ignored.
+Selection now occurs before observation construction, so the builder and runtime submission use
+the same focus. `:namespace` and `:project` retain their resolution-constraint meanings. Each call
+attributes provenance to its calling agent; the proxy does not retain the first caller's identity.
+
+```kactors
+ctx <- context.new("Regional checks" :persistence ONE_OFF)
+region <- ctx.submit('staging.vxii.basic.regions.france')
+regional <- ctx.focus(:within region)
+elevation <- regional.submit({{ geography:Elevation in m }}
+    :namespace "staging.vxii.basic" :project "klab.staging.vxii")
+assert inspector.viable(elevation !nodata)
+```
+
+An assignment waits for the submission result; a reactive call may use match branches. No explicit
+scheduler submission is needed: the runtime owns the observation lifecycle and its transactions.
+
+### Extracting assets with `query`
+
+`ctx.query(...)` returns the first matching asset, or null. `+all` returns an iterable list snapshot,
+including an empty list when nothing matches. Results are ordered by graph ID. Queries use the
+existing [typed knowledge-graph API](KNOWLEDGE_GRAPH.md), not interpolated Cypher or another text
+query language. Backend and authorization failures propagate as errors, never as empty matches.
+
+| Selector/option | Meaning |
+| --- | --- |
+| `OBSERVATION`, `COHORT`, `ACTIVITY`, `ACTUATOR`, `LINK`, `DATA`, `AGENT`, `PLAN` | Runtime asset type; `OBSERVATION` is the default. Other `RuntimeAsset.Type` values are forwarded subject to backend support. `ANY` selects generic RuntimeAssets. A Java RuntimeAsset class may also be supplied by an integration. |
+| `42` or `:id 42` | Positive committed graph ID. An ID predicate preserves all other filters; it does not use the API's condition-overriding `id()` shortcut. Unassigned `-1` and query-only `0` are rejected. |
+| `"canonical:urn"`, a URN literal, or `:urn value` | Exact canonical URN. Named observation URNs are passed directly, never parsed as numeric IDs. ID and URN selectors cannot be combined. |
+| `{{ ... }}`, a resolved `Observable`, or `:semantics value` | Exact canonical observable identity on observation results. Semantic literals are resolved by the selected scope's Reasoner. This is not subsumption, unit mediation, or a new observation request. |
+| `:type TYPE` | Named alternative to the positional type. |
+| `:within observation` | Derive `within(observation)` and traverse its outgoing `HAS_CHILD` edges. The query is authorized and executed using that derived scope. |
+| `:source asset` | Traverse outgoing edges from an explicit RuntimeAsset. |
+| `:target asset` | Traverse incoming edges toward an explicit RuntimeAsset, returning the source-side assets. |
+| `:source asset :target asset` | Select directed **graph Link assets** between endpoints. Defaults result type to `LINK`; explicit non-LINK types are rejected. For observation endpoints, execution uses a derived `between` scope. |
+| `:along HAS_MEMBER` | Edge relationship for traversal, default `HAS_CHILD`. A positional relationship constant is also accepted. |
+| `:depth 3` | Traverse paths of length 1 through 3 (default 1; maximum 64). Requires an anchor; endpoint Link queries require exactly one hop. |
+| `+all`, `:limit n`, `:offset n` | List mode, maximum rows and rows to skip. `+all` is unlimited by default; use `:limit` for large graphs. Limit -1 means unlimited and 0 means none; offset must be nonnegative. Without `+all`, at most one result is returned. |
+
+Without an explicit anchor, a within-focused proxy queries children of its focus. An unfocused
+proxy queries the requested type across its authorized twin. A between-focused proxy queries
+links between its endpoints. Explicit `:within`, `:source`, or `:target` options override inherited
+focus for query traversal. `:within` cannot be combined with explicit endpoints. Strings are URNs,
+not type names or semantic definitions; use constants and semantic literals for those purposes.
+Unknown options, duplicate selector kinds, nonintegral paging values, and incompatible combinations
+fail explicitly. `:namespace` and `:project` are submission options, not graph query filters.
+
+```kactors
+first <- ctx.query(OBSERVATION :within region)
+selected <- ctx.query(42)
+by_name <- ctx.query("test.tanzania.ruaha")
+elevation <- ctx.query({{ geography:Elevation in m }} :within region)
+links <- ctx.query(LINK :source region :target elevation :along HAS_CHILD +all)
+cohorts <- ctx.query(COHORT +all :limit 100)
+```
+
+The examples presume those assets and relationships exist in the selected twin. Paging is not a
+stable cursor across concurrent writes. For repeatable tests, query after the corresponding
+submission/commit completes and avoid overlapping mutations. These verbs do not promise visibility
+of uncommitted assets beyond what the backend query API provides. Use `ctx.graph` when an integration
+needs advanced typed `where`, `and`, `or`, hop ranges, or custom ordering directly.
+
+### Iterating cohorts
+
+`ctx.members(cohort)` returns the direct observations connected through `HAS_MEMBER`, as an
+ID-ordered list suitable for `for`. It accepts `:limit` and `:offset`; the default returns all
+members. It queries membership, not `getChildrenCount()`, so stale cached counters do not determine
+the result. Membership is a snapshot, not a subscription, and members are observations rather than
+messageable agent handles.
+
+```kactors
+for cohort in ctx.query(COHORT +all) (
+    for member in ctx.members(cohort) (
+        assert inspector.viable(member)
+    )
+)
+```
+
+For very large cohorts, request explicit pages. Lazy cursors tied to a stable commit are proposed
+below; ordinary offset paging can skip or repeat entries if membership changes between requests.
+
+### Access to twin components
+
+| Verb | Result and boundary |
+| --- | --- |
+| `ctx.scope` | The exact proxied ContextScope, retaining focus and authorization. |
+| `ctx.twin` | Its DigitalTwin; fails if unavailable. |
+| `ctx.graph` | Its KnowledgeGraph. |
+| `ctx.storagemanager` | Its StorageManager. Local/remote support depends on the scope implementation. |
+| `ctx.storage(observation)` | Existing storage; missing or inaccessible storage propagates the manager's error. No scanners are created by this accessor. |
+| `ctx.scheduler` | Its Scheduler, when supported by this scope. |
+| `ctx.timeline` | Read-only map of `epochStart`, `epochEnd`, and `resolution`; values may be null before scheduling establishes them. Does not advance time. |
+
+These are capability accessors, not a guarantee that a remote proxy implements every local method.
+Raw scheduler mutators require the scheduler's transaction and lifecycle preconditions; normal
+k.Actors callers should use `submit`. For stored values, combine `storage` with Inspector's
+`hasdata`, `nodata`, `complete`, and `inrange` checks instead of allocating write scanners.
+
+### Proposed additions requiring decisions
+
+These are documented contract proposals, **not callable stubs that return placeholder success**.
+
+| Proposal | Decisions and intended behavior |
+| --- | --- |
+| Semantic relationship observations between endpoints | Define one canonical direction for `HAS_RELATIONSHIP_SOURCE` and `HAS_RELATIONSHIP_TARGET`, and align storage and scope relationship helpers. Current `ServiceContextScope` incoming/outgoing helpers do not provide a consistent source/target contract. Then select relationship observations by endpoints plus observable. Existing `query(... :source ... :target ...)` deliberately returns graph Links. |
+| Broader semantic query modes | Specify exact observable identity versus semantic subsumption, compatible units, collective/distributed forms, and coverage requirements. Add explicit modes rather than silently resolving or mediating data during a graph read. |
+| `ctx.agents(:within observation :behavior behaviorUrn)` | Return existing runtime agent handles associated with observation URNs. First define the observation-to-agent registry, behavior multiplicity, visibility/permissions, lifecycle status, and reconnect semantics. `query(AGENT)` currently means a **provenance Agent asset**, not a RuntimeAgent. |
+| `ctx.agent(observation, behavior)` | Resolve an existing messageable handle, with explicit behavior selection when multiple behaviors are attached. Absence should not implicitly instantiate a behavior or start a new agent. Returned handles can use the existing `tell`/`ask` contract once runtime identity and authorization are resolved. |
+| Messaging a cohort | Decide snapshot membership versus live membership, target behavior selection, delivery/acknowledgement guarantees, timeouts, partial failures, and aggregation of replies. Prefer explicit per-member agent lookup and messaging before introducing broadcast. Querying members must never send messages or start behaviors. |
+| Observe membership or commits | Define a supplier/emitter contract, replay point, cancellation, bounded buffering and subscription cleanup. Use event subscriptions rather than repeatedly fetching all members. |
+| Stable cohort/query iteration | Define a cursor pinned to a commit or immutable capture, including expiration and authorization checks. Then expose bounded pages or a lazy iterable without pretending offset pagination is a snapshot. |
+| Scheduler step/run/pause | Define transaction ownership, simulated versus wall-clock time, cancellation, end conditions and idempotency. Do not expose a convenience step that bypasses provenance or runs a second scheduler. |
+| Context connection and composition | Define authorized lookup by ID/URN, ownership and lifetime of borrowed connections, and federation semantics. `wrap` accepts an already authorized scope; it does not connect or merge independent twins. |
+| Geometry/event-specific storage reads | Define read-only scanner lifetime, locator/event selection, native versus mediated units, limits and categorical missing values before exposing a values iterator. |
+
+The Context query regressions inspect the actual portable query representation and verify scope,
+selectors, links, membership, pagination, null results, and invalid combinations. They also verify
+that timeline inspection does not schedule work. A live project run, remote storage access, and
+behavior-agent messaging need separate integration verification.

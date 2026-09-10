@@ -479,6 +479,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
     }
 
+    /** Include cells excluded from the numeric histogram (NaN) in the transport snapshot. */
+    public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram, long cells) {
+      var ret = (HistogramImpl) adaptHistogram(histogram);
+      if (histogram != null) {
+        ret.setMissingCount(Math.max(0, cells - histogram.getTotalCount()));
+      }
+      return ret;
+    }
+
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
 
       /*

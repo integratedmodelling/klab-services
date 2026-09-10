@@ -60,6 +60,55 @@ import org.junit.jupiter.api.Test;
 class BehaviorAnalyzerTest {
 
   @Test
+  void awaitedSupplierAssignmentsDoNotLeaveAnUncompletedActionFuture() {
+    var submit = verb("worker", "submit");
+    var check = action("check_substantial_identity",
+        assignment("mainobs", KActorsStatement.Assignment.Scope.FRAME, submit));
+    check.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("worker")));
+    var source = behavior(check);
+    var validator = new KActorsVisitor.LenientValidator() {
+      @Override
+      public Verb.Type classifyActionCall(KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        return Verb.Type.SUPPLIER;
+      }
+    };
+    var analyzer = new BehaviorAnalyzer(source, validator);
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertTrue(analyzer.getCalls().getFirst().valueRequired());
+    assertEquals(Verb.Type.SUPPLIER, analyzer.getCalls().getFirst().executionType());
+    assertEquals(Verb.Type.FUNCTION, check.getActionType());
+    var compiler = new AgentCompiler(source, null, validator, null);
+    assertTrue(compiler.compile(), compiler.getNotifications().toString());
+    var generated = compiler.getSourceCode();
+    assertTrue(generated.contains("invokeSupplier("), generated);
+    assertTrue(generated.contains(".join()"), generated);
+    assertFalse(generated.contains("var actionResult ="), generated);
+    assertGeneratedJavaCompiles(generated);
+  }
+
+  @Test
+  void awaitingALocalSupplierDoesNotPropagateItsReactiveModeToTheCaller() {
+    var fetch = verb("worker", "fetch");
+    fetch.setActions(List.of(switchCase(number(1), yielded(number(42)))));
+    var supplier = action("fetch_value", fetch);
+    supplier.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("worker")));
+    var call = verb("self", "fetch_value");
+    call.getArguments().putUnnamed(identifier("worker"));
+    var caller = action("check", assignment("value", KActorsStatement.Assignment.Scope.FRAME, call));
+    caller.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("worker")));
+    var validator = new KActorsVisitor.LenientValidator() {
+      @Override
+      public Verb.Type classifyActionCall(KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        return Verb.Type.SUPPLIER;
+      }
+    };
+    var analyzer = new BehaviorAnalyzer(behavior(supplier, caller), validator);
+    assertTrue(analyzer.analyze(), messages(analyzer));
+    assertEquals(Verb.Type.SUPPLIER, supplier.getActionType());
+    assertEquals(Verb.Type.FUNCTION, caller.getActionType());
+  }
+
+  @Test
   void defaultKActorsValidatorAppliesObservableRulesToSemanticLiterals() {
     var concept = new KimConceptImpl();
     concept.setType(Set.of(SemanticType.QUALITY));
@@ -2067,6 +2116,63 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void enumLiteralValidationUsesCaseInsensitiveEnumNames() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "java.worker";
+    var accept = javaVerb("relationship", true, JavaStaticityActor.class.getMethod("relationship",
+        org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.class));
+    descriptor.verbs.add(accept.getKey());
+    var resolved = new AgentCompiler.ResolvedActor(descriptor, Map.of("relationship", accept.getValue()));
+    var resolver = new AgentCompiler.Resolver() {
+      @Override
+      public AgentCompiler.ResolvedActor resolveActor(String urn,
+          org.integratedmodelling.klab.api.scope.UserScope scope) {
+        return resolved;
+      }
+    };
+    for (var value : List.of(constant("HAS_CHILD"), constant("has_child"),
+        lexicalConstant("HaS_ChIlD"), lexicalConstant("NO_SUCH_LINK"))) {
+      var call = verb("java", "relationship");
+      call.getArguments().putUnnamed(value);
+      var source = behavior(action("main", call));
+      source.setImports(List.of(imported("java.worker", "java")));
+      var analyzer = new BehaviorAnalyzer(source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+      if ("NO_SUCH_LINK".equals(value.getStatedValue())) {
+        assertFalse(analyzer.analyze());
+        assertTrue(messages(analyzer).contains("Unknown enum name"), messages(analyzer));
+      } else {
+        assertTrue(analyzer.analyze(), messages(analyzer));
+      }
+    }
+  }
+
+  @Test
+  void inspectorAnnotatedVarargsAcceptZeroOneAndManyAssets() throws Exception {
+    var descriptor = new Extensions.ActorDescriptor();
+    descriptor.urn = "core.inspector";
+    var viable = javaVerb("viable", true,
+        org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Inspector.class
+            .getMethod("checkViable", RuntimeAgent.Scope.class, Object[].class));
+    descriptor.verbs.add(viable.getKey());
+    var resolved = new AgentCompiler.ResolvedActor(descriptor, Map.of("viable", viable.getValue()));
+    var resolver = new AgentCompiler.Resolver() {
+      @Override
+      public AgentCompiler.ResolvedActor resolveActor(String urn,
+          org.integratedmodelling.klab.api.scope.UserScope scope) { return resolved; }
+    };
+    for (int count = 0; count <= 3; count++) {
+      var call = verb("inspector", "viable");
+      for (int i = 0; i < count; i++) call.getArguments().putUnnamed(number(i));
+      call.getArguments().put("nodata", bool(false));
+      call.getArguments().getMetadataKeys().add("nodata");
+      var source = behavior(action("main", call));
+      source.setImports(List.of(imported("core.inspector", "inspector")));
+      var analyzer = new BehaviorAnalyzer(source, AgentCompiler.runtimeEnvironment(resolver, null).validator());
+      assertTrue(analyzer.analyze(), messages(analyzer));
+    }
+  }
+
+  @Test
   void testcaseParallelPropertyIsRuntimeDrivenAndRequiresABoolean() {
     var first = action("first_test", returned(number(1)));
     first.setAnnotations(List.of(Annotation.of("test")));
@@ -2107,6 +2213,8 @@ class BehaviorAnalyzerTest {
     assertion.setValue(bool(true));
     var statement = new KActorsStatementImpl.AssertImpl();
     statement.setAssertions(List.of(assertion));
+    statement.setMetadata(Metadata.create("success", "Temperature is correct",
+        "fail", "Temperature is wrong"));
     var test = action("checks_temperature", statement);
     test.setAnnotations(List.of(Annotation.of("test")));
     var source = behavior(test);
@@ -2119,6 +2227,8 @@ class BehaviorAnalyzerTest {
     assertTrue(generated.contains("assertValue(() -> true, () -> true"), generated);
     assertTrue(generated.contains("assertionLiteral("), generated);
     assertTrue(generated.contains("temperature-check"), generated);
+    assertTrue(generated.contains("Temperature is correct"), generated);
+    assertTrue(generated.contains("Temperature is wrong"), generated);
     assertGeneratedJavaCompiles(generated);
   }
 
@@ -2306,6 +2416,13 @@ class BehaviorAnalyzerTest {
     @Verb(name = "duration", executionType = Verb.Type.FUNCTION)
     public static Object duration(double amount, java.util.concurrent.TimeUnit unit) {
       return amount + " " + unit;
+    }
+
+    @Verb(name = "relationship", executionType = Verb.Type.FUNCTION)
+    public static Object relationship(
+        @Verb.Argument(name = "relationship", description = "Relationship enum")
+        org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship relationship) {
+      return relationship;
     }
 
     @Verb(name = "accept", executionType = Verb.Type.FUNCTION)

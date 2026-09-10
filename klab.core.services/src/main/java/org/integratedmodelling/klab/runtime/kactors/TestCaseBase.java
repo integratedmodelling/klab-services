@@ -155,6 +155,11 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
      */
     public void assertionEvaluated(
         KActorsStatement.Assert.Assertion assertion, boolean success, Throwable exception) {
+      assertionEvaluated(assertion, success, exception, null, null);
+    }
+
+    public void assertionEvaluated(KActorsStatement.Assert.Assertion assertion, boolean success,
+        Throwable exception, String description, Throwable messageFailure) {
       var assertionData = DomainObject.create();
       if (data == null) {
         return;
@@ -165,8 +170,9 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       if (exception != null) {
         assertionData.put("stacktrace", Utils.Exceptions.stackTrace(exception));
       }
-      // TODO fish "success" and "fail" metadata from assertion (probably attached to the statement(s) in it), add
-      //  the relevant one (depending on outcome) as description
+      if (description != null) assertionData.put(DomainObject.DESCRIPTION, description);
+      if (messageFailure != null)
+        assertionData.put("messageError", Utils.Exceptions.stackTrace(messageFailure));
       assertionData.put("end", System.currentTimeMillis());
       synchronized (getAgent().report) {
         data.getChildren().add(assertionData);
@@ -407,6 +413,16 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       Throwable exception) {
     if (scope instanceof TestCaseScope testCaseScope) {
       testCaseScope.assertionEvaluated(assertion, success, exception);
+    }
+  }
+
+  @Override
+  protected void assertionEvaluated(AgentScope scope, KActorsStatement.Assert.Assertion assertion,
+      boolean success, Throwable exception, String description, Throwable messageFailure) {
+    if (description == null && messageFailure == null) {
+      assertionEvaluated(scope, assertion, success, exception);
+    } else if (scope instanceof TestCaseScope testCaseScope) {
+      testCaseScope.assertionEvaluated(assertion, success, exception, description, messageFailure);
     }
   }
 

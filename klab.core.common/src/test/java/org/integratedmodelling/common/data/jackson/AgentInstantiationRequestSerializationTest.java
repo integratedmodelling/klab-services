@@ -21,6 +21,42 @@ import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
 import org.junit.jupiter.api.Test;
 
 class AgentInstantiationRequestSerializationTest {
+  @Test
+  void assertionMessagesAndInspectorPoliciesSurviveBehaviorTransmission() throws Exception {
+    var call = new KActorsStatementImpl.VerbImpl();
+    call.setRecipient("inspector");
+    call.setMessage("viable");
+    call.setArguments(new KActorsArgumentsImpl());
+    var policy = new KActorsValueImpl();
+    policy.setType(ValueType.BOOLEAN);
+    policy.setStatedValue(true);
+    call.getArguments().put("nodata", policy);
+    var assertion = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+    assertion.setCalls(java.util.List.of(call));
+    var statement = new KActorsStatementImpl.AssertImpl();
+    statement.getAssertions().add(assertion);
+    for (String key : java.util.List.of("success", "fail")) {
+      var message = new KActorsValueImpl();
+      message.setType(ValueType.STRING);
+      message.setStatedValue("assertion " + key);
+      statement.getArguments().put(key, message);
+    }
+    var action = new KActorsActionImpl();
+    action.setUrn("test");
+    action.getCode().add(statement);
+    var behavior = new KActorsBehaviorImpl();
+    behavior.setUrn("test.assertion.transport");
+    behavior.getStatements().add(action);
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var restored = mapper.readValue(mapper.writerFor(KActorsBehavior.class).writeValueAsString(behavior), KActorsBehavior.class);
+    var restoredAssert = (KActorsStatement.Assert) restored.getStatements().getFirst().getCode().getFirst();
+    assertEquals("assertion success", ((KActorsValue) restoredAssert.getArguments().get("success")).getValue(Object.class));
+    assertEquals("assertion fail", ((KActorsValue) restoredAssert.getArguments().get("fail")).getValue(Object.class));
+    var restoredCall = restoredAssert.getAssertions().getFirst().getCalls().getFirst();
+    assertEquals("viable", restoredCall.getMessage());
+    assertEquals(true, ((KActorsValue) restoredCall.getArguments().get("nodata")).getValue(Object.class));
+  }
+
 
   @Test
   void serializesBehaviorAsAnObject() throws Exception {
