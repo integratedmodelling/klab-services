@@ -246,7 +246,8 @@ public class DigitalTwinImpl implements DigitalTwin {
                         .orElse(observation);
                 try {
                   this.graph.addEdge(
-                      activity, obs, new RelationshipEdge(GraphModel.Relationship.CONTEXTUALIZED));
+                      activity, obs, new RelationshipEdge(GraphModel.Relationship.forContextualization(
+                          observation.getObservable().getContextualization())));
                 } catch (Exception e) {
                   Logging.INSTANCE.error(e, obs);
                 }

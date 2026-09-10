@@ -167,6 +167,11 @@ public enum Contextualization {
     this.verbalForm = verbalForm;
   }
 
+  /** These activities update existing substantial observations instead of producing a result observation. */
+  public boolean modifiesExistingObservations() {
+    return this == CLASSIFICATION || this == CHARACTERIZATION;
+  }
+
   public static Contextualization forSemantics(KimConcept observable) {
 
     // predicates are particular and cannot be classified based on type alone
@@ -181,7 +186,10 @@ public enum Contextualization {
         return TRANSFORMATION;
       }
 
-      return inherent.isCollective() ? CLASSIFICATION : CHARACTERIZATION;
+      if (!SemanticType.isSubstantial(inherent.getType())) return VOID;
+      // Abstraction selects classification; collective inherence selects its member source.
+      // Concrete predicates characterize even when applied across a collective.
+      return observable.is(SemanticType.ABSTRACT) ? CLASSIFICATION : CHARACTERIZATION;
     }
     return forSemantics(observable.getType(), observable.isCollective());
   }

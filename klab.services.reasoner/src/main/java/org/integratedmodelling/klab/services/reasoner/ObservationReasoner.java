@@ -229,6 +229,10 @@ public class ObservationReasoner {
   private ObservationStrategy lower(
       KimObservationStrategy strategy, Map<String, Object> variables, ContextScope scope) {
 
+    if (((Observable) variables.get("this")).getContextualization().modifiesExistingObservations())
+      throw new UnsupportedOperationException(
+          "Semantic-update plans require the classification runtime path; observation-producing lowering is not valid");
+
     var result = new ObservationStrategyImpl();
     result.setUrn(strategy.getUrn());
     result.setNamespace(strategy.getNamespace());

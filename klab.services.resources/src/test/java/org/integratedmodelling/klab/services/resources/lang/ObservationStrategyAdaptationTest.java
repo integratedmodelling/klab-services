@@ -106,7 +106,7 @@ class ObservationStrategyAdaptationTest {
       assertEquals("example.project", document.getProjectName());
       assertEquals(123L, document.getLastUpdateTimestamp());
       assertNotNull(document.getVersion());
-      if (file.equals("observations-proposed.obs")) assertEquals(8, document.getStatements().size());
+      if (file.equals("observations-proposed.obs")) assertEquals(10, document.getStatements().size());
       String json = mapper.writerFor(KimObservationStrategyDocument.class).writeValueAsString(document);
       assertFalse(json.contains("org.integratedmodelling.languages."), "No syntax/EMF classes on the wire");
       assertFalse(json.contains("org.eclipse.emf"));

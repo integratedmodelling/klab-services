@@ -121,15 +121,15 @@ from detected qualities is local to the observation holding those qualities.
 One built from relationships is global to the digital twin and can change as
 new observations are made under the same observer.
 
-**Contract and implementation:** the table describes the revised enum comments.
-Its current `forSemantics(KimConcept)` predicate branch dispatches by inherency:
-no bearer gives `VOID`, a quality bearer gives `TRANSFORMATION`, and otherwise
-the bearer's collective flag selects `CLASSIFICATION` or `CHARACTERIZATION`.
-That branch does not explicitly test predicate abstractness or `any`. The
-general dispatch also does not itself reject every abstract or inconsistent
-expression. Thus a selected enum value alone does not establish that a request
-is valid or that all documented lifecycle behavior is implemented. Worldview
-validation and executable strategies remain necessary.
+**Contract and implementation:** predicate dispatch uses inherency and the predicate's
+`ABSTRACT` semantic flag: no bearer gives `VOID`, a quality bearer gives `TRANSFORMATION`,
+and a substantial bearer gives `CLASSIFICATION` for an abstract predicate or
+`CHARACTERIZATION` for a concrete one. Collective inherence determines member acquisition,
+not whether a concrete predicate becomes a classifier. Classification preserves observation
+identity and cohort membership; it changes semantics, then Runtime schedules characterization
+inside each member. Missing characterization models do not invalidate classification.
+The member-resolving classifier strategy is Tier 0. Runtime execution remains staged; see
+[the implementation guide](CLASSIFICATION.md). An enum value is not proof of executable support.
 
 ## 2. Concepts and predicates
 

@@ -325,7 +325,20 @@ public interface GraphModel {
     HAS_AGENT,
     AFFECTS,
     CONTEXTUALIZED_BY,
-    CONTEXTUALIZED,
+    CONTEXTUALIZED, // Legacy activity-to-observation link; retained for stored graphs.
+    INSTANTIATED,
+    ACKNOWLEDGED,
+    DETECTED,
+    SIMULATED,
+    MEASURED,
+    QUANTIFIED,
+    VALUED,
+    CATEGORIZED,
+    VERIFIED,
+    CLASSIFIED,
+    CHARACTERIZED,
+    TRANSFORMED,
+    CONNECTED,
     HAS_CONTEXT, // for submission activities
     EMERGED_FROM,
     HAS_OBSERVER, // for submission activities FIXME currently is used on observations
@@ -347,6 +360,33 @@ public interface GraphModel {
     CONTRIBUTED_TO, // provenance relationship linking collective observations to cohorts
     TRIGGERED,
     RESOLVED;
+
+    /** Activity effects are not evidence of ownership, particularly for semantic updates. */
+    public static Relationship forContextualization(
+        org.integratedmodelling.klab.api.knowledge.Contextualization activity) {
+      if (activity == null) return CONTEXTUALIZED;
+      return switch (activity) {
+        case VOID -> CONTEXTUALIZED;
+        case INSTANTIATION -> INSTANTIATED;
+        case ACKNOWLEDGEMENT -> ACKNOWLEDGED;
+        case DETECTION -> DETECTED;
+        case SIMULATION -> SIMULATED;
+        case MEASURE -> MEASURED;
+        case QUANTIFICATION -> QUANTIFIED;
+        case VALUATION -> VALUED;
+        case CATEGORIZATION -> CATEGORIZED;
+        case VERIFICATION -> VERIFIED;
+        case CLASSIFICATION -> CLASSIFIED;
+        case CHARACTERIZATION -> CHARACTERIZED;
+        case TRANSFORMATION -> TRANSFORMED;
+        case CONNECTION -> CONNECTED;
+      };
+    }
+
+    public static final Set<Relationship> CONTEXTUALIZATION_EFFECTS = java.util.Collections.unmodifiableSet(
+        EnumSet.of(CONTEXTUALIZED, INSTANTIATED, ACKNOWLEDGED, DETECTED, SIMULATED,
+            MEASURED, QUANTIFIED, VALUED, CATEGORIZED, VERIFIED, CLASSIFIED,
+            CHARACTERIZED, TRANSFORMED, CONNECTED));
 
     public enum Direction {
       INCOMING,

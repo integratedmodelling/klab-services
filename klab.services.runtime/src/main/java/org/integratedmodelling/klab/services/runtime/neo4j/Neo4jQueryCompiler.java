@@ -24,7 +24,8 @@ public final class Neo4jQueryCompiler {
   private String contextParameter;
 
   private static final String OWNERSHIP =
-      java.util.stream.Stream.of(
+      java.util.stream.Stream.concat(GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.stream(),
+          java.util.stream.Stream.of(
               GraphModel.Relationship.HAS_CHILD,
               GraphModel.Relationship.HAS_MEMBER,
               GraphModel.Relationship.HAS_PROVENANCE,
@@ -41,7 +42,7 @@ public final class Neo4jQueryCompiler {
               GraphModel.Relationship.HAS_AGENT,
               GraphModel.Relationship.BY_AGENT,
               GraphModel.Relationship.CREATED,
-              GraphModel.Relationship.RESOLVED)
+              GraphModel.Relationship.RESOLVED))
           .map(Enum::name)
           .collect(Collectors.joining("|"));
 

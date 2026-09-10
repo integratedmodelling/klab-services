@@ -462,11 +462,14 @@ a demand to supply executable models for every concept.
 
 #### Semantic contract versus current dispatch
 
-The revised case comments are richer than the present dispatch helper.
 `forSemantics(KimConcept)` maps predicates without inherency to `VOID`, predicates
-inherent to qualities to `TRANSFORMATION`, and other predicates to
-`CLASSIFICATION` or `CHARACTERIZATION` according to the inherent observable's
-collective flag. It does not explicitly test abstractness or `any` there.
+inherent to qualities to `TRANSFORMATION`, and predicates inherent to substantials according
+to the predicate's `ABSTRACT` flag: classification for abstract, characterization for concrete.
+Collectivity selects member acquisition, not predicate abstractness. Classification changes
+existing/new members' semantics without creating a classification-result observation or changing
+their identity/cohort. Runtime then attempts concrete characterization per member; no explanatory
+model is a valid outcome. Member resolution is part of the Tier-0 classification strategy.
+The [classification runtime branch](../docs/CLASSIFICATION.md) is staged, not yet executable.
 The general type dispatch checks class, presence, physical intensive/extensive
 quality, value, generic quality, relationship, configuration, process, countable,
 and nothing, in that order; it is not a complete abstractness or consistency

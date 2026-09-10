@@ -11,6 +11,9 @@ quality transformation lowering, with model input-port validation and existing-b
 compilation. See [the implementation boundary](OBSERVATION.md#tier-1-predicate-transformation-initial-executable-subset).
 Other rank-1 merges and numerical runtime acceptance remain pending.
 
+The corpus now also includes `classification.members` and `characterization.direct`, with execution
+gated pending the operation-target runtime path. See [CLASSIFICATION.md](CLASSIFICATION.md).
+
 The baseline files are:
 
 - [Supplied version 1.0 source](examples/observation-strategies/observations-1.0.source.txt), retained

@@ -26,6 +26,15 @@ class Neo4jQueryCompilerTest {
   }
 
   @Test
+  void semanticEffectsAreVisibleButDoNotAuthorizeContextDeletion() {
+    var statement = compile(observations());
+    for (var effect : GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS)
+      assertTrue(statement.cypher().contains(effect.name()));
+    assertFalse(KnowledgeGraphNeo4j.Queries.DELETION_OWNERSHIP.contains("CLASSIFIED"));
+    assertFalse(KnowledgeGraphNeo4j.Queries.DELETION_OWNERSHIP.contains("CHARACTERIZED"));
+  }
+
+  @Test
   void wholeContextRangeIsTypedParameterizedAndPaginated() {
     var query = observations();
     query.where(GraphModel.Fields.SIZE, Query.Operator.GE, 10L)

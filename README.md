@@ -107,6 +107,7 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 - [Resources](docs/RESOURCES.md): resource service contract
 - [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
 - [Observation strategies](docs/OBSERVATION.md): end-to-end strategy trace, named-graph composition proposal, scenario walkthroughs, and staged implementation prompts
+- [Classification and characterization](docs/CLASSIFICATION.md): semantic-update lifecycle, implementation status, and staged acceptance tests
 - [Running strategy example](docs/OBSERVATION_STRATEGIES_EXAMPLE.md): supplied strategy corpus, comparative translation, and required compatibility cases
 - [Draft observation grammar](docs/grammar/README.md): evolving Observation.xtext sketch, strategy/context/dataflow fixtures, and integration requirements
 - [Scopes](docs/SCOPES.md): identity, propagation and digital-twin lifetime

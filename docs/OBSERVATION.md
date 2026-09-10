@@ -6,6 +6,13 @@ and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observa
 for contextualization categories and [Resolution](RESOLUTION.md) for the broader Resolver trace,
 transport, transactions, and existing tests.
 
+## Classification and characterization branch
+
+The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update
+contract, source audit, C0 foundation changes and C1–C5 continuation prompts. Classification and
+characterization source definitions are now in the reference corpus, but execution is explicitly
+gated until the Runtime can operate on members without registering a result observation.
+
 ## Accepted baseline
 
 The maintainer confirmed on **2026-09-09** that the revised implementation is feature-equal with
