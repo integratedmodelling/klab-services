@@ -35,13 +35,11 @@ model earth:PhysicalEnvironment of each earth:Region
     using klab.generators.random.categories();
 
 private model klab:random:objects:polygons
-    as each earth:Freshwater earth:Region;
+    as each earth:Region;
 ```
 
 A classifier attached to the Tanzania model would contextualize the parent, not implement its
-dependency. Model discovery must separately establish whether Freshwater Region instantiation
-provides the requested Region collective and how much of its requested support is covered. The
-existence of a subtype model is not proof of complete coverage.
+dependency. The instantiator now directly produces the requested Region collective.
 
 ## Source audit
 
