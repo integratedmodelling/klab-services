@@ -1,0 +1,162 @@
+id: ontology-expert-review
+version: "1.0"
+name: k.LAB ontology expert review
+description: Editorial and peer review of a k.LAB ontology.
+assetTypes: [ONTOLOGY]
+metadata:
+  provenanceStandard: W3C-PROV
+states:
+  editing:
+    description: Bootstrap the review process with an initial proposal for comments.
+    completionCriteria: A reviewable initial proposal and comment are attached.
+    instructions: Editors should attach the candidate asset and explain its intended use.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    attachments:
+      - type: bootstrap-proposal
+        mediaType: "application/vnd.klab.proposal+yaml"
+        arity: -1
+        required: true
+      - type: bootstrap-comments
+        mediaType: "application/vnd.klab.proposal+yaml"
+        arity: -1
+        required: true
+      - type: supporting-material
+        mediaType: "*/*"
+        arity: -1
+        required: false
+    assetTypes: [ONTOLOGY]
+    open: true
+    metadata:
+      provenanceActivity: authoring
+  peer-review:
+    description: Independent scientific review refining the proposal.
+    completionCriteria: Assigned reviewers have recorded a decision and rationale.
+    instructions: Review the initial proposal and comments; produce a second proposal.
+    managerRoles: [ADMIN]
+    contributorRoles: [REVIEWER, EDITOR]
+    attachments:
+      - type: bootstrap-proposal
+        mediaType: "application/vnd.klab.proposal+yaml"
+        arity: -1
+        required: true
+      - type: bootstrap-comments
+        mediaType: "application/vnd.klab.comments+json"
+        arity: -1
+        required: false
+      - type: supporting-material
+        mediaType: "*/*"
+        arity: -1
+        required: false
+    assetTypes: [ONTOLOGY]
+    open: true
+    metadata:
+      provenanceActivity: peer-review
+  community-review:
+    description: Community review refining the proposal.
+    completionCriteria: Assigned reviewers have recorded a decision and rationale.
+    instructions: Review the initial proposal and comments; produce a second proposal.
+    managerRoles: [ADMIN]
+    contributorRoles: [REVIEWER, EDITOR]
+    admittedGroups: [ PUBLIC ]
+    attachments:
+      - type: bootstrap-proposal
+        mediaType: "application/vnd.klab.proposal+yaml"
+        arity: -1
+        required: true
+      - type: bootstrap-comments
+        mediaType: "application/vnd.klab.comments+json"
+        arity: -1
+        required: false
+      - type: supporting-material
+        mediaType: "*/*"
+        arity: -1
+        required: false
+    assetTypes: [ONTOLOGY]
+    open: true
+    metadata:
+      provenanceActivity: community-review
+  accepted:
+    description: Review completed and asset accepted.
+    completionCriteria: Terminal state.
+    instructions: No further action is required.
+    managerRoles: [EDITOR, ADMIN]
+    contributorRoles: [EDITOR, ADMIN]
+    assetTypes: [ONTOLOGY]
+    open: false
+    attachments:
+      - type: final-proposal
+        mediaType: "application/vnd.klab.proposal+yaml"
+        arity: -1
+        required: true
+      - type: final-comments
+        mediaType: "application/vnd.klab.comments+json"
+        arity: -1
+        required: false
+      - type: accepted-ontology
+        mediaType: "application/vnd.klab.ontology"
+        arity: 1
+        required: true
+      - type: supporting-material
+        mediaType: "*/*"
+        arity: -1
+        required: false
+    metadata:
+      provenanceActivity: publication
+      resourceStage: REVIEWED
+      reviewStatus: 2
+  rejected:
+    description: Review completed and asset rejected.
+    completionCriteria: Terminal state.
+    instructions: The transition history contains the decision provenance.
+    managerRoles: [ADMIN]
+    contributorRoles: [ADMIN]
+    assetTypes: [ONTOLOGY]
+    open: false
+    metadata:
+      provenanceActivity: rejection
+      resourceStage: REJECTED
+      reviewStatus: -1
+transitions:
+  initialize:
+    description: Start authoring a review submission.
+    sourceStates: [INIT]
+    targetState: editing
+    roles: [ADMIN, EDITOR]
+  submit:
+    description: Submit the edited asset for peer review.
+    sourceStates: [editing]
+    sourceAssetTypes: [ONTOLOGY]
+    sourceMediaTypes: [application/*]
+    targetState: peer-review
+    roles: [ADMIN, EDITOR]
+  request-changes:
+    description: Return the asset to its editor.
+    sourceStates: [peer-review, community-review]
+    targetState: peer-review
+    roles: [ADMIN, EDITOR, REVIEWER]
+  open-input:
+    description: Send the peer-reviewed proposal for public review.
+    sourceStates: [peer-review]
+    targetState: community-review
+    roles: [ADMIN, EDITOR]
+  public-input:
+    description: Send the public proposal for another iteration.
+    sourceStates: [community-review]
+    targetState: community-review
+    roles: [ADMIN, REVIEWER]
+  accept-peer-review:
+    description: Accept directly after peer review.
+    sourceStates: [peer-review]
+    targetState: accepted
+    roles: [ADMIN, EDITOR]
+  accept-community-review:
+    description: Accept directly after community review.
+    sourceStates: [community-review]
+    targetState: accepted
+    roles: [ADMIN, EDITOR]
+  reject-peer-review:
+    description: Reject after peer review.
+    sourceStates: [peer-review]
+    targetState: rejected
+    roles: [ADMIN, REVIEWER]
