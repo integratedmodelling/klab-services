@@ -46,6 +46,28 @@ class ClientKnowledgeGraphTest {
   }
 
   @Test
+  void classificationCommitInvalidatesTheCachedMemberWithoutReplacingIdentity() {
+    var before = observation(421, null);
+    var after = observation(421, null);
+    var oldSemantics = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    oldSemantics.setUrn("test:Region");
+    var newSemantics = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    newSemantics.setUrn("test:Forest test:Region");
+    before.setObservable(oldSemantics); after.setObservable(newSemantics);
+    graph.ingest(before);
+    var commit = commit(81);
+    commit.getModifiedAssets().add(421L);
+    when(runtime.getCommit(81, scope)).thenReturn(commit);
+    when(runtime.getAsset(421, RuntimeAsset.class, scope)).thenReturn(after);
+    var submission = observation(422, 81L);
+    graph.ingest(submission);
+    var refreshed = graph.getAsset(421, scope, RuntimeAsset.class);
+    assertSame(after, refreshed);
+    assertEquals("test:Forest test:Region", ((ObservationImpl) refreshed).getObservable().getUrn());
+    assertTrue(commit.getAddedObservations().isEmpty());
+  }
+
+  @Test
   void walksAnExistingRemoteGraphBeyondTheFormerPreloadDepth() {
     var first = asset(101);
     var second = asset(102);

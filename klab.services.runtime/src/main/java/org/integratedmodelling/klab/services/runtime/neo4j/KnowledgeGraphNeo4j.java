@@ -115,6 +115,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private final RuntimeAsset provenanceNode = RuntimeAsset.PROVENANCE_ASSET;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   protected String serviceId;
+  private static final java.util.concurrent.atomic.AtomicLong SEMANTIC_CACHE_REVISION =
+      new java.util.concurrent.atomic.AtomicLong();
+  private volatile long cachedSemanticRevision;
+
+  @Override public long getSemanticRevision() { return SEMANTIC_CACHE_REVISION.get(); }
+
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from service settings */ 1000)
@@ -299,6 +305,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private final org.neo4j.driver.Session session;
     private final Set<RuntimeAsset> stored = new HashSet<>();
     private final Map<Long, RuntimeAsset> idCache = new HashMap<>();
+    private final Set<Long> semanticUpdates = new HashSet<>();
     private final List<Pair<Long, Long>> links = new ArrayList<>();
     private boolean closed;
     private boolean sessionClosed;
@@ -363,9 +370,37 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
       try {
         KnowledgeGraphNeo4j.this.update(transaction, asset, userScope, properties);
+        stored.add(asset);
       } catch (Exception e) {
         closed = true;
         throw storageFailure("updating " + asset.getClass().getSimpleName(), e);
+      }
+    }
+
+    @Override
+    public void updateSemantics(Observation observation, String expectedObservable) {
+      if (closed) throw new KlabStorageException("Closed semantic-update transaction");
+      try {
+        // The write acquires the observation lock before reading the baseline. This also
+        // serializes classifications of shared observations from different context roots.
+        var row = transaction.run(
+            "MATCH (n:Observation {id: $id}) "
+                + "SET n.semanticRevision = coalesce(n.semanticRevision, 0) "
+                + "RETURN n.observable AS observable",
+            Map.of("id", observation.getId())).list();
+        if (row.size() != 1 || !Objects.equals(expectedObservable, row.getFirst().get("observable").asString()))
+          throw new KlabStorageException("Stale or missing classification target " + observation.getId());
+        var properties = asParameters(observation);
+        var semantics = new HashMap<String, Object>();
+        for (var field : List.of(GraphModel.Fields.OBSERVABLE, GraphModel.Fields.SEMANTICS,
+            GraphModel.Fields.SEMANTICTYPE)) semantics.put(field, properties.get(field));
+        transaction.run("MATCH (n:Observation {id: $id}) SET n += $semantics, "
+                + "n.semanticRevision = n.semanticRevision + 1",
+            Map.of("id", observation.getId(), "semantics", semantics)).consume();
+        semanticUpdates.add(observation.getId());
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw failure;
       }
     }
 
@@ -480,6 +515,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       try {
         transaction.commit();
         stored.forEach(asset -> assetCache.put(asset.getId(), asset));
+        semanticUpdates.forEach(assetCache::invalidate);
+        if (!semanticUpdates.isEmpty()) SEMANTIC_CACHE_REVISION.incrementAndGet();
       } finally {
         clearTransactionState();
       }
@@ -493,6 +530,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     private void clearTransactionState() {
       stored.clear();
+      semanticUpdates.clear();
       links.clear();
       idCache.clear();
     }
@@ -1006,10 +1044,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ? "No description"
                 : node.get(GraphModel.Fields.DESCRIPTION).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
-        instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
+        instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong(-1));
+        instance.setTransientId(node.get("transientId").asLong(instance.getTransientId()));
+        instance.setParentTransientId(node.get("parentTransientId").asLong(0));
         ret.add((T) instance);
       } else if (Actuator.class.isAssignableFrom(cls)) {
-        var instance = new ActuatorImpl();
+        var instance = node.get("operationPlan").isNull() ? new ActuatorImpl()
+            : (ActuatorImpl) Utils.Json.parseObject(node.get("operationPlan").asString(), Actuator.class);
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong(-1));
         instance.setName(node.get(GraphModel.Fields.NAME).asString(null));
@@ -1437,6 +1478,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   protected <T extends RuntimeAsset> T retrieve(Object key, Class<T> assetClass, Scope scope) {
 
+    long revision = getSemanticRevision();
+    if (cachedSemanticRevision != revision) {
+      assetCache.invalidateAll();
+      cachedSemanticRevision = revision;
+    }
     if (key instanceof Long id) {
       try {
         var ret = assetCache.get(id, () -> retrieveFromGraph(id, assetClass, scope));

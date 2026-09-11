@@ -63,6 +63,11 @@ public final class MemberClassifierExecutor {
     return candidates.getFirst();
   }
 
+  /** Each root transaction attempt owns a fresh invocation cache. */
+  MemberClassifierExecutor forAttempt(ContextScope scope) {
+    return new MemberClassifierExecutor(actuator, method, receiver, scope);
+  }
+
   static boolean supports(Method method) {
     if (method == null
         || !Modifier.isPublic(method.getModifiers())

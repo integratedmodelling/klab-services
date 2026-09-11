@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * are inserted to distinguish submitted observations from those that have been generated during
  * resolution.
  */
-public class ObservationImpl implements Observation {
+public class ObservationImpl implements Observation, Cloneable {
 
   @Serial private static final long serialVersionUID = 8993700853991252827L;
 
@@ -190,6 +190,20 @@ public class ObservationImpl implements Observation {
           + adapterId
           + '\''
           + '}';
+    }
+  }
+
+  /** Detached semantic-update view; identity and immutable geometry are preserved. */
+  public ObservationImpl copyForAttribution(Observable observable) {
+    try {
+      var copy = (ObservationImpl) super.clone();
+      copy.observable = Objects.requireNonNull(observable);
+      copy.metadata = Metadata.create();
+      copy.metadata.putAll(metadata);
+      copy.notifications = new ArrayList<>(notifications);
+      return copy;
+    } catch (CloneNotSupportedException e) {
+      throw new IllegalStateException(e);
     }
   }
 

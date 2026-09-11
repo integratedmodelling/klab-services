@@ -287,6 +287,13 @@ public interface KnowledgeGraph {
 
     void update(RuntimeAsset asset, Object... properties);
 
+    /** Lock and compare the persisted observable before replacing semantics in this transaction.
+     * Implementations must fail the transaction on a stale baseline or missing observation. */
+    default void updateSemantics(Observation observation, String expectedObservable) {
+      throw new UnsupportedOperationException("Atomic semantic updates are not supported");
+    }
+
+
     /**
      * Link the two passed assets.
      *
@@ -325,6 +332,10 @@ public interface KnowledgeGraph {
    * @return a new transaction
    */
   Transaction createTransaction(ContextScope scope);
+
+  /** Local cache generation, advanced after committed semantic updates; not a persisted revision. */
+  default long getSemanticRevision() { return 0; }
+
 
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the

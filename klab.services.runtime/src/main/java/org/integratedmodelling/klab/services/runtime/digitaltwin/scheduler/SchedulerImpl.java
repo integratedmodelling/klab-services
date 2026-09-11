@@ -174,6 +174,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
    *
    * @param observation
    */
+  @Override
+  public boolean executeDependency(Observation observation, Geometry geometry, Event event, ContextScope scope) {
+    return checkEvent(observation, event)
+        || contextualize(observation, geometry, (ServiceContextScope) scope, event);
+  }
+
   private boolean initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     try {

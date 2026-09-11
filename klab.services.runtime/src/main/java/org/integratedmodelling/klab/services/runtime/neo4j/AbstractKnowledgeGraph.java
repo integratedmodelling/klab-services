@@ -182,7 +182,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                   ? null
                   : actuator.getResolvedGeometry().encode());
           ret.put(GraphModel.Fields.RESOLVED_COVERAGE, actuator.getResolvedCoverage());
-          ret.put(GraphModel.Fields.SEMANTICS, actuator.getObservation().getObservable().getUrn());
+          ret.put(GraphModel.Fields.SEMANTICS, actuator.getObservation() == null
+              ? actuator.getOperationObservable().getUrn() : actuator.getObservation().getObservable().getUrn());
+          if (actuator.getActuatorType() == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.UPDATE)
+            ret.put("operationPlan", Utils.Json.asString(actuator));
           ret.put(
               GraphModel.Fields.COMPUTATION,
               // TODO skip any recursive resolution calls and prepare for linking later
@@ -195,7 +198,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case Activity activity -> {
           var metadata = sanitizeMetadata(activity.getMetadata());
           ret.putAll(metadata);
-          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));
+          var auditMetadata = new HashMap<String, Object>(metadata);
+          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH)) {
+            if (activity.getMetadata().get(key) != null) auditMetadata.put(key, activity.getMetadata().get(key));
+          }
+          ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(auditMetadata));
+          ret.put(GraphModel.Fields.PARENT_ID, activity.getParentId());
+          ret.put("transientId", activity.getTransientId());
+          ret.put("parentTransientId", activity.getParentTransientId());
           ret.put(GraphModel.Fields.CREDITS, activity.getCredits());
           ret.put(GraphModel.Fields.DESCRIPTION, activity.getDescription());
           ret.put(GraphModel.Fields.END, activity.getEnd());

@@ -169,8 +169,11 @@ public class ServiceMonitor {
     handleStatus(client, client.refreshStatus(), true);
   }
 
-  private void refreshClientStatusAsync(BaseServiceClient client) {
-    Thread.ofVirtual()
+  void refreshClientStatusAsync(BaseServiceClient client) {
+    // Status listeners and reachability probes use intrinsic locks. On Java 21 these can
+    // pin every virtual-thread carrier, preventing contextualization tasks from starting.
+    Thread.ofPlatform()
+        .daemon(true)
         .name("klab-service-status-refresh")
         .start(
             () -> {
@@ -500,7 +503,8 @@ public class ServiceMonitor {
   }
 
   private void refreshLocalClientStatusesAsync() {
-    Thread.ofVirtual()
+    Thread.ofPlatform()
+        .daemon(true)
         .name("klab-local-service-status-refresh")
         .start(
             () -> {

@@ -1,6 +1,6 @@
 # Classification and characterization implementation
 
-Status: C0/C1 planning and C2 member invocation are implemented; transactional semantic updates remain gated on C3. This is a
+Status: C0-C3 are implemented for collective classification dependencies; C4 characterization and C5 live acceptance remain. This is a
 continuation of [OBSERVATION.md](OBSERVATION.md), not a declaration that the staging example runs.
 
 ## Contract
@@ -48,12 +48,12 @@ dependency. The instantiator now directly produces the requested Region collecti
 | Semantics | `Contextualization.forSemantics` previously classified any collective inherent, even for a concrete predicate. It now distinguishes abstraction and rejects non-substantial/non-quality inherents. |
 | Strategy selection | Activity patterns and ordinary producers already parse. Added a Tier-0 member-resolving classification strategy and direct characterization strategy. Lowering accepts the Tier-0 classification members plan and individual characterization. Classification requires an explicit resolved members input; unsupported forms are rejected. |
 | Resolver | `ResolutionCompiler` branches to an internal `OperationTarget` before observation query/registration for semantic updates, both at roots and in model dependencies. The existing resolution API remains unchanged. Y uses ordinary collective query and missing-scale resolution. |
-| Dataflow | Portable UPDATE actuators carry operation semantics, requested support and typed target bindings, with no result observation. `CompiledDataflow` preflights the entire tree and rejects updates before allocation until C3 provides atomic execution. |
+| Dataflow | Portable UPDATE actuators carry operation semantics, requested support and typed target bindings, with no result observation. `CompiledDataflow` dispatches CLASSIFICATION updates without allocating observations; other semantic updates remain rejected. |
 | Invocation | The generic `ContextualizerExecutor` remains observation-oriented. C2 adds `MemberClassifierExecutor`, which invokes the selected local method with operation semantics and member context, validates returned concepts, and retains pending attributions. |
-| Results | `ContextualizationScopeImpl` only contains a target, event and observation outcomes. It lacks typed attribution results and before/after semantics. |
+| Results | `MemberClassifierExecutor` returns pending attributions; `TransactionImpl.stageAttributions` builds detached semantic views and before/after audit records. The observation-oriented result scope is bypassed. |
 | Completion | `RuntimeService.submitContextualizationResult` explicitly throws for CLASSIFICATION. Its instantiation branch submits created children and waits for them. Characterization requires a separate, optional-explanation outcome, not a blanket swallowing of execution failures. |
-| Transactions | `DigitalTwinImpl.TransactionImpl` shares modified/added state with the root. `update(asset)` adds to modified, but in-place semantic mutation needs a staged copy or undo before failure; a shared live object must not remain altered after rollback. |
-| Provenance | Child contextualization activities formerly wrote CONTEXTUALIZED for every outcome. They now choose typed links. Later classifier execution must link the activity to each modified member, not to a directive placeholder. |
+| Transactions | `DigitalTwinImpl.TransactionImpl` shares modified/added state with the root. C3 stages detached observations and publishes semantics only after durable root commit; child failure poisons the root. |
+| Provenance | Child contextualization activities formerly wrote CONTEXTUALIZED for every outcome. They now choose typed links. C3 links CLASSIFIED to each affected member with before/after observable URNs, predicate family/result, support and event. |
 
 ## Implemented milestone C0
 
@@ -134,11 +134,11 @@ contextualized. Newly produced individual observations have their own registrati
 acknowledgement activities. This change does not invent additional INSTANTIATED edges to every
 individual. In C1–C4, classification and characterization must instead execute against the actual
 members and link CLASSIFIED/CHARACTERIZED to each affected member; no directive observation is
-created. Classification execution remains gated until that path exists.
+created. C3 implements CLASSIFIED member links; CHARACTERIZED execution remains C4 work.
 
 Neo4j visibility follows typed effects; context deletion does not use them as ownership evidence.
 The effect edge identifies the kind and target of work; the Activity outcome still determines
-success or failure. Before/after attributed semantics and member-specific execution remain C3 work.
+success or failure. C3 records before/after attributed semantics for each classified member.
 
 Typed-activity validation (2026-09-11): 18 tests passed across
 `ClassificationContractTest`, `DigitalTwinCommitTest`, `Neo4jQueryCompilerTest` and
@@ -173,7 +173,7 @@ strategy 0 named characterization.direct
 
 The classifier model still directly explains X of each Y; its strategy first obtains the members
 on which it operates. “No direct classifier strategy” does not remove the separate classifier
-model from the namespace. Both source definitions are installed, but execution remains gated.
+model from the namespace. Classification dependency execution is enabled by C3; characterization remains gated.
 
 An abstract classifier request must not use `request.fully_specified` to reject its deliberately
 abstract predicate. Validate the inherent and operation signature instead. The `members` port
@@ -217,19 +217,18 @@ without Jackson dependencies or annotations. Nested Dataflow transport preserves
 bindings. `SemanticUpdateTargets` provides side-effect-free binding of completed producer member
 sets, deduplicating positive durable IDs and transaction transient IDs in separate identity spaces.
 A completed empty set is valid; an absent producer is an error. C2 uses this helper for supplied
-completed member sets. C3 must integrate actual cohort enumeration and lifecycle completion with
-transactional execution; C1 does not enumerate or classify live members.
+completed member sets. C3 now enumerates completed cohort producers and stages their classifications;
+C1 alone did not enumerate or classify live members.
 
-The old blanket Reasoner lowerer guard is replaced by a Runtime whole-plan preflight guard. It runs
+At C1, the old blanket Reasoner lowerer guard was replaced by a Runtime whole-plan preflight guard. It ran
 before `requireObservations`, storage preparation or executor construction, so a nested update cannot
-partially execute as an observation-producing plan. C3 must replace this guard with explicit
-operation dispatch and atomic effects; merely removing it would reintroduce phantom observations.
+partially execute as an observation-producing plan. C3 replaces the classification gate with explicit
+operation dispatch and atomic effects; unsupported update kinds still fail preflight.
 Individual characterization has a portable target; collective characterization and singular-inherent
 classification remain unsupported pending their distribution/member-selection contracts.
 
 The remaining C1 text records the accepted contract and acceptance criteria. The next implementation
-stage is now **C3**, consuming the C2 pending attributions before enabling mutations, then C4
-for mandatory characterization.
+stage is now **C4**, adding mandatory characterization to C3 staged attributions.
 
 C1 validation: the eight-module offline Maven reactor passed 18 focused tests:
 `ClassificationPipelineTest` (6), `ObservationPipelineTest` (5), `DataflowCompilerTest` (1),
@@ -279,7 +278,7 @@ Acceptance: no new observation ID/CREATED link for X-of-Y; the member-resolving 
 rank zero; fully covered/partial/empty cohorts; existing and newly instantiated Ys; private model
 visibility; interface JSON round trips preserving contextualization and member bindings; no new
 resolution/mutation endpoints; all semantic changes occur through Dataflow execution. Planning tests
-now permit removal of the lowerer guard; execution remains gated until the later runtime stages.
+permitted removal of the lowerer guard; C3 now supplies the classification execution stage.
 
 **Completed-stage prompt (retained for traceability):** “Implement C1 in docs/CLASSIFICATION.md through the existing resolution API returning
 Dataflow. Extend its portable nodes to explicitly represent semantic-update contextualizations,
@@ -293,7 +292,7 @@ with the separate provenance-extracted graph-reproduction dataflow. Update the r
 **Implemented pending-attribution boundary.** `MemberClassifierExecutor.compile` selects one
 unambiguous local implementation through ComponentRegistry; `CompiledDataflow.compileMemberClassifier`
 exposes this stage for the runtime transaction integration. No endpoint was added. The normal
-whole-plan execution path remains gated until C3 can consume pending attributions atomically.
+whole-plan execution path now consumes pending attributions through the C3 transaction stage.
 
 The method must return Concept and accept exactly one Observable and one Scope/ContextScope.
 It may additionally request one each of Observation, ServiceCall, Geometry and Scheduler.Event;
@@ -324,14 +323,14 @@ it does not call the classifier. An unavailable producer is not an empty cohort.
 
 Execution binds and deduplicates completed member sets. For a given compiled executor, member identity,
 event and support, concurrent/repeated calls share the same result or failure, so the contextualizer
-runs once. The executor belongs to one transaction attempt; C3 must scope its lifetime accordingly
-and coordinate competing transactions. A batch publishes no successful list if any member fails.
+runs once. C3 creates a fresh invocation cache per root transaction attempt and compares persisted
+baselines under member locks to coordinate competing transactions. A batch publishes no successful list if any member fails.
 PendingAttribution records carry the member, original observable, abstract/concrete predicates,
 support and event; no observable, storage, ID, graph or provenance is changed.
 
 C2 rejects any result for a member already bearing an X-family trait or role, including an identical
-attribution. It does not silently replace or accumulate classifications. C3 must explicitly revise
-this conservative reclassification policy if replacement or idempotent acceptance is desired.
+attribution. It does not silently replace or accumulate classifications. C3 retains this conservative
+policy; it also rejects a second staged classification of the same member in one root attempt.
 Unrelated predicates and roles remain untouched.
 
 C2 validation: the eight-module offline Maven reactor passed 25 tests, with none skipped:
@@ -369,6 +368,63 @@ or create result observations. Test the actual generator signature and invalid r
 
 ### C3 — Atomic semantic updates and provenance
 
+**Implemented for the Tier-0 collective classification dependency.** The existing resolution API
+still returns Dataflow. No resolution or mutation endpoint was added, and neither operation execution
+nor audit creates an observation for X-of-Y. Root directive submission, singular-inherent
+classification and characterization are not newly enabled by this milestone.
+
+Execution proceeds as follows:
+
+1. `CompiledDataflow` compiles UPDATE nodes through `MemberClassifierExecutor`, with separate
+   actuator identities even though their result observation IDs are all zero. UPDATE children are
+   explicit prerequisites of their consuming executor. A parent with an empty computation still
+   registers its executor when it has an UPDATE dependency. No update receives an observation
+   scheduler entry, storage allocation or `AFFECTS` endpoint.
+2. Ordinary member producers execute through the scheduler in the current event. Instantiation's
+   existing completion path waits for the submitted members. Cached reference producers reuse their
+   completed support. Runtime enumerates durable and transaction-local `HAS_MEMBER` links and limits
+   membership to the producer/request support intersection. The typed binding deduplicates members;
+   a completed empty cohort succeeds, while a missing producer/cohort fails.
+3. Classifier invocation validates the full batch before staging. Only null results permitted by an
+   optional original model dependency are omitted. Runtime creates a CLASSIFICATION Activity carrying
+   its plan FlowChart before execution and nests it under the current transaction Activity.
+4. `TransactionImpl.stageAttributions` builds each replacement with the member's Reasoner builder,
+   using `withTrait` or `withRole`, and checks consistency of the resulting observable. Detached
+   copies preserve observation identity, URN, geometry, parent/cohort links and unrelated predicates.
+   Transaction asset/link views expose the replacement; original graph vertices and live objects
+   retain their old semantics until durable commit. This is a semantic overlay, not a general
+   transaction-isolation implementation for arbitrary observation fields or arbitrary Cypher queries.
+5. The root stores new members with final semantics and updates existing members through
+   `KnowledgeGraph.Transaction.updateSemantics`. Neo4j locks each existing member and compares its
+   stored observable against the recorded baseline. Existing members are locked in ID order. A stale
+   or missing target fails the entire transaction. Only semantic properties are replaced, preserving
+   unrelated persisted state; indexed `observable`, `semantics` and `semantictype` values change together.
+6. Successful durable commit publishes semantics to live member objects and includes existing IDs
+   in `Commit.modifiedAssets`; new members remain in `addedObservations` with final semantics.
+   A local semantic-cache generation invalidates graph and scope caches across context views.
+   Normal commit delivery invalidates client assets and adjacency; no new notification API is used.
+   Failed invocations, staging or storage publish no semantic replacements. Even `fail(null)` poisons
+   the shared root state. Storage failure is reported before resource closure, so closure cannot
+   accidentally commit an earlier successful portion of a failed batch.
+
+The provenance contract is `parent Activity -TRIGGERED-> CLASSIFICATION Activity -CLASSIFIED-> member`.
+Each CLASSIFIED edge has `before` and `after` observable URNs, `abstractPredicate`, `predicate`,
+encoded `support`, event key, and member transient/local identity. Its endpoint supplies the durable
+identity after storage. These links remain outside deletion ownership. The same portable audit list
+is available as Activity metadata `Metadata.IM_ATTRIBUTIONS` (`im:attributions`). Known FlowChart
+and attribution metadata survive Activity persistence; operation actuators preserve their portable
+UPDATE fields for audit. These contextual-plan snapshots are not provenance-extracted reproduction
+Dataflows, and persisted scheduler restoration of composite plans is not added here.
+
+A successful child activity means its batch was **staged**. The enclosing root commit determines
+whether those changes became durable; a later failure leaves no durable attribution/effect edge.
+Client consumers must not treat intermediate ActivityFinished as a commit notification.
+
+Reclassification remains conservative: an existing X-family attribution is rejected, including an
+identical result; concurrent or repeated staging of the same member is also rejected. Replacing or
+combining classifications requires a separate policy change. C4 must use the staged member views
+when adding characterization before the root commit.
+
 Represent pending attributions with member identity, old/new observable, abstract predicate,
 concrete result, coverage/event and activity. Construct new observables with the Reasoner builder;
 attach traits versus roles correctly. Preserve observation ID, URN, geometry, cohort and parent.
@@ -385,7 +441,24 @@ Acceptance: commit.modified contains existing members; no replacement identities
 members carry final semantics; rollback after a later-member failure; concurrent classifications;
 provenance queries and client graph updates; deletion cannot remove independently owned members.
 
-**Prompt:** “Implement C3: connect MemberClassifierExecutor pending attributions to atomic staged attribution updates and CLASSIFIED provenance, including
+C3 validation: the five-module offline Maven reactor passed **51 focused tests**, none skipped:
+ClassificationContractTest (2), ClientKnowledgeGraphTest (15), ClassificationExecutionTest (1),
+ClassificationTransactionTest (6), ClassificationPersistenceTest (4), MemberClassifierExecutorTest (8),
+SemanticUpdateTargetsTest (4), DigitalTwinCommitTest (4), Neo4jQueryExecutionTest (4),
+ContextualizationDiagnosticsTest (1), and ResolutionDiagnosticsTest (2). Coverage includes an empty
+parent computation with a classifier dependency, existing/new-member staging and commit, optional
+empty results, later failure, concurrent baseline conflicts, before/after edge properties, UPDATE
+persistence/transport, typed activity diagnostics, client refresh and deletion ownership boundaries.
+The actual generator source signature was compiled and invoked. Persistence tests run production
+transaction/Cypher logic against embedded Neo4j through a thin driver adapter: the application's
+current Bolt/Netty dependency combination cannot start the harness Bolt connector. This does not
+constitute live Bolt, deployed worldview/model lookup, full staging execution, AMQP or IDE validation.
+Log: `target/c3-tests.log`. A follow-up run passed both ClassificationExecutionTest cases, including
+an additional regression proving scope-cache reload after another context advances the semantic
+revision (`target/c3-cache-tests.log`). `git diff --check` passed. The next stage is C4; C5 retains
+live acceptance.
+
+**Completed-stage prompt:** “Implement C3: connect MemberClassifierExecutor pending attributions to atomic staged attribution updates and CLASSIFIED provenance, including
 before/after semantics, commit propagation, query/client invalidation and rollback tests.”
 
 ### C4 — Mandatory characterization scheduling, optional explanation
@@ -427,10 +500,10 @@ member identity/coverage, commits and typed provenance; distinguish test doubles
 Runtime, Resources and knowledge graph evidence. Close stages only when their acceptance passes.”
 
 
-## Diagnostic visibility before C3
+## Diagnostic visibility
 
 Accepted classification resolution graphs now travel as FlowChart metadata on the Dataflow and
 completed RESOLUTION Activity. Operation nodes expose contextualization and optional-dependency
-status; links expose member bindings and coverage. This documents planning without enabling
-semantic updates. See [resolution diagnostics](FLOWCHARTS.md#resolution-diagnostics) for the
+status; links expose member bindings and coverage. C3 additionally records per-member attribution
+audit data and typed effects during execution. See [resolution diagnostics](FLOWCHARTS.md#resolution-diagnostics) for the
 transport contract, validation and deferred ActivityCard rendering.

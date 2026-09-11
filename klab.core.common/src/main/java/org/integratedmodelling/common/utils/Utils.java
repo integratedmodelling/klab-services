@@ -2217,8 +2217,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public boolean isAlive() {
 
         var host = this.uri.getHost();
-        var port = this.uri.getPort() == -1 ? 80 : this.uri.getPort();
-        try (var socket = new Socket(host, port)) {
+        var port = this.uri.getPort() == -1
+            ? ("https".equalsIgnoreCase(this.uri.getScheme()) ? 443 : 80)
+            : this.uri.getPort();
+        try (var socket = new Socket()) {
+          socket.connect(new InetSocketAddress(host, port), 1000);
           return true;
         } catch (Throwable e) {
           return false;

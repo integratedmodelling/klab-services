@@ -23,6 +23,8 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.services.runtime.MemberClassifierExecutor;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -110,6 +112,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified;
     private final Set<RuntimeAsset> added;
+    private record Attribution(ObservationImpl original, ObservationImpl replacement, String before) {}
+    private Map<Observation, Attribution> attributions = new IdentityHashMap<>();
     private Observation target;
     private final Activity activity;
     private final ServiceContextScope scope;
@@ -123,14 +127,18 @@ public class DigitalTwinImpl implements DigitalTwin {
       GraphModel.Relationship relationship;
       Geometry geometry;
       int sequence = -1;
+      Map<String, Object> properties = new LinkedHashMap<>();
 
       public RelationshipEdge(GraphModel.Relationship relationship, Object... data) {
         this.relationship = relationship;
         if (data != null) {
-          for (int i = 0; i < data.length; i++) {
-            if (data[i] instanceof Integer seq) {
-              this.sequence = seq;
-            } // TODO geometry and more
+          for (int i = 0; i + 1 < data.length; i += 2) {
+            if (data[i] instanceof String key && data[i + 1] != null) {
+              properties.put(key, data[i + 1]);
+              if ((key.equals("sequence") || key.equals("rank")) && data[i + 1] instanceof Number n)
+                sequence = n.intValue();
+              if (key.equals("geometry") && data[i + 1] instanceof Geometry g) geometry = g;
+            }
           }
         }
       }
@@ -212,6 +220,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       // A child transaction contributes to the one atomic root commit. Keep all mutable commit
       // state root-shared just like the graph itself; otherwise modifications and failures from
       // secondary submissions disappear when the root assembles its commit result.
+      this.attributions = parent.attributions;
       this.modified = parent.modified;
       this.added = parent.added;
       this.failures = parent.failures;
@@ -376,6 +385,86 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
+    /** All members are validated and copied before any staged state becomes visible. */
+    public void stageAttributions(List<MemberClassifierExecutor.PendingAttribution> pending,
+        ContextScope executionScope) {
+      try {
+        stageValidatedAttributions(pending, executionScope);
+      } catch (RuntimeException failure) {
+        fail(failure);
+        throw failure;
+      }
+    }
+
+    private void stageValidatedAttributions(List<MemberClassifierExecutor.PendingAttribution> pending,
+        ContextScope executionScope) {
+      if (activity.getType() != Activity.Type.CLASSIFICATION)
+        throw new IllegalStateException("Attributions require a CLASSIFICATION activity");
+      synchronized (graph) {
+        if (!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
+        var reasoner = executionScope.getService(Reasoner.class);
+        var batch = new LinkedHashMap<Observation, Attribution>();
+        var audit = new ArrayList<Map<String, Object>>();
+        for (var value : pending) {
+          var canonical = checkPresentAsset(value.member());
+          if (!(canonical instanceof ObservationImpl member) || member.getId() == 0 || member.getId() == -1)
+            throw new IllegalArgumentException("Classification requires a registered member");
+          if (attributions.containsKey(member) || batch.containsKey(member)
+              || !Objects.equals(member.getObservable().getUrn(), value.originalObservable().getUrn()))
+            throw new IllegalStateException("Concurrent or repeated member classification");
+          var builder = member.getObservable().builder(executionScope);
+          if (value.predicate().is(SemanticType.ROLE)) builder.withRole(value.predicate());
+          else if (value.predicate().is(SemanticType.TRAIT)) builder.withTrait(value.predicate());
+          else throw new IllegalArgumentException("Classification result is neither trait nor role");
+          var after = builder.buildObservable();
+          if (after == null || !reasoner.satisfiable(after.getSemantics()))
+            throw new IllegalArgumentException("Inconsistent attributed observable");
+          var replacement = member.copyForAttribution(after);
+          batch.put(member, new Attribution(member, replacement, member.getObservable().getUrn()));
+          var item = new LinkedHashMap<String, Object>();
+          item.put("memberTransientId", member.getTransientId());
+          item.put("memberId", member.getId());
+          item.put("before", member.getObservable().getUrn());
+          item.put("after", after.getUrn());
+          item.put("abstractPredicate", value.abstractPredicate().getUrn());
+          item.put("predicate", value.predicate().getUrn());
+          item.put("support", value.support().encode());
+          item.put("event", value.event().toKey());
+          audit.add(item);
+        }
+        int i = 0;
+        for (var attribution : batch.values()) {
+          var item = audit.get(i++);
+          var data = new ArrayList<Object>();
+          item.forEach((key, value) -> { data.add(key); data.add(value); });
+          link(activity, attribution.original(), GraphModel.Relationship.CLASSIFIED, data.toArray());
+          if (attribution.original().getId() > 0) modified.add(attribution.original());
+        }
+        attributions.putAll(batch);
+        activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, audit);
+      }
+    }
+
+    private RuntimeAsset staged(RuntimeAsset asset) {
+      var attribution = attributions.get(asset);
+      return attribution == null ? asset : attribution.replacement();
+    }
+
+    private void publishAttributions() {
+      synchronized (graph) {
+        for (var value : attributions.values()) {
+          var original = value.original();
+          var replacement = value.replacement();
+          original.setObservable(replacement.getObservable());
+          original.setId(replacement.getId());
+          original.setUrn(replacement.getUrn());
+          original.setParentId(replacement.getParentId());
+          original.getMetadata().putAll(replacement.getMetadata());
+          scope.invalidateObservation(original.getId());
+        }
+      }
+    }
+
     @Override
     public void resolveWith(Observation observation, Executor executor) {
       this.contextualizers.put(observation, executor);
@@ -418,62 +507,72 @@ public class DigitalTwinImpl implements DigitalTwin {
         var stored = new ArrayList<RuntimeAsset>();
         var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
+          try {
+            registerCohortUpdates();
 
-          registerCohortUpdates();
-
-          synchronized (graph) {
-            var assets = new ArrayList<>(graph.vertexSet());
-            // Observations receive their persistent URNs before activities snapshot the URNs of
-            // the observations they created or resolved.
-            assets.sort(Comparator.comparing(asset -> asset instanceof Activity));
-            for (var asset : assets) {
-              if (asset instanceof ActivityImpl storedActivity) {
-                prepareActivityForStorage(storedActivity);
-              }
-              if (setupForStorage(asset, false)) {
-                kgTransaction.store(asset);
-                if (asset.getId() <= 0) {
-                  throw new KlabInternalErrorException(
-                      "Knowledge graph did not persist " + asset.getClass().getSimpleName());
+            synchronized (graph) {
+              var assets = new ArrayList<>(graph.vertexSet());
+              // Observations receive their persistent URNs before activities snapshot the URNs of
+              // the observations they created or resolved.
+              assets.sort(Comparator.comparing(asset -> asset instanceof Activity));
+              for (var originalAsset : assets) {
+                var asset = staged(originalAsset);
+                if (asset instanceof ActivityImpl storedActivity) {
+                  prepareActivityForStorage(storedActivity);
                 }
-                stored.add(asset);
+                if (setupForStorage(asset, false)) {
+                  kgTransaction.store(asset);
+                  if (asset.getId() <= 0) {
+                    throw new KlabInternalErrorException(
+                        "Knowledge graph did not persist " + asset.getClass().getSimpleName());
+                  }
+                  stored.add(asset);
+                }
+              }
+
+              for (var asset : modified.stream().sorted(Comparator.comparingLong(RuntimeAsset::getId)).toList()) {
+                var attribution = attributions.get(asset);
+                if (attribution != null) {
+                  if (attribution.original().getId() > 0)
+                    kgTransaction.updateSemantics(attribution.replacement(), attribution.before());
+                } else kgTransaction.update(asset);
+              }
+
+              for (var edge : graph.edgeSet()) {
+                var source = staged(graph.getEdgeSource(edge));
+                var target = staged(graph.getEdgeTarget(edge));
+                //              if (trivial
+                //                  && !(target instanceof Observation)
+                //                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+                //                continue;
+                //              }
+                var relationshipData = getRelationshipData(edge);
+                // KLAB-DEBUG-GUARD: links are intentionally still submitted and advertised; expose
+                // unassigned endpoints without changing the existing commit behavior.
+                if (source.getId() == 0 || target.getId() == 0) {
+                  Logging.INSTANCE.warn(
+                      "KLAB-DEBUG-GUARD: KG link has unassigned endpoint: source={}({}) target={}({}) "
+                          + "relationship={} activity={} trivial={}",
+                      source.getId(),
+                      source.getClass().getName(),
+                      target.getId(),
+                      target.getClass().getName(),
+                      edge.relationship,
+                      activity.getId(),
+                      false);
+                }
+                kgTransaction.link(source, target, edge.relationship, relationshipData);
+                // Only advertise relationships that were actually persisted. In particular, trivial
+                // transactions contain transient activity edges that are intentionally skipped.
+                linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
               }
             }
-
-            for (var asset : modified) {
-              kgTransaction.update(asset);
-            }
-
-            for (var edge : graph.edgeSet()) {
-              var source = graph.getEdgeSource(edge);
-              var target = graph.getEdgeTarget(edge);
-              //              if (trivial
-              //                  && !(target instanceof Observation)
-              //                  && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
-              //                continue;
-              //              }
-              var relationshipData = getRelationshipData(edge);
-              // KLAB-DEBUG-GUARD: links are intentionally still submitted and advertised; expose
-              // unassigned endpoints without changing the existing commit behavior.
-              if (source.getId() == 0 || target.getId() == 0) {
-                Logging.INSTANCE.warn(
-                    "KLAB-DEBUG-GUARD: KG link has unassigned endpoint: source={}({}) target={}({}) "
-                        + "relationship={} activity={} trivial={}",
-                    source.getId(),
-                    source.getClass().getName(),
-                    target.getId(),
-                    target.getClass().getName(),
-                    edge.relationship,
-                    activity.getId(),
-                    false);
-              }
-              kgTransaction.link(source, target, edge.relationship, relationshipData);
-              // Only advertise relationships that were actually persisted. In particular, trivial
-              // transactions contain transient activity edges that are intentionally skipped.
-              linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
-            }
+          } catch (Exception failure) {
+            kgTransaction.fail(failure);
+            throw failure;
           }
         } catch (Exception e) {
+          attributions.clear();
           scope.error(e);
           kgTransaction.fail(e);
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
@@ -484,6 +583,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           return -1;
         }
 
+        publishAttributions();
         var commit =
             createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
         commitCache.put(commit.getId(), commit);
@@ -523,13 +623,13 @@ public class DigitalTwinImpl implements DigitalTwin {
     private void prepareObservationsForStorage(long commitId) {
       synchronized (graph) {
         for (var asset : graph.vertexSet()) {
-          if (!(asset instanceof Observation observation)) {
+          if (!(staged(asset) instanceof Observation observation)) {
             continue;
           }
           if (observation instanceof ObservationImpl implementation) {
             implementation.setName(observation.getName());
           }
-          var creator = creationActivity(observation);
+          var creator = creationActivity((Observation) asset);
           var metadata = observation.getMetadata();
           metadata.put(Metadata.IM_COMMIT_ID, commitId);
           metadata.putIfAbsent(Metadata.IM_CONTEXT_ID, scope.getId());
@@ -562,6 +662,14 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     private void prepareActivityForStorage(ActivityImpl storedActivity) {
+      graph.incomingEdgesOf(storedActivity).stream()
+          .filter(edge -> edge.relationship == GraphModel.Relationship.TRIGGERED)
+          .map(graph::getEdgeSource).filter(Activity.class::isInstance).map(Activity.class::cast)
+          .findFirst().ifPresent(parentActivity -> {
+            storedActivity.setTriggeringActivityUrn(parentActivity.getUrn());
+            storedActivity.setParentId(parentActivity.getId());
+            storedActivity.setParentTransientId(parentActivity.getTransientId());
+          });
       graph.outgoingEdgesOf(storedActivity).stream()
           .filter(
               edge ->
@@ -671,6 +779,9 @@ public class DigitalTwinImpl implements DigitalTwin {
         ret.add("sequence");
         ret.add(edge.sequence);
       }
+      edge.properties.forEach((key, value) -> {
+        if (!key.equals("sequence")) { ret.add(key); ret.add(value instanceof Geometry g ? g.encode() : value); }
+      });
       return ret.toArray();
     }
 
@@ -708,8 +819,9 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " FAIL");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
+      this.failures.add(compilationError == null ? new IllegalStateException("Transaction failed") : compilationError);
+      synchronized (graph) { attributions.clear(); }
       if (compilationError != null) {
-        this.failures.add(compilationError);
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
       }
       scope.unregisterTransaction(this);
@@ -719,7 +831,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public Collection<RuntimeAsset> assets() {
       synchronized (graph) {
-        return new ArrayList<>(graph.vertexSet());
+        return graph.vertexSet().stream().map(this::staged).toList();
       }
     }
 
@@ -730,7 +842,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.incomingEdgesOf(asset)) {
-            var link = new LinkImpl(graph.getEdgeSource(edge), asset, edge.relationship);
+            var link = new LinkImpl(staged(graph.getEdgeSource(edge)), staged(asset), edge.relationship);
+            link.properties().putAll(edge.properties);
             link.setSequence(edge.sequence);
             link.setGeometry(edge.geometry);
             ret.add(link);
@@ -747,7 +860,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.outgoingEdgesOf(asset)) {
-            var link = new LinkImpl(asset, graph.getEdgeTarget(edge), edge.relationship);
+            var link = new LinkImpl(staged(asset), staged(graph.getEdgeTarget(edge)), edge.relationship);
+            link.properties().putAll(edge.properties);
             link.setSequence(edge.sequence);
             link.setGeometry(edge.geometry);
             ret.add(link);

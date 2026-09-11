@@ -63,6 +63,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private DigitalTwin.Configuration configuration;
   private final AtomicLong idGenerator;
   private final Map<String, DigitalTwin.Transaction> transactions;
+  private final Map<String, Map<Long, Observation>> provisionalObservations;
   private Observation observer;
   private Observation contextObservation;
   private Observation sourceObservation;
@@ -87,6 +88,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private int splits = -1;
 
   Cache<Long, Observation> observationCache;
+  private long observationCacheRevision;
   private DigitalTwin.Transaction currentTransaction;
 
   public ServiceContextScope(ServiceContextScope parent) {
@@ -107,6 +109,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.shardingStrategy = parent.shardingStrategy;
     this.idGenerator = parent.idGenerator;
     this.transactions = parent.transactions;
+    this.provisionalObservations = parent.provisionalObservations;
     this.remoteTransactionId = parent.remoteTransactionId;
     copyMessagingSetup(parent);
   }
@@ -130,6 +133,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.data.putAll(parent.data);
     this.configuration = configuration;
     this.transactions = new ConcurrentHashMap<>();
+    this.provisionalObservations = new ConcurrentHashMap<>();
     this.idGenerator = new AtomicLong(Observation.UNASSIGNED_ID);
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy
@@ -185,6 +189,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           return (Observation) obs;
         }
       }
+      var provisional = provisionalObservations.get(rootTransactionId(currentTransaction));
+      if (provisional != null && provisional.containsKey(id)) {
+        return provisional.get(id);
+      }
     }
 
     // at this point if it's unresolved we can't find it in the DT
@@ -193,10 +201,20 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     try {
+      var revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
+      if (revision != observationCacheRevision) {
+        observationCache.invalidateAll();
+        observationCacheRevision = revision;
+      }
       return observationCache.get(id, () -> loadObservation(id));
     } catch (ExecutionException e) {
       throw new KlabInternalErrorException(e);
     }
+  }
+
+  /** Drop the shared cached representation only after a successful durable update. */
+  public void invalidateObservation(long id) {
+    observationCache.invalidate(id);
   }
 
   private Observation loadObservation(long id) {
@@ -904,6 +922,29 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   public void unregisterTransaction(DigitalTwin.Transaction transaction) {
     transactions.remove(transaction.getId());
+    if (transaction.getParent() == null) {
+      provisionalObservations.remove(transaction.getId());
+    }
+  }
+
+  /**
+   * Make a registered candidate retrievable during resolution without adding it to the commit
+   * graph. Rejected model candidates must never be persisted merely because they were registered.
+   * Sibling resolution attempts share the root transaction's temporary identity registry.
+   */
+  public void registerProvisionalObservation(Observation observation) {
+    if (currentTransaction != null && observation.getId() < Observation.UNASSIGNED_ID) {
+      provisionalObservations
+          .computeIfAbsent(rootTransactionId(currentTransaction), key -> new ConcurrentHashMap<>())
+          .putIfAbsent(observation.getId(), observation);
+    }
+  }
+
+  private static String rootTransactionId(DigitalTwin.Transaction transaction) {
+    while (transaction.getParent() != null) {
+      transaction = transaction.getParent();
+    }
+    return transaction.getId();
   }
 
   public DigitalTwin.Transaction getTransaction(String key) {

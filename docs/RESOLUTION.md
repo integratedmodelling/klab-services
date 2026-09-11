@@ -34,6 +34,13 @@ Resolver/runtime trace; individual sections have been updated after the original
 Resolution is a planning phase between runtime observation registration and runtime
 contextualization:
 
+Registered provisional observations are retrievable by their negative IDs within the owning root
+transaction, including callbacks from the Resolver that carry a context-observation header.
+Registration retains them in a temporary lookup registry, not the commit graph: unsuccessful
+model candidates must not become persisted observations. Transaction graph assets take precedence
+once compilation adds the selected candidates. The temporary registry is discarded when the root
+transaction commits or fails, and is not visible to unrelated transactions.
+
 1. `RuntimeService` registers an unresolved observation and opens submission/resolution
    transactions.
 2. It calls `Resolver.resolve(...)`, locally or through `ResolverClient`.
@@ -1238,8 +1245,8 @@ The Resolver now compiles classification dependencies into portable `UPDATE` act
 operation semantics, requested support and typed cohort-member bindings. The directive itself is
 never registered as an observation. Individual characterization binds its existing context observation.
 All of this uses the existing resolution API returning Dataflow; no mutation endpoint was added.
-Runtime rejects any plan containing an update before allocating its dependencies until C2/C3 supply
-member execution and atomic attribution. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
+C3 now executes collective classification dependencies through staged atomic attributions; unsupported
+semantic-update kinds remain rejected before allocation. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
 for fields, tested boundaries and the next implementation prompt. These contextual plans remain
 distinct from provenance-extracted graph-reproduction documents.
 
@@ -1249,8 +1256,8 @@ distinct from provenance-extracted graph-reproduction documents.
 C2 provides a typed local classifier executor that returns pending attributions without mutation.
 Only an optional original model dependency, preserved in the portable actuator, permits a null
 classifier result. NOTHING remains an inconsistency error. The real generator signature is supported
-with the operation Observable and a member-contextualized Scope. Whole-plan execution remains gated
-until C3 supplies atomic updates; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
+with the operation Observable and a member-contextualized Scope. C3 consumes these results in the
+root transaction; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
 
 
 ### Portable resolution graph on completed activities
@@ -1271,3 +1278,14 @@ before ActivityStarted and preserved through ActivityFinished on success or fail
 shows the received plan and identifies the active actuator. See [plan diagnostics](FLOWCHARTS.md#contextualization-plan-diagnostics)
 for argument projection and restored-leaf limits. The resolution graph and execution plan remain
 separate diagrams; neither is a provenance-derived reproduction dataflow.
+
+
+### C3 atomic classification effects
+
+Collective classifier dependencies now execute their member prerequisites and stage detached semantic
+replacements. Existing observations appear in the root commit's modified assets; newly instantiated
+members are stored with final semantics. CLASSIFIED edges record before/after observables, predicate
+family/result and support/event. Failed batches or stale persisted baselines roll back together;
+classification directives never become observations. Graph/scope caches and client commit ingestion
+invalidate old member representations. See [C3](CLASSIFICATION.md#c3--atomic-semantic-updates-and-provenance)
+for execution boundaries and validation. Mandatory characterization remains C4; live staging is C5.

@@ -47,7 +47,7 @@ public class CompiledDataflow {
   private boolean empty;
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
-  private final Map<Long, ExecutorImpl> operations = new HashMap<>();
+  private final Map<Actuator, ExecutorImpl> operations = new IdentityHashMap<>();
   private final Map<Long, Observation> dependentObservations = new HashMap<>();
   private final Map<Actuator, Observation> actuatorObservations = new IdentityHashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
@@ -59,7 +59,7 @@ public class CompiledDataflow {
   public void createStorage() {
 
     for (var operation : operations.values()) {
-      if (operation.observation.getObservable().is(SemanticType.QUALITY)) {
+      if (operation.observation != null && operation.observation.getObservable().is(SemanticType.QUALITY)) {
         digitalTwin.getStorageManager().createStorage(operation.observation);
       }
     }
@@ -310,27 +310,33 @@ public class CompiledDataflow {
       if (!operation.isOperational()) {
         return false;
       }
-      operations.put(pair.getFirst().getId(), operation);
+      operations.put(pair.getFirst(), operation);
     }
     return true;
   }
 
-  /** Prepare C2's typed classifier without allocating an observation. Scheduling its pending
-   * attributions remains gated until C3 supplies the atomic transaction stage. */
+  /** Prepare the typed classifier without allocating an observation. */
   public MemberClassifierExecutor compileMemberClassifier(Actuator actuator) {
     return MemberClassifierExecutor.compile(actuator, componentRegistry, scope);
   }
 
   /**
-   * C1 plans are portable, but member execution and atomic attribution require C2/C3. Check the
-   * entire tree before any observation allocation or storage preparation.
+   * Reject unsupported update kinds throughout the tree before observation allocation or
+   * storage preparation. Classification dispatch uses the explicit operation contract.
    */
   static void validateSupportedPlan(Actuator actuator) {
     if (actuator.getActuatorType() == Actuator.Type.UPDATE
-        || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE
-        || (actuator.getContextualization() != null
-            && actuator.getContextualization().modifiesExistingObservations()))
-      throw new UnsupportedOperationException("Semantic-update Dataflow execution requires C3 atomic attribution");
+        || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE) {
+      if (actuator.getActuatorType() != Actuator.Type.UPDATE
+          || actuator.getEffect() != Actuator.Effect.SEMANTIC_UPDATE
+          || actuator.getContextualization() != Contextualization.CLASSIFICATION
+          || actuator.getObservation() != null || actuator.getId() != 0
+          || actuator.getOperationObservable() == null)
+        throw new UnsupportedOperationException("Unsupported semantic-update Dataflow node");
+    } else if (actuator.getContextualization() != null
+        && actuator.getContextualization().modifiesExistingObservations()) {
+      throw new IllegalArgumentException("Semantic update must use an UPDATE node");
+    }
     for (var child : actuator.getChildren()) validateSupportedPlan(child);
   }
 
@@ -349,7 +355,7 @@ public class CompiledDataflow {
       throw new KlabInternalErrorException(
           "Cannot recompile persisted actuator " + actuator.getId());
     }
-    operations.put(actuator.getId(), operation);
+    operations.put(actuator, operation);
     return operation;
   }
 
@@ -374,7 +380,7 @@ public class CompiledDataflow {
       priorityOrder.add(harmonizeShardingInternal(child));
     }
 
-    if (actuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
+    if (actuator.getObservation() != null && actuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
 
       var localDriven =
           actuator.getObservation().getContextualizationData() == null
@@ -448,7 +454,8 @@ public class CompiledDataflow {
   }
 
   private synchronized void requireObservations(Actuator rootActuator) {
-    actuatorObservations.put(rootActuator, rootObservation);
+    if (rootActuator.getActuatorType() != Actuator.Type.UPDATE)
+      actuatorObservations.put(rootActuator, rootObservation);
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
@@ -456,7 +463,7 @@ public class CompiledDataflow {
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
     // we don't add the root observation because it's added externally
-    if (rootActuator != actuator && !actuatorObservations.containsKey(actuator)) {
+    if (actuator.getActuatorType() != Actuator.Type.UPDATE && rootActuator != actuator && !actuatorObservations.containsKey(actuator)) {
       var observation =
           actuator.getActuatorType() == Actuator.Type.REFERENCE
               ? actuator.getObservation()
@@ -637,8 +644,10 @@ public class CompiledDataflow {
     }
 
     for (var actuator : dependencyGraph.vertexSet()) {
-      if (!actuator.getComputation().isEmpty()) {
+      if (!actuator.getComputation().isEmpty()
+          || actuator.getChildren().stream().anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
         transaction.add(actuator);
+        if (actuator.getActuatorType() == Actuator.Type.UPDATE) continue;
         transaction.link(
             actuatorObservations.get(actuator),
             actuator,
@@ -647,9 +656,9 @@ public class CompiledDataflow {
             actuator.getCoverage() == null
                 ? ((ActuatorImpl) actuator).getResolvedGeometry()
                 : actuator.getCoverage());
-        if (operations.containsKey(actuator.getId())) {
+        if (operations.containsKey(actuator)) {
           transaction.resolveWith(
-              actuatorObservations.get(actuator), operations.get(actuator.getId()));
+              actuatorObservations.get(actuator), operations.get(actuator));
         }
       }
     }
@@ -666,7 +675,7 @@ public class CompiledDataflow {
       var target = actuatorObservations.get(aTarget);
       // A detached query view is an execution-time binding, never a graph asset. Positive-ID
       // references retain AFFECTS so that later events can still propagate from them.
-      if (source.getId() != Observation.QUERY_ID) {
+      if (source != null && target != null && source.getId() != Observation.QUERY_ID) {
         // TODO the execution coverage should be recorded when the partial-storage policy is known.
         transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
       }
@@ -680,6 +689,9 @@ public class CompiledDataflow {
   class ExecutorImpl implements DigitalTwin.Executor {
 
     private final Observation observation;
+    private final Actuator actuator;
+    private MemberClassifierExecutor classifier;
+    private final Map<String, Boolean> updateResults = new HashMap<>();
     private final org.integratedmodelling.klab.api.documentation.FlowChart planChart;
     protected List<ContextualExecutor> executors = new ArrayList<>();
     private final boolean operational;
@@ -687,15 +699,21 @@ public class CompiledDataflow {
     private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
+      this.actuator = actuator;
       var adapter = new org.integratedmodelling.klab.api.documentation.DataflowFlowChartAdapter(actuator);
       this.planChart = sourceDataflow == null
           ? adapter.adapt(rootActuator == null ? actuator : rootActuator) : adapter.adapt(sourceDataflow);
       this.observation = actuator.getObservation();
-      defineLocalNames(actuator, this.localReferences);
+      if (observation != null) defineLocalNames(actuator, this.localReferences);
       this.operational = compile(actuator);
     }
 
     private boolean compile(Actuator actuator) {
+      if (actuator.getActuatorType() == Actuator.Type.UPDATE) {
+        classifier = compileMemberClassifier(actuator);
+        serviceCalls.addAll(actuator.getComputation());
+        return true;
+      }
 
       this.serviceCalls.addAll(actuator.getComputation());
 
@@ -794,6 +812,7 @@ public class CompiledDataflow {
       localReferences.put(Dataflow.SELF_ID, observation);
       // only scan the direct dependents, references or not.
       for (var child : actuator.getChildren()) {
+        if (child.getActuatorType() == Actuator.Type.UPDATE) continue;
         var childObservation = actuatorObservations.get(child);
         if (childObservation == null) {
           throw new KlabInternalErrorException(
@@ -827,6 +846,12 @@ public class CompiledDataflow {
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
+      if (classifier != null) return runClassification(geometry, event, contextScope);
+      // Operation prerequisites have no observation and therefore no AFFECTS/scheduler entry.
+      for (var child : actuator.getChildren()) {
+        if (child.getActuatorType() == Actuator.Type.UPDATE
+            && !operations.get(child).run(geometry, event, contextScope)) return false;
+      }
 
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         createStorage();
@@ -871,6 +896,46 @@ public class CompiledDataflow {
       }
 
       return ret;
+    }
+
+    private synchronized boolean runClassification(Geometry geometry, Scheduler.Event event,
+        ServiceContextScope contextScope) {
+      var root = contextScope.getCurrentTransaction();
+      while (root.getParent() != null) root = root.getParent();
+      var key = root.getId() + ":" + event.toKey() + ":" + geometry.encode();
+      if (updateResults.containsKey(key)) return updateResults.get(key);
+      var activity = Activity.of(Activity.Type.CLASSIFICATION, contextScope.getActivity(),
+          "Classification of " + actuator.getOperationObservable());
+      activity.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_DATAFLOW_GRAPH, planChart);
+      var executionScope = contextScope.executing(activity);
+      try {
+        var completed = new HashMap<String, List<Observation>>();
+        for (var child : actuator.getChildren()) {
+          if (child.getActuatorType() == Actuator.Type.UPDATE) {
+            if (!operations.get(child).run(geometry, event, executionScope))
+              throw new IllegalStateException("Classification prerequisite failed");
+          } else {
+            var producer = actuatorObservations.get(child);
+            if (producer == null) throw new IllegalStateException("Missing member producer");
+            if (child.getActuatorType() != Actuator.Type.REFERENCE
+                && !digitalTwin.getScheduler().executeDependency(producer, producer.getGeometry(), event, executionScope))
+              throw new IllegalStateException("Member producer failed");
+            if (actuator.getTargetBindings().stream().anyMatch(b -> b.getSources().contains(child.getName())))
+              completed.put(child.getName(), runtimeService.classificationMembers(producer, geometry, executionScope));
+          }
+        }
+        var support = actuator.getRequestedSupport() == null ? geometry : actuator.getRequestedSupport();
+        var pending = classifier.forAttempt(executionScope).execute(completed, support, event, executionScope);
+        ((DigitalTwinImpl.TransactionImpl) executionScope.getCurrentTransaction())
+            .stageAttributions(pending, executionScope);
+        if (executionScope.commit() < 0) throw new IllegalStateException("Classification stage failed");
+        updateResults.put(key, true);
+        return true;
+      } catch (Throwable failure) {
+        executionScope.fail(failure);
+        updateResults.put(key, false);
+        return false;
+      }
     }
 
     public boolean isOperational() {
@@ -973,7 +1038,7 @@ public class CompiledDataflow {
       Graph<Actuator, DependencyEdge> dependencyGraph,
       Map<Long, Actuator> cache) {
 
-    cache.put(rootActuator.getId(), rootActuator);
+    if (rootActuator.getActuatorType() != Actuator.Type.UPDATE) cache.put(rootActuator.getId(), rootActuator);
     dependencyGraph.addVertex(rootActuator);
     for (Actuator child : rootActuator.getChildren()) {
       if (child.getActuatorType() == Actuator.Type.REFERENCE) {

@@ -961,6 +961,33 @@ public class RuntimeService extends BaseService
     return query(builder.make(), scope);
   }
 
+  /** Enumerate the completed member binding, including transaction-local instantiations. */
+  List<Observation> classificationMembers(Observation producer, Geometry requested, ServiceContextScope scope) {
+    var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
+    if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");
+    var members = new LinkedHashMap<String, Observation>();
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    if (cohort.getId() > 0) {
+      for (var member : graph.query(Observation.class, scope).source(cohort)
+          .along(GraphModel.Relationship.HAS_MEMBER).run(scope)) members.put(querySourceKey(member), member);
+    }
+    var transaction = scope.getCurrentTransaction();
+    if (transaction != null) {
+      for (var link : transaction.outgoing(cohort)) {
+        if (link.type() == GraphModel.Relationship.HAS_MEMBER && link.target() instanceof Observation member)
+          members.put(querySourceKey(member), member);
+      }
+    }
+    var support = intersection(producer.getGeometry(), requested);
+    if (support == null || support.isEmpty()) throw new IllegalStateException("Missing member support");
+    var ret = new ArrayList<Observation>();
+    for (var member : members.values()) {
+      var overlap = intersection(member.getGeometry(), support);
+      if (overlap != null && !overlap.isEmpty() && overlap.size() > 0) ret.add(member);
+    }
+    return ret;
+  }
+
   private Observation queryCollective(Observation query, ServiceContextScope scope) {
 
     var cohort = getCohortFor(query.getObservable().getSemantics().singular(), scope, false);
@@ -1293,6 +1320,8 @@ public class RuntimeService extends BaseService
       if (observation.getId() == Observation.UNASSIGNED_ID) {
         observationImpl.setId(serviceContextScope.getNextObservationId());
       }
+
+      serviceContextScope.registerProvisionalObservation(observation);
 
       return observation;
     }

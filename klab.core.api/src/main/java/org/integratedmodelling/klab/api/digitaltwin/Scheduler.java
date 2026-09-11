@@ -61,6 +61,11 @@ public interface Scheduler {
         Geometry geometry, Event event, ContextScope scope, DigitalTwin.Transaction transaction);
   }
 
+  /** Execute an observation prerequisite in the current resolved plan and event. */
+  default boolean executeDependency(Observation observation, Geometry geometry, Event event, ContextScope scope) {
+    throw new UnsupportedOperationException("Explicit Dataflow prerequisites are not supported");
+  }
+
   interface Event {
 
     enum Type {
