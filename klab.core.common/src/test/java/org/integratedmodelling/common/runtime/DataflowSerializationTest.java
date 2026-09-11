@@ -9,6 +9,14 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.junit.jupiter.api.Test;
 
 class DataflowSerializationTest {
+  @Test void preservesExplicitNoModelOutcomeThroughInterface() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var plan = Dataflow.noModel(java.util.List.of());
+    var decoded = mapper.readValue(mapper.writeValueAsString(plan), Dataflow.class);
+    assertEquals(Dataflow.ResolutionOutcome.NO_MODEL, decoded.getResolutionOutcome());
+    assertEquals(false, decoded.isEmpty());
+    assertEquals(java.util.List.of(), decoded.getComputation());
+  }
 
   @Test
   void preservesResolverMetadataAcrossTheJsonWireFormat() throws Exception {

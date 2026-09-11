@@ -790,6 +790,7 @@ public class RuntimeService extends BaseService
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
+                resolution.getMetadata().put("resolutionOutcome", dataflow.getResolutionOutcome().name());
                 observation.getNotifications().addAll(dataflow.getNotifications());
                 if (observation instanceof ObservationImpl observationImpl
                     && dataflow instanceof DataflowImpl dataflowImpl) {
@@ -1756,6 +1757,31 @@ public class RuntimeService extends BaseService
     ret.getComputation().add(actuator);
 
     return CompletableFuture.completedFuture(ret);
+  }
+
+  void characterizePending(List<MemberClassifierExecutor.PendingAttribution> pending,
+      ServiceContextScope scope) {
+    CharacterizationLifecycle.run(pending, scope, this);
+  }
+
+  void executeCharacterization(Dataflow plan, Observation member, Scheduler.Event event,
+      ServiceContextScope scope) {
+    for (var node : plan.getComputation()) {
+      if (node.getContextualization() != Contextualization.CHARACTERIZATION
+          || node.getActuatorType() != Actuator.Type.UPDATE
+          || node.getTargetBindings().size() != 1
+          || node.getTargetBindings().getFirst().getKind() != Actuator.TargetBinding.Kind.OBSERVATION
+          || node.getTargetBindings().getFirst().getTarget() == null
+          || node.getTargetBindings().getFirst().getTarget().getId() != member.getId())
+        throw new IllegalArgumentException("Characterization requires an UPDATE root");
+      var compiled = new CompiledDataflow(this, member, scope, plan);
+      if (!compiled.compile(node)
+          || !compiled.store((DigitalTwinImpl.TransactionImpl) scope.getCurrentTransaction()))
+        throw new IllegalStateException("Cannot compile characterization plan");
+      scope.getCurrentTransaction().registerExecutors();
+      if (!compiled.executeRoot(member.getGeometry(), event, scope))
+        throw new IllegalStateException("Characterization execution failed");
+    }
   }
 
   private boolean compile(

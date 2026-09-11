@@ -24,6 +24,13 @@ characterization therefore extend the contextual Dataflow's explicit operation a
 they do not require a separate resolution or mutation endpoint. Runtime validates contextualizer
 signatures against that plan rather than discovering the operation's meaning only at execution.
 
+The contextual response also carries `resolutionOutcome` (`RESOLVED`, `NO_MODEL`, or `FAILED`).
+`NO_MODEL` is an explicit successful lifecycle decision for acknowledgment/characterization,
+with no computation; it is not evidence of a failed contextualizer or a graph-reproduction plan.
+Classification's Runtime-owned characterization resolves and executes member-bound UPDATE nodes
+before the root commit. A no-model Resolution Activity records the decision without a
+CHARACTERIZED effect; actual successful work records that effect on the existing member.
+
 A contextual Dataflow may legitimately reuse an existing observation. A reproduction export must
 include how to recreate it, package it as a submitted input, or declare how the prerequisite is
 obtained without relying on an observation already present in the destination graph. Extracting a

@@ -17,6 +17,11 @@ public class DataflowImpl implements Dataflow {
   @Serial private static final long serialVersionUID = 873406284216826384L;
 
   private boolean empty;
+  private ResolutionOutcome resolutionOutcome;
+  public ResolutionOutcome getResolutionOutcome() {
+    return resolutionOutcome == null ? Dataflow.super.getResolutionOutcome() : resolutionOutcome;
+  }
+  public void setResolutionOutcome(ResolutionOutcome outcome) { this.resolutionOutcome = outcome; }
   private ResourceSet requirements;
   private Geometry coverage;
   private List<Actuator> computation = new ArrayList<>();

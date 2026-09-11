@@ -43,6 +43,14 @@ class ClassificationExecutionTest {
   }
 
   @Test void emptyParentComputationStillRunsClassifierDependencyWithoutAResultObservation() throws Exception {
+    classificationLifecycle(false);
+  }
+
+  @Test void failedCharacterizationDiscardsPendingAttributions() throws Exception {
+    classificationLifecycle(true);
+  }
+
+  private void classificationLifecycle(boolean failCharacterization) throws Exception {
     var f = new MemberClassifierExecutorTest.Fixture();
     var scope = mock(ServiceContextScope.class);
     var runtime = mock(RuntimeService.class);
@@ -110,7 +118,18 @@ class ClassificationExecutionTest {
     verify(store, never()).resolveWith(isNull(), any());
     // Execute the compiled parent directly: its empty computation must not skip its UPDATE child.
     var executor = plan.new ExecutorImpl(root);
+    if (failCharacterization) {
+      doThrow(new IllegalStateException("Characterization failed"))
+          .when(runtime).characterizePending(anyList(), any(ServiceContextScope.class));
+      assertFalse(executor.run(Geometry.UNIVERSAL, f.event, scope));
+      assertNotSame(after, f.member.getObservable());
+      assertFalse(rootTransaction.assets().stream().anyMatch(asset -> asset instanceof Observation o
+          && o.getObservable() == after));
+      return;
+    }
     assertTrue(executor.run(Geometry.UNIVERSAL, f.event, scope));
+    verify(runtime).characterizePending(argThat(pending -> pending.size() == 1
+        && pending.getFirst().member().getId() == 42), any(ServiceContextScope.class));
     assertEquals(1, f.classifier.calls.get());
     assertNotSame(after, f.member.getObservable());
     assertTrue(rootTransaction.assets().stream().anyMatch(asset -> asset instanceof Observation o

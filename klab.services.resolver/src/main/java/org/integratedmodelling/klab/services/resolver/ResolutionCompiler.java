@@ -48,6 +48,10 @@ public class ResolutionCompiler {
   private Graph<RuntimeAsset, DefaultEdge> resolutionCache =
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
+  private int modelQueries;
+  private int matchedModels;
+
+  boolean hasNoExplanatoryModel() { return modelQueries > 0 && matchedModels == 0; }
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
   private List<Notification> notifications = new ArrayList<>();
 
@@ -632,6 +636,10 @@ public class ResolutionCompiler {
             .reduce(ResourceSet.empty(), Utils.Resources::merge);
     // FIXME the notifications from the resource set must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
+    if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(models.getNotifications()))
+      throw new KlabIllegalStateException("Model discovery failed");
+    modelQueries++;
+    matchedModels += ret.size();
     ret.sort(prioritizer);
     return ret;
   }

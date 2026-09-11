@@ -164,20 +164,35 @@ public class ResolverService extends BaseService implements Resolver {
   public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     return CompletableFuture.supplyAsync(
         () -> {
-          var ret = new ResolutionCompiler(this).resolve(observation, contextScope);
+          var compiler = new ResolutionCompiler(this);
+          var ret = compiler.resolve(observation, contextScope);
           if (!ret.isEmpty()) {
             return new DataflowCompiler(observation, ret, contextScope).compile();
           }
 
-          boolean isSubstantial =
-              observation.getObservable().is(SemanticType.SUBJECT)
-                  && !observation.getObservable().getSemantics().isCollective();
-
-          return isSubstantial
-              ? Dataflow.trivial(ret.getNotifications())
-              : Dataflow.empty(ret.getNotifications());
+          return unresolvedOutcome(observation.getObservable(), compiler.hasNoExplanatoryModel(), ret.getNotifications());
         },
         resolutionExecutor);
+  }
+
+  static Dataflow unresolvedOutcome(org.integratedmodelling.klab.api.knowledge.Observable observable,
+      boolean noModel, java.util.List<org.integratedmodelling.klab.api.services.runtime.Notification> notifications) {
+    boolean acknowledge = observable.getContextualization()
+        == org.integratedmodelling.klab.api.knowledge.Contextualization.ACKNOWLEDGEMENT;
+    // Transported/promoted individual concepts may carry an older collective description type.
+    // The existence contract is determined by their singular substantial semantics.
+    var semantics = observable.getSemantics();
+    acknowledge |= semantics != null && !semantics.isCollective()
+        && semantics.getType() != null && SemanticType.isEnumerableSubstantial(semantics.getType());
+    boolean characterize = observable.getContextualization()
+        == org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION;
+    // A substantial already exists independently of its optional explanation. An empty,
+    // error-free resolution must not undo instantiation, even if discovery did not run or
+    // candidate models contributed insufficient coverage. Characterization has a stricter
+    // no-model contract; neither case suppresses reported errors or exceptional completion.
+    return (acknowledge || (characterize && noModel))
+        && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
+        ? Dataflow.noModel(notifications) : Dataflow.empty(notifications);
   }
 
   @Override

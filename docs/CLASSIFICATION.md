@@ -1,6 +1,6 @@
 # Classification and characterization implementation
 
-Status: C0-C3 are implemented for collective classification dependencies; C4 characterization and C5 live acceptance remain. This is a
+Status: C0-C4 are implemented for collective classification dependencies, including runtime-owned individual characterization; C5 live acceptance remains. This is a
 continuation of [OBSERVATION.md](OBSERVATION.md), not a declaration that the staging example runs.
 
 ## Contract
@@ -134,7 +134,7 @@ contextualized. Newly produced individual observations have their own registrati
 acknowledgement activities. This change does not invent additional INSTANTIATED edges to every
 individual. In C1–C4, classification and characterization must instead execute against the actual
 members and link CLASSIFIED/CHARACTERIZED to each affected member; no directive observation is
-created. C3 implements CLASSIFIED member links; CHARACTERIZED execution remains C4 work.
+created. C3 implements CLASSIFIED member links; C4 implements CHARACTERIZED execution.
 
 Neo4j visibility follows typed effects; context deletion does not use them as ownership evidence.
 The effect edge identifies the kind and target of work; the Activity outcome still determines
@@ -173,7 +173,7 @@ strategy 0 named characterization.direct
 
 The classifier model still directly explains X of each Y; its strategy first obtains the members
 on which it operates. “No direct classifier strategy” does not remove the separate classifier
-model from the namespace. Classification dependency execution is enabled by C3; characterization remains gated.
+model from the namespace. Classification dependency execution is enabled by C3; C4 adds characterization of each staged attribution.
 
 An abstract classifier request must not use `request.fully_specified` to reject its deliberately
 abstract predicate. Validate the inherent and operation signature instead. The `members` port
@@ -228,7 +228,7 @@ Individual characterization has a portable target; collective characterization a
 classification remain unsupported pending their distribution/member-selection contracts.
 
 The remaining C1 text records the accepted contract and acceptance criteria. The next implementation
-stage is now **C4**, adding mandatory characterization to C3 staged attributions.
+stage is now **C5**, validating the complete lifecycle against the live staging namespaces.
 
 C1 validation: the eight-module offline Maven reactor passed 18 focused tests:
 `ClassificationPipelineTest` (6), `ObservationPipelineTest` (5), `DataflowCompilerTest` (1),
@@ -422,7 +422,7 @@ Client consumers must not treat intermediate ActivityFinished as a commit notifi
 
 Reclassification remains conservative: an existing X-family attribution is rejected, including an
 identical result; concurrent or repeated staging of the same member is also rejected. Replacing or
-combining classifications requires a separate policy change. C4 must use the staged member views
+combining classifications requires a separate policy change. C4 uses the staged member views
 when adding characterization before the root commit.
 
 Represent pending attributions with member identity, old/new observable, abstract predicate,
@@ -455,7 +455,7 @@ current Bolt/Netty dependency combination cannot start the harness Bolt connecto
 constitute live Bolt, deployed worldview/model lookup, full staging execution, AMQP or IDE validation.
 Log: `target/c3-tests.log`. A follow-up run passed both ClassificationExecutionTest cases, including
 an additional regression proving scope-cache reload after another context advances the semantic
-revision (`target/c3-cache-tests.log`). `git diff --check` passed. The next stage is C4; C5 retains
+revision (`target/c3-cache-tests.log`). `git diff --check` passed. C4 is implemented below; C5 retains
 live acceptance.
 
 **Completed-stage prompt:** “Implement C3: connect MemberClassifierExecutor pending attributions to atomic staged attribution updates and CLASSIFIED provenance, including
@@ -463,7 +463,7 @@ before/after semantics, commit propagation, query/client invalidation and rollba
 
 ### C4 — Mandatory characterization scheduling, optional explanation
 
-After each valid classification, Runtime builds concrete Z of singular Y and resolves it in
+**Implemented.** After each valid classification, Runtime builds concrete Z of singular Y and resolves it in
 `scope.within(member)`. The abstract X must not leak into this request. Keep the classification
 transaction open until its required child lifecycle work finishes, as for instantiation.
 
@@ -479,7 +479,50 @@ Acceptance: exactly one characterization request per new attribution; correct co
 and member scope; no-model success; execution failure propagation; no observation creation;
 multiple members/child completion order; explicit provenance of actual work.
 
-**Prompt:** “Implement C4: Runtime-owned characterization after classification, using an explicit
+`CharacterizationLifecycle` runs immediately after `stageAttributions`. It retrieves the detached
+staged member, focuses a scope on that member, and submits an unregistered characterization
+request through the existing Resolver API. The request uses the returned concrete predicate and
+the original singular substantial semantics. It does not recursively submit the whole member.
+All child work is awaited before classification can finish; the root transaction remains the only
+durable commit. A child failure clears pending attributions through the existing C3 failure path.
+
+The portable `Dataflow.ResolutionOutcome` distinguishes `RESOLVED`, `NO_MODEL`, and `FAILED`.
+`NO_MODEL` carries no computation and is non-empty in the legacy execution sense. The Resolver
+uses it for characterization after successful model discovery finds no candidate. For
+ACKNOWLEDGEMENT, any error-free empty resolution preserves the substantial's existence, including
+no applicable strategy or candidates that contribute no significant dataflow. Here `NO_MODEL`
+means no executable explanation was selected, not necessarily that no candidates were found.
+Characterization retains the stricter discovery requirement. Reported errors, exceptional service
+responses and contextualizer execution failures are not suppressed. The outcome survives the existing
+Jackson Dataflow interface mapping without annotations or new endpoints.
+
+For `NO_MODEL`, the successful Resolution Activity records `resolutionOutcome=NO_MODEL`; there
+is no CHARACTERIZED link because no characterization work ran. For actual work, the Runtime
+compiles CHARACTERIZATION UPDATE roots, executes their dependencies, and invokes the local
+characterizer in the member scope. A successful Characterization Activity links to that existing
+member through CHARACTERIZED and carries its plan FlowChart. The directive never becomes an
+observation. Ordinary dependency observations remain governed by their own resolved plans.
+
+The first executor supports public local contextualizers returning `void` or primitive `boolean`
+(`false` fails). Parameters may be Observable, Observation, ServiceCall, Geometry, Scheduler.Event,
+and exactly one Scope or ContextScope; Observable is required and duplicate parameter types are
+rejected. Observation/Concept-returning characterizers are rejected. A model with dependencies and
+no local computation is also executable. Remote/adaptor characterization functions are not yet
+supported by this typed executor and fail compilation explicitly.
+
+Duplicate attributions within a lifecycle batch are suppressed by member/predicate identity.
+The classification and characterization executors cache success or failure per root transaction,
+event and support, so repeated scheduler visits do not repeat lifecycle work. Controlled tests
+cover member scopes, request identity, execution-before-child-commit ordering, no-model audit,
+failed resolution versus failed execution, typed invocation, duplicate visits, effect ordering,
+JSON transport and rollback of staged classifications. Live worldview, AMQP and the forthcoming
+characterization namespace remain C5 acceptance work.
+
+C4 validation: the six-module offline reactor passed 28 focused tests, including the existing
+embedded persistence/rollback suite (`target/c4-final-tests.log`). No live services were restarted
+or staging observations submitted during this milestone. `git diff --check` passed.
+
+**Completed-stage prompt:** “Implement C4: Runtime-owned characterization after classification, using an explicit
 no-model success outcome. Test per-member scopes, no duplicate lifecycle work, commit ordering
 and the distinction between missing explanation and failed execution.”
 

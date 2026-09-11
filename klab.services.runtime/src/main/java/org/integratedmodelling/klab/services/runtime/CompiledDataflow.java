@@ -320,6 +320,10 @@ public class CompiledDataflow {
     return MemberClassifierExecutor.compile(actuator, componentRegistry, scope);
   }
 
+  boolean executeRoot(Geometry geometry, Scheduler.Event event, ServiceContextScope executionScope) {
+    return operations.get(rootActuator).run(geometry, event, executionScope);
+  }
+
   /**
    * Reject unsupported update kinds throughout the tree before observation allocation or
    * storage preparation. Classification dispatch uses the explicit operation contract.
@@ -329,7 +333,8 @@ public class CompiledDataflow {
         || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE) {
       if (actuator.getActuatorType() != Actuator.Type.UPDATE
           || actuator.getEffect() != Actuator.Effect.SEMANTIC_UPDATE
-          || actuator.getContextualization() != Contextualization.CLASSIFICATION
+          || (actuator.getContextualization() != Contextualization.CLASSIFICATION
+              && actuator.getContextualization() != Contextualization.CHARACTERIZATION)
           || actuator.getObservation() != null || actuator.getId() != 0
           || actuator.getOperationObservable() == null)
         throw new UnsupportedOperationException("Unsupported semantic-update Dataflow node");
@@ -691,6 +696,7 @@ public class CompiledDataflow {
     private final Observation observation;
     private final Actuator actuator;
     private MemberClassifierExecutor classifier;
+    private MemberCharacterizerExecutor characterizer;
     private final Map<String, Boolean> updateResults = new HashMap<>();
     private final org.integratedmodelling.klab.api.documentation.FlowChart planChart;
     protected List<ContextualExecutor> executors = new ArrayList<>();
@@ -710,7 +716,9 @@ public class CompiledDataflow {
 
     private boolean compile(Actuator actuator) {
       if (actuator.getActuatorType() == Actuator.Type.UPDATE) {
-        classifier = compileMemberClassifier(actuator);
+        if (actuator.getContextualization() == Contextualization.CHARACTERIZATION)
+          characterizer = MemberCharacterizerExecutor.compile(actuator, componentRegistry);
+        else classifier = compileMemberClassifier(actuator);
         serviceCalls.addAll(actuator.getComputation());
         return true;
       }
@@ -846,6 +854,7 @@ public class CompiledDataflow {
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
+      if (characterizer != null) return runCharacterization(geometry, event, contextScope);
       if (classifier != null) return runClassification(geometry, event, contextScope);
       // Operation prerequisites have no observation and therefore no AFFECTS/scheduler entry.
       for (var child : actuator.getChildren()) {
@@ -928,7 +937,45 @@ public class CompiledDataflow {
         var pending = classifier.forAttempt(executionScope).execute(completed, support, event, executionScope);
         ((DigitalTwinImpl.TransactionImpl) executionScope.getCurrentTransaction())
             .stageAttributions(pending, executionScope);
+        runtimeService.characterizePending(pending, executionScope);
         if (executionScope.commit() < 0) throw new IllegalStateException("Classification stage failed");
+        updateResults.put(key, true);
+        return true;
+      } catch (Throwable failure) {
+        executionScope.fail(failure);
+        updateResults.put(key, false);
+        return false;
+      }
+    }
+
+    private synchronized boolean runCharacterization(Geometry geometry, Scheduler.Event event,
+        ServiceContextScope contextScope) {
+      var root = contextScope.getCurrentTransaction();
+      while (root.getParent() != null) root = root.getParent();
+      var key = root.getId() + ":" + event.toKey() + ":" + geometry.encode();
+      if (updateResults.containsKey(key)) return updateResults.get(key);
+      var binding = actuator.getTargetBindings().getFirst().getTarget();
+      var member = contextScope.getObservation(binding.getId());
+      if (member == null) throw new IllegalStateException("Missing characterization member");
+      var activity = Activity.of(Activity.Type.CHARACTERIZATION, contextScope.getActivity(),
+          "Characterization of " + actuator.getOperationObservable());
+      activity.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_DATAFLOW_GRAPH, planChart);
+      var executionScope = contextScope.within(member).executing(activity);
+      try {
+        for (var child : actuator.getChildren()) {
+          if (child.getActuatorType() == Actuator.Type.UPDATE) {
+            if (!operations.get(child).run(geometry, event, executionScope))
+              throw new IllegalStateException("Characterization prerequisite failed");
+          } else {
+            var producer = actuatorObservations.get(child);
+            if (producer == null || (child.getActuatorType() != Actuator.Type.REFERENCE
+                && !digitalTwin.getScheduler().executeDependency(producer, producer.getGeometry(), event, executionScope)))
+              throw new IllegalStateException("Characterization dependency failed");
+          }
+        }
+        characterizer.execute(member, geometry, event, executionScope);
+        executionScope.getCurrentTransaction().link(activity, member, GraphModel.Relationship.CHARACTERIZED);
+        if (executionScope.commit() < 0) throw new IllegalStateException("Characterization commit failed");
         updateResults.put(key, true);
         return true;
       } catch (Throwable failure) {

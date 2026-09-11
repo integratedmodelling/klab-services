@@ -41,6 +41,23 @@ model candidates must not become persisted observations. Transaction graph asset
 once compilation adds the selected candidates. The temporary registry is discarded when the root
 transaction commits or fails, and is not visible to unrelated transactions.
 
+Dataflow carries an explicit `ResolutionOutcome`: `RESOLVED`, `NO_MODEL`, or `FAILED`.
+Acknowledgment accepts an error-free empty resolution as `NO_MODEL`: a substantial exists even
+when no strategy or candidate contributes an executable explanation. Runtime-owned characterization
+requires successful discovery with no matching model to accept `NO_MODEL`; a matching but
+unresolvable characterization model still fails. Reported resolution errors and execution failures
+are not suppressed. A no-model plan contains no computation; its
+`isEmpty()` is false, including after interface-based JSON transport. Individual substantial
+semantics also select acknowledgment when a transported observable carries a stale collective
+description type. `ConceptImpl.singular()` changes INSTANTIATION/CONNECTION to ACKNOWLEDGEMENT;
+the inverse collective conversion restores the corresponding creation type without modifying
+the original concept. This prevents newly instantiated members from being treated as requests
+to instantiate another collective.
+
+The no-model plan's
+successful Resolution Activity records the decision. Actual characterization executes a member-bound
+UPDATE plan before classification/root commit and records CHARACTERIZED only after success.
+
 1. `RuntimeService` registers an unresolved observation and opens submission/resolution
    transactions.
 2. It calls `Resolver.resolve(...)`, locally or through `ResolverClient`.

@@ -108,6 +108,22 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    */
   List<Notification> getNotifications();
 
+  /** Resolution absence is distinct from compilation, transport or execution failure. */
+  enum ResolutionOutcome { RESOLVED, NO_MODEL, FAILED }
+
+  default ResolutionOutcome getResolutionOutcome() {
+    return isEmpty() ? ResolutionOutcome.FAILED : ResolutionOutcome.RESOLVED;
+  }
+
+  /** Successful lifecycle decision with no explanatory model and no computation. */
+  static Dataflow noModel(List<Notification> notifications) {
+    var ret = new EmptyDataflow();
+    ret.setEmpty(false);
+    ret.setResolutionOutcome(ResolutionOutcome.NO_MODEL);
+    ret.getNotifications().addAll(notifications);
+    return ret;
+  }
+
   /**
    * Return a new empty dataflow, signaling failure of a mandatory resolution.
    *

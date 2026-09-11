@@ -271,6 +271,10 @@ public class ConceptImpl implements Concept {
 
     var ret = new ConceptImpl(this);
     ret.setCollective(true);
+    if (ret.contextualization == Contextualization.ACKNOWLEDGEMENT) {
+      ret.contextualization = ret.is(SemanticType.RELATIONSHIP)
+          ? Contextualization.CONNECTION : Contextualization.INSTANTIATION;
+    }
     ret.setReferenceName("each_" + this.getReferenceName());
     ret.setUrn("each " + this.getUrn());
     return ret;
@@ -293,6 +297,10 @@ public class ConceptImpl implements Concept {
 
     var ret = new ConceptImpl(this);
     ret.setCollective(false);
+    if (ret.contextualization == Contextualization.INSTANTIATION
+        || ret.contextualization == Contextualization.CONNECTION) {
+      ret.contextualization = Contextualization.ACKNOWLEDGEMENT;
+    }
     ret.setReferenceName(this.getReferenceName().replaceFirst("each_", ""));
     ret.setUrn(this.getUrn().replaceFirst("each ", ""));
     return ret;

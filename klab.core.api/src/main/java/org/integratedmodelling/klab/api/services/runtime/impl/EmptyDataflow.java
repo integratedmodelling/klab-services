@@ -9,6 +9,11 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class EmptyDataflow implements Dataflow {
+  private ResolutionOutcome resolutionOutcome;
+  public ResolutionOutcome getResolutionOutcome() {
+    return resolutionOutcome == null ? Dataflow.super.getResolutionOutcome() : resolutionOutcome;
+  }
+  public void setResolutionOutcome(ResolutionOutcome outcome) { this.resolutionOutcome = outcome; }
 
   private List<Notification> notifications = new ArrayList<>();
   private Geometry coverage = null;

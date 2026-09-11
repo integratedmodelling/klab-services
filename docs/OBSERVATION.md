@@ -1944,4 +1944,10 @@ members are stored with final semantics. CLASSIFIED edges record before/after ob
 family/result and support/event. Failed batches or stale persisted baselines roll back together;
 classification directives never become observations. Graph/scope caches and client commit ingestion
 invalidate old member representations. See [C3](CLASSIFICATION.md#c3--atomic-semantic-updates-and-provenance)
-for execution boundaries and validation. Mandatory characterization remains C4; live staging is C5.
+for execution boundaries and validation. C4 now resolves each concrete attribution in the staged
+member's own scope before classification can commit. An explicit Dataflow `NO_MODEL` outcome
+successfully ends the lifecycle without a CHARACTERIZED effect; actual characterization plans
+execute as UPDATE nodes and link their successful activities to the existing members. Failed
+resolution or execution propagates to the classification transaction. See
+[C4](CLASSIFICATION.md#c4--mandatory-characterization-scheduling-optional-explanation) for the typed
+executor contract and validation boundaries. Live staging remains C5.
