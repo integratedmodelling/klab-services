@@ -23,13 +23,27 @@ class ClassificationContractTest {
       assertEquals(Contextualization.VOID, Contextualization.forSemantics(predicate));
     }
   }
-  @Test void activityEffectsAreTypedAndLegacyLinksRemainReadable() {
+  @Test void activityTypesAndEffectsMatchEveryExecutableContextualization() throws Exception {
     for (var activity : Contextualization.values()) {
+      if (activity == Contextualization.VOID) continue;
+      var type = org.integratedmodelling.klab.api.provenance.Activity.Type.forContextualization(activity);
+      assertTrue(type.isContextualization());
+      assertEquals(activity, type.getContextualization());
+      assertEquals(activity.name(), type.name());
+      var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+      var bean = org.integratedmodelling.klab.api.provenance.Activity.of(type);
+      var json = mapper.writerFor(org.integratedmodelling.klab.api.provenance.Activity.class).writeValueAsString(bean);
+      assertEquals(type.name(), mapper.readTree(json).get("type").asText());
+      assertEquals(type, mapper.readValue(json, org.integratedmodelling.klab.api.provenance.Activity.class).getType());
       var effect = GraphModel.Relationship.forContextualization(activity);
       assertTrue(GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.contains(effect));
       assertEquals(GraphModel.Relationship.Direction.OUTGOING, effect.direction());
-      if (activity != Contextualization.VOID) assertNotEquals(GraphModel.Relationship.CONTEXTUALIZED, effect);
     }
+    assertThrows(IllegalArgumentException.class,
+        () -> GraphModel.Relationship.forContextualization(Contextualization.VOID));
+    assertThrows(IllegalArgumentException.class,
+        () -> org.integratedmodelling.klab.api.provenance.Activity.Type.forContextualization(null));
+    assertFalse(org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION.isContextualization());
     assertEquals(GraphModel.Relationship.CLASSIFIED,
         GraphModel.Relationship.forContextualization(Contextualization.CLASSIFICATION));
     assertTrue(Contextualization.CLASSIFICATION.modifiesExistingObservations());

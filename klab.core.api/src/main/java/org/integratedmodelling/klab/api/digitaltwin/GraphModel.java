@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import java.util.*;
-
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -279,14 +278,6 @@ public interface GraphModel {
     RELATIONSHIP
   }
 
-  enum ActivityType {
-    INSTANTIATION,
-    CONTEXTUALIZATION,
-    RESOLUTION,
-    EXECUTION,
-    INITIALIZATION
-  }
-
   enum ActivityOutcome {
     SUCCESS,
     FAILURE,
@@ -325,7 +316,6 @@ public interface GraphModel {
     HAS_AGENT,
     AFFECTS,
     CONTEXTUALIZED_BY,
-    CONTEXTUALIZED, // Legacy activity-to-observation link; retained for stored graphs.
     INSTANTIATED,
     ACKNOWLEDGED,
     DETECTED,
@@ -364,9 +354,9 @@ public interface GraphModel {
     /** Activity effects are not evidence of ownership, particularly for semantic updates. */
     public static Relationship forContextualization(
         org.integratedmodelling.klab.api.knowledge.Contextualization activity) {
-      if (activity == null) return CONTEXTUALIZED;
+      if (activity == null) throw new IllegalArgumentException("Missing contextualization");
       return switch (activity) {
-        case VOID -> CONTEXTUALIZED;
+        case VOID -> throw new IllegalArgumentException("VOID has no observation effect");
         case INSTANTIATION -> INSTANTIATED;
         case ACKNOWLEDGEMENT -> ACKNOWLEDGED;
         case DETECTION -> DETECTED;
@@ -383,10 +373,22 @@ public interface GraphModel {
       };
     }
 
-    public static final Set<Relationship> CONTEXTUALIZATION_EFFECTS = java.util.Collections.unmodifiableSet(
-        EnumSet.of(CONTEXTUALIZED, INSTANTIATED, ACKNOWLEDGED, DETECTED, SIMULATED,
-            MEASURED, QUANTIFIED, VALUED, CATEGORIZED, VERIFIED, CLASSIFIED,
-            CHARACTERIZED, TRANSFORMED, CONNECTED));
+    public static final Set<Relationship> CONTEXTUALIZATION_EFFECTS =
+        java.util.Collections.unmodifiableSet(
+            EnumSet.of(
+                INSTANTIATED,
+                ACKNOWLEDGED,
+                DETECTED,
+                SIMULATED,
+                MEASURED,
+                QUANTIFIED,
+                VALUED,
+                CATEGORIZED,
+                VERIFIED,
+                CLASSIFIED,
+                CHARACTERIZED,
+                TRANSFORMED,
+                CONNECTED));
 
     public enum Direction {
       INCOMING,
@@ -503,7 +505,7 @@ public interface GraphModel {
       String description,
       ServiceType serviceType,
       String serviceName,
-      ActivityType type,
+      org.integratedmodelling.klab.api.provenance.Activity.Type type,
       ActivityOutcome outcome,
       String observationUrn) {
     public static final String ID_FIELD = Fields.ID;

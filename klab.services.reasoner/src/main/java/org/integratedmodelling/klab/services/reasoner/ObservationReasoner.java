@@ -229,10 +229,6 @@ public class ObservationReasoner {
   private ObservationStrategy lower(
       KimObservationStrategy strategy, Map<String, Object> variables, ContextScope scope) {
 
-    if (((Observable) variables.get("this")).getContextualization().modifiesExistingObservations())
-      throw new UnsupportedOperationException(
-          "Semantic-update plans require the classification runtime path; observation-producing lowering is not valid");
-
     var result = new ObservationStrategyImpl();
     result.setUrn(strategy.getUrn());
     result.setNamespace(strategy.getNamespace());
@@ -326,6 +322,23 @@ public class ObservationReasoner {
     consumed.add(last);
     if (!consumed.containsAll(names))
       throw new IllegalArgumentException("Unconsumed graphs require explicit composition");
+    var requested = (Observable) variables.get("this");
+    if (requested.getContextualization() == Contextualization.CHARACTERIZATION) {
+      var inherent = reasoner.directInherent(requested);
+      if (inherent == null || inherent.isCollective())
+        throw new UnsupportedOperationException("Characterization currently requires an individual inherent context");
+    }
+    if (requested.getContextualization() == Contextualization.CLASSIFICATION) {
+      var operations = result.getOperations();
+      if (operations.size() != 2
+          || operations.getFirst().getType() != ObservationStrategy.Operation.Type.RESOLVE
+          || operations.getLast().getType() != ObservationStrategy.Operation.Type.OBSERVE
+          || !operations.getFirst().getObservable().getSemantics().isCollective()
+          || !Objects.equals(reasoner.directInherent(requested), operations.getFirst().getObservable().asConcept())
+          || !Objects.equals(requested.getUrn(), operations.getLast().getObservable().getUrn())
+          || !operations.getLast().getInputs().equals(Map.of("members", operations.getFirst().getId())))
+        throw new IllegalArgumentException("Classification requires resolve members then observe with a members input");
+    }
     return result;
   }
 

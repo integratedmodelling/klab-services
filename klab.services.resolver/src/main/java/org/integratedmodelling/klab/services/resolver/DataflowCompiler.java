@@ -81,6 +81,10 @@ public class DataflowCompiler {
       /*
       These MUST be observations. We check for now but it shouldn't happen.
        */
+      if (node instanceof OperationTarget operation) {
+        ret.getComputation().addAll(compileOperation(operation, coverage, null));
+        continue;
+      }
       if (!(node instanceof Observation rootObservation)) {
         throw new KlabIllegalStateException("Resolution root is not an observation");
       }
@@ -138,12 +142,15 @@ public class DataflowCompiler {
       if (child instanceof ObservationStrategy observationStrategy) {
         var actuator = new ActuatorImpl();
         actuator.setObservation(Observation.forTransport(observation));
+        actuator.setOperationObservable(observation.getObservable());
+        actuator.setContextualization(observation.getObservable().getContextualization());
         actuator.setName(localName == null ? observation.getObservable().getName() : localName);
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
         actuator.setCoverage(
             childCoverage == null ? null : Geometry.forTransport(childCoverage));
         actuator.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
+        actuator.setRequestedSupport(Geometry.forTransport(observation.getGeometry()));
         actuator.setStrategyUrn(observationStrategy.getUrn());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);
@@ -196,6 +203,8 @@ public class DataflowCompiler {
         compileModel(
             observationActuator, observation, coverage, observationStrategy, model, edge.localName);
 
+      } else if (child instanceof OperationTarget operation) {
+        observationActuator.getChildren().addAll(compileOperation(operation, coverage, edge.localName));
       } else if (child instanceof Observation childObservation) {
         // new dependencies brought in by the strategy
         observationActuator
@@ -234,7 +243,9 @@ public class DataflowCompiler {
       var child = resolutionGraph.graph().getEdgeTarget(edge);
       var coverage = edge.coverage;
 
-      if (child instanceof Observation dependentObservation) {
+      if (child instanceof OperationTarget operation) {
+        observationActuator.getChildren().addAll(compileOperation(operation, coverage, edge.localName));
+      } else if (child instanceof Observation dependentObservation) {
         observationActuator
             .getChildren()
             .addAll(
@@ -253,7 +264,10 @@ public class DataflowCompiler {
       Map<String, Object> overriddenParameters = new HashMap<>();
       // Named prerequisite ports are bound to child actuator names, not to producer graph IDs.
       for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
-        if (edge.localName != null) overriddenParameters.put(edge.localName, Identifier.create(edge.localName));
+        if (edge.localName != null
+            && !(observationActuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE
+                && edge.localName.equals("members")))
+          overriddenParameters.put(edge.localName, Identifier.create(edge.localName));
       }
       // If there is a link from the strategy, the contextualizer carries the transformation
       //  localName to be matched with any input tags from the prototype
@@ -273,7 +287,8 @@ public class DataflowCompiler {
           .add(adaptContextualizer(contextualizer, overriddenParameters));
     }
 
-    if (observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
+    if (observationActuator.getObservation() != null
+        && observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
       var shardingStrategy = new Data.ShardingStrategy();
       Utils.Annotations.getAnnotations(model, true)
           .forEach(
@@ -309,6 +324,46 @@ public class DataflowCompiler {
               });
       ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
     }
+  }
+
+  private List<Actuator> compileOperation(OperationTarget target, Geometry support, String localName) {
+    var result = new ArrayList<Actuator>();
+    for (var edge : resolutionGraph.graph().outgoingEdgesOf(target)) {
+      if (!(resolutionGraph.graph().getEdgeTarget(edge) instanceof ObservationStrategy strategy))
+        throw new KlabIllegalStateException("Operation target must resolve through a strategy");
+      var actuator = new ActuatorImpl();
+      actuator.setActuatorType(Actuator.Type.UPDATE);
+      actuator.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
+      actuator.setOperationObservable(target.observable());
+      actuator.setContextualization(target.observable().getContextualization());
+      actuator.setName(localName == null ? target.observable().getName() : localName);
+      // ID zero means there is no result observation. Runtime node identity is transientId.
+      actuator.setCoverage(Geometry.forTransport(edge.coverage));
+      actuator.setResolvedGeometry(Geometry.forTransport(support));
+      actuator.setRequestedSupport(Geometry.forTransport(support));
+      actuator.setStrategyUrn(strategy.getUrn());
+      compileStrategy(actuator, null, edge.coverage, strategy);
+      var binding = new ActuatorImpl.TargetBindingImpl();
+      if (actuator.getContextualization() == org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION) {
+        binding.setKind(Actuator.TargetBinding.Kind.COHORT_MEMBERS);
+        int index = 0;
+        for (var child : actuator.getChildren()) {
+          if ("members".equals(child.getName())) {
+            String name = "members_" + index++;
+            ((ActuatorImpl) child).setName(name);
+            binding.getSources().add(name);
+          }
+        }
+        if (binding.getSources().isEmpty())
+          throw new KlabIllegalStateException("Classification has no resolved member cohort");
+      } else {
+        binding.setKind(Actuator.TargetBinding.Kind.OBSERVATION);
+        binding.setTarget(Observation.forTransport(target.context()));
+      }
+      actuator.getTargetBindings().add(binding);
+      result.add(actuator);
+    }
+    return result;
   }
 
   private Actuator compileReference(Observation observation, Coverage coverage, String localName) {

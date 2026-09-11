@@ -498,6 +498,7 @@ public class JacksonConfiguration {
           Geometry.Dimension.class,
           Parameters.class,
           Actuator.class,
+          Actuator.TargetBinding.class,
           KnowledgeGraph.Commit.class,
           Adapter.class,
           Cohort.class,

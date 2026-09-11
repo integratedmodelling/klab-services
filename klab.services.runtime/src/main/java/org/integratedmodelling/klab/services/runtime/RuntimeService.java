@@ -1147,7 +1147,7 @@ public class RuntimeService extends BaseService
       DigitalTwin.Transaction currentTransaction, Cohort cohort) {
     var parent = currentTransaction.getParent();
     if (parent != null) {
-      if (parent.getActivity().getType() == Activity.Type.CONTEXTUALIZATION) {
+      if (parent.getActivity().getType().isContextualization()) {
         // cohort is in the metadata only if the observable was a collective.
         //        var collectiveCohort =
         //            parent.getActivity().getMetadata().get(COLLECTIVE_COHORT_ID, Cohort.class);
@@ -1237,6 +1237,11 @@ public class RuntimeService extends BaseService
   @Override
   public Observation register(Observation observation, ContextScope scope) {
 
+    if (observation.getObservable() != null
+        && observation.getObservable().getContextualization() != null
+        && observation.getObservable().getContextualization().modifiesExistingObservations()) {
+      throw new IllegalArgumentException("Semantic-update directives are Dataflow operations, not observations");
+    }
     if (observation.getId() == Observation.QUERY_ID
         || observation.getId() > 0
         || observation.isEmpty()) {

@@ -19,6 +19,32 @@ import org.junit.jupiter.api.Test;
 class DigitalTwinCommitTest {
 
   @Test
+  void executionActivityLinksToAffectedObservationUsingItsOwnType() {
+    var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var observation = new ObservationImpl(); observation.setId(42);
+    var parentActivity = org.integratedmodelling.klab.api.provenance.Activity.of(
+        org.integratedmodelling.klab.api.provenance.Activity.Type.SUBMISSION);
+    parentActivity.setId(100);
+    var parent = twin.new TransactionImpl(parentActivity, scope, RuntimeAsset.PROVENANCE_ASSET, observation);
+    long activityId = 101;
+    for (var contextualization : org.integratedmodelling.klab.api.knowledge.Contextualization.values()) {
+      if (contextualization == org.integratedmodelling.klab.api.knowledge.Contextualization.VOID) continue;
+      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+          org.integratedmodelling.klab.api.provenance.Activity.Type.forContextualization(contextualization));
+      activity.setId(activityId++);
+      var child = parent.getChild(activity, scope, observation);
+      var effect = child.outgoing(activity).iterator().next();
+      assertEquals(GraphModel.Relationship.forContextualization(contextualization), effect.type());
+      assertEquals(activity, effect.source());
+      assertEquals(observation, effect.target());
+      assertTrue(child.incoming(activity).stream().anyMatch(link ->
+          link.type() == GraphModel.Relationship.TRIGGERED && link.source() == parentActivity));
+      assertFalse(child.outgoing(activity).stream().anyMatch(link -> link.type() == GraphModel.Relationship.CREATED));
+    }
+  }
+
+  @Test
   void intermediateCommitKeepsItsTransactionLocalTarget() {
     var observation = new ObservationImpl();
     observation.setId(-1);

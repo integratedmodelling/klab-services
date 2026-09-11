@@ -17,6 +17,8 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
+import java.io.Serializable;
+import java.util.List;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -29,18 +31,16 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
-import java.io.Serializable;
-import java.util.List;
-
 /**
- * Actuators are the computable dataflow elements; each of them creates and computes an observation.
- * Within an actuator, the individual runtime operations are represented by k.LAB {@link
- * ServiceCall}s that serve as entry points into the runtime, and derived from {@link
- * Contextualizable} in k.LAB models. Before computing an actuator, the runtime must ensure that all
- * the components serving the needed service calls are available, authorized and loaded, interacting
- * appropriately with the {@link ResourcesService}s in the scope. An actuator with no computation is
- * just responsible for creating its observation, and only non-dependent observables; "substantials"
- * have the ability to just "acknowledge" the observation without providing a computation strategy.
+ * Actuators are the computable dataflow elements. They compute observations or describe explicit
+ * semantic updates to existing members, without creating a result observation. Within an actuator,
+ * the individual runtime operations are represented by k.LAB {@link ServiceCall}s that serve as
+ * entry points into the runtime, and derived from {@link Contextualizable} in k.LAB models. Before
+ * computing an actuator, the runtime must ensure that all the components serving the needed service
+ * calls are available, authorized and loaded, interacting appropriately with the {@link
+ * ResourcesService}s in the scope. An actuator with no computation is just responsible for creating
+ * its observation, and only non-dependent observables; "substantials" have the ability to just
+ * "acknowledge" the observation without providing a computation strategy.
  *
  * <p>Actuators may be references, corresponding to "input ports" in other workflow systems and used
  * only to establish the chain of computation, and they must be computed before they are referenced.
@@ -63,6 +63,8 @@ import java.util.List;
 public interface Actuator extends Serializable, RuntimeAsset {
 
   enum Type {
+    /** Execute a semantic update; has no result observation or observation ID. */
+    UPDATE,
     /** Resolve an existing observation identified by the same ID of this actuator */
     RESOLVE,
     /**
@@ -82,8 +84,9 @@ public interface Actuator extends Serializable, RuntimeAsset {
   }
 
   /**
-   * The ID of the actuator must be the same as that of the observation it handles. It is specific
-   * to the DT and shouldn't be propagated to the serialized form.
+   * For observation-producing nodes the ID is that of the observation. UPDATE nodes have ID zero
+   * and are identified within the plan by their transient ID. The observation ID is specific to the
+   * DT and shouldn't be propagated to the serialized form.
    *
    * @return the observation's ID.
    */
@@ -129,11 +132,45 @@ public interface Actuator extends Serializable, RuntimeAsset {
   Artifact.Type getType();
 
   /**
-   * Actuators carry the observation they explain.
+   * Actuators carry the observation they explain; null for UPDATE nodes.
    *
    * @return
    */
   Observation getObservation();
+
+  /** Explicit operation semantics, distinct from the semantics of affected members. */
+  Observable getOperationObservable();
+
+  org.integratedmodelling.klab.api.knowledge.Contextualization getContextualization();
+
+  enum Effect {
+    OBSERVATION,
+    SEMANTIC_UPDATE
+  }
+
+  Effect getEffect();
+
+  /**
+   * Inputs evaluated before this node. Members are deduplicated by observation identity, across all
+   * listed cohort producers; cohort support is not classification completion.
+   */
+  interface TargetBinding extends Serializable {
+    enum Kind {
+      COHORT_MEMBERS,
+      OBSERVATION
+    }
+
+    Kind getKind();
+
+    List<String> getSources();
+
+    Observation getTarget();
+  }
+
+  List<TargetBinding> getTargetBindings();
+
+  /** Requested operation support. Resolved cohort coverage does not imply that an update ran. */
+  Geometry getRequestedSupport();
 
   /**
    * Return all child actuators in order of declaration in the dataflow. This may not correspond to

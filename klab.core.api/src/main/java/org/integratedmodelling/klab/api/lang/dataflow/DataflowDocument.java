@@ -6,7 +6,9 @@ import java.util.List;
 
 /**
  * Initial portable semantic model for the observation language's dataflow persuasion. This is a
- * document, not a runtime Dataflow or a certificate of replay completeness. Immutable value records
+ * document, not a runtime Dataflow or a certificate of replay completeness. Provenance
+ * reconstruction may combine multiple resolutions to reproduce graph contents from scratch; a
+ * Resolver Dataflow instead specifies work within an existing graph. Immutable value records
  * contain no graph handles, database IDs, parser objects or live scopes. Only the finite
  * define/observe/reference subset is represented so far; see docs/DATAFLOW.md. JSON polymorphic
  * transport and parser adaptation are not yet registered for this model.

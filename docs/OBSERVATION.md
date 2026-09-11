@@ -9,9 +9,15 @@ transport, transactions, and existing tests.
 ## Classification and characterization branch
 
 The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update
-contract, source audit, C0 foundation changes and C1–C5 continuation prompts. Classification and
-characterization source definitions are now in the reference corpus, but execution is explicitly
+contract, source audit, implemented C0/C1 foundation and planning changes, and C2–C5 continuation
+prompts. Classification and individual characterization compile into portable update plans, but execution is explicitly
 gated until the Runtime can operate on members without registering a result observation.
+
+The existing resolution API returns a contextual **Dataflow** describing work within the current
+knowledge graph. All runtime mutations must result from executing such a resolved plan; new
+contextualization kinds extend Dataflow/Actuator contracts, not a separate mutation endpoint.
+This differs from the **graph-reproduction dataflow** extracted from provenance to reconstruct
+contents from scratch. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
 
 ## Accepted baseline
 
@@ -1889,3 +1895,15 @@ reviewing the existing resolution guide, and checking documentation links and wh
 parser suite, Java test suite, or connected worldview/runtime scenario was run for this
 documentation-only stage. Existing query/concurrency tests described in RESOLUTION.md provide
 starting fixtures; they do not establish the proposed composition contracts.
+
+
+### C1 semantic-update planning boundary
+
+The Resolver now compiles classification dependencies into portable `UPDATE` actuators with explicit
+operation semantics, requested support and typed cohort-member bindings. The directive itself is
+never registered as an observation. Individual characterization binds its existing context observation.
+All of this uses the existing resolution API returning Dataflow; no mutation endpoint was added.
+Runtime rejects any plan containing an update before allocating its dependencies until C2/C3 supply
+member execution and atomic attribution. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
+for fields, tested boundaries and the next implementation prompt. These contextual plans remain
+distinct from provenance-extracted graph-reproduction documents.

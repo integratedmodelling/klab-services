@@ -34,9 +34,8 @@ public final class Neo4jQueryCompiler {
               GraphModel.Relationship.HAS_GEOMETRY,
               GraphModel.Relationship.HAS_ACTIVITY,
               // Nested DigitalTwin transactions attach activities through TRIGGERED, and
-              // contextualization activities reach their observations through CONTEXTUALIZED.
+              // execution activities reach observations through their typed effect links.
               GraphModel.Relationship.TRIGGERED,
-              GraphModel.Relationship.CONTEXTUALIZED,
               GraphModel.Relationship.HAS_PLAN,
               GraphModel.Relationship.CONTEXTUALIZED_BY,
               GraphModel.Relationship.HAS_AGENT,

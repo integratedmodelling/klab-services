@@ -101,7 +101,38 @@ public class ResolutionCompiler {
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
 
+    if (observation.getObservable().getContextualization() != null
+        && observation.getObservable().getContextualization().modifiesExistingObservations()) {
+      var geometry = observation.getGeometry() == null && scope.getContextObservation() != null
+          ? scope.getContextObservation().getGeometry() : observation.getGeometry();
+      if (geometry == null || geometry.isEmpty()) return ResolutionGraph.empty();
+      return resolveOperation(observation.getObservable(), GeometryRepository.INSTANCE.scale(geometry, scope), parentGraph, scope);
+    }
     return resolve(observation, scope, parentGraph, null);
+  }
+
+  /** Resolve a directive without querying or registering it as an observation. */
+  private ResolutionGraph resolveOperation(
+      Observable observable, Scale scale, ResolutionGraph parent, ContextScope scope) {
+    if (scope.getContextObservation() == null) return ResolutionGraph.empty();
+    var target = new OperationTarget(observable, scope.getContextObservation());
+    var result = parent.createChild(target, scale);
+    // The existing Reasoner API accepts an observation-shaped request, not a runtime identity.
+    var builder = new Observation.NaiveBuilder(observable, scope);
+    builder.geometry(scale.as(Geometry.class));
+    var probe = builder.make();
+    for (var strategy : scope.getService(Reasoner.class).computeObservationStrategies(probe, scope)) {
+      if (observable.getContextualization() == Contextualization.CLASSIFICATION) {
+        var terminal = strategy.getOperations().isEmpty() ? null : strategy.getOperations().getLast();
+        if (terminal == null || terminal.getType() != ObservationStrategy.Operation.Type.OBSERVE
+            || !terminal.getInputs().containsKey("members")) continue;
+      }
+      var candidate = resolve(strategy, scale, result, scope, null);
+      if (candidate.isEmpty()) continue;
+      result.merge(candidate);
+      if (result.getCoverage().isComplete()) return result;
+    }
+    return ResolutionGraph.empty();
   }
 
   private ResolutionGraph resolve(
@@ -134,9 +165,8 @@ public class ResolutionCompiler {
     if (query.hasCoverage()) {
       scaleToResolve = missingScale(scale, query.coveredScale());
       if (scaleToResolve == null || scaleToResolve.isEmpty()) {
-        var ret = parentGraph.createChild(observation, scale);
-        ret.addReference(query.reference(), query.coverage());
-        return ret;
+        // An unrepresentable complement cannot turn reported partial coverage into success.
+        scaleToResolve = scale;
       }
     }
     Coverage coverage = Coverage.create(scale, 0.0);
@@ -470,6 +500,10 @@ public class ResolutionCompiler {
 
     var contextualizedScope = contextualizeScope(scope, observable, scaleToCover, graph);
 
+    if (observable.getContextualization() != null
+        && observable.getContextualization().modifiesExistingObservations()) {
+      return resolveOperation(observable, contextualizedScope.getSecond(), graph, contextualizedScope.getFirst());
+    }
     var query = query(observable, contextualizedScope.getSecond(), contextualizedScope.getFirst());
     if (query.hasCoverage() && query.coverage().isComplete()) {
       return graph.createReference(observable, query.reference());
@@ -478,10 +512,7 @@ public class ResolutionCompiler {
     var geometry = contextualizedScope.getSecond().as(Geometry.class);
     if (query.hasCoverage()) {
       var missing = missingScale(contextualizedScope.getSecond(), query.coveredScale());
-      if (missing == null || missing.isEmpty()) {
-        return graph.createReference(observable, query.reference());
-      }
-      geometry = missing.as(Geometry.class);
+      if (missing != null && !missing.isEmpty()) geometry = missing.as(Geometry.class);
     }
 
     // create the observation in unresolved state, restricted to the uncovered geometry
@@ -623,6 +654,7 @@ public class ResolutionCompiler {
         candidateScope.getContextObservation() == null
             ? RuntimeAsset.CONTEXT_ASSET
             : scope.getContextObservation();
+    resolutionCache.addVertex(parent);
     resolutionCache.addEdge(parent, ret);
 
     return ret;

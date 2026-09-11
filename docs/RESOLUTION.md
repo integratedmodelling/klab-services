@@ -6,6 +6,12 @@ contracts at the resolver/runtime boundary, the state that survives between call
 It is intended as a baseline for changes to resolution logic, dataflow encoding, inter-resolution
 state, and reentrancy.
 
+The existing resolution API returns a contextual **Dataflow** describing work within the current
+knowledge graph. All runtime mutations must result from executing such a resolved plan; new
+contextualization kinds extend Dataflow/Actuator contracts, not a separate mutation endpoint.
+This differs from the **graph-reproduction dataflow** extracted from provenance to reconstruct
+contents from scratch. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
+
 The description reflects the source in this repository as inspected on 2026-07-30. Statements
 marked **implemented** describe code that runs now. Statements marked **incomplete** or **risk**
 describe code that exists but does not yet fulfill the apparent contract. “Should” is reserved for
@@ -1214,3 +1220,25 @@ When changing one layer, trace the change through all subsequent layers. In part
 edge or actuator field is incomplete until its JSON service representation,
 observation-language syntax and adaptation, runtime compiler, `Resource` persistence, k.IM reuse,
 provenance behavior, and failure rollback are all defined and tested.
+
+
+### Typed execution provenance
+
+Execution activities now carry their actual contextualization type (for example MEASURE,
+INSTANTIATION or CLASSIFICATION). The corresponding effect runs **Activity → Observation**
+(MEASURED, INSTANTIATED, CLASSIFIED). CONTEXTUALIZED_BY remains **Observation → Actuator**;
+HAS_PLAN and RESOLVED identify the compiled plan and resolved target respectively. See the
+[complete link map](CLASSIFICATION.md#activity-types-and-exact-graph-links). Generic
+CONTEXTUALIZATION activities and CONTEXTUALIZED edges have been removed without legacy migration.
+
+
+### C1 semantic-update planning boundary
+
+The Resolver now compiles classification dependencies into portable `UPDATE` actuators with explicit
+operation semantics, requested support and typed cohort-member bindings. The directive itself is
+never registered as an observation. Individual characterization binds its existing context observation.
+All of this uses the existing resolution API returning Dataflow; no mutation endpoint was added.
+Runtime rejects any plan containing an update before allocating its dependencies until C2/C3 supply
+member execution and atomic attribution. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
+for fields, tested boundaries and the next implementation prompt. These contextual plans remain
+distinct from provenance-extracted graph-reproduction documents.

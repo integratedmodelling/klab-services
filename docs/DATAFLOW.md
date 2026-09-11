@@ -6,6 +6,37 @@ do not yet exist through these entry points. This document develops the implemen
 [OBSERVATION.md, section 7](OBSERVATION.md#72-provenance-to-dataflow-builder), rather than defining
 a second dataflow language. See also [RESOLUTION.md](RESOLUTION.md) for resolution and compilation.
 
+## Two distinct dataflow contracts
+
+This distinction is an architectural requirement, not two names for the same serialized object.
+
+| Contract | Contextual resolution Dataflow | Graph-reproduction dataflow |
+|---|---|---|
+| Origin | Resolver response to a resolution request | Extraction from the knowledge graph's recorded provenance |
+| Purpose | Perform the work needed for that resolution in the current graph | Reproduce the exported graph contents from scratch |
+| Starting state | Existing observations, identities, coverage and context may be prerequisites | A fresh graph; required submitted inputs, definitions and dependencies must be supplied or explicitly obtainable |
+| Contents | Chosen computations and contextualizations, including effects on existing observations | Ordered recorded work plus definitions, bindings and dependency closure across the exported graph |
+| Completeness | Complete for the requested resolution given the existing context | Complete for reconstruction; unexplained references to old runtime IDs make it incomplete |
+| Representation | Existing portable `Dataflow`/`Actuator` service contract, extended as necessary | Provenance-built document/source (currently `DataflowDocument` design), compiled for execution |
+
+Every runtime mutation must result from execution of a resolved Dataflow. Classification and
+characterization therefore extend the contextual Dataflow's explicit operation and target contract;
+they do not require a separate resolution or mutation endpoint. Runtime validates contextualizer
+signatures against that plan rather than discovering the operation's meaning only at execution.
+
+A contextual Dataflow may legitimately reuse an existing observation. A reproduction export must
+include how to recreate it, package it as a submitted input, or declare how the prerequisite is
+obtained without relying on an observation already present in the destination graph. Extracting a
+complete reproduction plan requires collecting relevant work across resolutions, not merely
+serializing the latest Resolver response. Shared execution concepts or syntax do not erase this
+scope difference. Partial exports must state their selected contents and close their prerequisites.
+
+Strict reproduction retains recorded computational choices and does not silently rerun strategy
+selection. Any later adaptive mode is a separate, explicit contract. Reproducibility still depends
+on the supplied inputs and pinned resources/components; packaging requirements must make these
+conditions visible. The runtime Dataflow retains its interface-based transport contract. Transport
+registration for the reconstruction document remains a separate implementation milestone below.
+
 ## 1. Intended result
 
 Start at a contextualized knowledge graph's **PROVENANCE** node, visit root activities in order of

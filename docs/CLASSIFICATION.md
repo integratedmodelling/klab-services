@@ -1,6 +1,6 @@
 # Classification and characterization implementation
 
-Status: first foundation milestone implemented; runtime execution is not enabled. This is a
+Status: C0 and C1 planning/transport implemented; semantic-update runtime execution is not enabled. This is a
 continuation of [OBSERVATION.md](OBSERVATION.md), not a declaration that the staging example runs.
 
 ## Contract
@@ -46,9 +46,9 @@ dependency. The instantiator now directly produces the requested Region collecti
 | Boundary | Current path and missing behavior |
 |---|---|
 | Semantics | `Contextualization.forSemantics` previously classified any collective inherent, even for a concrete predicate. It now distinguishes abstraction and rejects non-substantial/non-quality inherents. |
-| Strategy selection | Activity patterns and ordinary producers already parse. Added a Tier-0 member-resolving classification strategy and direct characterization strategy. Lowering explicitly rejects semantic-update activities until operation targets can be executed; this prevents falsely treating the directive as an observation-producing plan. |
-| Resolver | `ResolutionCompiler.resolve(Observable, ...)` obtains/registers an unresolved observation before recursively resolving it. Classification requires an operation-resolution entry point that does not call `requireObservation` for X of Y. Existing collective query and missing-scale logic must be reused for Y. |
-| Dataflow | `CompiledDataflow` builds executors around an observation target. A separate operation observable and the member binding must survive compilation; using a phantom X-of-Y observation as a carrier is not acceptable. |
+| Strategy selection | Activity patterns and ordinary producers already parse. Added a Tier-0 member-resolving classification strategy and direct characterization strategy. Lowering accepts the Tier-0 classification members plan and individual characterization. Classification requires an explicit resolved members input; unsupported forms are rejected. |
+| Resolver | `ResolutionCompiler` branches to an internal `OperationTarget` before observation query/registration for semantic updates, both at roots and in model dependencies. The existing resolution API remains unchanged. Y uses ordinary collective query and missing-scale resolution. |
+| Dataflow | Portable UPDATE actuators carry operation semantics, requested support and typed target bindings, with no result observation. `CompiledDataflow` preflights the entire tree and rejects updates before allocation until C2/C3 provide execution. |
 | Invocation | `ContextualizerExecutor` currently passes `observation.getObservable()` and ignores returned values. Classification must pass X of Y as the operation observable and each Y as the Observation argument; the returned Concept must be handled. |
 | Results | `ContextualizationScopeImpl` only contains a target, event and observation outcomes. It lacks typed attribution results and before/after semantics. |
 | Completion | `RuntimeService.submitContextualizationResult` explicitly throws for CLASSIFICATION. Its instantiation branch submits created children and waits for them. Characterization requires a separate, optional-explanation outcome, not a blanket swallowing of execution failures. |
@@ -61,11 +61,13 @@ dependency. The instantiator now directly produces the requested Region collecti
 - Added typed effect relationships and changed the current transaction writer to use them:
   INSTANTIATED, ACKNOWLEDGED, DETECTED, SIMULATED, MEASURED, QUANTIFIED, VALUED,
   CATEGORIZED, VERIFIED, CLASSIFIED, CHARACTERIZED, TRANSFORMED and CONNECTED.
-- Retained CONTEXTUALIZED for old graphs and unspecified activities. CONTEXTUALIZED_BY remains
-  the observation-to-actuator/execution relationship; it has a different purpose.
+- Removed the generic CONTEXTUALIZATION activity type and CONTEXTUALIZED effect relationship.
+  Execution activities use the actual contextualization type; orchestration types such as
+  SUBMISSION and RESOLUTION remain. CONTEXTUALIZED_BY remains the observation-to-actuator
+  relationship and has a different purpose. Old graph compatibility is not supported.
 - Updated Neo4j query visibility to follow all activity effects. New effect edges are deliberately
   absent from deletion ownership. Classifying an existing observation does not make it owned by
-  the classifying context. Historical deletion semantics are not migrated in this milestone.
+  the classifying context. The old CONTEXTUALIZED deletion path is removed; no graph migration is provided.
 - Added the two Tier-0 source strategies to the reference corpus and `imod/strategies/observations.obs`.
   These are definitions awaiting the operation-target milestone, not runnable classifiers today.
 - Corrected the staging model separation. The resource and live numerical/classifier execution
@@ -76,6 +78,73 @@ C0 validation: the eight-module Maven reactor compiled and 22 focused tests pass
 `ObservationStrategyAdaptationTest` (6) and `Neo4jQueryCompilerTest` (9). These verify semantic
 dispatch, the expanded corpus and interface serialization, existing Tier-0 behavior, typed effect
 visibility and the deletion boundary. They do not exercise classification against live members.
+
+## Activity types and exact graph links
+
+An execution activity's `type` is the corresponding `Contextualization` name. `Activity.Type`
+is the canonical enum, also used by the `GraphModel.Activity` record and serialized as the
+Neo4j Activity node's `type` property. There is no second, divergent graph-specific activity enum.
+`Activity.Type.forContextualization` rejects null and VOID: neither describes executable work.
+Submission, resolution and other orchestration activities retain their own types.
+
+| Activity node `type` | Activity → affected Observation relationship |
+|---|---|
+| INSTANTIATION | INSTANTIATED |
+| ACKNOWLEDGEMENT | ACKNOWLEDGED |
+| DETECTION | DETECTED |
+| SIMULATION | SIMULATED |
+| MEASURE | MEASURED |
+| QUANTIFICATION | QUANTIFIED |
+| VALUATION | VALUED |
+| CATEGORIZATION | CATEGORIZED |
+| VERIFICATION | VERIFIED |
+| CLASSIFICATION | CLASSIFIED |
+| CHARACTERIZATION | CHARACTERIZED |
+| TRANSFORMATION | TRANSFORMED |
+| CONNECTION | CONNECTED |
+
+`CompiledDataflow` creates the execution Activity using its target's contextualization.
+`DigitalTwinImpl.TransactionImpl` creates the effect edge when that execution enters a child
+transaction. It derives the edge from the **activity type**, not the target's current observable.
+This matters when a classification activity changes an ordinary substantial observation.
+
+```mermaid
+flowchart LR
+  P[Parent Activity] -->|TRIGGERED| E[Activity: type MEASURE]
+  E -->|MEASURED| O[Target Observation: quality]
+  R[Activity owning the compiled plan] -->|HAS_PLAN| A[Root Actuator]
+  R -->|RESOLVED| O
+  O -->|CONTEXTUALIZED_BY| A
+```
+
+These edges belong to different parts of the graph:
+
+| Edge | Source → destination | Writer and purpose |
+|---|---|---|
+| TRIGGERED | Parent Activity → child Activity | Transaction nesting; records causal execution hierarchy |
+| Typed effect, e.g. MEASURED | Execution Activity → target Observation | Child contextualization transaction; records the operation's effect |
+| CREATED | Submission/creation Activity → new Observation | `TransactionImpl.setTarget`; registration, not a replacement for an effect edge |
+| HAS_PLAN | Activity owning the plan → root Actuator | `CompiledDataflow`; identifies the compiled plan |
+| RESOLVED | Activity owning the plan → root Observation | `CompiledDataflow`; records resolution of the root |
+| CONTEXTUALIZED_BY | Observation → its Actuator | `CompiledDataflow`; links the observation to its executable implementation, including geometry |
+| HAS_CHILD / HAS_MEMBER | Parent Observation or Cohort → child/member Observation | Containment/membership; neither is a contextualization effect |
+
+For current instantiation execution, the effect's target is the collective observation being
+contextualized. Newly produced individual observations have their own registration and subsequent
+acknowledgement activities. This change does not invent additional INSTANTIATED edges to every
+individual. In C1–C4, classification and characterization must instead execute against the actual
+members and link CLASSIFIED/CHARACTERIZED to each affected member; no directive observation is
+created. Classification execution remains gated until that path exists.
+
+Neo4j visibility follows typed effects; context deletion does not use them as ownership evidence.
+The effect edge identifies the kind and target of work; the Activity outcome still determines
+success or failure. Before/after attributed semantics and member-specific execution remain C3 work.
+
+Typed-activity validation (2026-09-11): 18 tests passed across
+`ClassificationContractTest`, `DigitalTwinCommitTest`, `Neo4jQueryCompilerTest` and
+`Neo4jQueryExecutionTest`. Coverage includes every executable activity/effect pair, interface JSON
+round trips, actual transaction edge direction and triggering links, and embedded Neo4j traversal
+and context-deletion checks. No live service graph migration was performed or is supported.
 
 ## Strategy contract
 
@@ -108,7 +177,7 @@ model from the namespace. Both source definitions are installed, but execution r
 
 An abstract classifier request must not use `request.fully_specified` to reject its deliberately
 abstract predicate. Validate the inherent and operation signature instead. The `members` port
-must become a typed collective/member binding, not an ordinary scalar model argument. The current
+is compiled as a typed collective/member binding, not an ordinary scalar model argument. The current
 classification strategy covers collective inherence; singular-inherent classification needs its
 own existing-member binding contract before enabling that form.
 
@@ -119,16 +188,85 @@ classifier. Characterization is never written as a strategy continuation.
 
 ### C1 — Resolve operations without registering result observations
 
-Introduce an operation target carrying the observable, context observation identity, coverage and
-input graph bindings. Keep observation-producing and semantic-update targets explicit in portable
-plans and actuators. Route classifier dependencies through operation resolution before
-`requireObservation`. Retain lexical namespace/project/scenario constraints at each lookup.
+**Implemented planning boundary.** No endpoint or alternate request/result DTO was introduced.
+`Resolver.resolve(Observation, ContextScope)` still returns `Dataflow`. Its observation-shaped
+request may describe a directive, but the Resolver uses an unregistered probe only for the existing
+Reasoner selection API; the actual graph vertex is an internal `OperationTarget`. Model dependencies
+enter this path before `requireObservation`, and Runtime registration rejects directives.
 
-Suggested API direction (names are provisional): an interface-backed `ContextualizationRequest`
-with operation observable/context identity/geometry, and a `ContextualizationResult` reporting
-completion, affected identities and diagnostics. Register concrete beans in JacksonConfiguration;
-keep interfaces free of Jackson dependencies. Reuse the same target contract for characterization.
-Do not serialize a ContextScope or a live executor.
+| Portable actuator field | C1 meaning |
+|---|---|
+| `actuatorType = UPDATE`, `effect = SEMANTIC_UPDATE` | An operation affecting existing members; no result observation |
+| `operationObservable`, `contextualization` | X-of-Y semantics and CLASSIFICATION/CHARACTERIZATION, independent of affected member semantics |
+| `observation = null`, `id = 0` | No allocated or transported directive observation; node identity is `transientId` |
+| `requestedSupport`, `coverage` | Requested support and resolved plan coverage; neither records that classification has executed |
+| `targetBindings: COHORT_MEMBERS` | Named child producers whose member sets must be combined after prerequisite execution |
+| `targetBindings: OBSERVATION` | Existing individual context observation for characterization |
+| `children` | Prerequisite computations/references, required before the update |
+
+Classification lowers `resolve $members` and terminal `observe $this with inputs(members = cohort)`.
+The Resolver selects the classifier model in the requesting scope, retaining lexical constraints,
+and attaches the resolved cohort as a prerequisite. Complete cached support is reused; partial support
+requires an instantiator for the remainder. If scale subtraction cannot express that remainder, it
+conservatively resolves full support instead of upgrading the cached portion to complete coverage.
+Compiler-generated member source names are local to the update actuator and are not scalar arguments
+passed to the classifier. The entire cohort output, including cached references, supplies members.
+
+`Actuator.TargetBinding` is registered in JacksonConfiguration; implementations remain plain beans
+without Jackson dependencies or annotations. Nested Dataflow transport preserves the operation and
+bindings. `SemanticUpdateTargets` provides side-effect-free binding of completed producer member
+sets, deduplicating positive durable IDs and transaction transient IDs in separate identity spaces.
+A completed empty set is valid; an absent producer is an error. C2 must connect this helper to actual
+cohort enumeration after member lifecycle completion; C1 does not enumerate or classify live members.
+
+The old blanket Reasoner lowerer guard is replaced by a Runtime whole-plan preflight guard. It runs
+before `requireObservations`, storage preparation or executor construction, so a nested update cannot
+partially execute as an observation-producing plan. C2/C3 must replace this guard with explicit
+operation dispatch and atomic effects; merely removing it would reintroduce phantom observations.
+Individual characterization has a portable target; collective characterization and singular-inherent
+classification remain unsupported pending their distribution/member-selection contracts.
+
+The remaining C1 text records the accepted contract and acceptance criteria. The next implementation
+stage is **C2**, followed by C3 before enabling mutations and C4 for mandatory characterization.
+
+C1 validation: the eight-module offline Maven reactor passed 18 focused tests:
+`ClassificationPipelineTest` (6), `ObservationPipelineTest` (5), `DataflowCompilerTest` (1),
+`ClassificationContractTest` (2), and `SemanticUpdateTargetsTest` (4). These cover the actual parsed
+reference corpus, Reasoner selection/lowering, strategy and nested Dataflow interface JSON transport,
+cached/new/partial cohort planning, rejection of incomplete support, classification as a model
+dependency, individual characterization, existing namespace/context propagation regressions,
+deduplication, empty-versus-missing producer outputs, and pre-allocation rejection. External model,
+query and runtime services are controlled doubles. No live worldview model lookup, cohort enumeration,
+classifier execution, graph mutation, provenance extraction or replay was exercised. The test log is
+`target/c1-tests.log`; `git diff --check` also passed.
+
+Keep the existing resolution entry points and their Dataflow response. No new resolution or
+mutation endpoint is required. All runtime mutations, including classification and characterization,
+must occur through execution of a resolved Dataflow. Do not introduce a parallel request/result
+service contract for semantic updates.
+
+Extend Dataflow and Actuator interfaces/beans as needed to describe the contextualization explicitly:
+operation observable, affected observation or member-graph binding, requested support, dependency
+ordering and result/effect kind. Distinguish a newly produced observation from an existing member
+whose semantics are changed. A semantic-update node must not register a result observation for
+X of Y. Resolver may use internal planning targets, but these are neither a public mutation API
+nor persisted observations. Preserve lexical namespace/project/scenario constraints at lookup.
+
+Runtime dispatches from the contextualization declared in the resolved plan and validates the
+contextualizer signature against it. It must not infer the plan's meaning solely from Java return
+or parameter types. Classification outputs and completion states are internal execution/transaction
+results, not an alternative service response replacing Dataflow. Characterization follows the same
+resolution-to-Dataflow contract when Runtime schedules the mandatory follow-up.
+
+Maintain interface-based transport: register any added abstract bean types in JacksonConfiguration,
+use plain portable fields with no Jackson annotations/dependencies, and test nested Dataflow/Actuator
+round trips. Do not serialize ContextScope, live executors or Resolver graph implementations.
+
+This response is a **contextual resolution Dataflow**: it specifies work needed within the existing
+knowledge graph and can reference observations already present there. It is not a complete plan
+for rebuilding that graph. The latter is a separately extracted **graph-reproduction dataflow**,
+assembled from provenance with definitions and dependency closure sufficient to start from an
+empty graph. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
 
 Implement classifier model selection and the Tier-0 members port, reusing existing query coverage and
 missing-scale calculation. Deduplicate members by durable or transaction-local identity. Cohort
@@ -137,11 +275,16 @@ must not claim completion for an incompletely resolved requested cohort.
 
 Acceptance: no new observation ID/CREATED link for X-of-Y; the member-resolving strategy remains
 rank zero; fully covered/partial/empty cohorts; existing and newly instantiated Ys; private model
-visibility; interface JSON round trips. Only after these pass remove the explicit lowerer guard.
+visibility; interface JSON round trips preserving contextualization and member bindings; no new
+resolution/mutation endpoints; all semantic changes occur through Dataflow execution. Planning tests
+now permit removal of the lowerer guard; execution remains gated until the later runtime stages.
 
-**Prompt:** “Implement C1 in docs/CLASSIFICATION.md: semantic-update operation targets from Resolver
-through portable Dataflow, member-resolving Tier-0 classification and the typed members port. Prove that the
-classifier directive never becomes an observation. Update the running docs with supported paths.”
+**Completed-stage prompt (retained for traceability):** “Implement C1 in docs/CLASSIFICATION.md through the existing resolution API returning
+Dataflow. Extend its portable nodes to explicitly represent semantic-update contextualizations,
+Tier-0 member resolution and typed member bindings. Add no resolution/mutation endpoint, and
+ensure classification directives never become observations. Keep all changes within resolved
+Dataflow execution and preserve Jackson interface transport. Do not confuse this contextual plan
+with the separate provenance-extracted graph-reproduction dataflow. Update the running docs.”
 
 ### C2 — Invoke and validate classifiers per member
 

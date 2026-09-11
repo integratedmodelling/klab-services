@@ -237,7 +237,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                   activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
             } else if (datum instanceof Observation observation) {
               // only link contextualization to the contextualized observation
-              if (activity.getType() == Activity.Type.CONTEXTUALIZATION) {
+              if (activity.getType().isContextualization()) {
                 var obs =
                     graph.vertexSet().stream()
                         .filter(
@@ -247,7 +247,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                 try {
                   this.graph.addEdge(
                       activity, obs, new RelationshipEdge(GraphModel.Relationship.forContextualization(
-                          observation.getObservable().getContextualization())));
+                          activity.getType().getContextualization())));
                 } catch (Exception e) {
                   Logging.INSTANCE.error(e, obs);
                 }

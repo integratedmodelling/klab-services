@@ -26,7 +26,14 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.EmptyDataflow;
 
 /**
- * TODO rewrite the description
+ * The portable executable plan returned by resolution for work within an existing knowledge graph.
+ * It may depend on observations and coverage already present in that context. Runtime mutations,
+ * including semantic updates to existing observations, are performed by executing the resolved
+ * plan; different contextualizations must be represented explicitly in its contract.
+ *
+ * <p>This is distinct from a complete graph-reproduction dataflow extracted from provenance. Such
+ * an export must include the definitions and dependency closure needed to reconstruct its contents
+ * in a fresh graph; serializing one contextual resolution response is not sufficient.
  *
  * @author ferdinando.villa
  * @since 0.10.0

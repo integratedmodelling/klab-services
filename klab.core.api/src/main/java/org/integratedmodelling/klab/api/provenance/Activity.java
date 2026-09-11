@@ -14,6 +14,7 @@
 package org.integratedmodelling.klab.api.provenance;
 
 import java.util.List;
+import org.integratedmodelling.klab.api.knowledge.Contextualization;
 
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -75,7 +76,41 @@ public interface Activity extends Provenance.Node {
     SUBMISSION,
     INITIALIZATION,
     RESOLUTION,
-    CONTEXTUALIZATION,
+    INSTANTIATION(Contextualization.INSTANTIATION),
+    ACKNOWLEDGEMENT(Contextualization.ACKNOWLEDGEMENT),
+    DETECTION(Contextualization.DETECTION),
+    SIMULATION(Contextualization.SIMULATION),
+    MEASURE(Contextualization.MEASURE),
+    QUANTIFICATION(Contextualization.QUANTIFICATION),
+    VALUATION(Contextualization.VALUATION),
+    CATEGORIZATION(Contextualization.CATEGORIZATION),
+    VERIFICATION(Contextualization.VERIFICATION),
+    CLASSIFICATION(Contextualization.CLASSIFICATION),
+    CHARACTERIZATION(Contextualization.CHARACTERIZATION),
+    TRANSFORMATION(Contextualization.TRANSFORMATION),
+    CONNECTION(Contextualization.CONNECTION);
+
+    private final Contextualization contextualization;
+
+    Type() { this.contextualization = null; }
+    Type(Contextualization contextualization) {
+      this.contextualization = contextualization;
+    }
+
+    public boolean isContextualization() { return contextualization != null; }
+
+    /** Null for orchestration activities such as submission and resolution. */
+    public Contextualization getContextualization() {
+      return contextualization;
+    }
+
+    public static Type forContextualization(
+        Contextualization contextualization) {
+      if (contextualization == null
+          || contextualization == Contextualization.VOID)
+        throw new IllegalArgumentException("An execution activity requires a non-VOID contextualization");
+      return valueOf(contextualization.name());
+    }
   }
 
   enum Outcome {

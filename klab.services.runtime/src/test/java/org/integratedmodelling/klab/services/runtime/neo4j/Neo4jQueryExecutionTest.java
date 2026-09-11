@@ -25,9 +25,9 @@ class Neo4jQueryExecutionTest {
   }
 
   @Test
-  void childrenOfContextualizedCollectiveRemainVisible() {
+  void childrenOfInstantiatedCollectiveRemainVisible() {
     assertChildren("(root)-[:HAS_PROVENANCE]->(:Provenance)-[:HAS_CHILD]->(:Activity)"
-        + "-[:CONTEXTUALIZED]->(parent)");
+        + "-[:INSTANTIATED]->(parent)");
   }
 
   @Test

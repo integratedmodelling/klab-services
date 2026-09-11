@@ -272,6 +272,7 @@ public class CompiledDataflow {
    */
   public boolean compile(Actuator rootActuator) {
 
+    validateSupportedPlan(rootActuator);
     // build the observations as required
     requireObservations(rootActuator);
 
@@ -295,6 +296,19 @@ public class CompiledDataflow {
       operations.put(pair.getFirst().getId(), operation);
     }
     return true;
+  }
+
+  /**
+   * C1 plans are portable, but member execution and atomic attribution require C2/C3. Check the
+   * entire tree before any observation allocation or storage preparation.
+   */
+  static void validateSupportedPlan(Actuator actuator) {
+    if (actuator.getActuatorType() == Actuator.Type.UPDATE
+        || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE
+        || (actuator.getContextualization() != null
+            && actuator.getContextualization().modifiesExistingObservations()))
+      throw new UnsupportedOperationException("Semantic-update Dataflow execution requires C2/C3");
+    for (var child : actuator.getChildren()) validateSupportedPlan(child);
   }
 
   /** Recompile an already-bound leaf without allocating observations or changing native storage. */
@@ -793,7 +807,8 @@ public class CompiledDataflow {
 
       var contextualization =
           Activity.of(
-              Activity.Type.CONTEXTUALIZATION,
+              Activity.Type.forContextualization(
+                  observation.getObservable().getContextualization()),
               observation,
               contextScope.getActivity(),
               "Contextualization of " + observation.getObservable());

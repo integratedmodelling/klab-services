@@ -21,6 +21,34 @@ public class ActuatorImpl implements Actuator {
   private String name;
   private Artifact.Type type;
   private Observation observation;
+  private Observable operationObservable;
+  private Geometry requestedSupport;
+  private org.integratedmodelling.klab.api.knowledge.Contextualization contextualization;
+  private Effect effect = Effect.OBSERVATION;
+  private List<TargetBinding> targetBindings = new ArrayList<>();
+
+  public Observable getOperationObservable() { return operationObservable; }
+  public Geometry getRequestedSupport() { return requestedSupport; }
+  public void setRequestedSupport(Geometry value) { requestedSupport = value; }
+  public void setOperationObservable(Observable value) { operationObservable = value; }
+  public org.integratedmodelling.klab.api.knowledge.Contextualization getContextualization() { return contextualization; }
+  public void setContextualization(org.integratedmodelling.klab.api.knowledge.Contextualization value) { contextualization = value; }
+  public Effect getEffect() { return effect; }
+  public void setEffect(Effect value) { effect = value; }
+  public List<TargetBinding> getTargetBindings() { return targetBindings; }
+  public void setTargetBindings(List<TargetBinding> value) { targetBindings = value; }
+
+  public static class TargetBindingImpl implements TargetBinding {
+    private Kind kind;
+    private List<String> sources = new ArrayList<>();
+    private Observation target;
+    public Kind getKind() { return kind; }
+    public void setKind(Kind value) { kind = value; }
+    public List<String> getSources() { return sources; }
+    public void setSources(List<String> value) { sources = value; }
+    public Observation getTarget() { return target; }
+    public void setTarget(Observation value) { target = value; }
+  }
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();
@@ -91,6 +119,10 @@ public class ActuatorImpl implements Actuator {
 
   public void setObservation(Observation observation) {
     this.observation = observation;
+    if (observation != null) {
+      this.operationObservable = observation.getObservable();
+      this.contextualization = operationObservable == null ? null : operationObservable.getContextualization();
+    }
   }
 
   public void setChildren(List<Actuator> children) {
@@ -172,7 +204,7 @@ public class ActuatorImpl implements Actuator {
 
   @Override
   public String toString() {
-    return "A(" + this.getId() + ", " + this.observation.getObservable() + ")";
+    return "A(" + this.getId() + ", " + this.operationObservable + ")";
   }
 
   @Override

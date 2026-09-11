@@ -145,7 +145,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     // Agents and geometries are shared and are retained for separate orphan collection.
     String DELETION_OWNERSHIP =
         "HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_DATA|HAS_ACTIVITY|"
-            + "TRIGGERED|CONTEXTUALIZED|HAS_PLAN|CONTEXTUALIZED_BY|CREATED|RESOLVED";
+            + "TRIGGERED|HAS_PLAN|CONTEXTUALIZED_BY|CREATED|RESOLVED";
     String REMOVE_CONTEXT =
         "MATCH (ctx:Context {id:$contextId}) "
             + "OPTIONAL MATCH (ctx)-[:" + DELETION_OWNERSHIP + "*1..]->(owned) "
