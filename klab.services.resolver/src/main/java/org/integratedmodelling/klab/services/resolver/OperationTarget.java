@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 
 /** Resolver-local planning target. Never registered, persisted or transported as an observation. */
-record OperationTarget(Observable observable, Observation context) implements Resolvable {
+record OperationTarget(Observable observable, Observation context, Observable modelDependency) implements Resolvable {
   public String getUrn() {
     return observable.getUrn();
   }

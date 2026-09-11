@@ -98,6 +98,8 @@ public class DataflowCompiler {
     }
 
     ret.getNotifications().addAll(resolutionGraph.getNotifications());
+    ret.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_RESOLUTION_GRAPH,
+        new ResolutionFlowChartAdapter().adapt(resolutionGraph));
 
     return ret;
   }
@@ -147,8 +149,7 @@ public class DataflowCompiler {
         actuator.setName(localName == null ? observation.getObservable().getName() : localName);
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
-        actuator.setCoverage(
-            childCoverage == null ? null : Geometry.forTransport(childCoverage));
+        actuator.setCoverage(childCoverage == null ? null : Geometry.forTransport(childCoverage));
         actuator.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
         actuator.setRequestedSupport(Geometry.forTransport(observation.getGeometry()));
         actuator.setStrategyUrn(observationStrategy.getUrn());
@@ -204,7 +205,9 @@ public class DataflowCompiler {
             observationActuator, observation, coverage, observationStrategy, model, edge.localName);
 
       } else if (child instanceof OperationTarget operation) {
-        observationActuator.getChildren().addAll(compileOperation(operation, coverage, edge.localName));
+        observationActuator
+            .getChildren()
+            .addAll(compileOperation(operation, coverage, edge.localName));
       } else if (child instanceof Observation childObservation) {
         // new dependencies brought in by the strategy
         observationActuator
@@ -213,8 +216,11 @@ public class DataflowCompiler {
                 compileObservation(
                     childObservation, coverage, observationStrategy, edge.localName));
       } else if (child instanceof Observable) {
-        observationActuator.getChildren().add(
-            compileReference(resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
+        observationActuator
+            .getChildren()
+            .add(
+                compileReference(
+                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
       }
     }
 
@@ -244,12 +250,15 @@ public class DataflowCompiler {
       var coverage = edge.coverage;
 
       if (child instanceof OperationTarget operation) {
-        observationActuator.getChildren().addAll(compileOperation(operation, coverage, edge.localName));
+        observationActuator
+            .getChildren()
+            .addAll(compileOperation(operation, coverage, edge.localName));
       } else if (child instanceof Observation dependentObservation) {
         observationActuator
             .getChildren()
             .addAll(
-                compileObservation(dependentObservation, coverage, observationStrategy, edge.localName));
+                compileObservation(
+                    dependentObservation, coverage, observationStrategy, edge.localName));
       } else if (child instanceof Observable observable) {
         observationActuator
             .getChildren()
@@ -326,8 +335,11 @@ public class DataflowCompiler {
     }
   }
 
-  private List<Actuator> compileOperation(OperationTarget target, Geometry support, String localName) {
+  private List<Actuator> compileOperation(
+      OperationTarget target, Geometry support, String localName) {
+
     var result = new ArrayList<Actuator>();
+
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(target)) {
       if (!(resolutionGraph.graph().getEdgeTarget(edge) instanceof ObservationStrategy strategy))
         throw new KlabIllegalStateException("Operation target must resolve through a strategy");
@@ -335,6 +347,7 @@ public class DataflowCompiler {
       actuator.setActuatorType(Actuator.Type.UPDATE);
       actuator.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
       actuator.setOperationObservable(target.observable());
+      actuator.setModelDependency(target.modelDependency());
       actuator.setContextualization(target.observable().getContextualization());
       actuator.setName(localName == null ? target.observable().getName() : localName);
       // ID zero means there is no result observation. Runtime node identity is transientId.
@@ -344,7 +357,8 @@ public class DataflowCompiler {
       actuator.setStrategyUrn(strategy.getUrn());
       compileStrategy(actuator, null, edge.coverage, strategy);
       var binding = new ActuatorImpl.TargetBindingImpl();
-      if (actuator.getContextualization() == org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION) {
+      if (actuator.getContextualization()
+          == org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION) {
         binding.setKind(Actuator.TargetBinding.Kind.COHORT_MEMBERS);
         int index = 0;
         for (var child : actuator.getChildren()) {
@@ -440,8 +454,7 @@ public class DataflowCompiler {
 
     if (ret != null) {
       ret = new ServiceCallImpl(ret);
-      ret.getParameters()
-          .replaceAll((key, value) -> Geometry.valueForTransport(value));
+      ret.getParameters().replaceAll((key, value) -> Geometry.valueForTransport(value));
     }
 
     return ret;

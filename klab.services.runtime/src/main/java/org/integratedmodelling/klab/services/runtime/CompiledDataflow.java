@@ -53,6 +53,7 @@ public class CompiledDataflow {
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
+  private Dataflow sourceDataflow;
   private final Map<String, CallDescriptors> callInfo = new HashMap<>();
 
   public void createStorage() {
@@ -137,6 +138,22 @@ public class CompiledDataflow {
     this.scope = contextScope;
     this.componentRegistry = componentRegistry;
     this.digitalTwin = contextScope.getDigitalTwin();
+    this.sourceDataflow = dataflow;
+  }
+
+  public CompiledDataflow(RuntimeService runtimeService, Observation rootObservation,
+      ServiceContextScope contextScope, Dataflow dataflow) {
+    this(runtimeService, rootObservation, contextScope);
+    this.sourceDataflow = dataflow;
+  }
+
+  static Activity createContextualizationActivity(
+      org.integratedmodelling.klab.api.documentation.FlowChart plan, Observation observation, Activity parent) {
+    var activity = Activity.of(
+        Activity.Type.forContextualization(observation.getObservable().getContextualization()),
+        observation, parent, "Contextualization of " + observation.getObservable());
+    activity.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_DATAFLOW_GRAPH, plan);
+    return activity;
   }
 
   // use the cache to return the call info
@@ -298,6 +315,12 @@ public class CompiledDataflow {
     return true;
   }
 
+  /** Prepare C2's typed classifier without allocating an observation. Scheduling its pending
+   * attributions remains gated until C3 supplies the atomic transaction stage. */
+  public MemberClassifierExecutor compileMemberClassifier(Actuator actuator) {
+    return MemberClassifierExecutor.compile(actuator, componentRegistry, scope);
+  }
+
   /**
    * C1 plans are portable, but member execution and atomic attribution require C2/C3. Check the
    * entire tree before any observation allocation or storage preparation.
@@ -307,7 +330,7 @@ public class CompiledDataflow {
         || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE
         || (actuator.getContextualization() != null
             && actuator.getContextualization().modifiesExistingObservations()))
-      throw new UnsupportedOperationException("Semantic-update Dataflow execution requires C2/C3");
+      throw new UnsupportedOperationException("Semantic-update Dataflow execution requires C3 atomic attribution");
     for (var child : actuator.getChildren()) validateSupportedPlan(child);
   }
 
@@ -657,12 +680,16 @@ public class CompiledDataflow {
   class ExecutorImpl implements DigitalTwin.Executor {
 
     private final Observation observation;
+    private final org.integratedmodelling.klab.api.documentation.FlowChart planChart;
     protected List<ContextualExecutor> executors = new ArrayList<>();
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
     private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
+      var adapter = new org.integratedmodelling.klab.api.documentation.DataflowFlowChartAdapter(actuator);
+      this.planChart = sourceDataflow == null
+          ? adapter.adapt(rootActuator == null ? actuator : rootActuator) : adapter.adapt(sourceDataflow);
       this.observation = actuator.getObservation();
       defineLocalNames(actuator, this.localReferences);
       this.operational = compile(actuator);
@@ -805,13 +832,8 @@ public class CompiledDataflow {
         createStorage();
       }
 
-      var contextualization =
-          Activity.of(
-              Activity.Type.forContextualization(
-                  observation.getObservable().getContextualization()),
-              observation,
-              contextScope.getActivity(),
-              "Contextualization of " + observation.getObservable());
+      var contextualization = createContextualizationActivity(
+          planChart, observation, contextScope.getActivity());
 
       var executionScope = contextScope.executing(contextualization, observation);
       var contextualizationScope = new ContextualizationScopeImpl(observation, event);

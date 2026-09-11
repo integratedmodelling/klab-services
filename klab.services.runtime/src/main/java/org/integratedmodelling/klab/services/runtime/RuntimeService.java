@@ -795,12 +795,9 @@ public class RuntimeService extends BaseService
                     && dataflow instanceof DataflowImpl dataflowImpl) {
                   observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
                 }
-                var encoded =
-                    org.integratedmodelling.common.utils.Utils.Dataflows.encode(
-                        dataflow, resolutionScope);
-                resolution.getMetadata().put("dataflow", encoded);
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
+                    attachResolutionDiagnostics(dataflow, resolution);
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
@@ -1232,6 +1229,16 @@ public class RuntimeService extends BaseService
       }
     }
     return null;
+  }
+
+  /** Called after local compilation, before commit emits ActivityFinished. Do not copy arbitrary metadata. */
+  static void attachResolutionDiagnostics(Dataflow dataflow, Activity resolution) {
+    if (dataflow.getMetadata() == null || resolution.getType() != Activity.Type.RESOLUTION) return;
+    var value = dataflow.getMetadata().get(Metadata.IM_RESOLUTION_GRAPH);
+    if (value instanceof org.integratedmodelling.klab.api.documentation.FlowChart chart) {
+      chart.validate();
+      resolution.getMetadata().put(Metadata.IM_RESOLUTION_GRAPH, chart);
+    }
   }
 
   @Override
@@ -1736,7 +1743,7 @@ public class RuntimeService extends BaseService
 
     if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
-        var executionSequence = new CompiledDataflow(this, rootObservation, scope);
+        var executionSequence = new CompiledDataflow(this, rootObservation, scope, dataflow);
         if (!executionSequence.compile(rootActuator)) {
           scope
               .getCurrentTransaction()

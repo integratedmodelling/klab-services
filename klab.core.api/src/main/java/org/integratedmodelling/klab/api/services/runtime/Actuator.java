@@ -141,6 +141,10 @@ public interface Actuator extends Serializable, RuntimeAsset {
   /** Explicit operation semantics, distinct from the semantics of affected members. */
   Observable getOperationObservable();
 
+  /** Original model dependency that triggered this operation, or null for other requests.
+   * Only its optional flag permits an empty classifier result; strategy targets do not confer it. */
+  Observable getModelDependency();
+
   org.integratedmodelling.klab.api.knowledge.Contextualization getContextualization();
 
   enum Effect {

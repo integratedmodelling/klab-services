@@ -39,6 +39,8 @@ class ClassificationPipelineTest {
   @Test void incompleteCohortCannotClaimClassification() throws Exception { exercise(.5, false); }
   @Test void classificationDependencyNeverRegistersDirective() throws Exception { exercise(1, true, true); }
   @Test void characterizationBindsExistingContext() throws Exception { exercise(1, true, false, true); }
+  @Test void optionalDependencySurvivesTransport() throws Exception { exercise(1, true, true, false, true); }
+  @Test void optionalRootDoesNotConferDependencyOptionality() throws Exception { exercise(1, true, false, false, true); }
 
   private void exercise(double fraction, boolean instantiatorAvailable) throws Exception {
     exercise(fraction, instantiatorAvailable, false);
@@ -49,10 +51,15 @@ class ClassificationPipelineTest {
   }
 
   private void exercise(double fraction, boolean instantiatorAvailable, boolean nested, boolean characterization) throws Exception {
+    exercise(fraction, instantiatorAvailable, nested, characterization, false);
+  }
+
+  private void exercise(double fraction, boolean instantiatorAvailable, boolean nested, boolean characterization, boolean optional) throws Exception {
     var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     var members = observable("each test:Region", SemanticType.SUBJECT, Contextualization.INSTANTIATION, true);
     var activity = characterization ? Contextualization.CHARACTERIZATION : Contextualization.CLASSIFICATION;
     var directive = observable(characterization ? "test:Forest of test:Region" : "test:Environment of each test:Region", SemanticType.ATTRIBUTE, activity, false);
+    ((ObservableImpl) directive).setOptional(optional);
     var context = observation(observable("test:Region", SemanticType.SUBJECT, Contextualization.ACKNOWLEDGEMENT, false), 10, geometry);
     var request = observation(nested ? context.getObservable() : directive, nested ? -3 : 0, geometry);
     var scope = mock(ContextScope.class);
@@ -136,6 +143,10 @@ class ClassificationPipelineTest {
     Dataflow restored = mapper.readValue(mapper.writerFor(Dataflow.class).writeValueAsString(dataflow), Dataflow.class);
     var update = restored.getComputation().getFirst();
     if (nested) update = update.getChildren().getFirst();
+    if (nested) {
+      assertEquals(directive.getUrn(), update.getModelDependency().getUrn());
+      assertEquals(optional, update.getModelDependency().isOptional());
+    } else assertNull(update.getModelDependency());
     assertEquals(Actuator.Type.UPDATE, update.getActuatorType());
     assertEquals(Actuator.Effect.SEMANTIC_UPDATE, update.getEffect());
     assertEquals(activity, update.getContextualization());

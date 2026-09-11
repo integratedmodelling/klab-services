@@ -57,6 +57,9 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    */
   String getName();
 
+  /** Portable diagnostics for this resolution, including Metadata.IM_RESOLUTION_GRAPH as a FlowChart. */
+  org.integratedmodelling.klab.api.data.Metadata getMetadata();
+
   /**
    * An empty dataflow is a valid dataflow that produces an {@link Artifact#isEmpty() empty
    * artifact} when run in its scale. It is <em>not</em> a trivial dataflow that leaves the

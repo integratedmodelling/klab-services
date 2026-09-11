@@ -26,6 +26,9 @@ public class DataflowImpl implements Dataflow {
   private double resolvedCoverage;
   private int childrenCount = -1;
   private String name;
+  private org.integratedmodelling.klab.api.data.Metadata metadata = org.integratedmodelling.klab.api.data.Metadata.create();
+  public org.integratedmodelling.klab.api.data.Metadata getMetadata() { return metadata; }
+  public void setMetadata(org.integratedmodelling.klab.api.data.Metadata metadata) { this.metadata = metadata; }
   private List<Notification> notifications = new ArrayList<>();
 
   @Deprecated private long id;

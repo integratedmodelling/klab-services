@@ -487,13 +487,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
       activity.setName(activity.getType().name().substring(0, 3) + " OK");
-      if (getActivity().getType() == Activity.Type.RESOLUTION
-          && getActivity().getOutcome() == Activity.Outcome.SUCCESS) {
-        // add the resolved graph as metadata to the activity instead
-        getActivity()
-            .getMetadata()
-            .put(Metadata.IM_RESOLUTION_GRAPH, getCurrentTransaction().getGraph());
-      }
     }
 
     if (this.currentTransaction == null) {

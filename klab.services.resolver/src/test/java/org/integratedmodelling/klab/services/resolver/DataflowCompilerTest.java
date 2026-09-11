@@ -60,6 +60,11 @@ class DataflowCompilerTest {
     graph.setDependencies(requirements);
 
     var dataflow = new DataflowCompiler(requested, graph, scope).compile();
+    var chart = org.junit.jupiter.api.Assertions.assertInstanceOf(
+        org.integratedmodelling.klab.api.documentation.FlowChart.class,
+        dataflow.getMetadata().get(org.integratedmodelling.klab.api.data.Metadata.IM_RESOLUTION_GRAPH));
+    chart.validate();
+    assertEquals(1, chart.getRoot().getChildren().size());
 
     assertEquals(1, dataflow.getComputation().size());
     assertNotSame(root, dataflow.getComputation().getFirst().getObservation());

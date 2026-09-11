@@ -22,6 +22,10 @@ public class ActuatorImpl implements Actuator {
   private Artifact.Type type;
   private Observation observation;
   private Observable operationObservable;
+  private Observable modelDependency;
+
+  public Observable getModelDependency() { return modelDependency; }
+  public void setModelDependency(Observable value) { modelDependency = value; }
   private Geometry requestedSupport;
   private org.integratedmodelling.klab.api.knowledge.Contextualization contextualization;
   private Effect effect = Effect.OBSERVATION;

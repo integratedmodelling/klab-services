@@ -114,8 +114,14 @@ public class ResolutionCompiler {
   /** Resolve a directive without querying or registering it as an observation. */
   private ResolutionGraph resolveOperation(
       Observable observable, Scale scale, ResolutionGraph parent, ContextScope scope) {
+    return resolveOperation(observable, scale, parent, scope, null);
+  }
+
+  private ResolutionGraph resolveOperation(
+      Observable observable, Scale scale, ResolutionGraph parent, ContextScope scope,
+      Observable modelDependency) {
     if (scope.getContextObservation() == null) return ResolutionGraph.empty();
-    var target = new OperationTarget(observable, scope.getContextObservation());
+    var target = new OperationTarget(observable, scope.getContextObservation(), modelDependency);
     var result = parent.createChild(target, scale);
     // The existing Reasoner API accepts an observation-shaped request, not a runtime identity.
     var builder = new Observation.NaiveBuilder(observable, scope);
@@ -451,7 +457,10 @@ public class ResolutionCompiler {
     List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
     for (var dependency : model.getDependencies()) {
 
-      var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
+      var dependencyResolution = dependency.getContextualization() != null
+              && dependency.getContextualization().modifiesExistingObservations()
+          ? resolveOperation(dependency, scaleToCover, ret, scope, dependency)
+          : resolve(dependency, scaleToCover, ret, scope);
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
       //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCoverage merges to

@@ -9,7 +9,7 @@ transport, transactions, and existing tests.
 ## Classification and characterization branch
 
 The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update
-contract, source audit, implemented C0/C1 foundation and planning changes, and C2–C5 continuation
+contract, source audit, implemented C0–C2 foundation, planning and invocation changes, and C3–C5 continuation
 prompts. Classification and individual characterization compile into portable update plans, but execution is explicitly
 gated until the Runtime can operate on members without registering a result observation.
 
@@ -1907,3 +1907,30 @@ Runtime rejects any plan containing an update before allocating its dependencies
 member execution and atomic attribution. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
 for fields, tested boundaries and the next implementation prompt. These contextual plans remain
 distinct from provenance-extracted graph-reproduction documents.
+
+
+### C2 member invocation and optional results
+
+C2 provides a typed local classifier executor that returns pending attributions without mutation.
+Only an optional original model dependency, preserved in the portable actuator, permits a null
+classifier result. NOTHING remains an inconsistency error. The real generator signature is supported
+with the operation Observable and a member-contextualized Scope. Whole-plan execution remains gated
+until C3 supplies atomic updates; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
+
+
+### Resolution graph diagnostics
+
+The accepted graph, including semantic-update operation nodes and member bindings, is now adapted
+to a portable FlowChart attached to the returned Dataflow and the completed resolution Activity.
+See [the diagnostic contract](FLOWCHARTS.md#resolution-diagnostics). This provides client-visible
+planning structure without exposing Resolver graphs or changing the C3 execution gate.
+
+
+### Contextualization plan and outcome
+
+The old textual Dataflow metadata is no longer added to resolution Activities. Contextualization
+Activities carry a separate FlowChart under `Metadata.IM_DATAFLOW_GRAPH`, attached at creation
+before ActivityStarted and preserved through ActivityFinished on success or failure. The chart
+shows the received plan and identifies the active actuator. See [plan diagnostics](FLOWCHARTS.md#contextualization-plan-diagnostics)
+for argument projection and restored-leaf limits. The resolution graph and execution plan remain
+separate diagrams; neither is a provenance-derived reproduction dataflow.

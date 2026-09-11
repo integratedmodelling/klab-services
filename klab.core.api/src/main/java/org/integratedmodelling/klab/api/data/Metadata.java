@@ -205,7 +205,11 @@ public interface Metadata extends Parameters<String> {
 
   String IM_OBSERVATION_COST = "im:observation-cost";
 
+  /** Accepted Resolver graph as a portable FlowChart, carried from Dataflow to resolution Activity. */
   String IM_RESOLUTION_GRAPH = "im:resolution-graph";
+
+  /** Contextualization plan as a FlowChart, including the active actuator, before execution. */
+  String IM_DATAFLOW_GRAPH = "im:dataflow-graph";
 
   String IM_COMMIT_ID = "im:commit-id";
 

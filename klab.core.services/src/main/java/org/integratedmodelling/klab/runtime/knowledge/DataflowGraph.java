@@ -22,6 +22,10 @@ public class DataflowGraph implements Dataflow {
   private final ContextScope scope;
   private long transientId = Klab.getNextId();
   private String name;
+  private final org.integratedmodelling.klab.api.data.Metadata metadata = org.integratedmodelling.klab.api.data.Metadata.create();
+
+  @Override
+  public org.integratedmodelling.klab.api.data.Metadata getMetadata() { return metadata; }
   private List<Notification> notifications = new ArrayList<>();
 
   public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {

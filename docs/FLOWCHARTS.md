@@ -285,3 +285,119 @@ closing the dialog cancels the request. Missing images and service errors are sh
 the binary response with ImageIO. Authentication, service headers, scope headers and request
 timeouts are retained. A missing image returns null; failed requests and invalid images raise
 an error. The IDE uses its existing JavaFX Swing dependency for BufferedImage conversion.
+
+
+## Resolution diagnostics
+
+`ResolutionFlowChartAdapter` in the Resolver converts the accepted `ResolutionGraph` to a detached
+FlowChart after successful Dataflow compilation. The snapshot is placed in
+`Dataflow.getMetadata()[Metadata.IM_RESOLUTION_GRAPH]` (`im:resolution-graph`). It documents the
+accepted graph, not rejected search attempts, the runtime transaction graph, or a reproduction
+plan extracted from provenance.
+
+The chart uses flat node containment and directed links, so shared dependencies and parallel
+bindings remain visible without duplicating or recursively expanding vertices. Direction means
+**source is resolved by target**, not temporal execution order. IDs are chart-local and must not
+be used to query the knowledge graph. Labels and metadata distinguish observations, semantic-update
+operations, strategies, models and references. Node metadata includes observable URNs, observation
+identities, strategy rank, model namespace/project, and operation contextualization where applicable.
+Edges carry coverage, geometry encodings, named bindings and referenced observation identities.
+Only JSON values are inserted into chart metadata; no services, scopes, graph handles or domain
+beans are retained. Geometry is descriptive support, not a live Scale.
+
+The configured service Jackson mapper now registers FlowChart so its concrete type survives inside
+untyped Metadata values. This adds the usual service `@CLASS` discriminator to the chart envelope.
+The dependency-free bean itself still works with an ordinary mapper and has no Jackson annotations;
+standalone plain JSON and `chart.getRoot()` for ELK remain supported.
+
+After Runtime successfully compiles the received Dataflow, it copies the chart to the resolution
+Activity before commit. `ServiceContextScope.commit()` preserves it and uses the existing
+`ActivityFinished` message path to listening clients. The former assignment of the mutable runtime
+transaction graph to the same metadata key has been removed. Only this diagnostic key is forwarded,
+not arbitrary Dataflow metadata. Predefined/trivial/empty dataflows may have no Resolver snapshot.
+
+The snapshot supplies structure and layout hints, not a PNG or precomputed text measurements.
+A later `klab-ide` ActivityCard integration can request FlowChart-to-PNG adaptation through a
+service POST extension of `BaseService.info`. That endpoint and ActivityCard rendering are not
+implemented here. Clients should rebuild against the updated common transport configuration before
+expecting FlowChart instances from metadata.
+
+
+Validation: the six-module offline Maven reactor passed 10 focused tests: FlowChartTest (5),
+ResolutionFlowChartAdapterTest (2), DataflowCompilerTest (1), and ResolutionDiagnosticsTest (2).
+Tests cover plain chart JSON, shared/parallel/cyclic topology, classification-operation metadata,
+detachment from the source graph, automatic attachment after compilation, Dataflow interface
+transport, preservation through the real scope commit method with a mocked transaction, and
+ActivityFinished message serialization. `git diff --check` passed. Log:
+`target/resolution-chart-tests.log`. No live AMQP broker, persisted Neo4j activity, or IDE rendering
+was exercised.
+
+
+## Contextualization plan diagnostics
+
+The Resolution Activity no longer receives the old textual `dataflow` metadata value from
+`Utils.Dataflows.encode`, and the transaction constructor no longer replaces its description with
+encoded Dataflow source. Its ordinary description and accepted resolution-graph FlowChart remain.
+Executable-plan diagnostics now belong to the subsequently triggered contextualization Activity,
+under `Metadata.IM_DATAFLOW_GRAPH` (`im:dataflow-graph`).
+
+`DataflowFlowChartAdapter` projects the received Dataflow into a detached chart. Runtime retains
+that received plan while preparing its executors; each executor prepares a chart marking its own
+actuator via chart metadata `activeNode` and node metadata `active`. The full received plan, including
+multiple roots, remains available for context. A restored leaf executor has only its available leaf
+plan and documents that leaf instead; this does not imply reconstruction of historical dependencies.
+
+Each actuator is a node with nested contextualizer-call nodes. Dependency arrows point from
+prerequisite to consumer, and arrows between calls show their declared sequence. Reference occurrences
+remain distinct and link to matching in-plan producers. Node metadata includes identities,
+contextualization, effect, coverage, requested support, strategy and typed target bindings. Call
+metadata includes required version and a detached projection of arguments: JSON values, identifier
+references, geometry encodings and asset URNs. Unsupported objects are represented by an
+`omittedType` marker; nesting beyond 16 levels is marked `truncated`. The chart is an audit aid,
+not a complete serialization of arbitrary call parameters or an executable replay document.
+
+`CompiledDataflow.createContextualizationActivity` attaches the chart before `executing()` creates
+the transaction and emits ActivityStarted. The same metadata remains on the Activity through success
+or failure and is included in ActivityFinished, so clients can compare the outcome with the original
+plan. No layout/PNG endpoint or ActivityCard rendering is added by this change.
+
+
+Validation: the five-module offline Maven reactor passed 14 focused tests:
+DataflowFlowChartAdapterTest (2), FlowChartTest (5), ContextualizationDiagnosticsTest (1, exercising
+both success and failure), ResolutionDiagnosticsTest (2), and DigitalTwinCommitTest (4). They cover
+shared/multiple roots, references, call ordering, active-node selection, detached argument maps,
+interface/message transport, preservation of the plan through Activity completion, and prevention
+of transaction-driven description replacement. The argument-map round trip also covers the Jackson
+fix that treats plain JSON map keys such as `values` as data rather than Java implementation fields.
+Log: `target/dataflow-chart-tests.log`. Whitespace checks passed. Live AMQP delivery, full runtime
+contextualization and IDE rendering were not exercised.
+
+## Client activity catalogue and presentation
+
+Clients must accept every `Activity.Type`, including the specific contextualization types;
+`CONTEXTUALIZATION` is no longer an enum value. Descriptions are optional human-readable text,
+not serialized plans. The IDE uses shared null-safe labels for the tree, cards and inspector.
+Cards show the type, description, outcome, running/completed timing, service, observation URN
+and errors. They recognize both typed FlowChart metadata keys and indicate available diagnostics;
+PNG rendering remains a future service adaptation.
+
+The live IDE catalogue identifies an activity by its stable `transientId`, which survives
+ActivityStarted/ActivityFinished transport even when commit assigns a durable ID. A completion
+replaces the entire started payload, including description, durable identity, parent references
+and metadata. A delayed start cannot overwrite a completion. The catalogue reconstructs
+parent-to-child links from `parentTransientId`, falling back to `triggeringActivityUrn` when the
+live parent identity is unavailable. Children arriving before parents are linked when the parent
+arrives. Snapshot construction is synchronized with message ingestion, and tree refreshes retain
+expanded branches. This live message catalogue is not a historical provenance-query implementation.
+
+The knowledge-graph activity filter uses `GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS`
+together with `TRIGGERED` and the provenance containment links. Typed Activity-to-Observation
+effects must not be confused with Activity-to-Activity triggering or actuator `CONTEXTUALIZED_BY`
+links. No new transport annotations, mutation endpoints or reproduction-dataflow semantics are
+introduced by these client changes.
+
+Client validation: `klab-ide` compiled and `ActivityCatalogTest` passed four tests covering
+completion replacement, late starts, out-of-order parent arrival, URN fallback, snapshot isolation,
+null descriptions and all Activity types through the shared Jackson-configured JSON Message
+transport with typed FlowChart metadata. The log is `klab-ide/target/activity-contract-build.log`.
+Live AMQP delivery and JavaFX tree/card interaction remain unverified.

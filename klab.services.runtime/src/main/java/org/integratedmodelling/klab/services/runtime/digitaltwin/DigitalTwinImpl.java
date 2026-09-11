@@ -187,11 +187,6 @@ public class DigitalTwinImpl implements DigitalTwin {
               activityLinked = true;
             } else if (datum instanceof Observation observation) {
               setTarget(observation);
-            } else if (datum instanceof Dataflow dataflow) {
-              // serialize and record the dataflow with the activity
-              if (activity instanceof ActivityImpl activity1) {
-                activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
-              }
             }
           }
         }

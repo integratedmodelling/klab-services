@@ -19,6 +19,18 @@ import org.junit.jupiter.api.Test;
 class DigitalTwinCommitTest {
 
   @Test
+  void dataflowDoesNotOverwriteResolutionDescription() {
+    var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+        org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION, "Resolution of test:Region");
+    var dataflow = new org.integratedmodelling.common.runtime.DataflowImpl();
+    twin.new TransactionImpl(activity, scope, RuntimeAsset.PROVENANCE_ASSET, dataflow);
+    assertEquals("Resolution of test:Region", activity.getDescription());
+    assertFalse(activity.getMetadata().containsKey("dataflow"));
+  }
+
+  @Test
   void executionActivityLinksToAffectedObservationUsingItsOwnType() {
     var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
     var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);

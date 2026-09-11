@@ -1242,3 +1242,32 @@ Runtime rejects any plan containing an update before allocating its dependencies
 member execution and atomic attribution. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
 for fields, tested boundaries and the next implementation prompt. These contextual plans remain
 distinct from provenance-extracted graph-reproduction documents.
+
+
+### C2 member invocation and optional results
+
+C2 provides a typed local classifier executor that returns pending attributions without mutation.
+Only an optional original model dependency, preserved in the portable actuator, permits a null
+classifier result. NOTHING remains an inconsistency error. The real generator signature is supported
+with the operation Observable and a member-contextualized Scope. Whole-plan execution remains gated
+until C3 supplies atomic updates; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
+
+
+### Portable resolution graph on completed activities
+
+Successful `DataflowCompiler.compile()` now adds a detached FlowChart of the accepted resolution
+graph under `Metadata.IM_RESOLUTION_GRAPH`. Dataflow exposes Metadata through its service interface.
+Runtime forwards that chart to its RESOLUTION Activity after local compilation and before commit,
+so the existing ActivityFinished message carries it to clients. The mutable transaction graph is
+no longer written under this key. See [Flow chart diagnostics](FLOWCHARTS.md#resolution-diagnostics)
+for node/edge semantics, transport details and the deferred ActivityCard/PNG integration.
+
+
+### Contextualization plan and outcome
+
+The old textual Dataflow metadata is no longer added to resolution Activities. Contextualization
+Activities carry a separate FlowChart under `Metadata.IM_DATAFLOW_GRAPH`, attached at creation
+before ActivityStarted and preserved through ActivityFinished on success or failure. The chart
+shows the received plan and identifies the active actuator. See [plan diagnostics](FLOWCHARTS.md#contextualization-plan-diagnostics)
+for argument projection and restored-leaf limits. The resolution graph and execution plan remain
+separate diagrams; neither is a provenance-derived reproduction dataflow.

@@ -274,6 +274,12 @@ public class JacksonConfiguration {
           continue;
         }
 
+        // Plain JSON maps contain user keys, not implementation fields (e.g. "values", "size").
+        // Typed Parameters/Metadata beans still use their explicitly serialized bean fields.
+        if (ret instanceof Map map && !node.has(CLASS_FIELD)) {
+          map.put(field, deserialize(node.get(field), parser, Object.class));
+          continue;
+        }
         var declaredField = findField(cls, field);
         if (declaredField == null && ret instanceof Map map) {
           // FIXME must pass the generic type for the field
@@ -495,6 +501,7 @@ public class JacksonConfiguration {
           NumericRange.class,
           Annotation.class,
           Metadata.class,
+          org.integratedmodelling.klab.api.documentation.FlowChart.class,
           Geometry.Dimension.class,
           Parameters.class,
           Actuator.class,

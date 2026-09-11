@@ -13,6 +13,9 @@ public class EmptyDataflow implements Dataflow {
   private List<Notification> notifications = new ArrayList<>();
   private Geometry coverage = null;
   private String name = "Empty Dataflow";
+  private org.integratedmodelling.klab.api.data.Metadata metadata = org.integratedmodelling.klab.api.data.Metadata.create();
+  public org.integratedmodelling.klab.api.data.Metadata getMetadata() { return metadata; }
+  public void setMetadata(org.integratedmodelling.klab.api.data.Metadata metadata) { this.metadata = metadata; }
   private List<Actuator> computation = new ArrayList<>();
   private ResourceSet requirements = ResourceSet.empty();
   private boolean empty = true;
