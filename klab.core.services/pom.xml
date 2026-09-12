@@ -132,7 +132,7 @@
             <dependency>
                 <groupId>org.dizitart</groupId>
                 <artifactId>nitrite-bom</artifactId>
-                <version>4.3.0</version>
+                <version>4.3.2</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
