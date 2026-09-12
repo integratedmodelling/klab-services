@@ -355,7 +355,9 @@ public enum ResourceTransport {
       for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
         if (schema.mediaTypes.contains(mediaType)
             && (knowledgeClass == null || schema.knowledgeClass == knowledgeClass)) {
-          ret.add(schema);
+          if (ret.stream().noneMatch(existing -> existing.getSchemaId().equals(schema.getSchemaId()))) {
+            ret.add(schema);
+          }
         }
       }
     }
@@ -377,7 +379,9 @@ public enum ResourceTransport {
           for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
             if (schema.mediaTypes.contains(mediaType)
                 && (knowledgeClass == null || schema.knowledgeClass == knowledgeClass)) {
-              ret.add(schema);
+              if (ret.stream().noneMatch(existing -> existing.getSchemaId().equals(schema.getSchemaId()))) {
+                ret.add(schema);
+              }
             }
           }
         }

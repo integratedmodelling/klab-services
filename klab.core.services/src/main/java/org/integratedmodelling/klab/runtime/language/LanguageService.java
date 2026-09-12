@@ -103,6 +103,10 @@ public class LanguageService implements Language {
                 | IllegalArgumentException
                 | InvocationTargetException e) {
               scope.error("runtime error when invoking function " + call.getUrn(), e);
+              if (resultClass == java.io.InputStream.class) {
+                throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+                    e instanceof InvocationTargetException invocation ? invocation.getCause() : e);
+              }
               return null;
             }
           } else if (componentRegistry.implementation(descriptor).constructor != null) {

@@ -14,6 +14,27 @@ import org.neo4j.driver.Values;
 
 class ObservationAnnotationsPersistenceTest {
   @Test
+  void persistedTerrainColormapStillEvaluatesAfterRestoration() {
+    var observation = new ObservationImpl();
+    var concept = new ConceptImpl();
+    concept.setName("Elevation");
+    concept.setNamespace("test");
+    concept.setUrn("test:Elevation");
+    concept.getType().add(SemanticType.QUALITY);
+    observation.setObservable(ObservableImpl.promote(concept, null));
+    observation.mergeAnnotations(List.of(Annotation.of("colormap", "colors",
+        List.of(List.of(0, 0, 128), "#e8e6b5", List.of(255, 255, 255)),
+        "center", 0, "min", -8000, "max", 4000)), 2);
+    var graph = mock(AbstractKnowledgeGraph.class, CALLS_REAL_METHODS);
+    var restored = new ObservationImpl();
+    KnowledgeGraphNeo4j.restoreObservationAnnotations(Values.value(graph.asParameters(observation)), restored);
+    restored.mergeAnnotations(List.of(Annotation.of("colormap", "palette", "gray")), 1);
+    var ramp = org.integratedmodelling.klab.api.view.modeler.visualization.ColorRamp.fromObservation(restored);
+    assertEquals(0xff000080, ramp.argb(-8000, 0, 1));
+    assertEquals(0xffe8e6b5, ramp.argb(0, 0, 1));
+    assertEquals(0xffffffff, ramp.argb(4000, 0, 1));
+  }
+  @Test
   void storedAnnotationsRetainPrecedenceWhenRehydrated() {
     var concept = new ConceptImpl();
     concept.setName("Thing");

@@ -673,7 +673,10 @@ public abstract class BaseService implements KlabService {
     }
 
     if (hasComponents && loadComponents) {
-      getComponentRegistry().loadComponents(resourceSet, scope);
+      if (!getComponentRegistry().loadComponents(resourceSet, scope)) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+            "Failed to load components required by the resolved resources");
+      }
     }
 
     return ret;
@@ -728,8 +731,9 @@ public abstract class BaseService implements KlabService {
             knowledgeClass, mediaType, geometry, this, scope);
 
     if (schemata.isEmpty()) {
-      throw new KlabAuthorizationException(
-          "No authorized export schema with media type " + mediaType + " is available");
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "No export schema for " + knowledgeClass + " with media type " + mediaType
+              + " is available after component discovery; check Resources service discovery and component installation");
     } else if (schemata.size() > 1) {
       scope.warn(
           "Ambiguous request: more than one export schema with "
@@ -738,6 +742,8 @@ public abstract class BaseService implements KlabService {
               + " is available");
     }
     var exportSchema = schemata.getFirst();
+    getComponentRegistry().refreshDependencyComponentIfAvailable(
+        exportSchema.getSchemaId(), null, scope);
     // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope
     // is
     //  a context scope and the DT is local) or call the exported parametrically from a resources

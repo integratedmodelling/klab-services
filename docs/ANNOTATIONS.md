@@ -107,6 +107,14 @@ The palette does not convert units or vertical datums: input zero must represent
 
 ### Geospatial PNG rendering
 
+Exporting through Runtime discovers missing exporters through Resources using the media-type query endpoint, loads the providing component, and refreshes capabilities before dispatch. An installed dependency is checked for updates from its source service before export. The numeric and keyed implementations share the `png` schema but retain separate Java method bindings. Request viewport parameters are passed to the selected implementation, and float storage can be adapted to its numeric scanner.
+
+The renderer consumes the resolved or reloaded observation's annotations: it does not re-read source definitions. Annotation parameters and precedence therefore survive service JSON transport and knowledge-graph persistence. A missing exporter is reported as a discovery/installation failure, rather than an authorization failure; actual permission failures remain distinct.
+
+When verifying a rebuilt renderer, package and install the geospatial **component** artifact (`mvn install`), not just its classes or ordinary JAR. The deployable artifact has classifier `component` and extension `.kar`; services install it as a plugin JAR. An already running service may still hold the previous component until its update is applied. The annotation-aware component includes `RasterRenderer` and both numeric and keyed PNG exporters. Grey output without an explicit grey palette is a reason to check the loaded component: the current unannotated default is viridis.
+
+Changes to source annotations apply to newly resolved observations. Existing observations retain their stored annotation snapshot; rebuilding or updating a renderer does not retroactively add missing annotation parameters. After changing parser behavior or a model annotation, reparse the document and create a new observation when checking the full source-to-render path.
+
 The sibling `klab.component.geospatial` component's `png` exporter uses the rendered observation's effective `@colormap`. Continuous rasters default to viridis and derive automatic bounds from the selected raster, not from all observations or an entire time series. Keyed rasters require `values`; their storage codes are translated through the observation's `DataKey` before color lookup.
 
 The renderer preserves geographic envelope aspect ratio within `viewportX` and `viewportY` (800 pixels each by default), uses nearest-neighbor spatial sampling, and preserves alpha in PNG output. Color interpolation affects numeric values, not spatial category boundaries. Non-finite samples use `nodata`. Raster data exports such as GeoTIFF are separate from this PNG visualization contract.

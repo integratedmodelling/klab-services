@@ -95,6 +95,8 @@ public class ComponentRegistry {
       new HashSetValuedHashMap<>();
 
   private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
+  private static final Map<Extensions.FunctionDescriptor, ServiceImplementation>
+      functionImplementations = Collections.synchronizedMap(new IdentityHashMap<>());
 
   /** Here the key is each service URN, linked to all the components that provide it. */
   private MultiValuedMap<String, Adapter> adapters = new HashSetValuedHashMap<>();
@@ -668,6 +670,7 @@ public class ComponentRegistry {
   }
 
   private void removeFunctionImplementation(Extensions.FunctionDescriptor descriptor) {
+    functionImplementations.remove(descriptor);
     if (descriptor != null && descriptor.serviceInfo != null) {
       serviceImplementations.remove(descriptor.serviceInfo.getName());
     }
@@ -1196,7 +1199,9 @@ public class ComponentRegistry {
   }
 
   public ServiceImplementation implementation(Extensions.FunctionDescriptor descriptor) {
-    return serviceImplementations.get(descriptor.serviceInfo.getName());
+    var implementation = functionImplementations.get(descriptor);
+    return implementation == null
+        ? serviceImplementations.get(descriptor.serviceInfo.getName()) : implementation;
   }
 
   /**
@@ -1864,6 +1869,7 @@ public class ComponentRegistry {
 
     var ret = new Extensions.FunctionDescriptor();
     ServiceImplementation implementation = new ServiceImplementation();
+    functionImplementations.put(ret, implementation);
     serviceImplementations.put(serviceInfo.getName(), implementation);
 
     ret.serviceInfo = serviceInfo;
@@ -2229,12 +2235,17 @@ public class ComponentRegistry {
         scope.error(e);
         return false;
       }
-      installComponent(
+      var installed = installComponent(
           plugin,
           null,
           Extensions.ComponentImportType.DEPENDENCY,
           result.getServiceId(),
           result.getTimestamp());
+      if (installed == null || installed.getFirst() == null) {
+        scope.error("Failed to install component " + result.getResourceUrn()
+            + (installed == null ? "" : ": " + installed.getSecond().getNotifications()));
+        return false;
+      }
     }
 
     // hopefully this is OK with plugins that have started already

@@ -222,28 +222,13 @@ public class KlabServiceController {
       var stream =
           instance.klabService().exportAsset(urn, knowledgeClass, mediaType, params, scope);
       if (stream == null) {
-
-        // see if we have the referenced asset. In that case we can check for specific export
-        // schemata based on identity, geometry and metadata before we give up.
-        var asset = instance.klabService().resolveUrn(urn, knowledgeClass, scope);
-        if (asset instanceof Observation observation
-            && instance
-                .klabService()
-                .serviceId()
-                .equals(observation.getContextualizationData().getServiceId())) {
-          // observation available in local storage - data are here, find export based on geometry
-
-        } else {
-
-          throw new KlabResourceAccessException(
-              "Service cannot stream the asset identified by " + urn);
-        }
+        throw new KlabResourceAccessException(
+            "Exporter returned no data for " + urn + " as " + mediaType);
       }
 
-      try {
+      try (stream) {
         response.setContentType(mediaType);
         IOUtils.copy(stream, response.getOutputStream());
-        stream.close();
       } catch (IOException e) {
         throw new KlabInternalErrorException(e);
       }

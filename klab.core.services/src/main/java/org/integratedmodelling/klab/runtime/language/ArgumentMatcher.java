@@ -60,7 +60,9 @@ public class ArgumentMatcher {
           if (parameterType.isAssignableFrom(scannerArgument.getClass())) {
             payload.add(scannerArgument);
           } else {
-            // TODO adapt scannerArgument to the required type
+            if (!canAdaptScanner(scannerArgument, parameterType)) return null;
+            payload.add(ScannerAdapters.adaptType(scannerArgument,
+                (Class<? extends Storage.Scanner>) parameterType));
           }
 
         } else {
@@ -85,9 +87,12 @@ public class ArgumentMatcher {
               var shards = storage.getNativeShards(event);
               var scanners = shards.stream().map(shard -> storage.getNativeScanner(shard)).toList();
               if (!scanners.isEmpty()) {
+                if (scanners.stream().anyMatch(s -> !canAdaptScanner(s, parameterType))) return null;
                 payload.add(
                     ScannerAdapters.mergeScanners(
-                        scanners, (Class<? extends Storage.Scanner>) parameterType));
+                        scanners.stream().map(s -> (Storage.Scanner) ScannerAdapters.adaptType(s,
+                            (Class<? extends Storage.Scanner>) parameterType)).toList(),
+                        (Class<? extends Storage.Scanner>) parameterType));
               }
             }
           }
@@ -103,7 +108,8 @@ public class ArgumentMatcher {
       } else if (ServiceCall.class.isAssignableFrom(parameterType)) {
 
       } else if (Parameters.class.isAssignableFrom(parameterType)) {
-
+        var parameters = findArgument(Parameters.class, furtherArgs);
+        if (parameters != null) payload.add(parameters);
       } else if (Observable.class.isAssignableFrom(parameterType)) {
 
         var observable = findArgument(Observable.class, furtherArgs);
@@ -150,12 +156,18 @@ public class ArgumentMatcher {
   private static <T> T findArgument(Class<T> scannerClass, Object[] furtherArgs) {
     if (furtherArgs != null) {
       for (var arg : furtherArgs) {
-        if (scannerClass.isAssignableFrom(arg.getClass())) {
+        if (arg != null && scannerClass.isAssignableFrom(arg.getClass())) {
           return scannerClass.cast(arg);
         }
       }
     }
     return null;
+  }
+
+  private static boolean canAdaptScanner(Storage.Scanner scanner, Class<?> requiredType) {
+    return requiredType.isInstance(scanner)
+        || scanner instanceof Storage.FloatScanner && requiredType == Storage.DoubleScanner.class
+        || scanner instanceof Storage.DoubleScanner && requiredType == Storage.FloatScanner.class;
   }
 
   /**
