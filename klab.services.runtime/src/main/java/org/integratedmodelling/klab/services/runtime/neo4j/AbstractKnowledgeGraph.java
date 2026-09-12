@@ -84,6 +84,12 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     if (asset != null) {
       switch (asset) {
         case Observation observation -> {
+          ret.put(GraphModel.Fields.ANNOTATIONS_JSON,
+              observation.getAnnotations().stream().map(Utils.Json::asString).toList());
+          if (observation instanceof ObservationImpl annotated) {
+            ret.put(GraphModel.Fields.ANNOTATION_PRIORITIES,
+                Utils.Json.asString(annotated.getAnnotationPriorities()));
+          }
           var metadata = sanitizeMetadata(observation.getMetadata());
           ret.putAll(metadata);
           ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(metadata));

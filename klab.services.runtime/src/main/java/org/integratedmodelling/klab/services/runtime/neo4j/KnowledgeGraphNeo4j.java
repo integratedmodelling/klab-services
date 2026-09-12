@@ -89,6 +89,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           GraphModel.Fields.SEMANTICTYPE,
           GraphModel.Fields.SEMANTICS,
           GraphModel.Fields.OBSERVABLE,
+          GraphModel.Fields.ANNOTATIONS_JSON,
+          GraphModel.Fields.ANNOTATION_PRIORITIES,
           GraphModel.Fields.ID,
           GraphModel.Fields.PARENT_ID,
           GraphModel.Fields.EVENT_TIMESTAMPS,
@@ -918,6 +920,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
         restoreObservationMetadata(node, instance);
+        restoreObservationAnnotations(node, instance);
         if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
           instance.setHistograms(
               Utils.Data.deserializeHistogramMap(
@@ -1168,6 +1171,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
     }
     return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  static void restoreObservationAnnotations(Value node, ObservationImpl observation) {
+    if (!node.get(GraphModel.Fields.ANNOTATIONS_JSON).isNull()) {
+      observation.setAnnotations(node.get(GraphModel.Fields.ANNOTATIONS_JSON).asList(
+          value -> Utils.Json.parseObject(value.asString(),
+              org.integratedmodelling.klab.api.lang.Annotation.class)));
+    }
+    if (!node.get(GraphModel.Fields.ANNOTATION_PRIORITIES).isNull()) {
+      Map<String, Integer> priorities = new HashMap<>();
+      Utils.Json.parseObject(node.get(GraphModel.Fields.ANNOTATION_PRIORITIES).asString(), Map.class)
+          .forEach((key, value) -> priorities.put(key.toString(), ((Number) value).intValue()));
+      observation.setAnnotationPriorities(priorities);
+    }
   }
 
   @SuppressWarnings("unchecked")

@@ -375,6 +375,7 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     }
     var ret = new ObservationImpl();
     ret.setObservable(observation.getObservable());
+    ret.mergeAnnotations(observation);
     ret.setGeometry(Geometry.forTransport(observation.getGeometry()));
     var metadata = org.integratedmodelling.klab.api.data.Metadata.create();
     observation

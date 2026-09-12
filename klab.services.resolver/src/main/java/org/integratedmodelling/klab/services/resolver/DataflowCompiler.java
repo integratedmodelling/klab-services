@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -244,6 +245,16 @@ public class DataflowCompiler {
       Model model,
       String localName) {
 
+    if (observation != null && isMainObservable(observation.getObservable(), model)
+        && observationActuator.getObservation() instanceof ObservationImpl target) {
+      target.mergeAnnotations(model.getObservables().getFirst().getSemantics().getAnnotations(),
+          ObservationImpl.CONCEPT_ANNOTATIONS);
+      target.mergeAnnotations(model.getObservables().getFirst().getAnnotations(),
+          ObservationImpl.MODEL_ANNOTATIONS);
+      target.mergeAnnotations(model.getAnnotations(),
+          ObservationImpl.MODEL_ANNOTATIONS);
+    }
+
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
 
       var child = resolutionGraph.graph().getEdgeTarget(edge);
@@ -299,7 +310,7 @@ public class DataflowCompiler {
     if (observationActuator.getObservation() != null
         && observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
       var shardingStrategy = new Data.ShardingStrategy();
-      Utils.Annotations.getAnnotations(model, true)
+      observationActuator.getObservation().getAnnotations()
           .forEach(
               annotation -> {
                 switch (annotation.getName()) {
@@ -333,6 +344,18 @@ public class DataflowCompiler {
               });
       ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
     }
+  }
+
+  private boolean isMainObservable(Observable observable, Model model) {
+    for (int i = 0; i < model.getObservables().size(); i++) {
+      if (observable.getSemantics().equals(model.getObservables().get(i).getSemantics())) {
+        return i == 0;
+      }
+    }
+    if (model.getObservables().isEmpty()) return false;
+    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    return reasoner != null && reasoner.resolves(observable, model.getObservables().getFirst(),
+        scope.getContextObservation() == null ? null : scope.getContextObservation().getObservable());
   }
 
   private List<Actuator> compileOperation(

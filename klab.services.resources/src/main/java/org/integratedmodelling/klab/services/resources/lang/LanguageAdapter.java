@@ -263,6 +263,9 @@ public enum LanguageAdapter {
     ret.setProjectName(projectName);
     ret.setDocumentClass(documentClass);
     ret.setPattern(semantics.isPattern());
+    for (var annotation : semantics.getAnnotations()) {
+      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, documentClass));
+    }
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
     if (semantics.isLeafDeclaration()) {
@@ -308,7 +311,11 @@ public enum LanguageAdapter {
       boolean collective = restriction.getThird();
       var operand =
           adaptSemanticSequence(
-              asTokens(restriction.getSecond(), namespace, projectName, documentClass));
+              asTokens(
+                  restriction.getFirst() == SemanticSyntax.BinaryOperator.LINKING
+                      ? List.of(restriction.getSecond().get(0))
+                      : restriction.getSecond(),
+                  namespace, projectName, documentClass));
       if (operand != null && collective) {
         operand.setCollective(true);
         operand.resetDefinition();
@@ -330,7 +337,7 @@ public enum LanguageAdapter {
             ret.setRelationshipSource(operand);
             var target =
                 adaptSemantics(
-                    restriction.getSecond().get(0), namespace, projectName, documentClass);
+                    restriction.getSecond().get(1), namespace, projectName, documentClass);
             if (target != null && collective) {
               target.setCollective(true);
               target.resetDefinition();
@@ -351,6 +358,10 @@ public enum LanguageAdapter {
     }
 
     if (logicalOperator != null) {
+      ret.setExpressionType(
+          logicalOperator == SemanticSyntax.BinaryOperator.OR
+              ? KimConcept.Expression.UNION
+              : KimConcept.Expression.INTERSECTION);
       ret.getType()
           .add(
               logicalOperator == SemanticSyntax.BinaryOperator.OR
@@ -411,6 +422,10 @@ public enum LanguageAdapter {
     ret.setNamespace(namespace.getUrn());
     ret.setProjectName(namespace.getProjectName());
     ret.setDefaulted(define.isDefaulted());
+    for (var annotation : define.getAnnotations()) {
+      ret.getAnnotations().add(adaptAnnotation(annotation, namespace.getUrn(),
+          namespace.getProjectName(), KlabAsset.KnowledgeClass.NAMESPACE));
+    }
     ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
     ret.setValue(
         adaptValue(
@@ -1335,6 +1350,10 @@ public enum LanguageAdapter {
     ret.setProjectName(projectName);
     ret.setType(adaptSemanticType(definition.getDeclaredType()));
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+    for (var annotation : definition.getAnnotations()) {
+      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName,
+          KlabAsset.KnowledgeClass.ONTOLOGY));
+    }
 
     if (definition.isDeniable()) {
       ret.getType().add(SemanticType.DENIABLE);

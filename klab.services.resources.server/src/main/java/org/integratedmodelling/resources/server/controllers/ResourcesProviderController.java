@@ -724,15 +724,7 @@ public class ResourcesProviderController {
       @RequestBody String input,
       @PathVariable(name = "assetClass") KlabAsset.KnowledgeClass assetClass) {
 
-    if (assetClass == KlabAsset.KnowledgeClass.OBSERVABLE) {
-      return resourcesServer.klabService().declareObservable(input);
-    } else if (assetClass == KlabAsset.KnowledgeClass.CONCEPT) {
-      return resourcesServer.klabService().declareConcept(input);
-    }
-    return resourcesServer
-        .klabService()
-        .getWorkspaceManager()
-        .parseAsset(input, assetClass.getAssetClass());
+    return resourcesServer.klabService().parseAsset(input, assetClass);
   }
 
   //  private static Class<? extends KlabDocument<?>> loadDocumentClass(String className) {

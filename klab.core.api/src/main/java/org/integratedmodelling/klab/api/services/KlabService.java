@@ -44,6 +44,18 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public interface KlabService extends Service {
 
   /**
+   * Adapt source text to the requested media type. FlowChart JSON supports image/png on all
+   * base services; Resources additionally supports application/json with a semantic assetClass.
+   * The result is the raw representation (UTF-8 for JSON). Unsupported conversions throw.
+   * A default preserves compatibility with service implementations without adaptation support.
+   */
+  default byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
+      UserScope scope) {
+    throw new UnsupportedOperationException("Unsupported adaptation to " + mediaType);
+  }
+
+
+  /**
    * A set of services is identified in the hub response to certificate authentication, both for
    * engine (user-level) certificates and for service (partner-level) certificates (the latter is an
    * addition w.r.t. k.LAB 0.11). The service descriptor in the hub response should have a

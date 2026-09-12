@@ -344,6 +344,12 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
+      UserScope scope) {
+    return primary().adapt(source, mediaType, assetClass, scope);
+  }
+
+  @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     return primary().info(urn, assetClass, infoClass, scope);

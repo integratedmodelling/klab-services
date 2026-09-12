@@ -52,6 +52,7 @@ public interface GraphModel {
     String DATA_JSON = "dataJson";
     String COMPUTATION_JSON = "computationJson";
     String ANNOTATIONS_JSON = "annotationsJson";
+    String ANNOTATION_PRIORITIES = "annotationPriorities";
     String SHARDING_STRATEGY_JSON = "shardingStrategyJson";
     String ADAPTER_ID = "adapterId";
     String ADAPTER_PARAMETERS = "adapterParameters";
@@ -157,6 +158,7 @@ public interface GraphModel {
             DATA_JSON,
             COMPUTATION_JSON,
             ANNOTATIONS_JSON,
+            ANNOTATION_PRIORITIES,
             SHARDING_STRATEGY_JSON,
             ADAPTER_ID,
             ADAPTER_PARAMETERS,

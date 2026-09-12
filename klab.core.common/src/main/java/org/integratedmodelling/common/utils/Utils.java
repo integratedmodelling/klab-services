@@ -1767,15 +1767,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var request =
               requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
-          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+          var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
           if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
-            return parseResponse(response.body(), resultClass);
+            return resultClass == byte[].class ? resultClass.cast(response.body())
+                : parseResponse(new String(response.body(), java.nio.charset.StandardCharsets.UTF_8), resultClass);
           } else {
             Logging.INSTANCE.error(
                 "========== POST " + apiCall + " return " + response.statusCode());
-            var log = parseResponse(response.body(), Map.class);
+            var responseText = new String(response.body(), java.nio.charset.StandardCharsets.UTF_8);
+            var log = parseResponse(responseText, Map.class);
             Logging.INSTANCE.error(
                 "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
             Logging.INSTANCE.error(Maps.debugPrint(log));
@@ -1789,9 +1791,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               }
               throw new KlabServiceAccessException(
                   detail == null
-                      ? (response.body() == null || response.body().isBlank()
+                      ? (responseText.isBlank()
                           ? "POST " + apiCall + " failed with HTTP " + response.statusCode()
-                          : response.body())
+                          : responseText)
                       : detail.toString());
             }
           }

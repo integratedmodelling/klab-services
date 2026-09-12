@@ -1904,7 +1904,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         if (parent != null) {
-          ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), parent);
+          var annotated = new ConceptImpl((ConceptImpl) parent);
+          annotated.setAnnotations(AnnotationCollector.merge(
+              parent.getAnnotations(), concept.getAnnotations()));
+          ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
         }
 
         return null;
@@ -2009,6 +2012,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     ontology.define();
     main = ontology.getConcept(mainId);
+    ((ConceptImpl) main).setAnnotations(
+        AnnotationCollector.merge(concept.getAnnotations()));
 
     indexer.index(concept);
 
@@ -2026,6 +2031,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return null;
       } else {
         ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
+        ((ConceptImpl) main).setAnnotations(
+            AnnotationCollector.merge(
+                declared.getAnnotations(), concept.getAnnotations()));
       }
       //                concepts.add(declared);
       //            }
@@ -2268,7 +2276,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private Concept declare(KimConcept concept, Ontology ontology, Scope monitor) {
-    return declareInternal(concept, ontology, monitor);
+    var resolved = declareInternal(concept, ontology, monitor);
+    if (resolved == null) return null;
+    var result = new ConceptImpl((ConceptImpl) resolved);
+    result.setAnnotations(AnnotationCollector.collect(
+        concept, owl::getConcept));
+    return result;
   }
 
   private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
@@ -2464,10 +2477,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       observable.setStatedName(concept.getFormalName());
       observable.setReferenceName(concept.getFormalName());
       observable.setArtifactType(Artifact.Type.forSemantics(nsmain.getType()));
+      observable.setAnnotations(AnnotationCollector.merge(
+          concept.getAnnotations()));
       return observable;
     }
 
-    Concept main = declareInternal(concept.getSemantics(), declarationOntology, monitor);
+    Concept main = declare(concept.getSemantics(), declarationOntology, monitor);
     if (main == null) {
       return null;
     }
@@ -2500,7 +2515,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //    }
 
     if (concept.getDefaultValue() != null) {
-      Object value = concept.getValue();
+      Object value = concept.getDefaultValue();
       if (value instanceof KimConcept) {
         value = declareConcept((KimConcept) value);
       }
@@ -2535,13 +2550,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
     }
 
-    for (var annotation : concept.getAnnotations()) {
+    for (var annotation : AnnotationCollector.merge(
+        concept.getAnnotations())) {
       builder = builder.withAnnotation(new AnnotationImpl(annotation));
     }
 
     // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
-    return (Observable) builder.buildObservable();
+    var result = (ObservableImpl) builder.buildObservable();
+    var semantics = new ConceptImpl((ConceptImpl) result.getSemantics());
+    semantics.setAnnotations(main.getAnnotations());
+    result.setSemantics(semantics);
+    return result;
   }
 
   //  public void registerConcept(Concept thing) {

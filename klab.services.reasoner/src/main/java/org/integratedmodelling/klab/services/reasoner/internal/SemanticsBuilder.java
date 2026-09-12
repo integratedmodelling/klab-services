@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.AnnotationCollector;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -85,6 +86,9 @@ public class SemanticsBuilder implements Observable.Builder {
       ret.currency = observable.getCurrency();
       ret.statedName = observable.getStatedName();
       ret.optional = observable.isOptional();
+      ret.generic = observable.isGeneric();
+      ret.numericRange = observable.getRange();
+      ret.annotations = AnnotationCollector.merge(observable.getAnnotations());
       return ret;
     }
     throw new KlabInternalErrorException("Unexpected concept syntax implementation");
@@ -298,7 +302,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withRange(NumericRange range) {
-    return null;
+    this.numericRange = range;
+    return this;
   }
 
   @Override
@@ -318,7 +323,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withAnnotation(Annotation annotation) {
-    return null;
+    annotations = AnnotationCollector.merge(annotations, List.of(annotation));
+    return this;
   }
 
   @Override
@@ -654,7 +660,11 @@ public class SemanticsBuilder implements Observable.Builder {
     if (syntax.isPattern()) {
       throw new KlabIllegalStateException("Cannot build a concept pattern: " + syntax.getUrn());
     }
-    return buildConcept(syntax);
+    var concept = buildConcept(syntax);
+    if (concept == null) return null;
+    var result = new ConceptImpl((ConceptImpl) concept);
+    result.setAnnotations(AnnotationCollector.collect(syntax, reasoner::resolveConcept));
+    return result;
   }
 
   @Override
@@ -680,6 +690,7 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.setOptional(this.optional);
     ret.getAnnotations().addAll(annotations);
     ret.setGeneric(this.generic);
+    ret.setRange(this.numericRange);
     //
     //    if (unitStatement != null) {
     //      /* TODO CHECK */

@@ -10,6 +10,9 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
  */
 public interface ServicesAPI {
 
+  /** POST source content; Accept selects the output media type, assetClass optionally selects a semantic bean. */
+  String ADAPT = "/api/v1/adapt";
+
   String API_BASE = "/api/v1";
 
   /** Retrieve a typed information projection from any k.LAB service. */

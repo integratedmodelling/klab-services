@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.AnnotationCollector;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -32,6 +34,9 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private final List<Notification> notifications = new ArrayList<>();
   private String name;
   private boolean query = false;
+  private List<Annotation> annotations = new ArrayList<>();
+  private List<Annotation> conceptAnnotations = new ArrayList<>();
+  private int annotationPriority = ObservationImpl.MODEL_ANNOTATIONS;
 
   private final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
@@ -101,6 +106,21 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       default -> {}
     }
 
+    if (observable instanceof KimModel model) {
+      var main = model.getObservables().getFirst();
+      conceptAnnotations = AnnotationCollector.collect(
+          main.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+      annotations = AnnotationCollector.merge(
+          main.getAnnotations(), model.getAnnotations());
+    } else if (observable instanceof KimObservable obs) {
+      conceptAnnotations = AnnotationCollector.collect(
+          obs.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+      annotations = AnnotationCollector.merge(obs.getAnnotations());
+    } else if (observable instanceof KimConcept concept) {
+      annotations = AnnotationCollector.collect(concept, scope.getService(Reasoner.class)::resolveConcept);
+      annotationPriority = ObservationImpl.CONCEPT_ANNOTATIONS;
+    }
+
     if (this.observable == null) {
       notifications.add(Notification.error("Cannot resolve observable: " + observable));
     }
@@ -138,7 +158,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
         identity =
             Urn.of(
                 definition.get("namespace").toString() + ":" + definition.get("name").toString());
-      } else if (!definition.containsKey("urn")) {
+      } else if (definition.containsKey("urn")) {
         identity = Urn.of(definition.get("urn").toString());
       } else {
         notifications.add(
@@ -147,10 +167,20 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     }
 
     if (definition.containsKey("semantics")) {
+      var syntax = definition.get("semantics");
+      if (syntax instanceof KimObservable declaration) {
+        conceptAnnotations = AnnotationCollector.collect(
+            declaration.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+        annotations = AnnotationCollector.merge(annotations, declaration.getAnnotations());
+      } else if (syntax instanceof KimConcept declaration) {
+        conceptAnnotations = AnnotationCollector.collect(
+            declaration, scope.getService(Reasoner.class)::resolveConcept);
+      }
       observable =
           scope
               .getService(Reasoner.class)
-              .resolveObservable(definition.get("semantics").toString());
+              .resolveObservable(syntax instanceof KlabStatement statement
+                  ? statement.getUrn() : syntax.toString());
       if (observable == null) {
         notifications.add(
             Notification.error(
@@ -201,6 +231,8 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
       }
       identity = Urn.of(symbol.getNamespace() + ":" + symbol.getName());
       defineFromMap(definition, symbol.getUrn());
+      annotations = AnnotationCollector.merge(annotations, symbol.getAnnotations());
+      annotationPriority = ObservationImpl.DEFINITION_ANNOTATIONS;
     }
   }
 
@@ -244,6 +276,8 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.setGeometry(geometries.get(Observation.GeometryRelationship.OCCUPIES));
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
+    ret.mergeAnnotations(conceptAnnotations, ObservationImpl.CONCEPT_ANNOTATIONS);
+    ret.mergeAnnotations(annotations, annotationPriority);
     ret.setValue(defaultValue);
     ret.setContextualizationData(contextualizationData);
     ret.setName(name);

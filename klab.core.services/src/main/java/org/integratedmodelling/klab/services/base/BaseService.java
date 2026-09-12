@@ -253,6 +253,23 @@ public abstract class BaseService implements KlabService {
   /** Register additional process adapters here during service initialization. */
   public FlowChartService flowCharts() { return flowCharts; }
 
+  @Override
+  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
+      UserScope scope) {
+    if (assetClass == null && "image/png".equalsIgnoreCase(mediaType)) {
+      try {
+        // Accept both plain JSON and the IDE serializer's @CLASS metadata, without loading types.
+        return flowCharts.png(new com.fasterxml.jackson.databind.ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .readValue(source, FlowChart.class));
+      } catch (IOException | NullPointerException e) {
+        throw new IllegalArgumentException("Invalid FlowChart JSON", e);
+      }
+    }
+    throw new UnsupportedOperationException("Unsupported adaptation to " + mediaType);
+  }
+
+
   /** Resolve a process through the same visibility checks as ordinary information requests. */
   protected Object flowChartSource(String urn, KlabAsset.KnowledgeClass objectClass, UserScope scope) {
     var common = commonInformationObjects(objectClass, scope).stream()

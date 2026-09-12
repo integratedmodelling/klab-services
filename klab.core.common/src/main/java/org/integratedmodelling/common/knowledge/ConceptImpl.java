@@ -62,6 +62,8 @@ public class ConceptImpl implements Concept {
     this.notifications.addAll(other.notifications);
     this.qualifier = other.qualifier;
     this.contextualization = other.contextualization;
+    this.nonSemanticId = other.nonSemanticId;
+    this.serviceId = other.serviceId;
   }
 
   public Contextualization getContextualization() {

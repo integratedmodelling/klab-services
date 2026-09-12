@@ -1141,6 +1141,7 @@ public class RuntimeService extends BaseService
     var result = new ObservationImpl();
     result.setId(Observation.QUERY_ID);
     result.setObservable(source.getObservable());
+    result.mergeAnnotations(source);
     result.setName(source.getName());
     result.setUrn(source.getUrn());
     result.setGeometry(actualGeometry);

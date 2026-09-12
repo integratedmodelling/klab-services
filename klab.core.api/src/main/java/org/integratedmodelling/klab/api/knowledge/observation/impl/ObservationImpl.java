@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.AnnotationCollector;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -88,6 +89,15 @@ public class ObservationImpl implements Observation, Cloneable {
   }
 
   private Observable observable;
+  private List<Annotation> annotations = new ArrayList<>();
+  // The service mapper may deserialize integral values as Long rather than Integer.
+  private Map<String, Number> annotationPriorities = new HashMap<>();
+  /** Annotations collected from the semantic expression, in declaration precedence order. */
+  public static final int CONCEPT_ANNOTATIONS = 0;
+  /** Annotations on a dependency or on the model contextualizing its first observable. */
+  public static final int MODEL_ANNOTATIONS = 1;
+  /** Annotations on an explicit observation definition, retained across late resolution. */
+  public static final int DEFINITION_ANNOTATIONS = 2;
   private Geometry geometry;
   private Metadata metadata = Metadata.create();
   private long id = UNASSIGNED_ID;
@@ -197,10 +207,12 @@ public class ObservationImpl implements Observation, Cloneable {
   public ObservationImpl copyForAttribution(Observable observable) {
     try {
       var copy = (ObservationImpl) super.clone();
-      copy.observable = Objects.requireNonNull(observable);
       copy.metadata = Metadata.create();
       copy.metadata.putAll(metadata);
       copy.notifications = new ArrayList<>(notifications);
+      copy.annotations = AnnotationCollector.merge(annotations);
+      copy.annotationPriorities = new HashMap<>(annotationPriorities);
+      copy.setObservable(Objects.requireNonNull(observable));
       return copy;
     } catch (CloneNotSupportedException e) {
       throw new IllegalStateException(e);
@@ -210,7 +222,7 @@ public class ObservationImpl implements Observation, Cloneable {
   public ObservationImpl() {}
 
   protected ObservationImpl(Observable observable) {
-    this.observable = observable;
+    setObservable(observable);
   }
 
   @Override
@@ -333,14 +345,60 @@ public class ObservationImpl implements Observation, Cloneable {
     return null;
   }
 
+  /** Effective annotations, unique by name; definitions override models and dependencies,
+   * which override concept annotations. Known annotations are available before submission.
+   */
   @Override
   public List<Annotation> getAnnotations() {
-    // TODO Auto-generated method stub
-    return null;
+    return annotations;
+  }
+
+  public void setAnnotations(List<Annotation> annotations) {
+    this.annotations = AnnotationCollector.merge(annotations);
+  }
+
+  /** Serialized with annotations so late upstream contributors cannot override a definition. */
+  public Map<String, Integer> getAnnotationPriorities() {
+    Map<String, Integer> result = new HashMap<>();
+    annotationPriorities.forEach((name, priority) -> result.put(name, priority.intValue()));
+    return result;
+  }
+
+  public void setAnnotationPriorities(Map<String, ? extends Number> priorities) {
+    annotationPriorities = priorities == null ? new HashMap<>() : new HashMap<>(priorities);
+  }
+
+  public void mergeAnnotations(Collection<Annotation> incoming, int priority) {
+    if (incoming == null) return;
+    for (var annotation : incoming) {
+      int currentPriority = annotationPriorities.getOrDefault(annotation.getName(),
+          annotations.stream().anyMatch(a -> Objects.equals(a.getName(), annotation.getName()))
+              ? DEFINITION_ANNOTATIONS : -1).intValue();
+      if (priority >= currentPriority) {
+        annotations = AnnotationCollector.merge(annotations, List.of(annotation));
+        annotationPriorities.put(annotation.getName(), priority);
+      }
+    }
+  }
+
+  public void mergeAnnotations(Observation source) {
+    if (source == null || source == this || source.getAnnotations() == null) return;
+    for (var annotation : source.getAnnotations()) {
+      int priority = source instanceof ObservationImpl impl
+          ? impl.annotationPriorities.getOrDefault(annotation.getName(), DEFINITION_ANNOTATIONS).intValue()
+          : DEFINITION_ANNOTATIONS;
+      mergeAnnotations(List.of(annotation), priority);
+    }
   }
 
   public void setObservable(Observable observable) {
     this.observable = observable;
+    if (observable != null) {
+      if (observable.getSemantics() != null) {
+        mergeAnnotations(observable.getSemantics().getAnnotations(), CONCEPT_ANNOTATIONS);
+      }
+      mergeAnnotations(observable.getAnnotations(), MODEL_ANNOTATIONS);
+    }
   }
 
   public void setMetadata(Metadata metadata) {

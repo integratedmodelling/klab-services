@@ -37,6 +37,10 @@ class BinaryInfoTransportTest {
       assertEquals("Bearer test", authorization.get());
       assertEquals("image/png", accept.get());
       assertEquals("scope", scopeHeader.get());
+      assertArrayEquals(content, images.postRequired("/image", "{\"root\":{}}", byte[].class));
+      assertEquals("Bearer test", authorization.get());
+      assertEquals("image/png", accept.get());
+      assertEquals("scope", scopeHeader.get());
       assertNull(images.getBytes("/missing"));
       assertThrows(KlabServiceAccessException.class, () -> images.getBytes("/denied"));
     } finally { server.stop(0); }

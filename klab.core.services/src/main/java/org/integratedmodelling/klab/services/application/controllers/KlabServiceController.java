@@ -53,6 +53,43 @@ public class KlabServiceController {
 
   @Autowired private HealthEndpoint healthEndpoint;
 
+  @Operation(summary = "Adapt source content", description =
+      "Accept selects the output media type. FlowChart JSON supports image/png; Resources also "
+          + "parses semantic source as application/json with the assetClass parameter.")
+  @PostMapping(ServicesAPI.ADAPT)
+  public ResponseEntity<byte[]> adapt(
+      @RequestBody String source,
+      @RequestHeader(value = HttpHeaders.ACCEPT, defaultValue = "application/json") String accept,
+      @RequestParam(value = "assetClass", required = false) KlabAsset.KnowledgeClass assetClass,
+      Principal principal) {
+    var scope = principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope user ? user : null;
+    try {
+      var mediaTypes = new java.util.ArrayList<>(MediaType.parseMediaTypes(accept));
+      MediaType.sortBySpecificityAndQuality(mediaTypes);
+      for (var requested : mediaTypes) {
+        if (requested.getQualityValue() == 0) continue;
+        var mediaType = requested.isWildcardType() || requested.isWildcardSubtype()
+            ? (assetClass == null ? MediaType.IMAGE_PNG : MediaType.APPLICATION_JSON)
+            : new MediaType(requested.getType(), requested.getSubtype());
+        if (!requested.isCompatibleWith(mediaType)) continue;
+        try {
+          return ResponseEntity.ok().contentType(mediaType)
+              .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+              .body(instance.klabService().adapt(source, mediaType.toString(), assetClass, scope));
+        } catch (UnsupportedOperationException unsupported) {
+          // Try the next acceptable representation.
+        }
+      }
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.NOT_ACCEPTABLE, "Unsupported adaptation");
+    } catch (IllegalArgumentException invalid) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid adaptation input", invalid);
+    }
+  }
+
+
   @Operation(
       summary = "Get service health",
       description = "Return aggregated service health information")

@@ -459,6 +459,10 @@ public class CompiledDataflow {
   }
 
   private synchronized void requireObservations(Actuator rootActuator) {
+    if (rootActuator.getActuatorType() != Actuator.Type.UPDATE
+        && rootObservation instanceof ObservationImpl target) {
+      target.mergeAnnotations(rootActuator.getObservation());
+    }
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE)
       actuatorObservations.put(rootActuator, rootObservation);
     Map<Long, Observation> observationMap = new HashMap<>();

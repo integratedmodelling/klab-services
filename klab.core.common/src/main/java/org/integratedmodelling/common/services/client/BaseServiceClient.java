@@ -100,6 +100,13 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
+  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
+      UserScope scope) {
+    return client.withScope(scope).accepting(List.of(mediaType))
+        .postRequired(ServicesAPI.ADAPT, source, byte[].class, "assetClass", assetClass);
+  }
+
+  @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
     if (infoClass == java.awt.image.BufferedImage.class) {

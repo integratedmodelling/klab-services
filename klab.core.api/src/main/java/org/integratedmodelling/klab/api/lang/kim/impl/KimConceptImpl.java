@@ -831,16 +831,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       appender.append("(", LexicalRole.OPEN_PARENTHESIS);
     }
 
-    if (expressionType != null) {
-      ((KimConceptImpl) operands.getFirst()).formatParenthesized(appender, true);
-      for (int i = 1; i < operands.size(); i++) {
-        appender.append(
-            expressionType == Expression.INTERSECTION ? "and" : "or", LexicalRole.KEYWORD);
-        ((KimConceptImpl) operands.get(i)).formatParenthesized(appender, true);
-      }
-      return appender.output();
-    }
-
     var collective = !isCollective() && observable != null && observable.isCollective();
     if (collective) {
       appender.append("each", LexicalRole.KEYWORD);
@@ -921,6 +911,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     // TODO value operators
+
+    for (KimConcept operand : operands) {
+      appender.append(
+          expressionType == Expression.INTERSECTION ? "and" : "or", LexicalRole.KEYWORD);
+      ((KimConceptImpl) operand).formatParenthesized(appender, true);
+    }
 
     if (needsParentheses && addParentheses) {
       appender.append(")", LexicalRole.CLOSED_PARENTHESIS);

@@ -9,6 +9,9 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
+import org.integratedmodelling.common.knowledge.ConceptImpl;
+import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.klab.api.lang.AnnotationCollector;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
@@ -212,12 +215,12 @@ public class ResolverService extends BaseService implements Resolver {
     // TODO review how resolution criteria are handled
     // TODO coverage!
 
-    model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
+    model.getAnnotations().addAll(AnnotationCollector.merge(statement.getAnnotations()));
     for (KimObservable observable : statement.getObservables()) {
-      model.getObservables().add(reasoner.resolveObservable(observable.getUrn()));
+      model.getObservables().add(annotatedObservable(observable, reasoner));
     }
     for (KimObservable observable : statement.getDependencies()) {
-      model.getDependencies().add(reasoner.resolveObservable(observable.getUrn()));
+      model.getDependencies().add(annotatedObservable(observable, reasoner));
     }
 
     model.setResolutionInfo(resolutionInfo);
@@ -242,6 +245,21 @@ public class ResolverService extends BaseService implements Resolver {
     model.setCoverage(Coverage.universal());
 
     return model;
+  }
+
+  private org.integratedmodelling.klab.api.knowledge.Observable annotatedObservable(
+      KimObservable syntax, Reasoner reasoner) {
+    var resolved = reasoner.resolveObservable(syntax.getUrn());
+    if (resolved == null) return null;
+    var result = new ObservableImpl((ObservableImpl) resolved);
+    var semantics = new ConceptImpl((ConceptImpl) resolved.getSemantics());
+    semantics.setAnnotations(AnnotationCollector.merge(
+        semantics.getAnnotations(), AnnotationCollector.collect(
+            syntax.getSemantics(), reasoner::resolveConcept)));
+    result.setSemantics(semantics);
+    result.setAnnotations(AnnotationCollector.merge(
+        resolved.getAnnotations(), syntax.getAnnotations()));
+    return result;
   }
 
   @Override

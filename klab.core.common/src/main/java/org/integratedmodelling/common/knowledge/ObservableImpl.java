@@ -72,7 +72,7 @@ public class ObservableImpl implements Observable {
 
   public ObservableImpl() {}
 
-  private ObservableImpl(ObservableImpl other) {
+  public ObservableImpl(ObservableImpl other) {
     this.semantics = other.semantics;
     this.observerSemantics = other.observerSemantics;
     this.contextualization = other.contextualization;

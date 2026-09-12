@@ -2141,6 +2141,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return null;
   }
 
+  /** Shared by the legacy parsing route and generic adaptation. */
+  public KlabAsset parseAsset(String source, KlabAsset.KnowledgeClass assetClass) {
+    if (assetClass == KlabAsset.KnowledgeClass.OBSERVABLE) return declareObservable(source);
+    if (assetClass == KlabAsset.KnowledgeClass.CONCEPT) return declareConcept(source);
+    return workspaceManager.parseAsset(source, assetClass.getAssetClass());
+  }
+
+  @Override
+  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
+      UserScope scope) {
+    if (assetClass != null && "application/json".equalsIgnoreCase(mediaType)) {
+      return org.integratedmodelling.common.utils.Utils.Json.asString(parseAsset(source, assetClass))
+          .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+    return super.adapt(source, mediaType, assetClass, scope);
+  }
+
   @Override
   public <T extends KlabAsset> T parseAsset(URL url, Class<T> assetClass, UserScope scope) {
     var content = Utils.URLs.readUrlContents(url);
