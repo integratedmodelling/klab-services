@@ -229,7 +229,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         return Type.OBJECT;
       } else if (type.contains(SemanticType.PROCESS)) {
         return Type.PROCESS;
-      } else if (type.contains(SemanticType.TRAIT) || type.contains(SemanticType.ROLE)) {
+      } else if (type.contains(SemanticType.PREDICATE) || type.contains(SemanticType.ROLE)) {
         // FIXME seems odd and contradicting the comment below
         return Type.VALUE;
       }

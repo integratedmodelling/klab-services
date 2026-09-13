@@ -29,10 +29,10 @@ public enum SemanticType {
   EXTENSIVE,
   /** */
   INTENSIVE,
-  /**
-   * @deprecated use PREDICATE
-   */
-  TRAIT,
+  //  /**
+  //   * @deprecated use PREDICATE
+  //   */
+  //  TRAIT,
   /** */
   IDENTITY,
   /** applies to IDENTITY to denote those that define individual entities uniquely */
@@ -119,10 +119,10 @@ public enum SemanticType {
   INTERACTIVE,
   /** */
   REACTIVE,
-  /**
-   * @deprecated use COUNTABLE
-   */
-  DIRECT_OBSERVABLE,
+  //  /**
+  //   * @deprecated use COUNTABLE
+  //   */
+  //  DIRECT_OBSERVABLE,
   /** */
   COUNTABLE,
   /** */
@@ -281,7 +281,7 @@ public enum SemanticType {
           SemanticType.CONFIGURATION,
           SemanticType.RELATIONSHIP,
           SemanticType.PROCESS,
-          SemanticType.TRAIT,
+          SemanticType.PREDICATE,
           SemanticType.ROLE,
           SemanticType.DOMAIN);
 
@@ -495,7 +495,6 @@ public enum SemanticType {
   /** All direct observables */
   public static final EnumSet<SemanticType> DIRECT_OBSERVABLE_TYPES =
       EnumSet.of(
-          SemanticType.DIRECT_OBSERVABLE,
           SemanticType.SUBJECT,
           SemanticType.AGENT,
           SemanticType.EVENT,
@@ -524,7 +523,7 @@ public enum SemanticType {
           SemanticType.PROCESS,
           SemanticType.QUALITY,
           SemanticType.AGENT,
-          SemanticType.TRAIT,
+          SemanticType.PREDICATE,
           SemanticType.CONFIGURATION);
 
   /** All trait type bits set (not TRAIT itself). Each trait AND this must yield a set of size 1. */
@@ -537,7 +536,10 @@ public enum SemanticType {
    */
   public static final EnumSet<SemanticType> ALL_TRAIT_TYPES =
       EnumSet.of(
-          SemanticType.ATTRIBUTE, SemanticType.REALM, SemanticType.IDENTITY, SemanticType.TRAIT);
+          SemanticType.ATTRIBUTE,
+          SemanticType.REALM,
+          SemanticType.IDENTITY,
+          SemanticType.PREDICATE);
 
   public static SemanticType fundamentalType(Collection<SemanticType> types) {
 
@@ -597,7 +599,7 @@ public enum SemanticType {
             case QUALITY -> CONCEPT_COLOR_QUALITY;
             case ROLE -> CONCEPT_COLOR_ROLE;
             case CONFIGURATION -> CONCEPT_COLOR_CONFIGURATION;
-            case TRAIT -> CONCEPT_COLOR_TRAIT;
+            case PREDICATE -> CONCEPT_COLOR_TRAIT;
             case EXTENT -> CONCEPT_COLOR_EXTENT;
             default -> null;
           };

@@ -112,7 +112,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified;
     private final Set<RuntimeAsset> added;
-    private record Attribution(ObservationImpl original, ObservationImpl replacement, String before) {}
+
+    private record Attribution(
+        ObservationImpl original, ObservationImpl replacement, String before) {}
+
     private Map<Observation, Attribution> attributions = new IdentityHashMap<>();
     private Observation target;
     private final Activity activity;
@@ -250,8 +253,11 @@ public class DigitalTwinImpl implements DigitalTwin {
                         .orElse(observation);
                 try {
                   this.graph.addEdge(
-                      activity, obs, new RelationshipEdge(GraphModel.Relationship.forContextualization(
-                          activity.getType().getContextualization())));
+                      activity,
+                      obs,
+                      new RelationshipEdge(
+                          GraphModel.Relationship.forContextualization(
+                              activity.getType().getContextualization())));
                 } catch (Exception e) {
                   Logging.INSTANCE.error(e, obs);
                 }
@@ -386,8 +392,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     /** All members are validated and copied before any staged state becomes visible. */
-    public void stageAttributions(List<MemberClassifierExecutor.PendingAttribution> pending,
-        ContextScope executionScope) {
+    public void stageAttributions(
+        List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope executionScope) {
       try {
         stageValidatedAttributions(pending, executionScope);
       } catch (RuntimeException failure) {
@@ -396,8 +402,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
-    private void stageValidatedAttributions(List<MemberClassifierExecutor.PendingAttribution> pending,
-        ContextScope executionScope) {
+    private void stageValidatedAttributions(
+        List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope executionScope) {
       if (activity.getType() != Activity.Type.CLASSIFICATION)
         throw new IllegalStateException("Attributions require a CLASSIFICATION activity");
       synchronized (graph) {
@@ -407,15 +413,21 @@ public class DigitalTwinImpl implements DigitalTwin {
         var audit = new ArrayList<Map<String, Object>>();
         for (var value : pending) {
           var canonical = checkPresentAsset(value.member());
-          if (!(canonical instanceof ObservationImpl member) || member.getId() == 0 || member.getId() == -1)
+          if (!(canonical instanceof ObservationImpl member)
+              || member.getId() == 0
+              || member.getId() == -1)
             throw new IllegalArgumentException("Classification requires a registered member");
-          if (attributions.containsKey(member) || batch.containsKey(member)
-              || !Objects.equals(member.getObservable().getUrn(), value.originalObservable().getUrn()))
+          if (attributions.containsKey(member)
+              || batch.containsKey(member)
+              || !Objects.equals(
+                  member.getObservable().getUrn(), value.originalObservable().getUrn()))
             throw new IllegalStateException("Concurrent or repeated member classification");
           var builder = member.getObservable().builder(executionScope);
           if (value.predicate().is(SemanticType.ROLE)) builder.withRole(value.predicate());
-          else if (value.predicate().is(SemanticType.TRAIT)) builder.withTrait(value.predicate());
-          else throw new IllegalArgumentException("Classification result is neither trait nor role");
+          else if (value.predicate().is(SemanticType.PREDICATE))
+            builder.withTrait(value.predicate());
+          else
+            throw new IllegalArgumentException("Classification result is neither trait nor role");
           var after = builder.buildObservable();
           if (after == null || !reasoner.satisfiable(after.getSemantics()))
             throw new IllegalArgumentException("Inconsistent attributed observable");
@@ -436,8 +448,13 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (var attribution : batch.values()) {
           var item = audit.get(i++);
           var data = new ArrayList<Object>();
-          item.forEach((key, value) -> { data.add(key); data.add(value); });
-          link(activity, attribution.original(), GraphModel.Relationship.CLASSIFIED, data.toArray());
+          item.forEach(
+              (key, value) -> {
+                data.add(key);
+                data.add(value);
+              });
+          link(
+              activity, attribution.original(), GraphModel.Relationship.CLASSIFIED, data.toArray());
           if (attribution.original().getId() > 0) modified.add(attribution.original());
         }
         attributions.putAll(batch);
@@ -530,7 +547,10 @@ public class DigitalTwinImpl implements DigitalTwin {
                 }
               }
 
-              for (var asset : modified.stream().sorted(Comparator.comparingLong(RuntimeAsset::getId)).toList()) {
+              for (var asset :
+                  modified.stream()
+                      .sorted(Comparator.comparingLong(RuntimeAsset::getId))
+                      .toList()) {
                 var attribution = attributions.get(asset);
                 if (attribution != null) {
                   if (attribution.original().getId() > 0)
@@ -664,12 +684,16 @@ public class DigitalTwinImpl implements DigitalTwin {
     private void prepareActivityForStorage(ActivityImpl storedActivity) {
       graph.incomingEdgesOf(storedActivity).stream()
           .filter(edge -> edge.relationship == GraphModel.Relationship.TRIGGERED)
-          .map(graph::getEdgeSource).filter(Activity.class::isInstance).map(Activity.class::cast)
-          .findFirst().ifPresent(parentActivity -> {
-            storedActivity.setTriggeringActivityUrn(parentActivity.getUrn());
-            storedActivity.setParentId(parentActivity.getId());
-            storedActivity.setParentTransientId(parentActivity.getTransientId());
-          });
+          .map(graph::getEdgeSource)
+          .filter(Activity.class::isInstance)
+          .map(Activity.class::cast)
+          .findFirst()
+          .ifPresent(
+              parentActivity -> {
+                storedActivity.setTriggeringActivityUrn(parentActivity.getUrn());
+                storedActivity.setParentId(parentActivity.getId());
+                storedActivity.setParentTransientId(parentActivity.getTransientId());
+              });
       graph.outgoingEdgesOf(storedActivity).stream()
           .filter(
               edge ->
@@ -779,9 +803,13 @@ public class DigitalTwinImpl implements DigitalTwin {
         ret.add("sequence");
         ret.add(edge.sequence);
       }
-      edge.properties.forEach((key, value) -> {
-        if (!key.equals("sequence")) { ret.add(key); ret.add(value instanceof Geometry g ? g.encode() : value); }
-      });
+      edge.properties.forEach(
+          (key, value) -> {
+            if (!key.equals("sequence")) {
+              ret.add(key);
+              ret.add(value instanceof Geometry g ? g.encode() : value);
+            }
+          });
       return ret.toArray();
     }
 
@@ -819,8 +847,13 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " FAIL");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
-      this.failures.add(compilationError == null ? new IllegalStateException("Transaction failed") : compilationError);
-      synchronized (graph) { attributions.clear(); }
+      this.failures.add(
+          compilationError == null
+              ? new IllegalStateException("Transaction failed")
+              : compilationError);
+      synchronized (graph) {
+        attributions.clear();
+      }
       if (compilationError != null) {
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
       }
@@ -842,7 +875,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.incomingEdgesOf(asset)) {
-            var link = new LinkImpl(staged(graph.getEdgeSource(edge)), staged(asset), edge.relationship);
+            var link =
+                new LinkImpl(staged(graph.getEdgeSource(edge)), staged(asset), edge.relationship);
             link.properties().putAll(edge.properties);
             link.setSequence(edge.sequence);
             link.setGeometry(edge.geometry);
@@ -860,7 +894,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         asset = checkPresentAsset(asset);
         if (graph.vertexSet().contains(asset)) {
           for (var edge : graph.outgoingEdgesOf(asset)) {
-            var link = new LinkImpl(staged(asset), staged(graph.getEdgeTarget(edge)), edge.relationship);
+            var link =
+                new LinkImpl(staged(asset), staged(graph.getEdgeTarget(edge)), edge.relationship);
             link.properties().putAll(edge.properties);
             link.setSequence(edge.sequence);
             link.setGeometry(edge.geometry);

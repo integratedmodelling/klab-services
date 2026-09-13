@@ -80,7 +80,6 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * @version $Id: $Id
  */
 public enum ServiceConfiguration {
-
   INSTANCE;
 
   private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
@@ -217,10 +216,7 @@ public enum ServiceConfiguration {
                 ret.setReferenceName("each_object");
                 ret.setType(
                     EnumSet.of(
-                        SemanticType.SUBJECT,
-                        SemanticType.DIRECT_OBSERVABLE,
-                        SemanticType.COUNTABLE,
-                        SemanticType.OBSERVABLE));
+                        SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
                 ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_SUBJECT_ID);
                 ret.setCollective(true);
               }
@@ -245,10 +241,7 @@ public enum ServiceConfiguration {
                 ret.setReferenceName("each_event");
                 ret.setType(
                     EnumSet.of(
-                        SemanticType.EVENT,
-                        SemanticType.DIRECT_OBSERVABLE,
-                        SemanticType.COUNTABLE,
-                        SemanticType.OBSERVABLE));
+                        SemanticType.EVENT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
                 ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_EVENT_ID);
                 ret.setCollective(true);
               }
@@ -258,7 +251,6 @@ public enum ServiceConfiguration {
                 ret.setType(
                     EnumSet.of(
                         SemanticType.RELATIONSHIP,
-                        SemanticType.DIRECT_OBSERVABLE,
                         SemanticType.COUNTABLE,
                         SemanticType.OBSERVABLE));
                 ret.setNonSemanticId(ConceptImpl.NONSEMANTIC_RELATIONSHIP_ID);

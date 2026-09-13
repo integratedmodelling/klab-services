@@ -42,7 +42,7 @@ public class KimStyle {
       color = Color.PROCESS;
     } else if (concept.contains(SemanticType.NOTHING)) {
       color = Color.ERROR;
-    } else if (concept.contains(SemanticType.TRAIT)) {
+    } else if (concept.contains(SemanticType.PREDICATE)) {
       color = Color.TRAIT;
     } else if (concept.contains(SemanticType.ROLE)) {
       color = Color.ROLE;

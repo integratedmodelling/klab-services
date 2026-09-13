@@ -225,7 +225,7 @@ public class OWL {
    * Get the IProperty corresponding to the OWL class passed. Throws an unchecked exception if not
    * found.
    *
-   * @param owl
+   * @param expression
    * @return the property for the class
    */
   public Property getPropertyFor(OWLPropertyExpression expression) {
@@ -1396,11 +1396,7 @@ public class OWL {
         };
     EnumSet<SemanticType> identity =
         type.isCountable()
-            ? EnumSet.of(
-                SemanticType.SUBJECT,
-                SemanticType.OBSERVABLE,
-                SemanticType.DIRECT_OBSERVABLE,
-                SemanticType.COUNTABLE)
+            ? EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE, SemanticType.COUNTABLE)
             : EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE, qualityType);
 
     Concept ret = nonSemanticConcepts.getConcept(conceptId);
@@ -2008,7 +2004,7 @@ public class OWL {
 
     if (concept.is(SemanticType.QUALITY)
         || concept.is(SemanticType.CONFIGURATION)
-        || concept.is(SemanticType.TRAIT)
+        || concept.is(SemanticType.PREDICATE)
         || concept.is(SemanticType.ROLE)) {
       throw new KlabValidationException(
           "presence can be observed only for subjects, events, processes and relationships");
@@ -2061,7 +2057,7 @@ public class OWL {
       return concept;
     }
 
-    if (!concept.is(SemanticType.DIRECT_OBSERVABLE)) {
+    if (!concept.is(SemanticType.COUNTABLE)) {
       throw new KlabValidationException(
           "occurrences (probability of presence) can be observed only for subjects, events, "
               + "processes and "
@@ -2313,7 +2309,7 @@ public class OWL {
       return concept;
     }
 
-    if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.TRAIT))
+    if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.PREDICATE))
         && (comparison != null && !comparison.is(SemanticType.QUALITY))) {
       throw new KlabValidationException("proportion must be of qualities or traits to qualities");
     }
@@ -2394,7 +2390,7 @@ public class OWL {
     /*
      * accept only two qualities of the same physical nature (TODO)
      */
-    if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.TRAIT))
+    if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.PREDICATE))
         || !comparison.is(SemanticType.QUALITY)) {
       throw new KlabValidationException(
           "ratios must be between qualities of the same nature or traits to qualities");

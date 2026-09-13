@@ -87,8 +87,12 @@ public enum LanguageAdapter {
     ret.setCurrency(observableSyntax.getCurrency());
     ret.setOptional(observableSyntax.isOptional());
     if (observableSyntax.getRange() != null && observableSyntax.getRange().size() == 2) {
-      ret.setRange(new NumericRangeImpl(
-          observableSyntax.getRange().get(0), observableSyntax.getRange().get(1), false, false));
+      ret.setRange(
+          new NumericRangeImpl(
+              observableSyntax.getRange().get(0),
+              observableSyntax.getRange().get(1),
+              false,
+              false));
     }
     for (var annotation : observableSyntax.getAnnotations()) {
       ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, documentClass));
@@ -283,7 +287,7 @@ public enum LanguageAdapter {
         var trait = adaptSemantics(cr, documentClass);
         if (trait.is(SemanticType.ROLE)) {
           ret.getRoles().add(trait);
-        } else if (trait.is(SemanticType.TRAIT)) {
+        } else if (trait.is(SemanticType.PREDICATE)) {
           ret.getTraits().add(trait);
         }
       }
@@ -295,7 +299,9 @@ public enum LanguageAdapter {
       var operand = new KimConceptImpl();
       operand.setObservable(ret.getObservable());
       operand.setType(new java.util.HashSet<>(ret.getObservable().getType()));
-      operand.getType().removeAll(EnumSet.of(SemanticType.ANY, SemanticType.ALL, SemanticType.NONE));
+      operand
+          .getType()
+          .removeAll(EnumSet.of(SemanticType.ANY, SemanticType.ALL, SemanticType.NONE));
       operand.getTraits().addAll(ret.getTraits());
       operand.getRoles().addAll(ret.getRoles());
       ret.getTraits().clear();
@@ -316,7 +322,8 @@ public enum LanguageAdapter {
       }
     }
 
-    if (semantics.getUnaryOperator() == null && semantics.getObservable() != null
+    if (semantics.getUnaryOperator() == null
+        && semantics.getObservable() != null
         && semantics.getObservable().concept().isAbstract()) {
       ret.getType().add(SemanticType.ABSTRACT);
     }
@@ -336,7 +343,9 @@ public enum LanguageAdapter {
                   restriction.getFirst() == SemanticSyntax.BinaryOperator.LINKING
                       ? List.of(restriction.getSecond().get(0))
                       : restriction.getSecond(),
-                  namespace, projectName, documentClass));
+                  namespace,
+                  projectName,
+                  documentClass));
       if (operand != null && collective) {
         operand.setCollective(true);
         operand.resetDefinition();
@@ -444,8 +453,13 @@ public enum LanguageAdapter {
     ret.setProjectName(namespace.getProjectName());
     ret.setDefaulted(define.isDefaulted());
     for (var annotation : define.getAnnotations()) {
-      ret.getAnnotations().add(adaptAnnotation(annotation, namespace.getUrn(),
-          namespace.getProjectName(), KlabAsset.KnowledgeClass.NAMESPACE));
+      ret.getAnnotations()
+          .add(
+              adaptAnnotation(
+                  annotation,
+                  namespace.getUrn(),
+                  namespace.getProjectName(),
+                  KlabAsset.KnowledgeClass.NAMESPACE));
     }
     ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
     ret.setValue(
@@ -905,12 +919,16 @@ public enum LanguageAdapter {
       target.getType().add(SemanticType.ABSTRACT);
     }
     if (reference.generic() != null) {
-      target.getType().add(switch (reference.generic()) {
-        case "any" -> SemanticType.ANY;
-        case "all" -> SemanticType.ALL;
-        case "no" -> SemanticType.NONE;
-        default -> throw new IllegalArgumentException("Unknown selector: " + reference.generic());
-      });
+      target
+          .getType()
+          .add(
+              switch (reference.generic()) {
+                case "any" -> SemanticType.ANY;
+                case "all" -> SemanticType.ALL;
+                case "no" -> SemanticType.NONE;
+                default ->
+                    throw new IllegalArgumentException("Unknown selector: " + reference.generic());
+              });
     }
   }
 
@@ -948,13 +966,11 @@ public enum LanguageAdapter {
                   SemanticType.QUANTIFIABLE,
                   SemanticType.QUALITY,
                   SemanticType.AREA);
-          case ATTRIBUTE ->
-              EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.TRAIT);
+          case ATTRIBUTE -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
           case BOND ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
                   SemanticType.COUNTABLE,
-                  SemanticType.DIRECT_OBSERVABLE,
                   SemanticType.RELATIONSHIP,
                   SemanticType.BIDIRECTIONAL);
           case CHARGE ->
@@ -965,8 +981,7 @@ public enum LanguageAdapter {
                   SemanticType.CHARGE);
           case CLASS ->
               EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY, SemanticType.CLASS);
-          case CONFIGURATION ->
-              EnumSet.of(SemanticType.DIRECT_OBSERVABLE, SemanticType.CONFIGURATION);
+          case CONFIGURATION -> EnumSet.of(SemanticType.CONFIGURATION);
           case DOMAIN -> EnumSet.of(SemanticType.PREDICATE, SemanticType.DOMAIN);
           case DURATION ->
               EnumSet.of(
@@ -999,20 +1014,14 @@ public enum LanguageAdapter {
               EnumSet.of(
                   SemanticType.OBSERVABLE,
                   SemanticType.COUNTABLE,
-                  SemanticType.DIRECT_OBSERVABLE,
                   SemanticType.RELATIONSHIP,
                   SemanticType.FUNCTIONAL);
           case GENERIC_QUALITY ->
               // this only happens with core im:Quality. It's deprecated and should not get here.
               EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY);
-          case IDENTITY ->
-              EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY, SemanticType.TRAIT);
+          case IDENTITY -> EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY);
           case INDIVIDUAL_IDENTITY ->
-              EnumSet.of(
-                  SemanticType.PREDICATE,
-                  SemanticType.IDENTITY,
-                  SemanticType.INDIVIDUAL,
-                  SemanticType.TRAIT);
+              EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY, SemanticType.INDIVIDUAL);
           case LENGTH ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1031,8 +1040,7 @@ public enum LanguageAdapter {
                   SemanticType.QUANTIFIABLE,
                   SemanticType.QUALITY,
                   SemanticType.MONEY);
-          case ORDERING ->
-              EnumSet.of(SemanticType.PREDICATE, SemanticType.ORDERING, SemanticType.TRAIT); // TODO
+          case ORDERING -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ORDERING); // TODO
           // attribute?
           case PRESSURE ->
               EnumSet.of(
@@ -1057,10 +1065,9 @@ public enum LanguageAdapter {
               EnumSet.of(
                   SemanticType.OBSERVABLE,
                   SemanticType.COUNTABLE,
-                  SemanticType.DIRECT_OBSERVABLE,
                   SemanticType.AGENT);
           case REALM ->
-              EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.TRAIT);
+              EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
           case RESISTANCE ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1078,14 +1085,12 @@ public enum LanguageAdapter {
               EnumSet.of(
                   SemanticType.OBSERVABLE,
                   SemanticType.COUNTABLE,
-                  SemanticType.DIRECT_OBSERVABLE,
                   SemanticType.RELATIONSHIP,
                   SemanticType.STRUCTURAL);
           case SUBJECT ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
                   SemanticType.COUNTABLE,
-                  SemanticType.DIRECT_OBSERVABLE,
                   SemanticType.SUBJECT);
           case TEMPERATURE ->
               EnumSet.of(
@@ -1209,31 +1214,47 @@ public enum LanguageAdapter {
     ret.getNotifications().addAll(ret.getSource().getNotifications());
     adaptObservationMap(definition.getMetadata(), definition.getName(), projectName)
         .forEach(ret.getMetadata()::put);
-    ret.setCoverage(adaptObservationMap(definition.getCoverage(), definition.getName(), projectName));
+    ret.setCoverage(
+        adaptObservationMap(definition.getCoverage(), definition.getName(), projectName));
     for (var strategy : definition.getStrategies()) {
       var adapted = adaptStrategy(strategy, definition.getName(), projectName);
       ret.getStatements().add(adapted);
       ret.getNotifications().addAll(adapted.getNotifications());
     }
     // Collect ontology references from the adapted semantics, never from token matching.
-    var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
-        new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator(), null);
+    var visitor =
+        new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
+            new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor
+                .LenientValidator(),
+            null);
     visitor.visit(ret);
     visitor.getReferences().stream()
-        .filter(ref -> ref.knowledgeClass() == KlabAsset.KnowledgeClass.CONCEPT && ref.urn().contains(":"))
-        .forEach(ref -> ret.getReferencedNamespaces().add(ref.urn().substring(0, ref.urn().indexOf(':'))));
+        .filter(
+            ref ->
+                ref.knowledgeClass() == KlabAsset.KnowledgeClass.CONCEPT && ref.urn().contains(":"))
+        .forEach(
+            ref ->
+                ret.getReferencedNamespaces().add(ref.urn().substring(0, ref.urn().indexOf(':'))));
     return ret;
   }
 
-  private Map<String, Object> adaptObservationMap(ParsedLiteral map, String namespace, String projectName) {
+  private Map<String, Object> adaptObservationMap(
+      ParsedLiteral map, String namespace, String projectName) {
     var result = new LinkedHashMap<String, Object>();
     if (map != null) {
-      var value = (Map<?, ?>) adaptValue(map, namespace, projectName,
-          KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
+      var value =
+          (Map<?, ?>)
+              adaptValue(
+                  map,
+                  namespace,
+                  projectName,
+                  KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
       for (var entry : value.entrySet()) {
-        // Metadata and coverage are JSON objects; reject non-string keys rather than coerce collisions.
+        // Metadata and coverage are JSON objects; reject non-string keys rather than coerce
+        // collisions.
         if (!(entry.getKey() instanceof String key))
-          throw new KlabIllegalArgumentException("Observation metadata/coverage keys must be strings");
+          throw new KlabIllegalArgumentException(
+              "Observation metadata/coverage keys must be strings");
         result.put(key, entry.getValue());
       }
     }
@@ -1249,14 +1270,19 @@ public enum LanguageAdapter {
     source.setLength(syntax.getCodeLength());
     for (var diagnostic : syntax.getNotifications()) {
       var message = diagnostic.message();
-      var level = switch (message.level()) {
-        case DEBUG -> Notification.Level.Debug;
-        case INFO -> Notification.Level.Info;
-        case WARNING -> Notification.Level.Warning;
-        case ERROR -> Notification.Level.Error;
-      };
-      var notification = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl(message.message(), level);
-      var lexical = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+      var level =
+          switch (message.level()) {
+            case DEBUG -> Notification.Level.Debug;
+            case INFO -> Notification.Level.Info;
+            case WARNING -> Notification.Level.Warning;
+            case ERROR -> Notification.Level.Error;
+          };
+      var notification =
+          new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl(
+              message.message(), level);
+      var lexical =
+          new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl
+              .LexicalContextImpl();
       lexical.setDocumentUrn(namespace);
       lexical.setProjectUrn(projectName);
       lexical.setDocumentType(KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
@@ -1303,7 +1329,10 @@ public enum LanguageAdapter {
       ObservationSyntax.StrategyDeclaration strategy, String namespace, String projectName) {
     var ret = new KimObservationStrategyImpl();
     ret.setRank(strategy.getRank());
-    ret.setType(strategy.isIdentification() ? KimObservationStrategy.Type.IDENTIFICATION : KimObservationStrategy.Type.OBSERVATION);
+    ret.setType(
+        strategy.isIdentification()
+            ? KimObservationStrategy.Type.IDENTIFICATION
+            : KimObservationStrategy.Type.OBSERVATION);
     ret.setNamespace(namespace);
     ret.setUrn(strategy.getName());
     ret.setDescription(strategy.getDescription());
@@ -1316,14 +1345,17 @@ public enum LanguageAdapter {
     ret.setSource(adaptObservationSource(strategy, namespace, projectName));
     ret.getNotifications().addAll(ret.getSource().getNotifications());
     for (var annotation : strategy.getAnnotations())
-      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, ret.getDocumentClass()));
-    var adapter = new ObservationPlanAdapter(
-        observable -> adaptObservable(observable, namespace, projectName, ret.getDocumentClass()),
-        node -> {
-          var source = adaptObservationSource(node, namespace, projectName);
-          ret.getNotifications().addAll(source.getNotifications());
-          return source;
-        });
+      ret.getAnnotations()
+          .add(adaptAnnotation(annotation, namespace, projectName, ret.getDocumentClass()));
+    var adapter =
+        new ObservationPlanAdapter(
+            observable ->
+                adaptObservable(observable, namespace, projectName, ret.getDocumentClass()),
+            node -> {
+              var source = adaptObservationSource(node, namespace, projectName);
+              ret.getNotifications().addAll(source.getNotifications());
+              return source;
+            });
     ret.setSelection((KimObservationPlan.StrategySelection) adapter.adapt(strategy.getSelection()));
     for (var setup : strategy.getSetup())
       ret.getSetup().add((KimObservationPlan.StrategySetup) adapter.adapt(setup));
@@ -1392,8 +1424,10 @@ public enum LanguageAdapter {
     ret.setDocstring(definition.getDescription());
     ret.setAlias(definition.isAlias());
     for (var clause : definition.getDeclarationClauses()) {
-      ret.getDeclarationClauses().add(new KimConceptStatement.DeclarationClause(
-          clause.kind(), clause.text(), clause.offset(), clause.length()));
+      ret.getDeclarationClauses()
+          .add(
+              new KimConceptStatement.DeclarationClause(
+                  clause.kind(), clause.text(), clause.offset(), clause.length()));
     }
     for (var reference : definition.getDeclaredReferences()) {
       var source = new KimConceptImpl();
@@ -1413,8 +1447,10 @@ public enum LanguageAdapter {
     ret.setType(adaptSemanticType(definition.getDeclaredType()));
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var annotation : definition.getAnnotations()) {
-      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName,
-          KlabAsset.KnowledgeClass.ONTOLOGY));
+      ret.getAnnotations()
+          .add(
+              adaptAnnotation(
+                  annotation, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY));
     }
 
     if (definition.isDeniable()) {
@@ -1443,12 +1479,21 @@ public enum LanguageAdapter {
                   KlabAsset.KnowledgeClass.ONTOLOGY));
       if (ret.getDeclaredParent() != null && definition.isGenericQuality()) {
         var declaredFlags = new java.util.HashSet<>(ret.getType());
-        declaredFlags.retainAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SEALED,
-            SemanticType.SUBJECTIVE, SemanticType.DENIABLE));
+        declaredFlags.retainAll(
+            EnumSet.of(
+                SemanticType.ABSTRACT,
+                SemanticType.SEALED,
+                SemanticType.SUBJECTIVE,
+                SemanticType.DENIABLE));
         ret.getType().clear();
         ret.getType().addAll(ret.getDeclaredParent().getType());
-        ret.getType().removeAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SEALED,
-            SemanticType.SUBJECTIVE, SemanticType.DENIABLE));
+        ret.getType()
+            .removeAll(
+                EnumSet.of(
+                    SemanticType.ABSTRACT,
+                    SemanticType.SEALED,
+                    SemanticType.SUBJECTIVE,
+                    SemanticType.DENIABLE));
         ret.getType().addAll(declaredFlags);
       }
     }

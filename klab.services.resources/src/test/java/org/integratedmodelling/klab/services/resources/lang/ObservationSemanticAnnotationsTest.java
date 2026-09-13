@@ -19,8 +19,7 @@ import org.junit.jupiter.api.Test;
 class ObservationSemanticAnnotationsTest {
   @Test
   void semanticBuilderPreservesInheritedAndExplicitAnnotations() {
-    var type = EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE,
-        SemanticType.OBSERVABLE, SemanticType.DIRECT_OBSERVABLE);
+    var type = EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE);
     var concept = new ConceptImpl();
     concept.setUrn("test:Thing");
     concept.setName("Thing");

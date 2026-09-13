@@ -410,7 +410,7 @@ public class CLIReasonerView {
       if (concept == null) {
         err.println("Concept " + urn + " not found");
       } else {
-        if (concept.is(SemanticType.TRAIT)) {
+        if (concept.is(SemanticType.PREDICATE)) {
           out.println(
               AUTO.string(
                   "Lexical root: @|green " + reasoner.lexicalRoot(concept).getUrn() + "|@"));

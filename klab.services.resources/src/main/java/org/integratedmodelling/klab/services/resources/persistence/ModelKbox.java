@@ -958,7 +958,7 @@ public class ModelKbox extends ObservableKbox {
                 && model.getObservables().getFirst().getSemantics().is(SemanticType.QUALITY));
         m.setHasDirectObjects(
             m.isResolved()
-                && model.getObservables().get(0).getSemantics().is(SemanticType.DIRECT_OBSERVABLE));
+                && model.getObservables().getFirst().getSemantics().is(SemanticType.COUNTABLE));
 
         m.setMinSpatialScaleFactor(
             model.getMetadata().get(Metadata.IM_MIN_SPATIAL_SCALE, Space.MIN_SCALE_RANK));
