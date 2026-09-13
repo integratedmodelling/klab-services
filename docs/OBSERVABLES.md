@@ -282,6 +282,22 @@ requests one derived count. Validity depends on concept type and context.
 
 ### 4.3 Unary operators
 
+A unary operator applies to the complete terminal concept sequence immediately
+after it. Predicates in that sequence qualify its operand before the operator
+is applied. Predicates before the operator qualify the resulting observable:
+
+| Expression | Grouping and meaning |
+|---|---|
+| `presence of ecology:Managed biology:Tree` | `presence of (ecology:Managed biology:Tree)`: presence of managed trees |
+| `ecology:Managed presence of biology:Tree` | `ecology:Managed (presence of biology:Tree)`: the attribute qualifies the presence quality |
+
+The second form requires an attribute compatible with the resulting quality;
+syntactic grouping does not make an incompatible attribute valid. Parentheses
+explicitly delimit an operand. Binary modifiers retain their existing grammar
+scope: a modifier following an unparenthesized unary expression qualifies that
+expression; put it inside the operand's parentheses to qualify the operand.
+These rules do not change the associativity of other observable constructs.
+
 | Syntax | Typical intent |
 |---|---|
 | `presence of X` | whether or where X is present |
@@ -472,6 +488,48 @@ The selectors `any`, `all`, and `no` alter matching:
 They are query selectors, not new concepts. Pattern variables require
 substitution before an expression becomes concrete; `KimObservable` exposes
 the pattern and variable collection.
+
+The syntax and runtime semantic types retain `any`, `all`, and `no` as
+`SemanticType.ANY`, `SemanticType.ALL`, and `SemanticType.NONE`, respectively.
+Preserving these flags does not by itself implement every matching operation.
+
+### 7.1 Declared status
+
+Declared `abstract`, `subjective`, and `sealed` status is retained in the
+corresponding semantic type flags and in concept references. Abstract status
+is local to a declaration: a child of an abstract concept is concrete unless
+that child explicitly declares `abstract`. Creating a restricted subclass does
+not inherit the parent's `ABSTRACT` flag. Copies and observable promotion
+preserve the status already established for the concept.
+
+Every concept in the core ontology is automatically abstract. This is an
+intentional convention; it does not make all descendants abstract. Core aliases
+resolve the canonical core concept.
+
+### 7.2 Status of composed expressions
+
+The following first-pass rules apply independently to both `ABSTRACT` and
+`SUBJECTIVE`. An expression retains its head's status unless a unary operator
+transforms that head. A direct attribute carrying either flag gives that flag
+to the expression. Clause fillers, including the filler of `of`, do not
+contribute either flag to their bearer. Neither the primary operand nor a
+comparison operand of a unary operator contributes status to its result.
+
+For a concrete, non-subjective `X` and an abstract, subjective attribute `A`:
+
+| Expression | Abstract | Subjective |
+|---|---|---|
+| `A X` | yes | yes |
+| `X of A` | no | no |
+| `presence of (A X)` | no | no |
+| `A presence of X` | yes | yes |
+
+The examples describe scope; the worldview must still allow the attribute and
+clause types. These are expression rules, not subclass declaration inheritance.
+They do not add propagation from identities, realms, roles, or logical operands;
+policies for those combinations remain separate. Runtime evaluation uses resolved
+atomic declaration status and projects the result onto returned concepts and
+observables without changing canonical declarations.
 
 This describes the current shared grammar. The
 [observation-strategy proposal](OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)

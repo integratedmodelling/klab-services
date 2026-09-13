@@ -1675,7 +1675,9 @@ public class OWL {
       return existing;
     }
     List<Axiom> ax = new ArrayList<>();
-    ax.add(Axiom.ClassAssertion(name, ret.getType()));
+    var subclassTypes = new HashSet<>(ret.getType());
+    subclassTypes.remove(SemanticType.ABSTRACT);
+    ax.add(Axiom.ClassAssertion(name, subclassTypes));
     ax.add(Axiom.SubClass(ret.getNamespace() + ":" + ret.getName(), name));
     ax.add(Axiom.AnnotationAssertion(name, NS.CONCEPT_DEFINITION_PROPERTY, urn));
     ontology.define(ax);

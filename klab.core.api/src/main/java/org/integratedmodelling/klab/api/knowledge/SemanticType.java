@@ -151,7 +151,24 @@ public enum SemanticType {
   MACRO,
   /** */
   AMOUNT,
-
+  /**
+   * Observables gain this type when they are declared as `any`, which makes the reasoner and
+   * resolver treat them as abstract and consider their closure (including the concept itself) in
+   * the context of use even if they are concrete.
+   */
+  ANY,
+  /**
+   * Observables gain this type when declared as `all`, which implies that their entire closure
+   * should be considered in the context of use. Currently retained syntactically with no
+   * consequence in modeling.
+   */
+  ALL,
+  /**
+   * Observables gain this type when declared as `no`, which implies that their closure should not
+   * be considered in the context of use. Currently retained syntactically with no consequence in
+   * modeling.
+   */
+  NONE,
   /**
    * Only for concept peers of non-semantic types: this should never appear in a declared concept
    */
@@ -223,8 +240,7 @@ public enum SemanticType {
 
   /** Events and functional relationships are the substantial types whose identity is temporal. */
   public static boolean isOccurrentSubstantial(Set<SemanticType> type) {
-    return type.contains(EVENT)
-        || (type.contains(RELATIONSHIP) && type.contains(FUNCTIONAL));
+    return type.contains(EVENT) || (type.contains(RELATIONSHIP) && type.contains(FUNCTIONAL));
   }
 
   public static boolean isDependent(Set<SemanticType> type) {

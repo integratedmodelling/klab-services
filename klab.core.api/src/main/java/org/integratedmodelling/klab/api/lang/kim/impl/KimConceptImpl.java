@@ -567,6 +567,13 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    * <p>TODO generalize to a tokenizer where the append() can be delegated to a separate method that
    * also knows the type and role of each token, so that it can be connected to highlighting
    */
+  private String selector() {
+    if (is(SemanticType.ANY)) return "any";
+    if (is(SemanticType.ALL)) return "all";
+    if (is(SemanticType.NONE)) return "no";
+    return null;
+  }
+
   public String finalizeDefinition() {
 
     if (this.urn != null) {
@@ -579,6 +586,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     String main = "";
     StringBuilder ret = new StringBuilder(isCollective() ? "each" : "");
+    String selector = selector();
+    if (selector != null) {
+      ret.append(ret.isEmpty() ? "" : " ").append(selector);
+    }
 
     if (semanticModifier != null) {
       ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
@@ -834,6 +845,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     var collective = !isCollective() && observable != null && observable.isCollective();
     if (collective) {
       appender.append("each", LexicalRole.KEYWORD);
+    }
+    if (selector() != null) {
+      appender.append(selector(), LexicalRole.KEYWORD);
     }
     if (negated) {
       appender.append("not", LexicalRole.KEYWORD);

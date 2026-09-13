@@ -188,13 +188,12 @@ public enum LanguageAdapter {
     return adaptSemanticSequence(asTokens(semantics, namespace, projectName, documentClass));
   }
 
-  /**
-   * FIXME this will not work right: e.g. data:Normalized change rate of geography:Elevation will be
-   * interpreted as change rate of data:Normalized geography:Elevation. Needs to tokenize
-   * intelligently from the last, apply traits where they belong and bring the first "each" or
-   * distribution operator to the final concept
-   */
+  /** Fold sibling predicates onto their head; unary operands are grouped within each token. */
   private KimConceptImpl adaptSemanticSequence(List<KimConceptImpl> tokens) {
+
+    if (tokens.isEmpty()) {
+      throw new IllegalArgumentException("Empty semantic sequence");
+    }
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
@@ -231,6 +230,7 @@ public enum LanguageAdapter {
 
     ret.addTraits(traits, null);
     ret.addRoles(roles, null);
+    applyExpressionStatus(ret);
 
     if (observableIsCollective) {
       ret.setCollective(true);
@@ -269,7 +269,9 @@ public enum LanguageAdapter {
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
     if (semantics.isLeafDeclaration()) {
-      ret.setName(semantics.getObservable().toString());
+      ret.setName(semantics.getObservable().concept().toString());
+      ret.setNegated(semantics.isNegated() || semantics.getObservable().negated());
+      retainReferenceFlags(ret, semantics.getObservable());
     } else {
       if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
         ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
@@ -288,6 +290,17 @@ public enum LanguageAdapter {
     }
 
     if (semantics.getUnaryOperator() != null && semantics.getUnaryOperator().getFirst() != null) {
+      // References in this token occur after the operator. Sibling tokens are applied
+      // by adaptSemanticSequence to the resulting quality, outside this operand.
+      var operand = new KimConceptImpl();
+      operand.setObservable(ret.getObservable());
+      operand.setType(new java.util.HashSet<>(ret.getObservable().getType()));
+      operand.getType().removeAll(EnumSet.of(SemanticType.ANY, SemanticType.ALL, SemanticType.NONE));
+      operand.getTraits().addAll(ret.getTraits());
+      operand.getRoles().addAll(ret.getRoles());
+      ret.getTraits().clear();
+      ret.getRoles().clear();
+      ret.setObservable(operand);
       ret.setSemanticModifier(
           UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
       if (semantics.getUnaryOperator().getSecond() != null
@@ -301,6 +314,14 @@ public enum LanguageAdapter {
                     projectName,
                     documentClass)));
       }
+    }
+
+    if (semantics.getUnaryOperator() == null && semantics.getObservable() != null
+        && semantics.getObservable().concept().isAbstract()) {
+      ret.getType().add(SemanticType.ABSTRACT);
+    }
+    if (semantics.getQuantifier() != null) {
+      ret.getType().add(SemanticType.valueOf(semantics.getQuantifier().name()));
     }
 
     List<KimConceptImpl> logicalOperands = new ArrayList<>();
@@ -370,7 +391,7 @@ public enum LanguageAdapter {
       ret.getOperands().addAll(logicalOperands);
     }
 
-    // TODO establish abstract and generic nature
+    applyExpressionStatus(ret);
     ret.finalizeDefinition();
 
     return ret;
@@ -867,9 +888,36 @@ public enum LanguageAdapter {
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
+    retainReferenceFlags(ret, observable);
+    ret.setNegated(observable.negated());
+    ret.setNamespace(observable.concept().namespace());
+    ret.setPattern(observable.concept().isPatternVariable());
+    ret.resetDefinition();
     ret.setDocumentClass(documentClass);
     //    ret.computeUrn();
     return ret;
+  }
+
+  private void retainReferenceFlags(KimConceptImpl target, SemanticSyntax.ConceptData reference) {
+    if (reference.concept().isSubjective()) target.getType().add(SemanticType.SUBJECTIVE);
+    if (reference.concept().isSealed()) target.getType().add(SemanticType.SEALED);
+    if (reference.concept().isAbstract()) {
+      target.getType().add(SemanticType.ABSTRACT);
+    }
+    if (reference.generic() != null) {
+      target.getType().add(switch (reference.generic()) {
+        case "any" -> SemanticType.ANY;
+        case "all" -> SemanticType.ALL;
+        case "no" -> SemanticType.NONE;
+        default -> throw new IllegalArgumentException("Unknown selector: " + reference.generic());
+      });
+    }
+  }
+
+  private void applyExpressionStatus(KimConceptImpl target) {
+    var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(target);
+    target.getType().removeAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SUBJECTIVE));
+    target.getType().addAll(status);
   }
 
   private Set<SemanticType> adaptSemanticType(SemanticSyntax.Type type) {
@@ -1380,8 +1428,14 @@ public enum LanguageAdapter {
                   projectName,
                   KlabAsset.KnowledgeClass.ONTOLOGY));
       if (ret.getDeclaredParent() != null && definition.isGenericQuality()) {
+        var declaredFlags = new java.util.HashSet<>(ret.getType());
+        declaredFlags.retainAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SEALED,
+            SemanticType.SUBJECTIVE, SemanticType.DENIABLE));
         ret.getType().clear();
         ret.getType().addAll(ret.getDeclaredParent().getType());
+        ret.getType().removeAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SEALED,
+            SemanticType.SUBJECTIVE, SemanticType.DENIABLE));
+        ret.getType().addAll(declaredFlags);
       }
     }
     for (var child : definition.getChildren()) {

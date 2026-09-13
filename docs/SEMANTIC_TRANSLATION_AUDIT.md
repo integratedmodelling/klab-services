@@ -1,5 +1,10 @@
 # Semantic translation audit and completion plan
 
+For the subsequent clause-by-clause grammar → bean → service → OWL verification,
+see [Worldview OWL translation audit](WORLDVIEW_OWL_TRANSLATION_AUDIT.md). It records
+the missing declaration transfers, dormant/missing handlers, core property
+mismatches and executable diagnostic checks separately from status propagation.
+
 Reviewed 2026-09-12 against this working tree and the sibling `klab-languages` source.
 Existing annotation-related edits were preserved. This is a source audit, not a claim that
 the full language-to-OWL pipeline passes integration tests.
@@ -41,6 +46,66 @@ prefix in service modules, `src/main/java/org/integratedmodelling/klab/api` in t
 and `src/main/java/org/integratedmodelling/common/knowledge` for runtime implementations.
 
 ## Abstract status: definition and actual propagation
+
+### First-pass composition policy
+
+Direct attributes contribute `ABSTRACT` and `SUBJECTIVE` independently to their
+bearer. Clause fillers (including inherency) contribute neither. Unary operators
+stop status propagation from their operands; direct attributes outside the unary
+operator still qualify its result. The unchanged head retains its own status.
+`ExpressionStatus` implements this scope rule for adapted syntax and resolved
+runtime projections in both declaration and public builder paths. Projections
+are detached so canonical atomic declarations are not relabeled. Logical-operand
+policies and persisted/reloaded expression status are not completed by this step.
+
+Validation: the same targeted reactor command below, with `ExpressionStatusTest`
+added to `-Dtest`, passes all 12 tests. The three added tests exercise independent
+flags, direct attributes versus clause fillers, all unary operator boundaries,
+resolved declaration status, and detached concept/observable copies. The unary
+adapter regression also checks both status flags inside and outside the operator.
+
+### Follow-up: declared flags and unary operand scope (2026-09-13)
+
+The tables below record the original audit baseline. The follow-up now preserves
+descriptor abstract status, subjective/sealed reference flags, negation and
+`any`/`all`/`no` selectors. Generic-quality adaptation keeps local declaration
+flags instead of importing the parent's abstract status. `OWL.makeSubclass`
+removes `ABSTRACT` from the fresh subclass's type set. Explicit runtime abstract
+updates synchronize the type flag, and observable semantic replacement refreshes
+its abstract snapshot. Copies retain status and selector projections are detached
+from canonical ontology concepts.
+
+Unary-token predicates now belong to the operand; sibling predicates preceding
+the unary token belong to its result. Regression cases distinguish these two
+trees, retain selector identity through regeneration/copy, reject empty sequences,
+and check local generic-quality declaration flags and observable replacement.
+The grammar and other operator associativity are unchanged. See
+[OBSERVABLES.md](OBSERVABLES.md) for the rules and the automatically abstract core
+ontology convention. This does not establish an effective abstractness evaluator
+for composed expressions or solve ontology reload equivalence.
+
+The sibling `klab-languages` now reads top-level `subjective` and extends
+`ConceptDescriptor` with subjective/sealed fields, retaining the old constructor.
+Rebuild those language artifacts before building services against this change.
+The observable and worldview language modules compile successfully with the
+offline Tycho reactor (`-pl org.integratedmodelling.languages.observable,org.integratedmodelling.languages.worldview -am -DskipTests compile`).
+The unchanged grammar generator still reports existing ambiguity warnings;
+this compilation is not a parser conformance test.
+
+Validation follow-up: the missing `Data.FillCurve` and common API symbols were
+specific to the sandbox build environment, not removed APIs. Outside the sandbox,
+all 10 `FillCurveTest` tests pass; that coverage is retained. After installing the
+updated observable/worldview language snapshots locally and correcting test
+fixtures (required concept identity, public copy API, and nested Mockito stubbing),
+the targeted seven-module reactor succeeds:
+
+```powershell
+mvn -o -pl klab.services.resources,klab.services.reasoner -am '-Dtest=SemanticTranslationTest,ConceptCopyTest,ObservableTranslationTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+All nine targeted tests pass: six semantic translation tests, two concept copy
+tests and one observable translation test. This verifies the focused regressions;
+the broader real-parser and OWL conformance suite remains to be implemented.
 
 The `Semantics.isAbstract` contract says observations of an abstract concept cannot exist;
 atomic status is stated, whereas expression status is attributed by reasoning. This is an

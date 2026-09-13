@@ -73,6 +73,8 @@ public class ObservableImpl implements Observable {
   public ObservableImpl() {}
 
   public ObservableImpl(ObservableImpl other) {
+    this.serviceId = other.serviceId;
+    this.specializedComponents.addAll(other.specializedComponents);
     this.semantics = other.semantics;
     this.observerSemantics = other.observerSemantics;
     this.contextualization = other.contextualization;
@@ -85,7 +87,7 @@ public class ObservableImpl implements Observable {
     this.genericComponents.addAll(other.genericComponents);
     this.optional = other.optional;
     this.generic = other.generic;
-    this.resolutionDirectives = other.resolutionDirectives;
+    this.resolutionDirectives.addAll(other.resolutionDirectives);
     this.defaultValue = other.defaultValue;
     this.statedName = other.statedName;
     this.annotations.addAll(other.annotations);
@@ -234,7 +236,7 @@ public class ObservableImpl implements Observable {
   }
 
   public void setSemantics(ConceptImpl semantics) {
-    this.semantics = semantics;
+    setSemantics((Concept) semantics);
   }
 
   public void setObserverSemantics(Concept observer) {
@@ -344,6 +346,7 @@ public class ObservableImpl implements Observable {
 
   public void setSemantics(Concept semantics) {
     this.semantics = semantics;
+    this.isAbstract = semantics != null && semantics.isAbstract();
   }
 
   public static ObservableImpl promote(Concept concept, Scope scope) {

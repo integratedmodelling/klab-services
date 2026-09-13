@@ -137,11 +137,45 @@ public class ConceptImpl implements Concept {
   }
 
   public void setType(Set<SemanticType> type) {
-    this.type = type;
+    this.type = EnumSet.noneOf(SemanticType.class);
+    this.type.addAll(type);
   }
 
   public void setAbstract(boolean isAbstract) {
     this.isAbstract = isAbstract;
+    if (isAbstract) {
+      this.type.add(SemanticType.ABSTRACT);
+    } else {
+      this.type.remove(SemanticType.ABSTRACT);
+    }
+  }
+
+  /** Preserve query selectors on a detached result without relabeling a canonical concept. */
+  public ConceptImpl withSelectors(Set<SemanticType> syntaxTypes) {
+    var result = new ConceptImpl(this);
+    for (var flag : EnumSet.of(SemanticType.ANY, SemanticType.ALL, SemanticType.NONE)) {
+      if (syntaxTypes.contains(flag)) result.getType().add(flag);
+    }
+    return result;
+  }
+
+  /** Project expression status onto a detached concept, preserving canonical declarations. */
+  public ConceptImpl withExpressionStatus(
+      org.integratedmodelling.klab.api.lang.kim.KimConcept syntax,
+      java.util.function.Function<String, Concept> lookup) {
+    var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(syntax, leaf -> {
+      var resolved = leaf.getName() == null ? null : lookup.apply(leaf.getName());
+      if (resolved == null) return leaf.getType();
+      var flags = EnumSet.noneOf(SemanticType.class);
+      if (resolved.isAbstract()) flags.add(SemanticType.ABSTRACT);
+      if (resolved.is(SemanticType.SUBJECTIVE)) flags.add(SemanticType.SUBJECTIVE);
+      return flags;
+    });
+    var result = withSelectors(syntax.getType());
+    result.setAbstract(status.contains(SemanticType.ABSTRACT));
+    result.getType().remove(SemanticType.SUBJECTIVE);
+    if (status.contains(SemanticType.SUBJECTIVE)) result.getType().add(SemanticType.SUBJECTIVE);
+    return result;
   }
 
   @Override

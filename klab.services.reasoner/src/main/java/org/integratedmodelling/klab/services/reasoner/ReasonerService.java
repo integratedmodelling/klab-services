@@ -2285,12 +2285,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
+    var resolved = compileInternal(concept, ontology, monitor);
+    return resolved == null ? null
+        : ((ConceptImpl) resolved).withExpressionStatus(concept, owl::getConcept);
+  }
+
+  private Concept compileInternal(KimConcept concept, Ontology ontology, Scope monitor) {
 
     Concept main = null;
 
     var existing = owl.getConcept(concept.getUrn());
     if (existing != null) {
-      return existing;
+      return ((ConceptImpl) existing).withSelectors(concept.getType());
     }
 
     if (concept.getObservable() != null) {
@@ -2463,7 +2469,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       ret = negated(ret);
     }
 
-    return ret;
+    return ret == null ? null : ((ConceptImpl) ret).withSelectors(concept.getType());
   }
 
   public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {

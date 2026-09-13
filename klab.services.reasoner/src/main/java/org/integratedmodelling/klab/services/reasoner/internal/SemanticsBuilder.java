@@ -662,7 +662,7 @@ public class SemanticsBuilder implements Observable.Builder {
     }
     var concept = buildConcept(syntax);
     if (concept == null) return null;
-    var result = new ConceptImpl((ConceptImpl) concept);
+    var result = ((ConceptImpl) concept).withExpressionStatus(syntax, reasoner::resolveConcept);
     result.setAnnotations(AnnotationCollector.collect(syntax, reasoner::resolveConcept));
     return result;
   }

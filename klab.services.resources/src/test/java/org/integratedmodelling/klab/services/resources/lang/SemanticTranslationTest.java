@@ -13,12 +13,104 @@ import org.junit.jupiter.api.Test;
 
 class SemanticTranslationTest {
   @Test
+  void genericQualityUsesLocalDeclarationFlags() throws Exception {
+    var parent = leaf("Quality", SemanticSyntax.Type.LENGTH);
+    when(parent.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+        new ConceptDescriptor("test", "Quality", SemanticSyntax.Type.LENGTH,
+            "Quality", "", true, false, true, true), null, false));
+    var declaration = mock(org.integratedmodelling.languages.api.ConceptDeclarationSyntax.class);
+    when(declaration.getName()).thenReturn("Child");
+    when(declaration.getDeclaredType()).thenReturn(SemanticSyntax.Type.GENERIC_QUALITY);
+    when(declaration.isGenericQuality()).thenReturn(true);
+    when(declaration.getDeclaredParent()).thenReturn(parent);
+    var method = LanguageAdapter.class.getDeclaredMethod("adaptConceptDefinition",
+        org.integratedmodelling.languages.api.ConceptDeclarationSyntax.class, String.class, String.class);
+    method.setAccessible(true);
+    for (boolean explicitlyAbstract : List.of(false, true)) {
+      when(declaration.isAbstract()).thenReturn(explicitlyAbstract);
+      when(declaration.isSealed()).thenReturn(explicitlyAbstract);
+      when(declaration.isSubjective()).thenReturn(explicitlyAbstract);
+      var result = (org.integratedmodelling.klab.api.lang.kim.KimConceptStatement)
+          method.invoke(LanguageAdapter.INSTANCE, declaration, "test", "project");
+      assertEquals(explicitlyAbstract, result.isAbstract());
+      for (var flag : List.of(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT,
+          org.integratedmodelling.klab.api.knowledge.SemanticType.SEALED,
+          org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE)) {
+        assertEquals(explicitlyAbstract, result.getType().contains(flag));
+      }
+      assertTrue(result.getType().contains(org.integratedmodelling.klab.api.knowledge.SemanticType.LENGTH));
+    }
+  }
+
+  @Test
+  void unaryOperandPredicatesAndOuterPredicatesHaveDifferentScopes() {
+    var tree = leaf("Tree", SemanticSyntax.Type.SUBJECT);
+    var attribute = leaf("Managed", SemanticSyntax.Type.ATTRIBUTE);
+    when(attribute.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+        new ConceptDescriptor("test", "Managed", SemanticSyntax.Type.ATTRIBUTE,
+            "Managed", "", true, false, true, false), null, false));
+    var presence = leaf("Tree", SemanticSyntax.Type.PRESENCE);
+    when(presence.isLeafDeclaration()).thenReturn(false);
+    var treeReference = tree.getObservable();
+    var attributeReference = attribute.getObservable();
+    when(presence.getObservable()).thenReturn(treeReference);
+    when(presence.getUnaryOperator()).thenReturn(Tuples.pair(
+        SemanticSyntax.UnaryOperator.PRESENCE, null));
+    when(presence.getConceptReferences()).thenReturn(List.of(attributeReference));
+    var inside = adapt(presence);
+    assertTrue(inside.getTraits().isEmpty());
+    assertEquals("test:Managed", inside.getObservable().getTraits().getFirst().getUrn());
+    assertEquals("presence of test:Managed test:Tree", inside.getUrn());
+    assertFalse(inside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT));
+    assertFalse(inside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
+
+    when(presence.getConceptReferences()).thenReturn(List.of());
+    when(attribute.iterator()).thenAnswer(invocation -> List.of(attribute, presence).iterator());
+    var outside = LanguageAdapter.INSTANCE.adaptSemantics(
+        attribute, "test", "project", KlabAsset.KnowledgeClass.ONTOLOGY);
+    assertEquals("test:Managed", outside.getTraits().getFirst().getUrn());
+    assertTrue(outside.getObservable().getTraits().isEmpty());
+    assertEquals("test:Managed presence of test:Tree", outside.getUrn());
+    assertTrue(outside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT));
+    assertTrue(outside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
+  }
+
+  @Test
+  void referenceFlagsAndSelectorsSurviveAdaptationAndCopy() {
+    for (String selector : List.of("any", "all", "no")) {
+      var syntax = leaf("Thing", SemanticSyntax.Type.SUBJECT);
+      when(syntax.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+          new ConceptDescriptor("test", "Thing", SemanticSyntax.Type.SUBJECT,
+              "Thing", "", true, false, true, true), selector, false));
+      var result = adapt(syntax);
+      var copy = (org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl)
+          result.removeComponents();
+      assertTrue(copy.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT));
+      assertTrue(copy.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
+      assertTrue(copy.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SEALED));
+      assertTrue(copy.is(org.integratedmodelling.klab.api.knowledge.SemanticType.valueOf(
+          selector.equals("no") ? "NONE" : selector.toUpperCase(java.util.Locale.ROOT))));
+      copy.resetDefinition();
+      assertEquals(selector + " test:Thing", copy.getUrn());
+    }
+  }
+
+  @Test
+  void emptySequencesAreRejectedAtTheBoundary() {
+    var syntax = leaf("Thing", SemanticSyntax.Type.SUBJECT);
+    when(syntax.iterator()).thenAnswer(invocation -> List.<SemanticSyntax>of().iterator());
+    assertThrows(IllegalArgumentException.class, () -> LanguageAdapter.INSTANCE.adaptSemantics(
+        syntax, "test", "project", KlabAsset.KnowledgeClass.ONTOLOGY));
+  }
+
+  @Test
   void linkingKeepsDistinctOrderedEndpoints() {
     var relationship = leaf("Connection", SemanticSyntax.Type.FUNCTIONAL_RELATIONSHIP);
+    var source = leaf("Source", SemanticSyntax.Type.SUBJECT);
+    var target = leaf("Target", SemanticSyntax.Type.SUBJECT);
     when(relationship.getRestrictions()).thenReturn(List.of(Tuples.create(
         SemanticSyntax.BinaryOperator.LINKING,
-        List.of(leaf("Source", SemanticSyntax.Type.SUBJECT),
-            leaf("Target", SemanticSyntax.Type.SUBJECT)), false)));
+        List.of(source, target), false)));
     var result = adapt(relationship);
     assertEquals("test:Source", result.getRelationshipSource().getUrn());
     assertEquals("test:Target", result.getRelationshipTarget().getUrn());
@@ -28,9 +120,10 @@ class SemanticTranslationTest {
   @Test
   void intersectionKeepsItsConnectorWhenDefinitionIsRegenerated() {
     var left = leaf("Left", SemanticSyntax.Type.SUBJECT);
+    var right = leaf("Right", SemanticSyntax.Type.SUBJECT);
     when(left.getRestrictions()).thenReturn(List.of(Tuples.create(
         SemanticSyntax.BinaryOperator.AND,
-        List.of(leaf("Right", SemanticSyntax.Type.SUBJECT)), false)));
+        List.of(right), false)));
     var result = adapt(left);
     assertEquals(KimConcept.Expression.INTERSECTION, result.getExpressionType());
     assertEquals("test:Left and test:Right", result.getUrn());

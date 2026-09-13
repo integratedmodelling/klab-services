@@ -82,7 +82,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
             statement.getMetadata().get(Metadata.DC_LABEL, defaultLabel),
             statement.getMetadata().get(Metadata.DC_COMMENT, String.class),
             statement.isAbstract(),
-            false);
+            false, statement.isSubjective(), statement.isSealed());
     this.conceptTypes.put(defaultLabel, descriptor);
     for (var child : statement.getChildren()) {
       loadConcepts(child, namespace);
