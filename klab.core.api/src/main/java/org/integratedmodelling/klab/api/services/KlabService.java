@@ -333,6 +333,8 @@ public interface KlabService extends Service {
    * must support their service-specific contract and may additionally expose common projections
    * such as component, adapter and service descriptors. {@link
    * org.integratedmodelling.klab.api.collections.DomainObject} is the portable fallback projection.
+   * For CONCEPT and OBSERVABLE, String.class requests Markdown documentation from Resources
+   * (syntactic beans) or the Reasoner (semantic beans and OWL). HTTP clients use Accept: text/markdown.
    *
    * @param urn identifier of the object to inspect
    * @param objectClass classification of the object

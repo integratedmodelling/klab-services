@@ -148,6 +148,22 @@ public class KlabServiceController {
     throw new KlabAuthorizationException("No valid scope in service INFO request");
   }
 
+  @Operation(summary = "Document an asset as Markdown")
+  @GetMapping(value = ServicesAPI.INFO, produces = "text/markdown")
+  public ResponseEntity<String> infoMarkdown(
+      @PathVariable(name = "urn") String urn,
+      @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      var markdown = instance.klabService().info(urn, objectClass, String.class, userScope);
+      return markdown == null ? ResponseEntity.notFound().build()
+          : ResponseEntity.ok().contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"))
+              .header(HttpHeaders.CACHE_CONTROL, "private, no-store").body(markdown);
+    }
+    throw new KlabAuthorizationException("No valid scope in service INFO request");
+  }
+
   @Operation(summary = "Render asset information as PNG",
       description = "Layout an adaptable process using ELK and return a headless PNG rendering")
   @GetMapping(value = ServicesAPI.INFO, produces = MediaType.IMAGE_PNG_VALUE)

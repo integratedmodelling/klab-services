@@ -2161,7 +2161,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             ret =
                 ret.replace(
                     subst,
-                    UriUtils.encodeQueryParam(
+                    UriUtils.encodePathSegment(
                         parameters.get(key).toString(), StandardCharsets.UTF_8));
             toRemove.add(key);
           }

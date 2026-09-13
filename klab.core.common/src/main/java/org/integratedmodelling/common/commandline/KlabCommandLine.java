@@ -35,6 +35,10 @@ public class KlabCommandLine extends CLI {
         .build();
 
     command("reason", "Reasoner commands", "Reasoner commands")
+        .subCommand("info", "Observable documentation", "Document a concept or observable URN")
+        .option("syntax", "s", "Document the syntactic form from Resources", "Syntactic form")
+        .handler(ReasonCommands::info)
+        .parent()
         .subCommand("parents", "Parent hierarchy", "List parents of a concept")
         .handler(ReasonCommands::parents)
         .parent()
@@ -75,7 +79,8 @@ public class KlabCommandLine extends CLI {
           ret.setScope(scopeSupplier.get());
         }
         for (var option : cl.getOptions()) {
-          ret.getOptions().put(option.getOpt(), option.getValue());
+          ret.getOptions().put(option.getOpt() == null ? option.getLongOpt() : option.getOpt(),
+              option.hasArg() ? option.getValue() : Boolean.TRUE);
         }
         for (var arg : cl.getArgs()) {
           ret.getParameters().add(arg);
@@ -92,7 +97,10 @@ public class KlabCommandLine extends CLI {
 
   private Options computeOptions(Command command) {
     var options = new Options();
-    // TODO
+    for (var option : command.getOptions()) {
+      options.addOption(org.apache.commons.cli.Option.builder(option.getShortName())
+          .longOpt(option.getName()).desc(option.getLongDescription()).hasArg(option.hasValue()).build());
+    }
     return options;
   }
 }

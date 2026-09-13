@@ -3256,6 +3256,30 @@ public class WorkspaceManager {
     return null;
   }
 
+  /** Enclosing declarations followed by the requested declaration, preserving implicit inheritance. */
+  public List<KimConceptStatement> conceptDeclarationPath(String urn) {
+    if (_ontologyMap != null) {
+      for (var ontology : _ontologyMap.values()) {
+        for (var statement : ontology.getStatements()) {
+          var path = new ArrayList<KimConceptStatement>();
+          if (conceptDeclarationPath(statement, ontology.getUrn(), urn, path)) return path;
+        }
+      }
+    }
+    return List.of();
+  }
+
+  private boolean conceptDeclarationPath(KimConceptStatement statement, String namespace,
+      String urn, List<KimConceptStatement> path) {
+    path.add(statement);
+    if (urn.equals(statement.getUrn()) || urn.equals(namespace + ":" + statement.getUrn())) return true;
+    for (var child : statement.getChildren()) {
+      if (conceptDeclarationPath(child, namespace, urn, path)) return true;
+    }
+    path.removeLast();
+    return false;
+  }
+
   private KimConceptStatement resolveConceptStatement(String urn, KlabDocument<?> current) {
     if (current instanceof KimOntology ontology) {
       var ret = findConceptStatement(ontology, urn);

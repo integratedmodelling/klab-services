@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.cli;
 
 public class Option {
   private final String name;
+  private final String shortName;
   private final String shortDescription;
   private final String longDescription;
   private final boolean hasValue;
@@ -16,9 +17,10 @@ public class Option {
       Class<?> valueClass,
       Object defaultValue) {
     this.name = name;
+    this.shortName = shortName;
     this.shortDescription = shortDescription;
     this.longDescription = description;
-    this.hasValue = valueClass != null;
+    this.hasValue = valueClass != null && valueClass != Void.class;
     this.valueClass = valueClass;
     this.defaultValue = defaultValue;
   }
@@ -26,6 +28,8 @@ public class Option {
   public String getName() {
     return name;
   }
+
+  public String getShortName() { return shortName; }
 
   public String getShortDescription() {
     return shortDescription;

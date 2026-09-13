@@ -109,6 +109,12 @@ public abstract class BaseServiceClient implements KlabService {
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
+    if (infoClass == String.class
+        && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
+            || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
+      return client.withScope(scope).accepting(List.of("text/markdown"))
+          .get(ServicesAPI.INFO, infoClass, "urn", urn, "knowledgeClass", objectClass);
+    }
     if (infoClass == java.awt.image.BufferedImage.class) {
       var bytes = client.withScope(scope).accepting(List.of("image/png"))
           .getBytes(ServicesAPI.INFO, "urn", urn, "knowledgeClass", objectClass);

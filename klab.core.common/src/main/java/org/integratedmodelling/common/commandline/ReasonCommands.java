@@ -3,11 +3,43 @@ package org.integratedmodelling.common.commandline;
 import java.util.Collection;
 import org.integratedmodelling.common.data.Tree;
 import org.integratedmodelling.klab.api.cli.CommandLine;
+import org.integratedmodelling.klab.api.cli.MarkdownDocument;
+import org.integratedmodelling.klab.api.exceptions.KlabCommandLineError;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 public class ReasonCommands {
+
+  public static MarkdownDocument info(CommandLine commandLine) {
+    var urn = commandLine.getAs(String.class);
+    var scope = commandLine.getScope();
+    var user = scope instanceof UserScope u ? u
+        : scope == null ? null : scope.getParentScope(Scope.Type.USER, UserScope.class);
+    if (urn == null || urn.isBlank() || user == null) {
+      commandLine.setError(true);
+      commandLine.setErrorMessage("reason info requires a concept/observable URN and a user scope");
+      throw new KlabCommandLineError(
+          commandLine.getErrorMessage(), commandLine.getCommandLine());
+    }
+    KlabService service = commandLine.getOptions().containsKey("s")
+        ? scope.getService(ResourcesService.class)
+        : scope.getService(Reasoner.class);
+    var markdown = service == null ? null : service.info(urn,
+        KnowledgeClass.OBSERVABLE, String.class, user);
+    if (markdown == null) {
+      commandLine.setError(true);
+      commandLine.setErrorMessage(service == null ? "Requested service is unavailable" : "No documentation for " + urn);
+      throw new KlabCommandLineError(
+          commandLine.getErrorMessage(), commandLine.getCommandLine());
+    }
+    return new MarkdownDocument(markdown);
+  }
 
   /**
    * TODO table if --all, tree otherwise

@@ -1528,6 +1528,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return (T) retrieve(urn, (Class<? extends KlabAsset>) infoClass, scope);
     } else if (infoClass == String.class) {
       var asset = retrieve(urn, assetClass.getAssetClass(), scope);
+      if (asset != null && (assetClass == KnowledgeClass.CONCEPT || assetClass == KnowledgeClass.OBSERVABLE)) {
+        return infoClass.cast(org.integratedmodelling.klab.runtime.language.SyntacticDocumentation.describeWithPaths(
+            urn, asset, workspaceManager::conceptDeclarationPath));
+      }
       return asset == null ? null : (T) asset.getUrn();
     } else if (infoClass.isAssignableFrom(ResourceInfo.class)) {
       return (T) resourceInfo(urn, scope);
