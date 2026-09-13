@@ -1391,6 +1391,20 @@ public enum LanguageAdapter {
     ret.setSubjective(definition.isSubjective());
     ret.setDocstring(definition.getDescription());
     ret.setAlias(definition.isAlias());
+    for (var clause : definition.getDeclarationClauses()) {
+      ret.getDeclarationClauses().add(new KimConceptStatement.DeclarationClause(
+          clause.kind(), clause.text(), clause.offset(), clause.length()));
+    }
+    for (var reference : definition.getDeclaredReferences()) {
+      var source = new KimConceptImpl();
+      source.setName(reference.text());
+      source.setNamespace(namespace);
+      source.setProjectName(projectName);
+      source.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+      source.setOffsetInDocument(reference.offset());
+      source.setLength(reference.length());
+      ret.getDeclaredReferences().add(source);
+    }
     ret.setOffsetInDocument(definition.getCodeOffset());
     ret.setLength(definition.getCodeLength());
     ret.setDeprecation(definition.getDeprecation());

@@ -22,7 +22,7 @@ public class KimOntologyVisitor extends KimObservableVisitor {
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
       implements Validator {}
 
-  public static class DefaultValidator extends KimValidator implements Validator {}
+  public static class DefaultValidator extends KimWorldviewValidator {}
 
   private final Validator ontologyValidator;
 
@@ -31,7 +31,7 @@ public class KimOntologyVisitor extends KimObservableVisitor {
   }
 
   public KimOntologyVisitor(Validator validator, Resolver resolver) {
-    super(validator, resolver);
+    super(validator == null ? new DefaultValidator() : validator, resolver);
     this.ontologyValidator = validator == null ? new DefaultValidator() : validator;
   }
 
@@ -60,6 +60,9 @@ public class KimOntologyVisitor extends KimObservableVisitor {
 
   private void visitConceptStatement(KimConceptStatement statement, Context context) {
     addNotifications(ontologyValidator.validateConceptStatement(statement, context));
+    for (var source : safe(statement.getDeclaredReferences())) {
+      reference(source.getName(), KlabAsset.KnowledgeClass.CONCEPT, source, context);
+    }
     visitConceptStatementContents(statement, context);
   }
 }

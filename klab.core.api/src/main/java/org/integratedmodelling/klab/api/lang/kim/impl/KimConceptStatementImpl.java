@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
+    private List<DeclarationClause> declarationClauses = new ArrayList<>();
+    private List<KimConcept> declaredReferences = new ArrayList<>();
+    @Override public List<DeclarationClause> getDeclarationClauses() { return declarationClauses; }
+    public void setDeclarationClauses(List<DeclarationClause> clauses) { this.declarationClauses = clauses; }
+    @Override public List<KimConcept> getDeclaredReferences() { return declaredReferences; }
+    public void setDeclaredReferences(List<KimConcept> references) { this.declaredReferences = references; }
 
     @Serial
     private static final long serialVersionUID = 2640057106561346868L;

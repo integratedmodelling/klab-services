@@ -1,5 +1,9 @@
 # Observable expression language guide
 
+For inspection of syntactic and semantic forms, use `reason info <URN>` or
+`reason info --syntax <URN>`. See [semantic documentation](SEMANTIC_DOCUMENTATION.md) for
+the Markdown endpoint, report contents and asserted/inherited restriction provenance.
+
 An **observable expression** is k.LAB's query language for meaning. It states
 what should be observed independently of any dataset, model, service, or
 digital twin. The same expression is the semantic key used to annotate and
@@ -134,6 +138,9 @@ The member-resolving classifier strategy is Tier 0. Runtime execution remains st
 ## 2. Concepts and predicates
 
 A worldview concept is written as `namespace.path:ConceptName`:
+
+References in Worldview declarations must also use this qualified form, even
+when the referenced concept belongs to the same ontology namespace.
 
 ```observable
 earth:Region;

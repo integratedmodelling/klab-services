@@ -3,6 +3,43 @@
 Reviewed 2026-09-13 against the working trees of `klab-services` and sibling
 `klab-languages`, including the preceding status and observable adaptation fixes.
 
+## W01–W03 follow-up
+
+The coverage table below records the original audit. W01's local-reference form
+has since been removed from the grammar: references must be namespace-qualified,
+including references within the same ontology. The diagnostic fixture now uses
+`audit:Entity`; an unqualified-reference regression verifies parser rejection.
+
+W02 is intentional k.LAB aliasing, not OWL class equivalence. Top-level and nested
+aliases now share `ReasonerService.installAlias`; nested aliases no longer become
+subclasses of their enclosing declaration. Core declarations use this same path.
+
+Validation now runs **after `LanguageAdapter`**, on service semantic beans.
+`KimWorldviewValidator` is the default validator for `KimOntologyVisitor`, built
+on the existing observable visitor. `WorkspaceManager.validateSemanticAsset`
+invokes it in the same post-adaptation path as other document types. There are no
+Worldview semantic rule classes or invocation hooks left in `klab-languages`;
+the Xtext validator contains no custom checks.
+
+The language beans only transport passive clause/reference structure and source
+spans. `LanguageAdapter` preserves these in `KimConceptStatement`, including
+references in clauses whose OWL translation is still incomplete. The service
+validator creates ordinary `Notification` objects with focused lexical context
+(document, project, offset and length), following the existing IDE protocol.
+A future Langium frontend needs to populate the same beans, not reimplement rules.
+
+Initial rules reject undefined ordinary references, additional semantic clauses
+or `within` on aliases, and non-atomic core alias targets. Same-namespace names
+are checked against the current semantic document, avoiding stale workspace
+entries; external names use the visitor's resolver. Core targets retain their
+bootstrap convention and are checked against loaded OWL during core resolution.
+Docstrings, annotations and metadata remain permitted on aliases. Target-type,
+dependency-order, cycle and wider clause-legality validation remain future rules.
+
+`WorldviewValidationTest` now covers parser-free service beans, the actual Resources
+post-adaptation path, lexical spans, qualified references, rejected local syntax,
+alias restrictions and uniform top-level/nested alias installation.
+
 **The declaration pipeline is not complete.** Most Worldview clauses cannot reach
 their OWL handlers. Some information disappears in the language bean; additional
 information disappears in `LanguageAdapter.adaptConceptDefinition`. Consequently,

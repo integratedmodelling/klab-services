@@ -53,6 +53,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.runtime.language.KimObservableVisitor;
+import org.integratedmodelling.klab.runtime.language.SemanticDocumentation;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -61,6 +62,7 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
+import org.integratedmodelling.klab.services.reasoner.owl.OwlDocumentation;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +71,23 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class ReasonerService extends BaseService implements Reasoner, Reasoner.Admin {
+
+  @Override
+  public <T> T info(String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
+    if (infoClass == String.class && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
+        || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
+      Semantics asset = objectClass == KlabAsset.KnowledgeClass.OBSERVABLE
+          ? resolveObservable(urn) : resolveConcept(urn);
+      if (asset == null) return null;
+      var markdown = "# Semantic documentation\n\n"
+          + SemanticDocumentation.code(urn) + "\n\n"
+          + SemanticDocumentation.describe("Resolved bean and metadata", asset)
+          + SemanticInfoDocumentation.clauses(this, asset)
+          + OwlDocumentation.describe(owl, asset.asConcept());
+      return infoClass.cast(markdown);
+    }
+    return super.info(urn, objectClass, infoClass, scope);
+  }
 
   /**
    * Flag for {@link #compatible(Semantics, Semantics, int)}.
@@ -1885,31 +1904,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     try {
 
       if (concept.isAlias() || concept.getUpperConceptDefined() != null) {
-
-        /*
-         * can only have 'is' or 'equals' X; for core concepts 'is' means 'equals', and we use the
-         * statement to establish the semantic type.
-         */
-        Concept parent = null;
-        if (concept.getUpperConceptDefined() != null) {
-          parent = this.owl.getConcept(concept.getUpperConceptDefined());
-          if (parent == null) {
-            monitor.error(
-                "Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
-          } else {
-            parent.getType().addAll(concept.getType());
-          }
-        } else if (concept.getDeclaredParent() != null) {
-          parent = declareConcept(concept.getDeclaredParent());
-        }
-
-        if (parent != null) {
-          var annotated = new ConceptImpl((ConceptImpl) parent);
-          annotated.setAnnotations(AnnotationCollector.merge(
-              parent.getAnnotations(), concept.getAnnotations()));
-          ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
-        }
-
+        installAlias(concept, ontology, monitor);
         return null;
       }
 
@@ -1960,11 +1955,43 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return null;
   }
 
+  private void installAlias(KimConceptStatement concept, Ontology ontology, Scope monitor) {
+    /*
+     * can only have 'is' or 'equals' X; for core concepts 'is' means 'equals', and we use the
+     * statement to establish the semantic type.
+     */
+    Concept parent = null;
+    if (concept.getUpperConceptDefined() != null) {
+      parent = this.owl.getConcept(concept.getUpperConceptDefined());
+      if (parent == null) {
+        monitor.error(
+            "Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
+      } else {
+        parent.getType().addAll(concept.getType());
+      }
+    } else if (concept.getDeclaredParent() != null) {
+      parent = declareConcept(concept.getDeclaredParent());
+    }
+
+    if (parent != null) {
+      var annotated = new ConceptImpl((ConceptImpl) parent);
+      annotated.setAnnotations(AnnotationCollector.merge(
+          parent.getAnnotations(), concept.getAnnotations()));
+      ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
+    }
+
+  }
+
   private Concept buildInternal(
       final KimConceptStatement concept,
       Ontology ontology,
       KimConceptStatement kimObject,
       final Scope monitor) {
+
+    if (concept.isAlias() || concept.getUpperConceptDefined() != null) {
+      installAlias(concept, ontology, monitor);
+      return null; // An alias is not a child class and must not receive a subclass axiom.
+    }
 
     Concept main = null;
     String mainId = concept.getUrn();

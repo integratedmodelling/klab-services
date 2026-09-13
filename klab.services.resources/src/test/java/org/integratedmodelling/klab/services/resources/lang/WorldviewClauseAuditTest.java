@@ -28,7 +28,7 @@ class WorldviewClauseAuditTest {
         attribute State;
         quantity Measure;
         thing Specialized is audit:Entity within audit:Entity;
-        thing Local is Entity;
+        thing Local is audit:Entity;
         thing Qualified inherits audit:State;
         process Affected affects audit:Measure;
         process Created creates audit:Measure;

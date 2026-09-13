@@ -7,6 +7,12 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 public interface KimConceptStatement extends KlabStatement {
+    record DeclarationClause(String kind, String source, int offset, int length) {}
+
+    default List<DeclarationClause> getDeclarationClauses() { return List.of(); }
+
+    /** Source references, including references in clauses not yet compiled to OWL. */
+    default List<KimConcept> getDeclaredReferences() { return List.of(); }
 
     /**
      * Types of descriptional relationships to other concepts
