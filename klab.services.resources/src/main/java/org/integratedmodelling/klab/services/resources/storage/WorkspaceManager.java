@@ -2369,6 +2369,25 @@ public class WorkspaceManager {
       ret.add(worldviewChange);
     }
     ret.addAll(result.values());
+    // Descriptors were collected in dependency order before reloading. Publish the final
+    // validation snapshot, including an empty notification list when errors were corrected.
+    for (var resourceSet : ret) {
+      for (var resource : org.integratedmodelling.common.utils.Utils.Resources.collectChanges(resourceSet)) {
+        if (resource.getOperation() == CRUDOperation.DELETE) {
+          continue;
+        }
+        KlabDocument<?> document = switch (resource.getKnowledgeClass()) {
+          case ONTOLOGY -> getOntology(resource.getResourceUrn());
+          case NAMESPACE -> getNamespace(resource.getResourceUrn());
+          case OBSERVATION_STRATEGY_DOCUMENT -> getStrategyDocument(resource.getResourceUrn());
+          case BEHAVIOR, COMPONENT, APPLICATION, SCRIPT, TESTCASE -> getBehavior(resource.getResourceUrn());
+          default -> null;
+        };
+        if (document != null) {
+          refreshValidationSnapshot(resource, document);
+        }
+      }
+    }
     if (projectDescriptor != null
         && projectDescriptor.storage instanceof FileProjectStorage fileProjectStorage) {
       addRepositoryState(ret, projectDescriptor, fileProjectStorage.getRepositoryState());
@@ -2583,6 +2602,12 @@ public class WorkspaceManager {
    * @param asset
    * @param result
    */
+  static void refreshValidationSnapshot(ResourceSet.Resource resource, KlabDocument<?> document) {
+    resource.setResourceVersion(document.getVersion());
+    resource.getNotifications().clear();
+    resource.getNotifications().addAll(document.getNotifications());
+  }
+
   private ResourceSet.Resource addToResultSet(
       KlabDocument<?> asset, String externalWorkspaceId, Map<String, ResourceSet> result) {
 

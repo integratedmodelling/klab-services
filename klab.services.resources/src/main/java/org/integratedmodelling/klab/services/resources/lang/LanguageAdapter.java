@@ -103,6 +103,14 @@ public enum LanguageAdapter {
     } else {
       ret.setSemantics(
           adaptSemantics(observableSyntax.getSemantics(), namespace, projectName, documentClass));
+      // Use the adapted semantic tree as the canonical definition. Older syntax
+      // encoders omit restriction-level 'each', even though the tree retains it.
+      // Preserve the observable suffix (mediators, observer and stated name).
+      var encodedSemantics = observableSyntax.getSemantics().encode();
+      if (encodedSemantics != null && ret.getUrn().startsWith(encodedSemantics)) {
+        ret.setUrn(ret.getSemantics().getUrn()
+            + ret.getUrn().substring(encodedSemantics.length()));
+      }
       ret.setCodeName(
           ret.getSemantics().getType().contains(SemanticType.NOTHING)
               ? "invalid_observable"

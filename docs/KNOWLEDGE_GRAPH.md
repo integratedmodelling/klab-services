@@ -3,7 +3,7 @@
 See [PERSISTENT_TWINS](PERSISTENT_TWINS.md) for the subsequent actuator representation,
 committed scheduler registry, bounded executor restoration, and remaining restart requirements.
 
-This document describes the runtime graph as reviewed on 2026-09-05. It accompanies
+This document describes the runtime graph and its observation lifecycle contract. It accompanies
 [DIGITALTWINS](DIGITALTWINS.md), [STORAGE](STORAGE.md), and [PROVENANCE](PROVENANCE.md).
 The distributed design in [DISTRIBUTED_TWINS](DISTRIBUTED_TWINS.md) is proposed work;
 the Neo4j implementation does not currently merge remote graphs.
@@ -41,7 +41,8 @@ proof that every advertised field and query is implemented.
 | `HAS_CHILD`, `HAS_MEMBER` | Structural containment and cohort membership. |
 | `HAS_PROVENANCE`, `HAS_DATAFLOW`, `HAS_PLAN` | Entry points and links to computational history/plans. |
 | `CREATED`, `RESOLVED`, `BY_AGENT`, `TRIGGERED`, `CONTRIBUTED_TO` | Causal/provenance relationships. |
-| `AFFECTS`, `CONTEXTUALIZED_BY`, `CONTEXTUALIZED` | Influence and contextualization relationships. Direction matters to execution. |
+| `AFFECTS`, `CONTEXTUALIZED_BY` | Computational influence and observation-to-actuator implementation links. |
+| `INSTANTIATED`, `MEASURED`, `CLASSIFIED`, and other typed effects | Execution Activity to affected Observation; activity semantics determine the effect. |
 | `HAS_DATA`, `HAS_GEOMETRY` | Observation payload descriptors and extents. |
 | `HAS_OBSERVER`, `HAS_RELATIONSHIP_SOURCE`, `HAS_RELATIONSHIP_TARGET` | Observer and semantic relationship structure. |
 
@@ -49,6 +50,96 @@ A relation can carry properties such as sequence and geometry; it is not adequat
 for replication by endpoint IDs and type alone. Several links between the same nodes can carry
 different computational meanings or geometry. Define a durable edge identity before supporting
 property updates and precise deletion in a remote view.
+
+## Contextualization activities and effects
+
+Activities distinguish orchestration from execution. SUBMISSION and RESOLUTION describe lifecycle
+coordination; execution uses the actual contextualization type. Its effect is directed from the
+Activity to the affected Observation, even when that observation's own semantics describe a
+substantial and the operation is classification. There is no generic CONTEXTUALIZATION execution
+type or CONTEXTUALIZED effect.
+
+| Activity type | Activity → Observation effect |
+|---|---|
+| INSTANTIATION | INSTANTIATED |
+| ACKNOWLEDGEMENT | ACKNOWLEDGED |
+| DETECTION | DETECTED |
+| SIMULATION | SIMULATED |
+| MEASURE | MEASURED |
+| QUANTIFICATION | QUANTIFIED |
+| VALUATION | VALUED |
+| CATEGORIZATION | CATEGORIZED |
+| VERIFICATION | VERIFIED |
+| CLASSIFICATION | CLASSIFIED |
+| CHARACTERIZATION | CHARACTERIZED |
+| TRANSFORMATION | TRANSFORMED |
+| CONNECTION | CONNECTED |
+
+VOID is not executable work. The vocabulary records semantic distinctions; it does not establish
+executor support for every possible request. In particular, classification updates substantial
+members, whereas categorization supplies a quality value and transformation computes a quality.
+
+| Link | Direction and meaning |
+|---|---|
+| TRIGGERED | Parent Activity → child Activity; causal lifecycle nesting |
+| CREATED | Registration Activity → new Observation; creation, independently of explanation |
+| HAS_PLAN | Plan-owning Activity → root Actuator; chosen executable plan |
+| RESOLVED | Plan-owning Activity → root Observation, where the plan has one |
+| CONTEXTUALIZED_BY | Observation → Actuator implementing it, with support information |
+| Typed effect | Execution Activity → affected Observation |
+| HAS_CHILD / HAS_MEMBER | Parent/cohort → child/member; structure and membership |
+
+Instantiation's effect targets the collective being contextualized. Produced members have their
+own creation and acknowledgement activities. Classification and characterization instead target
+individual members; their operation directives have no Observation node. Their UPDATE actuators
+have independent node identities and no result observation or observation scheduler/storage slot.
+
+Typed effects participate in context visibility but do not confer deletion ownership. Classifying
+an independently owned member does not make it a disposable child of the classifier. Computational
+influence, causal nesting and structural ownership must remain separate traversal contracts.
+
+Resolution Activities carry a detached resolution FlowChart in `Metadata.IM_RESOLUTION_GRAPH`.
+Execution Activities carry their plan in `Metadata.IM_DATAFLOW_GRAPH` from creation through final
+status. Clients catalogue activities using type, identity and parent/triggering information;
+description is optional text, not a serialized Dataflow. See [FlowChart diagnostics](FLOWCHARTS.md).
+
+## Semantic attribution transactions
+
+Classification records knowledge about an existing identity. A pending attribution contains the
+member, its baseline observable, abstract predicate family, concrete result, support and event.
+Runtime validates the batch and builds detached replacements through the Reasoner, adding traits
+or roles while preserving IDs, URNs, geometry, parents, cohorts and unrelated predicates.
+Transaction views expose the replacements to characterization; committed objects retain their
+old semantics until durable success. This overlay is specific to semantic attribution, not general
+isolation of arbitrary object fields or database queries.
+
+Runtime characterizes each concrete attribution in the staged member's scope and awaits all child
+work before root commit. No explanatory model is a successful `NO_MODEL` outcome; it creates no
+CHARACTERIZED edge. Failed resolution or execution fails the root. An ActivityFinished for child
+work reports staged completion, not durable publication.
+
+At root commit, new observations are stored with final semantics. Existing members are locked in
+ID order and their stored semantics compared with the recorded baseline. Missing or stale targets
+fail the transaction. Semantic updates replace `observable`, `semantics` and `semantictype`
+together, preserving unrelated properties. Failures mark the database transaction before closure;
+no successful prefix of the attribution batch is committed.
+
+Each CLASSIFIED edge records `before` and `after` observable URNs, `abstractPredicate`, `predicate`,
+encoded `support`, event and member identity. The Activity also carries the portable attribution
+list under `Metadata.IM_ATTRIBUTIONS`. These records and the semantic replacements commit together.
+Actual successful characterization adds CHARACTERIZED to the same member. Existing same-family
+attributions and repeated staging of the same member are rejected; replacement/reclassification
+requires a separate policy.
+
+After commit, live member semantics are published, existing members appear in `Commit.modifiedAssets`,
+and new members appear in `addedObservations` with final semantics. A semantic cache generation
+invalidates graph/scope views; client commit ingestion invalidates stale assets and adjacency.
+Failed batches publish no replacement semantics or durable effect links. This contract does not
+promise rollback of unrelated filesystem writes or arbitrary pre-commit Java object mutations.
+
+The recorded plan is contextual work within an existing graph. Reproducing that graph from scratch
+requires collecting committed provenance, inputs and dependencies across resolutions; neither an
+Activity FlowChart nor the latest Dataflow alone supplies that [reproduction contract](DATAFLOW.md).
 
 ## Identity
 
@@ -269,13 +360,9 @@ and preserves composed result types. Unsupported requests fail explicitly.
 
 ### Query visibility follow-up
 
-The initial replacement compiler omitted `TRIGGERED` and `CONTEXTUALIZED` from context
-reachability. A child query returned no rows when a collective was reachable through a nested
-creation/contextualization activity. An embedded Neo4j test reproduced that failure; both edge
-types are now included. A read-only production-data check on collective observation 223
-confirmed the same path: the former filter returned zero children, while the corrected
-compiled query returned all 11 children (232 through 242). This verifies query selection,
-not the final GeoJSON serialization after restarting the runtime. Cross-context `AFFECTS` edges do not confer ownership. Negation also
+Context reachability includes `TRIGGERED` and the typed contextualization effects, so members
+reachable through nested execution remain visible. Effect traversal does not imply deletion
+ownership. Cross-context `AFFECTS` edges do not confer ownership. Negation also
 normalizes an absent-property comparison to false before complementing it, so missing fields
 do not incorrectly disappear from NOT results.
 
@@ -290,13 +377,12 @@ Propagate database failures, validate required row/update counts, and advertise 
 changes. Test a missing endpoint, an invalid query, an offline driver, and a failed update.
 The explicit transaction wrapper catches errors only if lower helpers actually throw them.
 
-### KG-6: close-on-success semantics can commit an application failure (high)
+### KG-6: failure must precede transaction closure
 
-`DigitalTwinImpl.commit` catches outside try-with-resources. If application logic throws while
-assembling the database transaction without marking it failed, `close` runs first and can
-commit partial work. Calling `fail` afterward cannot undo a committed transaction. Move failure
-signaling inside the resource lifetime or require explicit commit with rollback on close.
-Inject an application failure after a successful store and assert no partial graph survives.
+The root commit marks the graph transaction failed inside its resource lifetime when assembly or
+storage fails. This prevents close-on-success semantics from committing a partial semantic-update
+batch. Lower helpers must still propagate errors; a silently ignored mutation cannot be repaired
+by transaction orchestration alone. See KG-5 for the remaining general mutation concern.
 
 ### KG-7: interpolated relationship endpoints (fixed)
 
@@ -306,8 +392,9 @@ quote-bearing URNs. Caller values are never concatenated into Cypher source.
 ### KG-8: rollback and cache coherence are incomplete (high for retry/recovery)
 
 `setId` mutates assets and rekeys storage before commit; failure cleanup does not undo those
-changes. `update` does not independently invalidate/replace the asset cache, so updates using
-a different object instance may leave cached values stale. Deletion/reset also need explicit
+changes. Generic updates must maintain asset-cache coherence. Semantic attribution uses dedicated
+baseline-checked updates and post-commit graph/scope invalidation; this does not by itself establish
+coherence for every other mutation path. Deletion/reset also need explicit
 cache invalidation. Test failed-store retries and update-through-a-copy followed by lookup.
 
 ### KG-9: incomplete link adaptation and lifecycle (medium)
@@ -320,7 +407,7 @@ shutdown; test disconnect/reconnect and root/agent traversal.
 
 ## Implementation and test checklist
 
-Verify the KG-1 correction and fix KG-2, KG-3, KG-5, and KG-6 before broadening graph federation. Preserve explicit failures when building a federated planner. Add source-qualified identity and durable
+Verify the KG-1 correction and address KG-2, KG-3, and KG-5 before broadening graph federation. Preserve explicit failures when building a federated planner. Add source-qualified identity and durable
 revision/change records through a versioned schema migration, not ad hoc extra cache keys.
 
 Relevant existing tests are `DigitalTwinCommitTest`, `ClientKnowledgeGraphTest`, and the file

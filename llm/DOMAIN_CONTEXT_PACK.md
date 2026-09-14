@@ -469,7 +469,19 @@ Collectivity selects member acquisition, not predicate abstractness. Classificat
 existing/new members' semantics without creating a classification-result observation or changing
 their identity/cohort. Runtime then attempts concrete characterization per member; no explanatory
 model is a valid outcome. Member resolution is part of the Tier-0 classification strategy.
-The [classification runtime branch](../docs/CLASSIFICATION.md) is staged, not yet executable.
+Collective classification dependencies execute as semantic-update Dataflow nodes, followed by
+Runtime-owned individual characterization. Do not infer support for all collective/singular
+variants from the semantic taxonomy alone. See [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations).
+
+When analysing a domain, distinguish existence, attribution and explanation. An acknowledged
+substantial need not have an explanatory model. A classified substantial retains its identity,
+geometry and cohort membership while gaining a concrete trait or role; it is not a new observation
+of the predicate directive. Characterization explains that attribution inside the member. Missing
+explanation is a successful no-model outcome, whereas failed computation or inconsistent semantics
+is an error. The classifier's concrete result must strictly specialize the abstract predicate;
+semantic closure excludes all unsatisfiable classes, including named classes equivalent to OWL
+Nothing. Optional model dependencies can permit no attribution, but never an inconsistent one.
+These distinctions belong in the domain's conceptual design independently of model availability.
 The general type dispatch checks class, presence, physical intensive/extensive
 quality, value, generic quality, relationship, configuration, process, countable,
 and nothing, in that order; it is not a complete abstractness or consistency

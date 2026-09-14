@@ -263,6 +263,8 @@ public interface ServicesAPI {
     String CLOSURE = API_BASE + "/closure";
 
     String CORE_OBSERVABLE = API_BASE + "/coreObservable";
+    String BUILD_CONCEPT = API_BASE + "/buildConcept";
+    String BUILD_OBSERVABLE = API_BASE + "/buildObservable";
 
     String CORE_SUBSTANTIAL = API_BASE + "/coreSubstantial";
 

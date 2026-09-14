@@ -26,10 +26,22 @@ commonly adopted in day-to-day scientific practice;
 
 ## How provenance is collected and propagated
 
-In the current service architecture, Runtime records observation and activity relationships while
-resolving and contextualizing requests. A resolution's encoded dataflow is useful diagnostic
-metadata, but the current encoder does not yet produce a complete replay artifact. See
-[Resolution](RESOLUTION.md#103-reconstruction-export-and-external-execution) for the source trace.
+Runtime records both production of observations and changes to existing observations. Execution
+activities have contextualization-specific types and typed Activity-to-Observation effects;
+classification records CLASSIFIED with before/after semantics on the same member identity.
+Characterization records CHARACTERIZED only when work actually executes successfully. An explicit
+no-model resolution outcome records absence of explanation without inventing an execution effect.
+
+Parent-to-child TRIGGERED links record causal hierarchy. HAS_PLAN connects an activity to its
+actuator plan; CONTEXTUALIZED_BY connects an observation to its implementation. These links are
+not interchangeable with membership or deletion ownership. The [knowledge graph guide](KNOWLEDGE_GRAPH.md#contextualization-activities-and-effects)
+defines their exact directions and transactional semantics.
+
+A child activity may finish after staging its work. Only the enclosing root commit makes semantic
+updates and their effect links durable. Clients must consume commit changes rather than infer
+persistence from an intermediate completion message. Detached FlowCharts on resolution and
+execution activities document the accepted resolution graph and contextual plan, respectively;
+optional descriptions remain human-readable text. See [FlowCharts](FLOWCHARTS.md).
 
 The proposed [provenance-to-dataflow builder](OBSERVATION.md#72-provenance-to-dataflow-builder)
 selects a committed knowledge-graph snapshot, follows executable dependencies, assembles the

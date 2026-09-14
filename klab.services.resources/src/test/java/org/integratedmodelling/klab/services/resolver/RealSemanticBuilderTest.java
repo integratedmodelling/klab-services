@@ -19,6 +19,103 @@ import org.junit.jupiter.api.Test;
 
 /** Real portable-builder dispatch and semantic mutations; Resources and OWL storage are doubles. */
 class RealSemanticBuilderTest {
+  @Test
+  void transportedBuildersSupportClassificationAndCharacterization() throws Exception {
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    var scope = mock(ContextScope.class);
+    var resources = mock(ResourcesService.class);
+    var reasoner = mock(ReasonerService.class);
+    var owl = mock(OWL.class);
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(reasoner.owl()).thenReturn(owl);
+    when(reasoner.buildConcept(any(), eq(scope))).thenCallRealMethod();
+    when(reasoner.buildObservable(any(), eq(scope))).thenCallRealMethod();
+    var predicate = concept("test:Environment", SemanticType.PREDICATE,
+        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var member = concept("test:Region", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var memberSyntax = syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    memberSyntax.setCollective(true);
+    memberSyntax.resetDefinition();
+    var sourceSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE,
+        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    sourceSyntax.setInherent(memberSyntax);
+    sourceSyntax.resetDefinition();
+    var source = ObservableImpl.promote(concept(sourceSyntax.getUrn(), SemanticType.PREDICATE,
+        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT), scope);
+    when(resources.declareConcept(source.getUrn())).thenReturn(sourceSyntax);
+    when(reasoner.resolveConcept(predicate.getUrn())).thenReturn(predicate);
+    var strip = new ObservableBuildStrategy(source, scope);
+    strip.without(SemanticRole.INHERENT);
+    var wire = mapper.readValue(mapper.writeValueAsString(strip), ObservableBuildStrategy.class);
+    assertEquals(source.getUrn(), wire.getBaseObservable().getUrn());
+    assertEquals(predicate, reasoner.buildConcept(wire, scope));
+    assertNotNull(sourceSyntax.getInherent());
+
+    var concrete = concept("test:Forest", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    when(resources.declareConcept(concrete.getUrn())).thenReturn(
+        syntax(concrete.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    when(resources.declareConcept(member.getUrn())).thenReturn(
+        syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE));
+    when(reasoner.resolveConcept(concrete.getUrn())).thenReturn(concrete);
+    when(reasoner.resolveConcept(member.getUrn())).thenReturn(member);
+    when(owl.makeSubclass(eq(concrete), anyString())).thenAnswer(inv ->
+        concept(inv.getArgument(1), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    var characterize = new ObservableBuildStrategy(concrete, scope);
+    characterize.of(member);
+    wire = mapper.readValue(mapper.writeValueAsString(characterize), ObservableBuildStrategy.class);
+    var result = reasoner.buildObservable(wire, scope);
+    assertEquals("test:Forest of test:Region", result.getUrn());
+    assertEquals(Contextualization.CHARACTERIZATION, result.getContextualization());
+    var returned = mapper.readValue(mapper.writerFor(org.integratedmodelling.klab.api.knowledge.Observable.class)
+        .writeValueAsString(result), org.integratedmodelling.klab.api.knowledge.Observable.class);
+    assertEquals(result.getUrn(), returned.getUrn());
+  }
+
+  @Test
+  void collectiveInherentRestrictionComparesMemberTypes() {
+    var scope = mock(ContextScope.class);
+    var resources = mock(ResourcesService.class);
+    var reasoner = mock(ReasonerService.class);
+    var owl = mock(OWL.class);
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(reasoner.owl()).thenReturn(owl);
+    when(reasoner.buildConcept(any(), eq(scope))).thenCallRealMethod();
+    var predicate = concept("earth:PhysicalEnvironment", SemanticType.PREDICATE,
+        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var member = concept("earth:Region", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var collective = member.collective();
+    var pSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE,
+        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var mSyntax = syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    mSyntax.setCollective(true);
+    mSyntax.resetDefinition();
+    when(resources.declareConcept(predicate.getUrn())).thenReturn(pSyntax);
+    when(resources.declareConcept(collective.getUrn())).thenReturn(mSyntax);
+    when(reasoner.resolveConcept(predicate.getUrn())).thenReturn(predicate);
+    when(reasoner.resolveConcept(member.getUrn())).thenReturn(member);
+    when(reasoner.resolveConcept(collective.getUrn())).thenReturn(collective);
+    when(owl.makeSubclass(eq(predicate), anyString())).thenAnswer(inv ->
+        concept(inv.getArgument(1), SemanticType.PREDICATE, SemanticType.ATTRIBUTE,
+            SemanticType.ABSTRACT));
+    when(reasoner.inherent(any())).thenReturn(collective);
+    when(reasoner.is(any(), any())).thenAnswer(inv -> {
+      Concept left = inv.getArgument(0);
+      Concept right = inv.getArgument(1);
+      return left.isCollective() == right.isCollective() && left.equals(right);
+    });
+    var result = new ObservableBuildStrategy(predicate, scope).of(collective).buildConcept();
+    assertFalse(result.is(SemanticType.NOTHING), result.getNotifications().toString());
+    verify(reasoner).is(member, member);
+
+    // A genuinely incompatible member restriction must still be rejected.
+    when(reasoner.inherent(any())).thenReturn(
+        concept("earth:Unrelated", SemanticType.SUBJECT, SemanticType.COUNTABLE).collective());
+    assertTrue(new ObservableBuildStrategy(predicate, scope).of(collective).buildConcept()
+        .is(SemanticType.NOTHING));
+  }
+
   static KimConceptImpl syntax(String name, SemanticType... types) {
     var ret = new KimConceptImpl();
     ret.setName(name);

@@ -50,6 +50,7 @@ class MemberClassifierExecutorTest {
     Fixture() {
       var builder = mock(Observable.Builder.class);
       when(observable.builder(scope)).thenReturn(builder);
+      when(observable.builder(memberScope)).thenReturn(builder);
       when(builder.without(SemanticRole.INHERENT)).thenReturn(builder);
       when(builder.buildConcept()).thenReturn(predicate);
       when(observable.getContextualization()).thenReturn(Contextualization.CLASSIFICATION);
@@ -84,6 +85,7 @@ class MemberClassifierExecutorTest {
     var f = new Fixture(); var before = f.member.getObservable();
     var pending = f.run(f.executor()).getFirst();
     assertSame(f.observable, f.classifier.receivedObservable); assertSame(f.member, f.classifier.receivedMember);
+    assertSame(f.observable, f.actuator.getOperationObservable());
     assertSame(f.memberScope, f.classifier.receivedScope); assertSame(f.result, pending.predicate());
     assertSame(f.predicate, pending.abstractPredicate()); assertSame(before, pending.originalObservable());
     assertSame(before, f.member.getObservable()); assertEquals(42, f.member.getId());
@@ -167,9 +169,11 @@ class MemberClassifierExecutorTest {
       var method = loader.loadClass("org.integratedmodelling.generators.library.RandomContextualizers")
           .getMethod("generateConcept", Observable.class, ServiceCall.class, Scope.class);
       assertTrue(MemberClassifierExecutor.supports(method));
-      var f = new Fixture(); when(f.reasoner.closure(f.observable)).thenReturn(Set.of(f.result));
+      var f = new Fixture(); when(f.reasoner.closure(f.predicate)).thenReturn(Set.of(f.result));
       assertSame(f.result, f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)).getFirst().predicate());
-      when(f.reasoner.closure(f.observable)).thenReturn(Set.of());
+      verify(f.observable).builder(f.memberScope);
+      verify(f.reasoner, never()).closure(f.observable);
+      when(f.reasoner.closure(f.predicate)).thenReturn(Set.of());
       assertThrows(IllegalStateException.class, () -> f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)));
       f.optionalDependency();
       assertTrue(f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)).isEmpty());

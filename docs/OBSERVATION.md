@@ -9,9 +9,9 @@ transport, transactions, and existing tests.
 ## Classification and characterization branch
 
 The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update
-contract, source audit, implemented C0–C2 foundation, planning and invocation changes, and C3–C5 continuation
-prompts. Classification and individual characterization compile into portable update plans, but execution is explicitly
-gated until the Runtime can operate on members without registering a result observation.
+contract, source audit, implemented classification and characterization lifecycle, and remaining acceptance
+prompts. Collective classification dependencies and runtime-owned individual characterization
+execute through portable update plans without registering directive observations.
 
 The existing resolution API returns a contextual **Dataflow** describing work within the current
 knowledge graph. All runtime mutations must result from executing such a resolved plan; new
@@ -594,7 +594,8 @@ quality-transformation example is consistent with this route; it was not execute
 The resulting Dataflow carries requirements and coverage to Runtime. Runtime compiles it into
 executors, commits resolution, schedules contextualization, and commits or fails submission.
 `submitContextualizationResult` resubmits instantiation outcomes in the collective's scope;
-classification and connection follow-up branches currently throw `KlabUnimplementedException`.
+classification executes through semantic-update nodes and Runtime-owned characterization;
+connection follow-up remains incomplete.
 Consequently, the semantic lifecycle in Section 1 is a contract with partially implemented paths.
 
 ## 3. Design requirements and decisions to review
@@ -1093,8 +1094,8 @@ Individual inherency uses the existing inherent observation/context; it must not
 new collection as a side effect. An abstract predicate requests concrete classification outcomes;
 each successful attribution triggers characterization through the semantic lifecycle. Preserve
 individual IDs and cohort rules. A concrete predicate requires characterization rather than an
-abstract-classification shortcut. Review the current enum's predicate dispatch limitations alongside
-these cases before implementing them.
+abstract-classification shortcut. The implemented collective-classification and individual-characterization
+paths follow these rules; additional distribution forms require explicit member-selection support.
 
 ### 6.3 Value operators, including `whose`
 
@@ -1200,7 +1201,7 @@ idempotent identities and invalidation rules rather than repeated untracked appe
 
 General process scheduling and configuration detection are governed by their semantic lifecycles;
 the strategy language must not override them with a generic “execute all children immediately.”
-Complete the classification/connection lifecycle gaps before claiming collective predicate and
+Respect the implemented classification/characterization lifecycle and complete connection gaps before claiming all collective predicate and
 relationship strategies work end to end.
 
 ### 7.1 Observation language as planning and execution source
@@ -1747,7 +1748,7 @@ and executable-result evidence and revise the example to actual accepted syntax.
 ### S6 — Complete substantial predicate and lifecycle behavior
 
 Implement collective and individual inherency, classification/characterization signatures, and
-Runtime's missing classification and connection follow-ups. Preserve cohort and identity contracts.
+Runtime's classification/characterization lifecycle and remaining connection follow-ups. Preserve cohort and identity contracts.
 Keep mandatory follow-ups distinct from authored continuations and ensure parent completion waits
 for required children.
 
@@ -1897,57 +1898,20 @@ documentation-only stage. Existing query/concurrency tests described in RESOLUTI
 starting fixtures; they do not establish the proposed composition contracts.
 
 
-### C1 semantic-update planning boundary
+## Semantic-update strategy execution
 
-The Resolver now compiles classification dependencies into portable `UPDATE` actuators with explicit
-operation semantics, requested support and typed cohort-member bindings. The directive itself is
-never registered as an observation. Individual characterization binds its existing context observation.
-All of this uses the existing resolution API returning Dataflow; no mutation endpoint was added.
-C3 now executes collective classification dependencies through staged atomic attributions; unsupported
-semantic-update kinds remain rejected before allocation. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
-for fields, tested boundaries and the next implementation prompt. These contextual plans remain
-distinct from provenance-extracted graph-reproduction documents.
+The [resolution contract](RESOLUTION.md#17-semantic-update-contextualizations) describes portable
+UPDATE nodes, typed member bindings, full-observable invocation, validation and runtime-owned
+characterization. The [knowledge graph contract](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions)
+defines staging, atomic commit, typed effects and client invalidation.
 
+The Tier-0 collective classification strategy resolves the member graph before selecting and
+executing the classifier. A graph binding is an explicit prerequisite, not an observation of the
+directive or a scalar functor argument. Classification and characterization directives never become
+result observations. Strategies choose explanations; Runtime owns the acknowledgement and
+characterization lifecycle and waits for its completion. Error-free absence of an acknowledgement
+explanation, and successful discovery with no characterization model, are explicit non-empty
+`NO_MODEL` Dataflows. Actual failures remain failures.
 
-### C2 member invocation and optional results
-
-C2 provides a typed local classifier executor that returns pending attributions without mutation.
-Only an optional original model dependency, preserved in the portable actuator, permits a null
-classifier result. NOTHING remains an inconsistency error. The real generator signature is supported
-with the operation Observable and a member-contextualized Scope. C3 consumes these results in the
-root transaction; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
-
-
-### Resolution graph diagnostics
-
-The accepted graph, including semantic-update operation nodes and member bindings, is now adapted
-to a portable FlowChart attached to the returned Dataflow and the completed resolution Activity.
-See [the diagnostic contract](FLOWCHARTS.md#resolution-diagnostics). This provides client-visible
-planning structure without exposing Resolver graphs.
-
-
-### Contextualization plan and outcome
-
-The old textual Dataflow metadata is no longer added to resolution Activities. Contextualization
-Activities carry a separate FlowChart under `Metadata.IM_DATAFLOW_GRAPH`, attached at creation
-before ActivityStarted and preserved through ActivityFinished on success or failure. The chart
-shows the received plan and identifies the active actuator. See [plan diagnostics](FLOWCHARTS.md#contextualization-plan-diagnostics)
-for argument projection and restored-leaf limits. The resolution graph and execution plan remain
-separate diagrams; neither is a provenance-derived reproduction dataflow.
-
-
-### C3 atomic classification effects
-
-Collective classifier dependencies now execute their member prerequisites and stage detached semantic
-replacements. Existing observations appear in the root commit's modified assets; newly instantiated
-members are stored with final semantics. CLASSIFIED edges record before/after observables, predicate
-family/result and support/event. Failed batches or stale persisted baselines roll back together;
-classification directives never become observations. Graph/scope caches and client commit ingestion
-invalidate old member representations. See [C3](CLASSIFICATION.md#c3--atomic-semantic-updates-and-provenance)
-for execution boundaries and validation. C4 now resolves each concrete attribution in the staged
-member's own scope before classification can commit. An explicit Dataflow `NO_MODEL` outcome
-successfully ends the lifecycle without a CHARACTERIZED effect; actual characterization plans
-execute as UPDATE nodes and link their successful activities to the existing members. Failed
-resolution or execution propagates to the classification transaction. See
-[C4](CLASSIFICATION.md#c4--mandatory-characterization-scheduling-optional-explanation) for the typed
-executor contract and validation boundaries. Live staging remains C5.
+[FlowChart metadata](FLOWCHARTS.md) exposes the accepted resolution graph and execution plan to
+clients while retaining their distinct meanings. Neither diagram is a graph-reproduction document.

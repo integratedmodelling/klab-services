@@ -445,7 +445,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         var metadataChanges =
             asset != null
                 && asset instanceof NavigableKlabDocument document
-                && document.mergeMetadata(change.getMetadata(), change.getNotifications());
+                && document.mergeMetadata(change.getMetadata(), java.util.List.of());
         if (physicalChanges || metadataChanges) {
           changedAssets.add(asset);
           asset

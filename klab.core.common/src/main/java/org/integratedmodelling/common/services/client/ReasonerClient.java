@@ -702,14 +702,14 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
-    throw new KlabUnimplementedException(
-        "Observable build strategies are not exposed by the remote reasoner controller");
+    return client.withScope(scope).post(
+        ServicesAPI.REASONER.BUILD_CONCEPT, builder, Concept.class);
   }
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-    throw new KlabUnimplementedException(
-        "Observable build strategies are not exposed by the remote reasoner controller");
+    return client.withScope(scope).post(
+        ServicesAPI.REASONER.BUILD_OBSERVABLE, builder, Observable.class);
   }
 
   @Override

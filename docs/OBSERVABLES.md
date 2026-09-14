@@ -29,7 +29,7 @@ sublanguage through which the other three refer to the same meaning.
 - An **observable** is a logical specification of something that could be
   observed.
 - An **observation** is its contextualized realization in a digital twin.
-- A **model** is one possible strategy for producing an observation.
+- A **model** provides a method for a contextualization, including operations on existing observations.
 
 ```observable
 probability of hydrology:FloodEvent during calendar:Year;
@@ -37,8 +37,7 @@ probability of hydrology:FloodEvent during calendar:Year;
 
 This expression does not identify a raster or endpoint. It asks for a meaning.
 In a context scope, the Reasoner interprets it, the Resolver finds compatible
-strategies, Resources supplies applicable assets, and Runtime produces or
-retrieves an observation. Different contexts may lead to different dataflows
+strategies, Resources supplies applicable assets, and Runtime produces, retrieves or updates observations. Different contexts may lead to different dataflows
 without changing the query.
 
 Observable expressions are consequently the primary semantic catalogue key. A
@@ -132,8 +131,37 @@ and a substantial bearer gives `CLASSIFICATION` for an abstract predicate or
 not whether a concrete predicate becomes a classifier. Classification preserves observation
 identity and cohort membership; it changes semantics, then Runtime schedules characterization
 inside each member. Missing characterization models do not invalidate classification.
-The member-resolving classifier strategy is Tier 0. Runtime execution remains staged; see
-[the implementation guide](CLASSIFICATION.md). An enum value is not proof of executable support.
+The member-resolving classifier strategy is Tier 0. Collective classification dependencies execute
+through resolved Dataflow operations; runtime-owned individual characterization uses the same
+resolution contract. Other forms, including singular-inherent classification and collective
+characterization distribution, still require executor support. An enum value alone does not
+establish executable support.
+
+### 1.4 Existence, attribution and explanation
+
+A substantial can exist without an explanatory model. Instantiation resolves each new member,
+but an error-free absence of an explanation is successful acknowledgement, represented by a
+non-empty, computation-free Dataflow with outcome `NO_MODEL`. It is not failed observation.
+Likewise, classification remains valid when discovery finds no model explaining the newly
+attributed concrete predicate. Errors in resolution or in an explanation that actually runs
+remain failures.
+
+For example, abstract `earth:PhysicalEnvironment of each earth:Region` first obtains Region
+members and determines a concrete environment predicate for each. A result such as
+`earth:Freshwater` enriches the same Region's semantics; it preserves identity, geometry and cohort
+membership. Runtime then requests `earth:Freshwater of earth:Region` within that member. A
+`type of` quality instead stores a concept as a value: it does not make this semantic attribution.
+
+A classifier result must be a consistent concrete strict specialization of its abstract predicate.
+The predicate itself, an abstract descendant, and any unsatisfiable concept are invalid results.
+The classifier receives the full observable and chooses the predicate projection needed to query
+its closure. A null result may leave a member unchanged only for an optional original model
+dependency with a resolved classifier; inconsistency never means optional absence.
+
+Attributions and their explanations share the enclosing transaction. Semantics and typed
+provenance become durable together; a later failure cannot leave only part of the classification
+batch applied. See [resolution workflows](RESOLUTION.md#17-semantic-update-contextualizations) and
+[semantic attribution transactions](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions).
 
 ## 2. Concepts and predicates
 

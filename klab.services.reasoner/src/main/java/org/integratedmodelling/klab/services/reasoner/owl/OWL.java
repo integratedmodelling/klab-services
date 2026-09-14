@@ -1644,7 +1644,12 @@ public class OWL {
   }
 
   synchronized OWLClass getOWLClass(Concept concept) {
-    return owlClasses.get(concept.getUrn());
+    var owlClass = owlClasses.get(concept.getUrn());
+    // Collectivity belongs to observation semantics, not OWL class identity.
+    // Atomic collective views are not separately registered in owlClasses.
+    return owlClass == null && concept.isCollective()
+        ? owlClasses.get(concept.singular().getUrn())
+        : owlClass;
   }
 
   /**
@@ -2708,13 +2713,18 @@ public class OWL {
 
     if (reasoner != null) {
       Set<Concept> ret = new HashSet<>();
-      for (OWLClass cls : getSubClasses(getOWLClass(main.asConcept()), false).getFlattened()) {
-        if (cls.isBottomEntity() || cls.isTopEntity()) {
-          continue;
-        }
-        Concept cc = getConceptFor(cls);
-        if (cc != null) {
-          ret.add(cc);
+      for (var node : getSubClasses(getOWLClass(main.asConcept()), false).getNodes()) {
+        // Every unsatisfiable named class is equivalent to owl:Nothing and is
+        // returned beneath every class. Exclude the whole node before flattening.
+        if (node.isBottomNode() || node.isTopNode()) continue;
+        for (OWLClass cls : node.getEntities()) {
+          if (cls.isBottomEntity() || cls.isTopEntity()) {
+            continue;
+          }
+          Concept cc = getConceptFor(cls);
+          if (cc != null) {
+            ret.add(cc);
+          }
         }
       }
       return ret;

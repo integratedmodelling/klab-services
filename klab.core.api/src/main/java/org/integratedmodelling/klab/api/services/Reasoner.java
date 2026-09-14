@@ -156,6 +156,8 @@ public interface Reasoner extends KlabService {
   /**
    * The closure is the inferred version of {@link #allChildren(Semantics)}, which only uses the
    * asserted hierarchy.
+   * Inferred results exclude the entire OWL bottom equivalence node: unsatisfiable named
+   * classes are not usable specializations, even though OWL places them below every class.
    *
    * @param target
    * @return

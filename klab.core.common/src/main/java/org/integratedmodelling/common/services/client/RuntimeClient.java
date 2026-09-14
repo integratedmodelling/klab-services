@@ -92,6 +92,10 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   private Observation synchronizeSubmission(Observation resolved, ContextScope scope) {
+    // Query responses and provisional observations have no persisted commit to ingest.
+    if (resolved == null || resolved.getId() <= 0) {
+      return resolved;
+    }
     /*
      * The HTTP completion and the ObservationSubmissionFinished event race each other. Ingest the
      * returned observation before exposing it to callers so its Commit is attached regardless of

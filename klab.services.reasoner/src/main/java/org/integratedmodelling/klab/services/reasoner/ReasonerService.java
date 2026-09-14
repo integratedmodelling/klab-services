@@ -720,9 +720,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var inherent = directInherent(semantics);
     if (inherent != null) {
       ret.addAll(
-          allParents(inherent).stream()
+          allParents(inherent.singular()).stream()
               .map(
-                  ctx -> SemanticsBuilder.create(base, this, serviceScope()).of(ctx).buildConcept())
+                  ctx -> SemanticsBuilder.create(base, this, serviceScope())
+                      .of(inherent.isCollective() ? ctx.collective() : ctx).buildConcept())
               .toList());
     }
 
@@ -881,6 +882,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directInherent(Semantics concept) {
+    var explicit = explicitInherent(concept);
+    if (explicit != null) return explicit;
     Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_INHERENT_TO_PROPERTY));
@@ -889,10 +892,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept inherent(Semantics concept) {
+    var explicit = explicitInherent(concept);
+    if (explicit != null) return explicit;
     Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_INHERENT_TO_PROPERTY));
     return cls.isEmpty() ? null : cls.iterator().next();
+  }
+
+  /** OWL restrictions retain the inherent class but cannot encode its k.LAB collective flag. */
+  private Concept explicitInherent(Semantics semantics) {
+    var definition = semantics.asConcept().getUrn();
+    if (Urn.isAtomicConcept(definition)) return null;
+    var syntax = serviceScope().getService(ResourcesService.class).declareConcept(definition);
+    if (syntax == null || syntax.getInherent() == null) return null;
+    return resolveConcept(syntax.getInherent().getUrn());
   }
 
   @Override

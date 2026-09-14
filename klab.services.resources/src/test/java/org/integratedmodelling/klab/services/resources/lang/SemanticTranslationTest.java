@@ -13,6 +13,28 @@ import org.junit.jupiter.api.Test;
 
 class SemanticTranslationTest {
   @Test
+  void observableUrnPreservesCollectiveRestrictionAndSuffix() {
+    for (boolean collective : List.of(false, true)) {
+      var predicate = leaf("Environment", SemanticSyntax.Type.ATTRIBUTE);
+      var member = leaf("Region", SemanticSyntax.Type.SUBJECT);
+      when(predicate.getRestrictions()).thenReturn(List.of(Tuples.create(
+          SemanticSyntax.BinaryOperator.OF, List.of(member), collective)));
+      // The installed language encoder loses the restriction's collective flag.
+      String encoded = "test:Environment of test:Region";
+      when(predicate.encode()).thenReturn(encoded);
+      var observable = mock(org.integratedmodelling.languages.api.ObservableSyntax.class);
+      when(observable.getSemantics()).thenReturn(predicate);
+      when(observable.encode()).thenReturn(encoded + " named environment");
+      when(observable.getStatedName()).thenReturn("environment");
+      var result = LanguageAdapter.INSTANCE.adaptObservable(
+          observable, "test", "project", KlabAsset.KnowledgeClass.NAMESPACE);
+      assertEquals("test:Environment of " + (collective ? "each " : "")
+          + "test:Region named environment", result.getUrn());
+      assertEquals(collective, result.getSemantics().getInherent().isCollective());
+    }
+  }
+
+  @Test
   void genericQualityUsesLocalDeclarationFlags() throws Exception {
     var parent = leaf("Quality", SemanticSyntax.Type.LENGTH);
     when(parent.getObservable()).thenReturn(new SemanticSyntax.ConceptData(

@@ -142,6 +142,51 @@ class NavigableBehaviorLifecycleTest {
     }
   }
 
+  @Test
+  void correctedRepositoryDocumentDoesNotReintroduceOldDescriptorErrors() {
+    var project = new ProjectImpl();
+    project.setUrn("test.project");
+    var workspace = new WorkspaceImpl();
+    workspace.setUrn("test.workspace");
+    workspace.getProjects().add(project);
+    var navigable = new TestWorkspace(workspace);
+    var broken = behavior("test.behavior", KActorsBehavior.Type.BEHAVIOR);
+    var error = org.integratedmodelling.klab.api.services.runtime.Notification.error("old error");
+    broken.getNotifications().add(error);
+    var document = (NavigableKActorsBehavior) navigable.add(broken);
+    var corrected = behavior("test.behavior", KActorsBehavior.Type.BEHAVIOR);
+    var service = (org.integratedmodelling.klab.api.services.ResourcesService)
+        java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {org.integratedmodelling.klab.api.services.ResourcesService.class},
+            (proxy, method, args) -> switch (method.getName()) {
+              case "serviceId" -> "resources";
+              case "retrieve" -> corrected;
+              default -> null;
+            });
+    var scope = (org.integratedmodelling.klab.api.scope.UserScope)
+        java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {org.integratedmodelling.klab.api.scope.UserScope.class},
+            (proxy, method, args) -> method.getName().equals("findService")
+                ? java.util.Optional.of(service) : null);
+    var changes = new ResourceSet();
+    var change = new ResourceSet.Resource();
+    change.setResourceUrn(corrected.getUrn());
+    change.setServiceId("resources");
+    change.setKnowledgeClass(KlabAsset.KnowledgeClass.BEHAVIOR);
+    change.getNotifications().add(error);
+    changes.getBehaviors().add(change);
+    var projectChange = new ResourceSet.Resource();
+    projectChange.setResourceUrn("test.project");
+    projectChange.setRepositoryState(new RepositoryState());
+    changes.getProjects().add(projectChange);
+    navigable.mergeChanges(changes, scope);
+    navigable.mergeChanges(changes, scope);
+    assertEquals(0, document.getNotifications().size());
+    assertEquals(0, corrected.getNotifications().size());
+    assertEquals(0, navigable.localMetadata().get(NavigableAsset.ERROR_NOTIFICATION_COUNT_KEY, 0));
+    assertEquals(RepositoryState.Status.CLEAN,
+        document.localMetadata().get(NavigableAsset.REPOSITORY_STATUS_KEY));
+  }
   private static void assertFolder(NavigableAsset added, Class<?> folderClass) {
     assertInstanceOf(NavigableKActorsBehavior.class, added);
     assertInstanceOf(folderClass, added.parent());

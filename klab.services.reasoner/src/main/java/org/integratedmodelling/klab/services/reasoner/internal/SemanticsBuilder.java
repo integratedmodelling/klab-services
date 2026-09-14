@@ -516,7 +516,9 @@ public class SemanticsBuilder implements Observable.Builder {
                   throw new KlabInternalErrorException("Unexpected modifier in semantic builder");
             };
 
-        if (inherited != null && !reasoner.is(modifying.singular(), inherited)) {
+        // Restrictions constrain the member type. Public semantic projections preserve
+        // collective inherence, so normalize both sides for this type comparison.
+        if (inherited != null && !reasoner.is(modifying.singular(), inherited.singular())) {
           ret.error(
               "cannot set concept "
                   + modifying.getUrn()

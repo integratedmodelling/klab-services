@@ -12,22 +12,10 @@ contextualization kinds extend Dataflow/Actuator contracts, not a separate mutat
 This differs from the **graph-reproduction dataflow** extracted from provenance to reconstruct
 contents from scratch. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
 
-The description reflects the source in this repository as inspected on 2026-07-30. Statements
-marked **implemented** describe code that runs now. Statements marked **incomplete** or **risk**
-describe code that exists but does not yet fulfill the apparent contract. “Should” is reserved for
-recommendations, not current behavior.
-
-The companion [Observation strategies](OBSERVATION.md) adds a source audit dated 2026-09-08
-covering grammar/adaptation, Reasoner matching and setup, and the proposed named-graph composition
-contract. Its language guide and accepted baseline supersede the historical audit where noted.
-The maintainer confirmed feature parity with the previous working version on 2026-09-09, including
-the dependent-context correction. It is the running design and implementation ledger for strategy changes. The revised
-syntax and initial strategy semantic beans/LanguageAdapter boundary are implemented and tested
-through interface-based JSON transport. The Reasoner now matches and lowers the initial tier-0
-producer subset; see OBSERVATION S3c for its supported patterns and explicit limitations. The
-[observable guide](OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type) defines the
-semantic contextualization activities that strategies serve. This document remains the broader
-Resolver/runtime trace; individual sections have been updated after the original inspection date.
+The companion [Observation strategies](OBSERVATION.md) defines strategy syntax, matching,
+setup and graph composition. [Observable expressions](OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type)
+defines the semantic activities that strategies serve. This guide describes their Resolver and
+Runtime contracts; explicitly identified limitations are not implied capabilities.
 
 ## 1. Executive summary
 
@@ -156,11 +144,12 @@ new ResolutionCompiler(service)
 
 If the returned graph is empty, the fallback is exact:
 
-- a non-collective observable with `SemanticType.SUBJECT` receives a non-empty, computation-free
-  `Dataflow.trivial(...)`, meaning its unexplained existence is accepted;
-- every other observable receives `Dataflow.empty(...)`, meaning mandatory resolution failed.
+- an error-free ACKNOWLEDGEMENT receives a non-empty, computation-free
+  Dataflow with `NO_MODEL`, meaning its unexplained existence is accepted;
+- characterization receives `NO_MODEL` only after successful discovery finds no model;
+- other unresolved mandatory requests receive `Dataflow.empty(...)`, meaning resolution failed.
 
-This check is narrower than `SemanticType.isSubstantial(...)`: it only tests `SUBJECT`.
+This is an acknowledgement lifecycle rule for substantials, not a SUBJECT-only exemption.
 
 Exceptions are not converted to resolver notifications here. They complete the future
 exceptionally. In the normal runtime path, `RuntimeService` catches that exceptional completion,
@@ -1246,63 +1235,105 @@ observation-language syntax and adaptation, runtime compiler, `Resource` persist
 provenance behavior, and failure rollback are all defined and tested.
 
 
-### Typed execution provenance
+## 17. Semantic-update contextualizations
 
-Execution activities now carry their actual contextualization type (for example MEASURE,
-INSTANTIATION or CLASSIFICATION). The corresponding effect runs **Activity → Observation**
-(MEASURED, INSTANTIATED, CLASSIFIED). CONTEXTUALIZED_BY remains **Observation → Actuator**;
-HAS_PLAN and RESOLVED identify the compiled plan and resolved target respectively. See the
-[complete link map](CLASSIFICATION.md#activity-types-and-exact-graph-links). Generic
-CONTEXTUALIZATION activities and CONTEXTUALIZED edges have been removed without legacy migration.
+An observation request can describe an operation on existing observations. For abstract predicate
+X and substantial Y, `X of each Y` requests classification of Y members; it does not request a new
+observation whose observable is the classification directive. Concrete `Z of Y` requests
+characterization within Y. Abstraction chooses the activity; collective inherence chooses member
+acquisition. Neither follows merely from an executor's Java return type.
 
+### Planning and member support
 
-### C1 semantic-update planning boundary
+The Tier-0 classifier strategy resolves `each Y`, then observes the classifier directive with
+that graph bound as its `members` input. Member acquisition is an intrinsic prerequisite, so this
+is a direct strategy even though it includes recursive resolution. The classifier model is selected
+in the requesting scope with its lexical/model constraints retained. Recursive member work must
+retain those constraints while focusing context on the appropriate observation.
 
-The Resolver now compiles classification dependencies into portable `UPDATE` actuators with explicit
-operation semantics, requested support and typed cohort-member bindings. The directive itself is
-never registered as an observation. Individual characterization binds its existing context observation.
-All of this uses the existing resolution API returning Dataflow; no mutation endpoint was added.
-C3 now executes collective classification dependencies through staged atomic attributions; unsupported
-semantic-update kinds remain rejected before allocation. See [CLASSIFICATION.md, C1](CLASSIFICATION.md#c1--resolve-operations-without-registering-result-observations)
-for fields, tested boundaries and the next implementation prompt. These contextual plans remain
-distinct from provenance-extracted graph-reproduction documents.
+The Resolver represents the directive as an operation target before observation allocation. It
+returns the existing portable Dataflow, with UPDATE actuators carrying `effect = SEMANTIC_UPDATE`,
+`operationObservable`, `contextualization`, `requestedSupport`, coverage and typed target bindings.
+The node has no result observation; its transient node identity distinguishes it from other UPDATE
+nodes. `COHORT_MEMBERS` bindings name prerequisite producers; `OBSERVATION` bindings identify the
+existing member for individual characterization. These are execution bindings, not scalar
+contextualizer arguments. Interface mappings in JacksonConfiguration preserve the plan across
+services without annotations or Jackson dependencies in semantic beans.
 
+Complete cached cohort support is reused. Partial support requires resolution of missing support;
+if subtraction cannot represent the remainder, planning conservatively resolves full support.
+Requested support, producer coverage and completed attribution are separate facts. Runtime awaits
+producer execution and each new substantial's acknowledgement, then enumerates durable and
+transaction-local members within the requested/producer support intersection. Bindings deduplicate
+members. A completed empty cohort succeeds; a missing prerequisite does not.
 
-### C2 member invocation and optional results
+### Semantic identity across service boundaries
 
-C2 provides a typed local classifier executor that returns pending attributions without mutation.
-Only an optional original model dependency, preserved in the portable actuator, permits a null
-classifier result. NOTHING remains an inconsistency error. The real generator signature is supported
-with the operation Observable and a member-contextualized Scope. C3 consumes these results in the
-root transaction; see [the C2 implementation contract](CLASSIFICATION.md#c2--invoke-and-validate-classifiers-per-member).
+Abstraction and collectivity are operational semantics, not display hints. Adapted observable URNs
+must agree with the semantic concept tree, including `each` inside an inherence restriction.
+Projecting the inherent of `X of each Y` must return `each Y`; silently returning singular Y changes
+instantiation into acknowledgement and changes which strategies match. Ontological ancestry can
+use Y's singular OWL class, but model-discovery reconstruction must preserve the requested arity.
 
+Concept and observable builders cross the Reasoner boundary as portable semantic operations.
+Removing inherence for validation or building concrete Z-of-Y for characterization must work with
+a remote Reasoner as well as a local instance. These operations construct semantics only; they do
+not mutate runtime observations. Scope, context focus and lexical resolution constraints remain
+part of the resolution request through recursive and remote calls.
 
-### Portable resolution graph on completed activities
+### Invocation, validation and follow-up
 
-Successful `DataflowCompiler.compile()` now adds a detached FlowChart of the accepted resolution
-graph under `Metadata.IM_RESOLUTION_GRAPH`. Dataflow exposes Metadata through its service interface.
-Runtime forwards that chart to its RESOLUTION Activity after local compilation and before commit,
-so the existing ActivityFinished message carries it to clients. The mutable transaction graph is
-no longer written under this key. See [Flow chart diagnostics](FLOWCHARTS.md#resolution-diagnostics)
-for node/edge semantics, transport details and the deferred ActivityCard/PNG integration.
+A classifier receives the full operation Observable unchanged, the member when requested by its
+signature, and a scope contextualized to that member. Component code chooses any semantic
+projection it needs: a classifier selecting descendants of X removes inherence itself before
+requesting X's closure. Runtime independently extracts X to validate the result. Semantic closure
+excludes the entire OWL bottom-equivalence node, including named unsatisfiable classes; filtering
+only literal `owl:Nothing` would admit invalid candidates.
 
+A result must be a satisfiable, concrete predicate strictly specializing X, not X itself or an
+equivalent concept. NOTHING is always an error. A null result is permitted only when the operation
+originates in a model dependency and that original dependency is optional, after a classifier has
+been found and linked. Optionality does not excuse invalid concepts or execution failures.
+Existing attributions in the same predicate family are rejected under the current reclassification
+policy. Valid results become pending attributions, then detached semantic replacements; they do
+not become new observations.
 
-### Contextualization plan and outcome
+Runtime resolves concrete `Z of singular Y` in the staged member's scope after attribution. It
+awaits this characterization before completing classification and the root transaction, without
+resubmitting the entire member or invoking classification again. Executor/lifecycle bookkeeping
+prevents repeated scheduler visits from repeating the same work for a root transaction, event and
+support. Successful discovery with no characterization model yields `NO_MODEL`; actual resolution
+or execution failure propagates and rolls back the enclosing semantic updates. No-model success
+creates no CHARACTERIZED effect. Successful executed characterization links to the existing member.
 
-The old textual Dataflow metadata is no longer added to resolution Activities. Contextualization
-Activities carry a separate FlowChart under `Metadata.IM_DATAFLOW_GRAPH`, attached at creation
-before ActivityStarted and preserved through ActivityFinished on success or failure. The chart
-shows the received plan and identifies the active actuator. See [plan diagnostics](FLOWCHARTS.md#contextualization-plan-diagnostics)
-for argument projection and restored-leaf limits. The resolution graph and execution plan remain
-separate diagrams; neither is a provenance-derived reproduction dataflow.
+The individual characterizer executor supports local public contextualizers returning `void` or
+primitive `boolean` (`false` fails), and dependency-only models. Remote/adaptor characterizers and
+other unsupported semantic-update forms fail explicitly. Collective classification dependencies
+and runtime-owned individual characterization do not imply support for arbitrary root directives,
+singular-inherent classification or collective characterization distribution.
 
+### Outcomes and durable effects
 
-### C3 atomic classification effects
+| Resolution outcome | Meaning | Execution convention |
+|---|---|---|
+| `RESOLVED` | A contextual plan was obtained | Execute the plan and its prerequisites |
+| `NO_MODEL` | Successful absence of executable explanation for an eligible lifecycle request | No effective actuators; `isEmpty()` is false |
+| `FAILED` | Resolution failed | `isEmpty()` marks failure; do not treat it as acknowledgement |
 
-Collective classifier dependencies now execute their member prerequisites and stage detached semantic
-replacements. Existing observations appear in the root commit's modified assets; newly instantiated
-members are stored with final semantics. CLASSIFIED edges record before/after observables, predicate
-family/result and support/event. Failed batches or stale persisted baselines roll back together;
-classification directives never become observations. Graph/scope caches and client commit ingestion
-invalidate old member representations. See [C3](CLASSIFICATION.md#c3--atomic-semantic-updates-and-provenance)
-for execution boundaries and validation. Mandatory characterization remains C4; live staging is C5.
+For ACKNOWLEDGEMENT, an error-free resolution with no significant explanation preserves a
+substantial's existence, including when no strategy applies. Characterization's no-model outcome
+requires successful model discovery with no candidate. Neither path suppresses service errors or
+failed contextualizers. Resolution completion is distinct from execution completion, and a child
+ActivityFinished is distinct from durable root commit.
+
+The [knowledge-graph contract](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions) defines atomic
+semantic updates, before/after provenance, commit propagation and cache invalidation. Execution
+activities carry their actual contextualization type and link to affected observations through
+its typed effect. [FlowCharts](FLOWCHARTS.md#resolution-diagnostics) carry the accepted resolution
+graph under `Metadata.IM_RESOLUTION_GRAPH` on the completed Resolution Activity. Execution
+activities carry the contextual plan under `Metadata.IM_DATAFLOW_GRAPH` from creation through
+completion, including failures. Descriptions are optional human-readable text, not serialized plans;
+clients use activity type, identity and triggering hierarchy for cataloguing.
+
+These diagrams audit contextual planning and execution. Neither is the separate
+[provenance-extracted graph-reproduction dataflow](DATAFLOW.md#two-distinct-dataflow-contracts).

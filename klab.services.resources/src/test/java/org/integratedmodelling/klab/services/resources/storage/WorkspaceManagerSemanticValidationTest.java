@@ -13,6 +13,20 @@ import org.junit.jupiter.api.Test;
 class WorkspaceManagerSemanticValidationTest {
 
   @Test
+  void outgoingValidationSnapshotClearsErrorsAfterCorrection() {
+    var descriptor = new org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource();
+    descriptor.getNotifications().add(
+        org.integratedmodelling.klab.api.services.runtime.Notification.error("old error"));
+    var corrected = new KimNamespaceImpl();
+    WorkspaceManager.refreshValidationSnapshot(descriptor, corrected);
+    assertTrue(descriptor.getNotifications().isEmpty());
+    var warning = org.integratedmodelling.klab.api.services.runtime.Notification.warning("new warning");
+    corrected.getNotifications().add(warning);
+    WorkspaceManager.refreshValidationSnapshot(descriptor, corrected);
+    WorkspaceManager.refreshValidationSnapshot(descriptor, corrected);
+    org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(warning), descriptor.getNotifications());
+  }
+  @Test
   void attachesDefaultValidationNotificationsBeforeReturningTheBean() throws Exception {
     var concept = new KimConceptImpl();
     concept.setName("test:Uncountable");

@@ -28,6 +28,26 @@ public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
+  @Operation(summary = "Build a concept", description = "Replay a portable semantic builder; creates no observations")
+  @PostMapping(ServicesAPI.REASONER.BUILD_CONCEPT)
+  public @ResponseBody Concept buildConcept(
+      @RequestBody ObservableBuildStrategy builder, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      return reasoner.klabService().buildConcept(builder, authorization.getScope());
+    }
+    throw new IllegalArgumentException("Semantic construction requires an authorized scope");
+  }
+
+  @Operation(summary = "Build an observable", description = "Replay a portable semantic builder; creates no observations")
+  @PostMapping(ServicesAPI.REASONER.BUILD_OBSERVABLE)
+  public @ResponseBody Observable buildObservable(
+      @RequestBody ObservableBuildStrategy builder, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      return reasoner.klabService().buildObservable(builder, authorization.getScope());
+    }
+    throw new IllegalArgumentException("Semantic construction requires an authorized scope");
+  }
+
   private static void requireArguments(
       Concept[] arguments, int minimum, int maximum, String operation) {
     if (arguments == null || arguments.length < minimum || arguments.length > maximum) {

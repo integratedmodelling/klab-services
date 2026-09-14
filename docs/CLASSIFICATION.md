@@ -1,7 +1,9 @@
 # Classification and characterization implementation
 
-Status: C0-C4 are implemented for collective classification dependencies, including runtime-owned individual characterization; C5 live acceptance remains. This is a
-continuation of [OBSERVATION.md](OBSERVATION.md), not a declaration that the staging example runs.
+Status: C0–C4 are implemented. The rebuilt stack completes C5's instantiation, substantial
+resolution and classification path. Live characterization with an explanatory model remains to
+be verified. This running implementation record continues [OBSERVATION.md](OBSERVATION.md);
+the main guides describe the accepted process contracts.
 
 ## Contract
 
@@ -295,6 +297,9 @@ exposes this stage for the runtime transaction integration. No endpoint was adde
 whole-plan execution path now consumes pending attributions through the C3 transaction stage.
 
 The method must return Concept and accept exactly one Observable and one Scope/ContextScope.
+The Observable argument is the full X-of-each-Y directive. A classifier that needs the predicate
+family extracts X itself; parameter binding does not rewrite the observable. Runtime still
+extracts X independently to validate returned attributions.
 It may additionally request one each of Observation, ServiceCall, Geometry and Scheduler.Event;
 unknown, duplicate or ambiguous parameters and non-Concept return types are rejected. An instance
 method requires a local receiver. The actual generator currently declares
@@ -346,9 +351,9 @@ mutation. Log: `target/c2-tests.log`. To repeat the actual-source test, set
 `-Dclassifier.generator.source=<path-to-RandomContextualizers.java>`; without it that one test skips.
 
 Select a classifier executor from the operation contextualization. Resolve the contextualizer's
-signature before execution: operation Observable, member Observation and member ContextScope.
+signature before execution: full operation Observable, member Observation and member ContextScope.
 Execute once per member per classified support/event, not once per grid cell or data shard. The
-operation observable stays X of Y while the Observation argument is the concrete member.
+actuator's operation observable stays X of Y and is passed unchanged alongside the concrete member.
 
 Require a concrete, consistent Concept Z of the appropriate predicate family and a strict semantic
 specialization of X (`is(Z, X)` plus exclusion of semantic equivalence with X). A null result is
@@ -527,6 +532,147 @@ no-model success outcome. Test per-member scopes, no duplicate lifecycle work, c
 and the distinction between missing explanation and failed execution.”
 
 ### C5 — Live staging acceptance
+
+The rebuilt stack completes the classification scenario: the explainer is resolved, substantials
+are instantiated/resolved and concrete predicates are attributed as expected. This establishes the
+main classification path. Characterization with an explanatory model remains to be verified; the
+scenario without such a model does not establish that path. The authoritative process contracts
+are maintained in RESOLUTION.md, OBSERVABLES.md and KNOWLEDGE_GRAPH.md; the investigation history
+below remains implementation evidence rather than the reader-facing specification.
+
+**2026-09-14 diagnostic checkpoint (C5 remains open).** Inspected the deployed
+`staging.vxii.test.classification` namespace in the Resources workspace: it contains the Tanzania
+explainer, a separate PhysicalEnvironment classifier, and an `each earth:Region` instantiator.
+Read-only calls to the live Reasoner confirmed concrete ACKNOWLEDGEMENT for Tanzania Region,
+abstract CLASSIFICATION for PhysicalEnvironment of each Region, and INSTANTIATION for each Region.
+The root observable selects `substantial.direct` in the live service.
+
+A live `directInherent` call on `earth:PhysicalEnvironment of each earth:Region` returned singular
+`earth:Region` (ACKNOWLEDGEMENT). This loses the collective required by the `classification.members`
+pattern, preventing its member-resolving plan from being selected. In the Resolver, a failed
+mandatory classification dependency discards its enclosing model's contribution; an empty final
+substantial plan can then be accepted through the acknowledgment fallback. Consequently, an empty
+final graph does not establish that the explainer model was never looked up.
+
+`ReasonerService.directInherent` and `inherent` now recover explicitly stated inherence from parsed
+semantic syntax, preserving `each`, before falling back to OWL restrictions. OWL class restrictions
+alone cannot preserve the collective modifier. The seven-module offline reactor passed 14 tests:
+explicit collective/singular projection, eight classification pipeline cases, and five observation
+pipeline cases (`target/c5-inherent-tests.log`). The pipeline cases use controlled model/coverage
+boundaries. No live observation was submitted by this diagnostic run, and the patched service was
+not restarted. Repeat the staging submission after rebuilding/restarting the Reasoner; classifier
+execution, member commits and no-model characterization still require live acceptance evidence.
+
+**Follow-up after rebuild, 2026-09-14 (C5 remains open).** Read the active twin's persisted
+`testregion` (observation 628, context `ESA_INSTITUTIONAL.3c5nr70hlk`). Resources logs confirm
+that its 10:26 submission found `staging.vxii.test.classification.tanzania-region-explainer`.
+Live Reasoner calls now preserve `each earth:Region` and select `classification.members` with
+the expected `cohort` binding. However, the returned classifier semantics have type `NOTHING`
+and report that `each earth:Region` is incompatible with inherited `each earth:Region`.
+
+`SemanticsBuilder` normalized only the proposed modifier to singular before checking subsumption.
+With collective inherence now preserved, the inherited side remained collective, so the comparison
+failed and invalidated the classifier concept. Modifier restriction validation now compares both
+singular member types; this does not change the collective inherence used by strategy matching.
+The real-builder regression covers acceptance of the collective restriction and rejection of an
+incompatible member type. The focused reactor passed projection, classification pipeline and
+real-builder tests (`target/c5-collective-validation-tests.log`). No live mutation or service restart
+was performed. Rebuild/restart the Reasoner and reload/revalidate the staging namespace so that
+cached invalid semantics and model validation do not survive into the acceptance run.
+
+**Second follow-up after rebuild, 2026-09-14 (C5 remains open).** In context
+`ESA_INSTITUTIONAL.3ckx2ufsxo`, the 10:46 submission again found the Tanzania explainer.
+Read-only live calls confirm that the intended classifier now has valid predicate semantics
+with no notifications and selects `classification.members`. Retrieving the actual explainer
+from Resources exposed a different loss: its dependency's `KimConcept` retains `of each
+earth:Region`, but the enclosing `KimObservable.urn` contains `of earth:Region`.
+`ResolverService.annotatedObservable` resolves that outer URN, so the corrected semantic tree
+never reaches strategy selection. A live strategy query using this transported singular URN
+returns zero strategies, reproducing the failure independently of model search or execution.
+
+The installed `SemanticSyntaxImpl.encode` ignores the collective flag stored on restriction
+tuples. `LanguageAdapter.adaptObservable` now obtains the semantic prefix from the adapted
+`KimConcept` and retains the original observable suffix (mediators, observer and name). This
+keeps the transport URN consistent with its tree without requiring a language-library rebuild.
+Regression coverage checks collective and singular restrictions and suffix preservation.
+All 16 focused semantic/observable translation and classification pipeline tests passed in
+the seven-module reactor (`target/c5-observable-urn-tests.log`); `git diff --check` passed.
+The upstream encoder should also retain restriction-level collective flags when revised.
+Rebuild/restart Resources and reload/revalidate the namespace; restart Resolver to discard
+previously compiled models. This diagnostic did not mutate the live twin or restart services.
+Successful live classifier execution and commits remain unverified.
+
+**Third live follow-up, 2026-09-14 (C5 remains open).** The 11:04 submission in context
+`ESA_INSTITUTIONAL.3cymfft0v4` finds both the Tanzania explainer and the Region instantiator.
+The instantiator's runtime resource check succeeds. Additional calls through the existing
+Resolver API produce a complete standalone member plan, but an empty classification plan;
+these diagnostic plans were not executed. A missing classifier query log is not proof that
+the Resolver never attempted that query: `ModelKbox.observableQuery` exits before logging
+when compatible semantic candidate discovery returns no IDs.
+
+Live `Reasoner.resolving` on the classifier's core concept throws in `OWL.getParents`, because
+`each earth:Region` has no separately registered OWL class. The collective semantic projection
+must use its singular member's OWL class. `OWL.getOWLClass` now falls back to that class for
+collective views. `ReasonerService.resolving` traverses singular inherent parents and reapplies
+collectivity when building generalized candidates, retaining the classifier's member-binding
+contract. Tests now use universal model coverage and actual builder geometry propagation,
+including the staging request's spatial/temporal grid, alongside real OWL parent traversal.
+
+The warning about ignoring observation `-1` comes from commit synchronization of a query
+response. It is incidental to this model-search failure. `RuntimeClient` now skips commit
+ingestion for nonpersisted responses while retaining synchronization for positive IDs.
+The seven-module reactor passed all 16 focused tests (15 Resources/Reasoner pipeline cases
+and one common-client synchronization test; `target/c5-owl-collective-tests.log`).
+Rebuild/restart Reasoner and the services using the updated common client. Live classification
+execution, attribution commits and characterization acceptance still need verification.
+
+**Remote semantic-builder follow-up, 2026-09-14 (C5 remains open).** The 11:33 live
+Resources logs confirm discovery of the explainer, instantiator and classifier model. The
+submission now reaches Runtime classifier compilation, which fails in
+`MemberClassifierExecutor` while removing inherence from the classification observable:
+`ReasonerClient.buildConcept` was an unimplemented remote method. Characterization's
+construction of `Z of Y` uses the equally unimplemented `buildObservable` method.
+
+The existing portable `ObservableBuildStrategy` can now be deserialized through a no-argument
+transport constructor; its scope remains transient and is supplied by the receiving service.
+The Reasoner exposes `POST /api/v1/buildConcept` and `POST /api/v1/buildObservable`, and its
+client forwards the builder under the caller's scope. Both routes replay the existing
+`ReasonerService` semantic builder. These are semantic-construction operations, not resolution
+or runtime-mutation endpoints: classification and characterization still run exclusively through
+the resolved contextual Dataflow. Concept/Observable interface transport uses the shared
+`JacksonConfiguration`, with no Jackson annotations or dependencies added to semantic beans.
+Regression coverage includes transported classification predicate extraction, characterization
+construction, and HTTP controller routing with the authorized scope and interface results.
+All four real-builder tests and the controller HTTP regression passed. The final eight-module
+reactor succeeded (`target/c5-builder-controller-tests.log`); the builder test results are in
+`target/c5-remote-builder-tests.log`. `git diff --check` passed.
+Rebuild/restart the Reasoner server and the Runtime using the updated common client before
+repeating live acceptance; no patched service was restarted by this diagnostic.
+
+**Classifier closure follow-up, 2026-09-14 (C5 remains open).** Live closure queries reproduce
+`physical:Dissipation` among descendants of both `earth:PhysicalEnvironment` and the restricted
+classification directive. A live satisfiability query reports Dissipation as unsatisfiable.
+OWL includes all unsatisfiable named classes in the bottom equivalence node beneath every class.
+`OWL.getSemanticClosure` flattened this node and excluded only the literal `owl:Nothing`, leaking
+its other members into all closures. It now excludes the entire bottom node before flattening,
+while retaining all members of valid equivalence nodes.
+
+The generator was querying the restricted X-of-each-Y closure instead of X's predicate family.
+The accepted invocation contract passes the full observable unchanged. Predicate extraction
+belongs to `klab.generators.random.categories`: it removes `SemanticRole.INHERENT` through the
+semantic builder before requesting closure. Runtime separately extracts X for result validation,
+without changing the contextualizer arguments. This supersedes the initial proposal to strip
+inherence during parameter binding. Live filtering of the predicate closure leaves
+11 satisfiable concrete environment predicates, including Terrestrial, Freshwater and Marine.
+This excludes inconsistent ontology concepts from candidates; it does not repair their axioms.
+Tests exercise bottom-node filtering, typed invocation and the actual generator source, including
+empty closure and invalid-return handling. All 11 Runtime tests and three OWL/documentation tests
+passed, with no skips (`target/c5-closure-tests.log`, `target/c5-closure-owl-tests.log`), and
+`git diff --check` passed. After moving predicate extraction into the generator, all 11 Runtime
+tests passed again, including compilation and invocation of the actual updated generator source
+(`target/c5-classifier-invocation-tests.log`). Rebuild/restart Reasoner and Runtime and rebuild
+the generators component for live acceptance; these changes have not been executed in the
+deployed stack.
 
 Run the corrected staging namespace with the installed worldview and generator. Verify the
 classifier model is selected, Regions are queried/instantiated as necessary, each result is a

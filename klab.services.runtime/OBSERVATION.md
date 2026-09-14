@@ -137,7 +137,7 @@ A non-terminal submission creates a transaction tree and three principal provena
 
 1. `SUBMISSION` owns the overall operation and the root transaction.
 2. `RESOLUTION` is a child activity used while obtaining and compiling the dataflow.
-3. Each executed observation creates a `CONTEXTUALIZATION` activity in another child scope.
+3. Each executed observation creates an activity of the actual contextualization type in another child scope.
 
 The submission transaction initially links the prospective observation at the scope insertion
 point and records `CREATED`, `HAS_CONTEXT`, and `HAS_OBSERVER` provenance as applicable. Resolution
@@ -267,7 +267,7 @@ For each event, the scheduler:
 3. Invokes the registered executor for the observation.
 4. Stops the branch if execution returns false or the observation contains error notifications.
 
-An `ExecutorImpl` creates a `CONTEXTUALIZATION` activity and runs its compiled contextual executors
+An `ExecutorImpl` creates an activity of the actual contextualization type and runs its compiled contextual executors
 in sequence. Quality executors create storage, then `AbstractExecutor` creates one output scanner
 per shard plus conformant read scanners for quality dependencies. Shard tasks may run concurrently.
 
@@ -319,7 +319,10 @@ the resolver deliberately does not construct partial-quality plans.
 
 ### Semantic post-processing and event scheduling
 
-- classification and connection contextualization currently throw `KlabUnimplementedException`;
+- collective classification dependencies execute through UPDATE nodes with atomic staged
+  attributions and runtime-owned individual characterization; see
+  [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations);
+- connection follow-up remains incomplete;
 - relationship source/target persistence and relationship-specific post-processing contain
   explicit TODOs;
 - scheduler `checkApplies()` currently accepts every event, while `handleEvent()` implements only
@@ -328,8 +331,9 @@ the resolver deliberately does not construct partial-quality plans.
 - failure cleanup for non-transactional storage is still a TODO.
 
 The desired temporal trigger semantics, restart replay policy, and domain behavior for
-classification, connection, and relationships are not specified by the observation-query
-contract. These limitations affect what "submission complete" means for classifications,
+connection and relationships are not specified by the observation-query
+contract. Classification completion awaits member work and characterization before root commit.
+The remaining limitations affect what "submission complete" means for
 relationships, reactive observations, and restart behavior.
 
 ## Completion contract

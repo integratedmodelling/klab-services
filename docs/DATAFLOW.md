@@ -31,6 +31,19 @@ Classification's Runtime-owned characterization resolves and executes member-bou
 before the root commit. A no-model Resolution Activity records the decision without a
 CHARACTERIZED effect; actual successful work records that effect on the existing member.
 
+Semantic-update actuators explicitly carry the operation observable, contextualization, support,
+and typed member bindings. Their node identity is independent of observation identity: there is
+no observation for the directive. Member producers are executable prerequisites, and existing-member
+bindings are references to targets. The portable interface contract preserves these distinctions
+across services. See [semantic-update planning](RESOLUTION.md#17-semantic-update-contextualizations).
+
+A reproduction document must account for semantic history as well as creation. CLASSIFIED effects
+record the member's before/after observables, predicate family/result and support/event. Replaying
+such an effect requires reconstructing the same prerequisite member and its earlier semantics;
+creating a new observation for the directive would change the recorded meaning. Only committed
+effects qualify for reproduction. This is an extraction requirement, not a claim that the current
+builder already reconstructs and executes these updates.
+
 A contextual Dataflow may legitimately reuse an existing observation. A reproduction export must
 include how to recreate it, package it as a submitted input, or declare how the prerequisite is
 obtained without relying on an observation already present in the destination graph. Extracting a

@@ -35,6 +35,12 @@ class ClassificationPipelineTest {
 
   @Test void cachedCohort() throws Exception { exercise(1, true); }
   @Test void newCohort() throws Exception { exercise(0, true); }
+  @Test void griddedCohort() throws Exception {
+    exercise(0, true, false, false, false,
+        Geometry.create("T1(1){tend=1420070400000,tstart=1388534400000,ttype=GRID,tunit=YEAR,tscope=1}"
+            + "S2(240,258){bbox=[33.796 35.98113986232176 -9.41 -7.077211516709439],proj=EPSG:4326,"
+            + "shape=EPSG:4326 000000000300000001000000054040E5E353F7CED9C022D1EB851EB8524040E5E353F7CED9C01C5810624DD2F24041F916872B020CC01C5810624DD2F24041F916872B020CC022D1EB851EB8524040E5E353F7CED9C022D1EB851EB852}"));
+  }
   @Test void partialCohortRequiresMissingSupport() throws Exception { exercise(.5, true); }
   @Test void incompleteCohortCannotClaimClassification() throws Exception { exercise(.5, false); }
   @Test void classificationDependencyNeverRegistersDirective() throws Exception { exercise(1, true, true); }
@@ -55,7 +61,11 @@ class ClassificationPipelineTest {
   }
 
   private void exercise(double fraction, boolean instantiatorAvailable, boolean nested, boolean characterization, boolean optional) throws Exception {
-    var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
+    exercise(fraction, instantiatorAvailable, nested, characterization, optional,
+        Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}"));
+  }
+
+  private void exercise(double fraction, boolean instantiatorAvailable, boolean nested, boolean characterization, boolean optional, Geometry geometry) throws Exception {
     var members = observable("each test:Region", SemanticType.SUBJECT, Contextualization.INSTANTIATION, true);
     var activity = characterization ? Contextualization.CHARACTERIZATION : Contextualization.CLASSIFICATION;
     var directive = observable(characterization ? "test:Forest of test:Region" : "test:Environment of each test:Region", SemanticType.ATTRIBUTE, activity, false);
@@ -73,7 +83,11 @@ class ClassificationPipelineTest {
       Observable target = inv.getArgument(0);
       assertNotEquals(directive.getUrn(), target.getUrn(), "Directive must never be registered");
       return new Observation.NaiveBuilder(target, scope) {
-        @Override public Observation register() { return observation(target, nextId.getAndDecrement(), geometry); }
+        @Override public Observation register() {
+          var result = (ObservationImpl) make();
+          result.setId(nextId.getAndDecrement());
+          return result;
+        }
       };
     });
     var reasoner = mock(Reasoner.class);
@@ -101,18 +115,18 @@ class ClassificationPipelineTest {
     var requirements = new ResourceSet(); requirements.setEmpty(false);
     when(runtime.resolveContextualizables(any(), any())).thenReturn(requirements);
     var model = mock(Model.class);
-    when(model.getCoverage()).thenReturn(geometry);
+    when(model.getCoverage()).thenReturn(Coverage.universal());
     when(model.getDependencies()).thenReturn(List.of());
     when(model.getAnnotations()).thenReturn(List.of());
     var computation = new ContextualizableImpl(); computation.setServiceCall(new ServiceCallImpl("test.classify"));
     when(model.getComputation()).thenReturn(List.of(computation));
     var instantiator = mock(Model.class);
-    when(instantiator.getCoverage()).thenReturn(geometry);
+    when(instantiator.getCoverage()).thenReturn(Coverage.universal());
     when(instantiator.getDependencies()).thenReturn(List.of());
     when(instantiator.getComputation()).thenReturn(List.of(computation));
     when(instantiator.getAnnotations()).thenReturn(List.of());
     var parentModel = mock(Model.class);
-    when(parentModel.getCoverage()).thenReturn(geometry);
+    when(parentModel.getCoverage()).thenReturn(Coverage.universal());
     when(parentModel.getDependencies()).thenReturn(List.of(directive));
     when(parentModel.getComputation()).thenReturn(List.of(computation));
     when(parentModel.getAnnotations()).thenReturn(List.of());

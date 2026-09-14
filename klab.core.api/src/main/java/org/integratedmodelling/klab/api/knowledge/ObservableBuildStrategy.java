@@ -280,6 +280,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
   private Object defaultValue;
   private List<Notification> notifications = new ArrayList<>();
 
+  /** Transport constructor. The receiving Reasoner supplies the execution scope. */
+  public ObservableBuildStrategy() {
+    this.scope = null;
+  }
+
   public ObservableBuildStrategy(Observable observable, Scope scope) {
     this.baseObservable = observable;
     this.scope = scope;
