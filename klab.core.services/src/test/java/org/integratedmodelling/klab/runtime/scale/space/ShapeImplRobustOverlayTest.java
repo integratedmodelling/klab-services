@@ -16,6 +16,17 @@ class ShapeImplRobustOverlayTest {
       "EPSG:4326 POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))";
 
   @Test
+  void emptyOverlaysRetainProjectedCoordinates() {
+    var left = ShapeImpl.create("EPSG:3857 POLYGON ((0 0, 100 0, 100 100, 0 100, 0 0))");
+    var right = ShapeImpl.create("EPSG:3857 POLYGON ((300 300, 400 300, 400 400, 300 400, 300 300))");
+    for (var result : java.util.List.of(left.intersection(right), left.difference(left))) {
+      org.junit.jupiter.api.Assertions.assertEquals(left.getProjection(), result.getProjection());
+      assertTrue(((ShapeImpl) result).getJTSGeometry().isEmpty());
+      assertNotNull(assertDoesNotThrow(() -> result.encode()));
+    }
+  }
+
+  @Test
   void fixInvalidRepairsSelfCrossingPolygon() {
     ShapeImpl invalid = ShapeImpl.create(BOWTIE);
 

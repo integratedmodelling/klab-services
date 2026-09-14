@@ -112,7 +112,20 @@ class MemberClassifierExecutorTest {
       assertThrows(IllegalStateException.class, () -> f.run(f.executor()), invalid);
     }
   }
-  @Test void refusesReclassificationAndPreservesOtherPredicates() throws Exception {
+  @Test void alreadyClassifiedTraitsAndRolesNeedNoInvocationOrPendingWork() throws Exception {
+    for (boolean role : List.of(false, true)) {
+      var f = new Fixture();
+      var before = f.member.getObservable();
+      if (role) when(f.reasoner.directRoles(before)).thenReturn(List.of(f.result));
+      else when(f.reasoner.directTraits(before)).thenReturn(List.of(f.result));
+      f.classifier.failAt = 1;
+      assertTrue(f.run(f.executor()).isEmpty());
+      assertEquals(0, f.classifier.calls.get());
+      assertSame(before, f.member.getObservable());
+    }
+  }
+
+  @Test void rejectsInvalidExistingAttributionAndPreservesOtherPredicates() throws Exception {
     var f = new Fixture(); var unrelated = mock(Concept.class);
     when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(unrelated));
     assertEquals(1, f.run(f.executor()).size());

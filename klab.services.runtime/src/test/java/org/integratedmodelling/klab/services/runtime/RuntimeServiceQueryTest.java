@@ -38,6 +38,41 @@ class RuntimeServiceQueryTest {
   }
 
   @Test
+  void disjointSpatialSupportCanBeCachedAndEncoded() {
+    var left = ShapeImpl.create("EPSG:4326 POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))");
+    var right = ShapeImpl.create("EPSG:4326 POLYGON ((3 3, 4 3, 4 4, 3 4, 3 3))");
+    var leftGeometry = Geometry.create(left.encode());
+    var rightGeometry = Geometry.create(right.encode());
+    var intersection = RuntimeService.intersection(leftGeometry, rightGeometry);
+    org.junit.jupiter.api.Assertions.assertNotNull(intersection.encode());
+    assertEquals(0.0, RuntimeService.coverage(leftGeometry, intersection));
+    org.junit.jupiter.api.Assertions.assertFalse(RuntimeService.hasMemberSupport(intersection));
+    org.junit.jupiter.api.Assertions.assertTrue(RuntimeService.hasMemberSupport(
+        RuntimeService.intersection(leftGeometry, leftGeometry)));
+    assertEquals(intersection.encode(), RuntimeService.intersection(leftGeometry, rightGeometry).encode());
+  }
+
+  @Test
+  void rootSubstantialResetsFocusButNestedMemberAndQualityKeepIt() {
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var reset = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var observable = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.knowledge.Observable.class);
+    var semantics = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.knowledge.Concept.class);
+    var observation = new ObservationImpl();
+    observation.setObservable(observable);
+    org.mockito.Mockito.when(observable.getSemantics()).thenReturn(semantics);
+    org.mockito.Mockito.when(semantics.getType()).thenReturn(java.util.EnumSet.of(SemanticType.SUBJECT));
+    org.mockito.Mockito.when(scope.getContextObservation()).thenReturn(new ObservationImpl());
+    org.mockito.Mockito.when(scope.within(null)).thenReturn(reset);
+    org.junit.jupiter.api.Assertions.assertSame(reset, RuntimeService.submissionScope(observation, scope));
+    org.mockito.Mockito.when(scope.getActivity()).thenReturn(org.mockito.Mockito.mock(org.integratedmodelling.klab.api.provenance.Activity.class));
+    org.junit.jupiter.api.Assertions.assertSame(scope, RuntimeService.submissionScope(observation, scope));
+    org.mockito.Mockito.when(scope.getActivity()).thenReturn(null);
+    org.mockito.Mockito.when(semantics.getType()).thenReturn(java.util.EnumSet.of(SemanticType.QUALITY));
+    org.junit.jupiter.api.Assertions.assertSame(scope, RuntimeService.submissionScope(observation, scope));
+  }
+
+  @Test
   void exactCoveragePreservesContributionsBelowResolverThreshold() {
     Geometry requested = Geometry.create("T0(1){tend=1000,tstart=0,ttype=PHYSICAL}");
     Geometry source = Geometry.create("T0(1){tend=5,tstart=0,ttype=PHYSICAL}");

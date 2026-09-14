@@ -170,6 +170,20 @@ public final class MemberClassifierExecutor {
   private Optional<PendingAttribution> invoke(
       Observation member, Geometry support, Scheduler.Event event, ContextScope scope)
       throws ReflectiveOperationException {
+    var existing = new ArrayList<Concept>(reasoner.directTraits(member.getObservable()));
+    existing.addAll(reasoner.directRoles(member.getObservable()));
+    boolean classified = false;
+    for (var attribution : existing) {
+      if (!reasoner.is(attribution, predicate)) continue;
+      if (!validSpecialization(attribution)) {
+        throw new IllegalArgumentException("Member has an invalid attribution in this predicate family");
+      }
+      classified = true;
+    }
+    // Existing knowledge satisfies the request, independently of how it was acquired. Do not
+    // invoke a classifier, stage another attribution or repeat characterization for this member.
+    if (classified) return Optional.empty();
+
     var memberScope = Objects.requireNonNull(scope.within(member), "Missing member context");
     var arguments = new ArrayList<Object>();
     for (var type : method.getParameterTypes()) {
@@ -190,24 +204,18 @@ public final class MemberClassifierExecutor {
       throw new IllegalArgumentException("Required classifier returned no concept");
     }
     // NOTHING is inconsistency, never absence, even for an optional dependency.
-    if (value.is(SemanticType.NOTHING)
-        || value.isAbstract()
-        || value.is(SemanticType.ABSTRACT)
-        || !value.is(SemanticType.PREDICATE)
-        || !reasoner.satisfiable(value)
-        || !reasoner.is(value, predicate)
-        || reasoner.is(predicate, value)
-        || Objects.equals(value.getUrn(), predicate.getUrn()))
+    if (!validSpecialization(value))
       throw new IllegalArgumentException(
           "Classifier result is not a consistent concrete strict specialization: " + value);
-    // Reject reclassification until C3 defines transactional replacement. Never drop unrelated
-    // predicates.
-    var existing = new ArrayList<Concept>(reasoner.directTraits(member.getObservable()));
-    existing.addAll(reasoner.directRoles(member.getObservable()));
-    if (existing.stream().anyMatch(c -> reasoner.is(c, predicate)))
-      throw new IllegalArgumentException(
-          "Member already has an attribution in this predicate family");
     return Optional.of(
         new PendingAttribution(member, member.getObservable(), predicate, value, support, event));
   }
+  private boolean validSpecialization(Concept value) {
+    return !value.is(SemanticType.NOTHING)
+        && !value.isAbstract() && !value.is(SemanticType.ABSTRACT)
+        && value.is(SemanticType.PREDICATE) && reasoner.satisfiable(value)
+        && reasoner.is(value, predicate) && !reasoner.is(predicate, value)
+        && !Objects.equals(value.getUrn(), predicate.getUrn());
+  }
+
 }

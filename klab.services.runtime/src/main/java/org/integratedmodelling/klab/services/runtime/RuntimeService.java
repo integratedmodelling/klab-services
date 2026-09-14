@@ -500,10 +500,24 @@ public class RuntimeService extends BaseService
       return CompletableFuture.completedFuture(query(submitted, scope));
     }
 
-    var submissionIdentity = submissionIdentity(submitted, scope);
+    var submissionScope = submissionScope(submitted, scope);
+    var submissionIdentity = submissionIdentity(submitted, submissionScope);
     return submissionIdentity == null
-        ? submitInternal(submitted, scope)
-        : coalesce(inFlightSubmissions, submissionIdentity, () -> submitInternal(submitted, scope));
+        ? submitInternal(submitted, submissionScope)
+        : coalesce(inFlightSubmissions, submissionIdentity,
+            () -> submitInternal(submitted, submissionScope));
+  }
+
+  static ContextScope submissionScope(Observation submitted, ContextScope scope) {
+    // Client focus is not the bearer of an independent root submission. Nested submissions
+    // retain their context for collective membership registration and lifecycle ownership.
+    if (scope instanceof ServiceContextScope serviceScope
+        && serviceScope.getActivity() == null
+        && scope.getContextObservation() != null
+        && SemanticType.isSubstantial(submitted.getObservable().getSemantics().getType())) {
+      return serviceScope.within(null);
+    }
+    return scope;
   }
 
   private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
@@ -980,13 +994,21 @@ public class RuntimeService extends BaseService
       }
     }
     var support = intersection(producer.getGeometry(), requested);
-    if (support == null || support.isEmpty()) throw new IllegalStateException("Missing member support");
+    if (!hasMemberSupport(support)) throw new IllegalStateException("Missing member support");
     var ret = new ArrayList<Observation>();
     for (var member : members.values()) {
       var overlap = intersection(member.getGeometry(), support);
-      if (overlap != null && !overlap.isEmpty() && overlap.size() > 0) ret.add(member);
+      if (hasMemberSupport(overlap)) ret.add(member);
     }
     return ret;
+  }
+
+  static boolean hasMemberSupport(Geometry geometry) {
+    if (geometry == null || geometry.isEmpty() || geometry.size() == 0) return false;
+    // Portable geometry cardinality does not describe emptiness of its encoded spatial shape.
+    var scale = GeometryRepository.INSTANCE.scale(geometry);
+    return scale != null && scale.size() > 0
+        && scale.getExtents().stream().noneMatch(Extent::isEmpty);
   }
 
   private Observation queryCollective(Observation query, ServiceContextScope scope) {

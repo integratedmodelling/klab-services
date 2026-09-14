@@ -22,6 +22,11 @@ Runtime contracts; explicitly identified limitations are not implied capabilitie
 Resolution is a planning phase between runtime observation registration and runtime
 contextualization:
 
+A root substantial submission clears inherited client observation focus before reuse lookup,
+registration, resolution and execution. The observer and resolution constraints remain in scope.
+Nested instantiated-member submissions retain their collective focus for membership registration;
+their independent resolution subsequently clears it. Quality submissions retain their bearer.
+
 Registered provisional observations are retrievable by their negative IDs within the owning root
 transaction, including callbacks from the Resolver that carry a context-observation header.
 Registration retains them in a temporary lookup registry, not the commit graph: unsuccessful
@@ -1294,8 +1299,10 @@ A result must be a satisfiable, concrete predicate strictly specializing X, not 
 equivalent concept. NOTHING is always an error. A null result is permitted only when the operation
 originates in a model dependency and that original dependency is optional, after a classifier has
 been found and linked. Optionality does not excuse invalid concepts or execution failures.
-Existing attributions in the same predicate family are rejected under the current reclassification
-policy. Valid results become pending attributions, then detached semantic replacements; they do
+A member already bearing a valid concrete strict specialization of X satisfies the request.
+Runtime skips classifier invocation and produces no pending attribution or repeated characterization
+for that member, regardless of how the predicate was acquired. Invalid same-family attributions
+remain errors; this reuse does not authorize replacement of an existing classification. Valid results become pending attributions, then detached semantic replacements; they do
 not become new observations.
 
 Runtime resolves concrete `Z of singular Y` in the staged member's scope after attribution. It

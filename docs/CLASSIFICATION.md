@@ -333,9 +333,9 @@ baselines under member locks to coordinate competing transactions. A batch publi
 PendingAttribution records carry the member, original observable, abstract/concrete predicates,
 support and event; no observable, storage, ID, graph or provenance is changed.
 
-C2 rejects any result for a member already bearing an X-family trait or role, including an identical
-attribution. It does not silently replace or accumulate classifications. C3 retains this conservative
-policy; it also rejects a second staged classification of the same member in one root attempt.
+Members already bearing valid concrete X-family traits or roles are recognized before invocation
+and skipped as satisfied. Invalid same-family attributions remain errors. No predicate is replaced
+or accumulated by this reuse; a second staged classification in one root attempt remains rejected.
 Unrelated predicates and roles remain untouched.
 
 C2 validation: the eight-module offline Maven reactor passed 25 tests, with none skipped:
@@ -425,10 +425,12 @@ A successful child activity means its batch was **staged**. The enclosing root c
 whether those changes became durable; a later failure leaves no durable attribution/effect edge.
 Client consumers must not treat intermediate ActivityFinished as a commit notification.
 
-Reclassification remains conservative: an existing X-family attribution is rejected, including an
-identical result; concurrent or repeated staging of the same member is also rejected. Replacing or
-combining classifications requires a separate policy change. C4 uses the staged member views
-when adding characterization before the root commit.
+A valid concrete strict specialization of X already present as a direct trait or role satisfies
+classification, whether asserted originally or obtained by another classifier. The executor checks
+this before invocation and yields no pending attribution, update/effect edge or characterization
+for that member. Invalid same-family attributions remain errors. Explicit replacement/combination
+and concurrent repeated staging remain unsupported; reusing existing knowledge does not authorize
+reclassification. Characterization of newly staged attributions still precedes root commit.
 
 Represent pending attributions with member identity, old/new observable, abstract predicate,
 concrete result, coverage/event and activity. Construct new observables with the Reasoner builder;
@@ -696,3 +698,17 @@ completed RESOLUTION Activity. Operation nodes expose contextualization and opti
 status; links expose member bindings and coverage. C3 additionally records per-member attribution
 audit data and typed effects during execution. See [resolution diagnostics](FLOWCHARTS.md#resolution-diagnostics) for the
 transport contract, validation and deferred ActivityCard rendering.
+
+### Empty spatial support and inherited client focus
+
+Disjoint member/request support is a valid empty intersection. Empty overlay results retain the
+operand projection so scale encoding and geometry-cache keys can represent them. Root substantial
+submissions clear inherited client observation focus before lookup, registration and execution;
+nested members retain their collective registration scope. Tests cover disjoint cached support,
+projected empty intersections/differences, and root versus nested/dependent submission scopes.
+Live acceptance of this correction remains to be confirmed after rebuilding.
+
+Member selection inspects the decoded extents of intersected support. A portable Geometry's
+non-empty flag and positive cardinality alone do not imply a non-empty encoded spatial shape.
+Disjoint cohort members must be excluded before classifier invocation, independently of any
+existing predicate they bear. Reclassification policy is not a substitute for support filtering.

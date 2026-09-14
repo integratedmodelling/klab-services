@@ -127,9 +127,9 @@ no successful prefix of the attribution batch is committed.
 Each CLASSIFIED edge records `before` and `after` observable URNs, `abstractPredicate`, `predicate`,
 encoded `support`, event and member identity. The Activity also carries the portable attribution
 list under `Metadata.IM_ATTRIBUTIONS`. These records and the semantic replacements commit together.
-Actual successful characterization adds CHARACTERIZED to the same member. Existing same-family
-attributions and repeated staging of the same member are rejected; replacement/reclassification
-requires a separate policy.
+Actual successful characterization adds CHARACTERIZED to the same member. Valid existing same-family
+attributions satisfy classification without another invocation, update or effect edge. Invalid
+attributions and repeated staging remain errors; replacing an attribution requires a separate policy.
 
 After commit, live member semantics are published, existing members appear in `Commit.modifiedAssets`,
 and new members appear in `addedObservations` with final semantics. A semantic cache generation

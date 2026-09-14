@@ -338,20 +338,26 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     return envelope;
   }
 
+  private Shape emptyInProjection(Shape other) {
+    // Empty overlay results still need their CRS for scale encoding and cache keys.
+    var resultProjection = projection != null ? projection : other == null ? null : other.getProjection();
+    return resultProjection == null ? empty() : create(makeValid(null), resultProjection);
+  }
+
   @Override
   public Shape intersection(Shape other) {
     if (hasNoGeometry() || shapeIsActuallyEmpty(other)) {
-      return empty();
+      return emptyInProjection(other);
     }
     ShapeImpl otherShape = shapeInThisProjection(other);
     if (otherShape == null || otherShape.hasNoGeometry()) {
-      return empty();
+      return emptyInProjection(other);
     }
     Geometry thisGeometry = fix(geometry);
     Geometry otherGeometry = fix(otherShape.geometry);
     boolean trustPredicates = geometry.isValid() && otherShape.geometry.isValid();
     if (trustPredicates && !preparedIntersects(otherGeometry)) {
-      return empty();
+      return emptyInProjection(other);
     }
     if (trustPredicates && preparedContains(otherGeometry)) {
       return create(otherGeometry, projection);
@@ -1017,7 +1023,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
       return this;
     }
     if (trustPredicates && otherShape.preparedContains(thisGeometry)) {
-      return empty();
+      return emptyInProjection(shape);
     }
     return create(overlay(thisGeometry, otherGeometry, OverlayOperation.DIFFERENCE), projection);
   }
