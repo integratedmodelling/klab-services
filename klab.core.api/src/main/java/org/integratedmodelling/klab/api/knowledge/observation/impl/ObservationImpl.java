@@ -374,8 +374,19 @@ public class ObservationImpl implements Observation, Cloneable {
       int currentPriority = annotationPriorities.getOrDefault(annotation.getName(),
           annotations.stream().anyMatch(a -> Objects.equals(a.getName(), annotation.getName()))
               ? DEFINITION_ANNOTATIONS : -1).intValue();
-      if (priority >= currentPriority) {
-        annotations = AnnotationCollector.merge(annotations, List.of(annotation));
+      var current = annotations.stream()
+          .filter(a -> Objects.equals(a.getName(), annotation.getName())).findFirst().orElse(null);
+      boolean replace = priority >= currentPriority;
+      if (priority < DEFINITION_ANNOTATIONS && currentPriority < DEFINITION_ANNOTATIONS
+          && AnnotationCollector.overrides(current) != AnnotationCollector.overrides(annotation)) {
+        replace = AnnotationCollector.overrides(annotation);
+      }
+      if (replace) {
+        // Priority has already selected the winner, including explicit definitions.
+        var updated = new ArrayList<>(annotations);
+        updated.removeIf(a -> Objects.equals(a.getName(), annotation.getName()));
+        updated.add(new org.integratedmodelling.klab.api.lang.AnnotationImpl(annotation));
+        annotations = updated;
         annotationPriorities.put(annotation.getName(), priority);
       }
     }

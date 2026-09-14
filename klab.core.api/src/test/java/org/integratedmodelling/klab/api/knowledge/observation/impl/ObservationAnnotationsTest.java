@@ -16,6 +16,49 @@ import org.junit.jupiter.api.Test;
 class ObservationAnnotationsTest {
 
   @Test
+  void overridingPredicateSurvivesSyntaxAndLateContributorsAcrossTransport() {
+    var main = syntax("one:Main", 20);
+    var predicate = syntax("two:Trait", 10);
+    predicate.getAnnotations().add(Annotation.of("style", "value", "predicate", "override", true));
+    main.getTraits().add(predicate);
+    var concepts = Map.of("one:Main", concept("main"), "two:Trait", concept("trait"));
+    var collected = AnnotationCollector.collect(main, concepts::get);
+    assertEquals("predicate", collected.getFirst().get("value"));
+    assertEquals("predicate", AnnotationCollector.merge(collected,
+        List.of(annotation("style", "syntax"))).getFirst().get("value"));
+
+    for (boolean predicateFirst : List.of(true, false)) {
+      var observation = new ObservationImpl();
+      if (predicateFirst) observation.mergeAnnotations(collected, 0);
+      observation.mergeAnnotations(List.of(annotation("style", "syntax")), 1);
+      if (!predicateFirst) observation.mergeAnnotations(collected, 0);
+      var transported = (ObservationImpl) Observation.forTransport(observation);
+      transported.mergeAnnotations(List.of(annotation("style", "late syntax")), 1);
+      assertEquals("predicate", value(transported, "style"));
+      transported.mergeAnnotations(List.of(annotation("style", "definition")), 2);
+      transported.mergeAnnotations(collected, 0);
+      assertEquals("definition", value(transported, "style"));
+    }
+  }
+
+  @Test
+  void overrideRequiresBooleanTrueAndTiesUseExistingPrecedence() {
+    for (Object flag : List.of(false, "true")) {
+      var observation = new ObservationImpl();
+      observation.mergeAnnotations(List.of(Annotation.of("style", "value", "predicate", "override", flag)), 0);
+      observation.mergeAnnotations(List.of(annotation("style", "syntax")), 1);
+      assertEquals("syntax", value(observation, "style"));
+    }
+    var first = Annotation.of("style", "value", "first", "override", true);
+    var second = Annotation.of("style", "value", "second", "override", true);
+    assertEquals("second", AnnotationCollector.merge(List.of(first), List.of(second)).getFirst().get("value"));
+    var observation = new ObservationImpl();
+    observation.mergeAnnotations(List.of(second), 1);
+    observation.mergeAnnotations(List.of(first), 0);
+    assertEquals("second", value(observation, "style"));
+  }
+
+  @Test
   void lateModelAndConceptContributorsCannotReplaceDefinitionAcrossTransport() {
     var submitted = new ObservationImpl();
     submitted.mergeAnnotations(List.of(annotation("style", "concept")), 0);

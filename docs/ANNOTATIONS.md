@@ -10,6 +10,8 @@ Concept annotations have the lowest precedence. Model dependencies and the conte
 
 Known annotations are present at submission. Resolution and contextualization add further contributors while preserving this precedence, and the observation returned when submission completes retains the result.
 
+An annotation may specify the boolean parameter `override=true` to take precedence over a same-named annotation without that flag. For example, `@colormap(palette="terrain", override=true)` on a predicate in an observable's semantic definition prevails over the main concept's or syntactic observable's `@colormap`. This applies during semantic collection and when merging concept and model/dependency annotations into observations, including late contributors. If both annotations specify `override=true`, the usual contributor order and priority break the tie. An explicit observation definition still has highest priority. Omitted `override`, `override=false`, and the string `"true"` do not opt in. The winning annotation replaces the entire parameter set; its `override` parameter is retained through transport and persistence.
+
 ## Recognized annotations
 
 | Annotation | Context and interpretation |

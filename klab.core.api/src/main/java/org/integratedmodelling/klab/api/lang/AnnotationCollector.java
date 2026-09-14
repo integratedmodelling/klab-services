@@ -9,18 +9,26 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 public final class AnnotationCollector {
   private AnnotationCollector() {}
 
-  /** Later contributors replace earlier annotations with the same name. */
+  /** Later contributors replace earlier annotations, unless only the earlier one overrides. */
   @SafeVarargs
   public static List<Annotation> merge(Collection<Annotation>... contributors) {
     Map<String, Annotation> result = new LinkedHashMap<>();
     for (var contributor : contributors) {
       if (contributor != null) {
         for (var annotation : contributor) {
-          result.put(annotation.getName(), new AnnotationImpl(annotation));
+          var current = result.get(annotation.getName());
+          if (!overrides(current) || overrides(annotation)) {
+            result.put(annotation.getName(), new AnnotationImpl(annotation));
+          }
         }
       }
     }
     return new ArrayList<>(result.values());
+  }
+
+  /** Only the boolean source-language parameter opts into overriding defaults. */
+  public static boolean overrides(Annotation annotation) {
+    return annotation != null && Boolean.TRUE.equals(annotation.get("override"));
   }
 
   public static List<Annotation> collect(
