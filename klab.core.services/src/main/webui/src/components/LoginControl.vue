@@ -13,7 +13,7 @@ defineProps<{ auth: AuthState }>();
         outline
         no-caps
         rounded
-        color="white"
+        color="primary"
         icon="login"
         label="Sign in"
         @click="login"
@@ -23,7 +23,7 @@ defineProps<{ auth: AuthState }>();
         flat
         no-caps
         rounded
-        color="white"
+        color="primary"
         icon="account_circle"
         :label="auth.username || 'Account'"
     >
