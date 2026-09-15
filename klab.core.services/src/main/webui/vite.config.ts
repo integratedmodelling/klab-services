@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vue from "@vitejs/plugin-vue";
+import { quasar, transformAssetUrls } from "@quasar/vite-plugin";
 import { defineConfig, type Plugin } from "vite";
 
 const rootDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +66,15 @@ function dashboardExtensions(): Plugin {
 
 export default defineConfig({
   base: "./",
-  plugins: [dashboardExtensions(), vue()],
+  plugins: [
+    dashboardExtensions(),
+    vue({
+      template: {
+        transformAssetUrls,
+      },
+    }),
+    quasar(),
+  ],
   resolve: {
     dedupe: ["vue", "quasar"],
     alias: { "@klab-dashboard": path.resolve(rootDirectory, "src") },

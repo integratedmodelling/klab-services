@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
+    "@quasar/vite-plugin": "2.0.2",
     "@types/node": "26.4.0",
     "@vitejs/plugin-vue": "6.0.8",
     "typescript": "5.9.3",
