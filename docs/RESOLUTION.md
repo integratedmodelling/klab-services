@@ -92,7 +92,7 @@ re-execute a dataflow from it.
 | `ResolverService` | Service lifecycle, asynchronous root entry point, context instrumentation, model ingestion, submitted-resource handling, and an incomplete observation-language encoder |
 | `ResolutionCompiler` | Recursive resolution policy: runtime query, strategies, models, dependencies, coverage, and runtime requirement checks |
 | `ResolutionGraph` | Mutable intermediate graph and shared context-level resolver state |
-| `PrioritizerImpl` | Orders models using configured/model-specific ranking criteria |
+| `PrioritizerImpl` | Orders models using service defaults overridden by the scope namespace |
 | `DataflowCompiler` | Converts a successful `ResolutionGraph` into `DataflowImpl` and nested actuators |
 | `ResolverClient` / `ResolverController` | Remote request construction and asynchronous job transport |
 | `RuntimeService` | Owns observation registration, transactions, resolver invocation, executable compilation, contextualization, and commit/failure handling |
@@ -398,22 +398,131 @@ Actual namespace/model coverage, learners, annotation processing, and processed 
 TODOs. Assigning universal coverage means model coverage filtering cannot currently express the
 source model's true spatial or temporal limits unless other code reconstructs them.
 
-### 7.2 Ranking
+### 7.2 Ranking: the Prioritizer contract
 
-`PrioritizerImpl` builds a lexicographic comparator chain from service defaults overridden by each
-model's resolution criteria. Implemented standard scores include lexical scope and
-space/time coverage, specificity, and coherency. Many declared criteria return `0`.
+Prioritization orders model candidates for one `observe` operation. It does not rank observation
+strategies, change their tiers, establish coverage or execute a model. Resources performs candidate
+selection; Resolver ingests the returned models, excludes those without a compatible output,
+prepares their ranking and tries them in order. A highly ranked model can still fail to resolve its
+dependencies; subsequent candidates may supply all or part of the required coverage.
 
-Lexical scope gives scenarios the highest score, followed by the active resolution namespace and
-project. The namespace/project constraints are added while recursively resolving a model, so they
-influence that model's dependencies.
+#### Inputs, direction and lifetime
 
-**Risk:** `compare(o1, o2)` uses the criterion order from `o1`. If candidate models declare
-different criterion orders, reversing the operands can use a different comparator chain, violating
-the symmetry/transitivity required by Java sorting.
+`PrioritizerImpl` receives the request Observable, context observable, requested Scale, context
+scope and service ranking configuration. It captures lexical constraints and maintains request-local
+caches for semantic distance, spatial/temporal calculations and criterion maps. Inputs must remain
+stable during that ranking session. The object is not shared between resolution attempts and is not
+a service-transport bean.
 
-Blacklist, whitelist, `UsingModel`, parameters, additional observables, and several other
-documented resolution constraints are not visibly enforced by this resolver path.
+Semantic compatibility always uses `Reasoner.semanticDistance(candidateOutput, request, context)`.
+For multi-output models the lowest nonnegative output distance is used. No compatible output gives
+`Integer.MAX_VALUE`; Resolver excludes that model even if the semantic-distance ranking criterion
+is disabled. Reasoner/service errors propagate rather than becoming a poor but usable score.
+`Reasoner.resolves(request, candidate, context)` expresses the same capability with request-first
+arguments. Semantic distance applies to all observables, including inherency and other clauses;
+predicate heads may admit subsumption while non-predicate heads retain their equality requirement.
+
+#### One comparison policy
+
+Configuration maps criterion property names to integer priorities. Positive values enable criteria,
+smaller values run first, and nonpositive values disable criteria. These integers are ordering
+positions, not weights. Equal priorities use alphabetical property-name order; no weighted
+aggregation is implied. Unknown keys and null priorities are configuration errors.
+
+The effective `ResolutionNamespace` constraint in the submission/resolution scope selects the
+namespace whose `KimNamespace.getResolutionCriteria()` overrides service defaults. That single
+policy applies to every candidate, irrespective of its namespace. Candidate
+`Model.ResolutionInfo` criteria are descriptive metadata and never choose the comparator.
+The namespace is retrieved through the existing Resources API even when none of its models
+are candidates. No namespace constraint or an empty namespace policy means service defaults;
+an unavailable namespace produces a warning and uses defaults. Retrieval errors propagate.
+
+The policy is captured when the ranking session is created. ResolutionNamespace is a replacing,
+not accumulating, constraint: when resolution enters a model's dependencies, the model namespace
+becomes the effective namespace in that child scope. A new ranking session therefore uses that
+namespace's policy without changing the parent's session. For example, a request in namespace A
+uses A's order to compare models from A and B; dependencies of a selected B model use B's order.
+Different namespace policies do not conflict because they govern different ranking sessions.
+
+Members produced by INSTANTIATION are a further explicit handoff: their individual submissions
+adopt the producing instantiation model's namespace and project, rather than the submission's
+original namespace. The compiled Actuator carries `computationConstraints`, keyed by computation
+index, through interface-based JSON transport. Runtime binds each executor's new outcomes to those
+lexical constraints and applies them to each member's submission scope. Collective registration,
+transaction/provenance and other constraints remain inherited; the parent scope is unchanged.
+When several instantiators contribute members, each member uses its own producer's policy.
+Absent producer bindings inherit the execution scope; unrelated model metadata cannot select it.
+
+
+The namespace policy map is a portable bean property using the existing Jackson interface mapping.
+Current source adaptation does not yet populate it from a namespace ranking declaration; the
+property defaults to empty. Defining a source spelling and adapting it is separate from this
+policy-selection contract.
+
+Comparison is lexicographic. Semantic distance is ascending (zero is exact; distances are not
+capped). All implemented benefit scores descend. Equal score vectors use model URN in lexical order,
+with missing URNs last. Candidates sharing the same scores and URN compare equal; choosing between
+different revisions under the same identity requires a version-selection policy outside Prioritizer.
+An empty criterion order still uses this deterministic identity tie-break. The selected policy is immutable for the session.
+
+Service defaults place lexical scope first and semantic distance second. The remaining configured
+order is trait concordance, evidence, time specificity, time coverage, space specificity, space
+coverage, subjective concordance and inherency. Some are vocabulary placeholders, as below; their
+configuration does not make them implemented. Disabled criteria are absent from ranking maps.
+
+#### Criteria and score semantics
+
+| Criterion | Calculation and direction |
+|---|---|
+| `im:lexical-scope` | Descending: generated model without namespace or active scenario 100; resolution namespace 75; same non-null project 50; other visible model 0. Scope ranking does not grant access. |
+| `im:semantic-concordance` | Ascending minimum compatible semantic distance over model outputs; exact 0, broader compatible meanings positive. |
+| `im:space-coverage` | Descending `100 × area(intersection) / area(request)` in square metres. |
+| `im:space-specificity` | Descending `100 × area(intersection) / area(model)`. A more narrowly applicable model scores higher when it covers the request. |
+| `im:time-coverage` | Descending `100 × duration(intersection) / duration(request)`. |
+| `im:time-specificity` | Descending `100 × duration(intersection) / duration(model)`. |
+| Trait concordance, inherency, evidence, network remoteness, subjective concordance, reliability | Not implemented as independent criteria; score -1 and listed by `unsupportedCriteria()`. Inherency already contributes to semantic distance. |
+| Combined scale coverage/specificity/coherency; spatial and temporal coherency | Not implemented; score -1. Aggregation across dimensions and resolution-fidelity policy remain to be defined. |
+
+Benefit scores are finite and bounded to 0–100 when available. `-1` explicitly means unavailable,
+not zero coverage. All candidates receive the same unavailable value for an unsupported criterion,
+so it cannot discriminate. `listCriteria()` returns active property names in order;
+`unsupportedCriteria()` exposes the active unimplemented subset. `getRanking(model)` computes on
+demand and returns an immutable criterion map, as does `computeCriteria(model)`. Preparation also
+computes the single-candidate case, which ordinary sorting would not visit. These are local
+inspection methods; they do not automatically persist ranking metadata in Activities or Dataflows.
+
+#### Geometry and time boundaries
+
+Portable model geometry is decoded through GeometryRepository before reading extents. A missing
+model coverage or absent model/request dimension yields unavailable scores for that dimension.
+Explicit universal model coverage yields coverage 100 and specificity 0 in a requested dimension;
+it is distinct from missing coverage. Spatial intersections use the shape's projection-aware
+operations and square-metre areas. Disjoint or empty shapes score zero. Degenerate/nonfinite area
+denominators yield unavailable ratios rather than NaN or infinity. Point/line resolution-fidelity
+ranking requires a separate policy; polygon area ratios do not invent one. Geometry errors propagate;
+there is no arbitrary positive fallback score after a topology failure.
+
+Temporal intervals use overlap duration, so disjoint intervals score zero rather than receiving a
+positive distance-based bonus. A bounded request is needed; missing request endpoints yield
+unavailable scores. Open model endpoints act as unbounded limits: a covering open interval has full
+coverage and zero duration-specificity. The public `computeTemporalCriteria` helper retains `-1`
+as the open-model-endpoint sentinel; the model-based path uses nullable bounds so an actual timestamp
+of -1 is not confused with absence. Reversed bounds are errors. A point request scores coverage 100
+when contained by the model interval and specificity 100 only for the same model point; otherwise
+these point scores are zero. Coherency remains unavailable because sampling resolution is not the
+same as interval overlap.
+
+Model ingestion currently assigns universal coverage in paths described in section 7.1. Ranking
+cannot recover a model's true spatial or temporal limits from that placeholder. Coverage scores
+therefore describe the supplied model contract, not a proof of executable resource availability.
+
+#### Remaining policy decisions
+
+Define evidence, reliability, locality and subjective-ranking
+sources and scales before activating those criteria. Specify cross-dimension aggregation and
+spatial/temporal resolution fidelity before implementing coherency or combined scale scores.
+Neither deterministic ordering nor a high score substitutes for eligibility constraints such as
+blacklists, whitelists or `UsingModel`; their enforcement belongs to discovery/resolution.
 
 ### 7.3 Resolving one model
 
@@ -986,7 +1095,7 @@ Observable equality alone is insufficient.
 | High | Cycle handling | Per-call resolution cache is never consulted | Recursive semantic/model dependencies can recurse indefinitely |
 | High | Model fidelity | Ingested models receive universal coverage | Ranking/coverage can accept geographically or temporally invalid models |
 | High | Constraint enforcement | Many constraint types are not enforced | Caller intent may be serialized but ignored |
-| High | Ranking comparator | Operand-dependent criterion order | Sorting may be inconsistent for model-specific ranking policies |
+| Extension | Ranking configuration | Namespace bean policies are supported; source declaration adaptation is pending | Service defaults apply until namespace overrides are supplied |
 | Medium | Async execution | A virtual thread blocks on runtime query `.join()` | No carrier starvation, but reciprocal service latency and cancellation still need end-to-end deadlines |
 | Medium | Notifications | ResourceSet notifications are discarded | Missing diagnostics for model/resource failures |
 | Medium | Contextualizables | Unsupported form compiles to null | Delayed null failure rather than resolver diagnostic |
@@ -1202,8 +1311,8 @@ below also cover resolver state and transport work.
    source-to-dataflow validation, resource persistence, re-execution, and compatibility tests.
 10. Complete transactional external dataflow execution against empty and existing knowledge
     graphs.
-11. Enforce all advertised resolution constraints and make ranking comparator behavior global and
-    deterministic.
+11. Enforce all advertised resolution constraints and define source declaration and adaptation for
+    namespace ranking policies.
 12. Add multi-service integration tests and graph-level uniqueness before enabling distributed
     shared-work deduplication.
 
@@ -1242,11 +1351,11 @@ provenance behavior, and failure rollback are all defined and tested.
 
 ## 17. Semantic-update contextualizations
 
-An observation request can describe an operation on existing observations. For abstract predicate
+An observation request can describe an operation on existing observations. For predicate
 X and substantial Y, `X of each Y` requests classification of Y members; it does not request a new
-observation whose observable is the classification directive. Concrete `Z of Y` requests
-characterization within Y. Abstraction chooses the activity; collective inherence chooses member
-acquisition. Neither follows merely from an executor's Java return type.
+observation whose observable is the classification directive. `Z of Y` requests
+characterization within Y regardless of abstraction. Collective inherence alone chooses classification
+and its member acquisition. Neither follows merely from an executor's Java return type.
 
 ### Planning and member support
 
@@ -1272,6 +1381,20 @@ producer execution and each new substantial's acknowledgement, then enumerates d
 transaction-local members within the requested/producer support intersection. Bindings deduplicate
 members. A completed empty cohort succeeds; a missing prerequisite does not.
 
+### Predicate model discovery and precedence
+
+ModelKbox's observable index expands predicate heads through the Reasoner's resolving closure,
+including concrete and abstract ancestors. The full candidate observable then passes directional
+semantic-distance validation, including its bearer and contextualization. A model's predicate may
+subsume the requested predicate; the reverse does not suffice. Other observable heads must remain
+equal. `PrioritizerImpl` evaluates semantic distance for every observable, including inherence and other
+clauses for non-predicates. `SEMANTIC_DISTANCE` (`im:semantic-concordance`) uses the minimum
+nonnegative candidate-output-to-request distance; smaller is better, with no score cap that would
+collapse distinct distances. Incompatible candidates are excluded. The configured criterion order
+applies (by default lexical scope precedes semantic distance); within equal higher-priority criteria,
+exact and nearer explanations precede broader ones. Classification and characterization remain
+distinct operations. `Reasoner.resolves(request, candidate, context)` uses this same direction.
+
 ### Semantic identity across service boundaries
 
 Abstraction and collectivity are operational semantics, not display hints. Adapted observable URNs
@@ -1295,11 +1418,11 @@ requesting X's closure. Runtime independently extracts X to validate the result.
 excludes the entire OWL bottom-equivalence node, including named unsatisfiable classes; filtering
 only literal `owl:Nothing` would admit invalid candidates.
 
-A result must be a satisfiable, concrete predicate strictly specializing X, not X itself or an
-equivalent concept. NOTHING is always an error. A null result is permitted only when the operation
+A result must be a satisfiable, concrete predicate equal to or specializing X. A concrete X is
+a valid result even if it has no descendants. NOTHING is always an error. A null result is permitted only when the operation
 originates in a model dependency and that original dependency is optional, after a classifier has
 been found and linked. Optionality does not excuse invalid concepts or execution failures.
-A member already bearing a valid concrete strict specialization of X satisfies the request.
+A member already bearing a valid concrete specialization of X (including X itself) satisfies the request.
 Runtime skips classifier invocation and produces no pending attribution or repeated characterization
 for that member, regardless of how the predicate was acquired. Invalid same-family attributions
 remain errors; this reuse does not authorize replacement of an existing classification. Valid results become pending attributions, then detached semantic replacements; they do
@@ -1317,7 +1440,8 @@ The individual characterizer executor supports local public contextualizers retu
 primitive `boolean` (`false` fails), and dependency-only models. Remote/adaptor characterizers and
 other unsupported semantic-update forms fail explicitly. Collective classification dependencies
 and runtime-owned individual characterization do not imply support for arbitrary root directives,
-singular-inherent classification or collective characterization distribution.
+additional independent operation-submission entry points. Singular predicate inherence is
+characterization; distributed predicate inherence is classification.
 
 ### Outcomes and durable effects
 

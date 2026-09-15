@@ -20,6 +20,17 @@ public class ContextualizationScopeImpl
   private final Observation target;
   private final Scheduler.Event event;
   private final List<Observation> outcomes = new ArrayList<>();
+  private final java.util.Map<Observation, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
+      outcomeConstraints = new java.util.IdentityHashMap<>();
+
+  public void bindOutcomes(int first, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint> constraints) {
+    for (int i = first; i < outcomes.size(); i++) outcomeConstraints.put(outcomes.get(i), List.copyOf(constraints));
+  }
+
+  @Override
+  public List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint> getResolutionConstraints(Observation outcome) {
+    return outcomeConstraints.getOrDefault(outcome, List.of());
+  }
 
   public ContextualizationScopeImpl(Observation observation, Scheduler.Event event) {
     this.target = observation;

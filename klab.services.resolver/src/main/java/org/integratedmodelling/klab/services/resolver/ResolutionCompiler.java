@@ -614,7 +614,8 @@ public class ResolutionCompiler {
       Observable observable, Concept contextObservable, ContextScope scope, Scale scale) {
 
     var prioritizer =
-        new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
+        new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy(),
+            observable, contextObservable);
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models =
@@ -640,9 +641,12 @@ public class ResolutionCompiler {
       throw new KlabIllegalStateException("Model discovery failed");
     modelQueries++;
     matchedModels += ret.size();
+    ret.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
+    prioritizer.prepare(ret);
     ret.sort(prioritizer);
     return ret;
   }
+
 
   /**
    * Register a provisional observation for the geometry that remains after the runtime query. The

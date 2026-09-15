@@ -691,7 +691,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      compatible.
      */
 
-    return semanticDistance(toResolve, other, context) >= 0;
+    return semanticDistance(other, toResolve, context) >= 0;
   }
 
   /*
@@ -718,6 +718,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             .buildConcept();
 
     var inherent = directInherent(semantics);
+    if (base.is(SemanticType.PREDICATE)) {
+      var heads = new LinkedHashSet<Concept>();
+      heads.add(base);
+      heads.addAll(allParents(base));
+      var bearers = new LinkedHashSet<Concept>();
+      if (inherent != null) {
+        bearers.add(inherent.singular());
+        bearers.addAll(allParents(inherent.singular()));
+      }
+      for (var head : heads) {
+        if (!head.is(SemanticType.PREDICATE)) continue;
+        if (inherent == null) ret.add(head);
+        else for (var bearer : bearers) {
+          ret.add(SemanticsBuilder.create(head, this, serviceScope())
+              .of(inherent.isCollective() ? bearer.collective() : bearer).buildConcept());
+        }
+      }
+      return ret;
+    }
+
     if (inherent != null) {
       ret.addAll(
           allParents(inherent.singular()).stream()

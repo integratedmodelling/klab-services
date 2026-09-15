@@ -75,22 +75,18 @@ public enum Contextualization {
    */
   VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verifier"),
   /**
-   * CLASSIFICATION of an ABSTRACT PREDICATE (either directly abstract or qualified with <code>any
-   * </code>) is the contextualization that scans one or more substantials to attribute a concrete
-   * trait or role to each of them. Equivalent to INSTANTIATION of a concrete t/a given the abstract
-   * form and an inherent observable. This is specified as <code>
-   * ABSTRACT_PREDICATE of [each] SUBSTANTIAL</code>. Using a collective inherent forces k.LAB to
-   * resolve the collective substantials before the contextualization is triggered; not using <code>
-   * each</code> will only classify the substantials in the context of the observation. The
-   * substantials acquire the concrete predicate in their semantics, but do not switch cohorts; if
-   * the predicate is an <code>individual identity</code>, new cohorts may be built to collect the
-   * observables (e.g. Countries collecting all Regions that adopt Country). Triggers
-   * CHARACTERIZATION after each successful resolution.
+   * Classifies <code>PREDICATE of each SUBSTANTIAL</code>. Distributed inherence alone selects
+   * this activity, independently of predicate abstraction. Resolve the collective members, then
+   * attribute a satisfiable concrete predicate equal to or specializing the requested predicate.
+   * A concrete predicate without descendants may itself be attributed. Abstract predicates are
+   * never attributed. Existing valid attributions satisfy the request without another invocation.
+   * Members retain their identities and cohorts. New attributions trigger CHARACTERIZATION.
    */
   CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classifier"),
   /**
-   * The contextualization of a concrete trait or role after it has been attributed to an
-   * observation through {@link #CLASSIFICATION}. Explains the trait within the observation. This is
+   * The contextualization of a trait or role within an
+   * observation. Models may explain an exact predicate or a subsumed predicate, regardless of
+   * abstraction. This is
    * specified as <code>PREDICATE of SUBSTANTIAL</code>.
    */
   CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterizer"),
@@ -187,9 +183,8 @@ public enum Contextualization {
       }
 
       if (!SemanticType.isSubstantial(inherent.getType())) return VOID;
-      // Abstraction selects classification; collective inherence selects its member source.
-      // Concrete predicates characterize even when applied across a collective.
-      return observable.is(SemanticType.ABSTRACT) ? CLASSIFICATION : CHARACTERIZATION;
+      // Distributed inherence selects classification, independently of predicate abstraction.
+      return inherent.isCollective() ? CLASSIFICATION : CHARACTERIZATION;
     }
     return forSemantics(observable.getType(), observable.isCollective());
   }

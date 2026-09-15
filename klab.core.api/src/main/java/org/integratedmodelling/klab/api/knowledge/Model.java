@@ -37,7 +37,8 @@ public interface Model extends Knowledge, Resolvable {
 
     /**
      * Return a map containing any resolution criteria redefined in the namespace this model is part
-     * of. If no criteria have been redefined, return an empty map.
+     * of. If no criteria have been redefined, return an empty map. This is descriptive metadata:
+     * the Prioritizer selects the policy from the scope's resolution namespace, not each candidate.
      *
      * @return a map of resolution criteria, never null, possibly empty.
      */

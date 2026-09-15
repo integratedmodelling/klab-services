@@ -20,6 +20,26 @@ import org.junit.jupiter.api.Test;
 /** Real portable-builder dispatch and semantic mutations; Resources and OWL storage are doubles. */
 class RealSemanticBuilderTest {
   @Test
+  void resolvingPredicateHeadsIncludesConcreteAndAbstractAncestors() {
+    var scope = mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+    var resources = mock(ResourcesService.class);
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.serviceScope()).thenReturn(scope);
+    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    var child = concept("test:P2", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    var parent = concept("test:P1", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    var root = concept("test:Family", SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    when(resources.declareConcept(child.getUrn())).thenReturn(
+        syntax(child.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    when(reasoner.resolveConcept(child.getUrn())).thenReturn(child);
+    when(reasoner.allParents(child)).thenReturn(Set.of(parent,root));
+    when(reasoner.resolving(child)).thenCallRealMethod();
+    assertEquals(Set.of(child,parent,root),new HashSet<>(reasoner.resolving(child)));
+  }
+
+  @Test
   void transportedBuildersSupportClassificationAndCharacterization() throws Exception {
     var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
     var scope = mock(ContextScope.class);

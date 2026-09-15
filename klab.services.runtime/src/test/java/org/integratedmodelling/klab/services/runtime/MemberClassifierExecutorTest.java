@@ -90,6 +90,17 @@ class MemberClassifierExecutorTest {
     assertSame(f.predicate, pending.abstractPredicate()); assertSame(before, pending.originalObservable());
     assertSame(before, f.member.getObservable()); assertEquals(42, f.member.getId());
   }
+  @Test void concretePredicateCanAttributeItself() throws Exception {
+    var f = new Fixture();
+    when(f.predicate.isAbstract()).thenReturn(false);
+    f.classifier.result = f.predicate;
+    assertSame(f.predicate, f.run(f.executor()).getFirst().predicate());
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.predicate));
+    when(f.reasoner.is(f.predicate, f.predicate)).thenReturn(true);
+    assertTrue(f.run(f.executor()).isEmpty());
+    assertEquals(1, f.classifier.calls.get());
+  }
+
   @Test void onlyOptionalOriginalModelDependencyAllowsNull() throws Exception {
     var f = new Fixture(); f.classifier.result = null;
     when(f.observable.isOptional()).thenReturn(true); // root/strategy optionality is insufficient
@@ -99,13 +110,12 @@ class MemberClassifierExecutorTest {
     f.optionalDependency(); assertTrue(f.run(f.executor()).isEmpty());
   }
   @Test void invalidReturnsRemainErrorsEvenForOptionalDependency() throws Exception {
-    for (String invalid : List.of("nothing", "abstract", "unrelated", "equivalent", "inconsistent", "wrong-family")) {
+    for (String invalid : List.of("nothing", "abstract", "unrelated", "inconsistent", "wrong-family")) {
       var f = new Fixture(); f.optionalDependency();
       switch (invalid) {
         case "nothing" -> when(f.result.is(SemanticType.NOTHING)).thenReturn(true);
         case "abstract" -> when(f.result.isAbstract()).thenReturn(true);
         case "unrelated" -> when(f.reasoner.is(f.result, f.predicate)).thenReturn(false);
-        case "equivalent" -> when(f.reasoner.is(f.predicate, f.result)).thenReturn(true);
         case "inconsistent" -> when(f.reasoner.satisfiable(f.result)).thenReturn(false);
         case "wrong-family" -> when(f.result.is(SemanticType.PREDICATE)).thenReturn(false);
       }
@@ -190,6 +200,9 @@ class MemberClassifierExecutorTest {
       assertThrows(IllegalStateException.class, () -> f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)));
       f.optionalDependency();
       assertTrue(f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)).isEmpty());
+      when(f.predicate.isAbstract()).thenReturn(false);
+      assertSame(f.predicate, f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope))
+          .getFirst().predicate());
     }
   }
 }

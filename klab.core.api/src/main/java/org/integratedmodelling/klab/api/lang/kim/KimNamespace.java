@@ -25,6 +25,13 @@ public interface KimNamespace extends KlabDocument<KlabStatement> {
   Collection<String> getDisjointNamespaces();
 
   /**
+   * Ranking priority overrides used when this namespace is the scope's ResolutionNamespace.
+   * Applies to all candidate models, including those from other namespaces. Empty means service
+   * defaults. Positive priorities enable criteria; nonpositive priorities disable them.
+   */
+  Map<String, Integer> getResolutionCriteria();
+
+  /**
    * Private, project private, public
    *
    * @return

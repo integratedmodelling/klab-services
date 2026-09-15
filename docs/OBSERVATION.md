@@ -1091,10 +1091,9 @@ must preserve the intended order where transformations do not commute.
 For a predicate on substantials, distinguish attribution from numeric transformation. Collective
 inherency first resolves the requested collection, then applies the predicate plan to members.
 Individual inherency uses the existing inherent observation/context; it must not instantiate a
-new collection as a side effect. An abstract predicate requests concrete classification outcomes;
+new collection as a side effect. Distributed inherence requests concrete classification outcomes for an abstract or concrete predicate;
 each successful attribution triggers characterization through the semantic lifecycle. Preserve
-individual IDs and cohort rules. A concrete predicate requires characterization rather than an
-abstract-classification shortcut. The implemented collective-classification and individual-characterization
+individual IDs and cohort rules. Individual inherence requires characterization regardless of predicate abstraction. The implemented collective-classification and individual-characterization
 paths follow these rules; additional distribution forms require explicit member-selection support.
 
 ### 6.3 Value operators, including `whose`

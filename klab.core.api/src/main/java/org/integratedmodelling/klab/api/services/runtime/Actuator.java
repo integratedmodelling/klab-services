@@ -121,6 +121,13 @@ public interface Actuator extends Serializable, RuntimeAsset {
    */
   Parameters<String> getData();
 
+  /** Producing-model lexical constraints keyed by zero-based computation index. These travel with
+   * the contextual plan so instantiated members can resolve in their instantiator's namespace.
+   * An absent entry inherits the execution scope. Keep indices aligned when editing computation.
+   */
+  java.util.Map<Integer, java.util.List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
+      getComputationConstraints();
+
   /**
    * Each actuator reports the artifact type of the observation it produces. Pure resolvers (e.g.
    * the resolver for an object) are de facto void, but report the special RESOLVE type; VOID

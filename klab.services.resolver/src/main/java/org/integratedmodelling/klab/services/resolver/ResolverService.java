@@ -212,7 +212,8 @@ public class ResolverService extends BaseService implements Resolver {
 
     resolutionInfo.setScope(statement.getScope());
     resolutionInfo.setInScenario(namespace.isScenario());
-    // TODO review how resolution criteria are handled
+    resolutionInfo.setResolutionCriteria(namespace.getResolutionCriteria() == null
+        ? java.util.Map.of() : new java.util.HashMap<>(namespace.getResolutionCriteria()));
     // TODO coverage!
 
     model.getAnnotations().addAll(AnnotationCollector.merge(statement.getAnnotations()));

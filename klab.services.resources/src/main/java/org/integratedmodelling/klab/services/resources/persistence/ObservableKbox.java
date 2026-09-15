@@ -314,10 +314,10 @@ public abstract class ObservableKbox extends H2Kbox {
    * Determine all the compatible MODEL concepts for which observables have been stored, and return
    * the set of their IDs.
    *
-   * <p>If the core type is concrete, only that core type is looked up in the observable's parents,
-   * so that models that observe that type (potentially with other traits not adopted by the
-   * observable and in any compatible context) are found. If the core type is abstract or was stated
-   * generic, any child is OK as long as trait, roles, inherency and context are compatible.
+   * <p>Non-predicate heads retain their exact core type. Predicate heads additionally admit
+   * subsuming predicate heads, whether abstract or concrete. Full semantic distance validates
+   * inherency, operation type and other restrictions after candidate enumeration. Ranking is
+   * performed by the Resolver's Prioritizer, not by database ID order.
    *
    * @param observable
    * @return the IDs of all compatible concepts that have been used in the kbox.
@@ -393,8 +393,8 @@ public abstract class ObservableKbox extends H2Kbox {
   }
 
   /**
-   * We only accept abstract parent concepts (up to the base observable) if the observable is a
-   * predicate.
+   * Predicate heads admit all subsuming predicate model heads, concrete or abstract. Other
+   * observables retain their exact core head; inherence is negotiated separately.
    *
    * @param concept
    * @param resolvedPredicates

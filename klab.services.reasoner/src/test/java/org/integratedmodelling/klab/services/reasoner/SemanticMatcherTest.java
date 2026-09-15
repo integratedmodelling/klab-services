@@ -132,6 +132,39 @@ class SemanticMatcherTest {
     assertTrue(new SemanticMatcher(graph).semanticDistance(quality, elevation) < 0);
   }
 
+  @Test
+  void nonPredicateHeadsStillRankByInherentDistance() {
+    var graph = new FakeOperations();
+    var head = concept("Elevation");
+    var broad = concept("Elevation of Region");
+    var exact = concept("Elevation of Basin");
+    var region = concept("Region"); var basin = concept("Basin");
+    graph.heads.put(broad, head); graph.heads.put(exact, head);
+    graph.parents.put(basin, List.of(region));
+    graph.directInherent.put(broad, region); graph.directInherent.put(exact, basin);
+    graph.inherent.putAll(graph.directInherent);
+    var matcher = new SemanticMatcher(graph);
+    assertEquals(0, matcher.semanticDistance(exact, exact));
+    assertTrue(matcher.semanticDistance(broad, exact) > 0);
+    assertTrue(matcher.semanticDistance(exact, broad) < 0);
+  }
+
+  @Test
+  void distributedAndIndividualPredicateOperationsCannotResolveEachOther() {
+    var graph = new FakeOperations();
+    var classification = predicate("P of each S");
+    var characterization = predicate("P of S");
+    ((ConceptImpl) classification).setDescriptionType(
+        org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION);
+    ((ConceptImpl) characterization).setDescriptionType(
+        org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION);
+    graph.heads.put(classification, predicate("P"));
+    graph.heads.put(characterization, graph.heads.get(classification));
+    var matcher = new SemanticMatcher(graph);
+    assertTrue(matcher.semanticDistance(classification, characterization) < 0);
+    assertTrue(matcher.semanticDistance(characterization, classification) < 0);
+  }
+
   private static Concept concept(String name) {
     var ret = new ConceptImpl();
     ret.setUrn("test:" + name);

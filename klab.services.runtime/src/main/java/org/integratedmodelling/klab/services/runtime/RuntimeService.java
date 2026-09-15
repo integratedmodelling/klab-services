@@ -2060,11 +2060,14 @@ public class RuntimeService extends BaseService
          */
         var instantiationScope = contextScope.within(scope.getTarget());
         for (var child : scope.getOutcomes()) {
-          // enqueue tasks to resolve any new observation
+          var memberScope = instantiationScope.withResolutionConstraints(
+              scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
+          // Retain collective registration and all unrelated constraints, replacing lexical scope
+          // with the producing instantiation model's namespace/project for this member only.
           tasks.add(
-              instantiationScope
+              memberScope
                   .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
-                  .submit(child, instantiationScope));
+                  .submit(child, memberScope));
         }
 
       } else if (scope.getTarget().getObservable().getContextualization()

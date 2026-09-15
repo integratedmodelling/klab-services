@@ -302,6 +302,14 @@ public class DataflowCompiler {
                   input -> overriddenParameters.put(input.getName(), Identifier.create(localName)));
         }
       }
+      var lexicalConstraints = new java.util.ArrayList<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>();
+      if (model.getNamespace() != null) lexicalConstraints.add(
+          org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionNamespace, model.getNamespace()));
+      if (model.getProjectName() != null) lexicalConstraints.add(
+          org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
+      observationActuator.getComputationConstraints().put(observationActuator.getComputation().size(), lexicalConstraints);
       observationActuator
           .getComputation()
           .add(adaptContextualizer(contextualizer, overriddenParameters));

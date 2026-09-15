@@ -230,6 +230,13 @@ public class JacksonConfiguration {
 
     private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
 
+      // Preserve declared key/value types for plain maps (including nested interface beans).
+      // Treating their entries as Object loses Integer priorities and numeric computation keys.
+      if (node.isObject() && !node.has(CLASS_FIELD) && field != null
+          && field.getType() == Map.class
+          && field.getGenericType() instanceof ParameterizedType) {
+        return deserializeTypedContainer(node, parser, field.getGenericType());
+      }
       if (node.isObject()) {
         return deserializeObject(node, parser, getObjectClass(node));
       } else if (node.isArray()) {
@@ -237,6 +244,30 @@ public class JacksonConfiguration {
       }
       Class<?> targetType = field == null ? Object.class : field.getType();
       return parser.getCodec().treeToValue(node, targetType);
+    }
+
+    private Object deserializeTypedContainer(JsonNode node, JsonParser parser, java.lang.reflect.Type type)
+        throws Exception {
+      if (type instanceof ParameterizedType generic && generic.getRawType() instanceof Class<?> raw) {
+        if (raw == Map.class && node.isObject() && !node.has(CLASS_FIELD)) {
+          var ret = new LinkedHashMap<Object, Object>();
+          var fields = node.fields();
+          while (fields.hasNext()) {
+            var entry = fields.next();
+            var key = deserializeTypedContainer(new com.fasterxml.jackson.databind.node.TextNode(entry.getKey()),
+                parser, generic.getActualTypeArguments()[0]);
+            ret.put(key, deserializeTypedContainer(entry.getValue(), parser, generic.getActualTypeArguments()[1]));
+          }
+          return ret;
+        }
+        if (Collection.class.isAssignableFrom(raw) && node.isArray()) {
+          var ret = newCollection(raw);
+          for (var element : node) ret.add(deserializeTypedContainer(element, parser, generic.getActualTypeArguments()[0]));
+          return ret;
+        }
+      }
+      // Preserve polymorphic @class handling for Object/interface values and existing bean maps.
+      return deserialize(node, parser, type instanceof Class<?> cls ? cls : Object.class);
     }
 
     private Class<?> getGenericType(Field field, int n) {

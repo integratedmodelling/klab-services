@@ -53,6 +53,13 @@ public class ActuatorImpl implements Actuator {
     public Observation getTarget() { return target; }
     public void setTarget(Observation value) { target = value; }
   }
+  private java.util.Map<Integer, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
+      computationConstraints = new java.util.HashMap<>();
+  public java.util.Map<Integer, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
+      getComputationConstraints() { return computationConstraints; }
+  public void setComputationConstraints(java.util.Map<Integer, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>> value) {
+    computationConstraints = value == null ? new java.util.HashMap<>() : value;
+  }
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();

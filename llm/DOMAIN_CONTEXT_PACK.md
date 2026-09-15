@@ -412,8 +412,8 @@ worldview declarations and validation.
 | Value or monetary value quality | `VALUATION` | Produce absolute or relative value with a Currency, which may be a monetary unit or bounded rank. Identify valuation perspective and reference where applicable. | What is the monetary property value or non-monetary preference value? |
 | Categorical quality / `type of` reification | `CATEGORIZATION` | Produce a concept consistent with the declared value space; keep that quality distinct from the predicate it reifies. | What is the type of this tree? |
 | Presence quality | `VERIFICATION` | Produce presence/absence of a substantial; process presence is shorthand for presence of any event subsuming it. | Is a tree present here? |
-| Abstract predicate, directly abstract or qualified with `any`, inherent to substantials | `CLASSIFICATION` | Attribute concrete traits or roles and trigger `CHARACTERIZATION` after each successful resolution. | Resolve an abstract species predicate for each tree. |
-| Concrete trait or role attributed to a substantial | `CHARACTERIZATION` | Explain that predicate within the observation: `PREDICATE of SUBSTANTIAL`. | Explain the deciduous trait attributed to this tree. |
+| Predicate with distributed substantial inherence (`P of each S`), abstract or concrete | `CLASSIFICATION` | Attribute the concrete predicate itself or a concrete specialization and trigger `CHARACTERIZATION` after each successful resolution. | Resolve an abstract species predicate for each tree. |
+| Abstract or concrete predicate with individual substantial inherence (`P of S`) | `CHARACTERIZATION` | Explain that predicate within the observation: `PREDICATE of SUBSTANTIAL`. | Explain the deciduous trait attributed to this tree. |
 | Concrete trait or role attributed to a quality | `TRANSFORMATION` | Transform the quality to express the predicate: `PREDICATE of QUALITY`. | Express a numeric quality under a normalization trait defined by the worldview. |
 | Non-functional, abstract, or inconsistent observable unable to produce an observation | `VOID` | No productive observation activity. Preserve useful abstract ontology concepts, but do not present them as directly executable requests. | A bare predicate with no inherent observable. |
 
@@ -427,9 +427,8 @@ follow-ups (`ACKNOWLEDGEMENT` for instances/connections; `CHARACTERIZATION` for
 classifications) are implementation responsibilities, not observation strategies
 to be invented in an ontology proposal.
 
-For `ABSTRACT_PREDICATE of each SUBSTANTIAL`, resolve the collective substantials
-before classification. Without `each`, use substantials already available in
-the observation context. Attribution enriches their semantics without switching
+For `PREDICATE of each SUBSTANTIAL`, resolve the collective substantials
+before classification. Without `each`, characterize the predicate within the inherent substantial. Attribution enriches their semantics without switching
 cohorts; an individual identity may support new cohorts collecting its bearers.
 Connection uses the analogous collective/existing-instance distinction for
 connected substantials. State whether a domain example requires discovering
@@ -464,24 +463,27 @@ a demand to supply executable models for every concept.
 
 `forSemantics(KimConcept)` maps predicates without inherency to `VOID`, predicates
 inherent to qualities to `TRANSFORMATION`, and predicates inherent to substantials according
-to the predicate's `ABSTRACT` flag: classification for abstract, characterization for concrete.
-Collectivity selects member acquisition, not predicate abstractness. Classification changes
+to inherence: `of each` selects classification; `of` selects characterization.
+Abstractness constrains permissible attributions, not the activity. Classification changes
 existing/new members' semantics without creating a classification-result observation or changing
 their identity/cohort. Runtime then attempts concrete characterization per member; no explanatory
 model is a valid outcome. Member resolution is part of the Tier-0 classification strategy.
 Collective classification dependencies execute as semantic-update Dataflow nodes, followed by
-Runtime-owned individual characterization. Do not infer support for all collective/singular
-variants from the semantic taxonomy alone. See [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations).
+Runtime-owned individual characterization. Classifier and characterizer models are not interchangeable. See [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations).
 
 When analysing a domain, distinguish existence, attribution and explanation. An acknowledged
 substantial need not have an explanatory model. A classified substantial retains its identity,
 geometry and cohort membership while gaining a concrete trait or role; it is not a new observation
 of the predicate directive. Characterization explains that attribution inside the member. Missing
 explanation is a successful no-model outcome, whereas failed computation or inconsistent semantics
-is an error. The classifier's concrete result must strictly specialize the abstract predicate;
+is an error. The classifier's concrete result must equal or specialize the requested predicate;
 semantic closure excludes all unsatisfiable classes, including named classes equivalent to OWL
 Nothing. Optional model dependencies can permit no attribution, but never an inconsistent one.
-These distinctions belong in the domain's conceptual design independently of model availability.
+These distinctions belong in the domain's conceptual design independently of model availability. Characterization
+models may explain exact or subsumed predicates independently of abstractness. Semantic distance
+is a general ranking criterion for all observable heads and clauses; configured higher-priority
+criteria, such as lexical scope, still apply. Predicate heads admit broader model heads; other
+observable heads retain the equality requirement.
 The general type dispatch checks class, presence, physical intensive/extensive
 quality, value, generic quality, relationship, configuration, process, countable,
 and nothing, in that order; it is not a complete abstractness or consistency

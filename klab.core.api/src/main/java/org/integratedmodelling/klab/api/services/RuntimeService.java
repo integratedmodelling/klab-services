@@ -142,6 +142,10 @@ public interface RuntimeService extends KlabService {
      * @return
      */
     List<Observation> getOutcomes();
+
+    /** Producing computation's lexical constraints for a newly instantiated member. */
+    default List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>
+        getResolutionConstraints(Observation outcome) { return List.of(); }
   }
 
   /**

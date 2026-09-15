@@ -57,6 +57,10 @@ public interface ResolutionConstraint extends Serializable {
   enum Type {
     Scenarios(String.class, false /* debatable */),
     Geometry(Geometry.class, false),
+    /** Effective lexical namespace, replacing the inherited namespace. It also selects the
+     * namespace ranking overrides for all candidates. Instantiated members inherit their
+     * producing model's namespace when Runtime submits them for individual resolution.
+     */
     ResolutionNamespace(String.class, false),
     ResolutionProject(String.class, false),
     /**

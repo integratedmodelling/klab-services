@@ -106,7 +106,7 @@ description is optional text, not a serialized Dataflow. See [FlowChart diagnost
 ## Semantic attribution transactions
 
 Classification records knowledge about an existing identity. A pending attribution contains the
-member, its baseline observable, abstract predicate family, concrete result, support and event.
+member, its baseline observable, requested predicate family, concrete result, support and event.
 Runtime validates the batch and builds detached replacements through the Reasoner, adding traits
 or roles while preserving IDs, URNs, geometry, parents, cohorts and unrelated predicates.
 Transaction views expose the replacements to characterization; committed objects retain their
@@ -124,7 +124,7 @@ fail the transaction. Semantic updates replace `observable`, `semantics` and `se
 together, preserving unrelated properties. Failures mark the database transaction before closure;
 no successful prefix of the attribution batch is committed.
 
-Each CLASSIFIED edge records `before` and `after` observable URNs, `abstractPredicate`, `predicate`,
+Each CLASSIFIED edge records `before` and `after` observable URNs, `abstractPredicate` (the requested predicate family, which may also be concrete), `predicate`,
 encoded `support`, event and member identity. The Activity also carries the portable attribution
 list under `Metadata.IM_ATTRIBUTIONS`. These records and the semantic replacements commit together.
 Actual successful characterization adds CHARACTERIZED to the same member. Valid existing same-family

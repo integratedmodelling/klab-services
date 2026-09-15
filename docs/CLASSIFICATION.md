@@ -7,47 +7,27 @@ the main guides describe the accepted process contracts.
 
 ## Contract
 
-Classification resolves an abstract predicate X in a substantial Y. It attributes a concrete
-strict specialization Z of X to each selected Y observation. Observation identity, geometry,
-parent and cohort membership are preserved. The classification request is an operation, not a
-new observation or cohort. Instantiating missing Ys is a separate prerequisite which may create
-observations. Characterization then resolves Z of Y in the scope of that particular observation.
-Both lifecycle transitions belong to Runtime, not to user-authored continuations.
+Classification resolves `P of each S`, for abstract or concrete predicate P and substantial S.
+Distributed inherence alone determines CLASSIFICATION. Without `each`, `P of S` determines
+CHARACTERIZATION regardless of abstraction. Classification attributes a satisfiable concrete P
+or concrete specialization; it never attributes an abstract predicate. Existing valid attributions
+satisfy the request without reinvocation. Identity, geometry and cohort membership are preserved.
 
-| Request | Activity | Member source | Successful result |
-|---|---|---|---|
-| Abstract X of each Y | CLASSIFICATION | Query existing cohort support; resolve missing collective support | Existing/new Ys acquire concrete Z; no classification-result observation |
-| Abstract X of Y | CLASSIFICATION | Existing Ys in the contextual scope | Same semantic update, without implicitly demanding an instantiation |
-| Concrete Z of Y | CHARACTERIZATION | The classified Y, used as its own contextual scope | Explanation of its attributed predicate; no replacement Y |
-| Concrete Z of each Y | CHARACTERIZATION | Distribution across members | Per-member characterization, not classification merely because `each` occurs |
-| Predicate of quality Q | TRANSFORMATION | The base quality graph | Existing transformation contract, outside this work |
+Characterization models may match the predicate exactly or subsume it. Discovery includes abstract
+and concrete ancestor heads; semantic distance participates in the general Prioritizer criterion order (lexical scope first by default).
+Inherency and other semantic constraints still apply. Models for distinct non-predicate heads remain
+incompatible. See [the user-facing contract](OBSERVABLES.md#15-choosing-a-characterization-model).
 
-Abstraction selects classification versus characterization. Collective inherence selects how
-members are obtained. `isInstantiation()` historically includes collective predicate processing;
-use the new `modifiesExistingObservations()` distinction when deciding whether an observation
-result may be registered. Do not equate a successful empty cohort with missing coverage.
-
-The sample is corrected, as confirmed by the maintainer:
-
-```kim
-model geography:Tanzania earth:Region
-    observing earth:PhysicalEnvironment of each earth:Region;
-
-model earth:PhysicalEnvironment of each earth:Region
-    using klab.generators.random.categories();
-
-private model klab:random:objects:polygons
-    as each earth:Region;
-```
-
-A classifier attached to the Tanzania model would contextualize the parent, not implement its
-dependency. The instantiator now directly produces the requested Region collective.
+The implementation history below records earlier abstraction-based decisions where explicitly
+dated; this contract supersedes them. `PendingAttribution.abstractPredicate` and provenance metadata
+`abstractPredicate` retain their transport names but mean the requested predicate, not a guarantee
+of abstractness. All effects remain staged through resolved Dataflow execution.
 
 ## Source audit
 
 | Boundary | Current path and missing behavior |
 |---|---|
-| Semantics | `Contextualization.forSemantics` previously classified any collective inherent, even for a concrete predicate. It now distinguishes abstraction and rejects non-substantial/non-quality inherents. |
+| Semantics | `Contextualization.forSemantics` selects CLASSIFICATION for distributed substantial inherence and CHARACTERIZATION for individual substantial inherence. Predicate abstraction constrains results, not dispatch. Quality inherence remains TRANSFORMATION. |
 | Strategy selection | Activity patterns and ordinary producers already parse. Added a Tier-0 member-resolving classification strategy and direct characterization strategy. Lowering accepts the Tier-0 classification members plan and individual characterization. Classification requires an explicit resolved members input; unsupported forms are rejected. |
 | Resolver | `ResolutionCompiler` branches to an internal `OperationTarget` before observation query/registration for semantic updates, both at roots and in model dependencies. The existing resolution API remains unchanged. Y uses ordinary collective query and missing-scale resolution. |
 | Dataflow | Portable UPDATE actuators carry operation semantics, requested support and typed target bindings, with no result observation. `CompiledDataflow` dispatches CLASSIFICATION updates without allocating observations; other semantic updates remain rejected. |
@@ -59,7 +39,7 @@ dependency. The instantiator now directly produces the requested Region collecti
 
 ## Implemented milestone C0
 
-- Added abstraction-aware predicate activity selection and a semantic-update activity predicate.
+- Added predicate activity selection and a semantic-update activity predicate; selection now follows distributed versus individual inherence.
 - Added typed effect relationships and changed the current transaction writer to use them:
   INSTANTIATED, ACKNOWLEDGED, DETECTED, SIMULATED, MEASURED, QUANTIFIED, VALUED,
   CATEGORIZED, VERIFIED, CLASSIFIED, CHARACTERIZED, TRANSFORMED and CONNECTED.
@@ -180,8 +160,7 @@ model from the namespace. Classification dependency execution is enabled by C3; 
 An abstract classifier request must not use `request.fully_specified` to reject its deliberately
 abstract predicate. Validate the inherent and operation signature instead. The `members` port
 is compiled as a typed collective/member binding, not an ordinary scalar model argument. The current
-classification strategy covers collective inherence; singular-inherent classification needs its
-own existing-member binding contract before enabling that form.
+classification strategy covers collective inherence; singular inherence selects characterization instead.
 
 The runtime must finish resolution of newly instantiated members before passing them to the
 classifier. Characterization is never written as a strategy continuation.
@@ -226,8 +205,8 @@ At C1, the old blanket Reasoner lowerer guard was replaced by a Runtime whole-pl
 before `requireObservations`, storage preparation or executor construction, so a nested update cannot
 partially execute as an observation-producing plan. C3 replaces the classification gate with explicit
 operation dispatch and atomic effects; unsupported update kinds still fail preflight.
-Individual characterization has a portable target; collective characterization and singular-inherent
-classification remain unsupported pending their distribution/member-selection contracts.
+Individual characterization has a portable member target. Distributed predicate inherence is
+classification; singular predicate inherence is characterization.
 
 The remaining C1 text records the accepted contract and acceptance criteria. The next implementation
 stage is now **C5**, validating the complete lifecycle against the live staging namespaces.
@@ -306,7 +285,7 @@ method requires a local receiver. The actual generator currently declares
 `Concept generateConcept(Observable, ServiceCall, Scope)`; the executor supports it without inventing
 an Observation parameter. Every invocation receives the full X-of-Y operation observable, the
 actual member when requested, and `scope.within(member)`. Validation removes only INHERENT from
-the operation to obtain the abstract X, preserving other restrictions.
+the operation to obtain the requested X, preserving other restrictions.
 
 The original model dependency is carried as nullable `Actuator.modelDependency` through interface
 JSON transport. Only a non-null original dependency whose `isOptional()` is true permits the
@@ -316,10 +295,10 @@ exceptions, and invalid concepts are never treated as optional empty results.
 
 | Classifier outcome | Required dependency or other trigger | Optional original model dependency |
 |---|---|---|
-| Concrete, satisfiable strict specialization of X | Pending attribution | Pending attribution |
+| Concrete, satisfiable specialization (including an equal concrete predicate) of X | Pending attribution | Pending attribution |
 | Null (no concept, e.g. empty generator closure) | Failure | No attribution for that member |
 | NOTHING / owl:Nothing | Inconsistency error | Inconsistency error |
-| Abstract, equivalent to X, unrelated, unsatisfiable or non-predicate concept | Failure | Failure |
+| Abstract, unrelated, unsatisfiable or non-predicate concept | Failure | Failure |
 | Invocation exception | Failure | Failure |
 
 The initial Concept-returning contract has no separate empty collection or Optional return wrapper.
@@ -355,8 +334,8 @@ signature before execution: full operation Observable, member Observation and me
 Execute once per member per classified support/event, not once per grid cell or data shard. The
 actuator's operation observable stays X of Y and is passed unchanged alongside the concrete member.
 
-Require a concrete, consistent Concept Z of the appropriate predicate family and a strict semantic
-specialization of X (`is(Z, X)` plus exclusion of semantic equivalence with X). A null result is
+Require a concrete, consistent Concept Z of the appropriate predicate family and semantic
+compatibility with X (`is(Z, X)`, including equality for concrete X). A null result is
 allowed only for an optional original model dependency after classifier selection and linking.
 An abstract, unrelated, NOTHING or otherwise inconsistent result is always an error. Do not guess
 category compatibility from URN prefixes. Restrict the first implementation to local concept-
@@ -425,7 +404,7 @@ A successful child activity means its batch was **staged**. The enclosing root c
 whether those changes became durable; a later failure leaves no durable attribution/effect edge.
 Client consumers must not treat intermediate ActivityFinished as a commit notification.
 
-A valid concrete strict specialization of X already present as a direct trait or role satisfies
+A valid concrete specialization (including an equal concrete predicate) of X already present as a direct trait or role satisfies
 classification, whether asserted originally or obtained by another classifier. The executor checks
 this before invocation and yields no pending attribution, update/effect edge or characterization
 for that member. Invalid same-family attributions remain errors. Explicit replacement/combination
@@ -712,3 +691,12 @@ Member selection inspects the decoded extents of intersected support. A portable
 non-empty flag and positive cardinality alone do not imply a non-empty encoded spatial shape.
 Disjoint cohort members must be excluded before classifier invocation, independently of any
 existing predicate they bear. Reclassification policy is not a substitute for support filtering.
+
+### Distributed-inherence contract validation
+
+The revised contract is covered by 45 focused tests across API transport, semantic distance,
+Reasoner ancestor enumeration, model-index candidate filtering, Prioritizer ordering, resolution
+capability direction, classifier invocation and characterization lifecycle. The actual generator
+source is compiled and invoked, including a concrete predicate with no children. All passed with
+no skips (`target/predicate-contextualization-tests.log`). These controlled tests do not establish
+live model discovery and characterization after deployment of the revised contract.

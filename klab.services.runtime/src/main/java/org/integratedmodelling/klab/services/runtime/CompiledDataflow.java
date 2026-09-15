@@ -704,6 +704,8 @@ public class CompiledDataflow {
     private final Map<String, Boolean> updateResults = new HashMap<>();
     private final org.integratedmodelling.klab.api.documentation.FlowChart planChart;
     protected List<ContextualExecutor> executors = new ArrayList<>();
+    private final Map<ContextualExecutor, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
+        executorConstraints = new java.util.IdentityHashMap<>();
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
     private Map<String, Observation> localReferences = new HashMap<>();
@@ -741,7 +743,10 @@ public class CompiledDataflow {
        * all shards have computed. If there are multiple shards, we must keep the executor functions
        * and wrap them into another one that runs the shard executors in parallel.
        */
+      int computationIndex = 0;
       for (var call : actuator.getComputation()) {
+        var lexicalConstraints = actuator.getComputationConstraints().getOrDefault(computationIndex++, List.of());
+        int firstExecutor = executors.size();
 
         var callInfo = getCallInfo(call, observation);
         Expression expression = null;
@@ -809,6 +814,9 @@ public class CompiledDataflow {
               new ContextualizerExecutor(
                   componentRegistry, callInfo, observation, localReferences, call, scope));
         }
+        // Scalar batches do not instantiate members; bind each non-scalar producing executor.
+        for (int i = firstExecutor; i < executors.size(); i++)
+          executorConstraints.put(executors.get(i), lexicalConstraints);
       }
 
       if (scalarBuilder != null) {
@@ -879,11 +887,13 @@ public class CompiledDataflow {
       Throwable failure = null;
       boolean ret = true;
       for (var executor : executors) {
+        int firstOutcome = contextualizationScope.getOutcomes().size();
         if (!executor.execute(event, executionScope, contextualizationScope)) {
           ret = false;
           failure = executor.getCause();
           break;
         }
+        contextualizationScope.bindOutcomes(firstOutcome, executorConstraints.getOrDefault(executor, List.of()));
       }
 
       if (ret) {

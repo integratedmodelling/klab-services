@@ -29,6 +29,15 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
   private List<KlabStatement> statements = new ArrayList<>();
   private Map<String, List<String>> imports = new HashMap<>();
   private Geometry coverage;
+  private Map<String, Integer> resolutionCriteria = new HashMap<>();
+
+  @Override
+  public Map<String, Integer> getResolutionCriteria() { return resolutionCriteria; }
+
+  public void setResolutionCriteria(Map<String, Integer> resolutionCriteria) {
+    this.resolutionCriteria = resolutionCriteria == null ? new HashMap<>() : new HashMap<>(resolutionCriteria);
+  }
+
   private List<Annotation> annotations = new ArrayList<>();
   private KlabStatement.Scope scope;
   private KlabLanguage language = KlabLanguage.KIM;

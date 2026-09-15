@@ -121,6 +121,8 @@ class ClassificationPipelineTest {
     var computation = new ContextualizableImpl(); computation.setServiceCall(new ServiceCallImpl("test.classify"));
     when(model.getComputation()).thenReturn(List.of(computation));
     var instantiator = mock(Model.class);
+    when(instantiator.getNamespace()).thenReturn("test.instantiator");
+    when(instantiator.getProjectName()).thenReturn("test.project");
     when(instantiator.getCoverage()).thenReturn(Coverage.universal());
     when(instantiator.getDependencies()).thenReturn(List.of());
     when(instantiator.getComputation()).thenReturn(List.of(computation));
@@ -155,6 +157,19 @@ class ClassificationPipelineTest {
     assertTrue(graph.graph().vertexSet().stream().noneMatch(v -> v instanceof Observation o && o.getObservable().getUrn().equals(directive.getUrn())));
     var dataflow = new DataflowCompiler(request, graph, scope).compile();
     Dataflow restored = mapper.readValue(mapper.writerFor(Dataflow.class).writeValueAsString(dataflow), Dataflow.class);
+    var pending = new java.util.ArrayDeque<Actuator>(restored.getComputation());
+    boolean producerFound = false;
+    while (!pending.isEmpty()) {
+      var node = pending.removeFirst(); pending.addAll(node.getChildren());
+      for (var constraints : node.getComputationConstraints().values()) {
+        for (var constraint : constraints) {
+          if (constraint.getType() == org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionNamespace
+              && constraint.payload(String.class).contains("test.instantiator")) producerFound = true;
+        }
+      }
+    }
+    assertEquals(fraction < 1 && !characterization, producerFound,
+        "Only a newly resolved instantiator carries producer constraints through Dataflow transport");
     var update = restored.getComputation().getFirst();
     if (nested) update = update.getChildren().getFirst();
     if (nested) {

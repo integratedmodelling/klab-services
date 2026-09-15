@@ -55,6 +55,11 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
   }
 
   @Override
+  public Map<String, Integer> getResolutionCriteria() {
+    return delegate.getResolutionCriteria();
+  }
+
+  @Override
   public Geometry getCoverage() {
     return delegate.getCoverage();
   }

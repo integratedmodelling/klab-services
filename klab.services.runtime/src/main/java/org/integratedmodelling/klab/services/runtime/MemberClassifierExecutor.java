@@ -116,11 +116,10 @@ public final class MemberClassifierExecutor {
             .without(SemanticRole.INHERENT)
             .buildConcept();
     if (predicate == null
-        || !predicate.isAbstract()
         || predicate.is(SemanticType.NOTHING)
         || !predicate.is(SemanticType.PREDICATE)
         || !reasoner.satisfiable(predicate))
-      throw new IllegalArgumentException("Classification requires a consistent abstract predicate");
+      throw new IllegalArgumentException("Classification requires a consistent predicate");
     this.optional =
         actuator.getModelDependency() != null && actuator.getModelDependency().isOptional();
   }
@@ -206,7 +205,7 @@ public final class MemberClassifierExecutor {
     // NOTHING is inconsistency, never absence, even for an optional dependency.
     if (!validSpecialization(value))
       throw new IllegalArgumentException(
-          "Classifier result is not a consistent concrete strict specialization: " + value);
+          "Classifier result is not a consistent concrete specialization: " + value);
     return Optional.of(
         new PendingAttribution(member, member.getObservable(), predicate, value, support, event));
   }
@@ -214,8 +213,7 @@ public final class MemberClassifierExecutor {
     return !value.is(SemanticType.NOTHING)
         && !value.isAbstract() && !value.is(SemanticType.ABSTRACT)
         && value.is(SemanticType.PREDICATE) && reasoner.satisfiable(value)
-        && reasoner.is(value, predicate) && !reasoner.is(predicate, value)
-        && !Objects.equals(value.getUrn(), predicate.getUrn());
+        && (Objects.equals(value.getUrn(), predicate.getUrn()) || reasoner.is(value, predicate));
   }
 
 }

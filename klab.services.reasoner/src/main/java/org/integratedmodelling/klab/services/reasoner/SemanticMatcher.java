@@ -218,6 +218,10 @@ public class SemanticMatcher {
       Map<Concept, Concept> resolvedAbstractPredicates,
       Scope scope) {
 
+    if (from.is(SemanticType.PREDICATE) && to.is(SemanticType.PREDICATE)
+        && from.getDescriptionType() != null && to.getDescriptionType() != null
+        && from.getDescriptionType() != to.getDescriptionType()) return -50;
+
     if (from.getUrn().equals(to.getUrn()) && context == null) {
       return 0;
     }

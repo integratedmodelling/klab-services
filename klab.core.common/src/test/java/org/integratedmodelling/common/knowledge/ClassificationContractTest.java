@@ -14,9 +14,9 @@ class ClassificationContractTest {
       subject.setType(EnumSet.of(SemanticType.SUBJECT)); subject.setCollective(collective);
       var predicate = new KimConceptImpl(); predicate.setInherent(subject);
       predicate.setType(EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.ABSTRACT));
-      assertEquals(Contextualization.CLASSIFICATION, Contextualization.forSemantics(predicate));
+      assertEquals(collective ? Contextualization.CLASSIFICATION : Contextualization.CHARACTERIZATION, Contextualization.forSemantics(predicate));
       predicate.getType().remove(SemanticType.ABSTRACT);
-      assertEquals(Contextualization.CHARACTERIZATION, Contextualization.forSemantics(predicate));
+      assertEquals(collective ? Contextualization.CLASSIFICATION : Contextualization.CHARACTERIZATION, Contextualization.forSemantics(predicate));
       subject.setType(EnumSet.of(SemanticType.QUALITY));
       assertEquals(Contextualization.TRANSFORMATION, Contextualization.forSemantics(predicate));
       predicate.setInherent(null);

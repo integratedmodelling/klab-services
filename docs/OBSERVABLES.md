@@ -80,8 +80,8 @@ worldview declarations; they are not a tested model catalogue.
 | A monetary or non-monetary value quality | `VALUATION` | Assigns value, absolute or relative to another concept, with a Currency: a monetary unit or bounded rank. | `economy:PropertyValue in EUR@2025/m/m`; a non-monetary preference valuation. |
 | A categorical quality, including a `type of` reification | `CATEGORIZATION` | Assigns a concept consistent with the declared value space. | `type of biology:Tree`. |
 | A boolean presence quality | `VERIFICATION` | Establishes presence or absence of a substantial. | `presence of biology:Tree`. |
-| An abstract predicate, directly abstract or qualified with `any`, applied to substantials | `CLASSIFICATION` | Finds and attributes concrete traits or roles, then triggers characterization of each successful attribution. | Abstract `Species of each Tree`: determine the concrete species predicate for each tree. |
-| A concrete predicate attributed to a substantial | `CHARACTERIZATION` | Explains the attributed trait or role within that observation. | Concrete `Deciduous of Tree`: explain that trait for the tree. |
+| A predicate with distributed substantial inherence: `P of each S` | `CLASSIFICATION` | Obtains S members and attributes P itself if concrete, or a concrete specialization; then characterizes each new attribution. | `Species of each Tree` identifies species; concrete `Deciduous of each Tree` can attribute Deciduous. |
+| A predicate with individual substantial inherence: `P of S` | `CHARACTERIZATION` | Explains the predicate within S, using an exact or subsuming predicate model. P may be abstract or concrete. | `Deciduous of Tree`: explain that trait for the tree; a broader vegetation-trait model may supply the explanation. |
 | A concrete predicate attributed to a quality | `TRANSFORMATION` | Transforms the quality so that it expresses the trait or role. | A normalization trait applied to a numeric quality, where the worldview defines that trait and its transformation. |
 | A non-functional, abstract, or inconsistent request that cannot produce an observation | `VOID` | Produces nothing. | A bare predicate without an inherent observable. |
 
@@ -104,9 +104,9 @@ are resolution activities: they explain an observation or characteristic.
 Neither acknowledgement nor classification is defined by producing a numeric
 data array.
 
-For classification, `ABSTRACT_PREDICATE of each SUBSTANTIAL` first resolves the
-collective substantials. Without `each`, classification uses substantials
-already in the observation context. Attributed predicates do not move them to
+For classification, `PREDICATE of each SUBSTANTIAL` first resolves the
+collective substantials. Without `each`, the request is CHARACTERIZATION within
+the inherent substantial, independently of predicate abstraction. Attributed predicates do not move them to
 different cohorts, although an individual identity can support new cohorts
 collecting its bearers. Connection follows the same distinction for its
 endpoints: resolve a requested collective or use existing contextual instances.
@@ -124,18 +124,16 @@ from detected qualities is local to the observation holding those qualities.
 One built from relationships is global to the digital twin and can change as
 new observations are made under the same observer.
 
-**Contract and implementation:** predicate dispatch uses inherency and the predicate's
-`ABSTRACT` semantic flag: no bearer gives `VOID`, a quality bearer gives `TRANSFORMATION`,
-and a substantial bearer gives `CLASSIFICATION` for an abstract predicate or
-`CHARACTERIZATION` for a concrete one. Collective inherence determines member acquisition,
-not whether a concrete predicate becomes a classifier. Classification preserves observation
-identity and cohort membership; it changes semantics, then Runtime schedules characterization
-inside each member. Missing characterization models do not invalidate classification.
-The member-resolving classifier strategy is Tier 0. Collective classification dependencies execute
-through resolved Dataflow operations; runtime-owned individual characterization uses the same
-resolution contract. Other forms, including singular-inherent classification and collective
-characterization distribution, still require executor support. An enum value alone does not
-establish executable support.
+**Dispatch rule:** a predicate without a bearer gives `VOID`; a quality bearer gives
+`TRANSFORMATION`. For a substantial bearer, `of each` selects `CLASSIFICATION` and `of` selects
+`CHARACTERIZATION`. Abstractness does not select the activity. It constrains attribution: only a
+concrete, satisfiable predicate can be added to a substantial's semantics. Classification preserves
+identity and cohort membership, then Runtime schedules characterization inside each newly
+classified member. A member already bearing a valid matching predicate needs no new classification.
+
+The member-resolving classifier strategy is Tier 0. Classification and individual characterization
+execute through semantic-update Dataflow nodes. An enum value alone does not establish support for
+other workflows such as arbitrary root directive submission.
 
 ### 1.4 Existence, attribution and explanation
 
@@ -152,8 +150,10 @@ members and determines a concrete environment predicate for each. A result such 
 membership. Runtime then requests `earth:Freshwater of earth:Region` within that member. A
 `type of` quality instead stores a concept as a value: it does not make this semantic attribution.
 
-A classifier result must be a consistent concrete strict specialization of its abstract predicate.
-The predicate itself, an abstract descendant, and any unsatisfiable concept are invalid results.
+A classifier result must be a consistent concrete predicate equal to or specializing the requested
+predicate. A concrete predicate with no children is a valid result for itself. An abstract predicate
+may be requested, but neither it nor any abstract descendant can be attributed; unsatisfiable
+concepts are always invalid.
 The classifier receives the full observable and chooses the predicate projection needed to query
 its closure. A null result may leave a member unchanged only for an optional original model
 dependency with a resolved classifier; inconsistency never means optional absence.
@@ -162,6 +162,30 @@ Attributions and their explanations share the enclosing transaction. Semantics a
 provenance become durable together; a later failure cannot leave only part of the classification
 batch applied. See [resolution workflows](RESOLUTION.md#17-semantic-update-contextualizations) and
 [semantic attribution transactions](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions).
+
+### 1.5 Choosing a characterization model
+
+A model of `P of S` can characterize that predicate or a more specific predicate on a compatible
+bearer. This applies whether P is abstract or concrete. Model discovery includes subsuming
+predicate heads; semantic distance favors the exact match, then progressively broader applicable explanations.
+This is a general model-ranking criterion: inherency and other clauses also contribute for
+non-predicate observables. The configured criterion order applies; by default lexical scope precedes
+semantic distance. The examples below assume equal higher-priority ranking criteria. Inherency, scope and other
+semantic restrictions must still match. Non-predicate observables retain the exact-head rule:
+a model of a different quality subclass does not become an interchangeable measurement.
+
+Suppose `P2 is P1` and `P3 is P1`, with models for `P1 of S` and `P2 of S`:
+
+| Member attribution | Characterization request | Preferred model |
+|---|---|---|
+| `P1 S` (if P1 is concrete) | `P1 of S` | `P1 of S` |
+| `P2 S` | `P2 of S` | `P2 of S` (exact match) |
+| `P3 S` | `P3 of S` | `P1 of S` (subsuming match) |
+
+If P1 is abstract, `P1 S` cannot be created by classification, but the `P1 of S` model remains a
+valid general explanation for concrete P2 and P3. Models of narrower or unrelated predicates do
+not explain a broader requested predicate. `P of each S` classifier models and `P of S`
+characterizer models are different operations and are not interchangeable.
 
 ## 2. Concepts and predicates
 
