@@ -11,14 +11,14 @@ interface Workflow { id: string; name?: string; description?: string; version?: 
 const workflows = ref<Workflow[]>([]), selected = ref("");
 const busy = ref(false), downloading = ref(false), error = ref("");
 const workflow = computed(() => workflows.value.find(item => item.id === selected.value));
-const url = computed(() => selected.value ? `/api/v1/workflows/${encodeURIComponent(selected.value)}/flowchart` : "");
+const url = computed(() => selected.value ? `api/v1/workflows/${encodeURIComponent(selected.value)}/flowchart` : "");
 async function load(url: string, signal: AbortSignal): Promise<FlowChart> {
   return props.context.api.request<FlowChart>(url, { signal });
 }
 async function refresh() {
   busy.value = true; error.value = "";
   try {
-    workflows.value = await props.context.api.get<Workflow[]>("/api/v1/workflows");
+    workflows.value = await props.context.api.get<Workflow[]>("api/v1/workflows");
     if (!workflows.value.some(item => item.id === selected.value)) selected.value = workflows.value[0]?.id || "";
   } catch (cause) { error.value = cause instanceof Error ? cause.message : String(cause); }
   finally { busy.value = false; }
