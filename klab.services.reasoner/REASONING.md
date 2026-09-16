@@ -230,7 +230,7 @@ All listed direct and inherited operations are implemented locally and remotely.
 | --- | --- | --- | --- |
 | `computeObservationStrategies(observation, scope)` | yes | yes | Returns matching observation strategies ordered by the observation reasoner. |
 | `computeIdentificationStrategies(observable, scope)` | yes | yes | Returns the most specific identification strategy for the substantial observable in scope. |
-| `semanticSearch(request)` | yes | local only | Maintains an expiring interactive `SemanticExpression` supporting token search, scopes, and undo. |
+| `semanticSearch(request)` | partial | partial | JSON endpoint with server-owned sessions, contextual proposals, selection, groups, values and undo; see [rules and extension guide](SEMANTIC_SEARCH.md). |
 | `buildConcept(strategy, scope)` | yes | local only | Replays an `ObservableBuildStrategy` through `SemanticsBuilder` and returns a concept. |
 | `buildObservable(strategy, scope)` | yes | local only | Replays an `ObservableBuildStrategy` through `SemanticsBuilder` and returns an observable. |
 
@@ -323,9 +323,11 @@ TODO.
 
 TODO.
 
-## TODO: remote semantic search
+## Assisted semantic search
 
-TODO.
+The client and `AssistController` now expose the session protocol. The reusable IDE composer is its
+first consumer. [SEMANTIC_SEARCH.md](SEMANTIC_SEARCH.md) documents the implemented rule catalog,
+shared validator integration, incomplete semantic validation, extension workflow and tests.
 
 ## TODO: remote build strategies
 

@@ -1683,11 +1683,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   private String removeExcessParentheses(String definition) {
-    definition = definition.trim();
-    while (definition.startsWith("(") && definition.endsWith(")")) {
-      definition = definition.substring(1, definition.length() - 1);
-    }
-    return definition;
+    return org.integratedmodelling.common.utils.SemanticSyntax.stripOuterParentheses(definition);
   }
 
   public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {

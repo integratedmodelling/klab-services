@@ -62,7 +62,7 @@ public class StyledKimToken {
         ret.color = KimStyle.Color.UNKNOWN;
         
         if (c instanceof Concept) {
-            ret.value = c.toString();
+            ret.value = ((Concept) c).getUrn();
             KimStyle style = KimStyle.getStyle((Concept)c);
             ret.color = style.getColor();
             ret.font = style.getFontStyle();
@@ -76,7 +76,7 @@ public class StyledKimToken {
             ret.value = ((UnarySemanticOperator) c).declaration[alternative ? 1 : 0];
             ret.font = FontStyle.BOLD;
         } else if (c instanceof BinarySemanticOperator) {
-            ret.value = ((BinarySemanticOperator)c).name().toLowerCase();
+            ret.value = ((BinarySemanticOperator)c).getDeclaration();
             ret.font = FontStyle.BOLD;
         } else if (c instanceof String) {
 

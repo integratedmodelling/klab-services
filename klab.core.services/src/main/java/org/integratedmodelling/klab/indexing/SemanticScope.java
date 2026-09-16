@@ -61,18 +61,16 @@ public class SemanticScope {
 			return ret;
 		}
 
-		public boolean matches(Concept concept) {
-			for (Object o : arguments) {
-				if (o instanceof SemanticType
-						&& (!concept.is((SemanticType) o) || (negated && concept.is((SemanticType) o)))) {
-					return false;
-				} else if (o instanceof Constraint && (!((Constraint) o).matches(concept))
-						|| (negated && ((Constraint) o).matches(concept))) {
-					return false;
-				} // TODO continue
-			}
-			return negated ? false : true;
-		}
+        public boolean matches(Concept concept) {
+            if (concept == null || unit != null) return false;
+            boolean matches = true;
+            for (Object argument : arguments) {
+                matches &= argument instanceof SemanticType type ? concept.is(type)
+                        : argument instanceof Constraint constraint ? constraint.matches(concept)
+                        : argument instanceof Concept other && other.equals(concept);
+            }
+            return negated ? !matches : matches;
+        }
 
 		public String toString() {
 			return (negated ? "<NOT " : "<") + arguments + ">";

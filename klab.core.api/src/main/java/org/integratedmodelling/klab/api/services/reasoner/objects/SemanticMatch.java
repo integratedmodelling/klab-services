@@ -81,7 +81,7 @@ public class SemanticMatch {
     public SemanticMatch(BinarySemanticOperator op) {
         this.binaryOperator = op;
         this.matchType = Type.BINARY_OPERATOR;
-        this.id = this.name = op.name().toLowerCase();
+        this.id = this.name = op.getDeclaration();
     }
 
     public SemanticMatch(SemanticLexicalElement op) {
@@ -251,6 +251,9 @@ public class SemanticMatch {
     public BinarySemanticOperator getBinaryOperator() {
         return binaryOperator;
     }
+
+    public ValueOperator getValueOperator() { return valueOperator; }
+    public void setValueOperator(ValueOperator value) { valueOperator = value; }
 
     public void setBinaryOperator(BinarySemanticOperator binaryOperator) {
         this.binaryOperator = binaryOperator;

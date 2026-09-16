@@ -23,6 +23,26 @@ public class SemanticSearchResponse {
     private long elapsedTimeMs = System.currentTimeMillis();
     private List<SemanticMatch> matches = new ArrayList<>();
     private int parenthesisDepth;
+    private String declaration = "";
+    private org.integratedmodelling.klab.api.knowledge.Observable observable;
+    private boolean canUndo;
+    private boolean canOpenScope;
+    private boolean canCloseScope;
+    private boolean acceptsValue;
+
+    public String getDeclaration() { return declaration; }
+    public void setDeclaration(String value) { declaration = value; }
+    /** Non-null only when the complete expression resolves to a satisfiable observable. */
+    public org.integratedmodelling.klab.api.knowledge.Observable getObservable() { return observable; }
+    public void setObservable(org.integratedmodelling.klab.api.knowledge.Observable value) { observable = value; }
+    public boolean isCanUndo() { return canUndo; }
+    public void setCanUndo(boolean value) { canUndo = value; }
+    public boolean isCanOpenScope() { return canOpenScope; }
+    public void setCanOpenScope(boolean value) { canOpenScope = value; }
+    public boolean isCanCloseScope() { return canCloseScope; }
+    public void setCanCloseScope(boolean value) { canCloseScope = value; }
+    public boolean isAcceptsValue() { return acceptsValue; }
+    public void setAcceptsValue(boolean value) { acceptsValue = value; }
 
     public SemanticSearchResponse() {}
     

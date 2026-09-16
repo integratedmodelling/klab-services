@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @Tag(name = "Semantic assistance", description = "Semantic search and assisted concept discovery")
@@ -31,7 +32,7 @@ public class AssistController {
       @ApiResponse(responseCode = "200", description = "Search completed successfully")
   })
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_SEARCH)
-  SemanticSearchResponse semanticSearch(@Parameter(description = "Semantic search parameters") SemanticSearchRequest request) {
+  SemanticSearchResponse semanticSearch(@RequestBody @Parameter(description = "Semantic search parameters") SemanticSearchRequest request) {
     return reasoner.klabService().semanticSearch(request);
   }
 }

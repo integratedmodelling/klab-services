@@ -766,8 +766,8 @@ public interface Reasoner extends KlabService {
 
   /**
    * Entry point of the assisted semantic search behind interactive concept definition. If the
-   * request has a new searchId, start a new SemanticExpression and keep it until timeout or
-   * completion.
+   * request has searchId=0, allocate a server-owned session. Reuse the returned ID until explicit
+   * cancellation or timeout; unknown nonzero IDs fail without creating a replacement expression.
    *
    * @param request
    */

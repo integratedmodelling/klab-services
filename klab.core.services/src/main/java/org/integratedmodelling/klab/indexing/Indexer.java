@@ -19,8 +19,6 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.ControlledRealTimeReopenThread;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -34,7 +32,6 @@ import org.apache.lucene.store.Directory;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -271,14 +268,15 @@ public class Indexer {
     }
 
     public Query buildQuery(String currentTerm, Analyzer analyzer) {
-        QueryParser parser = new QueryParser("name", analyzer);
-        // parser.setAllowLeadingWildcard(true);
-        try {
-            // hai voglia
-            return parser.parse("name:" + currentTerm + "*");
-        } catch (ParseException e) {
-            throw new KlabValidationException(e);
+        if (currentTerm == null || currentTerm.isBlank())
+            return new org.apache.lucene.search.MatchAllDocsQuery();
+        // User input is plain type-ahead text, never Lucene query syntax.
+        var query = new org.apache.lucene.search.BooleanQuery.Builder();
+        for (String word : currentTerm.toLowerCase(java.util.Locale.ROOT).split("[^\\p{L}\\p{N}_]+")) {
+            if (!word.isBlank()) query.add(new org.apache.lucene.search.PrefixQuery(new Term("name", word)),
+                    org.apache.lucene.search.BooleanClause.Occur.MUST);
         }
+        return query.build();
     }
 
     /**
@@ -307,10 +305,10 @@ public class Indexer {
                         ret.add(new SemanticMatch(SemanticLexicalElement.ADJACENT_TO));
                         break;
                     case CAUSANT:
-                        ret.add(new SemanticMatch(SemanticLexicalElement.CAUSING));
+                        ret.add(new SemanticMatch(SemanticLexicalElement.CAUSED_BY));
                         break;
                     case CAUSED:
-                        ret.add(new SemanticMatch(SemanticLexicalElement.CAUSED_BY));
+                        ret.add(new SemanticMatch(SemanticLexicalElement.CAUSING));
                         break;
                     case COMPRESENT:
                         ret.add(new SemanticMatch(SemanticLexicalElement.WITH));
@@ -344,6 +342,11 @@ public class Indexer {
                             ret.add(match);
                         }
                         break;
+                    case BINARY_OPERATOR:
+                        for (var operator : org.integratedmodelling.klab.api.lang.BinarySemanticOperator.values()) {
+                            if (operator.getDeclaration().startsWith(term)) ret.add(new SemanticMatch(operator));
+                        }
+                        break;
                     case LOGICAL_OPERATOR:
                         break;
                     case UNARY_OPERATOR:
@@ -371,7 +374,7 @@ public class Indexer {
             Set<String> ids = new HashSet<>();
             try {
 
-                TopDocs docs = searcher.search(buildQuery(term, this.analyzer), maxResults);
+                TopDocs docs = searcher.search(buildQuery(term, this.analyzer), Math.max(1000, maxResults));
                 ScoreDoc[] hits = docs.scoreDocs;
 
                 for (ScoreDoc hit : hits) {
@@ -395,6 +398,7 @@ public class Indexer {
                             match.setDescription(document.get("description"));
                             match.setScore(hit.score);
                             match.setSemantics(decodeType(document.get("smtype")));
+                            match.setAbstract(concept.is(SemanticType.ABSTRACT));
                             match.setMatchType(matchType);
                             match.getConceptType().add(SemanticType.values()[Integer.parseInt(document.get(
                                     "vctype"))]);
@@ -431,7 +435,7 @@ public class Indexer {
     Collection<SemanticMatch> matchValueOperators(String term) {
         List<SemanticMatch> ret = new ArrayList<>();
         for (ValueOperator op : ValueOperator.values()) {
-            if (op.name().toLowerCase().startsWith(term)) {
+            if (op.declaration.startsWith(term) || op.textForm.startsWith(term)) {
                 ret.add(new SemanticMatch(op));
             }
         }

@@ -6,26 +6,20 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 /**
- * Sent by the front end to execute a query with a partial match.
- * <p>
- * Each request should come with a requestId that is unique within a session and increases at each
- * new request within the same search. First time sent, leave contextId blank. The response with the
- * passed requestId will contain the contextId which should be used for each later request. If
- * establishing a context is wished before any search proceeds (for example when search response can
- * be slow), establish the context passing an empty query and block until the response arrives.
- * <p>
- * Semantic types and match types should only be set to constrain the query at the first request.
- * After that it is better to leave it to the indexing service, as any type not fitting the current
- * query context will cause empty responses.
- * <p>
- * 
- * @author ferdinando.villa
+ * Incremental semantic-search request. Start with searchId=0 and TOKEN (an empty query is valid),
+ * then reuse the server-assigned ID. Request IDs must increase within that search. Serialize edits;
+ * clients may discard obsolete query responses but must retain the initialized search ID.
  *
+ * <p>TOKEN only queries. SELECT accepts selectedMatchId from the response identified by
+ * matchesRequestId. VALUE accepts a literal in queryString when the server requests one.
+ * UNDO and scope operations edit the expression. cancelSearch releases the session.
+ * Initial semanticTypes constrain completed results; initial matchTypes filter proposals.
+ * Unsupported components are not offered. Idle searches expire on the server.
  */
 public class SemanticSearchRequest {
 
     public enum Mode {
-        TOKEN, UNDO, OPEN_SCOPE, CLOSE_SCOPE
+        TOKEN, UNDO, OPEN_SCOPE, CLOSE_SCOPE, SELECT, VALUE
     }
 
     private String queryString;
@@ -36,7 +30,15 @@ public class SemanticSearchRequest {
     private int maxResults = 9;
     private Set<SemanticType> semanticTypes = EnumSet.noneOf(SemanticType.class);
     private Set<SemanticMatch.Type> matchTypes = EnumSet.noneOf(SemanticMatch.Type.class);
-    private Mode searchMode;
+    private Mode searchMode = Mode.TOKEN;
+    private String selectedMatchId;
+    private int matchesRequestId;
+
+    /** Identity of a proposal in the response identified by matchesRequestId. */
+    public String getSelectedMatchId() { return selectedMatchId; }
+    public void setSelectedMatchId(String value) { selectedMatchId = value; }
+    public int getMatchesRequestId() { return matchesRequestId; }
+    public void setMatchesRequestId(int value) { matchesRequestId = value; }
 
     public String getQueryString() {
         return queryString;
@@ -86,8 +88,7 @@ public class SemanticSearchRequest {
     }
 
     /**
-     * A search with this body corresponds to an empty search string and retrieves the user's most
-     * likely matches of interest, based on group and search history.
+     * Reserved for personalized defaults. Currently empty TOKEN queries return ordinary proposals.
      * 
      * @return
      */

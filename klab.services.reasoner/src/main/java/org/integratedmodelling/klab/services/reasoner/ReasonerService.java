@@ -51,7 +51,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
-import org.integratedmodelling.klab.indexing.SemanticExpression;
+import org.integratedmodelling.klab.indexing.SemanticSearchSession;
 import org.integratedmodelling.klab.runtime.language.KimObservableVisitor;
 import org.integratedmodelling.klab.runtime.language.SemanticDocumentation;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -152,8 +152,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * Cache for ongoing requests expires in 10 minutes. CHECK this may be less and become
    * configurable.
    */
-  private Cache<Integer, SemanticExpression> semanticExpressions =
-      Caffeine.newBuilder().expireAfterAccess(Duration.ofMinutes(10)).build();
+  private Cache<Integer, SemanticSearchSession> semanticExpressions =
+      Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(Duration.ofMinutes(10)).build();
 
   private final OWL owl;
   private final String hardwareSignature = Utils.Names.getHardwareId();
@@ -173,6 +173,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private void invalidateSemanticCaches() {
     knowledgeRevision.incrementAndGet();
+    semanticExpressions.invalidateAll();
     concepts.invalidateAll();
     observables.invalidateAll();
     subsumption.invalidateAll();
@@ -2651,94 +2652,41 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   /**
-   * Entry point of a semantic search. If the request has a new searchId, start a new
-   * SemanticExpression and keep it until timeout or completion.
+   * Allocate a semantic search only for ID zero. Unknown or expired IDs never silently restart
+   * an expression; the client must explicitly initialize again.
    *
    * @param request
    */
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
 
-    var response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
-
+    long started = System.currentTimeMillis();
+    int id = request.getSearchId();
+    SemanticSearchResponse response;
     if (request.isCancelSearch()) {
-      semanticExpressions.invalidate(request.getSearchId());
-    } else {
-
-      switch (request.getSearchMode()) {
-        case UNDO:
-
-          // client may be stupid, as mine is
-          var expression = semanticExpressions.getIfPresent(request.getSearchId());
-          if (expression != null) {
-            boolean ok = true;
-            if (!expression.undo()) {
-              semanticExpressions.invalidate(request.getSearchId());
-              ok = false;
-            }
-
-            response.setSearchId(ok ? request.getSearchId() : null);
-            if (ok) {
-              response.getErrors().addAll(expression.getErrors());
-              response.getCode().addAll(expression.getStyledCode());
-              response.setCurrentType(expression.getObservableType());
-            }
-          } else {
-            response.getErrors().add("Timeout during search");
-          }
-          break;
-
-        case OPEN_SCOPE:
-          expression = semanticExpressions.getIfPresent(response.getSearchId());
-          if (expression != null) {
-            expression.accept("(");
-            response.setSearchId(request.getSearchId());
-            response.getErrors().addAll(expression.getErrors());
-            response.getCode().addAll(expression.getStyledCode());
-            response.setCurrentType(expression.getObservableType());
-          } else {
-            response.getErrors().add("Timeout during search");
-          }
-
-          break;
-
-        case CLOSE_SCOPE:
-          expression = semanticExpressions.getIfPresent(response.getSearchId());
-          if (expression != null) {
-            expression.accept(")");
-            response.getErrors().addAll(expression.getErrors());
-            response.getCode().addAll(expression.getStyledCode());
-            response.setCurrentType(expression.getObservableType());
-          } else {
-            response.getErrors().add("Timeout during search");
-          }
-          break;
-
-        case TOKEN:
-          expression = semanticExpressions.getIfPresent(response.getSearchId());
-          if (expression == null) {
-            expression = SemanticExpression.create(serviceScope());
-            semanticExpressions.put(response.getSearchId(), expression);
-          } else {
-            response.getErrors().add("Timeout during search");
-          }
-
-          for (var match :
-              indexer.query(
-                  request.getQueryString(),
-                  expression.getCurrent().getScope(),
-                  request.getMaxResults())) {
-            response.getMatches().add(match);
-          }
-
-          // save the matches in the expression so that we recognize a choice
-          expression.setData("matches", response);
-
-          break;
-      }
+      semanticExpressions.invalidate(id);
+      return new SemanticSearchResponse(0, request.getRequestId());
     }
-
-    response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
+    var session = id == 0 ? null : semanticExpressions.getIfPresent(id);
+    if (id != 0 && session == null) {
+      response = new SemanticSearchResponse(0, request.getRequestId());
+      response.getErrors().add("This search has expired. Start a new expression.");
+    } else {
+      if (session == null) {
+        if (request.getSearchMode() != null
+            && request.getSearchMode() != SemanticSearchRequest.Mode.TOKEN) {
+          response = new SemanticSearchResponse(0, request.getRequestId());
+          response.getErrors().add("Initialize a search before editing an expression.");
+          return response;
+        }
+        session = new SemanticSearchSession(this, indexer::query, request);
+        do {
+          id = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
+        } while (semanticExpressions.asMap().putIfAbsent(id, session) != null);
+      }
+      response = session.handle(request, id);
+    }
+    response.setElapsedTimeMs(System.currentTimeMillis() - started);
     return response;
   }
 

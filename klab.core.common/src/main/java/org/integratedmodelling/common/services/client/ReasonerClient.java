@@ -104,11 +104,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   private String removeExcessParentheses(String definition) {
-    definition = definition.trim();
-    while (definition.startsWith("(") && definition.endsWith(")")) {
-      definition = definition.substring(1, definition.length() - 1);
-    }
-    return definition;
+    return org.integratedmodelling.common.utils.SemanticSyntax.stripOuterParentheses(definition);
   }
 
   public Concept resolveConceptInternal(String definition) {
@@ -650,8 +646,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
-    throw new KlabUnimplementedException(
-        "Semantic search is not exposed by the remote reasoner controller");
+    return client.post(ServicesAPI.REASONER.SEMANTIC_SEARCH, request, SemanticSearchResponse.class);
   }
 
   @Override

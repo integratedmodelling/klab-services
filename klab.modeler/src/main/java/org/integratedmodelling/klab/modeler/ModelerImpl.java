@@ -189,6 +189,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     Observation.NaiveBuilder builder = null;
 
+    if (asset instanceof org.integratedmodelling.klab.api.knowledge.Observable observable) {
+      try {
+        builder = ObservableSubmission.builder(observable, currentContext);
+      } catch (RuntimeException ex) {
+        return CompletableFuture.failedFuture(ex);
+      }
+    }
+
     if (asset instanceof KlabStatement statement) {
 
       if (asset instanceof KimModel || asset instanceof KimSymbolDefinition) {
