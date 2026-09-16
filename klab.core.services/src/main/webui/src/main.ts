@@ -13,7 +13,7 @@ createApp(App)
     config: {
       brand: {
         primary: "#18b795",
-        secondary: "#b9f36b",
+        secondary: "#9ab558",
         dark: "#092f2a",
       },
     },
