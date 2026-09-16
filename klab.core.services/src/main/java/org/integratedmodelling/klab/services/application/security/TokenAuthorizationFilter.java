@@ -44,6 +44,13 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
       HttpServletRequest req, HttpServletResponse res, FilterChain chain)
       throws IOException, ServletException {
 
+    // The exchange controller sends the Keycloak credential only to the trusted hub. It is not
+    // a legacy k.LAB JWT, and logout must remain possible after a browser credential expires.
+    if (HubWebAuthentication.ENDPOINT.equals(req.getServletPath())) {
+      chain.doFilter(req, res);
+      return;
+    }
+
     String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
     if (tokenString != null && tokenString.regionMatches(true, 0, "Bearer ", 0, 7)) {
       tokenString = tokenString.substring(7).trim();
@@ -61,6 +68,11 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
         EngineAuthorization token = authorizationManager.validateToken(tokenString, requestHeaders);
         if (token != null && token.isAuthenticated()) {
           SecurityContextHolder.getContext().setAuthentication(token);
+        } else if (tokenString.startsWith(HubWebAuthentication.PREFIX)) {
+          SecurityContextHolder.clearContext();
+          res.setHeader("Cache-Control", "no-store");
+          res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+          return;
         }
       } catch (Throwable e) {
         logger.error("Failed to extract JWT token: ", e);

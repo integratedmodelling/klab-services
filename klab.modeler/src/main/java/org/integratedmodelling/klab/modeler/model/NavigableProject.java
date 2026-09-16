@@ -52,6 +52,11 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
   }
 
   @Override
+  public org.integratedmodelling.klab.api.settings.ProjectSettings getSettings() {
+    return delegate.getSettings();
+  }
+
+  @Override
   public List<KimNamespace> getNamespaces() {
     return delegate.getNamespaces();
   }

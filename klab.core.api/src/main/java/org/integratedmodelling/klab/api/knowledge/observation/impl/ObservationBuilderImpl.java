@@ -276,6 +276,13 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.setGeometry(geometries.get(Observation.GeometryRelationship.OCCUPIES));
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
+    if (geometries.containsKey(Observation.GeometryRelationship.PERCEIVES)) {
+      if (observable == null || !observable.is(SemanticType.AGENT)) {
+        notifications.add(Notification.error("Only agents can have perceived geometry"));
+      } else {
+        ret.setPerceivedGeometry(geometries.get(Observation.GeometryRelationship.PERCEIVES));
+      }
+    }
     ret.mergeAnnotations(conceptAnnotations, ObservationImpl.CONCEPT_ANNOTATIONS);
     ret.mergeAnnotations(annotations, annotationPriority);
     ret.setValue(defaultValue);

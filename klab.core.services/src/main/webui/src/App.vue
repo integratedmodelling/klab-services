@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import CapabilitiesPanel from "./components/CapabilitiesPanel.vue";
 import ExtensionPanel from "./components/ExtensionPanel.vue";
 import FullPageExtension from "./components/FullPageExtension.vue";
@@ -16,6 +16,7 @@ const loading = ref(true);
 const refreshing = ref(false);
 const error = ref("");
 let refreshTimer: number | undefined;
+let refreshGeneration = 0;
 const pageName = ref(pageNameFromLocation());
 
 const context = reactive({
@@ -75,21 +76,31 @@ function navigate(relativePath: string, nextPageName: string | null): void {
 }
 
 async function refresh(): Promise<void> {
+  const generation = ++refreshGeneration;
   refreshing.value = true;
   try {
     const [newStatus, newCapabilities] = await Promise.all([
       serviceApi.get("public/status"),
-      serviceApi.get("public/capabilities"),
+      serviceApi.get("public/capabilities", authState.authenticated),
     ]);
+    if (generation !== refreshGeneration) return;
     status.value = newStatus;
     capabilities.value = newCapabilities;
     error.value = "";
   } catch (reason) {
+    if (generation !== refreshGeneration) return;
     error.value = reason instanceof Error ? reason.message : "Service data is unavailable";
   } finally {
-    refreshing.value = false;
+    if (generation === refreshGeneration) refreshing.value = false;
   }
 }
+
+watch(() => authState.authenticated, () => {
+  // Drop the previous user's grants immediately and reject any late capabilities response.
+  capabilities.value = null;
+  refreshGeneration++;
+  if (config.value && authState.ready) void refresh();
+});
 </script>
 
 <template>

@@ -107,8 +107,37 @@ If `klab.webui.keycloak.url` is absent, the dashboard stays public and shows no 
 Keycloak client must be public, use authorization code + PKCE, allow the exact service dashboard
 redirect URIs, and allow the service origin as a web origin.
 
-The service authorization filter accepts both the historical raw JWT header and the standard
-`Bearer` form produced by browser clients.
+After Keycloak sign-in, the dashboard exchanges the access token through the service's
+`POST public/ui/authentication`. The service calls the trusted hub's existing
+`/api/v2/users/me?remote=true` endpoint and returns a short-lived, service-specific opaque
+credential. Only a successful exchange sets the dashboard's authenticated state. Subsequent
+API and PNG requests carry that credential as `Bearer`; the Keycloak token is sent only to
+the exchange endpoint. Both credentials remain in browser memory. Logout revokes the service
+credential and ends the Keycloak session.
+
+The service obtains the trusted hub URL and issuer from startup authentication data, including
+local authentication packages. Where needed, configure `klab.webui.hub.url` and
+`klab.webui.hub.issuer` explicitly on the server. The hub URL must use HTTPS and include any
+deployment context. Local browser access requires the authenticated startup owner's username
+and hub issuer. The service's owner policy grants administration on this service to that identity,
+while keeping the browser scope isolated and its local-secret flag unset. The bridge needs no
+service certificate or browser access to `server-key`. Public dashboard data remains accessible
+if the exchange fails.
+
+After sign-in the dashboard requests caller-specific capabilities with its service credential.
+Logout clears the previous capabilities immediately and refreshes the anonymous view. The shared
+client's `get(path, authenticated)` option explicitly selects whether a public endpoint should
+receive the credential; configuration and status remain anonymous. Service administration also
+projects into workflow administration through the server scope's `ADMINISTER` permission.
+
+The current hub has no public JWT signing-key endpoint. The bridge trusts only the response
+it fetches directly from the configured hub over HTTPS, checks its identity claims, and retains
+the hub JWT server-side. It does not accept arbitrary hub JWTs in this local browser path.
+See [Hub authentication follow-up](HUB_IMPROVEMENT.md) for the trust model, deployment settings,
+current boundaries, and proposed hub changes.
+
+The service authorization filter continues to accept historical raw JWT headers and standard
+`Bearer` headers for existing certified-service clients.
 
 ## Build and packaging
 

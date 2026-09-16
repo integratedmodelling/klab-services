@@ -7,8 +7,10 @@ import java.util.LinkedHashSet;
 import java.util.Collection;
 import java.util.Set;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 
 /**
  * Stable, serializable authorization and provenance projection of a {@link UserScope}.
@@ -77,6 +79,10 @@ public class WorkflowParticipant implements Serializable {
               ret.maxResponseHours == null ? value : Math.min(ret.maxResponseHours, value);
         }
       }
+    }
+    if (scope instanceof ServiceSideScope serviceScope
+        && serviceScope.isAuthorized(CRUDOperation.ADMINISTER)) {
+      ret.roles.add(WorkflowRole.ADMIN);
     }
     if (ret.roles.isEmpty() && ret.knownRealPerson) {
       ret.roles.add(WorkflowRole.REVIEWER);

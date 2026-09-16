@@ -81,6 +81,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private static final Set<String> OBSERVATION_PROPERTIES =
       Set.of(
+          Queries.OWNER_CONTEXT,
+          "perceptionRevision",
           GraphModel.Fields.METADATA,
           GraphModel.Fields.NAME,
           GraphModel.Fields.TYPE,
@@ -149,19 +151,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    */
   interface Queries {
 
+    String OWNER_CONTEXT = "ownerContextId";
     // Ownership edges only: causal/reference edges must never authorize deletion.
-    // Agents and geometries are shared and are retained for separate orphan collection.
+    // Effect/reference links do not establish ownership. Stored ownership also finds assets
+    // whose only incoming link is an effect, or whose provenance path has been lost.
     String DELETION_OWNERSHIP =
         "HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_DATA|HAS_ACTIVITY|"
             + "TRIGGERED|HAS_PLAN|CONTEXTUALIZED_BY|CREATED|RESOLVED";
     String REMOVE_CONTEXT =
         "MATCH (ctx:Context {id:$contextId}) "
-            + "OPTIONAL MATCH (ctx)-[:" + DELETION_OWNERSHIP + "*1..]->(owned) "
+            + "MATCH (seed) WHERE seed = ctx OR coalesce(seed.ownerContextId, "
+            + "seed.`im:context-id`) = $contextId "
+            + "OPTIONAL MATCH path=(seed)-[:" + DELETION_OWNERSHIP + "*0..]->(owned) "
             + "WHERE NOT owned:Agent AND NOT owned:Geometry AND NOT owned:Context "
+            + "AND all(n IN nodes(path) WHERE NOT n:Agent AND NOT n:Geometry "
+            + "AND (NOT n:Context OR n = ctx) "
+            + "AND coalesce(n.ownerContextId, n.`im:context-id`, $contextId) = $contextId) "
             + "AND NOT EXISTS { MATCH (other:Context)-[:" + DELETION_OWNERSHIP
             + "*1..]->(owned) WHERE other <> ctx } "
+            + "AND NOT EXISTS { MATCH (foreign)-[:" + DELETION_OWNERSHIP
+            + "*0..]->(owned) WHERE coalesce(foreign.ownerContextId, "
+            + "foreign.`im:context-id`, $contextId) <> $contextId } "
             + "WITH ctx, collect(DISTINCT owned) AS assets "
-            + "FOREACH (asset IN assets | DETACH DELETE asset) DETACH DELETE ctx";
+            + "OPTIONAL MATCH (asset)-[:HAS_GEOMETRY|PERCEIVES_GEOMETRY|OVERSEES_GEOMETRY|"
+            + "AFFECTS_GEOMETRY]->(geometry:Geometry) WHERE asset IN assets OR asset = ctx "
+            + "WITH ctx, assets, collect(DISTINCT geometry) AS geometries "
+            + "FOREACH (asset IN assets | DETACH DELETE asset) DETACH DELETE ctx "
+            + "WITH geometries FOREACH (g IN [g IN geometries WHERE NOT EXISTS { (g)--() }] "
+            + "| DELETE g)";
     String FIND_CONTEXT =
         ("MATCH (ctx:"
             + GraphModel.Labels.CONTEXT
@@ -376,6 +393,95 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       } catch (Exception e) {
         closed = true;
         throw storageFailure("updating " + asset.getClass().getSimpleName(), e);
+      }
+    }
+
+    @Override
+    public Geometry perceive(Observation observer, Geometry observed) {
+      if (closed) throw new KlabStorageException("Closed perceived-geometry transaction");
+      if (observer == null || observer.getId() <= 0 || observer.getObservable() == null
+          || !observer.getObservable().is(SemanticType.AGENT)) {
+        closed = true;
+        throw new KlabStorageException("Only a persisted agent can observe");
+      }
+      try {
+        var rows = transaction.run(
+            "MATCH (n:Observation {id: $id}) "
+                + "SET n.perceptionRevision = coalesce(n.perceptionRevision, 0) + 1 "
+                + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) "
+                + "RETURN g.definition AS geometry",
+            Map.of("id", observer.getId())).list();
+        if (rows.size() != 1) throw new KlabStorageException("Missing or ambiguous observer geometry");
+        Geometry current = rows.getFirst().get("geometry").isNull() ? null
+            : Geometry.create(rows.getFirst().get("geometry").asString());
+        Geometry merged = mergePerceivedGeometry(current, observed);
+        if (merged != null) {
+          transaction.run("MATCH (n:Observation {id: $id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
+              Map.of("id", observer.getId())).consume();
+          storeGeometry(merged, observer, transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
+        }
+        // Reuse the observation-cache revision boundary so all scope caches see the new extent.
+        semanticUpdates.add(observer.getId());
+        return merged;
+      } catch (RuntimeException e) {
+        closed = true;
+        throw storageFailure("updating perceived geometry", e);
+      }
+    }
+
+    @Override
+    public void replacePerceivedSpace(Observation observer, String expectedGeometry, Geometry space) {
+      if (closed) throw new KlabStorageException("Closed perceived-geometry transaction");
+      try {
+        if (observer == null || observer.getId() <= 0 || observer.getObservable() == null
+            || !observer.getObservable().is(SemanticType.AGENT)
+            || space == null || space.getDimensions().size() != 1
+            || space.dimension(Geometry.Dimension.Type.SPACE) == null) {
+          throw new IllegalArgumentException("A persisted agent and a spatial geometry are required");
+        }
+        var rows = transaction.run(
+            "MATCH (:Context {id:$context})-[:HAS_CHILD]->(:Cohort)-[:HAS_MEMBER]->(n:Observation {id:$id}) "
+                + "WITH DISTINCT n SET n.perceptionRevision=coalesce(n.perceptionRevision,0)+1 "
+                + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g.definition AS geometry",
+            Map.of("context", rootContextId, "id", observer.getId())).list();
+        if (rows.size() != 1) throw new IllegalArgumentException("Agent is not in this twin or has ambiguous perception");
+        Geometry current = rows.getFirst().get("geometry").isNull() ? null
+            : Geometry.create(rows.getFirst().get("geometry").asString());
+        String actual = current == null ? null : GeometryRepository.INSTANCE.scale(current).encode();
+        String expected = expectedGeometry == null ? null
+            : GeometryRepository.INSTANCE.scale(Geometry.create(expectedGeometry)).encode();
+        if (!Objects.equals(actual, expected)) {
+          throw new ConcurrentModificationException("Perceived geometry changed; reload before saving your edit");
+        }
+        var replacement = current == null ? GeometryRepository.INSTANCE.scale(space)
+            : GeometryRepository.INSTANCE.scale(current).with(GeometryRepository.INSTANCE.scale(space).getSpace());
+        transaction.run("MATCH (n:Observation {id:$id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
+            Map.of("id", observer.getId())).consume();
+        storeGeometry(replacement, observer, transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
+        semanticUpdates.add(observer.getId());
+      } catch (RuntimeException e) {
+        closed = true;
+        throw e;
+      }
+    }
+
+    @Override
+    public void markExplicitAgent(Observation agent) {
+      if (closed) throw new KlabStorageException("Closed explicit-agent transaction");
+      try {
+        var row = transaction.run("MATCH (n:Observation {id:$id}) "
+            + "SET n.perceptionRevision = coalesce(n.perceptionRevision,0) "
+            + "RETURN n.metadata AS metadata", Map.of("id", agent.getId())).list();
+        if (row.size() != 1) throw new KlabStorageException("Missing agent");
+        Map<String, Object> metadata = row.getFirst().get("metadata").isNull() ? new HashMap<>()
+            : Utils.Json.parseObject(row.getFirst().get("metadata").asString(), Map.class);
+        metadata.put(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT, true);
+        transaction.run("MATCH (n:Observation {id:$id}) SET n.metadata=$metadata",
+            Map.of("id", agent.getId(), "metadata", Utils.Json.asString(metadata))).consume();
+        semanticUpdates.add(agent.getId());
+      } catch (RuntimeException e) {
+        closed = true;
+        throw storageFailure("marking explicit agent", e);
       }
     }
 
@@ -800,8 +906,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private void deleteContextAtomically(String contextId) {
     try (var session = driver.session(); var transaction = session.beginTransaction()) {
       lockContext(transaction, contextId);
-      transaction.run("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")",
-          Map.of(GraphModel.Fields.LAYER_NAME, getShapeLayerName(contextId))).consume();
+      var layerName = getShapeLayerName(contextId);
+      var layers = transaction.run(
+          "CALL spatial.layers() YIELD name WHERE name = $name RETURN name",
+          Map.of("name", layerName));
+      boolean layerExists = layers.hasNext();
+      layers.consume();
+      // A missing index must prevent reopening, but must not prevent disposal of the assets.
+      if (layerExists) {
+        transaction.run("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")",
+            Map.of(GraphModel.Fields.LAYER_NAME, layerName)).consume();
+      }
       transaction.run(Queries.REMOVE_CONTEXT,
           Map.of(GraphModel.Fields.CONTEXT_ID, contextId)).consume();
       transaction.commit();
@@ -985,6 +1100,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         if (gResult != null && !gResult.records().isEmpty()) {
           instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
+        }
+
+        if (instance.getObservable().is(SemanticType.AGENT)) {
+          var perceived = query(
+              "MATCH (o:Observation {id: $id})-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g",
+              Map.of("id", instance.getId()), scope);
+          if (perceived != null && !perceived.records().isEmpty()) {
+            instance.setPerceivedGeometry(adapt(perceived, Geometry.class, scope).getFirst());
+          }
         }
 
         ret.add((T) instance);
@@ -1466,10 +1590,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public void clear() {
-    if (userScope == null) {
+    if (rootContextId == null) {
       driver.executableQuery("MATCH (n) DETACH DELETE n").execute();
     } else {
-      query(Queries.REMOVE_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId), userScope);
+      deleteContextAtomically(rootContextId);
     }
   }
 
@@ -1529,6 +1653,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var type = getLabel(asset);
     var props = asParameters(asset, additionalProperties);
+    if (rootContextId != null && !(asset instanceof Agent)) {
+      props.put(Queries.OWNER_CONTEXT, rootContextId);
+    }
     var ret = nextKey();
     if (ret <= 0) {
       throw new KlabStorageException("Could not allocate a persistent knowledge-graph ID");
@@ -1579,6 +1706,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var type = getLabel(asset);
     var props = asParameters(asset, additionalProperties);
+    if (rootContextId != null && !(asset instanceof Agent)) {
+      props.put(Queries.OWNER_CONTEXT, rootContextId);
+    }
     var ret = nextKey();
     if (ret <= 0) {
       throw new KlabStorageException("Could not allocate a persistent knowledge-graph ID");
@@ -1648,6 +1778,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
       }
+      if (asset instanceof Observation observation && observation.getObservable().is(SemanticType.AGENT)
+          && observation.geometry(Observation.GeometryRelationship.PERCEIVES) != null) {
+        storeGeometry(observation.geometry(Observation.GeometryRelationship.PERCEIVES), asset,
+            transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
+      }
     } else {
       // KLAB-DEBUG-GUARD: preserve the current no-ID-assignment path when CREATE produces no
       // record, but identify it before the caller records the asset as stored.
@@ -1704,9 +1839,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private void storeGeometry(
       Geometry geometry, RuntimeAsset asset, @Nullable org.neo4j.driver.Transaction transaction) {
 
+    storeGeometry(geometry, asset, transaction, GraphModel.Relationship.HAS_GEOMETRY);
+  }
+
+  static Geometry mergePerceivedGeometry(Geometry current, Geometry observed) {
+    if (observed == null || observed.isEmpty() || observed.isUniversal()) return current;
+    if (current == null || current.isEmpty() || current.isUniversal()) return Geometry.forTransport(observed);
+    return switch (org.integratedmodelling.klab.api.knowledge.PerceivedGeometryPolicy.DEFAULT) {
+      case UNION -> Geometry.forTransport(GeometryRepository.INSTANCE.outerUnion(
+          GeometryRepository.INSTANCE.scale(current), GeometryRepository.INSTANCE.scale(observed)));
+    };
+  }
+
+  private void storeGeometry(Geometry geometry, RuntimeAsset asset,
+      @Nullable org.neo4j.driver.Transaction transaction, GraphModel.Relationship geometryRelationship) {
+
     // This guarantees processed, stable geometry representation with WBT
     var encoded = GeometryRepository.INSTANCE.scale(geometry).encode();
-    var relationship = GraphModel.Relationship.HAS_GEOMETRY.name();
+    var relationship = geometryRelationship.name();
 
     // Must be called after update() and this may happen more than once, so we must check to avoid
     // multiple relationships.

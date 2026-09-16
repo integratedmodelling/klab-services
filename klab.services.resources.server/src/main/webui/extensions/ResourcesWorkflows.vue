@@ -4,21 +4,22 @@ import { QBtn } from "quasar";
 import FlowChartViewer from "@klab-dashboard/components/FlowChartViewer.vue";
 import type { FlowChart } from "@klab-dashboard/flowchart/model";
 import type { DashboardContext } from "@klab-dashboard/types";
-import { accessToken } from "@klab-dashboard/services/auth";
+import { accessToken, invalidateServiceAuthentication } from "@klab-dashboard/services/auth";
 
 const props = defineProps<{ context: DashboardContext }>();
 interface Workflow { id: string; name?: string; description?: string; version?: string }
 const workflows = ref<Workflow[]>([]), selected = ref("");
 const busy = ref(false), downloading = ref(false), error = ref("");
 const workflow = computed(() => workflows.value.find(item => item.id === selected.value));
-const url = computed(() => selected.value ? `/api/v1/workflows/${encodeURIComponent(selected.value)}/flowchart` : "");
+// Resolve against the dashboard base URI, which includes the service context path.
+const url = computed(() => selected.value ? `api/v1/workflows/${encodeURIComponent(selected.value)}/flowchart` : "");
 async function load(url: string, signal: AbortSignal): Promise<FlowChart> {
   return props.context.api.request<FlowChart>(url, { signal });
 }
 async function refresh() {
   busy.value = true; error.value = "";
   try {
-    workflows.value = await props.context.api.get<Workflow[]>("/api/v1/workflows");
+    workflows.value = await props.context.api.get<Workflow[]>("api/v1/workflows");
     if (!workflows.value.some(item => item.id === selected.value)) selected.value = workflows.value[0]?.id || "";
   } catch (cause) { error.value = cause instanceof Error ? cause.message : String(cause); }
   finally { busy.value = false; }
@@ -31,7 +32,8 @@ async function download() {
     const token = await accessToken();
     const headers = new Headers({ Accept: "image/png" });
     if (token) headers.set("Authorization", `Bearer ${token}`);
-    const response = await fetch(`${endpoint}.png`, { headers });
+    const response = await fetch(`${endpoint}.png`, { headers, credentials: "omit" });
+    if (response.status === 401) invalidateServiceAuthentication();
     if (!response.ok) throw new Error(`Cannot download PNG (${response.status})`);
     const link = document.createElement("a"), objectUrl = URL.createObjectURL(await response.blob());
     link.href = objectUrl; link.download = "workflow.png"; link.click();

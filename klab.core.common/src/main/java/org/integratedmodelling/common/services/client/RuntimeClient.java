@@ -91,6 +91,29 @@ public class RuntimeClient extends BaseServiceClient
     return submission.thenApply(resolved -> synchronizeSubmission(resolved, scope));
   }
 
+  @Override
+  public Observation updateObserverGeometry(
+      org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      ContextScope scope) {
+    update.validate();
+    var observation = client.withScope(scope).post(
+        ServicesAPI.RUNTIME.UPDATE_OBSERVER_GEOMETRY, update, Observation.class);
+    if (observation != null && scope.getDigitalTwin() instanceof ClientDigitalTwin twin) {
+      twin.ingest(org.integratedmodelling.klab.api.services.runtime.Message.create(scope,
+          org.integratedmodelling.klab.api.services.runtime.Message.MessageClass.DigitalTwin,
+          org.integratedmodelling.klab.api.services.runtime.Message.MessageType.ObserverGeometryChanged,
+          observation));
+    }
+    return observation;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
+      long observerId, ContextScope scope) {
+    return client.withScope(scope).get(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY,
+        org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView.class, "id", observerId);
+  }
+
   private Observation synchronizeSubmission(Observation resolved, ContextScope scope) {
     // Query responses and provisional observations have no persisted commit to ingest.
     if (resolved == null || resolved.getId() <= 0) {

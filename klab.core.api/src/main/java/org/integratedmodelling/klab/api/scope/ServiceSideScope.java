@@ -8,4 +8,12 @@ package org.integratedmodelling.klab.api.scope;
 public interface ServiceSideScope extends Scope {
 
     String getId();
+
+    /**
+     * Permission granted by the hosting service, independently of identity-provider groups.
+     * Implementations without a service permission policy grant nothing by default.
+     */
+    default boolean isAuthorized(org.integratedmodelling.klab.api.authentication.CRUDOperation operation) {
+        return false;
+    }
 }

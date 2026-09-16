@@ -147,7 +147,7 @@ public interface Scope extends Channel {
    * Retrieve a service corresponding to the passed class and meeting the conditions passed. A
    * {@link KlabServiceAccessException} should be the response when services are unavailable. If
    * there are multiple services available for the class and any selectors, the implementation
-   * should choose a default one should be chosen based on the load factor, the vicinity or any
+   * should choose a default one should be chosen based on the load factor, the vicinity, or any
    * other sensible logic.
    *
    * <p>TODO reimplement and document so that the predicates are used as priority: if the first
@@ -156,8 +156,8 @@ public interface Scope extends Channel {
    *
    * @param <T>
    * @param serviceClass
-   * @param selector a predicate that the returned service must match. If more than one
-   *     service matches, the result is the first service that matches.
+   * @param selector a predicate that the returned service must match. If more than one service
+   *     matches, the result is the first service that matches.
    * @return an optional service
    */
   <T extends KlabService> Optional<T> findService(Class<T> serviceClass, Predicate<T> selector);

@@ -65,6 +65,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private final Map<String, DigitalTwin.Transaction> transactions;
   private final Map<String, Map<Long, Observation>> provisionalObservations;
   private Observation observer;
+  private long observerRevision = -1;
   private Observation contextObservation;
   private Observation sourceObservation;
   private Observation targetObservation;
@@ -157,7 +158,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObserver() {
+    if (observer != null && observer.getId() > 0 && digitalTwin != null && currentTransaction == null) {
+      long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
+      if (revision != observerRevision) {
+        var current = digitalTwin.getKnowledgeGraph().getAsset(observer.getId(), this, Observation.class);
+        if (current != null) observer = current;
+        observerRevision = revision;
+      }
+    }
     return this.observer;
+  }
+
+  /** A connection configuration is private to its user; the registered twin scope stays neutral. */
+  public ServiceContextScope forObserverConnection(Observation observer) {
+    var ret = withObserver(observer);
+    ret.configuration = Utils.Json.parseObject(Utils.Json.asString(configuration), ConfigurationImpl.class);
+    ((ConfigurationImpl) ret.configuration).setObserver(Observation.forTransport(observer));
+    return ret;
   }
 
   @Override
@@ -252,8 +269,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ServiceContextScope withObserver(Observation observer) {
+    if (observer != null && (observer.getId() <= 0 || observer.getObservable() == null
+        || !observer.getObservable().is(SemanticType.AGENT))) {
+      throw new IllegalArgumentException("An observer must be a persisted agent");
+    }
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
+    ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
+    if (observer != null) ret.resolutionConstraints.put(ResolutionConstraint.Type.Observer,
+        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
   }
 
@@ -579,6 +603,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
         if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
           ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
+          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
+              constraint.payload(Long.class).getFirst(), ret, Observation.class);
+          if (selected == null) throw new IllegalArgumentException("Unknown observer");
+          ret = ret.withObserver(selected);
         } else if (constraint.getType().incremental
             && ret.resolutionConstraints.containsKey(constraint.getType())) {
           ret.resolutionConstraints.put(

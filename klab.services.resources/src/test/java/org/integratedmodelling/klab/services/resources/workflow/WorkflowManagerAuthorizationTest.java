@@ -31,6 +31,33 @@ import org.junit.jupiter.api.Test;
 class WorkflowManagerAuthorizationTest {
 
   @Test
+  void serviceAdministrationAllowsWorkflowInspectionWithoutFabricatedGroupMembership() {
+    var store = new MemoryStore();
+    var manager = manager(store);
+    var ordinary = scope("owner", "REVIEWER", "another-workflow");
+    var administrator = (UserScope) Proxy.newProxyInstance(getClass().getClassLoader(),
+        new Class<?>[] {UserScope.class, org.integratedmodelling.klab.api.scope.ServiceSideScope.class},
+        (proxy, method, arguments) -> {
+          if (method.getName().equals("isAuthorized")) {
+            return arguments[0] == org.integratedmodelling.klab.api.authentication.CRUDOperation.ADMINISTER;
+          }
+          if (method.getName().equals("getId")) return "webui:owner";
+          return method.invoke(ordinary, arguments);
+        });
+    List<?> hidden = invoke(manager, "list",
+        new Class<?>[] {KlabAsset.KnowledgeClass.class, UserScope.class},
+        KlabAsset.KnowledgeClass.WORKFLOW, ordinary);
+    assertTrue(hidden.isEmpty());
+    List<?> visible = invoke(manager, "list",
+        new Class<?>[] {KlabAsset.KnowledgeClass.class, UserScope.class},
+        KlabAsset.KnowledgeClass.WORKFLOW, administrator);
+    assertFalse(visible.isEmpty());
+    assertEquals(store.listWorkflows().size(), visible.size());
+    assertTrue(WorkflowParticipant.from(administrator).isWorkflowPermitted("asset-review"));
+    assertFalse(WorkflowParticipant.from(ordinary).isWorkflowPermitted("asset-review"));
+  }
+
+  @Test
   void workflowPermissionAllowListIsEnforced() {
     var store = new MemoryStore();
     var manager = manager(store);

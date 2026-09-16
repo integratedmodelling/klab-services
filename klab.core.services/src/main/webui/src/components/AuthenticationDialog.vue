@@ -43,7 +43,7 @@ defineProps<{ visible: boolean; auth: AuthState; page: FullPageComponent }>();
           color="primary"
           icon-right="login"
           label="Sign in"
-          :disable="!auth.enabled || !!auth.error"
+          :disable="!auth.enabled"
           @click="login"
         />
       </q-card-actions>

@@ -106,6 +106,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
             Map.of("builtin", true)));
   }
 
+  public synchronized void ingestObserver(Observation observer) {
+    if (observer != null && observer.getId() > 0) assetCache.put(observer.getId(), observer);
+  }
+
   public synchronized void ingest(Observation observation) {
     if (observation == null || !isAddressableAssetId(observation.getId())) {
       scope.warn(

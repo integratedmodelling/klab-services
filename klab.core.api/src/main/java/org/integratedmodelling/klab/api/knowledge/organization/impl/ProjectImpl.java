@@ -129,6 +129,17 @@ public class ProjectImpl implements Project {
   }
 
   private Manifest manifest;
+  private org.integratedmodelling.klab.api.settings.ProjectSettings settings =
+      new org.integratedmodelling.klab.api.settings.ProjectSettings();
+
+  @Override
+  public org.integratedmodelling.klab.api.settings.ProjectSettings getSettings() {
+    return settings;
+  }
+
+  public void setSettings(org.integratedmodelling.klab.api.settings.ProjectSettings settings) {
+    this.settings = settings;
+  }
   private Metadata metadata = Metadata.create();
   private String urn;
   private List<KimNamespace> namespaces = new ArrayList<>();
@@ -299,7 +310,7 @@ public class ProjectImpl implements Project {
           }
           yield null;
         }
-        case MANIFEST -> null;
+        case MANIFEST, PROJECT_SETTINGS -> null;
         case DOCUMENTATION_NAMESPACE -> null;
         case STRATEGY -> {
           for (var strategy : getObservationStrategies()) {

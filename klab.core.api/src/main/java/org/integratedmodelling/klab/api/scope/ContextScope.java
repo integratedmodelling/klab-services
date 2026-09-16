@@ -463,7 +463,7 @@ public interface ContextScope extends SessionScope {
       }
       if ((resolutionGeometry == null || resolutionGeometry.isEmpty())
           && scope.getObserver() != null) {
-        resolutionGeometry = scope.getObserver().getGeometry();
+        resolutionGeometry = scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES);
       }
     }
     return resolutionGeometry;

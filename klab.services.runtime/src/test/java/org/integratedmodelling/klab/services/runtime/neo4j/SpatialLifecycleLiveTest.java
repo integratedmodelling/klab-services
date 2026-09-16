@@ -161,6 +161,40 @@ class SpatialLifecycleLiveTest {
     assertEquals(0, contextCount());
   }
 
+  @Test void deletionIncludesEffectOnlyAndDisconnectedObservationsAndTheirData() {
+    initialize();
+    driver.executableQuery("MATCH (c:Context {id:$id}) CREATE "
+        + "(c)-[:HAS_PROVENANCE]->(:Activity {testOwner:$id})-[:INSTANTIATED]->"
+        + "(o:Observation {testOwner:$id, `im:context-id`:$id})-[:HAS_DATA]->(:Data {testOwner:$id}), "
+        + "(o)-[:HAS_GEOMETRY]->(:Geometry {testOwner:$id}), "
+        + "(:Observation {testOwner:$id, ownerContextId:$id})-[:HAS_DATA]->(:Data {testOwner:$id})")
+        .withParameters(Map.of("id", id)).execute();
+    new Fixture(driver, id).deleteContext();
+    assertEquals(0, driver.executableQuery("MATCH (n {testOwner:$id}) RETURN count(n) AS n")
+        .withParameters(Map.of("id", id)).execute().records().getFirst().get("n").asLong());
+    assertFalse(layerExists());
+  }
+
+  @Test void missingLayerDoesNotPreventDeletion() {
+    try (var session = driver.session(); var tx = session.beginTransaction()) {
+      createContext(tx);
+      tx.commit();
+    }
+    new Fixture(driver, id).deleteContext();
+    assertEquals(0, contextCount());
+  }
+
+  @Test void contextualizedClearRemovesLayerAndPreservesOtherContexts() {
+    initialize();
+    driver.executableQuery("CREATE (:Context {id:$foreign, testOwner:$id})")
+        .withParameters(Map.of("foreign", id + ".foreign", "id", id)).execute();
+    new Fixture(driver, id).clear();
+    assertEquals(0, contextCount());
+    assertFalse(layerExists());
+    assertEquals(1, driver.executableQuery("MATCH (n {testOwner:$id}) RETURN count(n) AS n")
+        .withParameters(Map.of("id", id)).execute().records().getFirst().get("n").asLong());
+  }
+
   private static class Fixture extends KnowledgeGraphNeo4j {
     Fixture(Driver driver, String id) { this.driver = driver; this.rootContextId = id; }
     public KnowledgeGraph contextualize(DigitalTwin.Configuration c, UserScope s) {

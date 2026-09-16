@@ -257,6 +257,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   @Override
   public void defineFromExisting(DigitalTwin.Configuration descriptor) {
+    this.observer = descriptor.getObserver();
     if (descriptor.getAccessRights() != null) {
       this.accessRights = descriptor.getAccessRights();
       if (this.accessRights != null

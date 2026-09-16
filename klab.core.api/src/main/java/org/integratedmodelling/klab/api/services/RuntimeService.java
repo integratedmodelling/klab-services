@@ -189,6 +189,19 @@ public interface RuntimeService extends KlabService {
    */
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
+  /** Audit an agent in this twin, returning its snapshot and separate WGS84 spatial geometries. */
+  default org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
+      long observerId, ContextScope scope) {
+    throw new UnsupportedOperationException("Observer geometry auditing is unavailable");
+  }
+
+  /** Replace an agent's perceived space; reject stale edits and preserve perceived time. */
+  default Observation updateObserverGeometry(
+      org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      ContextScope scope) {
+    throw new UnsupportedOperationException("Observer geometry editing is unavailable");
+  }
+
   /**
    * Return an unresolved observation after checking the validity w.r.t. the scope and assigning a
    * negative ID that is unique within the scope. The observation will be empty if the scope is

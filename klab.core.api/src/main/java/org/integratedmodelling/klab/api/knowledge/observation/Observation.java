@@ -377,6 +377,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     ret.setObservable(observation.getObservable());
     ret.mergeAnnotations(observation);
     ret.setGeometry(Geometry.forTransport(observation.getGeometry()));
+    if (observation.getObservable() != null && observation.getObservable().is(SemanticType.AGENT)) {
+      ret.setPerceivedGeometry(Geometry.forTransport(observation.geometry(GeometryRelationship.PERCEIVES)));
+    }
     var metadata = org.integratedmodelling.klab.api.data.Metadata.create();
     observation
         .getMetadata()
@@ -467,9 +470,10 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * #getGeometry() reports the OCCUPIES relationship. Calling this with any other relationship on a
    * non-agent is an error. Otherwise, it will return null or a valid geometry.
    *
-   * <p>The observation should normally not store the geometries besides OCCUPIES, as these are more
-   * dynamic. This method is intentionally not an accessor and should retrieve the geometry from the
-   * knowledge graph when called.
+   * <p>PERCEIVES is a transported snapshot of the graph's perceived geometry. Successful perception
+   * updates invalidate graph caches and notify clients; callers should use the current scope's
+   * observer rather than retaining an older observation snapshot. A missing perceived geometry is
+   * null and must not fall back to OCCUPIES. OVERSEES and AFFECTS remain unimplemented.
    *
    * @param relationship
    * @return

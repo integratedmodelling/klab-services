@@ -54,6 +54,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
+    this.observer = configuration.getObserver();
+    if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
+        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     if (configuration.getUrl() == null
         && configuration instanceof ConfigurationImpl configurationImpl) {
       configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + getId()));
@@ -109,6 +112,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   public ContextScope withObserver(Observation observer) {
     var ret = childContext(this);
     ret.observer = observer;
+    ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
+    if (observer != null) ret.resolutionConstraints.put(ResolutionConstraint.Type.Observer,
+        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
   }
 
@@ -121,6 +127,14 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public ContextScope within(Observation contextObservation) {
     var ret = childContext(this);
+    ret.contextObservation = contextObservation;
+    return ret;
+  }
+
+  /** Replace the interactive context without nesting it under a previously selected context. */
+  public ClientContextScope withCurrentContext(Observation contextObservation) {
+    var ret = childContext(this);
+    ret.parentScope = getRootContextScope();
     ret.contextObservation = contextObservation;
     return ret;
   }
@@ -317,6 +331,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
         }
         if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
           ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
+          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
+              constraint.payload(Long.class).getFirst(), ret, Observation.class);
+          if (selected == null) throw new IllegalArgumentException("Unknown observer");
+          ret = (ClientContextScope) ret.withObserver(selected);
         } else if (constraint.getType().incremental
             && ret.resolutionConstraints.containsKey(constraint.getType())) {
           ret.resolutionConstraints.put(
@@ -472,5 +491,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       setId(configuration.getId());
     }
     this.configuration.getNotifications().addAll(configuration.getNotifications());
+    this.observer = configuration.getObserver();
+    resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
+    if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
+        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
   }
 }

@@ -20,6 +20,11 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Project extends KlabAsset {
 
+  /** Project-owned settings, distinct from manifest and service-generated metadata. */
+  default org.integratedmodelling.klab.api.settings.ProjectSettings getSettings() {
+    return new org.integratedmodelling.klab.api.settings.ProjectSettings();
+  }
+
   /**
    * Each project must publish a manifest with all the needed information. In source project this
    * should be in META-INF/manifest.json. Much of the manifest also ends up in the metadata based on

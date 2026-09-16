@@ -31,6 +31,7 @@ public interface ProjectStorage {
     ONTOLOGY,
     MODEL_NAMESPACE,
     MANIFEST,
+    PROJECT_SETTINGS,
     DOCUMENTATION_NAMESPACE,
     STRATEGY,
     BEHAVIOR,

@@ -287,6 +287,21 @@ public interface KnowledgeGraph {
 
     void update(RuntimeAsset asset, Object... properties);
 
+    /** Atomically union a successful observation's geometry into an agent's perceived extent. */
+    default Geometry perceive(Observation observer, Geometry geometry) {
+      throw new UnsupportedOperationException("Perceived geometry is not supported by this graph");
+    }
+
+    /** Compare the persisted perception with expectedGeometry, then replace space only. */
+    default void replacePerceivedSpace(Observation observer, String expectedGeometry, Geometry space) {
+      throw new UnsupportedOperationException("Observer geometry editing is unavailable");
+    }
+
+    /** Record that an existing agent has also been explicitly submitted by a user. */
+    default void markExplicitAgent(Observation agent) {
+      throw new UnsupportedOperationException("Explicit-agent promotion is not supported");
+    }
+
     /** Lock and compare the persisted observable before replacing semantics in this transaction.
      * Implementations must fail the transaction on a stale baseline or missing observation. */
     default void updateSemantics(Observation observation, String expectedObservable) {

@@ -91,6 +91,8 @@ public class ClientDigitalTwin implements DigitalTwin {
 
     // only the finished submission events are relevant for now.
     switch (event.getMessageType()) {
+      case ObserverResolved, ObserverGeometryChanged ->
+          getKnowledgeGraph().ingestObserver(event.getPayload(Observation.class));
       case ObservationSubmissionFinished ->
           getKnowledgeGraph().ingest(event.getPayload(Observation.class));
     }

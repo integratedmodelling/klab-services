@@ -152,6 +152,7 @@ public interface Message extends Serializable {
      * resolved, or when the user selects an observation from the graph as observer.
      */
     ObserverResolved(Queue.Events, Observation.class),
+    ObserverGeometryChanged(Queue.Events, Observation.class),
     /**
      * Sent after a new individual observation suitable for being a context observation has been
      * explicitly resolved, or when the user selects an observation from the graph as context

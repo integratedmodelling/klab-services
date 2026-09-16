@@ -14,6 +14,7 @@ public class GroupImpl implements Group {
   private String id;
   private String name;
   private String description;
+  private String observerSemantics;
   private String iconUrl;
   private String sshKey;
   private long defaultExpirationTime;
@@ -27,6 +28,15 @@ public class GroupImpl implements Group {
   private List<String> dependsOn = new ArrayList<String>();
 
   public GroupImpl() {}
+
+  @Override
+  public String getObserverSemantics() {
+    return observerSemantics;
+  }
+
+  public void setObserverSemantics(String observerSemantics) {
+    this.observerSemantics = observerSemantics;
+  }
 
   public GroupImpl(String id) {
     this.id = id;
@@ -223,6 +233,7 @@ public class GroupImpl implements Group {
         customProperties,
         defaultExpirationTime,
         description,
+        observerSemantics,
         iconUrl,
         id,
         maxUpload,
@@ -243,6 +254,7 @@ public class GroupImpl implements Group {
         && Objects.equals(customProperties, other.customProperties)
         && defaultExpirationTime == other.defaultExpirationTime
         && Objects.equals(description, other.description)
+        && Objects.equals(observerSemantics, other.observerSemantics)
         && Objects.equals(iconUrl, other.iconUrl)
         && Objects.equals(id, other.id)
         && maxUpload == other.maxUpload

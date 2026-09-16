@@ -32,6 +32,7 @@ import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.jwt.consumer.JwtContext;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Singleton containing all the JWT management and handshaking with the hub that every k.LAB service
@@ -41,6 +42,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ServiceAuthorizationManager {
+
+  @Autowired private HubWebAuthentication webAuthentication;
 
   private static final String TOKEN_CLASS_PACKAGE = "org.integratedmodelling.node.resource.token";
   private static final int ALLOWED_CLOCK_SKEW_MS = 30000;
@@ -168,6 +171,7 @@ public class ServiceAuthorizationManager {
       throw new KlabAuthorizationException("authentication response is null");
     }
     this.hubName = response.getAuthenticatingHub();
+    webAuthentication.configureHub(this.authenticatingHub, this.hubName);
 
     try {
       byte[] publicKeyData = Base64.getDecoder().decode(response.getPublicKey());
@@ -265,6 +269,10 @@ public class ServiceAuthorizationManager {
    * and roles as expected.
    */
   public EngineAuthorization validateToken(String token, Map<String, String> requestHeaders) {
+
+    if (token != null && token.startsWith(HubWebAuthentication.PREFIX)) {
+      return webAuthentication.authorize(token, requestHeaders);
+    }
 
     EngineAuthorization ret = null;
 
@@ -508,7 +516,7 @@ public class ServiceAuthorizationManager {
     }
 
     ret.setInfo(
-        "scopeHeader=" + scopeHeader + "; serverKey=" + serverKey + "; runtimeId=" + runtimeId);
+        "scopeHeader=" + scopeHeader + "; runtimeId=" + runtimeId);
 
     ret.setScope(resolvedScope);
 

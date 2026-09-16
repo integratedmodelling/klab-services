@@ -310,7 +310,8 @@ public class ScopeManager {
     }
 
     if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
-      var observer = ret.getObservation(contextualization.observerId());
+      var observer = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
+          contextualization.observerId(), ret, Observation.class);
       if (observer == null) {
         throw new KlabResourceAccessException(
             "Subject with ID "

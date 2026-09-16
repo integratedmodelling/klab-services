@@ -66,6 +66,38 @@ public class RuntimeServerController {
 
   @Autowired private RuntimeServer runtimeService;
 
+  @GetMapping(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY)
+  @Operation(summary = "Audit occupied and perceived geometry of an observer")
+  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
+      @PathVariable long id, Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization)) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    }
+    try {
+      return runtimeService.klabService().getObserverGeometry(id, authorization.getScope(ContextScope.class));
+    } catch (IllegalArgumentException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+    }
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.UPDATE_OBSERVER_GEOMETRY)
+  @Operation(summary = "Replace an observer's perceived spatial extent, preserving time")
+  public Observation updateObserverGeometry(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization)) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    }
+    try {
+      return Observation.forTransport(runtimeService.klabService().updateObserverGeometry(
+          update, authorization.getScope(ContextScope.class)));
+    } catch (java.util.ConcurrentModificationException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, e.getMessage(), e);
+    } catch (IllegalArgumentException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+    }
+  }
+
   /**
    * Observations are set into the digital twin by the context after creating them in an unresolved
    * state. The return long ID is the handle to the resolution; according to the messaging protocol,

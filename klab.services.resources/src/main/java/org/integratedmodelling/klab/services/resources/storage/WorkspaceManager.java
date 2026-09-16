@@ -38,6 +38,9 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.DefaultObserver;
+import org.integratedmodelling.klab.api.settings.ProjectSettings;
+import org.integratedmodelling.klab.resources.ProjectSettingsIO;
 import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -584,6 +587,7 @@ public class WorkspaceManager {
             .file("docs/documentation.json", "{}")
             .file("docs/references.json", "{}")
             .file("META-INF/manifest.json", Utils.Json.asString(manifest))
+            .file("META-INF/project.json", Utils.Json.asString(new ProjectSettings()))
             .build();
 
     if (result != null) {
@@ -672,6 +676,8 @@ public class WorkspaceManager {
 
   public ResourceSet resolveWorldview(String urn, Scope scope) {
 
+    getWorldview();
+
     if (_worldview.getUrn().equals(urn)) {
 
       ResourceSet ret = new ResourceSet();
@@ -708,6 +714,7 @@ public class WorkspaceManager {
       result.setTimestamp(System.currentTimeMillis());
 
       ret.getResults().add(result);
+      ret.getNotifications().addAll(_worldview.getNotifications());
 
       return ret;
     }
@@ -1819,6 +1826,8 @@ public class WorkspaceManager {
       // TODO should only add a file:/ URL if the project is local to the requester (check scope)
       ret.getMetadata().put(Metadata.RESOURCES_STORAGE_URL, pdesc.storage.getUrl());
       ret.setManifest(pdesc.manifest);
+      ret.setSettings(ProjectSettingsIO.read(pdesc.storage));
+      ret.getMetadata().putAll(projectMetadata(pdesc));
 
       for (KimOntology ontology : getOntologies(false)) {
         if (projectId.equals(ontology.getProjectName())) {
@@ -3734,6 +3743,49 @@ public class WorkspaceManager {
         ProjectImpl.ManifestImpl.class);
   }
 
+  private Map<String, Object> projectMetadata(ProjectDescriptor descriptor) {
+    Map<String, Object> metadata = new LinkedHashMap<>();
+    if (descriptor.manifest.getMetadata() != null) {
+      metadata.putAll(descriptor.manifest.getMetadata());
+    }
+    if (descriptor.externalProject != null) {
+      metadata.putAll(descriptor.externalProject.getMetadata());
+    } else if (descriptor.storage != null) {
+      metadata.putAll(ProjectSettingsIO.read(descriptor.storage).getMetadata());
+    }
+    return metadata;
+  }
+
+  /** Settings-only replacement through the normal project submission contract. */
+  public synchronized ResourceSet replaceProjectSettings(
+      String workspace, String projectName, ProjectSettings settings, UserScope userScope) {
+    var descriptor = projectDescriptors.get(projectName);
+    if (descriptor == null || !Objects.equals(workspace, descriptor.workspace)
+        || !(descriptor.storage instanceof FileProjectStorage storage)
+        || userScope == null || userScope.getIdentity() == null
+        || userScope.getIdentity().getId() == null || !projectLocks.containsKey(projectName)
+        || !Objects.equals(projectLocks.get(projectName), userScope.getIdentity().getId())) {
+      return ResourceSet.empty(Notification.error("Project settings require a local project locked by the requesting user"));
+    }
+    if (settings == null) return ResourceSet.empty(Notification.error("Missing project settings"));
+    try {
+      ProjectSettingsIO.write(storage, settings);
+      _worldview = null;
+      createProjectData(projectName, workspace);
+      ResourceSet result = new ResourceSet();
+      result.setWorkspace(workspace);
+      var resource = new ResourceSet.Resource();
+      resource.setResourceUrn(projectName);
+      resource.setServiceId(service.serviceId());
+      resource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+      resource.setOperation(CRUDOperation.UPDATE);
+      result.getProjects().add(resource);
+      return result;
+    } catch (Exception e) {
+      return ResourceSet.empty(Notification.error("Cannot save project settings: " + e.getMessage()));
+    }
+  }
+
   public WorkspaceImpl getWorkspace(String workspaceName) {
     return updateStatus(this.workspaces.get(workspaceName));
   }
@@ -3815,25 +3867,14 @@ public class WorkspaceManager {
       _worldview.getOntologies().addAll(getOntologies(true));
       // basic validations: non-empty, first must be root, take the worldview name from it
       // go back to the projects and load all observation strategies, adding project metadata
-      for (var pd : projectDescriptors.values()) {
+      for (var pd : projectDescriptors.values().stream()
+          .sorted(Comparator.comparing(descriptor -> descriptor.name)).toList()) {
         if (pd.manifest.getDefinedWorldview() == null) {
           continue;
         }
 
-        if (pd.manifest.getMetadata().containsKey(Worldview.USER_OBSERVER_SEMANTICS)) {
-          _worldview
-              .getMetadata()
-              .put(
-                  Worldview.USER_OBSERVER_SEMANTICS,
-                  pd.manifest.getMetadata().get(Worldview.USER_OBSERVER_SEMANTICS));
-        }
-        if (pd.manifest.getMetadata().containsKey(Worldview.FEDERATION_OBSERVER_SEMANTICS)) {
-          _worldview
-              .getMetadata()
-              .put(
-                  Worldview.FEDERATION_OBSERVER_SEMANTICS,
-                  pd.manifest.getMetadata().get(Worldview.FEDERATION_OBSERVER_SEMANTICS));
-        }
+        DefaultObserver.mergeMetadata(_worldview.getMetadata(), projectMetadata(pd), pd.name,
+            message -> _worldview.getNotifications().add(Notification.warning(message)));
 
         if (pd.externalProject != null) {
           for (var strategy : pd.externalProject.getObservationStrategies()) {

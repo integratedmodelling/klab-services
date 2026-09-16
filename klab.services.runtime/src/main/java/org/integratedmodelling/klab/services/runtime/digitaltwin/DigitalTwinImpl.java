@@ -520,6 +520,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         // the object returned by submit() expose the same finalized lifecycle information.
         var commitId = knowledgeGraph.nextKey();
         prepareObservationsForStorage(commitId);
+        var activeObserver = scope.getObserver();
         var kgTransaction = knowledgeGraph.createTransaction(scope);
         var stored = new ArrayList<RuntimeAsset>();
         var linked = new ArrayList<Triple<Long, Long, String>>();
@@ -585,6 +586,11 @@ public class DigitalTwinImpl implements DigitalTwin {
                 // Only advertise relationships that were actually persisted. In particular, trivial
                 // transactions contain transient activity edges that are intentionally skipped.
                 linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
+              }
+              if (activeObserver != null && target != null
+                  && activeObserver.getId() != target.getId()) {
+                kgTransaction.perceive(activeObserver, target.getGeometry());
+                modified.add(activeObserver);
               }
             }
           } catch (Exception failure) {

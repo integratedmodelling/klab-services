@@ -329,6 +329,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
             : EnumSet.copyOf(permissions);
   }
 
+  @Override
   public boolean isAuthorized(CRUDOperation operation) {
     return permissions.contains(operation);
   }

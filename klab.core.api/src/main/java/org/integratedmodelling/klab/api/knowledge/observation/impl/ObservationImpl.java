@@ -472,8 +472,19 @@ public class ObservationImpl implements Observation, Cloneable {
       throw new KlabIllegalArgumentException(
           "Non-agent observations cannot have geometries in relationship " + relationship);
     }
+    if (relationship == GeometryRelationship.PERCEIVES) return perceivedGeometry;
     throw new KlabUnimplementedException(
         "Observation still cannot access geometries for relationship " + relationship);
+  }
+
+  private Geometry perceivedGeometry;
+
+  public Geometry getPerceivedGeometry() {
+    return perceivedGeometry;
+  }
+
+  public void setPerceivedGeometry(Geometry geometry) {
+    this.perceivedGeometry = geometry;
   }
 
   public void setResolvedCoverage(double resolvedCoverage) {

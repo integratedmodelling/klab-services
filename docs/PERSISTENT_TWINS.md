@@ -1,5 +1,9 @@
 # Restoring persistent digital twins
 
+For stable user-agent identities, default selection on connection, and transactional perceived
+geometry maintenance, see [Default observers](OBSERVERS.md). Connection configurations carry a
+user-specific observer; the registered shared twin scope remains neutral.
+
 This guide assesses reopening a twin after a runtime shutdown and records the incremental
 restoration work begun on 2026-09-05. See [DIGITALTWINS](DIGITALTWINS.md),
 [KNOWLEDGE_GRAPH](KNOWLEDGE_GRAPH.md), [STORAGE](STORAGE.md), and

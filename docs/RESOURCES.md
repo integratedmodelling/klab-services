@@ -1,5 +1,8 @@
 # Resources service contract
 
+Project-owned metadata and the settings-only project replacement protocol are described in
+[Default observers](OBSERVERS.md#project-and-worldview-contract).
+
 This document defines the resource-management contract exposed by `ResourcesService`. Its public
 asset API consists of `resolve`, `retrieve`, `delete`, `list`, and `submit`, plus the shared
 `KlabService.info` and `KlabService.query` inspection operations. Asset-specific methods are

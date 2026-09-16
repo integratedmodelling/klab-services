@@ -431,7 +431,7 @@ public class RuntimeService extends BaseService
               this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
       getScopeManager().registerScope(serviceContextScope);
 
-      return serviceContextScope.getConfiguration();
+      return prepareObserverConnection(serviceContextScope, userScope).getConfiguration();
     }
     throw new KlabIllegalArgumentException("unexpected scope class");
   }
@@ -492,20 +492,118 @@ public class RuntimeService extends BaseService
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
+    var effectiveScope = submissionScope(submitted, scope);
+    if (submitted instanceof ObservationImpl mutable && submitted.getGeometry() == null) {
+      mutable.setGeometry(ContextScope.getResolutionGeometry(effectiveScope));
+    }
+    boolean explicitAgent = submitted.getObservable() != null && submitted.getObservable().is(SemanticType.AGENT)
+        && scope.getCurrentTransaction() == null && submitted.getId() != Observation.QUERY_ID
+        && (submitted.getId() > 0 || !Boolean.TRUE.equals(submitted.getMetadata().get(
+            org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC)));
+    if (explicitAgent && submitted.getId() <= 0) {
+      submitted.getMetadata().put(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT, true);
+    }
+
     if (submitted.getId() > 0 || submitted.isEmpty()) {
-      return CompletableFuture.completedFuture(submitted);
+      return CompletableFuture.completedFuture(submitted.isEmpty() ? submitted
+          : recordExistingPerception(submitted, effectiveScope, explicitAgent));
     }
 
     if (submitted.getId() == Observation.QUERY_ID) {
-      return CompletableFuture.completedFuture(query(submitted, scope));
+      return CompletableFuture.completedFuture(recordExistingPerception(query(submitted, effectiveScope), effectiveScope, false));
     }
 
     var submissionScope = submissionScope(submitted, scope);
     var submissionIdentity = submissionIdentity(submitted, submissionScope);
-    return submissionIdentity == null
+    var future = submissionIdentity == null
         ? submitInternal(submitted, submissionScope)
         : coalesce(inFlightSubmissions, submissionIdentity,
             () -> submitInternal(submitted, submissionScope));
+    return future.thenApply(result -> result != submitted
+        ? recordExistingPerception(result, submissionScope, explicitAgent) : result);
+  }
+
+  @Override
+  public Observation updateObserverGeometry(
+      org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      ContextScope scope) {
+    Objects.requireNonNull(update).validate();
+    if (scope.getCurrentTransaction() != null) {
+      throw new IllegalArgumentException("Edit perception outside an observation transaction");
+    }
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    var observer = graph.getAsset(update.getObserverId(), scope, Observation.class);
+    var spatial = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        update.getWest(), update.getSouth(), update.getEast(), update.getNorth(),
+        org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of("EPSG:4326"));
+    try (var transaction = graph.createTransaction(scope)) {
+      transaction.replacePerceivedSpace(observer, update.getExpectedGeometry(), Geometry.create(spatial.encode()));
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new KlabIllegalStateException(e);
+    }
+    var refreshed = graph.getAsset(update.getObserverId(), scope, Observation.class);
+    scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverGeometryChanged,
+        Observation.forTransport(refreshed));
+    return refreshed;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
+      long observerId, ContextScope scope) {
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    boolean member = graph.getLinks(RuntimeAsset.CONTEXT_ASSET,
+        GraphModel.Relationship.Direction.OUTGOING, scope, GraphModel.Relationship.HAS_CHILD).stream()
+        .map(link -> link.target()).filter(org.integratedmodelling.klab.api.knowledge.Cohort.class::isInstance)
+        .anyMatch(cohort -> graph.getLinks(cohort, GraphModel.Relationship.Direction.OUTGOING,
+            scope, GraphModel.Relationship.HAS_MEMBER).stream().anyMatch(link -> link.target().getId() == observerId));
+    if (!member) throw new IllegalArgumentException("Agent is not in this twin");
+    var observer = graph.getAsset(observerId, scope, Observation.class);
+    if (observer == null || !observer.getObservable().is(SemanticType.AGENT)) {
+      throw new IllegalArgumentException("Only agents have perceived geometry");
+    }
+    var view = new org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView();
+    view.setObserver(Observation.forTransport(observer));
+    view.setOccupiedGeoJson(observerGeoJson(observer.getGeometry()));
+    view.setPerceivedGeoJson(observerGeoJson(observer.geometry(Observation.GeometryRelationship.PERCEIVES)));
+    return view;
+  }
+
+  static String observerGeoJson(Geometry geometry) {
+    if (geometry == null || geometry.isUniversal() || geometry.isEmpty()) return null;
+    var space = GeometryRepository.INSTANCE.scale(geometry).getSpace();
+    if (space == null || space.getGeometricShape() == null) return null;
+    var shape = space.getGeometricShape().transform(
+        org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of("EPSG:4326"));
+    return org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.promote(shape).asGeoJSONString();
+  }
+
+  /** Reused/query observations do not open an observation transaction, but still record perception. */
+  private Observation recordExistingPerception(Observation result, ContextScope scope, boolean explicitAgent) {
+    if (result == null || result.isEmpty() || scope.getCurrentTransaction() != null) return result;
+    boolean promote = explicitAgent && result.getId() > 0
+        && !Boolean.TRUE.equals(result.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT));
+    var activeObserver = scope.getObserver();
+    boolean perceive = activeObserver != null && result.getGeometry() != null;
+    if (!promote && !perceive) return result;
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    try (var transaction = graph.createTransaction(scope)) {
+      if (promote) transaction.markExplicitAgent(result);
+      if (perceive) transaction.perceive(activeObserver, result.getGeometry());
+    } catch (Exception failure) {
+      throw new KlabIllegalStateException(failure);
+    }
+    if (promote) {
+      result = graph.getAsset(result.getId(), scope, Observation.class);
+      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved, Observation.forTransport(result));
+    }
+    if (perceive) {
+      var refreshed = graph.getAsset(activeObserver.getId(), scope, Observation.class);
+      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverGeometryChanged,
+          Observation.forTransport(refreshed));
+    }
+    return result;
   }
 
   static ContextScope submissionScope(Observation submitted, ContextScope scope) {
@@ -598,7 +696,7 @@ public class RuntimeService extends BaseService
           // FIXME no - this should run a query over the cohort and if needed, resolve the
           //  unaddressed coverage. If the observation has id == 0, it is a query and it can
           //  use the overall covered geometry of the cohort if the geometry is not there.
-          observation1.setGeometry(scope.getObserver().getGeometry());
+          observation1.setGeometry(scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES));
         }
       }
 
@@ -2208,7 +2306,39 @@ public class RuntimeService extends BaseService
     if (scope == null) {
       scope = reconstructContext(configuration, userScope);
     }
-    return scope;
+    return scope instanceof ServiceContextScope serviceScope
+        ? prepareObserverConnection(serviceScope, userScope) : scope;
+  }
+
+  private ServiceContextScope prepareObserverConnection(ServiceContextScope shared, UserScope userScope) {
+    var connection = shared.within(null).withObserver(null).withIdentity(userScope.getUser());
+    try {
+      org.integratedmodelling.klab.api.knowledge.Worldview worldview = null;
+      for (var resources : userScope.getServices(ResourcesService.class)) {
+        try {
+          var available = resources.list(org.integratedmodelling.klab.api.knowledge.Worldview.class, userScope);
+          if (available != null && !available.isEmpty()) {
+            worldview = available.getFirst();
+            break;
+          }
+        } catch (RuntimeException unavailable) {
+          userScope.warn("Cannot retrieve observer defaults from resources service " + resources.serviceId());
+        }
+      }
+      var observer = org.integratedmodelling.klab.runtime.DefaultObserverPreparation
+          .prepare(worldview, connection, Geometry.UNIVERSAL).join();
+      if (observer != null && !observer.isEmpty()) {
+        connection.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved,
+            Observation.forTransport(observer));
+      }
+      return connection.forObserverConnection(observer);
+    } catch (RuntimeException failure) {
+      userScope.warn("Default observer could not be prepared: " + failure.getMessage());
+      var ret = connection.forObserverConnection(null);
+      ret.getConfiguration().getNotifications().add(Notification.warning(
+          "Default observer could not be prepared: " + failure.getMessage()));
+      return ret;
+    }
   }
 
   @Override

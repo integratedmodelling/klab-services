@@ -69,6 +69,10 @@ public class WorldviewImpl implements Worldview {
 
     if (!resources.isEmpty() && !Utils.Notifications.hasErrors(resources.getNotifications())) {
 
+      notifications.clear();
+      notifications.addAll(resources.getNotifications());
+      resources.getNotifications().forEach(userScope::warn);
+      metadata.clear();
       metadata.putAll(result.get().getMetadata());
       boolean recomputeOrder = false;
       for (var resource : resources.getOntologies()) {

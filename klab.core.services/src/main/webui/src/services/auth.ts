@@ -1,6 +1,7 @@
 import Keycloak from "keycloak-js";
 import { reactive, readonly } from "vue";
 import type { AuthenticationSettings } from "../types";
+import { HubSession } from "./hub-session";
 
 export interface AuthState {
   enabled: boolean;
@@ -19,6 +20,8 @@ const mutableState = reactive<AuthState>({
 });
 
 let keycloak: Keycloak | null = null;
+const serviceSession = new HubSession();
+let identityGeneration = 0;
 
 export const authState = readonly(mutableState) as AuthState;
 
@@ -36,15 +39,14 @@ export async function initializeAuthentication(settings: AuthenticationSettings)
   });
 
   try {
-    mutableState.authenticated = await keycloak.init({
+    const signedIn = await keycloak.init({
       onLoad: "check-sso",
       checkLoginIframe: false,
       pkceMethod: "S256",
     });
-    mutableState.username =
-      String(keycloak.tokenParsed?.preferred_username ?? keycloak.tokenParsed?.name ?? "");
     keycloak.onAuthLogout = clearIdentity;
-    keycloak.onTokenExpired = () => void refreshToken();
+    keycloak.onTokenExpired = () => void accessToken().catch(() => {});
+    if (signedIn) await accessToken();
   } catch (error) {
     mutableState.error = error instanceof Error ? error.message : "Authentication is unavailable";
   } finally {
@@ -58,27 +60,47 @@ export function login(): Promise<void> {
 }
 
 export function logout(): Promise<void> {
+  clearIdentity();
   if (!keycloak) return Promise.resolve();
   return keycloak.logout({ redirectUri: window.location.href });
 }
 
 export async function accessToken(): Promise<string | undefined> {
-  if (!keycloak?.authenticated) return undefined;
-  await refreshToken();
-  return keycloak.token;
-}
-
-async function refreshToken(): Promise<void> {
-  if (!keycloak?.authenticated) return;
+  if (!keycloak?.authenticated) {
+    if (mutableState.authenticated) clearIdentity();
+    return undefined;
+  }
+  const generation = identityGeneration;
   try {
     await keycloak.updateToken(30);
-  } catch {
-    keycloak.clearToken();
-    clearIdentity();
+    if (generation !== identityGeneration) throw new Error("Sign-in was cancelled.");
+    if (!keycloak.authenticated || !keycloak.token) {
+      clearIdentity();
+      return undefined;
+    }
+    const session = await serviceSession.get(keycloak.token);
+    if (generation !== identityGeneration) throw new Error("Sign-in was cancelled.");
+    mutableState.username = session.username;
+    mutableState.authenticated = true;
+    mutableState.error = "";
+    return session.token;
+  } catch (error) {
+    if (generation === identityGeneration) {
+      clearIdentity();
+      mutableState.error = error instanceof Error ? error.message : "Service sign-in failed.";
+    }
+    throw error;
   }
 }
 
 function clearIdentity(): void {
+  identityGeneration++;
+  serviceSession.clear();
   mutableState.authenticated = false;
   mutableState.username = "";
+}
+
+export function invalidateServiceAuthentication(): void {
+  clearIdentity();
+  mutableState.error = "Service access expired or was denied. Sign in again.";
 }

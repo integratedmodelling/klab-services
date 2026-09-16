@@ -1385,6 +1385,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           if (submissionMode == SubmissionMode.ADD) {
             return List.of();
           }
+          if (submissionMode == SubmissionMode.REPLACE && project.getManifest() == null) {
+            return List.of(workspaceManager.replaceProjectSettings(
+                coordinates[0], coordinates[1], project.getSettings(), scope));
+          }
           return List.of(
               ResourceSet.empty(
                   Notification.error(

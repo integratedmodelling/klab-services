@@ -12,6 +12,11 @@ public interface Group {
 
   String getDescription();
 
+  /** Optional singular agent semantics overriding the worldview's default user observer. */
+  default String getObserverSemantics() {
+    return null;
+  }
+
   String getSshKey();
 
   List<String> getProjectUrls();

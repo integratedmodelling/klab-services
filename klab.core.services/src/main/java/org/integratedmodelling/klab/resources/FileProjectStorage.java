@@ -372,6 +372,16 @@ public class FileProjectStorage implements ProjectStorage {
         case MANIFEST -> {
           collectResources("manifest.json", "META-INF", false, ret);
         }
+        case PROJECT_SETTINGS -> {
+          var settings = rootFolder.toPath().resolve("META-INF/project.json");
+          if (Files.isRegularFile(settings)) {
+            try {
+              ret.add(settings.toUri().toURL());
+            } catch (MalformedURLException e) {
+              throw new KlabIOException(e);
+            }
+          }
+        }
         case DOCUMENTATION_NAMESPACE -> {
           collectResources(".json", "docs", false, ret);
         }

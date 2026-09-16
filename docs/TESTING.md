@@ -251,3 +251,24 @@ These are contract tests, not a live staging-project run. A release check must a
 staging testcase against its configured resources, reasoner, resolver, runtime, and knowledge graph,
 verify the expected report, and check cleanup. UI presentation, remote transport, scheduler capture,
 and submission gating require their own integration evidence.
+
+## Default observer preparation regression tests
+
+Run the metadata, group, identity, settings-storage and observer preparation contracts with:
+
+```powershell
+mvn -pl klab.core.services,klab.services.resources,klab.modeler -am '-Dtest=DefaultObserverTest,DefaultObserverPreparationTest,ProjectSettingsIOTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+Observer scope/transport and embedded persistence regression tests:
+
+```powershell
+mvn -pl klab.services.runtime -am '-Dtest=ObserverScopeTest,ObserverGeometryViewTest,PerceivedGeometryPersistenceTest,DigitalTwinCommitTest,ClientKnowledgeGraphTest,RuntimeServiceQueryTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+The persistence tests use a fresh embedded Neo4j database, including concurrent writers, rollback,
+spatial replacement, preserved time, and stale/cross-twin edit rejection. The view tests check
+WGS84 reprojection and absent spatial geometry. In `klab-ide`, run
+`mvn '-Dtest=ObserverCardTest,TreeModelTest,ObservationDropTargetTest' test` for edit baselines,
+viewport validation, observer visibility and geometry previews. See [Default observers](OBSERVERS.md)
+for live connection checks and remaining policy, advanced editing and semantic-query work.

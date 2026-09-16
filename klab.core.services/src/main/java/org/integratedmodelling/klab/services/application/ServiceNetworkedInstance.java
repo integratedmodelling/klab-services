@@ -16,11 +16,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 import javax.annotation.PreDestroy;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.services.application.security.HubWebAuthentication;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -98,6 +100,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   @Autowired private ConfigurableApplicationContext applicationContext;
   @Autowired private Environment environment;
   @Autowired protected ServiceAuthorizationManager authorizationManager;
+  @Autowired private HubWebAuthentication webAuthentication;
   @Autowired protected ApplicationAvailability applicationAvailability;
   private SimpMessagingTemplate webSocket;
 
@@ -126,7 +129,17 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       return authorizationManager.authenticateService(
           KlabCertificateImpl.createFromFile(config), getStartupOptions());
     }
-    return super.authenticateService();
+    var identity = super.authenticateService();
+    var authentication = Authentication.INSTANCE.getLastEngineAuthenticationResponse();
+    if (authentication != null && authentication.getHub() != null) {
+      var hub = authentication.getHub();
+      var url = hub.getUrls() == null ? null : hub.getUrls().stream()
+          .filter(Objects::nonNull)
+          .filter(candidate -> candidate.regionMatches(true, 0, "https://", 0, 8))
+          .findFirst().orElse(null);
+      webAuthentication.configureHub(url, hub.getId());
+    }
+    return identity;
   }
 
   @Override
