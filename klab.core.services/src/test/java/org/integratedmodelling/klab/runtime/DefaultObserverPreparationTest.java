@@ -86,4 +86,17 @@ class DefaultObserverPreparationTest {
     assertTrue(DefaultObserverPreparation.prepare(worldview, scope, geometry).isCompletedExceptionally());
     verify(scope, never()).observation(any(Observable.class));
   }
+
+  @Test void emptyTwinSubmitsDefaultObserverWithRealUniversalGeometry() {
+    var builder = mock(Observation.Builder.class, RETURNS_SELF);
+    var observer = mock(Observation.class);
+    when(scope.observation(observable)).thenReturn(builder);
+    when(builder.submit()).thenReturn(CompletableFuture.completedFuture(observer));
+    assertSame(observer, DefaultObserverPreparation.prepare(worldview, scope, Geometry.UNIVERSAL).join());
+    verify(builder).geometry(Geometry.UNIVERSAL);
+    var scale = new org.integratedmodelling.klab.runtime.scale.ScaleImpl(Geometry.UNIVERSAL);
+    assertFalse(scale.isEmpty());
+    assertEquals("*", scale.encode());
+    assertTrue(scale.as(Geometry.class).isUniversal());
+  }
 }

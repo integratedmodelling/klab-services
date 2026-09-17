@@ -2327,6 +2327,11 @@ public class RuntimeService extends BaseService
       }
       var observer = org.integratedmodelling.klab.runtime.DefaultObserverPreparation
           .prepare(worldview, connection, Geometry.UNIVERSAL).join();
+      if (observer != null && observer.isEmpty()) {
+        throw new IllegalStateException("Default observer resolution returned an empty observation: "
+            + observer.getNotifications().stream().map(Notification::getMessage)
+                .collect(java.util.stream.Collectors.joining("; ")));
+      }
       if (observer != null && !observer.isEmpty()) {
         connection.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved,
             Observation.forTransport(observer));

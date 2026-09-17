@@ -193,7 +193,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       T asset, SubmissionMode submissionMode, UserScope scope) {
     return client
         .withScope(scope)
-        .putCollection(
+        .putCollectionOrThrow(
             ServicesAPI.RESOURCES.SUBMIT,
             Utils.Json.asString(asset),
             ResourceSet.class,
@@ -202,7 +202,16 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             "submissionMode",
             submissionMode,
             "urn",
-            asset.getUrn());
+            submissionRouteUrn(asset));
+  }
+
+  private static String submissionRouteUrn(KlabAsset asset) {
+    // Project submissions carry workspace/project coordinates in the body. The controller
+    // routes by knowledge class; an encoded slash in its single path segment is rejected by Tomcat.
+    if (asset instanceof org.integratedmodelling.klab.api.knowledge.organization.Project) {
+      return asset.getUrn().substring(asset.getUrn().lastIndexOf('/') + 1);
+    }
+    return asset.getUrn();
   }
 
   @Override

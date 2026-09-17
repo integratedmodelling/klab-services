@@ -289,3 +289,14 @@ structured metadata, exact file rollback, malformed files, ignored paths and a r
 JGit repository through the normal commit operation. `ProjectSettingsSaveTest` checks the
 administrator-only worldview declaration and contributor-only observer changes. The IDE
 `ProjectSettingsEditorTest` checks the corresponding visibility and access predicates.
+
+Observer startup geometry regression checks:
+
+```shell
+mvn -pl klab.services.runtime -am -Dtest=GeometryAndCurvesTest,DefaultObserverPreparationTest,GeometryRepositoryTest,ObserverUniversalGeometryTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+These cover real UNIVERSAL default-observer preparation, the distinct `1` scalar / `*` universal /
+`X` empty encodings through runtime scales and repository reads, and replacement of initial
+universal perceived geometry by the first concrete observation. They do not prove a complete live
+resolver-to-graph-to-ObserverTree round trip.

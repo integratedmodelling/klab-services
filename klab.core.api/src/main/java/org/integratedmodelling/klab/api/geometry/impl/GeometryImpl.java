@@ -196,6 +196,7 @@ public class GeometryImpl implements Geometry {
   public static GeometryImpl scalar() {
     GeometryImpl ret = new GeometryImpl();
     ret.scalar = true;
+    ret.empty = false;
     return ret;
   }
 
@@ -207,6 +208,7 @@ public class GeometryImpl implements Geometry {
   public static GeometryImpl universal() {
     GeometryImpl ret = new GeometryImpl();
     ret.universal = true;
+    ret.empty = false;
     return ret;
   }
 
@@ -236,11 +238,11 @@ public class GeometryImpl implements Geometry {
     }
 
     if (isScalar()) {
-      return "*";
+      return "1";
     }
 
     if (isUniversal()) {
-      return "1";
+      return "*";
     }
 
     // Keep the encoding order stable. It also matches the scale scanning order after numerosity,
@@ -848,11 +850,11 @@ public class GeometryImpl implements Geometry {
       return empty();
     }
 
-    if (geometry.equals("*")) {
+    if (geometry.equals("1")) {
       return scalar();
     }
 
-    if (geometry.equals("1")) {
+    if (geometry.equals("*")) {
       return universal();
     }
 

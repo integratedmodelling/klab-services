@@ -2076,6 +2076,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       public <T> List<T> putCollection(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return putCollectionInternal(apiRequest, payload, resultClass, false, parameters);
+      }
+
+      /** Preserve HTTP/transport failures instead of reporting a successful empty collection. */
+      public <T> List<T> putCollectionOrThrow(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return putCollectionInternal(apiRequest, payload, resultClass, true, parameters);
+      }
+
+      private <T> List<T> putCollectionInternal(
+          String apiRequest, Object payload, Class<T> resultClass, boolean strict, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -2125,7 +2136,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
 
+          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              "PUT " + apiCall + " failed (HTTP " + (response == null ? "no response" : response.statusCode()) + ")", null);
+
         } catch (Throwable e) {
+          if (strict) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            if (e instanceof RequestFailure failure) throw failure;
+            throw new RequestFailure(0, "PUT " + apiCall + " failed: " + e.getClass().getSimpleName(), e);
+          }
           if (scope != null) {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {
