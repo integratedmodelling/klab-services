@@ -38,7 +38,7 @@ public class JavaLocalInstance extends LocalInstanceImpl {
 
     if (isUseDebugParameters(settings)) {
       ret.addArgument(
-          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:"
+          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:"
               + getProduct().getType().getDebugPort());
     }
     ret.addArgument("-Dfile.encoding=UTF-8");
