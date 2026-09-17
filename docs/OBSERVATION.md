@@ -6,6 +6,71 @@ and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observa
 for contextualization categories and [Resolution](RESOLUTION.md) for the broader Resolver trace,
 transport, transactions, and existing tests.
 
+## Geometry and Scale contract
+
+`Geometry` is the portable description of an observation's domain: its dimensions, shape,
+location and other geometric parameters. It can also describe the domain accepted or produced
+by a resource or computation. It carries no observable semantics, and declarations may leave
+dimensions or location unspecified. A geometry does not by itself prove that data exist or that
+an observation has been resolved.
+
+`Scale` extends `Geometry` with the runtime topology used for contextualization. It exposes
+operational extents such as `Space` and `Time`, their locators, and topology operations. Promoting
+a geometry with `Scale.create(geometry, scope)` requires the configured runtime implementation;
+it interprets the declaration rather than simply casting the portable object. Current concrete
+extent support must not be confused with a general implementation of every possible worldview
+topology. `Coverage` adds resolution coverage information; it is not another spelling of Geometry.
+
+### Scalar, universal and empty
+
+These dimensionless values have different meanings and must remain distinct at every boundary:
+
+| Encoding | Meaning | Empty? |
+|---|---|---|
+| `1` | **SCALAR**: one value without spatial or temporal subdivision. | No |
+| `*` | **UNIVERSAL**: an unrestricted domain, without a concrete spatial or temporal extent. | No |
+| `X` | **EMPTY**: no domain. | Yes |
+
+Universal is neither a scalar value nor an empty geometry. It does not encode a world polygon,
+a grid resolution, or an infinite collection of cells. An absence of dimensions therefore does
+not imply emptiness. Cardinality alone must not be used to distinguish these cases; use the
+geometry predicates and, for concrete extents, their topology. In particular, a valid default
+observer must not be rejected merely because its initial geometry is universal.
+
+### Conversion, transport and persistence
+
+Geometry encodings must preserve their meaning through parsing, promotion to Scale, transport,
+and storage. A universal Scale must encode as `*`, a dimensionless scalar Scale as `1`, and an
+empty Scale as `X`. Structured geometries must retain the dimension parameters needed to
+reconstruct their domain. Converting a universal Scale to an empty string loses this contract.
+
+Use `Geometry.forTransport(...)` for portable observation payloads and `GeometryRepository` for
+runtime geometry/scale mediation. Runtime Scale and Coverage implementation details must not
+leak into a service payload in place of the portable Geometry representation. The knowledge
+graph persists geometry definitions and reconstructs their runtime topology when needed.
+Geometry round trips preserve the domain; they do not establish semantic identity, resolution
+success, or data availability.
+
+### Occupied and perceived geometry
+
+An observation's ordinary geometry describes what it **occupies** (`OCCUPIES`). An agent can
+also have a distinct **perceived geometry** (`PERCEIVES`), describing the domain observed under
+its view. Observing another object updates this perceived domain without moving or enlarging
+the observer's occupied geometry.
+
+Default-observer preparation in an empty twin starts with `Geometry.UNIVERSAL`. The first
+concrete observation replaces an absent or universal perceived extent; subsequent concrete
+observations use the current default union policy. A universal observation does not erase an
+already concrete perceived extent. The observer's perceived extent supplies the default domain
+for submissions without a context observation; contextual observations retain their context's
+domain. Geometry defaults do not replace semantic resolution or its authorization checks.
+
+See [Default observers](OBSERVERS.md) for selection, connection notifications, graph maintenance,
+editing, and the boundary between implemented behavior and future semantic perception policies.
+`GeometryAndCurvesTest`, `GeometryRepositoryTest`, `DefaultObserverPreparationTest`, and
+`ObserverUniversalGeometryTest` cover the encoding and initial-perception invariants. These
+checks are distinct from a live resolver-to-graph-to-IDE acceptance test.
+
 ## Classification and characterization branch
 
 The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update

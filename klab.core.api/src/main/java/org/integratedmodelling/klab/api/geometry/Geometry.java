@@ -53,8 +53,9 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
  * letter if there is no subdivision.
  *
  * <p>The trivial case is a scalar geometry, describing scalars with no structure and specified by
- * an asterisk (<code>*</code>). Scalar geometries cannot be assigned parameters, nor, obviously, a
- * shape. An empty geometry (which is useless except to report errors) is specified by an uppercase
+ * <code>1</code>. Universal geometry is specified by <code>*</code> and leaves the domain
+ * unrestricted. Both are nonempty. Scalar geometries cannot be assigned parameters or a
+ * shape. An empty geometry is specified by an uppercase
  * <code>X</code>. Scalar geometries are useful: for example, a resolver for any countable will have
  * scalar geometry and void type.
  *
@@ -310,8 +311,9 @@ public interface Geometry extends Serializable, Locator {
     boolean distributed();
   }
 
+  /** Empty geometry encodes as X; a scalar encodes as 1 and universal geometry as *. */
   Geometry EMPTY = create("X");
-  Geometry UNIVERSAL = create("1");
+  Geometry UNIVERSAL = create("*");
 
   static Geometry create(String geometry) {
     return GeometryImpl.makeGeometry(geometry, 0);

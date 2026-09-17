@@ -82,4 +82,16 @@ class GeometryRepositoryTest {
         geometry.key(), GeometryRepository.INSTANCE.get(encoded, Geometry.class).key());
     assertEquals(scale.encode(), GeometryRepository.INSTANCE.get(encoded, Scale.class).encode());
   }
-}
+  @Test void dimensionlessEncodingsRemainDistinctThroughScaleAndRepository() {
+    for (String encoding : new String[]{"1", "*", "X"}) {
+      var geometry = Geometry.create(encoding);
+      var scale = new ScaleImpl(geometry);
+      assertEquals(encoding, scale.encode());
+      assertEquals(geometry.isEmpty(), scale.isEmpty());
+      assertEquals(geometry.isUniversal(), scale.isUniversal());
+      assertEquals(geometry.isScalar(), scale.isScalar());
+      if (!geometry.isEmpty()) assertEquals(geometry.size(), scale.size());
+      assertEquals(encoding, GeometryRepository.INSTANCE.get(encoding, Geometry.class).encode());
+      assertEquals(encoding, GeometryRepository.INSTANCE.get(encoding, Scale.class).encode());
+    }
+  }}

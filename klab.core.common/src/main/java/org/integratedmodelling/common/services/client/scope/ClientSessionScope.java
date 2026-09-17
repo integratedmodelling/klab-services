@@ -98,6 +98,8 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
     var id = runtime.declareContextScope(ret, this, userScope);
+    if (id == null) throw new KlabResourceAccessException("Runtime returned no digital twin configuration");
+    id.getNotifications().forEach(notification -> userScope.send(notification));
     ret.setFromConfiguration(id);
     if (!id.isEmpty()) {
       ClientScopeManager.INSTANCE.register(ret);

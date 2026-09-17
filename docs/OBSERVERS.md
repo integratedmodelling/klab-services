@@ -156,8 +156,10 @@ current context without nesting it under previous interactive context selections
 
 The IDE observer tab loads the twin's cohort members independently of the observation tree's
 current focus and depth. Every agent member is eligible, including agents instantiated by models.
-Click its icon to choose it; the selected icon becomes the observer icon. Clicking the selected
-icon clears the choice. On refresh or entering the tab, the selected agent's cohort is expanded
+Click an outline observer icon to make that agent current; the current observer uses a filled, accented icon.
+Clicking the current icon leaves the choice intact. If there is no current observer and the catalog has
+exactly one agent, it is selected automatically. Right-click opens the available observer actions without
+changing the choice. On refresh or entering the tab, the selected agent's cohort is expanded
 and the agent is scrolled into view. A selection remains visible while catalog links are loading.
 Asynchronous catalog and observer refreshes cannot overwrite a newer selection or another twin.
 
@@ -280,3 +282,17 @@ space; IDE `ObserverCardTest` checks perceived baselines and invalid viewport re
 IDE `TreeModelTest` covers explicit-only agent visibility and `ObservationDropTargetTest` checks
 the context/perception preview distinction. These tests do not constitute a live connected IDE
 demonstration or a remote Neo4j routing/spatial-plugin deployment test.
+
+### Universal initial geometry and preparation failures
+
+An empty twin prepares its default observer with `Geometry.UNIVERSAL` (`*`). Universal geometry
+is nonempty, and its encoding must survive conversion to a runtime scale and graph persistence.
+The first concrete observation replaces an absent/universal perceived extent; later concrete
+observations use the default union policy. A universal observation does not erase a concrete
+perceived extent. Occupied and perceived geometries remain separate.
+
+Preparation failures, including resolution returning an empty observation, are retained in the
+connection configuration. The client forwards new-twin configuration notifications through its
+notification channel, as it already does when connecting to an existing twin.
+
+Dimensionless geometry encoding is `1` for SCALAR, `*` for UNIVERSAL, and `X` for EMPTY. Scalar and universal are both nonempty. Geometry and runtime Scale parsing/encoding preserve these distinctions.

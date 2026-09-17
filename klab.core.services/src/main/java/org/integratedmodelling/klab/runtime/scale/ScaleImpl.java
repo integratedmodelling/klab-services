@@ -178,6 +178,11 @@ public class ScaleImpl implements Scale {
 
   public ScaleImpl(Geometry geometry, Scope scope) {
 
+    if (geometry.isEmpty()) {
+      this.extents = new Extent[0];
+      this.size = 0;
+      return;
+    }
     this.universal = geometry.isUniversal();
 
     if (!(this.universal = geometry.isUniversal())) {
@@ -196,6 +201,7 @@ public class ScaleImpl implements Scale {
       define(extents);
     } else {
       this.extents = new Extent[0];
+      this.size = geometry.size();
     }
   }
 
@@ -268,6 +274,8 @@ public class ScaleImpl implements Scale {
 
   @Override
   public String encode(Encoder... encoders) {
+    if (isUniversal()) return "*";
+    if (extents == null || extents.length == 0) return isEmpty() ? "X" : "1";
     StringBuilder ret = new StringBuilder();
     for (Extent<?> extent : extents) {
       if (extent instanceof ExtentImpl<?> extentImpl) ret.append(extentImpl.encode());
@@ -306,7 +314,7 @@ public class ScaleImpl implements Scale {
 
   @Override
   public boolean isScalar() {
-    return this.size == 1;
+    return !universal && this.size == 1;
   }
 
   @Override
@@ -373,7 +381,7 @@ public class ScaleImpl implements Scale {
 
   @Override
   public boolean isEmpty() {
-    return !this.universal && (extents == null || extents.length == 0);
+    return !this.universal && (extents == null || extents.length == 0) && size != 1;
   }
 
   @Override

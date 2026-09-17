@@ -366,3 +366,18 @@ which stage additions, modifications and deletions. The settings save leaves ind
 rejects conflicts on either settings path and ignored manifest paths, and returns fresh repository
 state. Manifest and legacy settings paths are recognized during repository change processing so
 pull/discard operations refresh project settings and invalidate cached worldview metadata.
+### Project settings transport diagnostics
+
+Project settings submissions carry `workspace/project` in the JSON body, but use the project
+identifier alone in the existing submit route's `{urn}` segment. Encoding the coordinate slash
+as `%2F` causes Tomcat to reject the request with HTTP 400 before controller authorization or
+observer validation. The project controller obtains the coordinates from the body.
+
+`ResourcesClient.submit` uses strict PUT handling: HTTP/transport failures throw an error with
+the HTTP status instead of becoming an empty collection. The IDE shows service rejection text
+in the settings tab as well as forwarding notifications. A successful empty response is reported
+as a missing save result, without suggesting that notifications exist.
+
+`ProjectSettingsTransportTest` covers the mounted URL, complete body coordinates, observer text,
+and HTTP 400/403/500 propagation. The encoded-slash rejection was reproduced against the local
+Resources service; this does not constitute an authenticated end-to-end settings save.

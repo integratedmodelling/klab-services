@@ -12,6 +12,18 @@ import org.junit.jupiter.api.Test;
 
 class GeometryAndCurvesTest {
 
+  @Test void universalAndScalarAreNonemptyAndRetainTheirEncoding() {
+    assertFalse(Geometry.UNIVERSAL.isEmpty());
+    assertEquals("*", Geometry.UNIVERSAL.encode());
+    assertTrue(Geometry.create(Geometry.UNIVERSAL.encode()).isUniversal());
+    assertFalse(Geometry.create("1").isEmpty());
+    assertEquals("1", Geometry.create("1").encode());
+    assertTrue(Geometry.create("1").isScalar());
+    assertFalse(Geometry.create("1").isUniversal());
+    assertTrue(Geometry.EMPTY.isEmpty());
+    assertEquals("X", Geometry.EMPTY.encode());
+  }
+
   @Test
   void spaceFillingCurve_offset_rowMajorAndVariants() {
     long[] sizes12 = new long[] {3, 2}; // X=3, Y=2

@@ -97,9 +97,9 @@ public enum GeometryRepository {
 
     if ("X".equals(encoded)) {
       return (T) (Scale.class.isAssignableFrom(geometryClass) ? Scale.empty() : Geometry.EMPTY);
-    } else if ("*".equals(encoded)) {
-      var scalar = Geometry.create("*");
-      return (T) (Scale.class.isAssignableFrom(geometryClass) ? Scale.create(scalar) : scalar);
+    } else if ("1".equals(encoded) || "*".equals(encoded)) {
+      var dimensionless = Geometry.create(encoded);
+      return (T) (Scale.class.isAssignableFrom(geometryClass) ? Scale.create(dimensionless) : dimensionless);
     }
 
     var identifier = Utils.Strings.hash(encoded);
