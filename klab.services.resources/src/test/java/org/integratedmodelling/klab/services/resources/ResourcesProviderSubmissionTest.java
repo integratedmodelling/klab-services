@@ -15,6 +15,26 @@ import org.junit.jupiter.api.Test;
 
 class ResourcesProviderSubmissionTest {
 
+  @Test void projectEditRequiresServiceUpdateAndProjectAccessOrAdministration() {
+    var identity = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    var user = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    org.mockito.Mockito.when(user.getUser()).thenReturn(identity);
+    org.mockito.Mockito.when(identity.getUsername()).thenReturn("editor");
+    org.mockito.Mockito.when(identity.getGroups()).thenReturn(List.of());
+    var info = new ResourceInfo();
+    info.setKnowledgeClass(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.PROJECT);
+    info.setOwner("owner");
+    info.setRights(org.integratedmodelling.klab.api.authentication.ResourcePrivileges.create("editor"));
+    assertTrue(ResourcesProvider.allowsProjectEdit(info, user, true, false));
+    assertFalse(ResourcesProvider.allowsProjectEdit(info, user, false, false));
+    info.setRights(org.integratedmodelling.klab.api.authentication.ResourcePrivileges.create("*,!editor"));
+    assertFalse(ResourcesProvider.allowsProjectEdit(info, user, true, false));
+    assertTrue(ResourcesProvider.allowsProjectEdit(info, user, false, true));
+    info.setOwner("editor");
+    assertTrue(ResourcesProvider.allowsProjectEdit(info, user, true, false));
+    assertFalse(ResourcesProvider.allowsProjectEdit(null, user, true, true));
+  }
+
   @Test
   void temporaryUpdatesAreLimitedToTierZeroOrLocalServices() {
     var tierZero = new ResourceInfo();

@@ -2679,7 +2679,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           response.getErrors().add("Initialize a search before editing an expression.");
           return response;
         }
-        session = new SemanticSearchSession(this, indexer::query, request);
+        session = new SemanticSearchSession(this, indexer::query, request,
+            new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(owl));
         do {
           id = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
         } while (semanticExpressions.asMap().putIfAbsent(id, session) != null);

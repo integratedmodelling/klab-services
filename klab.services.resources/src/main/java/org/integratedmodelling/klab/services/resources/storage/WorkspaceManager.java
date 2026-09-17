@@ -316,7 +316,7 @@ public class WorkspaceManager {
     return _behaviorMap == null ? Collections.emptySet() : _behaviorMap.keySet();
   }
 
-  public boolean lockProject(String urn, String token, boolean isLocal) {
+  public synchronized boolean lockProject(String urn, String token, boolean isLocal) {
 
     var descriptor = projectDescriptors.get(urn);
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
@@ -336,7 +336,7 @@ public class WorkspaceManager {
     return true;
   }
 
-  public boolean unlockProject(String urn, String token) {
+  public synchronized boolean unlockProject(String urn, String token) {
     if (projectLocks.containsKey(urn)) {
 
       if (projectLocks.get(urn).equals(token)) {
@@ -587,7 +587,6 @@ public class WorkspaceManager {
             .file("docs/documentation.json", "{}")
             .file("docs/references.json", "{}")
             .file("META-INF/manifest.json", Utils.Json.asString(manifest))
-            .file("META-INF/project.json", Utils.Json.asString(new ProjectSettings()))
             .build();
 
     if (result != null) {
@@ -1270,7 +1269,7 @@ public class WorkspaceManager {
       Map<String, URL> urlCache = new HashMap<>();
       Map<String, Long> lastUpdates = new HashMap<>();
       for (var pd : projectDescriptors.values()) {
-        var isWorldview = pd.manifest.getDefinedWorldview() != null;
+        var isWorldview = pd.manifest.getDefinedWorldview() != null && !pd.manifest.getDefinedWorldview().isBlank();
         if (pd.externalProject != null) {
           for (var ontology : pd.externalProject.getOntologies()) {
             cache.put(ontology.getUrn(), Triple.of(null, ontology, isWorldview));
@@ -1827,6 +1826,10 @@ public class WorkspaceManager {
       ret.getMetadata().put(Metadata.RESOURCES_STORAGE_URL, pdesc.storage.getUrl());
       ret.setManifest(pdesc.manifest);
       ret.setSettings(ProjectSettingsIO.read(pdesc.storage));
+      var projectInfo = resourcesKbox.getStatus(projectId, null);
+      if (projectInfo != null && projectInfo.getRights() != null) {
+        ret.getSettings().setPermissions(projectInfo.getRights().toString());
+      }
       ret.getMetadata().putAll(projectMetadata(pdesc));
 
       for (KimOntology ontology : getOntologies(false)) {
@@ -2069,8 +2072,27 @@ public class WorkspaceManager {
     List<KlabDocument<?>> newAssets = new ArrayList<>();
 
     boolean mustRecomputeOrder = false;
+    boolean settingsChanged = false;
+    boolean manifestChanged = false;
 
     for (var change : changes) {
+
+      if (projectDescriptor != null && (change.getFirst() == ProjectStorage.ResourceType.MANIFEST
+          || change.getFirst() == ProjectStorage.ResourceType.PROJECT_SETTINGS)) {
+        if (change.getFirst() == ProjectStorage.ResourceType.MANIFEST) {
+          projectDescriptor.manifest = readManifest(projectDescriptor.storage);
+          manifestChanged = true;
+        }
+        settingsChanged = true;
+        var settingsResult = result.computeIfAbsent(projectDescriptor.workspace, key -> new ResourceSet());
+        settingsResult.setWorkspace(projectDescriptor.workspace);
+        var updatedProject = new ResourceSet.Resource();
+        updatedProject.setResourceUrn(project); updatedProject.setServiceId(service.serviceId());
+        updatedProject.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+        updatedProject.setOperation(CRUDOperation.UPDATE);
+        settingsResult.getProjects().add(updatedProject);
+        continue;
+      }
 
       if (change.getSecond() == CRUDOperation.DELETE) {
         handleRepositoryDelete(project, change, result, worldviewChange);
@@ -2368,6 +2390,8 @@ public class WorkspaceManager {
 
     this.loading.set(false);
 
+    if (manifestChanged) refreshWorldviewMembership();
+    else if (settingsChanged) _worldview = null;
     if (projectDescriptor != null && projectDescriptor.workspace != null) {
       createProjectData(project, projectDescriptor.workspace);
     }
@@ -2615,6 +2639,16 @@ public class WorkspaceManager {
     resource.setResourceVersion(document.getVersion());
     resource.getNotifications().clear();
     resource.getNotifications().addAll(document.getNotifications());
+  }
+
+  /** Refresh catalog-owned values without replacing project membership or writing configuration. */
+  public synchronized void refreshWorkspaceSettings(ResourceInfo info) {
+    var workspace = workspaces.get(info.getUrn());
+    if (workspace != null) {
+      workspace.setMetadata(Metadata.create(info.getMetadata()));
+      workspace.setPrivileges(info.getRights());
+      workspace.setServiceId(info.getServiceId());
+    }
   }
 
   private ResourceSet.Resource addToResultSet(
@@ -3757,6 +3791,20 @@ public class WorkspaceManager {
   }
 
   /** Settings-only replacement through the normal project submission contract. */
+  public synchronized boolean updateProjectPermissions(String projectName, String permissions, UserScope userScope) {
+    var descriptor = projectDescriptors.get(projectName);
+    if (descriptor == null) return false;
+    try {
+      var settings = ProjectSettingsIO.read(descriptor.storage);
+      settings.setPermissions(permissions);
+      var result = replaceProjectSettings(descriptor.workspace, projectName, settings, userScope);
+      return !Utils.Notifications.hasErrors(result.getNotifications());
+    } catch (RuntimeException failure) {
+      return false;
+    }
+  }
+
+  /** Settings-only replacement through the normal project submission contract. */
   public synchronized ResourceSet replaceProjectSettings(
       String workspace, String projectName, ProjectSettings settings, UserScope userScope) {
     var descriptor = projectDescriptors.get(projectName);
@@ -3768,10 +3816,55 @@ public class WorkspaceManager {
       return ResourceSet.empty(Notification.error("Project settings require a local project locked by the requesting user"));
     }
     if (settings == null) return ResourceSet.empty(Notification.error("Missing project settings"));
+    if (!service.canEditProject(projectName, userScope)) {
+      return ResourceSet.empty(Notification.error("Project settings require edit access to the project"));
+    }
     try {
-      ProjectSettingsIO.write(storage, settings);
+      var storedSettings = ProjectSettingsIO.read(storage);
+      var manifestUrls = storage.listResources(ProjectStorage.ResourceType.MANIFEST);
+      var currentManifest = manifestUrls.isEmpty() ? descriptor.manifest : readManifest(storage);
+      String currentWorldview = currentManifest == null ? null : currentManifest.getDefinedWorldview();
+      if (settings.getDefinedWorldview() != null && !service.canAdministerProjectSettings(userScope)) {
+        return ResourceSet.empty(Notification.error("Only administrators can change the defined worldview"));
+      }
+      String effectiveWorldview = settings.getDefinedWorldview() == null
+          ? currentWorldview : settings.getDefinedWorldview().strip();
+      String observerKey = Worldview.USER_OBSERVER_SEMANTICS;
+      if ((effectiveWorldview == null || effectiveWorldview.isBlank())
+          && (!Objects.equals(storedSettings.getMetadata().get(observerKey), settings.getMetadata().get(observerKey))
+              || storedSettings.getMetadata().containsKey(observerKey) != settings.getMetadata().containsKey(observerKey))) {
+        return ResourceSet.empty(Notification.error("Default observer settings require a project defining a worldview"));
+      }
+      var info = resourcesKbox.getStatus(projectName, null);
+      var previousRights = info.getRights();
+      ProjectSettingsIO.write(storage, settings, () -> {
+        if (settings.getPermissions() == null) return;
+        var rights = org.integratedmodelling.klab.api.authentication.ResourcePrivileges.create(settings.getPermissions());
+        // The editor handles user/group rights; preserve the separate service grants.
+        if (previousRights != null && previousRights.getAllowedServices() != null) {
+          rights.setAllowedServices(new HashSet<>(previousRights.getAllowedServices()));
+        }
+        info.setRights(rights);
+        try {
+          if (!resourcesKbox.putStatus(info)) throw new IllegalStateException("Permission catalog rejected the update");
+        } catch (RuntimeException failure) {
+          var restore = resourcesKbox.getStatus(projectName, null);
+          if (restore != null) {
+            restore.setRights(previousRights);
+            if (!resourcesKbox.putStatus(restore)) {
+              throw new IllegalStateException("Permission update failed and catalog rights could not be restored", failure);
+            }
+          }
+          throw failure;
+        }
+      });
+      descriptor.manifest = readManifest(storage);
+      if (settings.getDefinedWorldview() != null) {
+        refreshWorldviewMembership();
+      }
       _worldview = null;
-      createProjectData(projectName, workspace);
+      var updatedProject = createProjectData(projectName, workspace);
+      if (updatedProject instanceof ProjectImpl implementation) implementation.setRepositoryState(storage.getRepositoryState());
       ResourceSet result = new ResourceSet();
       result.setWorkspace(workspace);
       var resource = new ResourceSet.Resource();
@@ -3779,6 +3872,7 @@ public class WorkspaceManager {
       resource.setServiceId(service.serviceId());
       resource.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
       resource.setOperation(CRUDOperation.UPDATE);
+      resource.setRepositoryState(storage.getRepositoryState());
       result.getProjects().add(resource);
       return result;
     } catch (Exception e) {
@@ -3786,7 +3880,25 @@ public class WorkspaceManager {
     }
   }
 
+  private void refreshWorldviewMembership() {
+    _worldview = null;
+    _ontologyOrder = null;
+    worldviewProvider = false;
+    adoptedWorldview = null;
+    for (var descriptor : projectDescriptors.values()) {
+      String worldview = descriptor.manifest == null ? null : descriptor.manifest.getDefinedWorldview();
+      if (worldview != null && !worldview.isBlank()) {
+        worldviewProvider = true;
+        if (adoptedWorldview == null) adoptedWorldview = worldview;
+      }
+    }
+  }
+
   public WorkspaceImpl getWorkspace(String workspaceName) {
+    var info = resourcesKbox.getStatus(workspaceName, null);
+    if (info != null && info.getKnowledgeClass() == KlabAsset.KnowledgeClass.WORKSPACE) {
+      refreshWorkspaceSettings(info);
+    }
     return updateStatus(this.workspaces.get(workspaceName));
   }
 
@@ -3869,7 +3981,7 @@ public class WorkspaceManager {
       // go back to the projects and load all observation strategies, adding project metadata
       for (var pd : projectDescriptors.values().stream()
           .sorted(Comparator.comparing(descriptor -> descriptor.name)).toList()) {
-        if (pd.manifest.getDefinedWorldview() == null) {
+        if (pd.manifest.getDefinedWorldview() == null || pd.manifest.getDefinedWorldview().isBlank()) {
           continue;
         }
 

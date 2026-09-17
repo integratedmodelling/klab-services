@@ -196,6 +196,12 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
     this.locked = locked;
   }
 
+  /** Refresh a saved project snapshot while preserving navigation children and the lock. */
+  public void refreshSettings(Project updated) {
+    delegate = updated;
+    setRepositoryState(updated.getRepositoryState());
+  }
+
   /**
    * Local filesystem directory. Only available if project is locked, either by interacting with the
    * very files in the filesystem or through a mirror copy from the service.

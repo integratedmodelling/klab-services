@@ -195,6 +195,65 @@ class SemanticSearchSessionTest {
     assertFalse(repeated.getErrors().isEmpty()); assertEquals("(", repeated.getDeclaration());
   }
 
+  @Test void inheritedInherencyFiltersCandidatesAndIsExplainedWhileClauseIsPending() {
+    var height = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    var oak = concept("test:Oak", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    concept("test:Rock", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    when(reasoner.inherent(height)).thenReturn(tree);
+    when(reasoner.is(oak, tree)).thenReturn(true);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    for (String name : List.of("Tree", "Oak", "Rock")) valid.put("test:Height of test:" + name, valid.get("test:Height"));
+    call(SemanticSearchRequest.Mode.TOKEN); var chosen = select("test:Height");
+    assertTrue(chosen.getClauses().getFirst().isInherited());
+    assertSame(tree, chosen.getClauses().getFirst().getFiller());
+    var pending = select("of");
+    assertSame(height, pending.getCurrentConcept());
+    assertTrue(pending.getMatches().stream().anyMatch(m -> m.getId().equals("test:Oak")));
+    assertFalse(pending.getMatches().stream().anyMatch(m -> m.getId().equals("test:Rock")));
+    assertNotNull(select("test:Oak").getObservable());
+    call(SemanticSearchRequest.Mode.UNDO);
+    assertFalse(select("test:Rock").getErrors().isEmpty());
+    var grouped = call(SemanticSearchRequest.Mode.OPEN_SCOPE);
+    assertTrue(grouped.getMatches().stream().anyMatch(m -> m.getId().equals("test:Oak")));
+    assertFalse(grouped.getMatches().stream().anyMatch(m -> m.getId().equals("test:Rock")));
+  }
+
+  @Test void predicateCanBeQualifiedButIsNotReadyWithoutAnInherent() {
+    var species = concept("test:Species", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var qualified = concept("test:Species of test:Tree", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    when(reasoner.inherent(qualified)).thenReturn(tree);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    var bare = select("test:Species");
+    assertSame(species, bare.getCurrentConcept()); assertNull(bare.getObservable());
+    select("of");
+    assertNotNull(select("test:Tree").getObservable());
+    call(SemanticSearchRequest.Mode.UNDO);
+    var height = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var transformation = concept("test:Species of test:Height", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    when(reasoner.inherent(transformation)).thenReturn(height);
+    call(SemanticSearchRequest.Mode.TOKEN);
+    assertNotNull(select("test:Height").getObservable());
+  }
+
+  @Test void nonInherentClauseAlsoUsesItsOntologyBound() {
+    var event = concept("test:Event", SemanticType.OBSERVABLE, SemanticType.EVENT);
+    var cause = concept("test:Cause", SemanticType.OBSERVABLE, SemanticType.EVENT);
+    concept("test:Other", SemanticType.OBSERVABLE, SemanticType.EVENT);
+    when(reasoner.directCausant(event)).thenReturn(cause);
+    when(reasoner.causant(event)).thenReturn(cause);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.CAUSED_BY));
+    valid.put("test:Event caused by test:Cause", valid.get("test:Event"));
+    valid.put("test:Event caused by test:Other", valid.get("test:Event"));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    assertFalse(select("test:Event").getClauses().getFirst().isInherited());
+    var pending = select("caused by");
+    assertFalse(pending.getMatches().stream().anyMatch(m -> m.getId().equals("test:Other")));
+    assertNotNull(select("test:Cause").getObservable());
+  }
+
   private Observable collective(String urn, Concept base) {
     var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
     concept.setUrn(urn); concept.setType(base.getType()); concept.setCollective(true);

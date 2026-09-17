@@ -31,6 +31,7 @@ public interface ProjectStorage {
     ONTOLOGY,
     MODEL_NAMESPACE,
     MANIFEST,
+    /** Legacy project.json, retained only for migration and repository change tracking. */
     PROJECT_SETTINGS,
     DOCUMENTATION_NAMESPACE,
     STRATEGY,
@@ -169,6 +170,8 @@ public interface ProjectStorage {
     boolean behaviorExtension = "kactor".equals(extension) || "kactors".equals(extension);
 
     if ("json".equals(extension)) {
+      if (relativeFilePath.equals("META-INF" + separator + "manifest.json")) return Pair.of(ResourceType.MANIFEST, "manifest");
+      if (relativeFilePath.equals("META-INF" + separator + "project.json")) return Pair.of(ResourceType.PROJECT_SETTINGS, "project");
       // TODO manifest, docs, resource.
       if (relativeFilePath.startsWith("resources" + separator)) {
         return null;
@@ -219,6 +222,8 @@ public interface ProjectStorage {
    */
   static String getRelativeFilePath(String urn, ResourceType type, String separator) {
     return switch (type) {
+      case MANIFEST -> "META-INF" + separator + "manifest.json";
+      case PROJECT_SETTINGS -> "META-INF" + separator + "project.json";
       case SCRIPT ->
           "scripts"
               + separator

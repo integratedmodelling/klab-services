@@ -24,6 +24,9 @@ class SemanticSearchTransportTest {
     concept.getType().addAll(List.of(SemanticType.OBSERVABLE, SemanticType.QUALITY));
     var observable = new ObservableImpl(); observable.setSemantics(concept); observable.setUrn(concept.getUrn());
     var response = new SemanticSearchResponse(42, 8); response.setObservable(observable);
+    response.setCurrentConcept(concept);
+    var clause = new SemanticClauseRestriction(org.integratedmodelling.klab.api.knowledge.SemanticRole.INHERENT, concept, true);
+    clause.setCode(List.of(StyledKimToken.create(concept))); response.setClauses(List.of(clause));
     response.setDeclaration("test:Height"); response.setCanUndo(true);
     response.getMatches().add(new SemanticMatch(ValueOperator.GREATER));
     var received = new AtomicReference<String>(); var path = new AtomicReference<String>();
@@ -50,6 +53,10 @@ class SemanticSearchTransportTest {
       assertEquals(42, result.getSearchId()); assertTrue(result.isCanUndo());
       assertEquals(ValueOperator.GREATER, result.getMatches().getFirst().getValueOperator());
       assertEquals("test:Height", result.getObservable().getUrn());
+      assertEquals("test:Height", result.getCurrentConcept().getUrn());
+      assertTrue(result.getClauses().getFirst().isInherited());
+      assertEquals("test:Height", result.getClauses().getFirst().getFiller().getUrn());
+      assertEquals("test:Height", result.getClauses().getFirst().getCode().getFirst().getValue());
     } finally { server.stop(0); }
   }
 }

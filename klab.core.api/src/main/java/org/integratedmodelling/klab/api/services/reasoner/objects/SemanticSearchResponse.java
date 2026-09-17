@@ -25,6 +25,12 @@ public class SemanticSearchResponse {
     private int parenthesisDepth;
     private String declaration = "";
     private org.integratedmodelling.klab.api.knowledge.Observable observable;
+    private org.integratedmodelling.klab.api.knowledge.Concept currentConcept;
+    private List<SemanticClauseRestriction> clauses = new ArrayList<>();
+    public org.integratedmodelling.klab.api.knowledge.Concept getCurrentConcept() { return currentConcept; }
+    public void setCurrentConcept(org.integratedmodelling.klab.api.knowledge.Concept value) { currentConcept = value; }
+    public List<SemanticClauseRestriction> getClauses() { return clauses; }
+    public void setClauses(List<SemanticClauseRestriction> value) { clauses = value; }
     private boolean canUndo;
     private boolean canOpenScope;
     private boolean canCloseScope;

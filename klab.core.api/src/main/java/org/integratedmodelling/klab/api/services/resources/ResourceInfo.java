@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.services.resources;
 import java.io.File;
 import java.io.Serializable;
 import java.util.*;
-
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;

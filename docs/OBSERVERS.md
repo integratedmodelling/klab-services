@@ -7,11 +7,11 @@ observer choice, and maintenance of perceived geometry.
 
 ## Project and worldview contract
 
-Project-owned settings are stored in `META-INF/project.json`, separately from the dependency,
-version, privilege and worldview declarations in `META-INF/manifest.json`:
+Project-owned settings are stored in `META-INF/manifest.json`, alongside dependency, version and worldview declarations:
 
 ```json
 {
+  "definedWorldview": "earth",
   "metadata": {
     "klab.user.observer": "people:Contributor",
     "dc:description": "Shared project metadata"
@@ -26,13 +26,19 @@ semantic validation occurs when the observer is prepared with the reasoner.
 `ProjectSettings` carries the metadata map. `Project.getSettings()` transports the stored
 settings separately from `Project.getMetadata()`, which also contains service-generated values.
 `ProjectSettingsIO` reads absent files as empty settings and replaces saved files atomically.
-Malformed files fail explicitly and are not silently overwritten. New projects include the file.
+Malformed files fail explicitly and are not silently overwritten. New projects include only the manifest.
 
-Legacy manifest metadata remains a fallback. Settings metadata overrides the same key in that
-project's manifest, including a blank observer value that masks a legacy declaration. All
-metadata from projects whose manifest declares `definedWorldview` is then merged into the
-worldview. Merely adopting a worldview does not make a model project a worldview contributor.
-External project metadata is included as well.
+The manifest metadata map supports structured JSON values. A legacy `META-INF/project.json` is
+read for compatibility, retaining its previous override precedence until the next successful save
+migrates the metadata into the manifest and removes that file. All metadata from projects whose
+manifest declares a nonblank `definedWorldview` is merged into the worldview. Merely adopting a
+worldview does not make a project a contributor. External project metadata is included as well.
+
+The IDE shows default observer settings only for these contributors. The worldview declaration
+is visible to other users but only administrators may change it, including via the service API.
+Null `ProjectSettings.definedWorldview` leaves the declaration unchanged; blank removes it.
+Changes to observer metadata are rejected for noncontributors; existing dormant values are
+preserved during unrelated edits and remain excluded from worldview harvesting.
 
 Projects are merged in ascending project-name order. A later project replaces an earlier value.
 Different nonblank observer expressions emit a warning identifying the replacing project and
@@ -95,10 +101,12 @@ the geometry appropriate to the worldview and connection policy.
 
 ## Project settings editor and save protocol
 
-The IDE's `WorkspaceEditor` project context menu opens one settings tab per project. The first
-setting is the default user observer. It preserves other stored metadata, saves asynchronously,
-and keeps the edited value visible after a rejected save. A project must be locked to enable
-saving. The tab is a first settings surface, not a manifest/dependency/privilege editor.
+The IDE's `WorkspaceEditor` project context menu opens one settings tab per project, with the
+default observer, a permission editor, and editable project-owned metadata. Metadata supports
+typed inline edits and adding, replacing or removing keys; JSON values preserve structured data.
+The observer key has its own text field and is excluded from the generic metadata rows.
+Saving is asynchronous and a rejected save retains the draft. Edit access and a lock owned by
+the requester are required. Manifest/dependency editing remains separate.
 
 Saving uses the existing generic resources API:
 
@@ -111,9 +119,18 @@ service.submit(request, ResourcesService.SubmissionMode.REPLACE, userScope);
 ```
 
 The service requires an existing local project in that workspace and a lock owned by the
-requesting identity. This settings-only replacement does not implement general project
-manifest updates or versioned project history. Errors are returned as resource-set notifications.
-The IDE reads a fresh settings snapshot before changing the observer key and submitting it.
+requesting identity, and rechecks service UPDATE plus project access (or service administration).
+`ProjectSettings.permissions` transports an optional encoded access-rights update: null leaves
+rights unchanged; an empty string means owner-only. Rights are stored only in `ResourcesKBox`,
+never in the manifest. Existing service grants and project ownership are preserved.
+The ordinary project `setRights` endpoint uses the same guarded path. Metadata is stored in
+the manifest; a catalog-write failure restores the original manifest and legacy settings file and attempts to restore rights.
+This is compensating error recovery across two stores, not a crash-atomic distributed transaction.
+This settings-only replacement does not implement general project
+manifest editing beyond `definedWorldview`. Errors are returned as resource-set notifications.
+The IDE loads stored metadata and catalog rights when opening the tab and saves that editable
+snapshot, excluding generated project metadata. Lock changes refresh editability; save-time server
+checks remain authoritative. Project `ResourceInfo.permissions` reports the caller's UPDATE access.
 
 ## Connection and interactive selection
 

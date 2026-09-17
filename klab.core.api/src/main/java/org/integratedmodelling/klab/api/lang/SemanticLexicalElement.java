@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 public enum SemanticLexicalElement {
 
 
-    OF(SemanticRole.INHERENT, "of", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE)),
+    OF(SemanticRole.INHERENT, "of", EnumSet.of(SemanticType.OBSERVABLE, SemanticType.PREDICATE), EnumSet.of(SemanticType.COUNTABLE)),
     FOR(SemanticRole.GOAL, "for", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),
     WITH(SemanticRole.COMPRESENT, "with", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE)),
     CAUSED_BY(SemanticRole.CAUSANT, "caused by", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),

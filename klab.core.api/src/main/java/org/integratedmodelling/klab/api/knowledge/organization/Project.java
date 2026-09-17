@@ -55,7 +55,7 @@ public interface Project extends KlabAsset {
 
     Version getVersion();
 
-    Map<String, String> getMetadata();
+    Map<String, Object> getMetadata();
 
     Collection<MetadataConvention> getMetadataConventions();
 

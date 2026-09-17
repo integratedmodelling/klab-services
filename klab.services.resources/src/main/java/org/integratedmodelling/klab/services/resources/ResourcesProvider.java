@@ -536,7 +536,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public Workspace retrieveWorkspace(String urn, Scope scope) {
-    // TODO check permissions in scope, possibly filter the workspace's projects
+    if (!(scope instanceof ServiceScope)
+        && (!(scope instanceof UserScope user) || !allowsWorkspaceRead(
+            resourcesKbox.getStatus(urn, null), user, isAllowed(CRUDOperation.ADMINISTER, user)))) return null;
     return this.workspaceManager.getWorkspace(urn);
   }
 
@@ -853,6 +855,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
+    if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()
+        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return false;
     /*
      * We just create the descriptor. Project URNs are unique anyway, so the workspace is a purely
      * logical entity for now.
@@ -873,8 +877,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     resourceInfo.setRights(rights);
     resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
     resourceInfo.setUrn(workspace);
+    resourceInfo.setOwner(scope.getUser().getUsername());
+    resourceInfo.setServiceId(serviceId());
     resourceInfo.getMetadata().putAll(metadata);
-    resourcesKbox.putStatus(resourceInfo);
+    if (!resourcesKbox.putStatus(resourceInfo)) return false;
 
     workspaceManager.notifyNewWorkspace(resourceInfo);
 
@@ -1100,6 +1106,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+    if (Workspace.class.isAssignableFrom(assetClass)) return assetClass.cast(retrieveWorkspace(urn, scope));
     // TODO RESOURCES-CRUD enforce the asset's ResourcePrivileges for every branch.
     var workflowClass = workflowKnowledgeClass(assetClass);
     if (workflowClass != null) {
@@ -1121,6 +1128,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
+    if (Workspace.class.isAssignableFrom(assetClass)) {
+      return workspaceManager.list(assetClass).stream().filter(workspace -> allowsWorkspaceRead(
+          resourcesKbox.getStatus(workspace.getUrn(), null), scope,
+          scope != null && isAllowed(CRUDOperation.ADMINISTER, scope))).toList();
+    }
     // TODO RESOURCES-CRUD filter every result using the requesting scope and ResourcePrivileges.
     var workflowClass = workflowKnowledgeClass(assetClass);
     if (workflowClass != null) {
@@ -1262,7 +1274,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           case MODEL -> resolveModelAsset(urn, scope);
           case RESOURCE -> resolveResourceUrn(urn, scope);
           case WORKSPACE -> {
-            var workspace = workspaceManager.getWorkspace(urn);
+            var workspace = retrieveWorkspace(urn, scope);
             if (workspace == null) {
               yield null;
             }
@@ -1358,9 +1370,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       case Resource resource:
         return List.of(ingestResource(resource, submissionMode, scope));
       case Workspace workspace:
-        if (workspaceManager.getWorkspace(workspace.getUrn()) != null) {
+        if (resourcesKbox.getStatus(workspace.getUrn(), null) != null) {
           if (submissionMode == SubmissionMode.ADD) {
             return List.of();
+          }
+          if (submissionMode == SubmissionMode.REPLACE) {
+            return updateWorkspaceSettings(workspace.getUrn(), workspace.getMetadata(), workspace.getPrivileges(), scope)
+                ? List.of(workspaceChange(workspace.getUrn(), CRUDOperation.UPDATE_METADATA))
+                : List.of(ResourceSet.empty(Notification.error("Workspace settings require its owner or a service administrator")));
           }
           return List.of(
               ResourceSet.empty(
@@ -2121,16 +2138,70 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       ret = ResourceInfo.offline(urn);
     }
     ret.setServiceId(serviceId());
+    if (ret.getKnowledgeClass() == KnowledgeClass.WORKSPACE) {
+      boolean administrator = scope instanceof UserScope user && isAllowed(CRUDOperation.ADMINISTER, user);
+      boolean edit = scope instanceof UserScope user && allowsWorkspaceEdit(ret, user, administrator);
+      boolean read = scope instanceof ServiceScope
+          || scope instanceof UserScope user && allowsWorkspaceRead(ret, user, administrator);
+      if (!read) {
+        var denied = new ResourceInfo();
+        denied.setUrn(urn); denied.setServiceId(serviceId()); denied.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+        denied.setType(ResourceInfo.Type.UNAUTHORIZED); denied.setPermissions(EnumSet.noneOf(CRUDOperation.class));
+        return denied;
+      }
+      ret.setPermissions(edit ? EnumSet.of(CRUDOperation.READ, CRUDOperation.UPDATE, CRUDOperation.ADMINISTER)
+          : EnumSet.of(CRUDOperation.READ));
+      return ret;
+    }
     ResourcePrivileges effectiveRights = effectiveRights(ret);
     if (ret.getType().isUsable()) {
       if (effectiveRights == null || !effectiveRights.checkAuthorization(scope)) {
         ret.setType(ResourceInfo.Type.UNAUTHORIZED);
       }
     }
+    if (ret.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT) {
+      var projectPermissions = EnumSet.noneOf(CRUDOperation.class);
+      if (scope instanceof UserScope userScope && canAdministerProjectSettings(userScope)) {
+        projectPermissions.add(CRUDOperation.ADMINISTER);
+      }
+      if (scope instanceof UserScope userScope && canEditProject(urn, userScope)) {
+        projectPermissions.add(CRUDOperation.UPDATE);
+      }
+      ret.setPermissions(projectPermissions);
+    }
     return ret;
   }
 
+  /** Project settings and rights share the authenticated project's edit-access boundary. */
+  public boolean canAdministerProjectSettings(UserScope scope) {
+    return scope != null && scope.getUser() != null && !scope.getUser().isAnonymous()
+        && isAllowed(CRUDOperation.ADMINISTER, scope);
+  }
+
+  public boolean canEditProject(String urn, UserScope scope) {
+    if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()) return false;
+    return allowsProjectEdit(resourcesKbox.getStatus(urn, null), scope,
+        isAllowed(CRUDOperation.UPDATE, scope), isAllowed(CRUDOperation.ADMINISTER, scope));
+  }
+
+  static boolean allowsProjectEdit(ResourceInfo info, UserScope scope, boolean update, boolean administer) {
+    if (info == null || info.getKnowledgeClass() != KlabAsset.KnowledgeClass.PROJECT
+        || scope == null || scope.getUser() == null || scope.getUser().isAnonymous()
+        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return false;
+    if (administer) return true;
+    return update && (Objects.equals(info.getOwner(), scope.getUser().getUsername())
+        || info.getRights() != null && info.getRights().checkAuthorization(
+            scope.getUser().getUsername(), scope.getUser().getGroups()));
+  }
+
   public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
+    if (info == null || !Objects.equals(urn, info.getUrn())) return false;
+    var existing = resourcesKbox.getStatus(urn, null);
+    if (info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
+        || existing != null && existing.getKnowledgeClass() == KnowledgeClass.WORKSPACE) {
+      return scope instanceof UserScope user
+          && updateWorkspaceSettings(urn, info.getMetadata(), info.getRights(), user);
+    }
     // TODO check access permissions etc
     return resourcesKbox.putStatus(info);
   }
@@ -2193,6 +2264,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (!(scope instanceof UserScope userScope) || resourcePrivileges == null) return false;
     var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
+      if (status.getKnowledgeClass() == KnowledgeClass.WORKSPACE) {
+        return updateWorkspaceSettings(resourceUrn, null, resourcePrivileges, userScope);
+      }
+      if (status.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT) {
+        return workspaceManager.updateProjectPermissions(resourceUrn, resourcePrivileges.toString(), userScope);
+      }
       if (!allowsRightsUpdate(
           resourceUrn,
           status,
@@ -2239,6 +2316,39 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             && !resourceUrn.equals(status.getPermissionsOwnerUrn())) return false;
     return administrator
         || status.getOwner() != null && status.getOwner().equals(username);
+  }
+
+  static boolean allowsWorkspaceEdit(ResourceInfo info, UserScope scope, boolean administrator) {
+    return info != null && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
+        && scope != null && scope.getUser() != null && !scope.getUser().isAnonymous()
+        && scope.getUser().getUsername() != null && !scope.getUser().getUsername().isBlank()
+        && (administrator || Objects.equals(info.getOwner(), scope.getUser().getUsername()));
+  }
+
+  static boolean allowsWorkspaceRead(ResourceInfo info, UserScope scope, boolean administrator) {
+    return allowsWorkspaceEdit(info, scope, administrator)
+        || info != null && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
+        && scope != null && scope.getUser() != null
+        && info.getRights() != null && info.getRights().checkAuthorization(
+            scope.getUser().getUsername(), scope.getUser().getGroups());
+  }
+
+  /** Metadata and rights share one catalog write; workspace contents and ownership are never submitted. */
+  synchronized boolean updateWorkspaceSettings(String urn, Metadata metadata, ResourcePrivileges rights, UserScope scope) {
+    var existing = resourcesKbox.getStatus(urn, null);
+    if (scope == null || !allowsWorkspaceEdit(existing, scope, isAllowed(CRUDOperation.ADMINISTER, scope))) return false;
+    var updated = Utils.Json.parseObject(Utils.Json.asString(existing), ResourceInfo.class);
+    if (metadata != null) updated.setMetadata(Metadata.create(metadata));
+    if (rights != null) {
+      var newRights = ResourcePrivileges.create(rights.toString());
+      if (existing.getRights() != null && existing.getRights().getAllowedServices() != null) {
+        newRights.setAllowedServices(new HashSet<>(existing.getRights().getAllowedServices()));
+      }
+      updated.setRights(newRights);
+    }
+    if (!resourcesKbox.putStatus(updated)) return false;
+    workspaceManager.refreshWorkspaceSettings(updated);
+    return true;
   }
 
   private ResourcePrivileges effectiveRights(ResourceInfo info) {

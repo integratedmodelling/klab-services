@@ -172,6 +172,16 @@ Permissions do not live in the serialized `Resource`. `ResourceInfo.rights` is i
 persisted in `ResourcesKBox`, and the editor updates it through its dedicated permissions action.
 Saving resource content does not implicitly save permission edits.
 
+Project settings use a different, combined save contract. `WorkspaceEditor` loads project-owned
+metadata and the catalog rights into one draft. A settings-only project `REPLACE` submission
+stores metadata in `META-INF/manifest.json` and an optional `ProjectSettings.permissions` update
+in the project's `ResourcesKBox` record. Null permissions leave the catalog unchanged; empty text
+means owner-only access. Owner and service grants are preserved. The requester needs service UPDATE
+plus project access (or service administration), and must own the project lock. The normal project
+`setRights` route has the same checks. Project `ResourceInfo.permissions` exposes effective UPDATE
+access for the settings UI. See [the settings contract](OBSERVERS.md#project-settings-editor-and-save-protocol)
+for error recovery and transport details.
+
 ### 2. Publication eligibility in the editor
 
 Publication is a separate tab, not a variant of local Save or Update. It is available only when all
@@ -324,3 +334,35 @@ k.Actors parsing in `AgentView` and `BehaviorEditor` now calls
 `retrieve`, `query`, `info`, and typed `submit` operations. Calls from `KlabIDEController` into the
 modeler's own create/update methods are not `ResourcesService` calls and remain valid; the modeler
 implements those workflows through the generic service API where supporting payloads exist.
+
+### Workspace settings
+
+Workspaces are virtual containers. Their metadata, permissions, creator (`owner`) and project
+membership live in the workspace `ResourceInfo` in `ResourcesKBox`; no workspace settings file
+is created. New workspaces record the authenticated creator. Existing workspaces without an
+owner remain administrable; membership in their access list does not imply ownership.
+
+Submit a `Workspace` with `SubmissionMode.REPLACE` to replace metadata and/or privileges. A null
+metadata or privileges field leaves that part unchanged; empty metadata clears metadata and
+empty privileges restrict access to owner/admin (existing service grants are retained). Both
+settings are persisted in one catalog update. Submitted ownership and project membership are
+ignored. Only the stored owner or a service administrator may save, including through generic
+rights and resource-info update routes. Project locks and project edit permissions are irrelevant.
+
+Workspace info exposes READ to authorized viewers and UPDATE/ADMINISTER to the owner/admin.
+Other viewers can audit settings without editing them. Reads honor explicit exclusions, while
+owner/admin access is retained even when not listed in the ACL. Catalog saves refresh cached
+workspace metadata and privileges without rebuilding project membership. The IDE settings tab
+uses this contract and retains drafts after failed saves.
+
+Project settings saves preserve unrelated manifest fields. `ProjectSettings.definedWorldview` is
+an optional admin-only manifest update (null unchanged, blank removes it); all saves still require
+a project lock and edit access. Observer edits require a nonblank effective `definedWorldview`.
+Legacy `META-INF/project.json` metadata is migrated on save and that file is removed. Failure
+restores both original files. No permissions are migrated into the manifest.
+
+Under Git, settings remain working-tree changes for the existing repository Save/Publish actions,
+which stage additions, modifications and deletions. The settings save leaves index and HEAD intact,
+rejects conflicts on either settings path and ignored manifest paths, and returns fresh repository
+state. Manifest and legacy settings paths are recognized during repository change processing so
+pull/discard operations refresh project settings and invalidate cached worldview metadata.

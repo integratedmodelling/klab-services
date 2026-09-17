@@ -81,4 +81,17 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace>
   public ResourcePrivileges getPrivileges() {
     return delegate.getPrivileges();
   }
+
+  /** Refresh catalog settings without rebuilding project navigation or losing tree state. */
+  public void updateSettings(org.integratedmodelling.klab.api.data.Metadata metadata,
+      ResourcePrivileges privileges) {
+    var updated = new org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl();
+    updated.setUrn(delegate.getUrn());
+    updated.setServiceId(delegate.getServiceId());
+    updated.setProjects(delegate.getProjects());
+    updated.setAnnotations(new ArrayList<>(delegate.getAnnotations()));
+    updated.setMetadata(org.integratedmodelling.klab.api.data.Metadata.create(metadata));
+    updated.setPrivileges(privileges);
+    delegate = updated;
+  }
 }

@@ -57,7 +57,7 @@ Still to implement:
 
 - Multi-operand unary operators (`ratio of ... to ...`, proportion, percentage, value-over).
 - Units/currencies and distributed units; `where` conditions and richer literal editors.
-- Full trait-base conflicts, domain/inherency compatibility and other worldview-sensitive rules as
+- Full trait-base conflicts, predicate domain applicability and other worldview-sensitive rules beyond clause bounds as
   shared validator contracts, including better explanations of why a proposal was excluded.
 - Context-aware proposal ranking, personal defaults/history and search-result pagination. Initial
   searches currently examine a bounded Lucene candidate window, so this is not an exhaustive browser.
@@ -77,10 +77,11 @@ satisfiable expression is not necessarily submit-ready.
 | --- | --- | --- |
 | Root accepts observable heads, predicate prefixes, unary operators and groups | `SemanticScope.root()`; `SemanticSearchSession.replay()` | Concept-only completion for ontology editing |
 | `each` starts an expression or follows an applicable semantic clause, including `of`; it is never repeated in the same operand position | `ObservableValidator.conceptAttributeRules()` (`EACH` requires `COUNTABLE`); session qualifier replay | Additional concept attributes; explicit grammar-position rules for future qualifiers |
-| A predicate prefix needs a head, unless a unary operator turns it into an observable | `replay()` concept branch and `complete()` | Base-trait uniqueness, predicate applicability, incompatible roles and predicate-only groups |
+| A predicate can prefix a head or become observable when qualified with an inherent | `replay()` concept branch and `complete()` | Base-trait uniqueness, predicate applicability and incompatible roles |
 | Unary operand categories | `ObservableValidator.unaryOperatorRules()`, with `UnarySemanticOperator.allowedOperandTypes` as fallback | Second operands, comparison clauses and operator-specific worldview constraints |
 | Clause argument categories | `ObservableValidator.clauseRules()`, with `SemanticLexicalElement.argument` as fallback | Shared rules for every clause; compatibility with the head and already-bound roles |
-| Clause applicability and duplicate roles in a lexical frame | `SemanticLexicalElement.applicable`; `Frame.used` | Restrictions inherited from named concepts and clauses nested in previously completed operands |
+| Direct/inherited clause fillers constrain complete operands by OWL subsumption | `OWLSemanticClauseSupport`; session trial replay | Shared diagnostics for ontology document validation |
+| Clause applicability and duplicate roles in a lexical frame | `SemanticLexicalElement.applicable`; `Frame.used` | Additional application-language constraints beyond ontology restriction bounds |
 | `during` requires an event | Shared `ObservableValidator` clause rule | Any broader event/process policy must first be decided in that shared contract |
 | `and` / `or` require the same fundamental operand category; `follows` requires events | `replay()` binary branch, consistent with `ObservableValidator.logicalOperatorRules()` for logical operators | Logical normalization, subsumption-aware compatibility, event ordering details |
 | A group opens only in an operand position (never directly after another opening group), closes only when complete, and must fit its enclosing operand scope | `replay()` group branches; `describe()` depth/action flags | Predicate groups and richer nested grammar contexts |
@@ -125,6 +126,39 @@ query it undoes one accepted component per physical key press. Held keys cannot 
 scope edits. Consecutive opening groups are also rejected on the server, including selections from
 the proposal table. Separate closing-key presses can close legitimately nested groups.
 
+### Ontology clause bounds and card provenance
+
+`SemanticSearchSession` uses one `SemanticClauseSupport` source for both candidate validation and
+card explanations. The deployed Reasoner supplies `OWLSemanticClauseSupport`: its role-to-property
+map covers `of`, `for`, `with`, `caused by`, `causing`, `adjacent to`, `during`, and relationship
+source/target clauses. Extend this map when introducing another ontology-backed clause.
+
+For each owner concept, the support visits direct superclass/equivalent restrictions, asserted
+ancestors and inferred superclasses. Every existing filler is a bound: the completed clause operand
+must be an inferred subclass of that filler (equality is accepted). All bounds must hold. Union
+fillers remain alternatives inside one bound; intersections and multiple restrictions are never
+flattened into an arbitrary first concept. Superclass unions are not traversed as though every
+branch were inherited. Collective flags are stripped for subsumption only.
+
+The entire operand is checked, including unary expressions and closed groups. Proposal trial replay
+and accepted edits use this same check; undo restores the previous scope. Incomplete predicate
+prefixes may remain visible until a head completes them. Satisfiability of the resulting expression
+is still required, but is not a substitute for checking specialization of the existing fillers.
+These bounds currently apply to assisted composition; they do not yet add equivalent diagnostics
+to the ontology document validator. Logical `and`/`or`/`follows` are expression connectors rather
+than object-property clauses and retain their separate category and satisfiability checks.
+
+The response includes `currentConcept` even when a clause is pending, plus `clauses` carrying role,
+origin (`inherited`), optional named filler and styled code (also for anonymous union/intersection
+fillers). The IDE card renders this snapshot using `Theme.semanticExpression` without synchronous
+remote calls. A label icon denotes a direct restriction; a merge icon denotes an inherited one,
+with accessible text and tooltips. Both are relative to the current composed concept. A bare
+predicate can be shown and qualified but is not returned as a ready observable without inherency.
+
+The generic support implementation uses the existing single-filler Reasoner getters for controlled
+clients/tests; production sessions use the OWL implementation to preserve all bounds. Session-local
+restriction snapshots are discarded with the search session on knowledge invalidation.
+
 ### Adding or strengthening a rule
 
 1. For a rule that applies to both authored k.IM and UI composition, add or refine the declarative
@@ -167,6 +201,7 @@ a raw `Observable` and uses `ObservableSubmission` to construct an unresolved ob
   and use its geometry.
 - Substantials, including enumerable relationships, are converted through the semantic builder to
   collective observables without mutating the selected observable.
+- Predicates require a substantial or quality inherent. A quality inherent remains singular and uses mandatory context-observation geometry. For a substantial inherent, submission replaces a singular inherent with its collective form through `Observable.Builder.of(inherent.collective())`, preserving the predicate and the composed expression. Predicates already qualified with a collective are retained. Predicates over substantials use the observer's perceived extent.
 - Collectives use the selected observer's `PERCEIVES` geometry. Missing observer/geometry is an
   error; the observer's own `OCCUPIES` geometry is never used as a fallback.
 
@@ -178,6 +213,6 @@ notification and graph-update route. No identity is fabricated for an individual
 Focused tests cover state transitions and invalid/stale edits with a controlled Reasoner, shared
 operand rules, literal bounds, balanced normalization, a real loopback HTTP JSON round trip through
 `ReasonerClient`, and unresolved-observation geometry/collective adaptation. These do not establish
-live worldview semantic behavior or a rendered JavaFX workflow. A live acceptance pass should compose
+live worldview semantic behavior or a manually rendered JavaFX workflow. A small real HermiT ontology additionally tests direct/equivalent and inherited bounds, including unions; JavaFX tests check card structure and origin tooltips. A live acceptance pass should compose
 a worldview quality, add a context clause, exercise nested groups/undo, then submit it in a twin with
 a context observation; repeat with a substantial and an observer with a perceived extent.

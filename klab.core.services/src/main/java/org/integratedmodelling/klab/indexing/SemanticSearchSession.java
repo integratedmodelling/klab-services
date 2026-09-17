@@ -27,6 +27,7 @@ public final class SemanticSearchSession {
 
   private final Reasoner reasoner;
   private final Search search;
+  private final SemanticClauseSupport clauseSupport;
   private final Set<SemanticType> resultTypes;
   private final Set<SemanticMatch.Type> matchTypes;
   private List<Object> tokens = new ArrayList<>();
@@ -45,6 +46,11 @@ public final class SemanticSearchSession {
     boolean complete;
     boolean value;
     boolean collectiveExpression;
+    Concept clauseOwner;
+    SemanticRole clauseRole;
+    int operandStart;
+    Concept enclosingOwner;
+    SemanticRole enclosingRole;
     Frame(int start) { this.start = start; }
   }
 
@@ -53,6 +59,12 @@ public final class SemanticSearchSession {
   }
 
   public SemanticSearchSession(Reasoner reasoner, Search search, SemanticSearchRequest initial) {
+    this(reasoner, search, initial, new SemanticClauseSupport(reasoner));
+  }
+
+  public SemanticSearchSession(Reasoner reasoner, Search search, SemanticSearchRequest initial,
+      SemanticClauseSupport clauseSupport) {
+    this.clauseSupport = Objects.requireNonNull(clauseSupport);
     this.reasoner = Objects.requireNonNull(reasoner);
     this.search = Objects.requireNonNull(search);
     resultTypes = initial.getSemanticTypes() == null ? Set.of() : Set.copyOf(initial.getSemanticTypes());
@@ -139,8 +151,12 @@ public final class SemanticSearchSession {
         && (tokens.isEmpty() || !"(".equals(tokens.getLast())));
     response.setCanCloseScope(state.frames().size() > 1 && state.current().complete);
     response.setAcceptsValue(state.current().value);
+    Concept current = state.frames().stream().map(f -> f.concept).filter(Objects::nonNull).findFirst().orElse(null);
+    response.setCurrentConcept(current);
+    if (current != null) response.setClauses(clauseSupport.clauses(current));
     Observable observable = state.observable();
-    if (observable != null && (resultTypes.isEmpty()
+    if (observable != null && (!observable.is(SemanticType.PREDICATE)
+        || reasoner.inherent(observable.getSemantics()) != null) && (resultTypes.isEmpty()
         || resultTypes.stream().anyMatch(observable::is))) {
       response.setObservable(observable);
       response.setCurrentType(SemanticType.fundamentalType(observable.getSemantics().getType()));
@@ -176,6 +192,14 @@ public final class SemanticSearchSession {
         require(i == 0 || !"(".equals(input.get(i - 1)), "Choose a component before opening another group.");
         var nested = new Frame(i + 1);
         nested.scope = operands(frame.scope.logicalRealm);
+        // Carry a clause bound into a directly grouped operand so its choices are filtered too.
+        // A group used inside a unary operator is checked when that operator completes instead.
+        if (frame.clauseRole != null && (i == frame.operandStart
+            || i == frame.operandStart + 1 && input.get(i - 1) == Qualifier.EACH)) {
+          nested.enclosingOwner = frame.clauseOwner; nested.enclosingRole = frame.clauseRole;
+        } else if (i == frame.start || i == frame.start + 1 && input.get(i - 1) == Qualifier.EACH) {
+          nested.enclosingOwner = frame.enclosingOwner; nested.enclosingRole = frame.enclosingRole;
+        }
         frames.push(nested);
       } else if (")".equals(token)) {
         require(frames.size() > 1 && frame.complete, "Complete the grouped expression before closing it.");
@@ -212,7 +236,12 @@ public final class SemanticSearchSession {
         if (predicate) {
           frame.complete = false;
           // A predicate may complete a unary expression (e.g. type of), or prefix a future head.
-          try { complete(frame, input, i); } catch (IllegalArgumentException incomplete) { }
+          try {
+            complete(frame, input, i);
+            // A bare predicate can also remain a prefix for a subsequent head concept.
+            if (frame.concept.is(SemanticType.PREDICATE))
+              frame.scope.logicalRealm.addAll(SemanticScope.root().logicalRealm);
+          } catch (IllegalArgumentException incomplete) { }
         } else {
           complete(frame, input, i);
         }
@@ -228,10 +257,15 @@ public final class SemanticSearchSession {
         require(frame.complete && modifier.role != null && modifier.argument != null
             && modifier.applicable.stream().anyMatch(frame.concept::is)
             && !frame.used.contains(modifier.role), "This clause is not applicable here.");
+        frame.clauseOwner = frame.concept;
+        frame.clauseRole = modifier.role;
+        frame.operandStart = i + 1;
         frame.used.add(modifier.role);
         frame.scope = operands(ObservableValidator.clauseRules().stream()
             .filter(rule -> rule.clause().role == modifier.role).findFirst()
             .map(ObservableValidator.ClauseRule::requiredArgumentType).orElse(modifier.argument));
+        if (modifier == SemanticLexicalElement.OF && frame.concept.is(SemanticType.PREDICATE))
+          frame.scope.logicalRealm.add(SemanticScope.Constraint.of(SemanticType.QUALITY));
         frame.complete = false;
       } else if (token instanceof BinarySemanticOperator operator) {
         require(frame.complete, "A binary operator needs a complete left operand.");
@@ -259,7 +293,8 @@ public final class SemanticSearchSession {
     Observable observable = null;
     if (frames.size() == 1 && frames.peek().complete) {
       observable = resolve(declaration(input));
-      require(resultTypes.isEmpty() || resultTypes.stream().anyMatch(observable::is),
+      require(observable.is(SemanticType.PREDICATE) && reasoner.inherent(observable.getSemantics()) == null
+          || resultTypes.isEmpty() || resultTypes.stream().anyMatch(observable::is),
           "This observable does not match the requested result category.");
     }
     return new State(frames, observable);
@@ -273,6 +308,21 @@ public final class SemanticSearchSession {
           .findFirst().orElseThrow().requiredConceptType();
       require(required.stream().anyMatch(observable::is) && observable.getSemantics().isCollective(),
           "The each qualifier must produce a collective countable observable.");
+    }
+    if (frame.enclosingRole != null) {
+      require(clauseSupport.accepts(frame.enclosingOwner, frame.enclosingRole, observable.getSemantics()),
+          "The grouped operand must specialize its enclosing clause restriction.");
+    }
+    if (frame.clauseRole != null) {
+      // Resolve the whole operand, including predicates, unary operators and closed groups.
+      // Checking only the final lexical concept would reject valid compound specializations.
+      if (clauseSupport.hasBounds(frame.clauseOwner, frame.clauseRole)) {
+        var operand = resolve(declaration(input.subList(frame.operandStart, end + 1))).getSemantics();
+        require(clauseSupport.accepts(frame.clauseOwner, frame.clauseRole, operand),
+            "The clause operand must specialize its existing direct or inherited restriction.");
+      }
+      frame.clauseRole = null;
+      frame.clauseOwner = null;
     }
     frame.concept = observable.getSemantics();
     frame.complete = true;
@@ -292,7 +342,7 @@ public final class SemanticSearchSession {
     try {
       observable = reasoner.resolveObservable(declaration);
       require(observable != null && observable.getSemantics() != null
-          && observable.is(SemanticType.OBSERVABLE)
+          && (observable.is(SemanticType.OBSERVABLE) || observable.is(SemanticType.PREDICATE))
           && !observable.is(SemanticType.NOTHING) && reasoner.satisfiable(observable.getSemantics()),
           "The expression does not resolve to a consistent observable.");
     } catch (RuntimeException ex) {

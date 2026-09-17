@@ -34,7 +34,7 @@ public class ProjectImpl implements Project {
     private List<Pair<String, Version>> prerequisiteComponents = new ArrayList<>();
     private String worldview;
     private String definedWorldview;
-    private Map<String, String> metadata = new HashMap<>();
+    private Map<String, Object> metadata = new HashMap<>();
     private long creationTimestamp = System.currentTimeMillis();
 
     @Override
@@ -63,11 +63,11 @@ public class ProjectImpl implements Project {
     }
 
     @Override
-    public Map<String, String> getMetadata() {
+    public Map<String, Object> getMetadata() {
       return metadata;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(Map<String, Object> metadata) {
       this.metadata = metadata;
     }
 

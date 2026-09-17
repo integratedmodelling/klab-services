@@ -257,7 +257,7 @@ and submission gating require their own integration evidence.
 Run the metadata, group, identity, settings-storage and observer preparation contracts with:
 
 ```powershell
-mvn -pl klab.core.services,klab.services.resources,klab.modeler -am '-Dtest=DefaultObserverTest,DefaultObserverPreparationTest,ProjectSettingsIOTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+mvn -pl klab.core.services,klab.services.resources,klab.modeler -am '-Dtest=DefaultObserverTest,DefaultObserverPreparationTest,ProjectSettingsIOTest,ProjectSettingsSaveTest,ResourcesProviderSubmissionTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
 ```
 
 Observer scope/transport and embedded persistence regression tests:
@@ -272,3 +272,20 @@ WGS84 reprojection and absent spatial geometry. In `klab-ide`, run
 `mvn '-Dtest=ObserverCardTest,TreeModelTest,ObservationDropTargetTest' test` for edit baselines,
 viewport validation, observer visibility and geometry previews. See [Default observers](OBSERVERS.md)
 for live connection checks and remaining policy, advanced editing and semantic-query work.
+
+Workspace settings regression checks:
+
+```shell
+mvn -pl klab.services.resources,klab.modeler -am -Dtest=WorkspaceSettingsTest,ProjectSettingsSaveTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+`WorkspaceSettingsTest` checks owner/admin authorization, read-only ACL membership, missing-owner
+workspaces, catalog failure, structured metadata, unchanged fields and preservation of ownership,
+project membership and service grants. IDE `WorkspaceSettingsEditorTest` checks audit/edit access
+and settings request payloads; these tests do not exercise a live JavaFX session or HTTP service.
+
+Manifest settings regression coverage: `ProjectSettingsIOTest` exercises legacy migration,
+structured metadata, exact file rollback, malformed files, ignored paths and a real temporary
+JGit repository through the normal commit operation. `ProjectSettingsSaveTest` checks the
+administrator-only worldview declaration and contributor-only observer changes. The IDE
+`ProjectSettingsEditorTest` checks the corresponding visibility and access predicates.
