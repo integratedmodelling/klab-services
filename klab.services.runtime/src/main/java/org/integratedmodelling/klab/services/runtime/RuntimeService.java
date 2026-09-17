@@ -492,6 +492,15 @@ public class RuntimeService extends BaseService
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
 
+    // Keep the stable catalog identity while naming a new default observer after its user.
+    if (submitted instanceof ObservationImpl mutable
+        && submitted.getId() <= 0 && submitted.getId() != Observation.QUERY_ID
+        && Boolean.TRUE.equals(submitted.getMetadata().get(
+            org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
+        && org.integratedmodelling.klab.api.knowledge.DefaultObserver.identity(scope.getUser())
+            .equals(submitted.getUrn())) {
+      mutable.setName(scope.getUser().getUsername());
+    }
     var effectiveScope = submissionScope(submitted, scope);
     if (submitted instanceof ObservationImpl mutable && submitted.getGeometry() == null) {
       mutable.setGeometry(ContextScope.getResolutionGeometry(effectiveScope));
