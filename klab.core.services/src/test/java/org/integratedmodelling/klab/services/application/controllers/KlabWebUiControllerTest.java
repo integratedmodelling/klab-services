@@ -2,11 +2,14 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+
+import jakarta.servlet.http.HttpServletRequest;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -19,15 +22,42 @@ import org.springframework.http.MediaType;
 class KlabWebUiControllerTest {
 
   @Test
-  void forwardsHtmlRootAndReturnsTheInstanceConfiguration() {
+  void servesHtmlRootAndReturnsTheInstanceConfiguration() {
     var instance = mock(ServiceNetworkedInstance.class);
-    var configuration = WebUiConfiguration.builder(KlabService.Type.RESOURCES).build();
+    var request = mock(HttpServletRequest.class);
+
+    var configuration =
+            WebUiConfiguration.builder(KlabService.Type.RESOURCES).build();
+
     when(instance.webUiConfiguration()).thenReturn(configuration);
+    when(request.getContextPath()).thenReturn("/resources");
 
-    var controller = new KlabWebUiController(instance);
+    var html =
+            """
+            <!doctype html>
+            <html>
+              <head>
+                <base href="__KLAB_BASE_HREF__">
+              </head>
+              <body>
+                <div id="app"></div>
+              </body>
+            </html>
+            """;
 
-    assertEquals("forward:/index.html", controller.dashboard());
-    assertEquals("forward:/index.html", controller.fullPageComponent());
+    var controller = new KlabWebUiController(instance, html);
+
+    var dashboard = controller.dashboard(request);
+    var fullPage = controller.fullPageComponent(request);
+
+    assertEquals(HttpStatus.OK, dashboard.getStatusCode());
+    assertEquals(MediaType.TEXT_HTML, dashboard.getHeaders().getContentType());
+    assertTrue(dashboard.getBody().contains("<base href=\"/resources/\">"));
+
+    assertEquals(HttpStatus.OK, fullPage.getStatusCode());
+    assertEquals(MediaType.TEXT_HTML, fullPage.getHeaders().getContentType());
+    assertTrue(fullPage.getBody().contains("<base href=\"/resources/\">"));
+
     assertEquals(configuration, controller.configuration());
   }
 
