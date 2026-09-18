@@ -158,7 +158,10 @@ public class SemanticsBuilder implements Observable.Builder {
         (added, original) -> {
           var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(original.getUrn()));
-          return baseTraitAdded.equals(baseTraitOriginal);
+          // An unresolved root is not evidence that two traits belong to the same family.
+          // Keep both occurrences so buildConcept can warn about the missing root without losing constraints.
+          return added.getUrn().equals(original.getUrn())
+              || (baseTraitAdded != null && baseTraitAdded.equals(baseTraitOriginal));
         });
 
     return this;
@@ -444,11 +447,11 @@ public class SemanticsBuilder implements Observable.Builder {
 
         var baseTrait = reasoner.lexicalRoot(traitConcept);
         if (baseTrait == null) {
-          ret.error(
-              "cannot add predicate "
-                  + trait.getUrn()
-                  + " because a base trait for it cannot be established");
-          continue;
+          String message = "Predicate " + trait.getUrn()
+              + " has no identifiable lexical root; the predicate is retained, but its trait family cannot be checked";
+          if (ret.getNotifications().stream().noneMatch(n ->
+              n.getLevel() == Notification.Level.Warning && message.equals(n.getMessage())))
+            ret.getNotifications().add(Notification.warning(message));
         } else if (!baseTraits.add(baseTrait)) {
           ret.error(
               "cannot add predicate "

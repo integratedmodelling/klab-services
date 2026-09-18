@@ -165,6 +165,48 @@ class SemanticTranslationTest {
     assertTrue(String.join(" ", tokens).contains("Right"));
   }
 
+  @Test
+  void domainHeadIsNotReintroducedAsItsOwnPredicate() {
+    var domain = leaf("Physical", SemanticSyntax.Type.DOMAIN);
+    when(domain.isLeafDeclaration()).thenReturn(false);
+    var head = domain.getObservable();
+    when(domain.getConceptReferences()).thenReturn(List.of(head));
+    for (int attempt = 0; attempt < 6; attempt++) {
+      var adapted = adapt(domain);
+      assertEquals("test:Physical", adapted.getUrn());
+      assertTrue(adapted.getTraits().isEmpty());
+    }
+  }
+
+  @Test
+  void emptyOntologyWithDomainKeepsAnAtomicDomainExpression() {
+    var parser = new org.integratedmodelling.languages.WorldviewStandaloneSetup()
+        .createInjectorAndDoEMFRegistration().getInstance(org.eclipse.xtext.parser.IParser.class);
+    var source = "ontology decision version 1.0 using imod, physical, agency in domain imod:Physical;";
+    var scope = new org.integratedmodelling.languages.validation.BasicObservableValidationScope() {
+      @Override public ConceptDescriptor getConceptDescriptor(String name) {
+        if (name.equals("imod:Physical")) return new ConceptDescriptor("imod", "Physical",
+            SemanticSyntax.Type.DOMAIN, "Physical", "", false, false);
+        return super.getConceptDescriptor(name);
+      }
+    };
+    for (int attempt = 0; attempt < 6; attempt++) {
+      var parsed = parser.parse(new java.io.StringReader(source));
+      assertFalse(parsed.hasSyntaxErrors());
+      var syntax = new org.integratedmodelling.languages.OntologySyntaxImpl(
+          (org.integratedmodelling.languages.worldview.Ontology) parsed.getRootASTElement(), scope) {
+        @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject t,
+            org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String message) {}
+        @Override protected void logError(org.integratedmodelling.languages.api.ParsedObject t,
+            org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String message) { fail(message); }
+      };
+      var ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax, "project", List.of(), 0L);
+      assertTrue(ontology.getStatements().isEmpty());
+      assertEquals("imod:Physical", ontology.getDomain().getUrn());
+      assertTrue(ontology.getDomain().getTraits().isEmpty());
+    }
+  }
+
   private org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl adapt(SemanticSyntax syntax) {
     return LanguageAdapter.INSTANCE.adaptSemanticToken(
         syntax, "test", "project", KlabAsset.KnowledgeClass.ONTOLOGY);

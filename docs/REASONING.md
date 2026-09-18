@@ -523,7 +523,7 @@ hash of the exact source text, the evaluated knowledge revision, and a status:
 | `COMPLETE` | The semantic pass completed; inspect notifications for errors. |
 | `SYNTAX_ERRORS` | Fix parsing errors before requesting semantic validation. |
 | `UNAVAILABLE` | No usable reasoner/Resources service, or unsupported endpoint. |
-| `STALE_KNOWLEDGE` | Synchronize the ontology or refresh the expected knowledge revision, then retry. |
+| `STALE_KNOWLEDGE` | Refresh the expected knowledge revision, then retry. Saved ontologies synchronize through Resources during validation. |
 | `FAILED` | The semantic pass could not finish; this is not a successful validation. |
 
 `response.valid()` requires `COMPLETE` and no error notifications. Semantic
@@ -560,7 +560,17 @@ save results on a background worker. Semantic tree badges aggregate document err
 editor status labels distinguish pending, unavailable and synchronization states. A separate
 `klab-semantics` Monaco marker owner preserves parser and LSP diagnostics. Editing clears semantic
 markers until saved text is validated. Revision/availability checks run every 30 seconds while the
-workspace is attached, and superseded or detached-workspace callbacks are discarded.
+workspace is attached, and superseded or detached-workspace callbacks are discarded. Documents
+already carrying Resources errors finish locally as `SYNTAX_ERRORS` (displayed as Document errors),
+even without a reasoner. They never remain pending awaiting worldview initialization. Semantic
+marker source matching tolerates line-ending normalization and maps offsets using the parsed source.
+Validation responses collapse identical messages at the same document range while preserving
+separate occurrences. An atomic domain in an otherwise empty ontology remains the expression head,
+never a predicate applied to itself.
+Successful
+validation adds no tree badge. Failed checks show their reason in the editor and a document-start
+marker (not a claim that the first source token is incorrect); they are retried after a save,
+knowledge revision change or workspace reopening, rather than on every poll.
 
 ### Ontology synchronization boundary
 
@@ -568,9 +578,20 @@ The reasoner records source hashes during full knowledge loading and ontology
 updates, and retains their source-bound compilation diagnostics for retrieval.
 An ontology validation request must match its loaded source exactly.
 Knowledge updates and validation are serialized to avoid observing a partly
-reloaded ontology. A newer edit is never evaluated against the previous declaration
-and never installed merely to validate it. Unsaved ontology validation before
-knowledge synchronization requires a future isolated ontology staging mechanism.
+reloaded ontology. Validation waits for full OWL initialization, not merely worldview discovery.
+Rejected worldview snapshots expose their document diagnostics in service advisories and log only
+when the failure changes. Calls requiring OWL before initialization report unavailable knowledge
+rather than attempting to create ontologies with a null manager.
+A predicate with no identifiable lexical root produces a warning. It remains in the expression
+and retains its generic OWL predicate restriction; unknown roots do not establish trait-family
+equivalence. Missing concepts and cyclic ancestry terminate lexical-root lookup safely.
+For an ontology source mismatch, the reasoner retrieves the saved ontology and imports from
+Resources in the caller's scope and synchronizes changed sources in dependency order through
+`updateKnowledge`. Only a request matching the saved source can trigger this synchronization;
+request-supplied declarations are never installed. Missing saved sources or dependencies return
+`UNAVAILABLE` with a reason, rather than waiting indefinitely for an unrequested synchronization.
+The response carries the resulting knowledge revision. Unsaved ontology validation requires a
+future isolated ontology staging mechanism.
 Namespace expressions can be validated against the currently loaded worldview;
 normal expression resolution may materialize derived semantic concepts.
 

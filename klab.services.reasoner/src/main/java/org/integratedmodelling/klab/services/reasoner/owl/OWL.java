@@ -204,6 +204,9 @@ public class OWL {
 
   public Ontology requireOntology(String id, String prefix) {
 
+    if (manager == null)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException(
+          "Reasoner knowledge is unavailable: OWL has not been initialized; check worldview diagnostics");
     if (ontologies.get(id) != null) {
       return ontologies.get(id);
     }
@@ -253,6 +256,11 @@ public class OWL {
     }
 
     return ret;
+  }
+
+  /** True after OWL initialization, including when inference is disabled. */
+  public boolean isInitialized() {
+    return manager != null && mergedReasonerOntology != null;
   }
 
   public void initialize(KimOntology rootDomain) {
@@ -1457,7 +1465,9 @@ public class OWL {
           base = t;
           pairs.put(base, new ArrayList<>());
         } else {
-          System.err.println("HOSTIA no  base trait for " + t);
+          // No family-specific property is available. Preserve this predicate using
+          // the supplied generic property; unrelated unknown families must not be unioned.
+          restrictSome(target, property, how, List.of(t), ontology);
           continue;
         }
       } else if (!pairs.containsKey(base)) {

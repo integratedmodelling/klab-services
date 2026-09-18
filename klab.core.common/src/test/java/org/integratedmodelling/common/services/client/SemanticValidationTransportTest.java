@@ -58,6 +58,48 @@ class SemanticValidationTransportTest {
     } finally { server.stop(0); }
   }
 
+  @Test void repeatedMessagesCollapseOnlyAtTheSameSourceOccurrence() {
+    var document = new KimOntologyImpl(); document.setUrn("decision"); document.setProjectName("project");
+    var response = SemanticValidationResponse.forRequest(SemanticValidationRequest.of(document, "1"));
+    var occurrence = new KimConceptImpl(); occurrence.setOffsetInDocument(75); occurrence.setLength(13);
+    for (int i = 0; i < 6; i++) response.getNotifications().add(Notification.error(
+        "Invalid domain", Notification.LexicalContext.of(occurrence, document)));
+    occurrence.setOffsetInDocument(110);
+    response.getNotifications().add(Notification.error("Invalid domain", Notification.LexicalContext.of(occurrence, document)));
+    response.deduplicateNotifications();
+    assertEquals(2, response.getNotifications().size());
+    assertEquals(75, response.getNotifications().getFirst().getLexicalContext().getOffsetInDocument());
+    assertEquals(110, response.getNotifications().getLast().getLexicalContext().getOffsetInDocument());
+    response.deduplicateNotifications();
+    assertEquals(2, response.getNotifications().size());
+  }
+
+  @Test void descriptionClausesRetainEnumAndContextualizedTargetAcrossTransport() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var ontology = new KimOntologyImpl(); ontology.setUrn("movement");
+    var statement = new KimConceptStatementImpl(); statement.setUrn("movement:MovementRelated");
+    var quality = new KimConceptImpl(); quality.setName("imod:Velocity");
+    var process = new KimConceptImpl(); process.setName("imod:Process");
+    quality.setInherent(process); quality.setOffsetInDocument(100); quality.setLength(29);
+    for (var kind : org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.DescriptionType.values()) {
+      statement.getObservablesDescribed().add(
+          new org.integratedmodelling.klab.api.collections.impl.PairImpl<>(quality, kind));
+    }
+    ontology.getStatements().add(statement);
+    var request = SemanticValidationRequest.of(ontology, "1");
+    for (int round = 0; round < 3; round++) {
+      request = mapper.readValue(mapper.writeValueAsBytes(request), SemanticValidationRequest.class);
+      var descriptions = request.getOntology().getStatements().getFirst().getObservablesDescribed();
+      for (int i = 0; i < descriptions.size(); i++) {
+        assertEquals(org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.DescriptionType.values()[i],
+            descriptions.get(i).getSecond());
+        assertEquals("imod:Velocity", descriptions.get(i).getFirst().getName());
+        assertEquals("imod:Process", descriptions.get(i).getFirst().getInherent().getName());
+        assertEquals(100, descriptions.get(i).getFirst().getOffsetInDocument());
+      }
+    }
+  }
+
   @Test void absentReasonerIsUnavailableAndNotAValidDocument() {
     var document = new KimNamespaceImpl(); document.setUrn("test"); document.setSourceCode("");
     var response = DocumentSemanticValidation.validate(SemanticValidationRequest.of(document, "1"), mock(Scope.class));

@@ -6,6 +6,14 @@ import org.junit.jupiter.api.Test;
 
 class ConceptCopyTest {
   @Test
+  void repeatedCompilationDoesNotAccumulateIdenticalConceptErrors() {
+    var concept = new ConceptImpl();
+    for (int i = 0; i < 6; i++) concept.error("Invalid domain");
+    assertEquals(1, concept.getNotifications().size());
+    assertTrue(concept.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING));
+  }
+
+  @Test
   void replacingSemanticsRefreshesAbstractStatusAndSelectorsDoNotMutateCanonicalConcept() {
     var concept = new ConceptImpl();
     concept.setAbstract(true);

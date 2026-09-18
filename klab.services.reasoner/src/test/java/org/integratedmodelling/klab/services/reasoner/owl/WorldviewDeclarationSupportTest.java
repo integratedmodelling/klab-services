@@ -69,6 +69,9 @@ class WorldviewDeclarationSupportTest {
       statement.getObservablesDescribed().add(new PairImpl<>(syntax("Quality"), type));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Entity")));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Quality")));
+    // Exercise the Resources -> Reasoner wire representation, including nested generic pairs.
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    statement = (KimConceptStatementImpl) mapper.readValue(mapper.writeValueAsBytes(statement), KimConceptStatement.class);
     var owner=ontology.getConcept("Owner");
     WorldviewDeclarationSupport.compile(owl,ontology,owner,statement,value -> owl.getConcept(value.getName()));
     for (String property : List.of("affects","impliesObservable","describesQuality","increasesWith",

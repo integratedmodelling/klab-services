@@ -25,6 +25,35 @@ public class SemanticValidationResponse implements Serializable {
     return ret;
   }
 
+  /** A service failure has document context, not a fictitious faulty source occurrence. */
+  public void addDocumentDiagnostic(SemanticValidationRequest request, Notification.Level level) {
+    var context = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+    var document = request.document();
+    context.setDocumentUrn(document.getUrn());
+    context.setProjectUrn(document.getProjectName());
+    context.setDocumentType(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.classify(document.getClass()));
+    context.setOffsetInDocument(0);
+    context.setLength(1);
+    notifications.add(Notification.create(level, reason, context));
+  }
+
+  /** Collapse repeated diagnostics for one occurrence, preserving separate source locations. */
+  public void deduplicateNotifications() {
+    record Occurrence(Notification.Level level, String message, String document, String project,
+                      int offset, int length) {}
+    var distinct = new java.util.LinkedHashMap<Occurrence, Notification>();
+    for (var notification : notifications) {
+      var context = notification.getLexicalContext();
+      var key = new Occurrence(notification.getLevel(), notification.getMessage(),
+          context == null ? documentUrn : context.getDocumentUrn(),
+          context == null ? null : context.getProjectUrn(),
+          context == null ? -1 : context.getOffsetInDocument(),
+          context == null ? -1 : context.getLength());
+      distinct.putIfAbsent(key, notification);
+    }
+    notifications = new ArrayList<>(distinct.values());
+  }
+
   public boolean valid() {
     return status == Status.COMPLETE && notifications.stream()
         .noneMatch(n -> n.getLevel() == Notification.Level.Error);

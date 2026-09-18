@@ -343,7 +343,9 @@ public class ConceptImpl implements Concept {
   }
 
   public void error(String s) {
-    notifications.add(Notification.error(s));
+    if (notifications.stream().noneMatch(n ->
+        n.getLevel() == Notification.Level.Error && Objects.equals(s, n.getMessage())))
+      notifications.add(Notification.error(s));
     this.type = EnumSet.of(SemanticType.NOTHING);
   }
 

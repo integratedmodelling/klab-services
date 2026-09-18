@@ -291,6 +291,10 @@ public enum LanguageAdapter {
         //        ret.setCodeName("invalid_concept");
       }
       for (var cr : semantics.getConceptReferences()) {
+        // The language syntax can retain its head in the reference list (notably DOMAIN,
+        // categorized as an observable there and as a predicate in the service API).
+        // A head reference must never also qualify itself.
+        if (java.util.Objects.equals(cr, semantics.getObservable())) continue;
         var trait = adaptSemantics(cr, documentClass);
         if (trait.is(SemanticType.ROLE)) {
           ret.getRoles().add(trait);

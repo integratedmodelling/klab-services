@@ -779,8 +779,11 @@ public interface Reasoner extends KlabService {
 
   /**
    * Validate a parsed document snapshot without publishing declarations. Diagnostics belong to
-   * source occurrences, never cached concepts. Ontologies must match the source loaded by this
-   * reasoner; newer edits return STALE_KNOWLEDGE. Call asynchronously after parsing succeeds and
+   * source occurrences, never cached concepts. Ontologies must match authoritative saved sources;
+   * the reasoner may synchronize them and their imports from Resources before validation. The
+   * response reports the resulting knowledge revision. Unsaved or unavailable sources return
+   * UNAVAILABLE; an obsolete expected revision returns STALE_KNOWLEDGE.
+   * Call asynchronously after parsing succeeds and
    * discard responses superseded by an editor or knowledge revision.
    */
   default SemanticValidationResponse validateDocument(

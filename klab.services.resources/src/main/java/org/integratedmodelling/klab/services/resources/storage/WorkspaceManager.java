@@ -3973,6 +3973,9 @@ public class WorkspaceManager {
    */
   public Worldview getWorldview() {
 
+    // Source changes invalidate this snapshot. Do not re-log the same validation failures
+    // for every reasoner discovery poll while the user is correcting them.
+    if (_worldview != null) return _worldview;
     if (_worldview == null) {
 
       _worldview = new WorldviewImpl();
@@ -3997,6 +4000,7 @@ public class WorkspaceManager {
             var notifications = new ArrayList<Notification>();
             var parsed = strategyParser.parseStrategies(strategyUrl, pd.name, notifications);
             if (parsed == null) {
+              _worldview.getNotifications().addAll(notifications);
               _worldview.setEmpty(true);
               return _worldview;
             }

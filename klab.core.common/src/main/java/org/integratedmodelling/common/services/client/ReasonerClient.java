@@ -662,6 +662,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       response = SemanticValidationResponse.forRequest(request);
       response.setReason("Semantic validation is unavailable from the selected reasoner");
     }
+    response.deduplicateNotifications();
     return response;
   }
 

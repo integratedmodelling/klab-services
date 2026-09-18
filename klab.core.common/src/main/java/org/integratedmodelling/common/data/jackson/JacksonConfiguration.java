@@ -230,13 +230,7 @@ public class JacksonConfiguration {
 
     private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
 
-      // Preserve declared key/value types for plain maps (including nested interface beans).
-      // Treating their entries as Object loses Integer priorities and numeric computation keys.
-      if (node.isObject()
-          && !node.has(CLASS_FIELD)
-          && field != null
-          && field.getType() == Map.class
-          && field.getGenericType() instanceof ParameterizedType) {
+      if (field != null && field.getGenericType() instanceof ParameterizedType) {
         return deserializeTypedContainer(node, parser, field.getGenericType());
       }
       if (node.isObject()) {
@@ -277,6 +271,10 @@ public class JacksonConfiguration {
           return ret;
         }
       }
+      if (node.isObject() && node.has(CLASS_FIELD) && type instanceof ParameterizedType) {
+        var declaredType = ((ObjectMapper) parser.getCodec()).getTypeFactory().constructType(type);
+        return deserializeObject(node, parser, getObjectClass(node), declaredType);
+      }
       // Preserve polymorphic @class handling for Object/interface values and existing bean maps.
       return deserialize(node, parser, type instanceof Class<?> cls ? cls : Object.class);
     }
@@ -305,6 +303,11 @@ public class JacksonConfiguration {
     private Object deserializeObject(JsonNode node, JsonParser parser, Class<?> cls)
         throws Exception {
 
+      return deserializeObject(node, parser, cls, null);
+    }
+
+    private Object deserializeObject(JsonNode node, JsonParser parser, Class<?> cls,
+        JavaType declaredType) throws Exception {
       Iterator<String> fields = node.fieldNames();
       var constructor = cls.getDeclaredConstructor();
       constructor.setAccessible(true);
@@ -328,10 +331,20 @@ public class JacksonConfiguration {
           map.put(field, deserialize(node.get(field), parser, getGenericType(declaredField, 1)));
         } else if (declaredField != null) {
           declaredField.setAccessible(true);
+          Object value;
+          if (declaredType != null
+              && declaredField.getGenericType() instanceof java.lang.reflect.TypeVariable<?>) {
+            // Pair<T1,T2> and other generic beans must retain the containing field's bindings.
+            var memberType = ((ObjectMapper) parser.getCodec()).getTypeFactory()
+                .resolveMemberType(declaredField.getGenericType(), declaredType.getBindings());
+            value = deserialize(node.get(field), parser, memberType.getRawClass());
+          } else {
+            value = deserialize(node.get(field), parser, declaredField);
+          }
           declaredField.set(
               ret,
               checkField(
-                  declaredField.getType(), deserialize(node.get(field), parser, declaredField)));
+                  declaredField.getType(), value));
         } else {
           throw new KlabInternalErrorException(
               "Unexpected field name " + field + " in " + "deserialization of " + cls);
