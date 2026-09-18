@@ -1,5 +1,9 @@
 # Worldview syntax and OWL translation audit
 
+The consolidated [reasoner documentation](REASONING.md) describes the current semantic APIs,
+assisted composition rules and source-bound document validation. This audit records translation
+coverage and unresolved language contracts.
+
 Reviewed 2026-09-13 against the working trees of `klab-services` and sibling
 `klab-languages`, including the preceding status and observable adaptation fixes.
 
@@ -201,3 +205,70 @@ and continued declaration processing do not guarantee failure is atomic.
 Until these steps pass, the pipeline cannot be signed off as preserving the
 meaning of every Worldview declaration. The existing status/observable regression
 tests remain useful but do not cover this missing declaration-clause pipeline.
+## Implementation follow-up — 2026-09-18
+
+This section supersedes the implementation-status observations below; the original
+inventory remains as the record of the audit.
+
+- **W05–W09:** inherited predicates (including roles), affected qualities, created
+  observables, applicability, and ordered relationship endpoints now survive parsing,
+  service adaptation, and transport and are compiled to OWL restrictions. `applies to`
+  lists use a union of alternatives, as confirmed by the worldview maintainer.
+- **W10–W11:** unscoped emergence and implication targets now produce `emergesFrom`
+  and `impliesObservable` existentials. Emergence also retains its operational
+  registration. Scoped forms remain pending and produce a validation warning; their
+  source is retained rather than compiled as an unconditional statement.
+- **W12–W13:** all four typed requirements are preserved, checked against their
+  expected target types, and translated using the corresponding `requires...` property.
+- **W14:** authority identifiers and parameters are preserved in service beans.
+  Runtime enforcement remains pending and is reported by validation.
+- **W15–W20:** all six descriptive relations carry their target and generate the
+  corresponding existential restriction. `describes ... as` retains its value syntax;
+  the extra value semantics remain pending and produce a validation warning.
+- **W22:** `has disjoint children` is retained and emits a disjoint-classes axiom
+  over the declared children. Parent restrictions and inheritance are installed
+  before child restrictions are checked. Sealed covering semantics remain pending.
+- **W04/W23:** declaration and short-child `within` operands are preserved separately
+  from ordinary Observable `of`. Their OWL interpretation remains pending.
+- **W24/preamble:** declaration and ontology metadata survive adaptation; non-root
+  domain expressions are parsed. Arbitrary metadata-to-OWL annotation policy remains
+  pending; existing documentation/annotation behavior is retained.
+
+The authoritative ontology changes were made in `odo-im/releases/0.1.0/odo.owl`
+and then copied into the reasoner resources. With maintainer approval, the audited
+repeated domains/ranges now use unions and the four typed requirements are
+subproperties of `requires` with their individual ranges. `decreasesWith` accepts
+the same Ordering/Quality alternatives as `increasesWith`. Java annotation IDs now
+match `odo:isSubjective` and `odo:orderingRank`; subjective declarations emit the
+annotation and metadata hydration recognizes both corrected IDs.
+
+Relationship composition treats `linking ... to ...` as one mandatory pair. Both
+endpoints must be substantials and specialize **all** corresponding inherited
+`links` fillers, including union/intersection bounds. The assisted API exposes the
+source and target restrictions and keeps the expression incomplete after its source.
+Predicate prefixes preserve the clause's required head category, and predicates
+whose conjunction is unsatisfiable are excluded from proposals for the same operand.
+The two endpoint operands have independent predicate prefixes.
+
+Shared repairs include role reconstruction, the trait replacement comparison,
+multi-filler restriction placement in the declaring ontology, and safe lookup of
+universal-restriction properties. Transport includes a concrete applicability bean
+and its Jackson mappings. Focused regression tests cover parser/adaptation, JSON
+transport, exact OWL restrictions and reload, core-ontology satisfiability, inherited
+endpoint specialization, and incremental composer behavior.
+
+`applies to` is also enforced as an applicability domain during semantic construction
+and assisted composition. Predicate-qualified targets must specialize every inherited
+domain restriction; for qualities and processes the applicability domain is an
+additional constraint on explicit or inherited inherency. Collective operands are
+checked using their member types. A domain declaration may narrow inherited bounds
+but cannot widen them. Composer head and inherency proposals use these same checks,
+and dependent clause explanations display applicability bounds alongside ordinary
+inherency bounds. An unconstrained concept retains its previous behavior; a free
+dependent is checked when an inherent is available, without inventing one.
+
+Still requiring contract decisions: scoped declaration/trigger/implication semantics,
+`deniable as` and negation/complement semantics, sealed covering axioms, description
+value constraints, runtime authority enforcement, arbitrary OWL metadata, spatial
+containment, and canonical logical-expression equivalence. No closed-world or
+cardinality meaning is inferred from the new existential restrictions.

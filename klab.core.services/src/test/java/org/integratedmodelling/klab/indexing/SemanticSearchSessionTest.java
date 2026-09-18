@@ -160,7 +160,8 @@ class SemanticSearchSessionTest {
 
   @Test void eachAppliesToTheInherentWithoutMakingTheQualityCollective() {
     concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
-    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    valid.put("each test:Tree", collective("each test:Tree", tree));
     candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
     valid.put("test:Height of each test:Tree", valid.get("test:Height"));
     call(SemanticSearchRequest.Mode.TOKEN); select("test:Height"); select("of");
@@ -178,6 +179,7 @@ class SemanticSearchSessionTest {
     candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
     valid.put("each test:Tree", collective("each test:Tree", tree));
     valid.put("test:Height of ( each test:Tree )", valid.get("test:Height"));
+    valid.put("( each test:Tree )", valid.get("each test:Tree"));
     call(SemanticSearchRequest.Mode.TOKEN); select("test:Height"); select("of");
     call(SemanticSearchRequest.Mode.OPEN_SCOPE); select("each");
     var duplicate = select("each");
@@ -252,6 +254,165 @@ class SemanticSearchSessionTest {
     var pending = select("caused by");
     assertFalse(pending.getMatches().stream().anyMatch(m -> m.getId().equals("test:Other")));
     assertNotNull(select("test:Cause").getObservable());
+  }
+
+  @Test void linkingRequiresBothEndpointsAndChecksTheirBounds() {
+    var relationship = concept("test:Connection", SemanticType.OBSERVABLE, SemanticType.RELATIONSHIP, SemanticType.COUNTABLE);
+    var source = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var target = concept("test:Rock", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    when(reasoner.relationshipSource(relationship)).thenReturn(source);
+    when(reasoner.relationshipTarget(relationship)).thenReturn(target);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.LINKING));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.TO));
+    valid.put("test:Connection linking test:Tree to test:Rock", valid.get("test:Connection"));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    var head = select("test:Connection");
+    assertFalse(head.getMatches().stream().anyMatch(value -> value.getId().equals("to")));
+    select("linking");
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Rock")));
+    var pending = select("test:Tree");
+    assertTrue(pending.getErrors().isEmpty(), pending.getErrors().toString());
+    assertNull(pending.getObservable());
+    assertTrue(pending.getMatches().stream().anyMatch(value -> value.getId().equals("to")));
+    select("to");
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+    var completed = select("test:Rock");
+    assertTrue(completed.getErrors().isEmpty(), completed.getErrors().toString());
+    assertNotNull(completed.getObservable());
+    assertNull(call(SemanticSearchRequest.Mode.UNDO).getObservable());
+    assertNull(call(SemanticSearchRequest.Mode.UNDO).getObservable());
+  }
+
+  @Test void predicatePrefixesKeepTheRequiredSubstantialInScope() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var red = concept("test:Red", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    concept("test:Old", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    when(reasoner.resolveConcept("(test:Red) and (test:Old)")).thenReturn(red);
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    // A permissive resolver can return something for this incomplete prefix: it must
+    // still not consume the substantial operand or erase its candidate category.
+    valid.put("test:Height of test:Red", valid.get("test:Height"));
+    valid.put("test:Red test:Old", valid.get("test:Red"));
+    valid.put("test:Red test:Tree", valid.get("test:Tree"));
+    valid.put("test:Red test:Old test:Tree", valid.get("test:Tree"));
+    valid.put("test:Height of test:Red test:Tree", valid.get("test:Height"));
+    valid.put("test:Height of test:Red test:Old test:Tree", valid.get("test:Height"));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Height"); select("of");
+    var prefix = select("test:Red");
+    assertNull(prefix.getObservable());
+    assertTrue(prefix.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+    assertTrue(prefix.getMatches().stream().anyMatch(value -> value.getId().equals("test:Old")));
+    select("test:Old");
+    assertNotNull(select("test:Tree").getObservable());
+    assertNull(call(SemanticSearchRequest.Mode.UNDO).getObservable());
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+  }
+
+  @Test void disjointPredicatesAreExcludedBeforeAHeadIsEntered() {
+    var red = concept("test:Red", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    concept("test:Blue", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    concept("test:Old", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    when(reasoner.resolveConcept("(test:Red) and (test:Old)")).thenReturn(red);
+    var impossible = mock(Concept.class);
+    when(impossible.is(SemanticType.NOTHING)).thenReturn(true);
+    when(reasoner.resolveConcept("(test:Red) and (test:Blue)")).thenReturn(impossible);
+    call(SemanticSearchRequest.Mode.TOKEN);
+    var prefix = select("test:Red");
+    assertFalse(prefix.getMatches().stream().anyMatch(value -> value.getId().equals("test:Blue")));
+    assertTrue(prefix.getMatches().stream().anyMatch(value -> value.getId().equals("test:Old")));
+    assertFalse(select("test:Blue").getErrors().isEmpty());
+    assertTrue(call(SemanticSearchRequest.Mode.UNDO).getMatches().stream()
+        .anyMatch(value -> value.getId().equals("test:Blue")));
+  }
+
+  @Test void substantialClausesFilterUnaryOperatorsByTheirResultCategory() {
+    for (var clause : List.of(SemanticLexicalElement.OF, SemanticLexicalElement.WITH,
+        SemanticLexicalElement.ADJACENT_TO, SemanticLexicalElement.LINKING)) {
+      var fixture = new SemanticSearchSessionTest();
+      fixture.concept("test:Connection", SemanticType.OBSERVABLE, SemanticType.RELATIONSHIP, SemanticType.COUNTABLE);
+      fixture.candidates.add(new SemanticMatch(clause));
+      for (var operator : UnarySemanticOperator.values()) fixture.candidates.add(new SemanticMatch(operator));
+      fixture.call(SemanticSearchRequest.Mode.TOKEN);
+      fixture.select("test:Connection");
+      fixture.select(clause.declaration[0]);
+      fixture.assertSubstantialOperators();
+      fixture.call(SemanticSearchRequest.Mode.OPEN_SCOPE);
+      fixture.assertSubstantialOperators();
+    }
+  }
+
+  @Test void linkingTargetAlsoExcludesDependentProducingOperators() {
+    concept("test:Connection", SemanticType.OBSERVABLE, SemanticType.RELATIONSHIP, SemanticType.COUNTABLE);
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.LINKING));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.TO));
+    for (var operator : UnarySemanticOperator.values()) candidates.add(new SemanticMatch(operator));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Connection"); select("linking");
+    select("test:Tree"); select("to");
+    assertSubstantialOperators();
+  }
+
+  @Test void dependentProducingOperatorsRemainAvailableAtRootAndInCompatibleClauses() {
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.FOR));
+    candidates.add(new SemanticMatch(UnarySemanticOperator.COUNT));
+    candidates.add(new SemanticMatch(UnarySemanticOperator.CHANGE));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("count of")));
+    select("test:Tree"); select("for");
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("count of")));
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("change in")));
+  }
+
+  private void assertSubstantialOperators() {
+    assertTrue(last.getErrors().isEmpty(), last.getErrors().toString());
+    for (var operator : UnarySemanticOperator.values()) {
+      var types = operator.apply(Set.of());
+      if (types != null && (types.contains(SemanticType.QUALITY) || types.contains(SemanticType.PROCESS)))
+        assertFalse(last.getMatches().stream().anyMatch(value -> value.getUnaryOperator() == operator), operator.name());
+    }
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getUnaryOperator() == UnarySemanticOperator.CHANGED));
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getUnaryOperator() == UnarySemanticOperator.NOT));
+    assertFalse(select("count of").getErrors().isEmpty());
+    call(SemanticSearchRequest.Mode.TOKEN);
+  }
+
+  @Test void predicateApplicabilityFiltersHeadsIncludingInsideClauses() {
+    var red = concept("test:Red", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    concept("test:Rock", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    when(reasoner.applicableObservables(red)).thenReturn(List.of(tree));
+    valid.put("test:Red test:Tree", valid.get("test:Tree"));
+    valid.put("test:Red test:Rock", valid.get("test:Rock"));
+    valid.put("test:Height of test:Red test:Tree", valid.get("test:Height"));
+    valid.put("test:Height of test:Red test:Rock", valid.get("test:Height"));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Red");
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Rock")));
+    call(SemanticSearchRequest.Mode.UNDO); select("test:Height"); select("of"); select("test:Red");
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Rock")));
+    assertNotNull(select("test:Tree").getObservable());
+  }
+
+  @Test void dependentApplicabilityFiltersInherencyInAdditionToExistingBounds() {
+    var height = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var oak = concept("test:Oak", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    concept("test:Rock", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    when(reasoner.inherent(height)).thenReturn(tree);
+    when(reasoner.applicableObservables(height)).thenReturn(List.of(oak));
+    when(reasoner.is(oak, tree)).thenReturn(true);
+    for (String name : List.of("Tree", "Oak", "Rock")) valid.put("test:Height of test:" + name, valid.get("test:Height"));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Height"); select("of");
+    assertTrue(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Oak")));
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Tree")));
+    assertFalse(last.getMatches().stream().anyMatch(value -> value.getId().equals("test:Rock")));
+    assertNotNull(select("test:Oak").getObservable());
   }
 
   private Observable collective(String urn, Concept base) {

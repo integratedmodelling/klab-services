@@ -19,6 +19,9 @@ The services are used through an Engine process, which authenticates a human use
 
 For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md). For a code-oriented trace of the service stack, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+The [reasoner documentation](docs/REASONING.md) covers semantic APIs, assisted observable
+composition, source-aware document validation, knowledge loading and caching.
+
 To follow the central observation process, start with the
 [observable-to-contextualization mapping](docs/OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type),
 then read [observation strategies](docs/OBSERVATION.md) for worldview strategy selection,
@@ -105,6 +108,7 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 - [Observable expressions](docs/OBSERVABLES.md), [worldview ontologies](docs/ONTOLOGY_LANGUAGE.md), [k.IM](docs/KIM.md) and [k.Actors](docs/AGENTS.md): the user-facing language guides
 - [Semantic modeling](docs/SEMANTIC_MODELING.md) and [ODO-IM](docs/ODO_IM.md): the conceptual knowledge model
 - [Resources](docs/RESOURCES.md): resource service contract
+- [Reasoning](docs/REASONING.md): reasoner service and client APIs, semantic composition, document validation and knowledge lifecycle
 - [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
 - [Observation strategies](docs/OBSERVATION.md): end-to-end strategy trace, named-graph composition proposal, scenario walkthroughs, and staged implementation prompts
 - [Classification and characterization](docs/CLASSIFICATION.md): semantic-update lifecycle, implementation status, and staged acceptance tests

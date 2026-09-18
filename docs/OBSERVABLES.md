@@ -24,6 +24,9 @@ grammar is shared by all three user-facing languages:
 Observable syntax is not a fourth workflow language. It is the common semantic
 sublanguage through which the other three refer to the same meaning.
 
+For semantic resolution, assisted composition and source-bound validation diagnostics, see
+the [reasoner documentation](REASONING.md).
+
 ## 1. Observable, observation, and model
 
 - An **observable** is a logical specification of something that could be

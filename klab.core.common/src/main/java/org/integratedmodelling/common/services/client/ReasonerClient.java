@@ -1,5 +1,8 @@
 package org.integratedmodelling.common.services.client;
 
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Lists;
@@ -81,12 +84,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       return resolveConceptInternal(removeExcessParentheses(definition));
     }
     String normalized = removeExcessParentheses(definition);
-    return concepts.get(
-        normalized,
-        key -> {
-          Concept ret = resolveConceptInternal(key);
-          return ret == null ? Concept.nothing() : ret;
-        });
+    Concept resolved = concepts.getIfPresent(normalized);
+    if (resolved == null) {
+      resolved = resolveConceptInternal(normalized);
+      // Preserve failure diagnostics for the caller, but allow subsequent attempts to retry.
+      if (resolved != null && !resolved.is(SemanticType.NOTHING)) concepts.put(normalized, resolved);
+    }
+    return resolved == null ? Concept.nothing() : resolved;
   }
 
   @Override
@@ -95,12 +99,12 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       return resolveObservableInternal(removeExcessParentheses(definition));
     }
     String normalized = removeExcessParentheses(definition);
-    return observables.get(
-        normalized,
-        key -> {
-          Observable ret = resolveObservableInternal(key);
-          return ret == null ? Observable.nothing(null) : ret;
-        });
+    Observable resolved = observables.getIfPresent(normalized);
+    if (resolved == null) {
+      resolved = resolveObservableInternal(normalized);
+      if (resolved != null && !resolved.is(SemanticType.NOTHING)) observables.put(normalized, resolved);
+    }
+    return resolved == null ? Observable.nothing(null) : resolved;
   }
 
   private String removeExcessParentheses(String definition) {
@@ -647,6 +651,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
     return client.post(ServicesAPI.REASONER.SEMANTIC_SEARCH, request, SemanticSearchResponse.class);
+  }
+
+  @Override
+  public SemanticValidationResponse validateDocument(
+      SemanticValidationRequest request, Scope scope) {
+    var response = client.withScope(scope).post(ServicesAPI.REASONER.VALIDATE_DOCUMENT, request,
+        SemanticValidationResponse.class);
+    if (response == null) {
+      response = SemanticValidationResponse.forRequest(request);
+      response.setReason("Semantic validation is unavailable from the selected reasoner");
+    }
+    return response;
   }
 
   @Override

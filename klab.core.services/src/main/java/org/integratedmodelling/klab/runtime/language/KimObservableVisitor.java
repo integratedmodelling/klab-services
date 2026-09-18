@@ -352,6 +352,7 @@ public class KimObservableVisitor {
     for (var concept : safe(statement.getRequiredAttributes())) visitConcept(concept, context);
     for (var concept : safe(statement.getRequiredIdentities())) visitConcept(concept, context);
     for (var concept : safe(statement.getEmergenceTriggers())) visitConcept(concept, context);
+    for (var concept : safe(statement.getImpliedObservables())) visitConcept(concept, context);
     for (var description : safe(statement.getObservablesDescribed())) {
       if (description != null) visitConcept(description.getFirst(), context);
     }

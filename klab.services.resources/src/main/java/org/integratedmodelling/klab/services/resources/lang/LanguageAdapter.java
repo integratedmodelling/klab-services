@@ -108,8 +108,7 @@ public enum LanguageAdapter {
       // Preserve the observable suffix (mediators, observer and stated name).
       var encodedSemantics = observableSyntax.getSemantics().encode();
       if (encodedSemantics != null && ret.getUrn().startsWith(encodedSemantics)) {
-        ret.setUrn(ret.getSemantics().getUrn()
-            + ret.getUrn().substring(encodedSemantics.length()));
+        ret.setUrn(ret.getSemantics().getUrn() + ret.getUrn().substring(encodedSemantics.length()));
       }
       ret.setCodeName(
           ret.getSemantics().getType().contains(SemanticType.NOTHING)
@@ -1070,12 +1069,8 @@ public enum LanguageAdapter {
                   SemanticType.QUALITY,
                   SemanticType.QUANTITY);
           case AGENT ->
-              EnumSet.of(
-                  SemanticType.OBSERVABLE,
-                  SemanticType.COUNTABLE,
-                  SemanticType.AGENT);
-          case REALM ->
-              EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+              EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.AGENT);
+          case REALM -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
           case RESISTANCE ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1096,10 +1091,7 @@ public enum LanguageAdapter {
                   SemanticType.RELATIONSHIP,
                   SemanticType.STRUCTURAL);
           case SUBJECT ->
-              EnumSet.of(
-                  SemanticType.OBSERVABLE,
-                  SemanticType.COUNTABLE,
-                  SemanticType.SUBJECT);
+              EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
           case TEMPERATURE ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1383,6 +1375,18 @@ public enum LanguageAdapter {
     ret.getImportedOntologies().addAll(ontology.getImportedOntologies());
     ret.setSourceCode(ontology.getSourceCode());
     ret.getMetadata().put(Metadata.DC_COMMENT, ontology.getDescription());
+    ontology
+        .getMetadata()
+        .forEach(
+            (key, value) ->
+                ret.getMetadata()
+                    .put(
+                        key.toString(),
+                        adaptValue(
+                            value,
+                            ontology.getName(),
+                            projectName,
+                            KlabAsset.KnowledgeClass.ONTOLOGY)));
     ret.setVersion(Version.create(ontology.getVersion()));
     ret.setProjectName(projectName);
     ret.setLastUpdateTimestamp(timestamp);
@@ -1505,6 +1509,91 @@ public enum LanguageAdapter {
         ret.getType().addAll(declaredFlags);
       }
     }
+    ret.setChildrenDisjoint(definition.isChildrenDisjoint());
+    java.util.function.Function<SemanticSyntax, KimConcept> adapt =
+        value -> adaptSemantics(value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
+    if (definition.getDeclaredInherent() != null)
+      ret.setDeclaredInherent(adapt.apply(definition.getDeclaredInherent()));
+    definition
+        .getInheritedPredicates()
+        .forEach(value -> ret.getTraitsInherited().add(adapt.apply(value)));
+    definition.getAffected().forEach(value -> ret.getQualitiesAffected().add(adapt.apply(value)));
+    definition.getCreated().forEach(value -> ret.getObservablesCreated().add(adapt.apply(value)));
+    definition
+        .getMetadata()
+        .forEach(
+            (key, value) ->
+                ret.getMetadata()
+                    .put(
+                        key.toString(),
+                        adaptValue(
+                            value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
+    definition
+        .getAppliesTo()
+        .forEach(
+            value ->
+                ret.getAppliesTo()
+                    .add(
+                        new org.integratedmodelling.klab.api.lang.kim.impl.ApplicableConceptImpl(
+                            null, adapt.apply(value))));
+    if (!definition.getRelationshipSources().isEmpty()
+        || !definition.getRelationshipTargets().isEmpty()) {
+      if (definition.getRelationshipSources().size() != 1
+          || definition.getRelationshipTargets().size() != 1)
+        throw new IllegalArgumentException("links requires exactly one source and one target");
+      ret.getSubjectsLinked()
+          .add(
+              new org.integratedmodelling.klab.api.lang.kim.impl.ApplicableConceptImpl(
+                  adapt.apply(definition.getRelationshipSources().getFirst()),
+                  adapt.apply(definition.getRelationshipTargets().getFirst())));
+    }
+    for (var requirement : definition.getRequirements()) {
+      if (requirement.type() == ConceptDeclarationSyntax.RequiresType.AUTHORITY) {
+        ret.setAuthorityRequired(requirement.authority());
+        requirement
+            .parameters()
+            .forEach(
+                (key, value) ->
+                    ret.getAuthorityParameters()
+                        .put(
+                            key.toString(),
+                            adaptValue(
+                                value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
+      } else {
+        var targets =
+            switch (requirement.type()) {
+              case IDENTITY -> ret.getRequiredIdentities();
+              case REALM -> ret.getRequiredRealms();
+              case EXTENT -> ret.getRequiredExtents();
+              case ATTRIBUTE -> ret.getRequiredAttributes();
+              default -> throw new IllegalArgumentException("Unexpected requirement");
+            };
+        requirement.targets().forEach(value -> targets.add(adapt.apply(value)));
+      }
+    }
+    for (var description : definition.getDescribes()) {
+      var kind =
+          switch (description.type()) {
+            case BASIC_DESCRIPTION -> KimConceptStatement.DescriptionType.DESCRIBES;
+            case DIRECT_PROPORTIONALITY -> KimConceptStatement.DescriptionType.INCREASES_WITH;
+            case INVERSE_PROPORTIONALITY -> KimConceptStatement.DescriptionType.DECREASES_WITH;
+            case MARK -> KimConceptStatement.DescriptionType.MARKS;
+            case CLASSIFICATION -> KimConceptStatement.DescriptionType.CLASSIFIES;
+            case DISCRETIZATION -> KimConceptStatement.DescriptionType.DISCRETIZES;
+          };
+      ret.getObservablesDescribed()
+          .add(
+              new org.integratedmodelling.klab.api.collections.impl.PairImpl<>(
+                  adapt.apply(description.target()), kind));
+      ret.setDescriptionValue(description.valueSource());
+    }
+    // Scoped clauses remain preserved in declarationClauses pending their interpretation.
+    definition.getEmergesFrom().stream()
+        .filter(value -> value.getContextualization() == null)
+        .forEach(value -> ret.getEmergenceTriggers().add(adapt.apply(value)));
+    definition.getImplies().stream()
+        .filter(value -> value.getContextualization() == null)
+        .forEach(value -> ret.getImpliedObservables().add(adapt.apply(value)));
     for (var child : definition.getChildren()) {
       ret.getChildren().add(adaptConceptDefinition(child, namespace, projectName));
     }

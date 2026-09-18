@@ -72,6 +72,17 @@ public class SemanticScope {
             return negated ? !matches : matches;
         }
 
+        /** Category check for an operator result before its operand is known. */
+        public boolean admitsResult(Set<SemanticType> types) {
+            boolean matches = true;
+            for (Object argument : arguments) {
+                matches &= argument instanceof SemanticType type ? types.contains(type)
+                        : argument instanceof Constraint constraint ? constraint.admitsResult(types)
+                        : true; // Concrete bounds and units require the completed expression.
+            }
+            return negated ? !matches : matches;
+        }
+
 		public String toString() {
 			return (negated ? "<NOT " : "<") + arguments + ">";
 		}

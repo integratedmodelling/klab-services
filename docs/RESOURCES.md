@@ -1,5 +1,8 @@
 # Resources service contract
 
+For optional semantic checks after parsing, see the reasoner's
+[document validation API and client orchestration](REASONING.md#semantic-document-validation).
+
 Project-owned metadata and the settings-only project replacement protocol are described in
 [Default observers](OBSERVERS.md#project-and-worldview-contract).
 

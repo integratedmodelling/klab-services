@@ -27,26 +27,27 @@ public class CommonConfiguration implements Klab.Configuration {
 
   @Override
   public Observable promoteConceptToObservable(Concept concept) {
-    throw new KlabIllegalStateException(
-        "k.LAB environment not configured for service-level operations");
+    return org.integratedmodelling.common.knowledge.ObservableImpl.promote(concept, null);
   }
 
   @Override
   public Observable promoteConceptToObservable(Concept concept, String named) {
-    throw new KlabIllegalStateException(
-        "k.LAB environment not configured for service-level operations");
+    var ret =
+        (org.integratedmodelling.common.knowledge.ObservableImpl)
+            promoteConceptToObservable(concept);
+    ret.setStatedName(named);
+    if (named != null) ret.setUrn(ret.getUrn() + " named " + named);
+    return ret;
   }
 
   @Override
   public Observable.Builder getObservableBuilder(Concept observable, Scope scope) {
-    throw new KlabIllegalStateException(
-        "k.LAB environment not configured for service-level operations");
+    return new ObservableBuildStrategy(observable, scope);
   }
 
   @Override
   public Observable.Builder getObservableBuilder(Observable observable, Scope scope) {
-    throw new KlabIllegalStateException(
-        "k.LAB environment not configured for service-level operations");
+    return new ObservableBuildStrategy(observable, scope);
   }
 
   @Override
@@ -135,6 +136,16 @@ public class CommonConfiguration implements Klab.Configuration {
 
   @Override
   public Concept getNonSemanticConcept(SemanticType semanticType) {
+    if (semanticType == SemanticType.NOTHING) {
+      var ret = new org.integratedmodelling.common.knowledge.ConceptImpl();
+      ret.setUrn("owl:Nothing");
+      ret.setNamespace("owl");
+      ret.setName("Nothing");
+      ret.setReferenceName("owl:Nothing");
+      ret.setType(java.util.EnumSet.of(SemanticType.NOTHING));
+      ret.setNonSemanticId(org.integratedmodelling.common.knowledge.ConceptImpl.NOTHING_ID);
+      return ret;
+    }
     throw new KlabIllegalStateException(
         "k.LAB environment not configured for service-level operations");
   }

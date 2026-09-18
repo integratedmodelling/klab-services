@@ -20,6 +20,31 @@ import org.junit.jupiter.api.Test;
 /** Real portable-builder dispatch and semantic mutations; Resources and OWL storage are doubles. */
 class RealSemanticBuilderTest {
   @Test
+  void transportedClausesDispatchToTheirCorrespondingBuilderMethods() throws Exception {
+    var source = concept("earth:StreamJunction", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var target = concept("earth:Outlet", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    var relationship =
+        concept("earth:StreamConnection", SemanticType.RELATIONSHIP, SemanticType.COUNTABLE);
+    var strategy = new ObservableBuildStrategy(relationship, mock(ContextScope.class));
+    strategy.linking(source, target).withCooccurrent(source).withObserverSemantics(target);
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    var wire = mapper.readValue(mapper.writeValueAsString(strategy), ObservableBuildStrategy.class);
+    var delegate =
+        mock(org.integratedmodelling.klab.api.knowledge.Observable.Builder.class, RETURNS_SELF);
+    var dispatch =
+        ReasonerService.class.getDeclaredMethod(
+            "defineBuilder",
+            ObservableBuildStrategy.class,
+            org.integratedmodelling.klab.api.knowledge.Observable.Builder.class);
+    dispatch.setAccessible(true);
+    dispatch.invoke(mock(ReasonerService.class), wire, delegate);
+    verify(delegate).linking(source, target);
+    verify(delegate).withCooccurrent(source);
+    verify(delegate).withObserverSemantics(target);
+    verify(delegate, never()).with(any());
+  }
+
+  @Test
   void resolvingPredicateHeadsIncludesConcreteAndAbstractAncestors() {
     var scope = mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
     var resources = mock(ResourcesService.class);
@@ -30,13 +55,15 @@ class RealSemanticBuilderTest {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     var child = concept("test:P2", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
     var parent = concept("test:P1", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
-    var root = concept("test:Family", SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
-    when(resources.declareConcept(child.getUrn())).thenReturn(
-        syntax(child.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    var root =
+        concept(
+            "test:Family", SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    when(resources.declareConcept(child.getUrn()))
+        .thenReturn(syntax(child.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
     when(reasoner.resolveConcept(child.getUrn())).thenReturn(child);
-    when(reasoner.allParents(child)).thenReturn(Set.of(parent,root));
+    when(reasoner.allParents(child)).thenReturn(Set.of(parent, root));
     when(reasoner.resolving(child)).thenCallRealMethod();
-    assertEquals(Set.of(child,parent,root),new HashSet<>(reasoner.resolving(child)));
+    assertEquals(Set.of(child, parent, root), new HashSet<>(reasoner.resolving(child)));
   }
 
   @Test
@@ -51,18 +78,32 @@ class RealSemanticBuilderTest {
     when(reasoner.owl()).thenReturn(owl);
     when(reasoner.buildConcept(any(), eq(scope))).thenCallRealMethod();
     when(reasoner.buildObservable(any(), eq(scope))).thenCallRealMethod();
-    var predicate = concept("test:Environment", SemanticType.PREDICATE,
-        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var predicate =
+        concept(
+            "test:Environment",
+            SemanticType.PREDICATE,
+            SemanticType.ATTRIBUTE,
+            SemanticType.ABSTRACT);
     var member = concept("test:Region", SemanticType.SUBJECT, SemanticType.COUNTABLE);
     var memberSyntax = syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE);
     memberSyntax.setCollective(true);
     memberSyntax.resetDefinition();
-    var sourceSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE,
-        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var sourceSyntax =
+        syntax(
+            predicate.getUrn(),
+            SemanticType.PREDICATE,
+            SemanticType.ATTRIBUTE,
+            SemanticType.ABSTRACT);
     sourceSyntax.setInherent(memberSyntax);
     sourceSyntax.resetDefinition();
-    var source = ObservableImpl.promote(concept(sourceSyntax.getUrn(), SemanticType.PREDICATE,
-        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT), scope);
+    var source =
+        ObservableImpl.promote(
+            concept(
+                sourceSyntax.getUrn(),
+                SemanticType.PREDICATE,
+                SemanticType.ATTRIBUTE,
+                SemanticType.ABSTRACT),
+            scope);
     when(resources.declareConcept(source.getUrn())).thenReturn(sourceSyntax);
     when(reasoner.resolveConcept(predicate.getUrn())).thenReturn(predicate);
     var strip = new ObservableBuildStrategy(source, scope);
@@ -73,22 +114,27 @@ class RealSemanticBuilderTest {
     assertNotNull(sourceSyntax.getInherent());
 
     var concrete = concept("test:Forest", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
-    when(resources.declareConcept(concrete.getUrn())).thenReturn(
-        syntax(concrete.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
-    when(resources.declareConcept(member.getUrn())).thenReturn(
-        syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE));
+    when(resources.declareConcept(concrete.getUrn()))
+        .thenReturn(syntax(concrete.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    when(resources.declareConcept(member.getUrn()))
+        .thenReturn(syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE));
     when(reasoner.resolveConcept(concrete.getUrn())).thenReturn(concrete);
     when(reasoner.resolveConcept(member.getUrn())).thenReturn(member);
-    when(owl.makeSubclass(eq(concrete), anyString())).thenAnswer(inv ->
-        concept(inv.getArgument(1), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
+    when(owl.makeSubclass(eq(concrete), anyString()))
+        .thenAnswer(
+            inv -> concept(inv.getArgument(1), SemanticType.PREDICATE, SemanticType.ATTRIBUTE));
     var characterize = new ObservableBuildStrategy(concrete, scope);
     characterize.of(member);
     wire = mapper.readValue(mapper.writeValueAsString(characterize), ObservableBuildStrategy.class);
     var result = reasoner.buildObservable(wire, scope);
     assertEquals("test:Forest of test:Region", result.getUrn());
     assertEquals(Contextualization.CHARACTERIZATION, result.getContextualization());
-    var returned = mapper.readValue(mapper.writerFor(org.integratedmodelling.klab.api.knowledge.Observable.class)
-        .writeValueAsString(result), org.integratedmodelling.klab.api.knowledge.Observable.class);
+    var returned =
+        mapper.readValue(
+            mapper
+                .writerFor(org.integratedmodelling.klab.api.knowledge.Observable.class)
+                .writeValueAsString(result),
+            org.integratedmodelling.klab.api.knowledge.Observable.class);
     assertEquals(result.getUrn(), returned.getUrn());
   }
 
@@ -102,12 +148,20 @@ class RealSemanticBuilderTest {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.owl()).thenReturn(owl);
     when(reasoner.buildConcept(any(), eq(scope))).thenCallRealMethod();
-    var predicate = concept("earth:PhysicalEnvironment", SemanticType.PREDICATE,
-        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var predicate =
+        concept(
+            "earth:PhysicalEnvironment",
+            SemanticType.PREDICATE,
+            SemanticType.ATTRIBUTE,
+            SemanticType.ABSTRACT);
     var member = concept("earth:Region", SemanticType.SUBJECT, SemanticType.COUNTABLE);
     var collective = member.collective();
-    var pSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE,
-        SemanticType.ATTRIBUTE, SemanticType.ABSTRACT);
+    var pSyntax =
+        syntax(
+            predicate.getUrn(),
+            SemanticType.PREDICATE,
+            SemanticType.ATTRIBUTE,
+            SemanticType.ABSTRACT);
     var mSyntax = syntax(member.getUrn(), SemanticType.SUBJECT, SemanticType.COUNTABLE);
     mSyntax.setCollective(true);
     mSyntax.resetDefinition();
@@ -116,24 +170,35 @@ class RealSemanticBuilderTest {
     when(reasoner.resolveConcept(predicate.getUrn())).thenReturn(predicate);
     when(reasoner.resolveConcept(member.getUrn())).thenReturn(member);
     when(reasoner.resolveConcept(collective.getUrn())).thenReturn(collective);
-    when(owl.makeSubclass(eq(predicate), anyString())).thenAnswer(inv ->
-        concept(inv.getArgument(1), SemanticType.PREDICATE, SemanticType.ATTRIBUTE,
-            SemanticType.ABSTRACT));
+    when(owl.makeSubclass(eq(predicate), anyString()))
+        .thenAnswer(
+            inv ->
+                concept(
+                    inv.getArgument(1),
+                    SemanticType.PREDICATE,
+                    SemanticType.ATTRIBUTE,
+                    SemanticType.ABSTRACT));
     when(reasoner.inherent(any())).thenReturn(collective);
-    when(reasoner.is(any(), any())).thenAnswer(inv -> {
-      Concept left = inv.getArgument(0);
-      Concept right = inv.getArgument(1);
-      return left.isCollective() == right.isCollective() && left.equals(right);
-    });
+    when(reasoner.is(any(), any()))
+        .thenAnswer(
+            inv -> {
+              Concept left = inv.getArgument(0);
+              Concept right = inv.getArgument(1);
+              return left.isCollective() == right.isCollective() && left.equals(right);
+            });
     var result = new ObservableBuildStrategy(predicate, scope).of(collective).buildConcept();
     assertFalse(result.is(SemanticType.NOTHING), result.getNotifications().toString());
     verify(reasoner).is(member, member);
 
     // A genuinely incompatible member restriction must still be rejected.
-    when(reasoner.inherent(any())).thenReturn(
-        concept("earth:Unrelated", SemanticType.SUBJECT, SemanticType.COUNTABLE).collective());
-    assertTrue(new ObservableBuildStrategy(predicate, scope).of(collective).buildConcept()
-        .is(SemanticType.NOTHING));
+    when(reasoner.inherent(any()))
+        .thenReturn(
+            concept("earth:Unrelated", SemanticType.SUBJECT, SemanticType.COUNTABLE).collective());
+    assertTrue(
+        new ObservableBuildStrategy(predicate, scope)
+            .of(collective)
+            .buildConcept()
+            .is(SemanticType.NOTHING));
   }
 
   static KimConceptImpl syntax(String name, SemanticType... types) {

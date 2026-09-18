@@ -62,8 +62,7 @@ public class SemanticsBuilder implements Observable.Builder {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
-    var syntax =
-        scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
+    var syntax = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
@@ -131,7 +130,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withRole(Concept role) {
-    //    syntax.getRoles().add(role);
+    syntax.getRoles().add(resourcesService.declareConcept(role.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
@@ -157,7 +157,7 @@ public class SemanticsBuilder implements Observable.Builder {
         concepts.stream().map(c -> resourcesService.declareConcept(c.getUrn())).toList(),
         (added, original) -> {
           var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
-          var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
+          var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(original.getUrn()));
           return baseTraitAdded.equals(baseTraitOriginal);
         });
 
@@ -236,6 +236,11 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder linking(Concept source, Concept target) {
+    if (source == null
+        || target == null
+        || !source.is(SemanticType.COUNTABLE)
+        || !target.is(SemanticType.COUNTABLE))
+      throw new KlabValidationException("linking requires two substantial endpoints");
     syntax.setRelationshipSource(resourcesService.declareConcept(source.getUrn()));
     syntax.setRelationshipTarget(resourcesService.declareConcept(target.getUrn()));
     syntax.resetDefinition();
@@ -308,7 +313,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withObserverSemantics(Concept observerSemantics) {
-    this.observerSyntax = (KimConceptImpl) resourcesService.declareConcept(observerSyntax.getUrn());
+    this.observerSyntax =
+        (KimConceptImpl) resourcesService.declareConcept(observerSemantics.getUrn());
     return this;
   }
 
@@ -345,6 +351,14 @@ public class SemanticsBuilder implements Observable.Builder {
                 ? reasoner.resolveConcept(kimConcept.getName())
                 : buildConcept(kimConcept.getObservable()));
     var resolvedConcept = ret;
+    boolean linking =
+        kimConcept.getRelationshipSource() != null || kimConcept.getRelationshipTarget() != null;
+    if (linking
+        && (!ret.is(SemanticType.RELATIONSHIP)
+            || kimConcept.getRelationshipSource() == null
+            || kimConcept.getRelationshipTarget() == null))
+      throw new KlabValidationException(
+          "linking ... to ... requires a relationship or bond and both endpoints");
 
     if (ret.is(SemanticType.NOTHING)) {
       return ret;
@@ -409,6 +423,7 @@ public class SemanticsBuilder implements Observable.Builder {
     var realms = new ArrayList<Concept>();
     var identities = new ArrayList<Concept>();
     var acceptedRoles = new ArrayList<Concept>();
+    var appliedPredicates = new ArrayList<Concept>();
 
     if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0) {
 
@@ -425,6 +440,7 @@ public class SemanticsBuilder implements Observable.Builder {
           ret.error("predicate " + traitConcept.getUrn() + " is inconsistent");
           continue;
         }
+        appliedPredicates.add(traitConcept);
 
         var baseTrait = reasoner.lexicalRoot(traitConcept);
         if (baseTrait == null) {
@@ -518,7 +534,28 @@ public class SemanticsBuilder implements Observable.Builder {
 
         // Restrictions constrain the member type. Public semantic projections preserve
         // collective inherence, so normalize both sides for this type comparison.
-        if (inherited != null && !reasoner.is(modifying.singular(), inherited.singular())) {
+        if (modifying == null || modifying.is(SemanticType.NOTHING))
+          throw new KlabValidationException("Unresolved semantic modifier " + modifier.getFirst());
+        if (modifier.getFirst() == SemanticRole.INHERENT
+            && SemanticType.isDependent(parent.getType())
+            && !new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(
+                    reasoner.owl())
+                .applicableTo(parent, modifying))
+          throw new KlabValidationException(
+              "The inherent is outside the dependent's applies to domain");
+        boolean relationshipEndpoint =
+            modifier.getFirst() == SemanticRole.RELATIONSHIP_SOURCE
+                || modifier.getFirst() == SemanticRole.RELATIONSHIP_TARGET;
+        if (relationshipEndpoint
+            && (!modifying.is(SemanticType.COUNTABLE)
+                || !new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(
+                        reasoner.owl())
+                    .accepts(resolvedConcept, modifier.getFirst(), modifying)))
+          throw new KlabValidationException(
+              "linking endpoints must specialize all inherited links fillers");
+        if (!relationshipEndpoint
+            && inherited != null
+            && !reasoner.is(modifying.singular(), inherited.singular())) {
           ret.error(
               "cannot set concept "
                   + modifying.getUrn()
@@ -568,6 +605,27 @@ public class SemanticsBuilder implements Observable.Builder {
       ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
 
       reasoner.owl().finalizeConcept(ret);
+    }
+
+    var applicability =
+        new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(
+            reasoner.owl());
+    appliedPredicates.addAll(reasoner.traits(ret));
+    appliedPredicates.addAll(reasoner.roles(ret));
+    for (var predicate : appliedPredicates) {
+      if (!applicability.applicableTo(predicate, ret))
+        throw new KlabValidationException(
+            "Predicate "
+                + predicate.getUrn()
+                + " cannot qualify "
+                + ret.getUrn()
+                + ": outside its applies to domain");
+    }
+    if (SemanticType.isDependent(ret.getType())) {
+      var inherent = reasoner.inherent(ret);
+      if (inherent != null && !applicability.applicableTo(ret, inherent))
+        throw new KlabValidationException(
+            "The inherited inherent is outside the dependent's applies to domain");
     }
 
     // set collective and abstract FIXME make this semantic and that's it

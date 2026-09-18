@@ -19,8 +19,8 @@ public interface Concept extends Semantics {
    * The 'collective' character ('each' ...) belongs to the observable and not to the concept, but
    * for consistent parsing we must add it to the Concept and propagate it to the observable. When
    * the Concept is used alone, the collective character should be ignored as it is an attribute of
-   * the observation (determining the {@link Contextualization#INSTANTIATION}) and does not affect the
-   * semantics.
+   * the observation (determining the {@link Contextualization#INSTANTIATION}) and does not affect
+   * the semantics.
    *
    * @return
    */

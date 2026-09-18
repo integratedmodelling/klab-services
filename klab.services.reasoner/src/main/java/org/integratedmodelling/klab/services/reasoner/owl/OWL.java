@@ -1071,7 +1071,7 @@ public class OWL {
     OWLClassExpression restriction =
         factory.getOWLObjectSomeValuesFrom(property._owl.asOWLObjectProperty(), union);
     manager.addAxiom(
-        ((Ontology) property.getOntology(this)).ontology,
+        getTargetOntology(ontology, target, property, fillers).ontology,
         factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
   }
 
@@ -1544,6 +1544,14 @@ public class OWL {
   }
 
   public void addTrait(Concept main, Concept trait, Ontology ontology) {
+    if (trait.is(SemanticType.ROLE)) {
+      restrictSome(main, getProperty(CoreOntology.NS.HAS_ROLE_PROPERTY), trait, ontology);
+      return;
+    }
+    if (!trait.is(SemanticType.IDENTITY)
+        && !trait.is(SemanticType.REALM)
+        && !trait.is(SemanticType.ATTRIBUTE))
+      throw new KlabValidationException("inherits requires a trait or role");
     Property property = null;
     if (trait.is(SemanticType.IDENTITY)) {
       property = getProperty(CoreOntology.NS.HAS_IDENTITY_PROPERTY);
@@ -2901,6 +2909,10 @@ public class OWL {
           ReasonerInterruptedException,
           TimeOutException {
     return reasoner.getSubObjectProperties(arg0, arg1);
+  }
+
+  public boolean hasReasoner() {
+    return reasoner != null;
   }
 
   public NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)

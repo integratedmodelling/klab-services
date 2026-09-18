@@ -48,6 +48,8 @@ public final class SemanticSearchSession {
     boolean collectiveExpression;
     Concept clauseOwner;
     SemanticRole clauseRole;
+    boolean awaitingRelationshipTarget;
+    final List<Concept> predicates = new ArrayList<>();
     int operandStart;
     Concept enclosingOwner;
     SemanticRole enclosingRole;
@@ -149,7 +151,8 @@ public final class SemanticSearchSession {
     response.setCanUndo(!tokens.isEmpty());
     response.setCanOpenScope(state.current().scope.lexicalRealm.contains(SemanticRole.GROUP_OPEN)
         && (tokens.isEmpty() || !"(".equals(tokens.getLast())));
-    response.setCanCloseScope(state.frames().size() > 1 && state.current().complete);
+    response.setCanCloseScope(state.frames().size() > 1 && state.current().complete
+        && !state.current().awaitingRelationshipTarget);
     response.setAcceptsValue(state.current().value);
     Concept current = state.frames().stream().map(f -> f.concept).filter(Objects::nonNull).findFirst().orElse(null);
     response.setCurrentConcept(current);
@@ -192,6 +195,7 @@ public final class SemanticSearchSession {
         require(i == 0 || !"(".equals(input.get(i - 1)), "Choose a component before opening another group.");
         var nested = new Frame(i + 1);
         nested.scope = operands(frame.scope.logicalRealm);
+        nested.predicates.addAll(frame.predicates);
         // Carry a clause bound into a directly grouped operand so its choices are filtered too.
         // A group used inside a unary operator is checked when that operator completes instead.
         if (frame.clauseRole != null && (i == frame.operandStart
@@ -202,7 +206,8 @@ public final class SemanticSearchSession {
         }
         frames.push(nested);
       } else if (")".equals(token)) {
-        require(frames.size() > 1 && frame.complete, "Complete the grouped expression before closing it.");
+        require(frames.size() > 1 && frame.complete && !frame.awaitingRelationshipTarget,
+            "Complete the grouped expression before closing it.");
         Concept grouped = frame.concept;
         frames.pop();
         frame = frames.peek();
@@ -234,6 +239,10 @@ public final class SemanticSearchSession {
         require(admits(frame.scope, concept) || (predicate && !frame.scope.logicalRealm.isEmpty()),
             "This concept is not a valid operand here.");
         if (predicate) {
+          var combined = new ArrayList<>(frame.predicates);
+          combined.add(concept);
+          require(clauseSupport.predicatesCompatible(combined), "This predicate is disjoint with an entered predicate.");
+          frame.predicates.add(concept);
           frame.complete = false;
           // A predicate may complete a unary expression (e.g. type of), or prefix a future head.
           try {
@@ -244,20 +253,29 @@ public final class SemanticSearchSession {
           } catch (IllegalArgumentException incomplete) { }
         } else {
           complete(frame, input, i);
+          frame.predicates.clear();
         }
       } else if (token instanceof UnarySemanticOperator operator) {
         require(frame.scope.lexicalRealm.contains(SemanticRole.UNARY_OPERATOR), "A unary operator cannot occur here.");
         require(operator.declaration.length == 1, "Multi-operand unary operators are not yet supported.");
+        var resultTypes = operator.apply(Set.of());
+        if (resultTypes == null) resultTypes = Set.of(operator.returnType);
+        var producedTypes = resultTypes;
+        require(frame.scope.logicalRealm.stream().anyMatch(constraint -> constraint.admitsResult(producedTypes)),
+            "This operator produces a result of the wrong category for this operand.");
         frame.scope = operands(ObservableValidator.unaryOperatorRules().stream()
             .filter(rule -> rule.operator() == operator).findFirst()
             .map(ObservableValidator.UnaryOperatorRule::requiredOperandType)
             .orElse(operator.getAllowedOperandTypes()));
         frame.complete = false;
       } else if (token instanceof SemanticLexicalElement modifier) {
+        require(frame.awaitingRelationshipTarget == (modifier == SemanticLexicalElement.TO),
+            "A linking source must be followed by to and a target.");
         require(frame.complete && modifier.role != null && modifier.argument != null
             && modifier.applicable.stream().anyMatch(frame.concept::is)
             && !frame.used.contains(modifier.role), "This clause is not applicable here.");
         frame.clauseOwner = frame.concept;
+        frame.predicates.clear();
         frame.clauseRole = modifier.role;
         frame.operandStart = i + 1;
         frame.used.add(modifier.role);
@@ -268,6 +286,7 @@ public final class SemanticSearchSession {
           frame.scope.logicalRealm.add(SemanticScope.Constraint.of(SemanticType.QUALITY));
         frame.complete = false;
       } else if (token instanceof BinarySemanticOperator operator) {
+        require(!frame.awaitingRelationshipTarget, "Complete linking ... to ... first.");
         require(frame.complete, "A binary operator needs a complete left operand.");
         require(operator != BinarySemanticOperator.FOLLOWS || frame.concept.is(SemanticType.EVENT),
             "The follows operator requires events.");
@@ -291,7 +310,7 @@ public final class SemanticSearchSession {
       } else throw new IllegalArgumentException("Unsupported component.");
     }
     Observable observable = null;
-    if (frames.size() == 1 && frames.peek().complete) {
+    if (frames.size() == 1 && frames.peek().complete && !frames.peek().awaitingRelationshipTarget) {
       observable = resolve(declaration(input));
       require(observable.is(SemanticType.PREDICATE) && reasoner.inherent(observable.getSemantics()) == null
           || resultTypes.isEmpty() || resultTypes.stream().anyMatch(observable::is),
@@ -301,7 +320,32 @@ public final class SemanticSearchSession {
   }
 
   private void complete(Frame frame, List<Object> input, int end) {
+    if (frame.clauseRole != null) {
+      var operand = resolve(declaration(input.subList(frame.operandStart, end + 1))).getSemantics();
+      // Predicates may prefix an operand, but cannot consume the clause's required head.
+      // In particular, preserve the countable scope after 'of Red' so Tree stays available.
+      require(!operand.is(SemanticType.PREDICATE) || operand.is(SemanticType.OBSERVABLE),
+          "Qualify the required clause operand with this predicate.");
+      require(admits(frame.scope, operand), "The clause still requires an operand of the expected type.");
+      validatePredicates(frame, operand);
+    }
+    // A source is a complete operand, but 'R linking S' is deliberately not a complete
+    // Observable expression. Keep the relationship owner until the mandatory target arrives.
+    if (frame.clauseRole == SemanticRole.RELATIONSHIP_SOURCE) {
+      var operand = resolve(declaration(input.subList(frame.operandStart, end + 1))).getSemantics();
+      require(clauseSupport.accepts(frame.clauseOwner, frame.clauseRole, operand),
+          "The linking source must specialize its inherited links filler.");
+      frame.concept = frame.clauseOwner;
+      frame.clauseRole = null;
+      frame.clauseOwner = null;
+      frame.complete = true;
+      frame.awaitingRelationshipTarget = true;
+      frame.scope = new SemanticScope();
+      frame.scope.lexicalRealm.add(SemanticRole.RELATIONSHIP_TARGET);
+      return;
+    }
     Observable observable = resolve(declaration(input.subList(frame.start, end + 1)));
+    if (frame.clauseRole == null) validatePredicates(frame, observable.getSemantics());
     if (frame.collectiveExpression) {
       var required = ObservableValidator.conceptAttributeRules().stream()
           .filter(rule -> rule.attribute() == ObservableValidator.ConceptAttribute.EACH)
@@ -323,6 +367,7 @@ public final class SemanticSearchSession {
       }
       frame.clauseRole = null;
       frame.clauseOwner = null;
+      frame.awaitingRelationshipTarget = false;
     }
     frame.concept = observable.getSemantics();
     frame.complete = true;
@@ -331,10 +376,17 @@ public final class SemanticSearchSession {
     frame.scope.lexicalRealm.add(SemanticRole.BINARY_OPERATOR);
     if (frame.concept.is(SemanticType.QUALITY)) frame.scope.lexicalRealm.add(SemanticRole.VALUE_OPERATOR);
     for (var modifier : SemanticLexicalElement.values()) {
-      if (modifier.role != null && !frame.used.contains(modifier.role)
+      if (modifier.role != null && modifier != SemanticLexicalElement.TO && !frame.used.contains(modifier.role)
           && modifier.applicable.stream().anyMatch(frame.concept::is))
         frame.scope.lexicalRealm.add(modifier.role);
     }
+  }
+
+  private void validatePredicates(Frame frame, Concept target) {
+    if (target.is(SemanticType.PREDICATE) && !target.is(SemanticType.OBSERVABLE)) return;
+    for (var predicate : frame.predicates)
+      require(clauseSupport.applicableTo(predicate, target),
+          "This predicate cannot qualify a concept outside its applies to domain.");
   }
 
   private Observable resolve(String declaration) {

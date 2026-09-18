@@ -12,300 +12,355 @@ import java.util.List;
 import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
-    private List<DeclarationClause> declarationClauses = new ArrayList<>();
-    private List<KimConcept> declaredReferences = new ArrayList<>();
-    @Override public List<DeclarationClause> getDeclarationClauses() { return declarationClauses; }
-    public void setDeclarationClauses(List<DeclarationClause> clauses) { this.declarationClauses = clauses; }
-    @Override public List<KimConcept> getDeclaredReferences() { return declaredReferences; }
-    public void setDeclaredReferences(List<KimConcept> references) { this.declaredReferences = references; }
+  private List<DeclarationClause> declarationClauses = new ArrayList<>();
+  private List<KimConcept> declaredReferences = new ArrayList<>();
 
-    @Serial
-    private static final long serialVersionUID = 2640057106561346868L;
+  @Override
+  public List<DeclarationClause> getDeclarationClauses() {
+    return declarationClauses;
+  }
 
-    private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
-    private String authorityRequired;
-    private List<KimConcept> qualitiesAffected = new ArrayList<>();
-    private List<KimConcept> observablesCreated = new ArrayList<>();
-    private List<KimConcept> traitsConferred = new ArrayList<>();
-    private List<KimConcept> traitsInherited = new ArrayList<>();
-    private List<KimConcept> requiredExtents = new ArrayList<>();
-    private List<KimConcept> requiredRealms = new ArrayList<>();
-    private List<KimConcept> requiredAttributes = new ArrayList<>();
-    private List<KimConcept> requiredIdentities = new ArrayList<>();
-    private List<KimConcept> emergenceTriggers = new ArrayList<>();
-//    private List<KimRestriction> restrictions = new ArrayList<>();
-    private KimConcept declaredParent;
-    private List<KimConceptStatement> children = new ArrayList<>();
-    private KimConcept declaredInherent;
-    private boolean alias;
-    private boolean isAbstract;
-    private boolean subjective;
-    private boolean sealed;
-    private String urn;
-    //    private boolean macro;
-    private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
-    private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
-    private List<ApplicableConcept> appliesTo = new ArrayList<>();
-    private String docstring;
-    private String upperConceptDefined;
-    private String authorityDefined;
-//    private List<ParentConcept> parents = new ArrayList<>();
+  public void setDeclarationClauses(List<DeclarationClause> clauses) {
+    this.declarationClauses = clauses;
+  }
 
-    @Override
-    public Set<SemanticType> getType() {
-        return this.type;
-    }
+  @Override
+  public List<KimConcept> getDeclaredReferences() {
+    return declaredReferences;
+  }
 
-    @Override
-    public String getAuthorityRequired() {
-        return this.authorityRequired;
-    }
+  public void setDeclaredReferences(List<KimConcept> references) {
+    this.declaredReferences = references;
+  }
 
-    @Override
-    public List<KimConcept> getQualitiesAffected() {
-        return this.qualitiesAffected;
-    }
+  @Serial private static final long serialVersionUID = 2640057106561346868L;
 
-    @Override
-    public List<KimConcept> getObservablesCreated() {
-        return this.observablesCreated;
-    }
+  private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
+  private String authorityRequired;
+  private boolean childrenDisjoint;
+  private String descriptionValue;
+  private List<KimConcept> impliedObservables = new ArrayList<>();
+  private java.util.Map<String, Object> authorityParameters = new java.util.LinkedHashMap<>();
 
-    @Override
-    public List<KimConcept> getTraitsConferred() {
-        return this.traitsConferred;
-    }
+  @Override
+  public boolean isChildrenDisjoint() {
+    return childrenDisjoint;
+  }
 
-    @Override
-    public List<KimConcept> getTraitsInherited() {
-        return this.traitsInherited;
-    }
+  public void setChildrenDisjoint(boolean value) {
+    childrenDisjoint = value;
+  }
 
-    @Override
-    public List<KimConcept> getRequiredExtents() {
-        return this.requiredExtents;
-    }
+  @Override
+  public String getDescriptionValue() {
+    return descriptionValue;
+  }
 
-    @Override
-    public List<KimConcept> getRequiredRealms() {
-        return this.requiredRealms;
-    }
+  public void setDescriptionValue(String value) {
+    descriptionValue = value;
+  }
 
-    @Override
-    public List<KimConcept> getRequiredAttributes() {
-        return this.requiredAttributes;
-    }
+  @Override
+  public List<KimConcept> getImpliedObservables() {
+    return impliedObservables;
+  }
 
-    @Override
-    public List<KimConcept> getRequiredIdentities() {
-        return this.requiredIdentities;
-    }
+  public void setImpliedObservables(List<KimConcept> value) {
+    impliedObservables = value;
+  }
 
-    @Override
-    public List<KimConcept> getEmergenceTriggers() {
-        return this.emergenceTriggers;
-    }
+  @Override
+  public java.util.Map<String, Object> getAuthorityParameters() {
+    return authorityParameters;
+  }
 
-//    @Override
-//    public List<KimRestriction> getRestrictions() {
-//        return this.restrictions;
-//    }
+  public void setAuthorityParameters(java.util.Map<String, Object> value) {
+    authorityParameters = value;
+  }
 
-    @Override
-    public boolean isAlias() {
-        return this.alias;
-    }
+  private List<KimConcept> qualitiesAffected = new ArrayList<>();
+  private List<KimConcept> observablesCreated = new ArrayList<>();
+  private List<KimConcept> traitsConferred = new ArrayList<>();
+  private List<KimConcept> traitsInherited = new ArrayList<>();
+  private List<KimConcept> requiredExtents = new ArrayList<>();
+  private List<KimConcept> requiredRealms = new ArrayList<>();
+  private List<KimConcept> requiredAttributes = new ArrayList<>();
+  private List<KimConcept> requiredIdentities = new ArrayList<>();
+  private List<KimConcept> emergenceTriggers = new ArrayList<>();
+  //    private List<KimRestriction> restrictions = new ArrayList<>();
+  private KimConcept declaredParent;
+  private List<KimConceptStatement> children = new ArrayList<>();
+  private KimConcept declaredInherent;
+  private boolean alias;
+  private boolean isAbstract;
+  private boolean subjective;
+  private boolean sealed;
+  private String urn;
+  //    private boolean macro;
+  private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
+  private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
+  private List<ApplicableConcept> appliesTo = new ArrayList<>();
+  private String docstring;
+  private String upperConceptDefined;
+  private String authorityDefined;
 
-    @Override
-    public boolean isAbstract() {
-        return this.isAbstract;
-    }
+  //    private List<ParentConcept> parents = new ArrayList<>();
 
-    @Override
-    public String getUrn() {
-        return this.urn;
-    }
+  @Override
+  public Set<SemanticType> getType() {
+    return this.type;
+  }
 
-//    @Override
-//    public boolean isMacro() {
-//        return this.macro;
-//    }
+  @Override
+  public String getAuthorityRequired() {
+    return this.authorityRequired;
+  }
 
-    @Override
-    public List<PairImpl<KimConcept, DescriptionType>> getObservablesDescribed() {
-        return this.observablesDescribed;
-    }
+  @Override
+  public List<KimConcept> getQualitiesAffected() {
+    return this.qualitiesAffected;
+  }
 
-    @Override
-    public List<ApplicableConcept> getSubjectsLinked() {
-        return this.subjectsLinked;
-    }
+  @Override
+  public List<KimConcept> getObservablesCreated() {
+    return this.observablesCreated;
+  }
 
-    @Override
-    public List<ApplicableConcept> getAppliesTo() {
-        return this.appliesTo;
-    }
+  @Override
+  public List<KimConcept> getTraitsConferred() {
+    return this.traitsConferred;
+  }
 
-    @Override
-    public String getDocstring() {
-        return this.docstring;
-    }
+  @Override
+  public List<KimConcept> getTraitsInherited() {
+    return this.traitsInherited;
+  }
 
-    public void setType(Set<SemanticType> type) {
-        this.type = type;
-    }
+  @Override
+  public List<KimConcept> getRequiredExtents() {
+    return this.requiredExtents;
+  }
 
-    public void setAuthorityRequired(String authorityRequired) {
-        this.authorityRequired = authorityRequired;
-    }
+  @Override
+  public List<KimConcept> getRequiredRealms() {
+    return this.requiredRealms;
+  }
 
-    public void setQualitiesAffected(List<KimConcept> qualitiesAffected) {
-        this.qualitiesAffected = qualitiesAffected;
-    }
+  @Override
+  public List<KimConcept> getRequiredAttributes() {
+    return this.requiredAttributes;
+  }
 
-    public void setObservablesCreated(List<KimConcept> observablesCreated) {
-        this.observablesCreated = observablesCreated;
-    }
+  @Override
+  public List<KimConcept> getRequiredIdentities() {
+    return this.requiredIdentities;
+  }
 
-    public void setTraitsConferred(List<KimConcept> traitsConferred) {
-        this.traitsConferred = traitsConferred;
-    }
+  @Override
+  public List<KimConcept> getEmergenceTriggers() {
+    return this.emergenceTriggers;
+  }
 
-    public void setTraitsInherited(List<KimConcept> traitsInherited) {
-        this.traitsInherited = traitsInherited;
-    }
+  //    @Override
+  //    public List<KimRestriction> getRestrictions() {
+  //        return this.restrictions;
+  //    }
 
-    public void setRequiredExtents(List<KimConcept> requiredExtents) {
-        this.requiredExtents = requiredExtents;
-    }
+  @Override
+  public boolean isAlias() {
+    return this.alias;
+  }
 
-    public void setRequiredRealms(List<KimConcept> requiredRealms) {
-        this.requiredRealms = requiredRealms;
-    }
+  @Override
+  public boolean isAbstract() {
+    return this.isAbstract;
+  }
 
-    public void setRequiredAttributes(List<KimConcept> requiredAttributes) {
-        this.requiredAttributes = requiredAttributes;
-    }
+  @Override
+  public String getUrn() {
+    return this.urn;
+  }
 
-    public void setRequiredIdentities(List<KimConcept> requiredIdentities) {
-        this.requiredIdentities = requiredIdentities;
-    }
+  //    @Override
+  //    public boolean isMacro() {
+  //        return this.macro;
+  //    }
 
-    public void setEmergenceTriggers(List<KimConcept> emergenceTriggers) {
-        this.emergenceTriggers = emergenceTriggers;
-    }
+  @Override
+  public List<PairImpl<KimConcept, DescriptionType>> getObservablesDescribed() {
+    return this.observablesDescribed;
+  }
 
-//    public void setRestrictions(List<KimRestriction> restrictions) {
-//        this.restrictions = restrictions;
-//    }
+  @Override
+  public List<ApplicableConcept> getSubjectsLinked() {
+    return this.subjectsLinked;
+  }
 
-    public void setAlias(boolean alias) {
-        this.alias = alias;
-    }
+  @Override
+  public List<ApplicableConcept> getAppliesTo() {
+    return this.appliesTo;
+  }
 
-    public void setAbstract(boolean isAbstract) {
-        this.isAbstract = isAbstract;
-    }
+  @Override
+  public String getDocstring() {
+    return this.docstring;
+  }
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
+  public void setType(Set<SemanticType> type) {
+    this.type = type;
+  }
 
-//    public void setMacro(boolean macro) {
-//        this.macro = macro;
-//    }
+  public void setAuthorityRequired(String authorityRequired) {
+    this.authorityRequired = authorityRequired;
+  }
 
-    public void setObservablesDescribed(List<PairImpl<KimConcept, DescriptionType>> observablesDescribed) {
-        this.observablesDescribed = observablesDescribed;
-    }
+  public void setQualitiesAffected(List<KimConcept> qualitiesAffected) {
+    this.qualitiesAffected = qualitiesAffected;
+  }
 
-    public void setSubjectsLinked(List<ApplicableConcept> subjectsLinked) {
-        this.subjectsLinked = subjectsLinked;
-    }
+  public void setObservablesCreated(List<KimConcept> observablesCreated) {
+    this.observablesCreated = observablesCreated;
+  }
 
-    public void setAppliesTo(List<ApplicableConcept> appliesTo) {
-        this.appliesTo = appliesTo;
-    }
+  public void setTraitsConferred(List<KimConcept> traitsConferred) {
+    this.traitsConferred = traitsConferred;
+  }
 
-    public void setDocstring(String docstring) {
-        this.docstring = docstring;
-    }
+  public void setTraitsInherited(List<KimConcept> traitsInherited) {
+    this.traitsInherited = traitsInherited;
+  }
 
-    @Override
-    public String getUpperConceptDefined() {
-        return this.upperConceptDefined;
-    }
+  public void setRequiredExtents(List<KimConcept> requiredExtents) {
+    this.requiredExtents = requiredExtents;
+  }
 
-    @Override
-    public String getAuthorityDefined() {
-        return this.authorityDefined;
-    }
+  public void setRequiredRealms(List<KimConcept> requiredRealms) {
+    this.requiredRealms = requiredRealms;
+  }
 
-    public void setUpperConceptDefined(String upperConceptDefined) {
-        this.upperConceptDefined = upperConceptDefined;
-    }
+  public void setRequiredAttributes(List<KimConcept> requiredAttributes) {
+    this.requiredAttributes = requiredAttributes;
+  }
 
-    public void setAuthorityDefined(String authorityDefined) {
-        this.authorityDefined = authorityDefined;
-    }
+  public void setRequiredIdentities(List<KimConcept> requiredIdentities) {
+    this.requiredIdentities = requiredIdentities;
+  }
 
-//    @Override
-//    public List<ParentConcept> getParents() {
-//        return parents;
-//    }
-//
-//    public void setParents(List<ParentConcept> parents) {
-//        this.parents = parents;
-//    }
+  public void setEmergenceTriggers(List<KimConcept> emergenceTriggers) {
+    this.emergenceTriggers = emergenceTriggers;
+  }
 
-    @Override
-    public boolean isSubjective() {
-        return subjective;
-    }
+  //    public void setRestrictions(List<KimRestriction> restrictions) {
+  //        this.restrictions = restrictions;
+  //    }
 
-    public void setSubjective(boolean subjective) {
-        this.subjective = subjective;
-    }
+  public void setAlias(boolean alias) {
+    this.alias = alias;
+  }
 
-    @Override
-    public boolean isSealed() {
-        return sealed;
-    }
+  public void setAbstract(boolean isAbstract) {
+    this.isAbstract = isAbstract;
+  }
 
-    public void setSealed(boolean sealed) {
-        this.sealed = sealed;
-    }
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
 
-    @Override
-    public KimConcept getDeclaredParent() {
-        return declaredParent;
-    }
+  //    public void setMacro(boolean macro) {
+  //        this.macro = macro;
+  //    }
 
-    public void setDeclaredParent(KimConcept declaredParent) {
-        this.declaredParent = declaredParent;
-    }
+  public void setObservablesDescribed(
+      List<PairImpl<KimConcept, DescriptionType>> observablesDescribed) {
+    this.observablesDescribed = observablesDescribed;
+  }
 
+  public void setSubjectsLinked(List<ApplicableConcept> subjectsLinked) {
+    this.subjectsLinked = subjectsLinked;
+  }
 
-    @Override
-    public KimConcept getDeclaredInherent() {
-        return declaredInherent;
-    }
+  public void setAppliesTo(List<ApplicableConcept> appliesTo) {
+    this.appliesTo = appliesTo;
+  }
 
-    public void setDeclaredInherent(KimConcept declaredInherent) {
-        this.declaredInherent = declaredInherent;
-    }
+  public void setDocstring(String docstring) {
+    this.docstring = docstring;
+  }
 
-    @Override
-    public List<KimConceptStatement> getChildren() {
-        return children;
-    }
+  @Override
+  public String getUpperConceptDefined() {
+    return this.upperConceptDefined;
+  }
 
-    public void setChildren(List<KimConceptStatement> children) {
-        this.children = children;
-    }
+  @Override
+  public String getAuthorityDefined() {
+    return this.authorityDefined;
+  }
 
-    @Override
-    public <T> T format(CodeAppender<T> appender) {
-        return null;
-    }
+  public void setUpperConceptDefined(String upperConceptDefined) {
+    this.upperConceptDefined = upperConceptDefined;
+  }
+
+  public void setAuthorityDefined(String authorityDefined) {
+    this.authorityDefined = authorityDefined;
+  }
+
+  //    @Override
+  //    public List<ParentConcept> getParents() {
+  //        return parents;
+  //    }
+  //
+  //    public void setParents(List<ParentConcept> parents) {
+  //        this.parents = parents;
+  //    }
+
+  @Override
+  public boolean isSubjective() {
+    return subjective;
+  }
+
+  public void setSubjective(boolean subjective) {
+    this.subjective = subjective;
+  }
+
+  @Override
+  public boolean isSealed() {
+    return sealed;
+  }
+
+  public void setSealed(boolean sealed) {
+    this.sealed = sealed;
+  }
+
+  @Override
+  public KimConcept getDeclaredParent() {
+    return declaredParent;
+  }
+
+  public void setDeclaredParent(KimConcept declaredParent) {
+    this.declaredParent = declaredParent;
+  }
+
+  @Override
+  public KimConcept getDeclaredInherent() {
+    return declaredInherent;
+  }
+
+  public void setDeclaredInherent(KimConcept declaredInherent) {
+    this.declaredInherent = declaredInherent;
+  }
+
+  @Override
+  public List<KimConceptStatement> getChildren() {
+    return children;
+  }
+
+  public void setChildren(List<KimConceptStatement> children) {
+    this.children = children;
+  }
+
+  @Override
+  public <T> T format(CodeAppender<T> appender) {
+    return null;
+  }
 }

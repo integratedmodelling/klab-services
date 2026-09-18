@@ -177,7 +177,7 @@ public class CoreOntology {
     // core properties. TODO: these could be created in the root worldview namespace
     public static final String IS_ABSTRACT = "odo:isAbstract";
     public static final String BASE_DECLARATION = "klab:baseDeclaration";
-    public static final String ORDER_PROPERTY = "klab:orderingRank";
+    public static final String ORDER_PROPERTY = "odo:orderingRank";
     public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";
     public static final String HAS_REALM_PROPERTY = "odo:hasRealm";
     public static final String HAS_IDENTITY_PROPERTY = "odo:hasIdentity";
@@ -189,7 +189,7 @@ public class CoreOntology {
     public static final String OCCURS_DURING_PROPERTY = "odo:observedDuring";
     public static final String IS_ADJACENT_TO_PROPERTY = "odo:isAdjacentTo";
     public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
-    public static final String IS_SUBJECTIVE = "odo:isSubjectiveTrait";
+    public static final String IS_SUBJECTIVE = "odo:isSubjective";
     public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
     // TODO decide which ones go in klab and which in ODO
     public static final String DESCRIBES_OBSERVABLE_PROPERTY = "klab:describesObservable";

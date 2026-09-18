@@ -433,10 +433,8 @@ public class Ontology {
           OWLEntity property = findProperty(axiom.getArgument(1).toString(), false, errors);
           OWLClass target = findClass(axiom.getArgument(0).toString(), errors);
           OWLClass filler = findClass(axiom.getArgument(2).toString(), errors);
-          OWLClassExpression restr =
-              factory.getOWLObjectAllValuesFrom(property.asOWLObjectProperty(), filler);
-
-          if (property != null && filler != null && target != null && restr != null) {
+          if (property != null && filler != null && target != null) {
+            var restr = factory.getOWLObjectAllValuesFrom(property.asOWLObjectProperty(), filler);
             owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
           }
 
@@ -508,8 +506,8 @@ public class Ontology {
 
           Set<OWLClassExpression> classExpressions = new HashSet<>();
           for (Object arg : axiom) {
-            OWLClass p = factory.getOWLClass(IRI.create(this.prefix + "#" + arg));
-            classExpressions.add(p);
+            OWLClass p = findClass(arg.toString(), errors);
+            if (p != null) classExpressions.add(p);
           }
           owl.manager.addAxiom(this.ontology, factory.getOWLDisjointClassesAxiom(classExpressions));
 

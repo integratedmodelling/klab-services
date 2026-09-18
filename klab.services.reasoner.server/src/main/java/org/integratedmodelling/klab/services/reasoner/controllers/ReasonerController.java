@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner.controllers;
 
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,6 +30,23 @@ import org.springframework.web.bind.annotation.*;
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
+
+  @Operation(summary = "Validate document semantics", description = "Return source-bound diagnostics for a parsed document snapshot")
+  @PostMapping(ServicesAPI.REASONER.VALIDATE_DOCUMENT)
+  public SemanticValidationResponse validateDocument(
+      @RequestBody SemanticValidationRequest request,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      try { request.document(); }
+      catch (IllegalArgumentException e) {
+        throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
+      }
+      return reasoner.klabService().validateDocument(request, authorization.getScope());
+    }
+    throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.FORBIDDEN, "Semantic validation requires an authorized scope");
+  }
 
   @Operation(summary = "Build a concept", description = "Replay a portable semantic builder; creates no observations")
   @PostMapping(ServicesAPI.REASONER.BUILD_CONCEPT)

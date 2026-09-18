@@ -1,5 +1,8 @@
 # Worldview ontology language guide
 
+The [reasoner documentation](REASONING.md) covers semantic APIs, knowledge loading and
+[document validation after synchronization](REASONING.md#ontology-synchronization-boundary).
+
 This file is a user-level introduction and reference for the k.LAB worldview ontology language,
 whose source files use the `.kwv` extension. It is intended for worldview authors, reviewers,
 maintainers, and contributors who need to understand how ontology source becomes executable

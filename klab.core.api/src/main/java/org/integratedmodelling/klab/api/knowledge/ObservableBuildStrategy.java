@@ -376,7 +376,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
   @Override
   public Builder withCooccurrent(Concept cooccurrent) {
-    this.operations.add(new Operation(OperationType.WITH, cooccurrent));
+    this.operations.add(new Operation(OperationType.COOCCURRENT, cooccurrent));
     return this;
   }
 

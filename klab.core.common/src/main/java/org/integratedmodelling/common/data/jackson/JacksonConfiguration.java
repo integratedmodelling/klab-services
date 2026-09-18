@@ -232,7 +232,9 @@ public class JacksonConfiguration {
 
       // Preserve declared key/value types for plain maps (including nested interface beans).
       // Treating their entries as Object loses Integer priorities and numeric computation keys.
-      if (node.isObject() && !node.has(CLASS_FIELD) && field != null
+      if (node.isObject()
+          && !node.has(CLASS_FIELD)
+          && field != null
           && field.getType() == Map.class
           && field.getGenericType() instanceof ParameterizedType) {
         return deserializeTypedContainer(node, parser, field.getGenericType());
@@ -246,23 +248,32 @@ public class JacksonConfiguration {
       return parser.getCodec().treeToValue(node, targetType);
     }
 
-    private Object deserializeTypedContainer(JsonNode node, JsonParser parser, java.lang.reflect.Type type)
-        throws Exception {
-      if (type instanceof ParameterizedType generic && generic.getRawType() instanceof Class<?> raw) {
+    private Object deserializeTypedContainer(
+        JsonNode node, JsonParser parser, java.lang.reflect.Type type) throws Exception {
+      if (type instanceof ParameterizedType generic
+          && generic.getRawType() instanceof Class<?> raw) {
         if (raw == Map.class && node.isObject() && !node.has(CLASS_FIELD)) {
           var ret = new LinkedHashMap<Object, Object>();
           var fields = node.fields();
           while (fields.hasNext()) {
             var entry = fields.next();
-            var key = deserializeTypedContainer(new com.fasterxml.jackson.databind.node.TextNode(entry.getKey()),
-                parser, generic.getActualTypeArguments()[0]);
-            ret.put(key, deserializeTypedContainer(entry.getValue(), parser, generic.getActualTypeArguments()[1]));
+            var key =
+                deserializeTypedContainer(
+                    new com.fasterxml.jackson.databind.node.TextNode(entry.getKey()),
+                    parser,
+                    generic.getActualTypeArguments()[0]);
+            ret.put(
+                key,
+                deserializeTypedContainer(
+                    entry.getValue(), parser, generic.getActualTypeArguments()[1]));
           }
           return ret;
         }
         if (Collection.class.isAssignableFrom(raw) && node.isArray()) {
           var ret = newCollection(raw);
-          for (var element : node) ret.add(deserializeTypedContainer(element, parser, generic.getActualTypeArguments()[0]));
+          for (var element : node)
+            ret.add(
+                deserializeTypedContainer(element, parser, generic.getActualTypeArguments()[0]));
           return ret;
         }
       }
@@ -429,6 +440,7 @@ public class JacksonConfiguration {
           KimNamespace.class,
           KlabStatement.class,
           KimConceptStatement.class,
+          KimConceptStatement.ApplicableConcept.class,
           KimObservationStrategy.class,
           org.integratedmodelling.klab.api.actors.Agent.class,
           KimObservationStrategyDocument.class,
@@ -582,6 +594,9 @@ public class JacksonConfiguration {
   /** Configure human-authored data formats whose documents do not contain {@value #CLASS_FIELD}. */
   public static void configureObjectMapperForKlabBeanTypes(ObjectMapper mapper) {
     var resolver = new SimpleAbstractTypeResolver();
+    resolver.addMapping(
+        org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept.class,
+        org.integratedmodelling.klab.api.lang.kim.impl.ApplicableConceptImpl.class);
     resolver.addMapping(Workflow.class, WorkflowImpl.class);
     resolver.addMapping(Workflow.AttachmentRule.class, WorkflowImpl.AttachmentRuleImpl.class);
     resolver.addMapping(Workflow.StateSchema.class, WorkflowImpl.StateSchemaImpl.class);

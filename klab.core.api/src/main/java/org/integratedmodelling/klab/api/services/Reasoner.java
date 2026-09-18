@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -155,9 +158,9 @@ public interface Reasoner extends KlabService {
 
   /**
    * The closure is the inferred version of {@link #allChildren(Semantics)}, which only uses the
-   * asserted hierarchy.
-   * Inferred results exclude the entire OWL bottom equivalence node: unsatisfiable named
-   * classes are not usable specializations, even though OWL places them below every class.
+   * asserted hierarchy. Inferred results exclude the entire OWL bottom equivalence node:
+   * unsatisfiable named classes are not usable specializations, even though OWL places them below
+   * every class.
    *
    * @param target
    * @return
@@ -179,7 +182,8 @@ public interface Reasoner extends KlabService {
   int semanticDistance(Semantics target, Semantics other);
 
   /**
-   * Contextual version of {@link #semanticDistance(Semantics, Semantics)}; argument order is directional.
+   * Contextual version of {@link #semanticDistance(Semantics, Semantics)}; argument order is
+   * directional.
    *
    * @param target candidate model semantics (may be broader than the request)
    * @param other requested semantics
@@ -772,6 +776,19 @@ public interface Reasoner extends KlabService {
    * @param request
    */
   SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
+
+  /**
+   * Validate a parsed document snapshot without publishing declarations. Diagnostics belong to
+   * source occurrences, never cached concepts. Ontologies must match the source loaded by this
+   * reasoner; newer edits return STALE_KNOWLEDGE. Call asynchronously after parsing succeeds and
+   * discard responses superseded by an editor or knowledge revision.
+   */
+  default SemanticValidationResponse validateDocument(
+      SemanticValidationRequest request, Scope scope) {
+    var ret = SemanticValidationResponse.forRequest(request);
+    ret.setReason("This reasoner does not support document semantic validation");
+    return ret;
+  }
 
   /**
    * Send a build strategy constructed through a builder and return the result as a concept.

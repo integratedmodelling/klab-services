@@ -241,6 +241,7 @@ public interface ServicesAPI {
     String RESOLVE_OBSERVABLE = API_BASE + "/resolve/observable";
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
+    String VALIDATE_DOCUMENT = API_BASE + "/validate/document";
 
     String HAS_TRAIT = API_BASE + "/hasTrait";
 

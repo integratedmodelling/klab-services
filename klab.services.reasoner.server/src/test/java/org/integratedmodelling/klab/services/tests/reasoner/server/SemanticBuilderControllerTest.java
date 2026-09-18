@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.tests.reasoner.server;
 
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,6 +25,30 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class SemanticBuilderControllerTest {
+  @Test void routesSemanticValidationAndRequiresAuthorization() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var service = mock(ReasonerService.class);
+    var server = mock(ReasonerServer.class); when(server.klabService()).thenReturn(service);
+    var controller = new ReasonerController(); ReflectionTestUtils.setField(controller, "reasoner", server);
+    var scope = mock(ContextScope.class);
+    var authorization = mock(EngineAuthorization.class); when(authorization.getScope()).thenReturn(scope);
+    var mvc = MockMvcBuilders.standaloneSetup(controller)
+        .setMessageConverters(new MappingJackson2HttpMessageConverter(mapper)).build();
+    var document = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+    document.setUrn("test"); document.setSourceCode("namespace test;");
+    var request = SemanticValidationRequest.of(document, "1");
+    when(service.validateDocument(any(), same(scope))).thenAnswer(inv ->
+        SemanticValidationResponse.forRequest(inv.getArgument(0)));
+    String body = mapper.writeValueAsString(request);
+    mvc.perform(post(ServicesAPI.REASONER.VALIDATE_DOCUMENT).principal(authorization)
+        .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
+    mvc.perform(post(ServicesAPI.REASONER.VALIDATE_DOCUMENT)
+        .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+    mvc.perform(post(ServicesAPI.REASONER.VALIDATE_DOCUMENT).principal(authorization)
+        .contentType(MediaType.APPLICATION_JSON).content("{}")) .andExpect(status().isBadRequest());
+    verify(service).validateDocument(any(), same(scope));
+  }
+
   @Test void routesPortableBuildersWithAuthorizedScopeAndInterfaceResults() throws Exception {
     var mapper = JacksonConfiguration.newObjectMapper();
     var service = mock(ReasonerService.class);

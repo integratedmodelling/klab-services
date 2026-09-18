@@ -46,5 +46,6 @@ class ObservableTranslationTest {
     assertSame(builder, builder.withRange(replacement));
     assertSame(replacement, builder.buildObservable().getRange());
     assertSame(range, observable.getRange());
+    assertEquals(concept, builder.withObserverSemantics(concept).buildObservable().getObserverSemantics());
   }
 }

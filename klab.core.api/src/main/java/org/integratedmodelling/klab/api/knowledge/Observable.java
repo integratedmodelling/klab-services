@@ -235,9 +235,10 @@ public interface Observable extends Semantics, Resolvable {
     Collection<Concept> removed(Semantics result);
 
     /**
-     * @param source
-     * @param target
-     * @return
+     * Specialize both relationship inherents together: {@code linking source to target}. Both
+     * operands must be substantials and subsumed by every corresponding inherited {@code links ...
+     * to ...} filler. This clause applies to relationships and bonds; specifying only one endpoint
+     * is invalid.
      */
     Builder linking(Concept source, Concept target);
 

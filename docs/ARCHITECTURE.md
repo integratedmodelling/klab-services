@@ -1,5 +1,8 @@
 # k.LAB Architecture
 
+For reasoner APIs, assisted composition and semantic document diagnostics, see
+[Reasoning](REASONING.md).
+
 k.LAB is a service stack for turning semantic observation requests into a live
 digital twin. The interesting part is not that there are four services. It is
 that each service owns a different kind of truth, and scopes carry the user's

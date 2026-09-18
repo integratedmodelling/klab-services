@@ -32,6 +32,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     this.participants = List.of(source, target);
     return this;
   }
+
   private ContextScope scope;
   private Urn identity;
   private Map<Observation.GeometryRelationship, Geometry> geometries = new HashMap<>();
@@ -115,16 +116,18 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
 
     if (observable instanceof KimModel model) {
       var main = model.getObservables().getFirst();
-      conceptAnnotations = AnnotationCollector.collect(
-          main.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
-      annotations = AnnotationCollector.merge(
-          main.getAnnotations(), model.getAnnotations());
+      conceptAnnotations =
+          AnnotationCollector.collect(
+              main.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+      annotations = AnnotationCollector.merge(main.getAnnotations(), model.getAnnotations());
     } else if (observable instanceof KimObservable obs) {
-      conceptAnnotations = AnnotationCollector.collect(
-          obs.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+      conceptAnnotations =
+          AnnotationCollector.collect(
+              obs.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
       annotations = AnnotationCollector.merge(obs.getAnnotations());
     } else if (observable instanceof KimConcept concept) {
-      annotations = AnnotationCollector.collect(concept, scope.getService(Reasoner.class)::resolveConcept);
+      annotations =
+          AnnotationCollector.collect(concept, scope.getService(Reasoner.class)::resolveConcept);
       annotationPriority = ObservationImpl.CONCEPT_ANNOTATIONS;
     }
 
@@ -176,18 +179,22 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     if (definition.containsKey("semantics")) {
       var syntax = definition.get("semantics");
       if (syntax instanceof KimObservable declaration) {
-        conceptAnnotations = AnnotationCollector.collect(
-            declaration.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
+        conceptAnnotations =
+            AnnotationCollector.collect(
+                declaration.getSemantics(), scope.getService(Reasoner.class)::resolveConcept);
         annotations = AnnotationCollector.merge(annotations, declaration.getAnnotations());
       } else if (syntax instanceof KimConcept declaration) {
-        conceptAnnotations = AnnotationCollector.collect(
-            declaration, scope.getService(Reasoner.class)::resolveConcept);
+        conceptAnnotations =
+            AnnotationCollector.collect(
+                declaration, scope.getService(Reasoner.class)::resolveConcept);
       }
       observable =
           scope
               .getService(Reasoner.class)
-              .resolveObservable(syntax instanceof KlabStatement statement
-                  ? statement.getUrn() : syntax.toString());
+              .resolveObservable(
+                  syntax instanceof KlabStatement statement
+                      ? statement.getUrn()
+                      : syntax.toString());
       if (observable == null) {
         notifications.add(
             Notification.error(
@@ -280,13 +287,21 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   public ObservationImpl build() {
 
     ObservationImpl ret = new ObservationImpl();
+    if (observable == null || observable.is(SemanticType.NOTHING)) {
+      notifications.add(
+          Notification.error(
+              "Cannot build an observation with unresolved or inconsistent semantics"));
+    }
     ret.setGeometry(geometries.get(Observation.GeometryRelationship.OCCUPIES));
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
     ret.setParticipants(participants);
-    if (!participants.isEmpty() && (observable == null || !observable.is(SemanticType.RELATIONSHIP)
-        || observable.getSemantics().isCollective())) {
-      notifications.add(Notification.error("Only individual relationships or bonds can specify participants"));
+    if (!participants.isEmpty()
+        && (observable == null
+            || !observable.is(SemanticType.RELATIONSHIP)
+            || observable.getSemantics().isCollective())) {
+      notifications.add(
+          Notification.error("Only individual relationships or bonds can specify participants"));
     }
     if (geometries.containsKey(Observation.GeometryRelationship.PERCEIVES)) {
       if (observable == null || !observable.is(SemanticType.AGENT)) {
