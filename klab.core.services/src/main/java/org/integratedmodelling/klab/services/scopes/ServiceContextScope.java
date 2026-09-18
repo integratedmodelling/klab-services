@@ -192,6 +192,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    * @param id
    * @return
    */
+  @Override
   public Observation getObservation(long id) {
 
     if (id == Observation.UNASSIGNED_ID) {
@@ -366,48 +367,49 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
-    var ret = new ArrayList<RuntimeAsset>();
-    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
-      ret.addAll(
-          currentTransaction.outgoing(observation).stream()
-              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-              .map(KnowledgeGraph.Link::target)
-              .toList());
-    }
-    if (observation.getId() > 0) {
-      ret.addAll(
-          digitalTwin
-              .getKnowledgeGraph()
-              .query(RuntimeAsset.class, this)
-              .source(observation)
-              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-              .run(this));
-    }
-    return ret;
+    return new ArrayList<>(participantLinks(observation, false,
+        GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
+        GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
   }
 
   @Override
   public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
-    var ret = new ArrayList<RuntimeAsset>();
-    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
-      ret.addAll(
-          currentTransaction.incoming(observation).stream()
-              .filter(edge -> edge.type() == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-              .map(KnowledgeGraph.Link::target)
-              .toList());
-    }
-    if (observation.getId() > 0) {
-      ret.addAll(
-          digitalTwin
-              .getKnowledgeGraph()
-              .query(RuntimeAsset.class, this)
-              .target(observation)
-              .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
-              .run(this));
-    }
-    return ret;
+    return new ArrayList<>(participantLinks(observation, false,
+        GraphModel.Relationship.HAS_RELATIONSHIP_TARGET,
+        GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
   }
 
+  @Override
+  public List<Observation> getRelationshipParticipants(Observation relationship) {
+    if (!relationship.getObservable().is(SemanticType.RELATIONSHIP)
+        || relationship.getObservable().getSemantics().isCollective()) return List.of();
+    return relationship.getObservable().is(SemanticType.BIDIRECTIONAL)
+        ? participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT)
+        : participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
+            GraphModel.Relationship.HAS_RELATIONSHIP_TARGET);
+  }
+
+  private List<Observation> participantLinks(RuntimeAsset anchor, boolean outgoing,
+      GraphModel.Relationship... types) {
+    var result = new LinkedHashMap<Long, Observation>();
+    for (var type : types) {
+      // An existing participant need not itself belong to assets() to have new incoming edges.
+      if (currentTransaction != null) {
+        var links = outgoing ? currentTransaction.outgoing(anchor) : currentTransaction.incoming(anchor);
+        for (var link : links) {
+          var other = outgoing ? link.target() : link.source();
+          if (link.type() == type && other instanceof Observation observation)
+            result.put(observation.getId(), observation);
+        }
+      }
+      if (anchor.getId() > 0) {
+        var query = digitalTwin.getKnowledgeGraph().query(Observation.class, this).along(type);
+        if (outgoing) query.source(anchor); else query.target(anchor);
+        for (var observation : query.run(this)) result.putIfAbsent(observation.getId(), observation);
+      }
+    }
+    return new ArrayList<>(result.values());
+  }
   //  @Override
   //  public Collection<Observation> affecting(Observation observation) {
   //

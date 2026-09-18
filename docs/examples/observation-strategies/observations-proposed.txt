@@ -34,7 +34,7 @@ strategy 0 named countables.direct
 
 strategy 0 named relationships.direct
   for pattern {
-    node { kind = relationship; collective = true; abstract = false; }
+    node { kind = relationship; activity = CONNECTION; collective = true; abstract = false; }
   }
   ensure request.fully_specified($this)
   let source = relationship.source($this), target = relationship.target($this)

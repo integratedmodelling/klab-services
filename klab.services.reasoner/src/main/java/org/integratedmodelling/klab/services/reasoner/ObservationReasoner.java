@@ -339,6 +339,19 @@ public class ObservationReasoner {
           || !operations.getLast().getInputs().equals(Map.of("members", operations.getFirst().getId())))
         throw new IllegalArgumentException("Classification requires resolve members then observe with a members input");
     }
+    if (requested.getContextualization() == Contextualization.CONNECTION) {
+      var operations = result.getOperations();
+      if (operations.size() != 3
+          || operations.get(0).getType() != ObservationStrategy.Operation.Type.RESOLVE
+          || operations.get(1).getType() != ObservationStrategy.Operation.Type.RESOLVE
+          || operations.get(2).getType() != ObservationStrategy.Operation.Type.OBSERVE
+          || !operations.get(0).getObservable().getSemantics().isCollective()
+          || !operations.get(1).getObservable().getSemantics().isCollective()
+          || !Objects.equals(requested.getUrn(), operations.get(2).getObservable().getUrn())
+          || !operations.get(2).getInputs().equals(
+              Map.of("source", operations.get(0).getId(), "target", operations.get(1).getId())))
+        throw new IllegalArgumentException("Connection requires resolve endpoints then observe with source and target inputs");
+    }
     return result;
   }
 

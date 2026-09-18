@@ -87,7 +87,9 @@ class ObservationPipelineTest {
     observable.setSemantics(concept);
     observable.setUrn(concept.getUrn());
     observable.setName(kind.name().toLowerCase());
-    observable.setDescriptionType(collective ? Contextualization.INSTANTIATION : Contextualization.ACKNOWLEDGEMENT);
+    observable.setDescriptionType(collective
+        ? (kind == SemanticType.RELATIONSHIP ? Contextualization.CONNECTION : Contextualization.INSTANTIATION)
+        : Contextualization.ACKNOWLEDGEMENT);
     return observable;
   }
 

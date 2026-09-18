@@ -25,6 +25,13 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public abstract class ObservationBuilderImpl implements Observation.Builder {
 
   private Observable observable;
+  private List<Observation> participants = List.of();
+
+  @Override
+  public Observation.Builder between(Observation source, Observation target) {
+    this.participants = List.of(source, target);
+    return this;
+  }
   private ContextScope scope;
   private Urn identity;
   private Map<Observation.GeometryRelationship, Geometry> geometries = new HashMap<>();
@@ -276,6 +283,11 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     ret.setGeometry(geometries.get(Observation.GeometryRelationship.OCCUPIES));
     ret.getMetadata().putAll(metadata);
     ret.setObservable(observable);
+    ret.setParticipants(participants);
+    if (!participants.isEmpty() && (observable == null || !observable.is(SemanticType.RELATIONSHIP)
+        || observable.getSemantics().isCollective())) {
+      notifications.add(Notification.error("Only individual relationships or bonds can specify participants"));
+    }
     if (geometries.containsKey(Observation.GeometryRelationship.PERCEIVES)) {
       if (observable == null || !observable.is(SemanticType.AGENT)) {
         notifications.add(Notification.error("Only agents can have perceived geometry"));
@@ -302,7 +314,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
 
     if (observable != null
         && !observable.getSemantics().isCollective()
-        && SemanticType.isSubstantial(observable.getSemantics().getType())) {
+        && SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())) {
       if (identity == null) {
         notifications.add(
             Notification.error(

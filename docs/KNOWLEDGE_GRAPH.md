@@ -44,12 +44,34 @@ proof that every advertised field and query is implemented.
 | `AFFECTS`, `CONTEXTUALIZED_BY` | Computational influence and observation-to-actuator implementation links. |
 | `INSTANTIATED`, `MEASURED`, `CLASSIFIED`, and other typed effects | Execution Activity to affected Observation; activity semantics determine the effect. |
 | `HAS_DATA`, `HAS_GEOMETRY` | Observation payload descriptors and extents. |
-| `HAS_OBSERVER`, `HAS_RELATIONSHIP_SOURCE`, `HAS_RELATIONSHIP_TARGET` | Observer and semantic relationship structure. |
+| `HAS_OBSERVER`, `HAS_RELATIONSHIP_SOURCE`, `HAS_RELATIONSHIP_TARGET`, `HAS_RELATIONSHIP_PARTICIPANT` | Observer and semantic relationship structure; bonds use unordered participant edges. |
 
 A relation can carry properties such as sequence and geometry; it is not adequately described
 for replication by endpoint IDs and type alone. Several links between the same nodes can carry
 different computational meanings or geometry. Define a durable edge identity before supporting
 property updates and precise deletion in a remote view.
+
+## Relationship observations
+
+A semantic relationship is an `Observation` node, hosted by a `Cohort` through
+`HAS_MEMBER`. It is not the graph edge between its participants. Each directed
+relationship has `HAS_RELATIONSHIP_SOURCE` and `HAS_RELATIONSHIP_TARGET` edges
+**from the relationship observation to the respective substantial**. A bond instead
+has two `HAS_RELATIONSHIP_PARTICIPANT` edges from its observation to its participants;
+neither edge has a source/target role.
+
+`ContextScope.getRelationshipParticipants` retrieves participants from the transaction
+and durable graph. Directed results are ordered source then target; bond results have
+no semantic order. `getOutgoingRelationshipsOf` and `getIncomingRelationshipsOf`
+return relationship observations, including bonds in both queries. They traverse
+participant edges in reverse, deduplicate results, and retain context visibility checks.
+Participant edges do not establish ownership or authorize cascading deletion.
+
+`Observation.getParticipants` carries creation-time references, including provisional
+transaction-local endpoints. Durable participant lookup uses the graph method above.
+Runtime validates arity, participant existence and substantial semantics before
+acknowledgement, and persists participant edges in the same enclosing transaction as
+the relationship. An existing relationship identity cannot be rebound to another pair.
 
 ## Contextualization activities and effects
 

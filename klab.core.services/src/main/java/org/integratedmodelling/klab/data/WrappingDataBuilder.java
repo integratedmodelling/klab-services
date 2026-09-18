@@ -55,13 +55,26 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     var reasoner = scope.getService(Reasoner.class);
     for (var child : data.children()) {
       var observable = reasoner.resolveObservable(child.semantics());
-      var observation =
+      var observationBuilder =
           scope
               .observation(observable)
               .geometry(child.geometry())
               .identity(child.identity())
-              .metadata(child.metadata())
-              .register();
+              .metadata(child.metadata());
+      var sourceId = child.metadata().get("im:relationship-source-id");
+      var targetId = child.metadata().get("im:relationship-target-id");
+      if (sourceId != null || targetId != null) {
+        if (sourceId == null || targetId == null)
+          throw new IllegalArgumentException("A remote relationship must supply both participant IDs");
+        var source = scope.getObservation(Long.parseLong(sourceId.toString()));
+        var target = scope.getObservation(Long.parseLong(targetId.toString()));
+        if (source == null || target == null)
+          throw new IllegalArgumentException("Unknown remote relationship participant");
+        observationBuilder.between(source, target);
+      }
+      var observation = observationBuilder.register();
+      observation.getMetadata().remove("im:relationship-source-id");
+      observation.getMetadata().remove("im:relationship-target-id");
       if (observation.getContextualizationData()
           instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
         contextualizationData.setAdapterId(adapterId);

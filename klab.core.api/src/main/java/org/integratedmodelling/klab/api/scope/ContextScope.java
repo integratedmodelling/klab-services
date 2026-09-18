@@ -104,6 +104,16 @@ public interface ContextScope extends SessionScope {
    */
   Observation getObservation(Observation observation);
 
+  /** Resolve an observation reference in this context, including the enclosing transaction. */
+  default Observation getObservation(long id) {
+    if (id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID) return null;
+    if (getCurrentTransaction() != null) {
+      for (var asset : getCurrentTransaction().assets())
+        if (asset instanceof Observation observation && observation.getId() == id) return observation;
+    }
+    return id > 0 ? getDigitalTwin().getKnowledgeGraph().getAsset(id, this, Observation.class) : null;
+  }
+
   /**
    * Return all the known observation perspectives for the passed observable. These are the
    * different observations of the same observable made by different observers. The observer in the
@@ -295,7 +305,7 @@ public interface ContextScope extends SessionScope {
 
   /**
    * Inspect the network graph of the current context, returning all <code>relationship</code>
-   * observations that have the passed subject as source.
+   * observations that have the passed subject as source, and bonds involving that subject.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
@@ -304,12 +314,20 @@ public interface ContextScope extends SessionScope {
 
   /**
    * Inspect the network graph of the current context, returning all <code>relationship</code>
-   * observations that have the passed subject as target.
+   * observations that have the passed subject as target, and bonds involving that subject.
    *
    * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
    */
   Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset asset);
+
+  /**
+   * The two participants of a relationship observation, in source/target order for directed
+   * relationships and without order for bonds. This queries participant edges, not graph adjacency.
+   */
+  default List<Observation> getRelationshipParticipants(Observation relationship) {
+    throw new UnsupportedOperationException("Relationship participant lookup is unavailable");
+  }
 
   /**
    * Set resolution constraints here. Returns a new scope with all the constraints added to the ones

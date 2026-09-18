@@ -336,6 +336,8 @@ public interface GraphModel {
     HAS_OBSERVER, // for submission activities FIXME currently is used on observations
     HAS_RELATIONSHIP_SOURCE,
     HAS_RELATIONSHIP_TARGET,
+    /** From a bond observation to either participant; carries no direction or endpoint role. */
+    HAS_RELATIONSHIP_PARTICIPANT,
     HAS_PLAN,
     BY_AGENT,
     HAS_GEOMETRY,

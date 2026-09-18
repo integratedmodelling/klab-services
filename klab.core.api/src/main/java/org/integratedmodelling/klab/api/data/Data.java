@@ -729,9 +729,8 @@ public interface Data {
     Builder state(String outputId);
 
     /**
-     * Returns a new builder for an object, on which build() must be called to confirm the
-     * transaction. The API ensures that the object is sound after this call, but the builder can be
-     * used to add metadata, states or child objects.
+     * Returns a new builder for an object, automatically included in this builder's outputs.
+     * The child builder can be used to add metadata, states or child objects.
      *
      * @param name the name of the object
      * @param observable the observable for the object FIXME should not be necessary?
@@ -740,6 +739,17 @@ public interface Data {
      * @return a new builder for the object
      */
     Builder object(String name, Observable observable, Geometry geometry, Urn identity);
+
+    /**
+     * Emit an individual relationship. The connector chooses the pairs; Runtime acknowledges each
+     * emitted observation. For bonds the two arguments are interchangeable.
+     */
+    default Builder relationship(String name, Observable observable, Geometry geometry, Urn identity,
+        Observation source, Observation target) {
+      return object(name, observable, geometry, identity)
+          .metadata("im:relationship-source-id", source.getId())
+          .metadata("im:relationship-target-id", target.getId());
+    }
 
     /**
      * Retrieve the observation being contextualized (not resolved at this point).

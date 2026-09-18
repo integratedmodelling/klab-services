@@ -101,6 +101,13 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   long QUERY_ID = 0;
 
   /**
+   * Participants supplied when creating a relationship. Directed relationships use source, target
+   * order; bonds have no participant order. Durable participants are obtained through
+   * {@link ContextScope#getRelationshipParticipants(Observation)}.
+   */
+  default List<Observation> getParticipants() { return List.of(); }
+
+  /**
    * A builder for creating new observations is only created by a context scope, which communicates
    * with the assigned runtime service. To obtain a builder, get a context scope and call {@link
    * ContextScope#observation(Observable)} on it. The builder does not have a <code>build</code>
@@ -108,6 +115,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * #register()} when the submission to the runtime is managed directly through the API.
    */
   interface Builder {
+
+    /** Set the two substantial participants of an individual relationship or bond. */
+    Builder between(Observation source, Observation target);
 
     /**
      * Mandatory for all observations except dependents, which inherit their geometry from their
@@ -375,6 +385,15 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     }
     var ret = new ObservationImpl();
     ret.setObservable(observation.getObservable());
+    // Participant references must retain transaction-local IDs across service transport, without
+    // recursively serializing the participant's own relationships.
+    ret.setParticipants(observation.getParticipants().stream().map(participant -> {
+      var reference = new ObservationImpl();
+      reference.setId(participant.getId());
+      reference.setUrn(participant.getUrn());
+      reference.setObservable(participant.getObservable());
+      return (Observation) reference;
+    }).toList());
     ret.mergeAnnotations(observation);
     ret.setGeometry(Geometry.forTransport(observation.getGeometry()));
     if (observation.getObservable() != null && observation.getObservable().is(SemanticType.AGENT)) {

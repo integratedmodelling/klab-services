@@ -223,6 +223,11 @@ public interface RuntimeService extends KlabService {
    */
   Observation register(Observation observation, ContextScope scope);
 
+  /** Enumerate a completed collective input within its observed support, including uncommitted members. */
+  default List<Observation> getMembers(Observation collective, ContextScope scope) {
+    throw new UnsupportedOperationException("Collective member enumeration is unavailable");
+  }
+
   /**
    * Create an agent with the given behavior in the given scope. The k.Actors behavior must be valid
    * and appropriate to the scope. Based on the scope passed, the agent will be associated with the

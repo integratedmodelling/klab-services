@@ -42,6 +42,10 @@ public class BaseDataImpl implements Data {
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
     this.name = instance.getName().toString();
     this.notifications.addAll(notifications);
+    if (instance.getIdentity() != null && !instance.getIdentity().toString().isBlank())
+      this.identity = Urn.of(instance.getIdentity().toString());
+    if (instance.getMetadata() != null)
+      instance.getMetadata().forEach((key, value) -> metadata.put(key.toString(), value.toString()));
   }
 
   public BaseDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {

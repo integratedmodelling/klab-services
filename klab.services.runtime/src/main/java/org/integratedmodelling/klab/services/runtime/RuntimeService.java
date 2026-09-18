@@ -621,13 +621,23 @@ public class RuntimeService extends BaseService
     if (scope instanceof ServiceContextScope serviceScope
         && serviceScope.getActivity() == null
         && scope.getContextObservation() != null
-        && SemanticType.isSubstantial(submitted.getObservable().getSemantics().getType())) {
+        && SemanticType.isEnumerableSubstantial(submitted.getObservable().getSemantics().getType())) {
       return serviceScope.within(null);
     }
     return scope;
   }
 
   private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
+
+    if (ConnectionSupport.isIndividual(submitted) && submitted.getId() <= 0
+        && submitted.getId() != Observation.QUERY_ID) {
+      var participants = ConnectionSupport.participants(submitted, scope);
+      if (scope.getSourceObservation() == null || scope.getTargetObservation() == null
+          || scope.getSourceObservation().getId() != participants.get(0).getId()
+          || scope.getTargetObservation().getId() != participants.get(1).getId()) {
+        return submitInternal(submitted, scope.between(participants.get(0), participants.get(1)));
+      }
+    }
 
     /*
      * A complete query is the terminal answer. Partial and empty queries must continue to the
@@ -700,7 +710,8 @@ public class RuntimeService extends BaseService
             && scope.getContextObservation() != null) {
           observation1.setGeometry(scope.getContextObservation().getGeometry());
         } else if (observation.getObservable().is(SemanticType.COUNTABLE)
-            && observation.getObservable().getSemantics().isCollective()
+            && (observation.getObservable().getSemantics().isCollective()
+                || observation.getObservable().is(SemanticType.RELATIONSHIP))
             && scope.getObserver() != null) {
           // FIXME no - this should run a query over the cohort and if needed, resolve the
           //  unaddressed coverage. If the observation has id == 0, it is a query and it can
@@ -859,6 +870,10 @@ public class RuntimeService extends BaseService
 
       if (cohort != null && !collective && observation.getObservable().is(SemanticType.COUNTABLE)) {
         transaction.link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+      }
+
+      if (ConnectionSupport.isIndividual(observation)) {
+        ConnectionSupport.link(observation, submissionScope);
       }
 
       submissionScope
@@ -1081,6 +1096,19 @@ public class RuntimeService extends BaseService
     var builder = new Observation.NaiveBuilder(observable, scope);
     builder.geometry(submitted.getGeometry()).query();
     return query(builder.make(), scope);
+  }
+
+  /** Enumerate the completed member binding, including transaction-local instantiations. */
+  @Override
+  public List<Observation> getMembers(Observation collective, ContextScope scope) {
+    if (!collective.getObservable().getSemantics().isCollective()) return List.of(collective);
+    if (!(scope instanceof ServiceContextScope serviceScope))
+      throw new IllegalArgumentException("Member enumeration requires a runtime context");
+    var semantics = collective.getObservable().getSemantics().singular();
+    var reasoner = scope.getService(Reasoner.class);
+    return classificationMembers(collective, collective.getGeometry(), serviceScope).stream()
+        .filter(member -> member.getObservable().getSemantics().equals(semantics)
+            || reasoner.is(member.getObservable(), semantics)).toList();
   }
 
   /** Enumerate the completed member binding, including transaction-local instantiations. */
@@ -1433,6 +1461,7 @@ public class RuntimeService extends BaseService
         if (cohort != null) {
           var existing = checkIdentity(observation, cohort, serviceContextScope);
           if (existing != null) {
+            ConnectionSupport.checkIdentity(existing, observation, scope);
             return existing;
           }
         } else {
@@ -2179,11 +2208,20 @@ public class RuntimeService extends BaseService
 
       } else if (scope.getTarget().getObservable().getContextualization()
           == Contextualization.CONNECTION) {
-        // TODO the observations have been created but are not yet in the KG or in the transaction.
-        // Take them
-        //  from the execution scope, then resolve them here in the between() scope of the
-        // collective.
-        throw new KlabUnimplementedException("Contextualization not implemented");
+        // Validate the entire result before starting any acknowledgements. Each result is an
+        // observation in a cohort, never a graph edge directly connecting the two participants.
+        var participants = scope.getOutcomes().stream()
+            .map(child -> ConnectionSupport.participants(child, contextScope)).toList();
+        var collectiveScope = contextScope.within(scope.getTarget());
+        for (int i = 0; i < scope.getOutcomes().size(); i++) {
+          var child = scope.getOutcomes().get(i);
+          var endpoints = participants.get(i);
+          var memberScope = collectiveScope.between(endpoints.get(0), endpoints.get(1))
+              .withResolutionConstraints(
+                  scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
+          tasks.add(memberScope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+              .submit(child, memberScope));
+        }
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
         // TODO the finalizeStorage() could be done here as a sub-task instead of coming with the

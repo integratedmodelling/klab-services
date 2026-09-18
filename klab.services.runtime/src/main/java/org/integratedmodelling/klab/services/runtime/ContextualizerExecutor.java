@@ -50,11 +50,11 @@ public class ContextualizerExecutor extends AbstractExecutor
       Data.Builder builder = null;
       boolean needsBuilder =
           Arrays.stream(implementation.method.getParameterTypes())
-              .anyMatch(cls -> cls.isAssignableFrom(Data.Builder.class));
+              .anyMatch(Data.Builder.class::isAssignableFrom);
 
       if (needsBuilder) {
-        // TODO! MUST PROVIDE A BUILDER IF REQUESTED - for instantiators it's the only way
-        throw new KlabUnimplementedException("HOSTIA MAKE A BUILDER FOR THE INSTANTIATOR");
+        builder = new org.integratedmodelling.klab.data.DirectDataBuilder(
+            observation.getName(), null, observation, scope, null);
       }
 
       var arguments =
@@ -91,9 +91,7 @@ public class ContextualizerExecutor extends AbstractExecutor
                   .method
                   .invoke(null, arguments.toArray());
 
-          // TODO PROCESS RESULT - BOOLEAN, NOTIFICATION ETC.
-
-          // TODO INGEST DATA IF BUILDER WAS PASSED
+          if (Boolean.FALSE.equals(context)) return false;
 
         } catch (Exception e) {
           cause = e;
@@ -111,12 +109,21 @@ public class ContextualizerExecutor extends AbstractExecutor
                   .invoke(
                       componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance,
                       arguments.toArray());
-          return true;
+          if (Boolean.FALSE.equals(context)) return false;
         } catch (Exception e) {
           cause = e;
           scope.error(e /* TODO tracing parameters */);
           return false;
         }
+      }
+      if (builder != null) {
+        observation.getNotifications().addAll(builder.getNotifications());
+        if (org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(builder.getNotifications()))
+          return false;
+        var outcomes = builder.getObjects().stream().map(Data.Builder::getObservation).toList();
+        contextualizationScope.getOutcomes().addAll(outcomes);
+        if (observation instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl impl)
+          impl.setChildrenCount(outcomes.size());
       }
     }
     return true;

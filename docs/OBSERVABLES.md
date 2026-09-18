@@ -187,6 +187,33 @@ valid general explanation for concrete P2 and P3. Models of narrower or unrelate
 not explain a broader requested predicate. `P of each S` classifier models and `P of S`
 characterizer models are different operations and are not interchangeable.
 
+### 1.6 Connecting substantials
+
+The Tier-0 `relationships.direct` strategy handles `CONNECTION`: it resolves the
+collective source and target types, then uses `observe` with named `source` and
+`target` inputs to discover a connector model. Endpoint coverage alone is not a
+connection result. The model chooses which pairs to connect and may emit zero
+instances; Runtime does not construct a Cartesian product.
+
+Implementations emit individual observations through
+`Data.Builder.relationship(name, observable, geometry, identity, source, target)`.
+Direct observation construction also supports `Observation.Builder.between(...)`.
+Both participants must be distinct individual substantials in the current context.
+The relationship has its own identity, geometry, provenance and cohort membership.
+A free request uses the current observer's perceived geometry.
+
+Runtime acknowledges every new result individually in a scope focused on the
+producing collective for registration and contextualized through
+`ContextScope.between(source, target)` for resolution and execution. It preserves
+the producing model's lexical constraints. A missing explanatory model is valid
+acknowledgement; an execution failure fails the enclosing transaction.
+
+Directed relationships persist separate source and target edges. Bonds, represented
+semantically as `RELATIONSHIP + BIDIRECTIONAL`, persist two unordered participant
+edges. See [relationship observations in the knowledge graph](KNOWLEDGE_GRAPH.md#relationship-observations).
+The `klab.component.generators` function `klab.generators.random.relationships`
+provides percentage-based endpoint sampling and seeded random geometry for tests.
+
 ## 2. Concepts and predicates
 
 A worldview concept is written as `namespace.path:ConceptName`:

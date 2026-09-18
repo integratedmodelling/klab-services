@@ -89,6 +89,14 @@ public class ObservationImpl implements Observation, Cloneable {
   }
 
   private Observable observable;
+  private List<Observation> participants = new ArrayList<>();
+
+  @Override
+  public List<Observation> getParticipants() { return Collections.unmodifiableList(participants); }
+
+  public void setParticipants(List<Observation> participants) {
+    this.participants = new ArrayList<>(participants == null ? List.of() : participants);
+  }
   private List<Annotation> annotations = new ArrayList<>();
   // The service mapper may deserialize integral values as Long rather than Integer.
   private Map<String, Number> annotationPriorities = new HashMap<>();

@@ -35,6 +35,7 @@ public abstract class AbstractResourceContextualizer {
     this.urnParameters = Parameters.create(this.urn.getParameters());
     this.observation = observation;
     this.observable = observation.getObservable();
+    this.dependencies.putAll(dependencies);
   }
 
   public boolean contextualize(
@@ -70,10 +71,11 @@ public abstract class AbstractResourceContextualizer {
       //  Should be accomplished through an "execution scope" provided by the runtime at dataflow
       // run.
       if (observable.is(SemanticType.COUNTABLE)) {
+        var objects = builder.getObjects();
         if (observation instanceof ObservationImpl observationImpl) {
-          observationImpl.setChildrenCount(builder.getObjects().size());
+          observationImpl.setChildrenCount(objects.size());
         }
-        contextualizationScope.getOutcomes().addAll(builder.getObjects().stream().map(Data.Builder::getObservation).toList());
+        contextualizationScope.getOutcomes().addAll(objects.stream().map(Data.Builder::getObservation).toList());
       }
 
       return true;

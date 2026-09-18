@@ -23,6 +23,7 @@ public class SerializingDataBuilder implements Data.Builder {
 
   private final Instance.Builder builder;
   private Instance.Builder parentBuilder;
+  private final List<SerializingDataBuilder> objects = new ArrayList<>();
   private final Geometry geometry;
   private Data.FillCurve fillCurve;
   private Map<Object, Integer> objectKey;
@@ -44,9 +45,14 @@ public class SerializingDataBuilder implements Data.Builder {
     this.builder.setIntData(null);
     this.builder.setLongData(null);
     this.builder.setDataKey(null);
-    this.builder.setIdentity(identity.toString());
+    this.builder.setIdentity(identity == null ? "" : identity.toString());
     this.geometry = geometry;
     this.input = input;
+  }
+
+  public SerializingDataBuilder(String name, Observable observable, Data input, Geometry geometry, Urn identity) {
+    this(name, input, geometry, identity);
+    this.builder.setObservable(observable.getUrn());
   }
 
   private SerializingDataBuilder(
@@ -67,7 +73,7 @@ public class SerializingDataBuilder implements Data.Builder {
 
   @Override
   public List<Data.Builder> getObjects() {
-    return List.of();
+    return new ArrayList<>(objects);
   }
 
 //  @Override
@@ -78,6 +84,7 @@ public class SerializingDataBuilder implements Data.Builder {
 
   public Data.Builder identity(String namespace, String id) {
     this.identity = Urn.of(namespace + ":" + id);
+    this.builder.setIdentity(identity.getUrn());
     return this;
   }
 
@@ -94,7 +101,10 @@ public class SerializingDataBuilder implements Data.Builder {
 
   @Override
   public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
-    return new SerializingDataBuilder(name, input, geometry, identity, this.builder);
+    var child = new SerializingDataBuilder(name, observable, input,
+        geometry == null ? this.geometry : geometry, identity);
+    objects.add(child);
+    return child;
   }
 
   @Override
@@ -109,6 +119,9 @@ public class SerializingDataBuilder implements Data.Builder {
 
   //  @Override
   public Data build() {
+    if (!objects.isEmpty()) {
+      builder.setInstances(objects.stream().map(child -> ((BaseDataImpl) child.build()).asInstance()).toList());
+    }
     if (objectKey != null) {
       builder.setDataKey(
           objectKey.entrySet().stream()

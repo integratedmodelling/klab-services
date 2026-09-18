@@ -109,6 +109,16 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   }
 
   @Override
+  public Data.Builder relationship(String name, Observable observable, Geometry geometry, Urn identity,
+      Observation source, Observation target) {
+    var relationship = scope.observation(observable).geometry(geometry).identity(identity)
+        .between(source, target).register();
+    var builder = new DirectDataBuilder(name, null, relationship, scope, identity);
+    objects.add(builder);
+    return builder;
+  }
+
+  @Override
   public Collection<Notification> getNotifications() {
     return this.notifications;
   }
