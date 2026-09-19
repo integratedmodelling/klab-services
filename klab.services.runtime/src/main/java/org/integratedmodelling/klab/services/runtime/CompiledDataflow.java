@@ -330,6 +330,38 @@ public class CompiledDataflow {
    * storage preparation. Classification dispatch uses the explicit operation contract.
    */
   static void validateSupportedPlan(Actuator actuator) {
+    var requestData = actuator.getData().get(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.REQUEST_KEY);
+    if (requestData != null) {
+      var request = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(requestData.toString(),
+          org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request.class);
+      var accepted = actuator.getObservation().getMetadata().get(
+          org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY);
+      if (accepted == null) throw new IllegalArgumentException("Cannot verify referenced occurrence schedule");
+      org.integratedmodelling.klab.utilities.Utils.Json.parseObject(accepted.toString(),
+          org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.class).requireCompatible(request,
+          GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).getTime());
+    }
+    var encodedSchedule = actuator.getData().get(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY);
+    if (encodedSchedule != null) {
+      var negotiated = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encodedSchedule.toString(),
+          org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.class);
+      var time = GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).getTime();
+      negotiated.validate(time);
+      var existing = actuator.getObservation().getMetadata().get(
+          org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY);
+      if (existing != null) {
+        var registered = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(existing.toString(),
+            org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.class);
+        if (!org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.equivalent(
+            registered.effective(), negotiated.effective(), time))
+          throw new IllegalArgumentException("Implicit occurrence rescheduling is not supported");
+      } else if (negotiated.request() != null && actuator.getObservation().getMetadata().containsKey(
+          org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.OccurrenceRegistration.METADATA_KEY)) {
+        throw new IllegalArgumentException("Cannot verify a dependency request against a legacy registration");
+      }
+      if (actuator.getOccurrenceSchedules().values().stream().anyMatch(s -> !s.equals(negotiated.effective())))
+        throw new IllegalArgumentException("Actuator schedules differ from accepted negotiation");
+    }
     var processPlan = processPlan(actuator);
     if (processPlan != null) {
       if (actuator.getExecutionRole() != Actuator.ExecutionRole.PROCESS)
@@ -449,6 +481,7 @@ public class CompiledDataflow {
     validateSupportedPlan(plan);
     this.rootActuator = plan;
     bindRestoredOccurrence(plan);
+    validateSupportedPlan(plan);
     compileRestoredOccurrence(plan);
     return operations.get(plan);
   }

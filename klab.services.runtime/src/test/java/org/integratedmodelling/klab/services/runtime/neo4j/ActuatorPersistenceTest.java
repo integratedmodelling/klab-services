@@ -33,6 +33,14 @@ class ActuatorPersistenceTest {
     actuator.setStrategyUrn("strategy.test");
     actuator.setCoverage(Geometry.UNIVERSAL);
     actuator.getData().put("factor", 3);
+    var declaration = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromModel(List.of(
+        org.integratedmodelling.klab.api.lang.Annotation.of("time", "step",
+            org.integratedmodelling.common.lang.QuantityImpl.parse("1.day"), "minStep",
+            org.integratedmodelling.common.lang.QuantityImpl.parse("1.hour"))));
+    var negotiation = new org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation(1, "test:model", null,
+        List.of(new org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Declaration("test:model", declaration)), declaration);
+    actuator.getData().put(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(negotiation));
     actuator.setExecutionRole(Actuator.ExecutionRole.PROCESS);
     actuator.getOccurrenceSchedules().put(0,
         new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule(1, "", "", 1,
@@ -61,6 +69,9 @@ class ActuatorPersistenceTest {
     assertEquals(actuator.getOccurrenceSchedules(), restored.getOccurrenceSchedules());
     assertEquals(3, restored.getData().get("factor", 0));
     assertEquals(1, restored.getComputation().size());
+    assertEquals(negotiation, org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+        restored.getData().get(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY).toString(),
+        org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.class));
     var call = restored.getComputation().getFirst();
     assertEquals("test.function", call.getUrn());
     assertEquals(7, call.getParameters().get("value", 0));

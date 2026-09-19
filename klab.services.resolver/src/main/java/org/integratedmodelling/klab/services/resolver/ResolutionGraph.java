@@ -52,6 +52,21 @@ public class ResolutionGraph {
 
   private Resolvable target;
   org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
+  org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request scheduleRequest;
+  org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation scheduleNegotiation;
+
+  /** Lexically scoped request boundary; catalogs remain shared but requests never mutate a sibling. */
+  ResolutionGraph withScheduleRequest(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request request) {
+    var result = new ResolutionGraph(rootScope);
+    result.parent = this;
+    result.target = target;
+    result.targetCoverage = targetCoverage;
+    result.observations = observations;
+    result.serviceInfos = serviceInfos;
+    result.localResources = localResources;
+    result.scheduleRequest = request;
+    return result;
+  }
   private Coverage targetCoverage;
   private ContextScope rootScope;
   // Two ports may reference the same observation (e.g. both relationship endpoints).
@@ -109,6 +124,7 @@ public class ResolutionGraph {
     }
 
     this.parent = parent;
+    this.scheduleRequest = parent.scheduleRequest;
     this.observations = parent.observations;
     this.localResources = parent.localResources;
     this.serviceInfos = parent.serviceInfos;
@@ -142,6 +158,7 @@ public class ResolutionGraph {
     this.localResources = parent.localResources;
     this.serviceInfos = parent.serviceInfos;
     this.resolved = resolvedObservation;
+    this.scheduleRequest = parent.scheduleRequest;
     this.target = target;
     this.targetCoverage =
         Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
@@ -220,6 +237,8 @@ public class ResolutionGraph {
     this.graph.addVertex(childGraph.target);
     var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
     edge.processPlan = childGraph.processPlan;
+    edge.scheduleNegotiation = childGraph.scheduleNegotiation;
+    edge.scheduleRequest = childGraph.scheduleRequest;
     if (childGraph.getResolved() != null) {
       edge.observationId = childGraph.resolvedKey;
     } else {
@@ -309,6 +328,7 @@ public class ResolutionGraph {
     this.graph.addVertex(this.target);
     this.graph.addVertex(reference.getObservable());
     var edge = new ResolutionEdge(coverage, null);
+    edge.scheduleRequest = scheduleRequest;
     edge.observationId = referenceKey(reference);
     this.observations.put(edge.observationId, reference);
     this.graph.addEdge(this.target, reference.getObservable(), edge);
@@ -368,6 +388,8 @@ public class ResolutionGraph {
    * >1 resolving nodes, successively covering the extents up to "sufficient" coverage.
    */
   public static class ResolutionEdge extends DefaultEdge {
+    org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request scheduleRequest;
+    org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation scheduleNegotiation;
     org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
 
     public Coverage coverage;

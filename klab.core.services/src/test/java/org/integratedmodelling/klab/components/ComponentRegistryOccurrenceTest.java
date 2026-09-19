@@ -11,7 +11,9 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.junit.jupiter.api.Test;
 
 class ComponentRegistryOccurrenceTest {
-  @Contextualizer(timeStep = 1, timeUnit = Time.Resolution.Type.MONTH, timeOverridable = false)
+  @Contextualizer(timeStep = 1, timeUnit = Time.Resolution.Type.MONTH, timeOverridable = false,
+      timeMinStep = 1, timeMinStepUnit = Time.Resolution.Type.DAY,
+      timeMaxStep = 1, timeMaxStepUnit = Time.Resolution.Type.MONTH)
   @KlabFunction(name = "process", description = "test")
   public static class Monthly {
     @KlabFunction(name = "inherited", description = "test")
@@ -39,11 +41,15 @@ class ComponentRegistryOccurrenceTest {
     var classSchedule = prototype(Monthly.class, null).getOccurrenceSchedule();
     assertEquals(Time.Resolution.Type.MONTH, classSchedule.unit());
     assertFalse(classSchedule.overridable());
+    assertEquals(Time.Resolution.Type.DAY, classSchedule.minStep().unit());
+    assertEquals(Time.Resolution.Type.MONTH, classSchedule.maxStep().unit());
+    assertEquals(1, classSchedule.minStep().step());
     assertEquals(classSchedule, prototype(Monthly.class, Monthly.class.getMethod("inherited")).getOccurrenceSchedule());
     var methodSchedule = prototype(Monthly.class, Monthly.class.getMethod("overridden")).getOccurrenceSchedule();
     assertEquals(Time.Resolution.Type.DAY, methodSchedule.unit());
     assertEquals(2, methodSchedule.step());
     assertTrue(methodSchedule.overridable());
+    assertNull(methodSchedule.minStep());
     assertNull(prototype(Static.class, null).getOccurrenceSchedule());
   }
 }

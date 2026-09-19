@@ -159,7 +159,7 @@ public class DataflowCompiler {
       } else if (child instanceof Observable) {
         references.add(
             compileReference(
-                resolutionGraph.getResolved(edge.observationId), childCoverage, edge.localName));
+                resolutionGraph.getResolved(edge.observationId), childCoverage, edge.localName, edge.scheduleRequest));
       }
     }
 
@@ -196,6 +196,13 @@ public class DataflowCompiler {
 
       // There can be 1+ nodes: if OBS it's the result of a RESOLVE, otherwise a MODEL.
       if (child instanceof Model model) {
+        if (edge.scheduleNegotiation != null) {
+          var encoded = org.integratedmodelling.klab.utilities.Utils.Json.asString(edge.scheduleNegotiation);
+          var previous = observationActuator.getData().putIfAbsent(
+              org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY, encoded);
+          if (previous != null && !previous.equals(encoded))
+            throw new UnsupportedOperationException("Competing occurrence schedule negotiations");
+        }
         if (edge.processPlan != null) {
           var encoded = org.integratedmodelling.klab.utilities.Utils.Json.asString(edge.processPlan);
           var previous = observationActuator.getData().putIfAbsent(
@@ -228,7 +235,7 @@ public class DataflowCompiler {
             .getChildren()
             .add(
                 compileReference(
-                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
+                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName, edge.scheduleRequest));
       }
     }
 
@@ -290,7 +297,7 @@ public class DataflowCompiler {
             .getChildren()
             .add(
                 compileReference(
-                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName));
+                    resolutionGraph.getResolved(edge.observationId), coverage, edge.localName, edge.scheduleRequest));
       }
     }
 
@@ -386,6 +393,14 @@ public class DataflowCompiler {
       throw new KlabIllegalStateException("Occurrence compilation requires a portable actuator");
     }
     try {
+      var accepted = actuator.getData().get(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY);
+      if (accepted != null) {
+        var negotiation = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(accepted.toString(),
+            org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.class);
+        if (!model.getUrn().equals(negotiation.model())) throw new KlabIllegalStateException("Schedule model mismatch");
+        implementation.setExecutionRole(role);
+        return negotiation.effective();
+      }
       var declared = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromModel(model.getAnnotations());
       var javaSchedules = new ArrayList<org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>();
       for (var computation : model.getComputation()) {
@@ -397,6 +412,10 @@ public class DataflowCompiler {
         }
       }
       var selected = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.select(declared, javaSchedules);
+      if ((declared != null && (declared.minStep() != null || declared.maxStep() != null || !declared.overridable()))
+          || javaSchedules.stream().anyMatch(s -> s.minStep() != null || s.maxStep() != null))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+            "Constrained occurrence requires accepted candidate negotiation");
       if (model.getComputation().isEmpty()) {
         throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
             "Scheduled occurrence model has no executable computation");
@@ -466,8 +485,11 @@ public class DataflowCompiler {
     return result;
   }
 
-  private Actuator compileReference(Observation observation, Coverage coverage, String localName) {
+  private Actuator compileReference(Observation observation, Coverage coverage, String localName,
+      org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request request) {
     var ret = new ActuatorImpl();
+    if (request != null) ret.getData().put(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.REQUEST_KEY,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(request));
     ret.setObservation(Observation.forTransport(observation));
     ret.setId(observation.getId());
     ret.setName(localName == null ? observation.getObservable().getName() : localName);

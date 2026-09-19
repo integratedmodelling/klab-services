@@ -7,6 +7,8 @@ the feature; proposed representations and explicitly open decisions are not clai
 behavior. S1 schedule metadata, the bounded S2 registration subset, and S3 semantic/bearer bindings
 are now present. Temporal execution remains gated pending S4/S5. See the implementation records
 for verification and remaining work.
+S3.1 now implements the dependency-level schedule override and admissible cadence range contract in
+Section 3.2 for bounded contexts. Parser/live-service acceptance remains a separate verification gate.
 
 Read with [observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md),
 [observable semantics](OBSERVABLES.md), [ontology declarations](ONTOLOGY_LANGUAGE.md),
@@ -158,6 +160,9 @@ Every executable occurrent resolver or event instantiator must have an explicit 
 Java contextualizer metadata, model `@time`, or both. Observation geometry alone is not a substitute.
 Missing specification is a runtime validation error until, and also after, the future k.IM semantic
 validator diagnoses it earlier. Reject invalid candidates before activating any schedule.
+An explicit `@time` on a model's process dependency may request an override of that process's
+schedule, subject to every downstream lock and declared acceptance range (Section 3.2). It does not
+repair an otherwise missing schedule declaration on the process implementation.
 
 | Java declaration | Model `@time` | Effective schedule |
 |---|---|---|
@@ -186,10 +191,11 @@ Proposed normalized contract, independent of source syntax:
 
 | Field | Meaning |
 |---|---|
-| Schema version and source | Versioned representation; Java/model origin and diagnostic location |
+| Schema version and source | Versioned representation; Java/model/dependency origin and diagnostic location |
 | Bounds | Explicit start and finite end, or a typed open end; allow context-relative declarations only through deterministic binding |
 | Cadence and phase | Positive step, temporal unit/resolution, and anchor; distinguish fixed duration from calendar recurrence |
-| Override policy | Explicit Java lock/permission; default should permit model overrides |
+| Override policy | Java and process-model lock/permission; default permits upstream overrides; lower-level locks cannot be removed |
+| Admissible cadence | Optional inclusive minimum/maximum step, retained separately from default and requested cadence; all applicable constraints intersect |
 | Bound support | Intersection with model, actuator and observation support; preserve original declaration separately |
 | Plan identity | Stable actuator/plan revision and execution role, not a live executor or Java scope |
 
@@ -247,6 +253,93 @@ Validate every participating contextualizer's limitations and locked declaration
 locked schedules are errors. Do not register each utility/filter function as an independent clock.
 Keep general contextualization-chain and data-type validation in the same diagnostic pipeline as
 semantic validation; this plan does not imply that the entire future validator already exists.
+
+### 3.2 Dependency-requested schedules and acceptable cadence ranges
+
+**Accepted contract addition; bounded implementation in S3.1.** A model may attach `@time` directly to
+a process dependency observable. That annotation requests the schedule for that particular dependency
+resolution. For example, the Region model may request a daily Erosion dependency even though the
+Erosion model defaults to monthly execution, provided the selected implementation accepts daily
+execution. The annotation belongs to the dependency occurrence in the requesting model, not to the
+Erosion concept globally or to every process inside that Region.
+
+Precedence for the effective schedule is **dependency request > process-model declaration > Java
+contextualizer default**. This orders candidate values, not authority to remove constraints. Check
+the final choice against all applicable declarations in the computation chain. A model cannot unlock
+a Java contextualizer, and a dependency cannot unlock either a process model or its contextualizers.
+An equivalent request is redundant and may be accepted against a lock; a different request is rejected
+even if it falls inside an otherwise acceptable cadence range. An absent dependency annotation retains
+the existing behavior. The process implementation must still provide a valid default schedule through
+its model or Java metadata.
+
+The dependency request uses the same typed Quantity `step` and optional `start`/`end` fields as the
+existing annotation. Preserve whole-schedule replacement: omitted bounds inherit the context bounds,
+not the lower declaration's explicit bounds. Bind the result to the available contextual/model support
+using the existing rules. Acceptance ranges and locks are separate constraints and are never erased
+by replacement. Dependency requests do not declare `minStep`, `maxStep` or `overridable` and cannot
+widen an implementation's acceptance envelope. Exact annotation placement must be verified against
+the k.IM grammar before publishing an executable namespace example.
+
+The process model may declare an inclusive acceptable cadence interval in addition to its default:
+
+```text
+@time(step=1.month, minStep=1.day, maxStep=1.month)
+```
+
+Here `step` is the default execution interval. `minStep` is the shortest accepted interval (highest
+frequency), and `maxStep` is the longest (lowest frequency). All three use temporal Quantities.
+Either endpoint may be absent, meaning no additional limit on that side; both absent preserve the
+existing unconstrained override behavior. The default and every requested step must satisfy all
+declared limits. Range endpoints must be positive and supported by Time, and an inverted or empty
+intersection is an error. A range is not a request to choose an arbitrary cadence, and resolution
+must not clamp, round or silently fall back from a caller's requested step.
+
+The extended model contract also admits `overridable=false` (default true) so a process author can
+lock the declared schedule even without a Java contextualizer. A lock always takes precedence over
+the flexibility suggested by a range. Java metadata must express the same acceptance contract:
+annotation fields are `timeMinStep`/`timeMinStepUnit` and `timeMaxStep`/`timeMaxStepUnit`,
+using positive multipliers and `Time.Resolution.Type`, with an absent-endpoint sentinel matching the
+existing `timeStep` convention. Each endpoint carries its own unit; the model's default cadence unit
+does not reinterpret a range endpoint. Portable metadata retains default, lock, admissible interval,
+request, effective schedule, and provenance separately. Version the representation and preserve
+legacy declarations with no range or dependency request.
+
+| Default and acceptance contract | Dependency request | Result |
+|---|---|---|
+| Monthly, overridable, 1.day through 1.month | 1.day | Daily execution |
+| Monthly, overridable, 1.day through 1.month | 1.hour | Reject: finer than permitted |
+| Monthly, overridable, 1.day through 1.month | 2.month | Reject: coarser than permitted |
+| Monthly, locked, 1.day through 1.month | 1.day | Reject: locked schedule |
+| Monthly, locked | Equivalent monthly schedule | Accept as redundant; retain lock |
+| Monthly, overridable, no range | No request | Preserve monthly default |
+| Any model range intersecting a narrower Java range | Outside the Java range | Reject; model cannot widen Java acceptance |
+
+Cadence comparison must use Time's actual temporal semantics. Fixed durations may be compared exactly
+after normalization. Calendar and mixed calendar/fixed quantities must not use indicative millisecond
+spans: validate by native calendar advancement at the effective recurrence anchors over the bounded
+support, including leap years and month-end behavior. The requested full step must remain inside the
+limits at every applicable anchor; a clipped final transition does not redefine its nominal cadence.
+For example, 1.month and 30.day are not universally equivalent. If comparison cannot be established
+for the supported context, reject with an explicit diagnostic rather than approximate. A range does
+not imply that accepted steps must be multiples of the default or of the context's grid step.
+
+Validation is part of **candidate model resolution**, before a candidate is accepted, observations
+are initialized, or a registration is activated. An otherwise applicable model whose lock/range
+rejects the request is ineligible; continue with other candidates. If none can satisfy the request,
+report the requesting model, dependency name, requested schedule, rejecting model/contextualizer,
+and conflicting lock or limits. Revalidate the accepted portable plan at the runtime boundary.
+Keep these checks usable by the future language/semantic validator as well.
+
+Carry the request explicitly on its resolution edge/constraint and accepted actuator plan. Do not
+recover it by merging concept, observation or model annotations. It applies only to the direct
+process dependency; that process's own dependencies receive no implicit propagated override.
+Independent request sites, including same-named processes on different bearers, must remain distinct.
+Query/reference hits and cached resolutions must check schedule compatibility, not just semantic
+identity and coverage. For a process observation already registered under a different schedule,
+reject incompatible reuse until explicit transactional rescheduling exists; never mutate a shared
+registration as a side effect of resolving another model. Preserve the accepted request and
+constraints across transport, persistence, executor restoration and replay, without rerunning model
+selection against possibly changed defaults.
 
 ## 4. Registration, execution, and recovery
 
@@ -394,7 +487,7 @@ Record the chosen alternative, compatibility impact, and test evidence here as s
 
 | ID | Decision and recommendation | Gate |
 |---|---|---|
-| O1 | S1 fixes Quantity cadence, matching Java units, whole-schedule override and inherited context bounds. Remaining: dispatch boundaries, instantiation instant, partial periods, point events, calendar anchor/time-zone edge cases and open-time policy | Metadata in S1; execution decisions before S4; open-time extensions in S8 |
+| O1 | S1/S3.1 implement Quantity cadence, matching Java units, whole-schedule overrides, dependency requests, sticky locks and intersected cadence ranges in bounded contexts. Remaining: parser/live acceptance, dispatch boundaries, instantiation instant, partial periods, point events, additional calendar/time-zone edge cases and open-time policy | Metadata in S1/S3.1; execution decisions before S4; open-time extensions in S8 |
 | O2 | Journal/receipt storage, atomic commit/outbox boundary, monotonic ordering, plan version retention, checkpoint and client-history retention | S2 |
 | O3 | `AFFECTS` role/direction mapping, reasoner closure, `creates` target resolution, prior-state reads, competing writers and feedback | S3 before semantic dispatch |
 | O4 | Atomic event batch versus partial success, future-start activation, cascade limits, user-facing consequence criterion and message schema | S6/S7 |
@@ -618,11 +711,88 @@ mvn -o -pl klab.services.resolver.server,klab.services.runtime,klab.services.rea
 Deploy updated API/Common, Reasoner and Resolver components together: typed influence discovery adds
 the Reasoner `/influences` endpoint, and the updated core ontology declares marksQuality's implication
 and range. Reload the worldview under that Reasoner before the live staging check. Temporal clocks
-and client consequences remain disabled; S4 is the next implementation stage.
+and client consequences remain disabled. The subsequent Section 3.2 contract introduces S3.1 as a
+prerequisite to S4.
+
+### S3.1 — Dependency schedule requests and cadence negotiation
+
+**Depends on:** S1/S3 and Section 3.2. **Deliver:** dependency-observable `@time` extraction with lexical
+provenance; explicit request propagation; model/Java acceptance-range and lock metadata; final-choice
+validation during candidate selection; portable accepted schedule and constraints; schedule-aware
+query/cache/reference reuse. This extends the metadata and resolution contract without enabling clocks.
+
+**Implementation record (2026-09-19):** implemented for finite, bounded contexts; temporal dispatch
+remains disabled. `OccurrenceSchedule` version 2 adds DEPENDENCY provenance and independently typed
+inclusive endpoints; version 1 remains readable. `OccurrenceNegotiation` version 1 retains the
+requesting model, dependency name and observable URN, selected model, every model/Java declaration,
+and effective schedule. Provenance identifies the lexical request site; it does not claim parser
+source-span tracking.
+
+`ResolutionCompiler` extracts only the direct process dependency's own annotation. A lexical graph
+boundary prevents propagation into sibling or nested dependencies. Candidate negotiation occurs
+before resolving quality inputs; incompatible candidates produce diagnostics and the selection loop
+tries another model. Every default is checked against its declared range, the model default against
+the downstream ranges, and the final request against every range and lock. Whole-schedule replacement
+retains no omitted lower-precedence bounds. A dependency cannot supply a missing implementation default.
+
+Exact fixed-duration comparisons and native Time calendar advancement implement range/equivalence
+checks, including full final steps and month-end/leap behavior. Calendar or mixed comparisons exceeding
+1,000,000 recurrence anchors fail explicitly; they are never approximated. Java class/method metadata
+uses `timeMinStep`/`timeMinStepUnit`, `timeMaxStep`/`timeMaxStepUnit` and `timeOverridable`; -1 denotes
+an absent endpoint. Class defaults and method replacement keep the existing registry precedence.
+
+Query and reference reuse validate explicit requests against retained constraints and reject implicit
+rescheduling or legacy registrations lacking evidence. Cache contributions without evidence cannot
+satisfy an explicit request (the existing graph-local `getResolving` cache is still unimplemented).
+Reference actuator data retain each new requesting site's provenance. Accepted negotiation JSON travels
+in actuator data, is persisted by the existing graph codec and full occurrence-plan snapshot, and is
+committed to observation metadata with rollback restoration. Runtime activation and executor restoration
+revalidate the evidence without selecting models again. Direct compilation without candidate evidence
+rejects newly constrained declarations. No timer, quality transition execution or client event dispatch
+is enabled by these changes.
+
+**Verification:** the automated suite covers precedence, redundant locked requests, inclusive endpoints,
+intersected/disjoint limits, malformed declarations, whole-schedule bounds, calendar and fixed cadence
+comparisons, candidate fallback, lexical isolation, reference provenance, conflicting reuse, portable
+Java/JSON metadata, actuator graph encoding, registration snapshots/restoration, and runtime rejection
+of inconsistent plans. Existing process ownership/INIT, `creates`, `marks`, CONNECTION and CLASSIFICATION
+regressions are included. **79 tests passed, zero failures/errors/skips**, using host Java 21 and the
+offline Maven cache:
+
+```powershell
+mvn -o -pl klab.services.resolver.server,klab.services.runtime,klab.services.reasoner.server -am '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=ProcessModelBindingsTest,ProcessOwnershipTest,ProcessInfluenceTest,ResolverControllerScopeTest,OccurrenceRegistrationTest,OccurrenceExecutorTest,OccurrenceCapabilityTest,OccurrenceScheduleTest,ComponentRegistryOccurrenceTest,OccurrenceCompilationTest,ClassificationTransactionTest,DigitalTwinCommitTest,ActuatorPersistenceTest,ConnectionExecutionTest,ConnectionContextualizerTest,ConnectionTransportTest,ClassificationExecutionTest,ClassificationPersistenceTest,SemanticUpdateTargetsTest,ResolutionCompilerQueryTest,WorldviewOwlRestrictionTest,WorldviewDeclarationSupportTest,OccurrenceNegotiationTest,ScheduleNegotiationResolutionTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+**Parser coverage:** inspected the sibling `klab-languages` grammars: k.IM model dependencies use
+`AnnotatedObservable`, whose annotations precede the observable. Java tests construct typed annotations;
+they do not execute Xtext parsing or the source adapter. Real-file parsing of dependency `@time`,
+Quantity endpoints and model locks in the test project remains unverified.
+
+**Live coverage:** no running-service namespace test, live Neo4j round trip or service-process restart
+was performed. Persistence/restoration coverage uses the automated graph codec and scheduler fixtures.
+The staging namespace remains the live acceptance gate before enabling S4 dispatch.
+
+**Gate:** default-preserving absence; direct dependency precedence; locked Java/model schedules;
+equivalent redundant requests; minimum/maximum equality and out-of-range rejection; intersected and
+disjoint chain limits; valid defaults; malformed/duplicate declarations; finite fixed/calendar/mixed
+comparison including leap/month-end anchors; no rounding or range widening; rejected candidate followed
+by an acceptable alternative; distinct request sites/bearers; cached reference compatibility; rejection
+of conflicting reuse of an active registration; full request/constraint JSON, graph and restart round
+trips. Confirm actual k.IM dependency-annotation parsing in the test project. Preserve ordinary quality
+INIT and the `creates` no-observation/no-INIT rule throughout rejected and successful resolution.
+
+**Prompt:** “Implement S3.1 of docs/OCCURRENCE.md before S4. Support @time on process dependency
+observables, preserving request provenance and dependency-local scope. Add inclusive minStep/maxStep
+acceptance ranges and model locks with equivalent portable Java metadata. Validate the final requested
+schedule against every downstream lock and range during candidate model resolution; try another model
+when a candidate cannot comply. Preserve whole-schedule replacement and native calendar semantics.
+Make cached/reference reuse schedule-aware, reject implicit rescheduling, version and persist the
+accepted request and constraints, and test Section 3.2's precedence, bounds, transport and isolation
+contracts. Keep temporal dispatch disabled and report parser/live-test coverage separately.”
 
 ### S4 — Deterministic simulated dispatch and catch-up
 
-**Depends on:** S2/S3. **Deliver:** connect TimeEmitter to scheduler dispatch; match schedules and
+**Depends on:** S2/S3/S3.1. **Deliver:** connect TimeEmitter to scheduler dispatch; match schedules and
 support; construct fresh transactional scopes; pass temporal geometry to local/remote executors;
 commit receipts and advance watermarks; restore and replay only required work with backpressure.
 

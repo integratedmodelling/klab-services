@@ -135,6 +135,10 @@ class OccurrenceRegistrationTest {
 
   @Test void registrationCommitsAfterInputInitAndRestartsWithoutRunningAnything() throws Exception {
     try (var f = new Fixture()) {
+      var declaration = f.plan.getOccurrenceSchedules().get(0);
+      var negotiation = new OccurrenceNegotiation(1, "test:model", null,
+          List.of(new OccurrenceNegotiation.Declaration("test:model", declaration)), declaration);
+      f.plan.getData().put(OccurrenceNegotiation.DATA_KEY, Utils.Json.asString(negotiation));
       f.transaction.registerExecutors();
       assertTrue(f.scheduler.submit(f.process, f.scope));
       assertEquals(1, f.qualityInit.get());
@@ -142,9 +146,13 @@ class OccurrenceRegistrationTest {
       assertTrue(f.scheduler.getOccurrenceRegistrations().isEmpty());
       assertEquals(900, f.transaction.commit());
       assertNotNull(f.durableRegistration);
+      assertEquals(negotiation, Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceNegotiation.DATA_KEY).toString(),
+          OccurrenceNegotiation.class));
       var registration = f.scheduler.getOccurrenceRegistrations().get(f.process.getId());
       assertEquals(Time.Resolution.Type.MONTH, registration.schedules().getFirst().bound().unit());
       var restoredPlan = Utils.Json.parseObject(registration.plan(), Actuator.class);
+      assertEquals(negotiation, Utils.Json.parseObject(restoredPlan.getData().get(OccurrenceNegotiation.DATA_KEY).toString(),
+          OccurrenceNegotiation.class));
       assertEquals(f.quality.getId(), restoredPlan.getChildren().getFirst().getObservation().getId());
       assertEquals("elevation", restoredPlan.getChildren().getFirst().getName());
       assertThrows(UnsupportedOperationException.class, () -> f.scheduler.switchToRealTime(-1));

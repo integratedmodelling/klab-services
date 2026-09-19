@@ -38,6 +38,15 @@ public @interface Contextualizer {
    */
   Time.Resolution.Type timeUnit() default Time.Resolution.Type.MILLISECOND;
 
-  /** Whether a model's @time may replace this schedule. */
+  /** Whether model or dependency @time may replace this schedule. Ranges never remove a lock. */
   boolean timeOverridable() default true;
+
+  /** Inclusive shortest accepted interval; -1 leaves this endpoint unconstrained. */
+  long timeMinStep() default -1L;
+  /** Native unit for the minimum, independent of the default cadence unit. */
+  Time.Resolution.Type timeMinStepUnit() default Time.Resolution.Type.MILLISECOND;
+  /** Inclusive longest accepted interval; -1 leaves this endpoint unconstrained. */
+  long timeMaxStep() default -1L;
+  /** Native unit for the maximum, independent of the default cadence unit. */
+  Time.Resolution.Type timeMaxStepUnit() default Time.Resolution.Type.MILLISECOND;
 }

@@ -523,6 +523,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var id = UUID.randomUUID().toString();
     var previous = observation.getMetadata().get(OccurrenceRegistration.METADATA_KEY);
     var previousRegistered = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
+    var negotiationKey = org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY;
+    var previousNegotiation = observation.getMetadata().get(negotiationKey);
     Runnable release =
         () -> {
           synchronized (pending) {
@@ -535,6 +537,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         () -> {
           restoreMetadata(observation, OccurrenceRegistration.METADATA_KEY, previous);
           restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previousRegistered);
+          restoreMetadata(observation, negotiationKey, previousNegotiation);
           release.run();
         });
     root.update(observation);
@@ -568,6 +571,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
               .getMetadata()
               .put(OccurrenceRegistration.METADATA_KEY, Utils.Json.asString(registration));
           observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
+          if (plan.getData().containsKey(negotiationKey))
+            observation.getMetadata().put(negotiationKey, plan.getData().get(negotiationKey));
         });
     root.afterCommit(
         () -> {

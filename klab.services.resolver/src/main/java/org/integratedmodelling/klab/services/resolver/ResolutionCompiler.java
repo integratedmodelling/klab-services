@@ -76,7 +76,12 @@ public class ResolutionCompiler {
       throw new KlabIllegalStateException(
           "Resolver context was not declared before starting observation resolution");
     }
-    return resolve(observation, scope, contextGraph.createAttempt());
+    var result = resolve(observation, scope, contextGraph.createAttempt());
+    if (result.isEmpty()) {
+      for (var diagnostic : notifications) result.getNotifications().add(
+          org.integratedmodelling.klab.api.services.runtime.Notification.error(diagnostic.getMessage().toString()));
+    }
+    return result;
   }
 
   public List<Notification> getNotifications() {
@@ -167,6 +172,8 @@ public class ResolutionCompiler {
       QueryMatch suppliedQuery) {
 
     if (observation.getId() > 0) {
+      ScheduleNegotiationSupport.checkReuse(observation, parentGraph.scheduleRequest,
+          GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime());
       return parentGraph;
     }
 
@@ -181,6 +188,7 @@ public class ResolutionCompiler {
     var query =
         suppliedQuery == null ? query(observation.getObservable(), scale, scope) : suppliedQuery;
     if (query.hasCoverage() && query.coverage().isComplete()) {
+      ScheduleNegotiationSupport.checkReuse(query.reference(), parentGraph.scheduleRequest, scale.getTime());
       var ret = parentGraph.createChild(observation, scale);
       ret.addReference(query.reference(), query.coverage());
       return ret;
@@ -196,6 +204,11 @@ public class ResolutionCompiler {
     }
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
+      if (parentGraph.scheduleRequest != null) {
+        // A semantic/coverage cache entry alone cannot prove occurrence compatibility.
+        if (!(resolvable.getFirst() instanceof Observation cached)) continue;
+        ScheduleNegotiationSupport.checkReuse(cached, parentGraph.scheduleRequest, scale.getTime());
+      }
       if (resolvable.getSecond().getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
         continue;
       }
@@ -295,7 +308,7 @@ public class ResolutionCompiler {
                 resolve(
                     operation.getObservable(),
                     contextualizedScope.getSecond(),
-                    ret,
+                    ret.withScheduleRequest(null),
                     contextualizedScope.getFirst());
           if (observableResolution.isEmpty() || !observableResolution.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
@@ -504,6 +517,12 @@ public class ResolutionCompiler {
     }
 
     updateServiceInfo(requirements, ret, scope);
+    try {
+      ret.scheduleNegotiation = ScheduleNegotiationSupport.negotiate(model, ret, scope, scaleToCover.getTime());
+    } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException rejected) {
+      scheduleRejected(model, ret.scheduleRequest, rejected, scope);
+      return ResolutionGraph.empty();
+    }
     ret.setDependencies(Utils.Resources.merge(requirements, ret.getDependencies()));
 
     /*
@@ -528,11 +547,23 @@ public class ResolutionCompiler {
           && binding.effect()
               == org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.Effect.CREATED) continue;
 
-      var dependencyResolution =
-          dependency.getContextualization() != null
-                  && dependency.getContextualization().modifiesExistingObservations()
-              ? resolveOperation(dependency, scaleToCover, ret, scope, dependency)
-              : resolve(dependency, scaleToCover, ret, scope);
+      ResolutionGraph dependencyResolution;
+      try {
+        var requestedSchedule = dependency.is(SemanticType.PROCESS)
+            ? org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromDependency(dependency.getAnnotations()) : null;
+        var request = requestedSchedule == null ? null
+            : new org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request(
+                model.getUrn(), ProcessModelBindings.name(dependency), dependency.getUrn(), requestedSchedule);
+        var dependencyGraph = ret.withScheduleRequest(request);
+        dependencyResolution =
+            dependency.getContextualization() != null
+                    && dependency.getContextualization().modifiesExistingObservations()
+                ? resolveOperation(dependency, scaleToCover, dependencyGraph, scope, dependency)
+                : resolve(dependency, scaleToCover, dependencyGraph, scope);
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException rejected) {
+        scheduleRejected(model, ret.scheduleRequest, rejected, scope);
+        return ResolutionGraph.empty();
+      }
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
       //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCoverage merges to
@@ -553,6 +584,19 @@ public class ResolutionCompiler {
     }
 
     return ret;
+  }
+
+  private void scheduleRejected(Model model,
+      org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request request,
+      RuntimeException failure, ContextScope scope) {
+    var message = "Rejected occurrence schedule in model " + model.getUrn()
+        + (request == null ? "" : " for " + request.model() + "/" + request.dependency())
+        + ": " + failure.getMessage();
+    var diagnostic = new Notification();
+    diagnostic.setMessage(message);
+    diagnostic.setLevel(org.integratedmodelling.klab.common.data.Level.WARNING);
+    notifications.add(diagnostic);
+    scope.warn(message);
   }
 
   private Pair<ContextScope, Scale> contextualizeScope(
@@ -588,6 +632,7 @@ public class ResolutionCompiler {
     }
     var query = query(observable, contextualizedScope.getSecond(), contextualizedScope.getFirst());
     if (query.hasCoverage() && query.coverage().isComplete()) {
+      ScheduleNegotiationSupport.checkReuse(query.reference(), graph.scheduleRequest, contextualizedScope.getSecond().getTime());
       return graph.createReference(observable, query.reference());
     }
 
@@ -603,6 +648,7 @@ public class ResolutionCompiler {
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
     } else if (observation.getId() > 0) {
+      ScheduleNegotiationSupport.checkReuse(observation, graph.scheduleRequest, contextualizedScope.getSecond().getTime());
       return graph.createReference(observable, observation);
     }
 
@@ -613,7 +659,7 @@ public class ResolutionCompiler {
   /** Query the runtime without changing its state and normalize the result for resolution. */
   QueryMatch query(Observable observable, Scale requestedScale, ContextScope scope) {
 
-    if (observable.is(SemanticType.QUALITY)) {
+    if (observable.is(SemanticType.QUALITY) || observable.is(SemanticType.PROCESS)) {
       var probe = new Observation.NaiveBuilder(observable, scope);
       probe.geometry(requestedScale.as(Geometry.class));
       var existing = scope.getObservation(probe.make());
