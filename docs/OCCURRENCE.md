@@ -39,6 +39,46 @@ lexical constraints, geometry, and bindings while resolving in that bearer's sco
 relationship can be that bearer; neither endpoint is implicitly substituted for the relationship.
 Explicitly different dependency inherence must be honored or diagnosed, never silently rebound.
 
+### 1.1 Inline scalar expressions for process outputs
+
+k.IM process models must support inline scalar expressions for inherent variables, without requiring
+a Java process contextualizer. The primary model observable is the process; additional observables
+listed after it declare the model's outputs. A named quality output belongs to the process's inherent
+bearer, not to the process itself.
+
+| Process-model assignment | Required behavior |
+|---|---|
+| `set to []` | Illegal: the implicit target is the primary process, which cannot be assigned a scalar value |
+| `set x to []` | Accepted when `x` identifies a known output observable quality listed after the primary process observable |
+| Named assignment to the process, a non-quality, an unknown name, or an input-only dependency | Reject with a target-specific diagnostic |
+
+Here `[]` denotes an inline scalar-expression body, not a prescribed empty expression. Resolve `x`
+against the model's declared output names, retain its observable semantics and bearer binding, and
+validate the expression's inputs and result against the target quality's data contract. Ambiguous
+output names must be diagnosed. Enforce these rules at runtime validation and expose the same
+diagnostics through the future k.IM semantic/contextualization-chain validator.
+
+Compile the expression into the resolved executable plan and evaluate it over the localized geometry
+of the target quality at the current scheduled time. A scalar expression is evaluated at the relevant
+quality locations; it does not assign a scalar to the process or necessarily to the whole quality
+extent. Bind inherent input variables at those locations using the required mediation and causal
+state versions. Preserve the target's spatial and other support while locating its temporal extent
+to the current transaction. Output bindings and expression definitions must survive actuator
+persistence, transport, and executor restoration.
+
+Inline assignments obey the same schedule, INIT exclusion, influence, transaction, new Data/storage,
+replay and client-update contracts as other process computations. With no Java schedule declaration,
+the model must supply `@time`. Integrate the expression into the output quality's execution path so
+one scheduled computation produces one committed state, without also scheduling a duplicate output
+computation. Multi-output read/write ordering follows the causal-state policy in Section 5; textual
+assignment order must not accidentally expose partially written current-time state.
+
+This is a required early execution path for simple processes and deterministic test cases, to be
+enabled before sophisticated Java process contextualizers. Those contextualizers will match the
+relevant scanners by name or annotation after split and fill-curve negotiation. Inline execution
+must preserve the equivalent quality-location and data-layout contract using the scalar compilation
+machinery, without depending on completion of that later Java scanner-matching feature.
+
 ## 2. Repository baseline and gaps
 
 The following findings come from source inspection, not an end-to-end temporal test run.
@@ -326,16 +366,21 @@ Test rollback and restart; do not enable temporal dispatch until these gates pas
 **Depends on:** S1/S2 and O3. **Deliver:** process model inputs resolve on their inherent bearer;
 functional/structural hosting rules are explicit; reasoner relationships bind to typed concrete
 influence edges and creation obligations; prerequisite and causal traversals are separated.
+Bind additional process-model output qualities to their bearer and validate named inline assignment
+targets as specified in Section 1.1; reject implicit assignment to the primary process.
 
 **Gate:** process on subject, event, and functional relationship; structural-host rejection; no
 process-owned quality; same-named qualities on different bearers stay distinct; named/optional inputs
 survive transport; inherited semantic effects and `creates` work without spurious targets; feedback
 reads the prior slice; same-time cycles and unsupported competing writers fail deterministically.
+Include accepted `set x to []` for a declared output quality and rejected `set to []`, unknown,
+ambiguous, input-only and non-quality targets; preserve output bindings across plan transport.
 
 **Prompt:** “Implement S3 of docs/OCCURRENCE.md. Bind process quality dependencies to the inherent
 substantial/event while preserving explicit restrictions. Normalize and persist semantic AFFECTS
 roles using Reasoner evidence, separating them from computational prerequisites. Close O3, test
-functional-relationship hosting and temporal feedback, and preserve CONNECTION identity behavior.”
+functional-relationship hosting and temporal feedback, validate inline process output assignments
+under Section 1.1, and preserve CONNECTION identity behavior.”
 
 ### S4 — Deterministic simulated dispatch and catch-up
 
@@ -357,15 +402,24 @@ an uninterrupted reference run. Keep unsupported real-time/calendar behavior exp
 
 **Depends on:** S4. **Deliver:** recompute affected qualities at transaction time, allocate new
 temporal Data/storage, retain old states, extend committed coverage, and publish fetchable deltas.
+Compile and execute inline `set x to []` process assignments over each output quality's localized
+current-time geometry. Deliver this simple-process path before advanced Java process contextualizers
+and their scanner matching by name/annotation after split and fill-curve negotiation.
 
 **Gate:** assert distinct Data/shards across transitions, unchanged historical values, exact event
 geometry in local/remote invocations, durable flush before descriptor commit, no duplicate retry
 slice, rollback/file cleanup, correct histogram/geometry extension, and replay-equivalent storage.
+Use an inline process model with model `@time` and no Java contextualizer. Check per-location values
+over nonuniform inputs and differing output supports, correct prior-state reads, multiple named
+quality outputs, expression type errors, restored expression execution, and no duplicate output
+computation. Verify location/value correspondence under supported split and fill-curve configurations.
 
 **Prompt:** “Implement S5 of docs/OCCURRENCE.md. Follow semantic consequences into resolved quality
 actuators with transition geometry, persist new temporal states atomically with completion and
 geometry deltas, and preserve historical data. Verify storage contents and Data links across retry,
-rollback and restart rather than testing invocation counts alone.”
+rollback and restart rather than testing invocation counts alone. Implement Section 1.1's inline
+scalar process assignments as the first executable fixture, with named output binding and localized
+quality geometry; do not defer this path until advanced Java contextualizers are available.”
 
 ### S6 — Scheduled event instantiation and observed-event feedback
 
@@ -419,8 +473,12 @@ across the deployed services and IDE. Report evidence without treating unavailab
 Use a small deterministic fixture: a substantial with initialized quality Q; a process on that
 substantial that reads Q's prior state; a two-step schedule; an event instantiator emitting zero
 events on one transition and one event on another; that event affects Q and has a future end.
-Supply explicit deterministic quality algorithms, so semantic declarations are not mistaken for
-numerical models. Repeat with a functional relationship bearer and reject a structural bearer.
+Implement the first process fixture through k.IM inline `set x to []`, with `x` declared as an output
+quality after the primary process observable and an explicit model `@time`. Use a deterministic scalar
+expression over nonuniform inherent inputs to verify computation at each quality location and time;
+no Java process contextualizer is required. Include a rejected `set to []` fixture. Repeat with a
+functional relationship bearer and reject a structural bearer. Add advanced Java scanner-bound
+contextualizers later as parity tests after split and fill-curve negotiation is available.
 
 Compare uninterrupted execution against late resolution, executor-cache eviction, and service
 restart after the first commit. Assert equal values, temporal support, causal outcomes and logical
