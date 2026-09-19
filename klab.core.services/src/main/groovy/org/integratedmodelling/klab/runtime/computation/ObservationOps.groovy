@@ -22,12 +22,12 @@ trait ObservationOps {
 
         // TODO all these pieces (check out 0.11)
         double getMax() {
-            def time = state.time.getTimeType() == Time.Type.INITIALIZATION ? 0 : state.time.getStart().milliseconds
+            def time = state.time.getTimeType() == Time.Type.INITIALIZATION ? 0L : state.time.getStart().milliseconds
             delegate.getHistograms().get(time)?.max
         }
 
         double getMin() {
-            def time = state.time.getTimeType() == Time.Type.INITIALIZATION ? 0 : state.time.getStart().milliseconds
+            def time = state.time.getTimeType() == Time.Type.INITIALIZATION ? 0L : state.time.getStart().milliseconds
             delegate.getHistograms().get(time)?.min
         }
 

@@ -65,28 +65,30 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   }
 
   private List<Bound> bounds(Concept concept) {
-    return cache.computeIfAbsent(
-        concept.getUrn(),
-        key -> {
-          var result = new ArrayList<Bound>();
-          var root = owl.getOWLClass(concept);
-          if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
-          visit(root, false, new HashSet<>(), result);
-          // Include inferred superclasses as well as asserted/equivalent class definitions.
-          if (owl.hasReasoner()) {
-            owl.flushReasoner();
-            for (var parent : owl.getSuperClasses(root, false).getFlattened())
-              if (!parent.isOWLThing() && !parent.equals(root))
-                visit(parent, true, new HashSet<>(), result);
-          }
-          return result.stream()
-              .distinct()
-              .sorted(
-                  Comparator.comparing((Bound b) -> b.role().name())
-                      .thenComparing(Bound::inherited)
-                      .thenComparing(b -> b.filler().toString()))
-              .toList();
-        });
+    synchronized (owl) {
+      return cache.computeIfAbsent(
+          concept.getUrn(),
+          key -> {
+            var result = new ArrayList<Bound>();
+            var root = owl.getOWLClass(concept);
+            if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
+            visit(root, false, new HashSet<>(), result);
+            // Include inferred superclasses as well as asserted/equivalent class definitions.
+            if (owl.hasReasoner()) {
+              owl.flushReasoner();
+              for (var parent : owl.getSuperClasses(root, false).getFlattened())
+                if (!parent.isOWLThing() && !parent.equals(root))
+                  visit(parent, true, new HashSet<>(), result);
+            }
+            return result.stream()
+                .distinct()
+                .sorted(
+                    Comparator.comparing((Bound b) -> b.role().name())
+                        .thenComparing(Bound::inherited)
+                        .thenComparing(b -> b.filler().toString()))
+                .toList();
+          });
+    }
   }
 
   private void visit(

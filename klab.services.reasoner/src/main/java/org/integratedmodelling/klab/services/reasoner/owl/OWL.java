@@ -90,6 +90,8 @@ public class OWL {
   private boolean reasonerSynchronizing = false;
   private Ontology mergedReasonerOntology;
   private OWLReasoner reasoner;
+  // HermiT queries mutate tableau state. Queries, flush, creation and disposal must
+  // share this OWL instance's monitor; interrupt deliberately remains non-blocking.
 
   // this is the ontology that imports all concepts including the worldview, on which the OWL
   // reasoner operates
@@ -263,7 +265,7 @@ public class OWL {
     return manager != null && mergedReasonerOntology != null;
   }
 
-  public void initialize(KimOntology rootDomain) {
+  public synchronized void initialize(KimOntology rootDomain) {
 
     reset();
 
@@ -2627,7 +2629,7 @@ public class OWL {
     }
   }
 
-  public void flushReasoner() {
+  public synchronized void flushReasoner() {
     if (reasoner != null && !reasonerSynchronizing) {
       reasoner.flush();
     }
@@ -2758,13 +2760,13 @@ public class OWL {
    * Delegate methods. TODO align with k.LAB API instead of OWLAPI.
    */
 
-  public void flush() {
+  public synchronized void flush() {
     if (reasoner != null) {
       reasoner.flush();
     }
   }
 
-  public NodeSet<OWLClass> getDataPropertyDomains(OWLDataProperty arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getDataPropertyDomains(OWLDataProperty arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2772,7 +2774,7 @@ public class OWL {
     return reasoner.getDataPropertyDomains(arg0, arg1);
   }
 
-  public Set<OWLLiteral> getDataPropertyValues(OWLNamedIndividual arg0, OWLDataProperty arg1)
+  public synchronized Set<OWLLiteral> getDataPropertyValues(OWLNamedIndividual arg0, OWLDataProperty arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2780,7 +2782,7 @@ public class OWL {
     return reasoner.getDataPropertyValues(arg0, arg1);
   }
 
-  public NodeSet<OWLNamedIndividual> getDifferentIndividuals(OWLNamedIndividual arg0)
+  public synchronized NodeSet<OWLNamedIndividual> getDifferentIndividuals(OWLNamedIndividual arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2788,7 +2790,7 @@ public class OWL {
     return reasoner.getDifferentIndividuals(arg0);
   }
 
-  public NodeSet<OWLClass> getDisjointClasses(OWLClassExpression arg0)
+  public synchronized NodeSet<OWLClass> getDisjointClasses(OWLClassExpression arg0)
       throws ReasonerInterruptedException,
           TimeOutException,
           FreshEntitiesException,
@@ -2796,7 +2798,7 @@ public class OWL {
     return reasoner.getDisjointClasses(arg0);
   }
 
-  public NodeSet<OWLDataProperty> getDisjointDataProperties(OWLDataPropertyExpression arg0)
+  public synchronized NodeSet<OWLDataProperty> getDisjointDataProperties(OWLDataPropertyExpression arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2804,7 +2806,7 @@ public class OWL {
     return reasoner.getDisjointDataProperties(arg0);
   }
 
-  public NodeSet<OWLObjectPropertyExpression> getDisjointObjectProperties(
+  public synchronized NodeSet<OWLObjectPropertyExpression> getDisjointObjectProperties(
       OWLObjectPropertyExpression arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2813,7 +2815,7 @@ public class OWL {
     return reasoner.getDisjointObjectProperties(arg0);
   }
 
-  public Node<OWLClass> getEquivalentClasses(OWLClassExpression arg0)
+  public synchronized Node<OWLClass> getEquivalentClasses(OWLClassExpression arg0)
       throws InconsistentOntologyException,
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
@@ -2822,7 +2824,7 @@ public class OWL {
     return reasoner.getEquivalentClasses(arg0);
   }
 
-  public Node<OWLDataProperty> getEquivalentDataProperties(OWLDataProperty arg0)
+  public synchronized Node<OWLDataProperty> getEquivalentDataProperties(OWLDataProperty arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2830,7 +2832,7 @@ public class OWL {
     return reasoner.getEquivalentDataProperties(arg0);
   }
 
-  public Node<OWLObjectPropertyExpression> getEquivalentObjectProperties(
+  public synchronized Node<OWLObjectPropertyExpression> getEquivalentObjectProperties(
       OWLObjectPropertyExpression arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2839,7 +2841,7 @@ public class OWL {
     return reasoner.getEquivalentObjectProperties(arg0);
   }
 
-  public NodeSet<OWLNamedIndividual> getInstances(OWLClassExpression arg0, boolean arg1)
+  public synchronized NodeSet<OWLNamedIndividual> getInstances(OWLClassExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
@@ -2848,7 +2850,7 @@ public class OWL {
     return reasoner.getInstances(arg0, arg1);
   }
 
-  public Node<OWLObjectPropertyExpression> getInverseObjectProperties(
+  public synchronized Node<OWLObjectPropertyExpression> getInverseObjectProperties(
       OWLObjectPropertyExpression arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2857,7 +2859,7 @@ public class OWL {
     return reasoner.getInverseObjectProperties(arg0);
   }
 
-  public NodeSet<OWLClass> getObjectPropertyDomains(OWLObjectPropertyExpression arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getObjectPropertyDomains(OWLObjectPropertyExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2865,7 +2867,7 @@ public class OWL {
     return reasoner.getObjectPropertyDomains(arg0, arg1);
   }
 
-  public NodeSet<OWLClass> getObjectPropertyRanges(OWLObjectPropertyExpression arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getObjectPropertyRanges(OWLObjectPropertyExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2873,7 +2875,7 @@ public class OWL {
     return reasoner.getObjectPropertyRanges(arg0, arg1);
   }
 
-  public NodeSet<OWLNamedIndividual> getObjectPropertyValues(
+  public synchronized NodeSet<OWLNamedIndividual> getObjectPropertyValues(
       OWLNamedIndividual arg0, OWLObjectPropertyExpression arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2882,15 +2884,15 @@ public class OWL {
     return reasoner.getObjectPropertyValues(arg0, arg1);
   }
 
-  public String getReasonerName() {
+  public synchronized String getReasonerName() {
     return reasoner.getReasonerName();
   }
 
-  public Version getReasonerVersion() {
+  public synchronized Version getReasonerVersion() {
     return reasoner.getReasonerVersion();
   }
 
-  public Node<OWLNamedIndividual> getSameIndividuals(OWLNamedIndividual arg0)
+  public synchronized Node<OWLNamedIndividual> getSameIndividuals(OWLNamedIndividual arg0)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2898,7 +2900,7 @@ public class OWL {
     return reasoner.getSameIndividuals(arg0);
   }
 
-  public NodeSet<OWLClass> getSubClasses(OWLClassExpression arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getSubClasses(OWLClassExpression arg0, boolean arg1)
       throws ReasonerInterruptedException,
           TimeOutException,
           FreshEntitiesException,
@@ -2907,7 +2909,7 @@ public class OWL {
     return reasoner.getSubClasses(arg0, arg1);
   }
 
-  public NodeSet<OWLDataProperty> getSubDataProperties(OWLDataProperty arg0, boolean arg1)
+  public synchronized NodeSet<OWLDataProperty> getSubDataProperties(OWLDataProperty arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2915,7 +2917,7 @@ public class OWL {
     return reasoner.getSubDataProperties(arg0, arg1);
   }
 
-  public NodeSet<OWLObjectPropertyExpression> getSubObjectProperties(
+  public synchronized NodeSet<OWLObjectPropertyExpression> getSubObjectProperties(
       OWLObjectPropertyExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2924,11 +2926,11 @@ public class OWL {
     return reasoner.getSubObjectProperties(arg0, arg1);
   }
 
-  public boolean hasReasoner() {
+  public synchronized boolean hasReasoner() {
     return reasoner != null;
   }
 
-  public NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
@@ -2937,7 +2939,7 @@ public class OWL {
     return reasoner.getSuperClasses(arg0, arg1);
   }
 
-  public NodeSet<OWLDataProperty> getSuperDataProperties(OWLDataProperty arg0, boolean arg1)
+  public synchronized NodeSet<OWLDataProperty> getSuperDataProperties(OWLDataProperty arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2945,7 +2947,7 @@ public class OWL {
     return reasoner.getSuperDataProperties(arg0, arg1);
   }
 
-  public NodeSet<OWLObjectPropertyExpression> getSuperObjectProperties(
+  public synchronized NodeSet<OWLObjectPropertyExpression> getSuperObjectProperties(
       OWLObjectPropertyExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
@@ -2954,11 +2956,11 @@ public class OWL {
     return reasoner.getSuperObjectProperties(arg0, arg1);
   }
 
-  public long getTimeOut() {
+  public synchronized long getTimeOut() {
     return reasoner.getTimeOut();
   }
 
-  public NodeSet<OWLClass> getTypes(OWLNamedIndividual arg0, boolean arg1)
+  public synchronized NodeSet<OWLClass> getTypes(OWLNamedIndividual arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,
           ReasonerInterruptedException,
@@ -2966,7 +2968,7 @@ public class OWL {
     return reasoner.getTypes(arg0, arg1);
   }
 
-  public Node<OWLClass> getUnsatisfiableClasses()
+  public synchronized Node<OWLClass> getUnsatisfiableClasses()
       throws ReasonerInterruptedException, TimeOutException, InconsistentOntologyException {
     return reasoner.getUnsatisfiableClasses();
   }
@@ -2975,11 +2977,11 @@ public class OWL {
     reasoner.interrupt();
   }
 
-  public boolean isConsistent() throws ReasonerInterruptedException, TimeOutException {
+  public synchronized boolean isConsistent() throws ReasonerInterruptedException, TimeOutException {
     return reasoner.isConsistent();
   }
 
-  public boolean isEntailed(OWLAxiom arg0)
+  public synchronized boolean isEntailed(OWLAxiom arg0)
       throws ReasonerInterruptedException,
           UnsupportedEntailmentTypeException,
           TimeOutException,
@@ -2989,7 +2991,7 @@ public class OWL {
     return reasoner.isEntailed(arg0);
   }
 
-  public boolean isEntailed(Set<? extends OWLAxiom> arg0)
+  public synchronized boolean isEntailed(Set<? extends OWLAxiom> arg0)
       throws ReasonerInterruptedException,
           UnsupportedEntailmentTypeException,
           TimeOutException,
@@ -2999,15 +3001,15 @@ public class OWL {
     return reasoner.isEntailed(arg0);
   }
 
-  public boolean isEntailmentCheckingSupported(AxiomType<?> arg0) {
+  public synchronized boolean isEntailmentCheckingSupported(AxiomType<?> arg0) {
     return reasoner.isEntailmentCheckingSupported(arg0);
   }
 
-  public boolean isPrecomputed(InferenceType arg0) {
+  public synchronized boolean isPrecomputed(InferenceType arg0) {
     return reasoner.isPrecomputed(arg0);
   }
 
-  public boolean isSatisfiable(OWLClassExpression arg0)
+  public synchronized boolean isSatisfiable(OWLClassExpression arg0)
       throws ReasonerInterruptedException,
           TimeOutException,
           ClassExpressionNotInProfileException,

@@ -112,11 +112,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   public Concept resolveConceptInternal(String definition) {
-    return client.post(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);
+    return client.postRequired(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);
   }
 
   public Observable resolveObservableInternal(String definition) {
-    return client.post(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
+    return client.postRequired(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
   }
 
   @Override

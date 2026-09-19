@@ -10,6 +10,32 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.junit.jupiter.api.Test;
 
 class ReasonerResolutionCacheTest {
+  @Test void serverFailureIsNotConvertedToNothing() throws Exception {
+    var server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/", exchange -> {
+      byte[] body = "{\"detail\":\"Semantic compilation failed: tableau unavailable\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      exchange.sendResponseHeaders(500, body.length);
+      try (var output = exchange.getResponseBody()) { output.write(body); }
+    });
+    server.start();
+    try (var http = org.integratedmodelling.common.utils.Utils.Http.getClient(
+        "http://127.0.0.1:" + server.getAddress().getPort(), null)) {
+      var client = mock(ReasonerClient.class, CALLS_REAL_METHODS);
+      var field = BaseServiceClient.class.getDeclaredField("client");
+      field.setAccessible(true); field.set(client, http);
+      for (boolean caches : new boolean[] {false, true}) {
+        set(client, "useCaches", caches);
+        set(client, "concepts", Caffeine.newBuilder().build());
+        set(client, "observables", Caffeine.newBuilder().build());
+        for (int attempt = 0; attempt < 2; attempt++) {
+          assertThrows(org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException.class,
+              () -> client.resolveConcept("earth:Freshwater earth:Region"));
+          assertThrows(org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException.class,
+              () -> client.resolveObservable("earth:Freshwater earth:Region"));
+        }
+      }
+    } finally { server.stop(0); }
+  }
   @Test void failedResolutionsAreRetriedButSuccessfulResolutionsAreCached() throws Exception {
     var previous = org.integratedmodelling.klab.api.Klab.INSTANCE.getConfiguration();
     try {

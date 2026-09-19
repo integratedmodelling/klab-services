@@ -606,13 +606,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Concept resolveConcept(String definition) {
     Objects.requireNonNull(definition, "definition");
-    return concepts.get(definition, this::resolveConceptInternal);
+    var result = concepts.get(definition, this::resolveConceptInternal);
+    if (result != null && result.is(SemanticType.NOTHING)) concepts.invalidate(definition);
+    return result;
   }
 
   @Override
   public Observable resolveObservable(String definition) {
     Objects.requireNonNull(definition, "definition");
-    return observables.get(definition, this::resolveObservableInternal);
+    var result = observables.get(definition, this::resolveObservableInternal);
+    if (result != null && result.is(SemanticType.NOTHING)) observables.invalidate(definition);
+    return result;
   }
 
   public Concept resolveConceptInternal(String definition) {
@@ -2674,6 +2678,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     } catch (Throwable e) {
       monitor.error(e, concept);
+      var failure = new org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException(
+          "Semantic compilation failed for " + concept.getUrn() + ": " + e.getMessage());
+      failure.initCause(e);
+      throw failure;
     }
 
     if (concept.isNegated()) {
