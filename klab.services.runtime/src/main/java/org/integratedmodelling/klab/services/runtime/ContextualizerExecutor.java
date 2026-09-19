@@ -94,8 +94,8 @@ public class ContextualizerExecutor extends AbstractExecutor
           if (Boolean.FALSE.equals(context)) return false;
 
         } catch (Exception e) {
-          cause = e;
-          scope.error(e /* TODO tracing parameters */);
+          cause = e instanceof java.lang.reflect.InvocationTargetException invocation
+              && invocation.getCause() != null ? invocation.getCause() : e;
           return false;
         }
 
@@ -111,8 +111,8 @@ public class ContextualizerExecutor extends AbstractExecutor
                       arguments.toArray());
           if (Boolean.FALSE.equals(context)) return false;
         } catch (Exception e) {
-          cause = e;
-          scope.error(e /* TODO tracing parameters */);
+          cause = e instanceof java.lang.reflect.InvocationTargetException invocation
+              && invocation.getCause() != null ? invocation.getCause() : e;
           return false;
         }
       }

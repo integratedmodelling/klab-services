@@ -35,6 +35,17 @@ public class DocumentSemanticValidator
   }
 
   @Override
+  public List<Notification> validateReference(
+      KimObservableVisitor.Reference reference, KimObservableVisitor.Context context) {
+    if (context.getDocument() instanceof KimOntology ontology
+        && reference.urn().startsWith(ontology.getUrn() + ":")) {
+      // The loaded OWL may contain a later (or deleted) declaration from the previous save.
+      return new KimWorldviewValidator().validateReference(reference, context);
+    }
+    return List.of();
+  }
+
+  @Override
   public List<Notification> validateConcept(
       KimConcept syntax, KimObservableVisitor.Context context) {
     // Validate each complete occurrence once, including its operands. The same URN elsewhere
@@ -222,6 +233,14 @@ public class DocumentSemanticValidator
 
   private Notification error(
       String message, Statement source, KimObservableVisitor.Context context) {
+    // ConceptData references may lack a token range. Use their enclosing source occurrence
+    // rather than emitting a diagnostic that the editor cannot place.
+    for (var enclosing = context; source.getLength() <= 0 && enclosing != null;
+        enclosing = enclosing.getParent()) {
+      if (enclosing.getNode() instanceof Statement statement && statement.getLength() > 0) {
+        source = statement;
+      }
+    }
     return Notification.error(
         message, Notification.LexicalContext.of(source, context.getDocument()));
   }

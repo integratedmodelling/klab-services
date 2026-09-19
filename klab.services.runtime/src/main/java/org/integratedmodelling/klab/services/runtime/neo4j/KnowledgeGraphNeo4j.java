@@ -123,7 +123,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       new java.util.concurrent.atomic.AtomicLong();
   private volatile long cachedSemanticRevision;
 
-  @Override public long getSemanticRevision() { return SEMANTIC_CACHE_REVISION.get(); }
+  @Override
+  public long getSemanticRevision() {
+    return SEMANTIC_CACHE_REVISION.get();
+  }
 
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
@@ -162,14 +165,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         "MATCH (ctx:Context {id:$contextId}) "
             + "MATCH (seed) WHERE seed = ctx OR coalesce(seed.ownerContextId, "
             + "seed.`im:context-id`) = $contextId "
-            + "OPTIONAL MATCH path=(seed)-[:" + DELETION_OWNERSHIP + "*0..]->(owned) "
+            + "OPTIONAL MATCH path=(seed)-[:"
+            + DELETION_OWNERSHIP
+            + "*0..]->(owned) "
             + "WHERE NOT owned:Agent AND NOT owned:Geometry AND NOT owned:Context "
             + "AND all(n IN nodes(path) WHERE NOT n:Agent AND NOT n:Geometry "
             + "AND (NOT n:Context OR n = ctx) "
             + "AND coalesce(n.ownerContextId, n.`im:context-id`, $contextId) = $contextId) "
-            + "AND NOT EXISTS { MATCH (other:Context)-[:" + DELETION_OWNERSHIP
+            + "AND NOT EXISTS { MATCH (other:Context)-[:"
+            + DELETION_OWNERSHIP
             + "*1..]->(owned) WHERE other <> ctx } "
-            + "AND NOT EXISTS { MATCH (foreign)-[:" + DELETION_OWNERSHIP
+            + "AND NOT EXISTS { MATCH (foreign)-[:"
+            + DELETION_OWNERSHIP
             + "*0..]->(owned) WHERE coalesce(foreign.ownerContextId, "
             + "foreign.`im:context-id`, $contextId) <> $contextId } "
             + "WITH ctx, collect(DISTINCT owned) AS assets "
@@ -399,25 +406,36 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public Geometry perceive(Observation observer, Geometry observed) {
       if (closed) throw new KlabStorageException("Closed perceived-geometry transaction");
-      if (observer == null || observer.getId() <= 0 || observer.getObservable() == null
+      if (observer == null
+          || observer.getId() <= 0
+          || observer.getObservable() == null
           || !observer.getObservable().is(SemanticType.AGENT)) {
         closed = true;
         throw new KlabStorageException("Only a persisted agent can observe");
       }
       try {
-        var rows = transaction.run(
-            "MATCH (n:Observation {id: $id}) "
-                + "SET n.perceptionRevision = coalesce(n.perceptionRevision, 0) + 1 "
-                + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) "
-                + "RETURN g.definition AS geometry",
-            Map.of("id", observer.getId())).list();
-        if (rows.size() != 1) throw new KlabStorageException("Missing or ambiguous observer geometry");
-        Geometry current = rows.getFirst().get("geometry").isNull() ? null
-            : Geometry.create(rows.getFirst().get("geometry").asString());
+        var rows =
+            transaction
+                .run(
+                    "MATCH (n:Observation {id: $id}) "
+                        + "SET n.perceptionRevision = coalesce(n.perceptionRevision, 0) + 1 "
+                        + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) "
+                        + "RETURN g.definition AS geometry",
+                    Map.of("id", observer.getId()))
+                .list();
+        if (rows.size() != 1)
+          throw new KlabStorageException("Missing or ambiguous observer geometry");
+        Geometry current =
+            rows.getFirst().get("geometry").isNull()
+                ? null
+                : Geometry.create(rows.getFirst().get("geometry").asString());
         Geometry merged = mergePerceivedGeometry(current, observed);
         if (merged != null) {
-          transaction.run("MATCH (n:Observation {id: $id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
-              Map.of("id", observer.getId())).consume();
+          transaction
+              .run(
+                  "MATCH (n:Observation {id: $id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
+                  Map.of("id", observer.getId()))
+              .consume();
           storeGeometry(merged, observer, transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
         }
         // Reuse the observation-cache revision boundary so all scope caches see the new extent.
@@ -430,34 +448,58 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    public void replacePerceivedSpace(Observation observer, String expectedGeometry, Geometry space) {
+    public void replacePerceivedSpace(
+        Observation observer, String expectedGeometry, Geometry space) {
       if (closed) throw new KlabStorageException("Closed perceived-geometry transaction");
       try {
-        if (observer == null || observer.getId() <= 0 || observer.getObservable() == null
+        if (observer == null
+            || observer.getId() <= 0
+            || observer.getObservable() == null
             || !observer.getObservable().is(SemanticType.AGENT)
-            || space == null || space.getDimensions().size() != 1
+            || space == null
+            || space.getDimensions().size() != 1
             || space.dimension(Geometry.Dimension.Type.SPACE) == null) {
-          throw new IllegalArgumentException("A persisted agent and a spatial geometry are required");
+          throw new IllegalArgumentException(
+              "A persisted agent and a spatial geometry are required");
         }
-        var rows = transaction.run(
-            "MATCH (:Context {id:$context})-[:HAS_CHILD]->(:Cohort)-[:HAS_MEMBER]->(n:Observation {id:$id}) "
-                + "WITH DISTINCT n SET n.perceptionRevision=coalesce(n.perceptionRevision,0)+1 "
-                + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g.definition AS geometry",
-            Map.of("context", rootContextId, "id", observer.getId())).list();
-        if (rows.size() != 1) throw new IllegalArgumentException("Agent is not in this twin or has ambiguous perception");
-        Geometry current = rows.getFirst().get("geometry").isNull() ? null
-            : Geometry.create(rows.getFirst().get("geometry").asString());
-        String actual = current == null ? null : GeometryRepository.INSTANCE.scale(current).encode();
-        String expected = expectedGeometry == null ? null
-            : GeometryRepository.INSTANCE.scale(Geometry.create(expectedGeometry)).encode();
+        var rows =
+            transaction
+                .run(
+                    "MATCH (:Context {id:$context})-[:HAS_CHILD]->(:Cohort)-[:HAS_MEMBER]->(n:Observation {id:$id}) "
+                        + "WITH DISTINCT n SET n.perceptionRevision=coalesce(n.perceptionRevision,0)+1 "
+                        + "WITH n OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g.definition AS geometry",
+                    Map.of("context", rootContextId, "id", observer.getId()))
+                .list();
+        if (rows.size() != 1)
+          throw new IllegalArgumentException(
+              "Agent is not in this twin or has ambiguous perception");
+        Geometry current =
+            rows.getFirst().get("geometry").isNull()
+                ? null
+                : Geometry.create(rows.getFirst().get("geometry").asString());
+        String actual =
+            current == null ? null : GeometryRepository.INSTANCE.scale(current).encode();
+        String expected =
+            expectedGeometry == null
+                ? null
+                : GeometryRepository.INSTANCE.scale(Geometry.create(expectedGeometry)).encode();
         if (!Objects.equals(actual, expected)) {
-          throw new ConcurrentModificationException("Perceived geometry changed; reload before saving your edit");
+          throw new ConcurrentModificationException(
+              "Perceived geometry changed; reload before saving your edit");
         }
-        var replacement = current == null ? GeometryRepository.INSTANCE.scale(space)
-            : GeometryRepository.INSTANCE.scale(current).with(GeometryRepository.INSTANCE.scale(space).getSpace());
-        transaction.run("MATCH (n:Observation {id:$id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
-            Map.of("id", observer.getId())).consume();
-        storeGeometry(replacement, observer, transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
+        var replacement =
+            current == null
+                ? GeometryRepository.INSTANCE.scale(space)
+                : GeometryRepository.INSTANCE
+                    .scale(current)
+                    .with(GeometryRepository.INSTANCE.scale(space).getSpace());
+        transaction
+            .run(
+                "MATCH (n:Observation {id:$id})-[r:PERCEIVES_GEOMETRY]->() DELETE r",
+                Map.of("id", observer.getId()))
+            .consume();
+        storeGeometry(
+            replacement, observer, transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
         semanticUpdates.add(observer.getId());
       } catch (RuntimeException e) {
         closed = true;
@@ -469,15 +511,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     public void markExplicitAgent(Observation agent) {
       if (closed) throw new KlabStorageException("Closed explicit-agent transaction");
       try {
-        var row = transaction.run("MATCH (n:Observation {id:$id}) "
-            + "SET n.perceptionRevision = coalesce(n.perceptionRevision,0) "
-            + "RETURN n.metadata AS metadata", Map.of("id", agent.getId())).list();
+        var row =
+            transaction
+                .run(
+                    "MATCH (n:Observation {id:$id}) "
+                        + "SET n.perceptionRevision = coalesce(n.perceptionRevision,0) "
+                        + "RETURN n.metadata AS metadata",
+                    Map.of("id", agent.getId()))
+                .list();
         if (row.size() != 1) throw new KlabStorageException("Missing agent");
-        Map<String, Object> metadata = row.getFirst().get("metadata").isNull() ? new HashMap<>()
-            : Utils.Json.parseObject(row.getFirst().get("metadata").asString(), Map.class);
+        Map<String, Object> metadata =
+            row.getFirst().get("metadata").isNull()
+                ? new HashMap<>()
+                : Utils.Json.parseObject(row.getFirst().get("metadata").asString(), Map.class);
         metadata.put(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT, true);
-        transaction.run("MATCH (n:Observation {id:$id}) SET n.metadata=$metadata",
-            Map.of("id", agent.getId(), "metadata", Utils.Json.asString(metadata))).consume();
+        transaction
+            .run(
+                "MATCH (n:Observation {id:$id}) SET n.metadata=$metadata",
+                Map.of("id", agent.getId(), "metadata", Utils.Json.asString(metadata)))
+            .consume();
         semanticUpdates.add(agent.getId());
       } catch (RuntimeException e) {
         closed = true;
@@ -491,20 +543,31 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       try {
         // The write acquires the observation lock before reading the baseline. This also
         // serializes classifications of shared observations from different context roots.
-        var row = transaction.run(
-            "MATCH (n:Observation {id: $id}) "
-                + "SET n.semanticRevision = coalesce(n.semanticRevision, 0) "
-                + "RETURN n.observable AS observable",
-            Map.of("id", observation.getId())).list();
-        if (row.size() != 1 || !Objects.equals(expectedObservable, row.getFirst().get("observable").asString()))
-          throw new KlabStorageException("Stale or missing classification target " + observation.getId());
+        var row =
+            transaction
+                .run(
+                    "MATCH (n:Observation {id: $id}) "
+                        + "SET n.semanticRevision = coalesce(n.semanticRevision, 0) "
+                        + "RETURN n.observable AS observable",
+                    Map.of("id", observation.getId()))
+                .list();
+        if (row.size() != 1
+            || !Objects.equals(expectedObservable, row.getFirst().get("observable").asString()))
+          throw new KlabStorageException(
+              "Stale or missing classification target " + observation.getId());
         var properties = asParameters(observation);
         var semantics = new HashMap<String, Object>();
-        for (var field : List.of(GraphModel.Fields.OBSERVABLE, GraphModel.Fields.SEMANTICS,
-            GraphModel.Fields.SEMANTICTYPE)) semantics.put(field, properties.get(field));
-        transaction.run("MATCH (n:Observation {id: $id}) SET n += $semantics, "
-                + "n.semanticRevision = n.semanticRevision + 1",
-            Map.of("id", observation.getId(), "semantics", semantics)).consume();
+        for (var field :
+            List.of(
+                GraphModel.Fields.OBSERVABLE,
+                GraphModel.Fields.SEMANTICS,
+                GraphModel.Fields.SEMANTICTYPE)) semantics.put(field, properties.get(field));
+        transaction
+            .run(
+                "MATCH (n:Observation {id: $id}) SET n += $semantics, "
+                    + "n.semanticRevision = n.semanticRevision + 1",
+                Map.of("id", observation.getId(), "semantics", semantics))
+            .consume();
         semanticUpdates.add(observation.getId());
       } catch (RuntimeException failure) {
         closed = true;
@@ -697,11 +760,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     ensureRuntimeIndexes(scope);
 
-    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+    try (var session = driver.session();
+        var transaction = session.beginTransaction()) {
       var result =
           transaction.run(
-              Queries.FIND_CONTEXT,
-              Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()));
+              Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, configuration.getId()));
 
       boolean newContext = !result.hasNext();
       if (!newContext) {
@@ -719,33 +782,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         for (var query : Queries.INITIALIZATION_QUERIES) {
-          transaction.run(
-              query,
-              Map.of(
-                  GraphModel.Fields.CONTEXT_ID,
-                  configuration.getId(),
-                  GraphModel.Fields.NAME,
-                  configuration.getName(),
-                  GraphModel.Fields.RIGHTS,
-                  rights.toString(),
-                  GraphModel.Fields.TIMESTAMP,
-                  timestamp,
-                  GraphModel.Fields.FEDERATION,
-                  (federation == null ? "" : federation.getId()),
-                  GraphModel.Fields.DESCRIPTION,
-                  (configuration.getDescription() == null
-                      ? "No description given"
-                      : configuration.getDescription()),
-                  GraphModel.Fields.LAST_UPDATE,
-                  System.currentTimeMillis(),
-                  GraphModel.Fields.USERNAME,
-                  scope.getUser().getUsername(),
-                  GraphModel.Fields.EXPIRATION_TYPE,
-                  configuration.getPersistence().name(),
-                  GraphModel.Fields.ACTIVITY_ID,
-                  activityId)).consume();
+          transaction
+              .run(
+                  query,
+                  Map.of(
+                      GraphModel.Fields.CONTEXT_ID,
+                      configuration.getId(),
+                      GraphModel.Fields.NAME,
+                      configuration.getName(),
+                      GraphModel.Fields.RIGHTS,
+                      rights.toString(),
+                      GraphModel.Fields.TIMESTAMP,
+                      timestamp,
+                      GraphModel.Fields.FEDERATION,
+                      (federation == null ? "" : federation.getId()),
+                      GraphModel.Fields.DESCRIPTION,
+                      (configuration.getDescription() == null
+                          ? "No description given"
+                          : configuration.getDescription()),
+                      GraphModel.Fields.LAST_UPDATE,
+                      System.currentTimeMillis(),
+                      GraphModel.Fields.USERNAME,
+                      scope.getUser().getUsername(),
+                      GraphModel.Fields.EXPIRATION_TYPE,
+                      configuration.getPersistence().name(),
+                      GraphModel.Fields.ACTIVITY_ID,
+                      activityId))
+              .consume();
         }
-
       }
 
       ensureSpatialLayer(transaction, configuration.getId(), newContext);
@@ -753,8 +817,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
   }
 
-  static void ensureSpatialLayer(org.neo4j.driver.Transaction transaction,
-      String contextId, boolean newContext) {
+  static void ensureSpatialLayer(
+      org.neo4j.driver.Transaction transaction, String contextId, boolean newContext) {
     // Existing twins must not silently acquire an empty spatial index.
     // Validate the layer on every reopen, in the same transaction as initialization.
     String layerName = getShapeLayerName(contextId);
@@ -773,22 +837,29 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             Map.of(GraphModel.Fields.LAYER_NAME, layerName));
     boolean layerExists = layerCheck.single().get(GraphModel.Fields.EXISTS).asBoolean();
     if (newContext && layerExists) {
-      throw new KlabStorageException("Spatial layer already exists for new context " + contextId
-          + "; refusing to reuse a potentially foreign index");
+      throw new KlabStorageException(
+          "Spatial layer already exists for new context "
+              + contextId
+              + "; refusing to reuse a potentially foreign index");
     }
     if (!layerExists) {
       if (!newContext) {
-        throw new KlabStorageException("Missing spatial layer " + layerName
-            + " for existing context " + contextId
-            + "; explicit spatial-index recovery is required");
+        throw new KlabStorageException(
+            "Missing spatial layer "
+                + layerName
+                + " for existing context "
+                + contextId
+                + "; explicit spatial-index recovery is required");
       }
-      transaction.run(
-          ("CALL spatial.addLayer($"
-              + GraphModel.Fields.LAYER_NAME
-              + ", 'WKB', '"
-              + GraphModel.Fields.SHAPE
-              + "')"),
-          Map.of(GraphModel.Fields.LAYER_NAME, layerName)).consume();
+      transaction
+          .run(
+              ("CALL spatial.addLayer($"
+                  + GraphModel.Fields.LAYER_NAME
+                  + ", 'WKB', '"
+                  + GraphModel.Fields.SHAPE
+                  + "')"),
+              Map.of(GraphModel.Fields.LAYER_NAME, layerName))
+          .consume();
     }
   }
 
@@ -882,11 +953,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   /** Lock the durable context for the full write transaction, including commit/rollback. */
   static void lockContext(org.neo4j.driver.Transaction transaction, String contextId) {
-    var result = transaction.run(
-        "MATCH (ctx:" + GraphModel.Labels.CONTEXT + " {" + GraphModel.Fields.ID
-            + ": $contextId}) SET ctx." + GraphModel.Fields.ID + " = ctx."
-            + GraphModel.Fields.ID + " RETURN ctx",
-        Map.of("contextId", contextId));
+    var result =
+        transaction.run(
+            "MATCH (ctx:"
+                + GraphModel.Labels.CONTEXT
+                + " {"
+                + GraphModel.Fields.ID
+                + ": $contextId}) SET ctx."
+                + GraphModel.Fields.ID
+                + " = ctx."
+                + GraphModel.Fields.ID
+                + " RETURN ctx",
+            Map.of("contextId", contextId));
     if (!result.hasNext()) {
       throw new KlabStorageException("Context no longer exists: " + contextId);
     }
@@ -904,21 +982,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   private void deleteContextAtomically(String contextId) {
-    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+    try (var session = driver.session();
+        var transaction = session.beginTransaction()) {
       lockContext(transaction, contextId);
       var layerName = getShapeLayerName(contextId);
-      var layers = transaction.run(
-          "CALL spatial.layers() YIELD name WHERE name = $name RETURN name",
-          Map.of("name", layerName));
+      var layers =
+          transaction.run(
+              "CALL spatial.layers() YIELD name WHERE name = $name RETURN name",
+              Map.of("name", layerName));
       boolean layerExists = layers.hasNext();
       layers.consume();
       // A missing index must prevent reopening, but must not prevent disposal of the assets.
       if (layerExists) {
-        transaction.run("CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")",
-            Map.of(GraphModel.Fields.LAYER_NAME, layerName)).consume();
+        transaction
+            .run(
+                "CALL spatial.removeLayer($" + GraphModel.Fields.LAYER_NAME + ")",
+                Map.of(GraphModel.Fields.LAYER_NAME, layerName))
+            .consume();
       }
-      transaction.run(Queries.REMOVE_CONTEXT,
-          Map.of(GraphModel.Fields.CONTEXT_ID, contextId)).consume();
+      transaction
+          .run(Queries.REMOVE_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, contextId))
+          .consume();
       transaction.commit();
     }
   }
@@ -1103,9 +1187,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         if (instance.getObservable().is(SemanticType.AGENT)) {
-          var perceived = query(
-              "MATCH (o:Observation {id: $id})-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g",
-              Map.of("id", instance.getId()), scope);
+          var perceived =
+              query(
+                  "MATCH (o:Observation {id: $id})-[:PERCEIVES_GEOMETRY]->(g:Geometry) RETURN g",
+                  Map.of("id", instance.getId()),
+                  scope);
           if (perceived != null && !perceived.records().isEmpty()) {
             instance.setPerceivedGeometry(adapt(perceived, Geometry.class, scope).getFirst());
           }
@@ -1176,8 +1262,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setParentTransientId(node.get("parentTransientId").asLong(0));
         ret.add((T) instance);
       } else if (Actuator.class.isAssignableFrom(cls)) {
-        var instance = node.get("operationPlan").isNull() ? new ActuatorImpl()
-            : (ActuatorImpl) Utils.Json.parseObject(node.get("operationPlan").asString(), Actuator.class);
+        var instance =
+            node.get("operationPlan").isNull()
+                ? new ActuatorImpl()
+                : (ActuatorImpl)
+                    Utils.Json.parseObject(node.get("operationPlan").asString(), Actuator.class);
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong(-1));
         instance.setName(node.get(GraphModel.Fields.NAME).asString(null));
@@ -1300,13 +1389,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @SuppressWarnings("unchecked")
   static void restoreObservationAnnotations(Value node, ObservationImpl observation) {
     if (!node.get(GraphModel.Fields.ANNOTATIONS_JSON).isNull()) {
-      observation.setAnnotations(node.get(GraphModel.Fields.ANNOTATIONS_JSON).asList(
-          value -> Utils.Json.parseObject(value.asString(),
-              org.integratedmodelling.klab.api.lang.Annotation.class)));
+      observation.setAnnotations(
+          node.get(GraphModel.Fields.ANNOTATIONS_JSON)
+              .asList(
+                  value ->
+                      Utils.Json.parseObject(
+                          value.asString(),
+                          org.integratedmodelling.klab.api.lang.Annotation.class)));
     }
     if (!node.get(GraphModel.Fields.ANNOTATION_PRIORITIES).isNull()) {
       Map<String, Integer> priorities = new HashMap<>();
-      Utils.Json.parseObject(node.get(GraphModel.Fields.ANNOTATION_PRIORITIES).asString(), Map.class)
+      Utils.Json.parseObject(
+              node.get(GraphModel.Fields.ANNOTATION_PRIORITIES).asString(), Map.class)
           .forEach((key, value) -> priorities.put(key.toString(), ((Number) value).intValue()));
       observation.setAnnotationPriorities(priorities);
     }
@@ -1739,7 +1833,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       var scale = GeometryRepository.INSTANCE.scale(((Observation) asset).getGeometry());
       var shape = scale.getSpace().getGeometricShape().transform(Projection.getLatLon());
       if (shape instanceof ShapeImpl shape1) {
-        props.put(GraphModel.Fields.SHAPE, ShapeImpl.wkbWriter.write(shape1.getJTSGeometry()));
+        // The graph stores binary WKB; the text geometry encoder returns hexadecimal instead.
+        props.put(GraphModel.Fields.SHAPE,
+            new org.locationtech.jts.io.WKBWriter().write(shape1.getJTSGeometry()));
         var xy = shape1.getCenter(true);
         props.put(GraphModel.Fields.LATITUDE, xy[1]);
         props.put(GraphModel.Fields.LONGITUDE, xy[0]);
@@ -1778,10 +1874,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (geometry != null) {
         storeGeometry(geometry, asset, transaction);
       }
-      if (asset instanceof Observation observation && observation.getObservable().is(SemanticType.AGENT)
+      if (asset instanceof Observation observation
+          && observation.getObservable().is(SemanticType.AGENT)
           && observation.geometry(Observation.GeometryRelationship.PERCEIVES) != null) {
-        storeGeometry(observation.geometry(Observation.GeometryRelationship.PERCEIVES), asset,
-            transaction, GraphModel.Relationship.PERCEIVES_GEOMETRY);
+        storeGeometry(
+            observation.geometry(Observation.GeometryRelationship.PERCEIVES),
+            asset,
+            transaction,
+            GraphModel.Relationship.PERCEIVES_GEOMETRY);
       }
     } else {
       // KLAB-DEBUG-GUARD: preserve the current no-ID-assignment path when CREATE produces no
@@ -1844,15 +1944,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   static Geometry mergePerceivedGeometry(Geometry current, Geometry observed) {
     if (observed == null || observed.isEmpty() || observed.isUniversal()) return current;
-    if (current == null || current.isEmpty() || current.isUniversal()) return Geometry.forTransport(observed);
+    if (current == null || current.isEmpty() || current.isUniversal())
+      return Geometry.forTransport(observed);
     return switch (org.integratedmodelling.klab.api.knowledge.PerceivedGeometryPolicy.DEFAULT) {
-      case UNION -> Geometry.forTransport(GeometryRepository.INSTANCE.outerUnion(
-          GeometryRepository.INSTANCE.scale(current), GeometryRepository.INSTANCE.scale(observed)));
+      case UNION ->
+          Geometry.forTransport(
+              GeometryRepository.INSTANCE.outerUnion(
+                  GeometryRepository.INSTANCE.scale(current),
+                  GeometryRepository.INSTANCE.scale(observed)));
     };
   }
 
-  private void storeGeometry(Geometry geometry, RuntimeAsset asset,
-      @Nullable org.neo4j.driver.Transaction transaction, GraphModel.Relationship geometryRelationship) {
+  private void storeGeometry(
+      Geometry geometry,
+      RuntimeAsset asset,
+      @Nullable org.neo4j.driver.Transaction transaction,
+      GraphModel.Relationship geometryRelationship) {
 
     // This guarantees processed, stable geometry representation with WBT
     var encoded = GeometryRepository.INSTANCE.scale(geometry).encode();
@@ -2179,16 +2286,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return contextNode;
   }
 
-//  private String encodeGeometry(Geometry observationGeometry) {
-//
-//    /*
-//     * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are resolved.
-//     * TODO we should cache the geometries and scales, then reuse them.
-//     */
-//    var ret = GeometryRepository.INSTANCE.scale(observationGeometry).encode(ShapeImpl.wkbEncoder);
-//
-//    return ret;
-//  }
+  //  private String encodeGeometry(Geometry observationGeometry) {
+  //
+  //    /*
+  //     * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are
+  // resolved.
+  //     * TODO we should cache the geometries and scales, then reuse them.
+  //     */
+  //    var ret =
+  // GeometryRepository.INSTANCE.scale(observationGeometry).encode(ShapeImpl.wkbEncoder);
+  //
+  //    return ret;
+  //  }
 
   private String getLabel(Object target) {
 

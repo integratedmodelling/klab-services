@@ -192,11 +192,17 @@ characterizer models are different operations and are not interchangeable.
 
 ### 1.6 Connecting substantials
 
+CONNECTION is complete and accepted. See the [implementation reference](CONNECTION.md)
+for endpoint binding, lifecycle, persistence, and testing contracts.
+
 The Tier-0 `relationships.direct` strategy handles `CONNECTION`: it resolves the
 collective source and target types, then uses `observe` with named `source` and
 `target` inputs to discover a connector model. Endpoint coverage alone is not a
 connection result. The model chooses which pairs to connect and may emit zero
 instances; Runtime does not construct a Cartesian product.
+
+When source and target semantics are identical, they share one collective resolution
+and instantiation while retaining both named input bindings.
 
 Implementations emit individual observations through
 `Data.Builder.relationship(name, observable, geometry, identity, source, target)`.

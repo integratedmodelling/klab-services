@@ -23,6 +23,46 @@ class DocumentSemanticValidatorTest {
     assertTrue(failure.getMessage().contains("worldview diagnostics"));
   }
 
+  @Test void savedSourceErrorsReachTheEditorBeforeKnowledgeStartupWithoutLeakingToDrafts() {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var resources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(resources);
+    var saved = new KimOntologyImpl(); saved.setUrn("earth"); saved.setSourceCode("saved source");
+    var source = new KimConceptImpl(); source.setOffsetInDocument(42); source.setLength(25);
+    saved.getNotifications().add(org.integratedmodelling.klab.api.services.runtime.Notification.error(
+        "Unknown MeteorologicalEvent", org.integratedmodelling.klab.api.services.runtime.Notification.LexicalContext.of(source, saved)));
+    when(resources.retrieve("earth", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, scope)).thenReturn(saved);
+    var editor = new KimOntologyImpl(); editor.setUrn("earth"); editor.setSourceCode("saved source");
+    var response = reasoner.validateDocument(SemanticValidationRequest.of(editor, "1"), scope);
+    assertEquals(SemanticValidationResponse.Status.COMPLETE, response.getStatus());
+    assertFalse(response.valid());
+    assertEquals(42, response.getNotifications().getFirst().getLexicalContext().getOffsetInDocument());
+    editor.setSourceCode("corrected draft");
+    var draft = reasoner.validateDocument(SemanticValidationRequest.of(editor, "2"), scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, draft.getStatus());
+    assertTrue(draft.getNotifications().isEmpty());
+  }
+
+  @Test void loadedConceptDoesNotHideForwardReferenceInTheCurrentOntology() {
+    var reasoner = mock(ReasonerService.class); when(reasoner.owl()).thenReturn(new OWL(mock(Scope.class)));
+    var document = new KimOntologyImpl(); document.setUrn("earth");
+    var earlier = new KimConceptStatementImpl(); earlier.setUrn("Earlier"); earlier.setOffsetInDocument(10); earlier.setLength(40);
+    var later = new KimConceptStatementImpl(); later.setUrn("Later"); later.setOffsetInDocument(100); later.setLength(20);
+    earlier.getDeclaredReferences().add(syntax("Later", 30));
+    document.getStatements().addAll(List.of(earlier, later));
+    var loaded = mock(Concept.class);
+    when(reasoner.resolveConcept(anyString())).thenReturn(loaded);
+    when(reasoner.satisfiable(loaded)).thenReturn(true);
+    var errors = new DocumentSemanticValidator(reasoner).validate(document);
+    assertEquals(1, errors.size());
+    assertTrue(errors.getFirst().getMessage().contains("before its declaration"));
+    assertEquals(30, errors.getFirst().getLexicalContext().getOffsetInDocument());
+    later.setOffsetInDocument(1);
+    assertTrue(new DocumentSemanticValidator(reasoner).validate(document).isEmpty());
+  }
+
   @Test void emptyDomainOnlyOntologyRemainsValidAcrossRepeatedChecks() {
     var scope = mock(Scope.class);
     var owl = new OWL(scope); owl.manager = OWLManager.createOWLOntologyManager();
@@ -200,6 +240,11 @@ class DocumentSemanticValidatorTest {
     assertEquals("test", notifications.getFirst().getLexicalContext().getDocumentUrn());
     assertTrue(ontology.getConcept("Region").getNotifications().isEmpty());
     assertEquals(count, ontology.getOWLOntology().getAxiomCount());
+    var firstOccurrence = ((KimModelImpl) document.getStatements().getFirst()).getObservables().getFirst().getSemantics();
+    ((KimConceptImpl) firstOccurrence.getRelationshipSource()).setLength(0);
+    var fallback = new DocumentSemanticValidator(reasoner).validate(document);
+    assertEquals(20, fallback.getFirst().getLexicalContext().getOffsetInDocument());
+    assertEquals(firstOccurrence.getLength(), fallback.getFirst().getLexicalContext().getLength());
     for (var statement : document.getStatements()) {
       var connection = (KimConceptImpl) ((KimModelImpl) statement).getObservables().getFirst().getSemantics();
       connection.setRelationshipSource(syntax("StreamJunction", 50));

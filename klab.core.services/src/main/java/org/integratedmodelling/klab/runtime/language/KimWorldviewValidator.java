@@ -108,10 +108,14 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       }
     }
     boolean local = reference.urn().startsWith(ontology.getUrn() + ":");
-    boolean known =
-        local
-            ? contains(ontology.getStatements(), ontology.getUrn(), reference.urn())
-            : reference.resolved() != null;
+    var declaration = local ? find(ontology.getStatements(), ontology.getUrn(), reference.urn()) : null;
+    boolean known = local ? declaration != null : reference.resolved() != null;
+    if (declaration != null && source.getLength() > 0 && declaration.getLength() > 0
+        && declaration.getOffsetInDocument() > source.getOffsetInDocument()) {
+      return List.of(Notification.error(
+          "Concept is referenced before its declaration: " + reference.urn(),
+          Notification.LexicalContext.of(source, ontology)));
+    }
     // Preserve authority identity handling when no workspace declaration is expected.
     if (!local && !reference.urn().isEmpty() && Character.isUpperCase(reference.urn().charAt(0)))
       known = true;
@@ -123,11 +127,13 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
     return List.of();
   }
 
-  private boolean contains(List<KimConceptStatement> statements, String namespace, String urn) {
+  private KimConceptStatement find(List<KimConceptStatement> statements, String namespace, String urn) {
     for (var statement : statements) {
-      if ((namespace + ":" + statement.getUrn()).equals(urn)) return true;
-      if (contains(statement.getChildren(), namespace, urn)) return true;
+      String name = statement.getUrn().contains(":") ? statement.getUrn() : namespace + ":" + statement.getUrn();
+      if (name.equals(urn)) return statement;
+      var child = find(statement.getChildren(), namespace, urn);
+      if (child != null) return child;
     }
-    return false;
+    return null;
   }
 }

@@ -53,6 +53,9 @@ property updates and precise deletion in a remote view.
 
 ## Relationship observations
 
+The [CONNECTION implementation](CONNECTION.md) is complete and accepted, including
+the persistence and query contracts below.
+
 A semantic relationship is an `Observation` node, hosted by a `Cohort` through
 `HAS_MEMBER`. It is not the graph edge between its participants. Each directed
 relationship has `HAS_RELATIONSHIP_SOURCE` and `HAS_RELATIONSHIP_TARGET` edges

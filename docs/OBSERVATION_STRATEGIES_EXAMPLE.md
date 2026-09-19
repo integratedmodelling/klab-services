@@ -11,8 +11,12 @@ quality transformation lowering, with model input-port validation and existing-b
 compilation. See [the implementation boundary](OBSERVATION.md#tier-1-predicate-transformation-initial-executable-subset).
 Other rank-1 merges and numerical runtime acceptance remain pending.
 
-The corpus now also includes `classification.members` and `characterization.direct`, with execution
-gated pending the operation-target runtime path. See [CLASSIFICATION.md](CLASSIFICATION.md).
+The corpus includes the implemented `classification.members` and `characterization.direct`
+strategies. Classification and its mandatory characterization lifecycle are complete and accepted.
+See [CLASSIFICATION.md](CLASSIFICATION.md).
+
+CONNECTION is also complete and accepted. Its endpoint resolution, individual acknowledgement,
+and directed relationship/bond persistence are documented in [CONNECTION.md](CONNECTION.md).
 
 The baseline files are:
 
@@ -132,21 +136,21 @@ a successful empty answer, not failure to find an instantiator.
 
 The supplied relationship strategy is not a single-producer strategy: it resolves endpoints
 before observing the whole relationship. This conflicts with a literal “rank zero has exactly
-one producer” rule. Recommended policy: **rank zero uses a direct model for the entire requested
+one producer” rule. Accepted policy: **rank zero uses a direct model for the entire requested
 output, but may prepare mandatory contextual inputs through explicit bindings**. Recursive
 endpoint resolution is such preparation; decomposing the output into alternative meanings remains
-a positive-rank fallback. Record this distinction in S1 instead of silently changing its rank.
+a positive-rank fallback.
 
-Resolve the two endpoint collections without conflating their roles, even when both have the
-same semantics or share instances. The connection model determines qualifying pairs; the strategy
+The endpoint ports retain their roles even when they share instances. Identical semantics reuse
+one collective producer rather than instantiating twice. The connection model determines qualifying pairs; the strategy
 does not prescribe a Cartesian product, self-links, or reverse edges. A complete empty endpoint
 collection can yield a complete empty relationship collection only when the connection contract
 supports that conclusion. Missing endpoint coverage is not evidence that no relationships exist.
-Runtime must acknowledge each created relationship before reporting required lifecycle completion.
+Runtime acknowledges each created relationship in its `between(source, target)` scope before
+reporting required lifecycle completion.
 
-The legacy strategy always requests collective endpoints. Preserve that behavior in this fixture.
-Using existing singular endpoints or non-directional bonds belongs in additional fixtures using
-the reviewed scope/port contracts; do not force directional source/target semantics onto a bond.
+The strategy requests collective endpoints. Bonds use unordered participant edges in persistence
+and queries; source/target input names do not impose semantic direction on a bond.
 
 ## 4. Logical composition
 
@@ -220,7 +224,7 @@ model, and expected-data fixtures. A release cannot claim the corpus works by me
 | EX01 | Whole-meaning individual model wins; eligible no-model acknowledgement works | Collective cannot pass singular guard; invalid model execution is not converted to trivial success | S2, S4–S6 |
 | EX02 | Context-bound concrete quality and process resolve through their correct activities | Missing context rejected; predicate/operator/inherency information remains in the model query | S2–S5 |
 | EX03 | Instantiator returns two individuals, both acknowledged exactly once | Zero outcomes complete; failed required acknowledgement blocks completion | S5–S6 |
-| EX04 | Endpoint graphs bind to the connection model and created links are acknowledged | Same-type endpoints retain distinct bindings; no invented Cartesian product; incomplete discovery is not empty success | S3–S6 |
+| EX04 | Endpoint graphs bind to the connection model and created relationship observations are acknowledged | Same-type endpoints share one producer with distinct bindings; no invented Cartesian product; incomplete discovery is not empty success | Complete; accepted 2026-09-19 |
 | EX05 | Overlapping membership unions deduplicate; three operands reduce to the intended union | Identical original request is not recursively repeated; missing branch cannot be hidden by geometry coverage | S2, S4, S8 |
 | EX06 | Boolean OR; at least one approved categorical-union fixture before claiming full compatibility | Unknown truth-table cases; incompatible category combination rejected; no implicit numerical union | S1, S8 |
 | EX07 | Boolean AND; at least one approved categorical-intersection fixture before claiming full compatibility | Unknown truth-table cases; unavailable foundational alias not required by the translated type pattern | S1, S8 |

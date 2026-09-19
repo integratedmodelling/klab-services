@@ -56,6 +56,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       ServiceContextScope contextScope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
+    cause = null;
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
 
@@ -150,7 +151,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       tasks.add(
           () -> {
             try {
-              return run(event, null, contextScope, contextualizationScope);
+              return run(event, Map.of(), contextScope, contextualizationScope);
             } catch (Throwable t) {
               threadNotifications.add(
                   Notification.error("Error running dataflow task: " + t.getMessage(), t));
@@ -184,11 +185,21 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
         }
       }
 
+      if (!ret) {
+        // A failed transaction may never persist its activity. Publish the actual cause now.
+        contextScope.error(cause);
+        if (threadNotifications.isEmpty()) {
+          threadNotifications.add(Notification.error(
+              "Contextualization of " + observation.getObservable().getUrn()
+                  + " failed: " + cause.getMessage(), cause));
+        }
+      }
       observation.getNotifications().addAll(threadNotifications);
 
       return ret;
     } catch (Throwable t) {
       cause = t;
+      contextScope.error(t);
       observation.getNotifications().add(Notification.error(t.getMessage(), t));
       return false;
     }

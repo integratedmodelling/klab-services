@@ -3147,7 +3147,7 @@ public class WorkspaceManager {
 
       List<Notification> notifications = new ArrayList<>();
       var syntax =
-          new OntologySyntaxImpl(parsed, this.languageValidationScope) {
+          new OntologySyntaxImpl(parsed, this.languageValidationScope.withoutNamespace(declaredUrn)) {
 
             @Override
             protected void logWarning(

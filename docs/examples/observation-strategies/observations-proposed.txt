@@ -42,7 +42,7 @@ strategy 0 named relationships.direct
   resolve collective($target) to targets
   observe $this with inputs(source = sources, target = targets) to connections
 ;
-// Endpoint roles bind separate producer graphs, not a guessed Cartesian product.
+// Endpoint ports retain their roles; identical semantics share a producer. The model chooses pairs.
 // This explicit prerequisite form is a reviewed exception to a single-producer rank-zero rule.
 
 strategy 1 named countable.union

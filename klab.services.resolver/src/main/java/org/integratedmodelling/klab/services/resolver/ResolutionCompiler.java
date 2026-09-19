@@ -255,6 +255,9 @@ public class ResolutionCompiler {
 
     var ret = graph.createChild(observationStrategy, scaleToCover);
     Map<String, ResolutionGraph> produced = new LinkedHashMap<>();
+    // Named ports may request the same collective (e.g. both ends of a connection).
+    // Share the producer within this strategy, before it exists in the runtime catalog.
+    Map<String, ResolutionGraph> collectives = new LinkedHashMap<>();
     boolean namedPlan = observationStrategy.getOperations().stream().allMatch(o -> o.getId() != null);
 
     for (var operation : observationStrategy.getOperations()) {
@@ -264,8 +267,13 @@ public class ResolutionCompiler {
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
 
-          var observableResolution =
-              resolve(
+          var observable = operation.getObservable();
+          boolean share = observable.getSemantics().isCollective()
+              && (observable.getContextualization() == null
+                  || !observable.getContextualization().modifiesExistingObservations());
+          String key = observable.getUrn() + "|" + observable.getContextualization();
+          var observableResolution = share ? collectives.get(key) : null;
+          if (observableResolution == null) observableResolution = resolve(
                   operation.getObservable(),
                   contextualizedScope.getSecond(),
                   ret,
@@ -273,6 +281,7 @@ public class ResolutionCompiler {
           if (observableResolution.isEmpty() || !observableResolution.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
           }
+          if (share) collectives.put(key, observableResolution);
           if (namedPlan) {
             produced.put(operation.getId(), observableResolution);
             if (operation == observationStrategy.getOperations().getLast()) ret.merge(observableResolution);

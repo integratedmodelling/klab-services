@@ -24,6 +24,27 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 class DataflowCompilerTest {
 
+  @Test
+  void sharedUnresolvedEndpointCompilesOneProducerAndTwoNamedPorts() {
+    var scope = mock(ContextScope.class);
+    var scale = new ScaleImpl(Geometry.UNIVERSAL);
+    var observable = mock(Observable.class);
+    when(observable.getSemantics()).thenReturn(mock(org.integratedmodelling.klab.api.knowledge.Concept.class));
+    var endpoint = new ObservationImpl();
+    endpoint.setId(-2); endpoint.setObservable(observable); endpoint.setGeometry(scale);
+    var strategy = mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.class);
+    var graph = ResolutionGraph.create(scope).createChild(endpoint, scale);
+    graph.merge(graph.createChild(strategy, scale));
+    var compiler = new DataflowCompiler(endpoint, graph, scope);
+    var source = compiler.compileObservation(endpoint, scale, strategy, "source").getFirst();
+    var target = compiler.compileObservation(endpoint, scale, strategy, "target").getFirst();
+    assertEquals(Actuator.Type.OBSERVE, source.getActuatorType());
+    assertEquals(Actuator.Type.REFERENCE, target.getActuatorType());
+    assertEquals(source.getId(), target.getId());
+    assertEquals("source", source.getName());
+    assertEquals("target", target.getName());
+  }
+
   @BeforeAll
   static void configure() { ServiceConfiguration.injectInstantiators(); }
 

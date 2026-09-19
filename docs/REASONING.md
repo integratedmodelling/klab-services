@@ -578,7 +578,19 @@ The reasoner records source hashes during full knowledge loading and ontology
 updates, and retains their source-bound compilation diagnostics for retrieval.
 An ontology validation request must match its loaded source exactly.
 Knowledge updates and validation are serialized to avoid observing a partly
-reloaded ontology. Validation waits for full OWL initialization, not merely worldview discovery.
+reloaded ontology. OWL validation waits for full initialization, not merely worldview discovery.
+Ontology edits are parsed with an isolated descriptor scope excluding all previous declarations
+from that ontology. Imports remain available and new declarations become visible in source order.
+Both Resources and reasoner reference validation also check same-ontology declaration positions,
+so an already-loaded concept cannot conceal a forward reference or a deleted declaration.
+Source errors from Resources are returned with their lexical locations before that check when
+its saved source hash matches the editor request; they are never attached to a newer draft.
+A local reasoner may load a snapshot marked invalid by Resources if ordered ontologies and a
+root ontology are present, retaining its diagnostics and inconsistent status while remaining
+operational for editing. Remote reasoners retain strict snapshot rejection. Missing roots still
+prevent loading. Startup failure summaries name errors and their source positions; warnings
+about unsupported clauses remain warnings. Source diagnostics are retained through ontology
+synchronization and replaced when that ontology is updated.
 Rejected worldview snapshots expose their document diagnostics in service advisories and log only
 when the failure changes. Calls requiring OWL before initialization report unavailable knowledge
 rather than attempting to create ontologies with a null manager.

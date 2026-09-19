@@ -30,6 +30,16 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
     }
   }
 
+  /** Isolated editing scope: old declarations from the edited ontology cannot resolve references. */
+  public WorldviewValidationScope withoutNamespace(String namespace) {
+    var isolated = new WorldviewValidationScope();
+    synchronized (conceptTypes) {
+      isolated.conceptTypes.putAll(conceptTypes);
+    }
+    isolated.clearNamespace(namespace);
+    return isolated;
+  }
+
   public void clearNamespace(String namespace) {
     Set<String> keys = new HashSet<>();
     String ns = namespace + ":";

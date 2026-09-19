@@ -200,6 +200,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       response.setReason("Semantic validation waits for parsing errors to be corrected");
       return response;
     }
+    // An editor snapshot may predate Resources validation of the saved file. Surface those
+    // diagnostics even before OWL startup, but only when they refer to exactly this source.
+    if (document instanceof KimOntology && response.getSourceHash() != null && scope instanceof UserScope userScope) {
+      var resources = scope.getService(ResourcesService.class);
+      if (resources != null) {
+        try {
+          var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
+          if (saved != null && Objects.equals(response.getSourceHash(),
+              SemanticValidationRequest.sourceHash(saved.getSourceCode()))
+              && Utils.Notifications.hasErrors(saved.getNotifications())) {
+            response.getNotifications().addAll(saved.getNotifications());
+            response.deduplicateNotifications();
+            response.setStatus(SemanticValidationResponse.Status.COMPLETE);
+            response.setReason("The saved ontology contains validation errors");
+            return response;
+          }
+        } catch (RuntimeException e) {
+          response.setReason("Cannot retrieve saved ontology diagnostics: " + e.getMessage());
+          return response;
+        }
+      }
+    }
     if (!knowledgeReady || owl() == null || !owl().isInitialized()
         || scope == null || scope.getService(ResourcesService.class) == null) {
       response.setReason("Semantic validation requires loaded knowledge and an available Resources service");
@@ -274,7 +296,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       UserScope scope, Map<String, KimOntology> ordered, Set<String> visiting) {
     if (ordered.containsKey(ontology.getUrn())) return true;
     if (!visiting.add(ontology.getUrn()) || ontology.getSourceCode() == null
-        || Utils.Notifications.hasErrors(ontology.getNotifications())) return false;
+        || (!Utils.URLs.isLocalHost(getUrl())
+            && Utils.Notifications.hasErrors(ontology.getNotifications()))) return false;
     for (var dependency : ontology.getImportedOntologies()) {
       var imported = resources.retrieve(dependency, KimOntology.class, scope);
       if (imported == null
@@ -507,10 +530,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           }
         }
         var notifications = loadKnowledge(discovered, serviceScope());
-        if (knowledgeReady && !Utils.Resources.hasErrors(notifications)) {
+        if (knowledgeReady && (Utils.URLs.isLocalHost(getUrl()) || !Utils.Resources.hasErrors(notifications))) {
           setOperational(true);
           ret = true;
-          serviceScope().info("Worldview loaded into local reasoner");
+          serviceScope().info(Utils.Resources.hasErrors(notifications)
+              ? "Worldview loaded for local editing; validation errors remain"
+              : "Worldview loaded into local reasoner");
 
           // TODO if there were previous logical notifications they should be deleted now
 
@@ -1418,25 +1443,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     scope = getScopeManager().collectMessagePayload(scope, Notification.class, ret);
 
-    if (worldview == null || worldview.isEmpty() || worldview.getOntologies().isEmpty()) {
-      var failures = new ArrayList<Notification>();
-      if (worldview != null) {
-        failures.addAll(worldview.getNotifications());
-        for (var ontology : worldview.getOntologies())
-          failures.addAll(ontology.getNotifications());
-      }
+    boolean localAuthoring = Utils.URLs.isLocalHost(getUrl());
+    var sourceDiagnostics = org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.diagnostics(worldview);
+    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, localAuthoring)) {
+      var failures = new ArrayList<>(sourceDiagnostics);
       if (!Utils.Notifications.hasErrors(failures))
         failures.add(Notification.error("Worldview is unavailable or contains no loadable ontologies"));
       var previous = worldviewLoadDiagnostics.stream().map(Notification::getMessage).toList();
       var current = failures.stream().map(Notification::getMessage).toList();
       worldviewLoadDiagnostics = List.copyOf(failures);
       if (!current.equals(previous))
-        serviceScope().warn("Cannot initialize worldview: " + String.join("; ", current));
+        serviceScope().warn("Cannot initialize worldview: "
+            + org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.errorSummary(failures));
       var rejected = ResourceSet.empty();
       rejected.getNotifications().addAll(failures);
       return rejected;
     }
     worldviewLoadDiagnostics = List.of();
+    ret.addAll(sourceDiagnostics);
+    if (worldview.isEmpty()) {
+      serviceScope().warn("Loading local worldview for editing with validation errors: "
+          + org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.errorSummary(sourceDiagnostics));
+    }
 
     knowledgeReady = false;
     invalidateSemanticCaches();
@@ -1475,7 +1503,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.advisories.addAll(ret);
 
     knowledgeReady = true;
-    setOperational(this.consistent.get());
+    setOperational(localAuthoring || this.consistent.get());
 
     return Utils.Resources.createFromLexicalNotifications(ret);
   }
@@ -1523,12 +1551,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
         var ontology =
             resourceService.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
+        notifications.addAll(ontology.getNotifications());
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
         }
         this.owl.registerWithReasoner(ontology);
         rememberOntologySource(ontology);
+        this.advisories.removeAll(loadedOntologyDiagnostics.getOrDefault(ontology.getUrn(), List.of()));
         loadedOntologyDiagnostics.put(ontology.getUrn(), List.copyOf(notifications));
+        this.advisories.addAll(notifications);
         resource.getNotifications().addAll(notifications);
 
         if (Utils.Notifications.hasErrors(notifications)) {
@@ -1579,7 +1610,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       serviceScope().setMaintenanceMode(false);
     }
 
-    this.consistent.set(!inconsistent);
+    this.consistent.set(!inconsistent && loadedOntologyDiagnostics.values().stream()
+        .noneMatch(Utils.Notifications::hasErrors));
 
     return changes;
   }

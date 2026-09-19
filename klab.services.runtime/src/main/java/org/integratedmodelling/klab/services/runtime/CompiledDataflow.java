@@ -467,7 +467,18 @@ public class CompiledDataflow {
       actuatorObservations.put(rootActuator, rootObservation);
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
+    // References carry transport copies. Bind aliases to the actual producer object so
+    // both ports see its assigned identity and completed contextualization state.
+    bindLocalReferences(rootActuator, observationMap);
     dependentObservations.putAll(observationMap);
+  }
+
+  private void bindLocalReferences(Actuator actuator, Map<Long, Observation> observations) {
+    if (actuator.getActuatorType() == Actuator.Type.REFERENCE
+        && observations.containsKey(actuator.getId())) {
+      actuatorObservations.put(actuator, observations.get(actuator.getId()));
+    }
+    for (var child : actuator.getChildren()) bindLocalReferences(child, observations);
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
@@ -584,11 +595,9 @@ public class CompiledDataflow {
                       // TODO source and target
                     }
 
-                    if (scope
-                        .getContextObservation()
-                        .getObservable()
-                        .getSemantics()
-                        .isCollective()) {
+                    var contextObservation = scope.getContextObservation();
+                    if (contextObservation != null
+                        && contextObservation.getObservable().getSemantics().isCollective()) {
                       transaction.link(
                           scope.getContextObservation(),
                           dependent,

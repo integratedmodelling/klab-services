@@ -1663,11 +1663,14 @@ public class OWL {
 
   synchronized OWLClass getOWLClass(Concept concept) {
     var owlClass = owlClasses.get(concept.getUrn());
-    // Collectivity belongs to observation semantics, not OWL class identity.
-    // Atomic collective views are not separately registered in owlClasses.
-    return owlClass == null && concept.isCollective()
-        ? owlClasses.get(concept.singular().getUrn())
-        : owlClass;
+    // Collectivity belongs to observation semantics, not OWL identity. Generated classes
+    // may be registered with either form, depending on which expression was resolved first.
+    if (owlClass == null) {
+      String counterpart = concept.isCollective()
+          ? concept.singular().getUrn() : concept.collective().getUrn();
+      owlClass = owlClasses.get(counterpart);
+    }
+    return owlClass;
   }
 
   /**

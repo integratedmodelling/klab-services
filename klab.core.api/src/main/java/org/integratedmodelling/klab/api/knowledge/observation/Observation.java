@@ -552,10 +552,11 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     if (observation.getObservable().is(SemanticType.QUALITY)
         || observation.getObservable().is(SemanticType.PROCESS)) {
       return Role.DEPENDENT;
+    } else if (observation.getObservable().getSemantics().isCollective()) {
+      // Connection producers are collectives hosted in cohorts, like object producers.
+      return Role.COLLECTIVE_SUBSTANTIAL;
     } else if (observation.getObservable().is(SemanticType.RELATIONSHIP)) {
       return Role.RELATIONAL;
-    } else if (observation.getObservable().getSemantics().isCollective()) {
-      return Role.COLLECTIVE_SUBSTANTIAL;
     }
     return Role.INDIVIDUAL_SUBSTANTIAL;
   }

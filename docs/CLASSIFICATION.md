@@ -1,139 +1,35 @@
-# Classification and characterization implementation
+# Classification and characterization
 
-Status: C0–C4 are implemented. The rebuilt stack completes C5's instantiation, substantial
-resolution and classification path. Live characterization with an explanatory model remains to
-be verified. This running implementation record continues [OBSERVATION.md](OBSERVATION.md);
-the main guides describe the accepted process contracts.
+Status: **CLASSIFICATION is complete and accepted**, confirmed by the maintainer on
+2026-09-19. The implementation includes mandatory individual characterization after each new
+attribution. The classification staging plan and continuation prompts have been retired.
 
-## Contract
+This reference describes the implemented contract. See [observable semantics](OBSERVABLES.md),
+[observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md), and
+[knowledge-graph persistence](KNOWLEDGE_GRAPH.md) for the surrounding architecture.
+
+## Semantic contract
 
 Classification resolves `P of each S`, for abstract or concrete predicate P and substantial S.
-Distributed inherence alone determines CLASSIFICATION. Without `each`, `P of S` determines
-CHARACTERIZATION regardless of abstraction. Classification attributes a satisfiable concrete P
-or concrete specialization; it never attributes an abstract predicate. Existing valid attributions
-satisfy the request without reinvocation. Identity, geometry and cohort membership are preserved.
+Distributed inherence alone selects CLASSIFICATION. Without `each`, `P of S` selects
+CHARACTERIZATION regardless of abstraction. Quality inherence remains TRANSFORMATION.
+
+Classification attributes a satisfiable concrete P or concrete specialization; it never
+attributes an abstract predicate. Existing valid attributions satisfy the request without
+reinvocation, another effect edge, or another characterization. Identity, URN, geometry, cohort
+membership, and unrelated predicates are preserved. Invalid same-family attributions remain
+errors; reuse does not authorize replacement or accumulation of classifications.
 
 Characterization models may match the predicate exactly or subsume it. Discovery includes abstract
-and concrete ancestor heads; semantic distance participates in the general Prioritizer criterion order (lexical scope first by default).
-Inherency and other semantic constraints still apply. Models for distinct non-predicate heads remain
-incompatible. See [the user-facing contract](OBSERVABLES.md#15-choosing-a-characterization-model).
+and concrete ancestor heads; semantic distance participates in the general Prioritizer criterion
+order (lexical scope first by default). Inherency and other semantic constraints still apply.
+Distinct non-predicate heads remain incompatible. See
+[choosing a characterization model](OBSERVABLES.md#15-choosing-a-characterization-model).
 
-The implementation history below records earlier abstraction-based decisions where explicitly
-dated; this contract supersedes them. `PendingAttribution.abstractPredicate` and provenance metadata
-`abstractPredicate` retain their transport names but mean the requested predicate, not a guarantee
-of abstractness. All effects remain staged through resolved Dataflow execution.
+## Strategy and resolution
 
-## Source audit
-
-| Boundary | Current path and missing behavior |
-|---|---|
-| Semantics | `Contextualization.forSemantics` selects CLASSIFICATION for distributed substantial inherence and CHARACTERIZATION for individual substantial inherence. Predicate abstraction constrains results, not dispatch. Quality inherence remains TRANSFORMATION. |
-| Strategy selection | Activity patterns and ordinary producers already parse. Added a Tier-0 member-resolving classification strategy and direct characterization strategy. Lowering accepts the Tier-0 classification members plan and individual characterization. Classification requires an explicit resolved members input; unsupported forms are rejected. |
-| Resolver | `ResolutionCompiler` branches to an internal `OperationTarget` before observation query/registration for semantic updates, both at roots and in model dependencies. The existing resolution API remains unchanged. Y uses ordinary collective query and missing-scale resolution. |
-| Dataflow | Portable UPDATE actuators carry operation semantics, requested support and typed target bindings, with no result observation. `CompiledDataflow` dispatches CLASSIFICATION updates without allocating observations; other semantic updates remain rejected. |
-| Invocation | The generic `ContextualizerExecutor` remains observation-oriented. C2 adds `MemberClassifierExecutor`, which invokes the selected local method with operation semantics and member context, validates returned concepts, and retains pending attributions. |
-| Results | `MemberClassifierExecutor` returns pending attributions; `TransactionImpl.stageAttributions` builds detached semantic views and before/after audit records. The observation-oriented result scope is bypassed. |
-| Completion | `RuntimeService.submitContextualizationResult` explicitly throws for CLASSIFICATION. Its instantiation branch submits created children and waits for them. Characterization requires a separate, optional-explanation outcome, not a blanket swallowing of execution failures. |
-| Transactions | `DigitalTwinImpl.TransactionImpl` shares modified/added state with the root. C3 stages detached observations and publishes semantics only after durable root commit; child failure poisons the root. |
-| Provenance | Child contextualization activities formerly wrote CONTEXTUALIZED for every outcome. They now choose typed links. C3 links CLASSIFIED to each affected member with before/after observable URNs, predicate family/result, support and event. |
-
-## Implemented milestone C0
-
-- Added predicate activity selection and a semantic-update activity predicate; selection now follows distributed versus individual inherence.
-- Added typed effect relationships and changed the current transaction writer to use them:
-  INSTANTIATED, ACKNOWLEDGED, DETECTED, SIMULATED, MEASURED, QUANTIFIED, VALUED,
-  CATEGORIZED, VERIFIED, CLASSIFIED, CHARACTERIZED, TRANSFORMED and CONNECTED.
-- Removed the generic CONTEXTUALIZATION activity type and CONTEXTUALIZED effect relationship.
-  Execution activities use the actual contextualization type; orchestration types such as
-  SUBMISSION and RESOLUTION remain. CONTEXTUALIZED_BY remains the observation-to-actuator
-  relationship and has a different purpose. Old graph compatibility is not supported.
-- Updated Neo4j query visibility to follow all activity effects. New effect edges are deliberately
-  absent from deletion ownership. Classifying an existing observation does not make it owned by
-  the classifying context. The old CONTEXTUALIZED deletion path is removed; no graph migration is provided.
-- Added the two Tier-0 source strategies to the reference corpus and `imod/strategies/observations.obs`.
-  These are definitions awaiting the operation-target milestone, not runnable classifiers today.
-- Corrected the staging model separation. The resource and live numerical/classifier execution
-  have not been exercised.
-
-C0 validation: the eight-module Maven reactor compiled and 22 focused tests passed:
-`ClassificationContractTest` (2), `ObservationPipelineTest` (5),
-`ObservationStrategyAdaptationTest` (6) and `Neo4jQueryCompilerTest` (9). These verify semantic
-dispatch, the expanded corpus and interface serialization, existing Tier-0 behavior, typed effect
-visibility and the deletion boundary. They do not exercise classification against live members.
-
-## Activity types and exact graph links
-
-An execution activity's `type` is the corresponding `Contextualization` name. `Activity.Type`
-is the canonical enum, also used by the `GraphModel.Activity` record and serialized as the
-Neo4j Activity node's `type` property. There is no second, divergent graph-specific activity enum.
-`Activity.Type.forContextualization` rejects null and VOID: neither describes executable work.
-Submission, resolution and other orchestration activities retain their own types.
-
-| Activity node `type` | Activity → affected Observation relationship |
-|---|---|
-| INSTANTIATION | INSTANTIATED |
-| ACKNOWLEDGEMENT | ACKNOWLEDGED |
-| DETECTION | DETECTED |
-| SIMULATION | SIMULATED |
-| MEASURE | MEASURED |
-| QUANTIFICATION | QUANTIFIED |
-| VALUATION | VALUED |
-| CATEGORIZATION | CATEGORIZED |
-| VERIFICATION | VERIFIED |
-| CLASSIFICATION | CLASSIFIED |
-| CHARACTERIZATION | CHARACTERIZED |
-| TRANSFORMATION | TRANSFORMED |
-| CONNECTION | CONNECTED |
-
-`CompiledDataflow` creates the execution Activity using its target's contextualization.
-`DigitalTwinImpl.TransactionImpl` creates the effect edge when that execution enters a child
-transaction. It derives the edge from the **activity type**, not the target's current observable.
-This matters when a classification activity changes an ordinary substantial observation.
-
-```mermaid
-flowchart LR
-  P[Parent Activity] -->|TRIGGERED| E[Activity: type MEASURE]
-  E -->|MEASURED| O[Target Observation: quality]
-  R[Activity owning the compiled plan] -->|HAS_PLAN| A[Root Actuator]
-  R -->|RESOLVED| O
-  O -->|CONTEXTUALIZED_BY| A
-```
-
-These edges belong to different parts of the graph:
-
-| Edge | Source → destination | Writer and purpose |
-|---|---|---|
-| TRIGGERED | Parent Activity → child Activity | Transaction nesting; records causal execution hierarchy |
-| Typed effect, e.g. MEASURED | Execution Activity → target Observation | Child contextualization transaction; records the operation's effect |
-| CREATED | Submission/creation Activity → new Observation | `TransactionImpl.setTarget`; registration, not a replacement for an effect edge |
-| HAS_PLAN | Activity owning the plan → root Actuator | `CompiledDataflow`; identifies the compiled plan |
-| RESOLVED | Activity owning the plan → root Observation | `CompiledDataflow`; records resolution of the root |
-| CONTEXTUALIZED_BY | Observation → its Actuator | `CompiledDataflow`; links the observation to its executable implementation, including geometry |
-| HAS_CHILD / HAS_MEMBER | Parent Observation or Cohort → child/member Observation | Containment/membership; neither is a contextualization effect |
-
-For current instantiation execution, the effect's target is the collective observation being
-contextualized. Newly produced individual observations have their own registration and subsequent
-acknowledgement activities. This change does not invent additional INSTANTIATED edges to every
-individual. In C1–C4, classification and characterization must instead execute against the actual
-members and link CLASSIFIED/CHARACTERIZED to each affected member; no directive observation is
-created. C3 implements CLASSIFIED member links; C4 implements CHARACTERIZED execution.
-
-Neo4j visibility follows typed effects; context deletion does not use them as ownership evidence.
-The effect edge identifies the kind and target of work; the Activity outcome still determines
-success or failure. C3 records before/after attributed semantics for each classified member.
-
-Typed-activity validation (2026-09-11): 18 tests passed across
-`ClassificationContractTest`, `DigitalTwinCommitTest`, `Neo4jQueryCompilerTest` and
-`Neo4jQueryExecutionTest`. Coverage includes every executable activity/effect pair, interface JSON
-round trips, actual transaction edge direction and triggering links, and embedded Neo4j traversal
-and context-deletion checks. No live service graph migration was performed or is supported.
-
-## Strategy contract
-
-Classification always consumes observed members. Resolving `each Y` is therefore a mandatory
-prerequisite within the Tier-0 strategy, not a Tier-1 fallback. There is no classifier strategy
-that bypasses member resolution. Existing complete cohort coverage makes that resolution a query
-reuse; partial coverage triggers resolution of the missing support.
+Classification always consumes observed members. Resolving `each S` is a mandatory Tier-0
+prerequisite. Complete cohort coverage is reused; partial coverage resolves the missing support.
 
 ```text
 strategy 0 named classification.members
@@ -153,550 +49,113 @@ strategy 0 named characterization.direct
   observe $this;
 ```
 
-The classifier model still directly explains X of each Y; its strategy first obtains the members
-on which it operates. “No direct classifier strategy” does not remove the separate classifier
-model from the namespace. Classification dependency execution is enabled by C3; C4 adds characterization of each staged attribution.
+The classifier model explains the full predicate-of-each-substantial directive. Abstract predicate
+requests are intentional and must not be rejected by a `request.fully_specified` guard.
+The `members` port is a typed collective/member binding, not a scalar model argument.
 
-An abstract classifier request must not use `request.fully_specified` to reject its deliberately
-abstract predicate. Validate the inherent and operation signature instead. The `members` port
-is compiled as a typed collective/member binding, not an ordinary scalar model argument. The current
-classification strategy covers collective inherence; singular inherence selects characterization instead.
+The existing Resolver API returns a Dataflow. `ResolutionCompiler` represents semantic updates
+with `OperationTarget`, and portable UPDATE actuators carry operation semantics, requested support,
+and typed target bindings. No observation, storage, or scheduler entry is allocated for the
+directive. UPDATE dependencies execute before their consumer, including consumers with empty
+computation. All mutations result from resolved Dataflow execution; there is no separate mutation API.
 
-The runtime must finish resolution of newly instantiated members before passing them to the
-classifier. Characterization is never written as a strategy continuation.
+## Member selection and classifier invocation
 
-## Progressive implementation and acceptance
+Member producers complete their required individual resolution before classification. Enumeration
+combines durable `HAS_MEMBER` links with transaction-local links, including ancestor transactions,
+and deduplicates member identities. Selection intersects member geometry with producer/request
+support and checks decoded extent emptiness. Points and lines retain their spatial support;
+disjoint members are excluded. A completed empty cohort succeeds without invoking a classifier.
+A missing or incomplete producer is an error, not an empty cohort.
 
-### C1 — Resolve operations without registering result observations
+`MemberClassifierExecutor` selects one unambiguous local implementation through ComponentRegistry.
+The method returns Concept and accepts exactly one Observable and one Scope/ContextScope. It may
+also accept one each of Observation, ServiceCall, Geometry, and Scheduler.Event. Unknown, duplicate,
+or ambiguous parameters and non-Concept return types are rejected; instance methods require a
+local receiver.
 
-**Implemented planning boundary.** No endpoint or alternate request/result DTO was introduced.
-`Resolver.resolve(Observation, ContextScope)` still returns `Dataflow`. Its observation-shaped
-request may describe a directive, but the Resolver uses an unregistered probe only for the existing
-Reasoner selection API; the actual graph vertex is an internal `OperationTarget`. Model dependencies
-enter this path before `requireObservation`, and Runtime registration rejects directives.
+The Observable argument is the full classification directive. Each invocation receives
+`scope.within(member)` and the actual member when requested. Validation removes only INHERENT
+from the directive to obtain the requested predicate, preserving its other restrictions.
 
-| Portable actuator field | C1 meaning |
-|---|---|
-| `actuatorType = UPDATE`, `effect = SEMANTIC_UPDATE` | An operation affecting existing members; no result observation |
-| `operationObservable`, `contextualization` | X-of-Y semantics and CLASSIFICATION/CHARACTERIZATION, independent of affected member semantics |
-| `observation = null`, `id = 0` | No allocated or transported directive observation; node identity is `transientId` |
-| `requestedSupport`, `coverage` | Requested support and resolved plan coverage; neither records that classification has executed |
-| `targetBindings: COHORT_MEMBERS` | Named child producers whose member sets must be combined after prerequisite execution |
-| `targetBindings: OBSERVATION` | Existing individual context observation for characterization |
-| `children` | Prerequisite computations/references, required before the update |
-
-Classification lowers `resolve $members` and terminal `observe $this with inputs(members = cohort)`.
-The Resolver selects the classifier model in the requesting scope, retaining lexical constraints,
-and attaches the resolved cohort as a prerequisite. Complete cached support is reused; partial support
-requires an instantiator for the remainder. If scale subtraction cannot express that remainder, it
-conservatively resolves full support instead of upgrading the cached portion to complete coverage.
-Compiler-generated member source names are local to the update actuator and are not scalar arguments
-passed to the classifier. The entire cohort output, including cached references, supplies members.
-
-`Actuator.TargetBinding` is registered in JacksonConfiguration; implementations remain plain beans
-without Jackson dependencies or annotations. Nested Dataflow transport preserves the operation and
-bindings. `SemanticUpdateTargets` provides side-effect-free binding of completed producer member
-sets, deduplicating positive durable IDs and transaction transient IDs in separate identity spaces.
-A completed empty set is valid; an absent producer is an error. C2 uses this helper for supplied
-completed member sets. C3 now enumerates completed cohort producers and stages their classifications;
-C1 alone did not enumerate or classify live members.
-
-At C1, the old blanket Reasoner lowerer guard was replaced by a Runtime whole-plan preflight guard. It ran
-before `requireObservations`, storage preparation or executor construction, so a nested update cannot
-partially execute as an observation-producing plan. C3 replaces the classification gate with explicit
-operation dispatch and atomic effects; unsupported update kinds still fail preflight.
-Individual characterization has a portable member target. Distributed predicate inherence is
-classification; singular predicate inherence is characterization.
-
-The remaining C1 text records the accepted contract and acceptance criteria. The next implementation
-stage is now **C5**, validating the complete lifecycle against the live staging namespaces.
-
-C1 validation: the eight-module offline Maven reactor passed 18 focused tests:
-`ClassificationPipelineTest` (6), `ObservationPipelineTest` (5), `DataflowCompilerTest` (1),
-`ClassificationContractTest` (2), and `SemanticUpdateTargetsTest` (4). These cover the actual parsed
-reference corpus, Reasoner selection/lowering, strategy and nested Dataflow interface JSON transport,
-cached/new/partial cohort planning, rejection of incomplete support, classification as a model
-dependency, individual characterization, existing namespace/context propagation regressions,
-deduplication, empty-versus-missing producer outputs, and pre-allocation rejection. External model,
-query and runtime services are controlled doubles. No live worldview model lookup, cohort enumeration,
-classifier execution, graph mutation, provenance extraction or replay was exercised. The test log is
-`target/c1-tests.log`; `git diff --check` also passed.
-
-Keep the existing resolution entry points and their Dataflow response. No new resolution or
-mutation endpoint is required. All runtime mutations, including classification and characterization,
-must occur through execution of a resolved Dataflow. Do not introduce a parallel request/result
-service contract for semantic updates.
-
-Extend Dataflow and Actuator interfaces/beans as needed to describe the contextualization explicitly:
-operation observable, affected observation or member-graph binding, requested support, dependency
-ordering and result/effect kind. Distinguish a newly produced observation from an existing member
-whose semantics are changed. A semantic-update node must not register a result observation for
-X of Y. Resolver may use internal planning targets, but these are neither a public mutation API
-nor persisted observations. Preserve lexical namespace/project/scenario constraints at lookup.
-
-Runtime dispatches from the contextualization declared in the resolved plan and validates the
-contextualizer signature against it. It must not infer the plan's meaning solely from Java return
-or parameter types. Classification outputs and completion states are internal execution/transaction
-results, not an alternative service response replacing Dataflow. Characterization follows the same
-resolution-to-Dataflow contract when Runtime schedules the mandatory follow-up.
-
-Maintain interface-based transport: register any added abstract bean types in JacksonConfiguration,
-use plain portable fields with no Jackson annotations/dependencies, and test nested Dataflow/Actuator
-round trips. Do not serialize ContextScope, live executors or Resolver graph implementations.
-
-This response is a **contextual resolution Dataflow**: it specifies work needed within the existing
-knowledge graph and can reference observations already present there. It is not a complete plan
-for rebuilding that graph. The latter is a separately extracted **graph-reproduction dataflow**,
-assembled from provenance with definitions and dependency closure sufficient to start from an
-empty graph. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
-
-Implement classifier model selection and the Tier-0 members port, reusing existing query coverage and
-missing-scale calculation. Deduplicate members by durable or transaction-local identity. Cohort
-support and classification completion are separate quantities. Classifying only the cached members
-must not claim completion for an incompletely resolved requested cohort.
-
-Acceptance: no new observation ID/CREATED link for X-of-Y; the member-resolving strategy remains
-rank zero; fully covered/partial/empty cohorts; existing and newly instantiated Ys; private model
-visibility; interface JSON round trips preserving contextualization and member bindings; no new
-resolution/mutation endpoints; all semantic changes occur through Dataflow execution. Planning tests
-permitted removal of the lowerer guard; C3 now supplies the classification execution stage.
-
-**Completed-stage prompt (retained for traceability):** “Implement C1 in docs/CLASSIFICATION.md through the existing resolution API returning
-Dataflow. Extend its portable nodes to explicitly represent semantic-update contextualizations,
-Tier-0 member resolution and typed member bindings. Add no resolution/mutation endpoint, and
-ensure classification directives never become observations. Keep all changes within resolved
-Dataflow execution and preserve Jackson interface transport. Do not confuse this contextual plan
-with the separate provenance-extracted graph-reproduction dataflow. Update the running docs.”
-
-### C2 — Invoke and validate classifiers per member
-
-**Implemented pending-attribution boundary.** `MemberClassifierExecutor.compile` selects one
-unambiguous local implementation through ComponentRegistry; `CompiledDataflow.compileMemberClassifier`
-exposes this stage for the runtime transaction integration. No endpoint was added. The normal
-whole-plan execution path now consumes pending attributions through the C3 transaction stage.
-
-The method must return Concept and accept exactly one Observable and one Scope/ContextScope.
-The Observable argument is the full X-of-each-Y directive. A classifier that needs the predicate
-family extracts X itself; parameter binding does not rewrite the observable. Runtime still
-extracts X independently to validate returned attributions.
-It may additionally request one each of Observation, ServiceCall, Geometry and Scheduler.Event;
-unknown, duplicate or ambiguous parameters and non-Concept return types are rejected. An instance
-method requires a local receiver. The actual generator currently declares
-`Concept generateConcept(Observable, ServiceCall, Scope)`; the executor supports it without inventing
-an Observation parameter. Every invocation receives the full X-of-Y operation observable, the
-actual member when requested, and `scope.within(member)`. Validation removes only INHERENT from
-the operation to obtain the requested X, preserving other restrictions.
-
-The original model dependency is carried as nullable `Actuator.modelDependency` through interface
-JSON transport. Only a non-null original dependency whose `isOptional()` is true permits the
-classifier to return null. Root requests and strategy-only recursive requests do not acquire this
-permission from their own optional flag. Missing implementations, incomplete cohort producers,
-exceptions, and invalid concepts are never treated as optional empty results.
-
-| Classifier outcome | Required dependency or other trigger | Optional original model dependency |
+| Classifier result | Required dependency or other trigger | Optional original model dependency |
 |---|---|---|
-| Concrete, satisfiable specialization (including an equal concrete predicate) of X | Pending attribution | Pending attribution |
-| Null (no concept, e.g. empty generator closure) | Failure | No attribution for that member |
+| Concrete, satisfiable specialization, including the requested concrete predicate itself | Pending attribution | Pending attribution |
+| Null | Failure | No attribution for that member |
 | NOTHING / owl:Nothing | Inconsistency error | Inconsistency error |
-| Abstract, unrelated, unsatisfiable or non-predicate concept | Failure | Failure |
+| Abstract, unrelated, unsatisfiable, or non-predicate concept | Failure | Failure |
 | Invocation exception | Failure | Failure |
 
-The initial Concept-returning contract has no separate empty collection or Optional return wrapper.
-A successfully completed cohort with zero members succeeds independently of dependency optionality;
-it does not call the classifier. An unavailable producer is not an empty cohort.
+Only the original model dependency's optional flag permits null. Root requests and strategy-only
+requests do not acquire that permission from their own optional flag. Missing implementations,
+service failures, and invalid results are never suppressed as optional outcomes.
 
-Execution binds and deduplicates completed member sets. For a given compiled executor, member identity,
-event and support, concurrent/repeated calls share the same result or failure, so the contextualizer
-runs once. C3 creates a fresh invocation cache per root transaction attempt and compares persisted
-baselines under member locks to coordinate competing transactions. A batch publishes no successful list if any member fails.
-PendingAttribution records carry the member, original observable, abstract/concrete predicates,
-support and event; no observable, storage, ID, graph or provenance is changed.
+Invocation success or failure is cached per compiled executor, root transaction, member, event,
+and support. The full batch is validated before staging. `PendingAttribution` records contain the
+member, original observable, requested and returned predicates, support, and event. The legacy
+transport field `abstractPredicate` means the requested predicate, which may be concrete.
 
-Members already bearing valid concrete X-family traits or roles are recognized before invocation
-and skipped as satisfied. Invalid same-family attributions remain errors. No predicate is replaced
-or accumulated by this reuse; a second staged classification in one root attempt remains rejected.
-Unrelated predicates and roles remain untouched.
+## Atomic attribution and provenance
 
-C2 validation: the eight-module offline Maven reactor passed 25 tests, with none skipped:
-`MemberClassifierExecutorTest` (8), `SemanticUpdateTargetsTest` (4), `ClassificationPipelineTest`
-(8), and `ObservationPipelineTest` (5). The actual sibling generator source was compiled with the
-Java compiler and invoked through its real method signature using a singleton closure for a
-deterministic result and an empty closure for null-result behavior. Other tests cover typed member
-arguments, invalid results including NOTHING for optional dependencies, failed batches, repeated
-and concurrent invocation, reclassification rejection, registry selection, and optional dependency
-provenance across JSON transport. Reasoner and service boundaries are controlled doubles; this does
-not verify deployed component loading, live ontology closure, cohort enumeration or transaction
-mutation. Log: `target/c2-tests.log`. To repeat the actual-source test, set
-`-Dclassifier.generator.source=<path-to-RandomContextualizers.java>`; without it that one test skips.
+`TransactionImpl.stageAttributions` uses the member's Reasoner builder to add the returned trait or
+role and validates the resulting observable. Detached semantic replacements leave original live
+objects unchanged until durable root commit. Transaction asset/link views expose the staged
+replacement. This is a semantic overlay, not general isolation for arbitrary fields or Cypher queries.
 
-Select a classifier executor from the operation contextualization. Resolve the contextualizer's
-signature before execution: full operation Observable, member Observation and member ContextScope.
-Execute once per member per classified support/event, not once per grid cell or data shard. The
-actuator's operation observable stays X of Y and is passed unchanged alongside the concrete member.
+New members are stored with final semantics. Existing members are updated through
+`KnowledgeGraph.Transaction.updateSemantics`, with locks acquired in ID order and the persisted
+observable compared against its recorded baseline. Stale or missing targets fail the transaction.
+Indexed observable, semantics, and semantic-type properties change together; unrelated state is
+preserved. Explicit replacement/combination and repeated concurrent staging are unsupported.
 
-Require a concrete, consistent Concept Z of the appropriate predicate family and semantic
-compatibility with X (`is(Z, X)`, including equality for concrete X). A null result is
-allowed only for an optional original model dependency after classifier selection and linking.
-An abstract, unrelated, NOTHING or otherwise inconsistent result is always an error. Do not guess
-category compatibility from URN prefixes. Restrict the first implementation to local concept-
-returning contextualizers; report unsupported signatures explicitly.
+Successful root commit publishes semantics to live objects, reports existing IDs in
+`Commit.modifiedAssets`, and invalidates graph, scope, and client caches. New members remain in
+`addedObservations`. Invocation, characterization, staging, or storage failure rolls back the
+batch. A successful child activity means staged work; only root commit establishes durability.
 
-Acceptance: actual `klab.generators.random.categories` signature; deterministically controlled
-choices; mixed existing/new members; zero members with complete support; return validation; no
-concurrent duplicate classification. Provide explicit policy/tests for reclassification before
-silently replacing an existing X-family predicate. Preserve unrelated predicates and roles.
+Classification provenance is:
 
-**Completed-stage prompt:** “Implement C2: a member classifier executor with typed invocation and semantic closure
-validation. Retain returned concepts as pending attributions; do not mutate persisted observations
-or create result observations. Test the actual generator signature and invalid returns.”
+```text
+parent Activity -TRIGGERED-> CLASSIFICATION Activity -CLASSIFIED-> member
+```
 
-### C3 — Atomic semantic updates and provenance
+Each CLASSIFIED edge records before/after observable URNs, requested/returned predicates, encoded
+support, event, and member identity. The portable audit list is also Activity metadata
+`Metadata.IM_ATTRIBUTIONS`. Typed effects establish visibility but do not establish deletion
+ownership. `CONTEXTUALIZED_BY` separately connects observations to executable actuators;
+`HAS_PLAN` connects activities to plans. No generic CONTEXTUALIZED effect is used.
 
-**Implemented for the Tier-0 collective classification dependency.** The existing resolution API
-still returns Dataflow. No resolution or mutation endpoint was added, and neither operation execution
-nor audit creates an observation for X-of-Y. Root directive submission, singular-inherent
-classification and characterization are not newly enabled by this milestone.
+## Mandatory characterization
 
-Execution proceeds as follows:
+After staging a new attribution, `CharacterizationLifecycle` resolves the concrete returned
+predicate of the singular substantial in the staged member's scope. It does not resubmit the
+whole member or re-enter classification. Runtime awaits all required child work before completing
+classification and committing the root transaction. Characterization is a runtime lifecycle
+obligation, not an authored strategy continuation.
 
-1. `CompiledDataflow` compiles UPDATE nodes through `MemberClassifierExecutor`, with separate
-   actuator identities even though their result observation IDs are all zero. UPDATE children are
-   explicit prerequisites of their consuming executor. A parent with an empty computation still
-   registers its executor when it has an UPDATE dependency. No update receives an observation
-   scheduler entry, storage allocation or `AFFECTS` endpoint.
-2. Ordinary member producers execute through the scheduler in the current event. Instantiation's
-   existing completion path waits for the submitted members. Cached reference producers reuse their
-   completed support. Runtime enumerates durable and transaction-local `HAS_MEMBER` links and limits
-   membership to the producer/request support intersection. The typed binding deduplicates members;
-   a completed empty cohort succeeds, while a missing producer/cohort fails.
-3. Classifier invocation validates the full batch before staging. Only null results permitted by an
-   optional original model dependency are omitted. Runtime creates a CLASSIFICATION Activity carrying
-   its plan FlowChart before execution and nests it under the current transaction Activity.
-4. `TransactionImpl.stageAttributions` builds each replacement with the member's Reasoner builder,
-   using `withTrait` or `withRole`, and checks consistency of the resulting observable. Detached
-   copies preserve observation identity, URN, geometry, parent/cohort links and unrelated predicates.
-   Transaction asset/link views expose the replacement; original graph vertices and live objects
-   retain their old semantics until durable commit. This is a semantic overlay, not a general
-   transaction-isolation implementation for arbitrary observation fields or arbitrary Cypher queries.
-5. The root stores new members with final semantics and updates existing members through
-   `KnowledgeGraph.Transaction.updateSemantics`. Neo4j locks each existing member and compares its
-   stored observable against the recorded baseline. Existing members are locked in ID order. A stale
-   or missing target fails the entire transaction. Only semantic properties are replaced, preserving
-   unrelated persisted state; indexed `observable`, `semantics` and `semantictype` values change together.
-6. Successful durable commit publishes semantics to live member objects and includes existing IDs
-   in `Commit.modifiedAssets`; new members remain in `addedObservations` with final semantics.
-   A local semantic-cache generation invalidates graph and scope caches across context views.
-   Normal commit delivery invalidates client assets and adjacency; no new notification API is used.
-   Failed invocations, staging or storage publish no semantic replacements. Even `fail(null)` poisons
-   the shared root state. Storage failure is reported before resource closure, so closure cannot
-   accidentally commit an earlier successful portion of a failed batch.
+Dataflow outcomes distinguish `RESOLVED`, `NO_MODEL`, and `FAILED`. Successful discovery with no
+characterization model is a terminal success and preserves the attribution. Its Resolution
+Activity records `resolutionOutcome=NO_MODEL`; no CHARACTERIZED edge is created when no work ran.
+Infrastructure errors, exceptional responses, and contextualizer failures remain failures.
+Actual successful characterization creates a CHARACTERIZATION Activity with a CHARACTERIZED edge
+to the existing member and a plan FlowChart; the directive never becomes an observation.
 
-The provenance contract is `parent Activity -TRIGGERED-> CLASSIFICATION Activity -CLASSIFIED-> member`.
-Each CLASSIFIED edge has `before` and `after` observable URNs, `abstractPredicate`, `predicate`,
-encoded `support`, event key, and member transient/local identity. Its endpoint supplies the durable
-identity after storage. These links remain outside deletion ownership. The same portable audit list
-is available as Activity metadata `Metadata.IM_ATTRIBUTIONS` (`im:attributions`). Known FlowChart
-and attribution metadata survive Activity persistence; operation actuators preserve their portable
-UPDATE fields for audit. These contextual-plan snapshots are not provenance-extracted reproduction
-Dataflows, and persisted scheduler restoration of composite plans is not added here.
+Local characterizers return `void` or primitive `boolean` (`false` fails). They require Observable
+and exactly one Scope/ContextScope, and may accept Observation, ServiceCall, Geometry, and
+Scheduler.Event without duplicate parameter types. A model with dependencies and no local
+computation is executable. Observation/Concept-returning and remote/adapter characterizers are
+outside this executor's supported contract and fail compilation explicitly.
 
-A successful child activity means its batch was **staged**. The enclosing root commit determines
-whether those changes became durable; a later failure leaves no durable attribution/effect edge.
-Client consumers must not treat intermediate ActivityFinished as a commit notification.
+## Diagnostics and verification
 
-A valid concrete specialization (including an equal concrete predicate) of X already present as a direct trait or role satisfies
-classification, whether asserted originally or obtained by another classifier. The executor checks
-this before invocation and yields no pending attribution, update/effect edge or characterization
-for that member. Invalid same-family attributions remain errors. Explicit replacement/combination
-and concurrent repeated staging remain unsupported; reusing existing knowledge does not authorize
-reclassification. Characterization of newly staged attributions still precedes root commit.
+Accepted resolution graphs travel as FlowChart metadata on Dataflow and RESOLUTION Activity.
+Operation nodes expose contextualization and optional-dependency status; links expose member
+bindings and coverage. Execution records per-member attribution audit data and typed effects.
+See [resolution diagnostics](FLOWCHARTS.md#resolution-diagnostics).
 
-Represent pending attributions with member identity, old/new observable, abstract predicate,
-concrete result, coverage/event and activity. Construct new observables with the Reasoner builder;
-attach traits versus roles correctly. Preserve observation ID, URN, geometry, cohort and parent.
-Avoid mutating hash keys while observations are vertices in graphs or members of sets.
-
-Apply replacements within the root transaction, mark existing members modified, and include new
-members in their creation records with final semantics. Update persistence indexes and invalidate
-client/query caches from commit payloads. Store before/after semantics in provenance so extraction
-can reconstruct what was classified; a bare CLASSIFIED edge is insufficient for replay.
-Rollback must restore both in-memory views and durable state. Runtime activities must link to all
-affected members with CLASSIFIED, without making those effects deletion-ownership edges.
-
-Acceptance: commit.modified contains existing members; no replacement identities/cohorts; optional empty classifier results leave members unchanged; new
-members carry final semantics; rollback after a later-member failure; concurrent classifications;
-provenance queries and client graph updates; deletion cannot remove independently owned members.
-
-C3 validation: the five-module offline Maven reactor passed **51 focused tests**, none skipped:
-ClassificationContractTest (2), ClientKnowledgeGraphTest (15), ClassificationExecutionTest (1),
-ClassificationTransactionTest (6), ClassificationPersistenceTest (4), MemberClassifierExecutorTest (8),
-SemanticUpdateTargetsTest (4), DigitalTwinCommitTest (4), Neo4jQueryExecutionTest (4),
-ContextualizationDiagnosticsTest (1), and ResolutionDiagnosticsTest (2). Coverage includes an empty
-parent computation with a classifier dependency, existing/new-member staging and commit, optional
-empty results, later failure, concurrent baseline conflicts, before/after edge properties, UPDATE
-persistence/transport, typed activity diagnostics, client refresh and deletion ownership boundaries.
-The actual generator source signature was compiled and invoked. Persistence tests run production
-transaction/Cypher logic against embedded Neo4j through a thin driver adapter: the application's
-current Bolt/Netty dependency combination cannot start the harness Bolt connector. This does not
-constitute live Bolt, deployed worldview/model lookup, full staging execution, AMQP or IDE validation.
-Log: `target/c3-tests.log`. A follow-up run passed both ClassificationExecutionTest cases, including
-an additional regression proving scope-cache reload after another context advances the semantic
-revision (`target/c3-cache-tests.log`). `git diff --check` passed. C4 is implemented below; C5 retains
-live acceptance.
-
-**Completed-stage prompt:** “Implement C3: connect MemberClassifierExecutor pending attributions to atomic staged attribution updates and CLASSIFIED provenance, including
-before/after semantics, commit propagation, query/client invalidation and rollback tests.”
-
-### C4 — Mandatory characterization scheduling, optional explanation
-
-**Implemented.** After each valid classification, Runtime builds concrete Z of singular Y and resolves it in
-`scope.within(member)`. The abstract X must not leak into this request. Keep the classification
-transaction open until its required child lifecycle work finishes, as for instantiation.
-
-Distinguish no explanatory model from failed resolution infrastructure or failed contextualizer
-execution. No characterization model is a successful terminal lifecycle condition; it does not
-undo classification. An execution failure follows the normal failure/rollback policy. Do not
-reclassify on completion of characterization or resolve the whole member recursively in a loop.
-Record CHARACTERIZED for actual characterization work, with a distinct no-model outcome when
-only the lifecycle decision was made. Apply the same no-model distinction to acknowledged newly
-instantiated members rather than suppressing arbitrary failures.
-
-Acceptance: exactly one characterization request per new attribution; correct concrete semantics
-and member scope; no-model success; execution failure propagation; no observation creation;
-multiple members/child completion order; explicit provenance of actual work.
-
-`CharacterizationLifecycle` runs immediately after `stageAttributions`. It retrieves the detached
-staged member, focuses a scope on that member, and submits an unregistered characterization
-request through the existing Resolver API. The request uses the returned concrete predicate and
-the original singular substantial semantics. It does not recursively submit the whole member.
-All child work is awaited before classification can finish; the root transaction remains the only
-durable commit. A child failure clears pending attributions through the existing C3 failure path.
-
-The portable `Dataflow.ResolutionOutcome` distinguishes `RESOLVED`, `NO_MODEL`, and `FAILED`.
-`NO_MODEL` carries no computation and is non-empty in the legacy execution sense. The Resolver
-uses it for characterization after successful model discovery finds no candidate. For
-ACKNOWLEDGEMENT, any error-free empty resolution preserves the substantial's existence, including
-no applicable strategy or candidates that contribute no significant dataflow. Here `NO_MODEL`
-means no executable explanation was selected, not necessarily that no candidates were found.
-Characterization retains the stricter discovery requirement. Reported errors, exceptional service
-responses and contextualizer execution failures are not suppressed. The outcome survives the existing
-Jackson Dataflow interface mapping without annotations or new endpoints.
-
-For `NO_MODEL`, the successful Resolution Activity records `resolutionOutcome=NO_MODEL`; there
-is no CHARACTERIZED link because no characterization work ran. For actual work, the Runtime
-compiles CHARACTERIZATION UPDATE roots, executes their dependencies, and invokes the local
-characterizer in the member scope. A successful Characterization Activity links to that existing
-member through CHARACTERIZED and carries its plan FlowChart. The directive never becomes an
-observation. Ordinary dependency observations remain governed by their own resolved plans.
-
-The first executor supports public local contextualizers returning `void` or primitive `boolean`
-(`false` fails). Parameters may be Observable, Observation, ServiceCall, Geometry, Scheduler.Event,
-and exactly one Scope or ContextScope; Observable is required and duplicate parameter types are
-rejected. Observation/Concept-returning characterizers are rejected. A model with dependencies and
-no local computation is also executable. Remote/adaptor characterization functions are not yet
-supported by this typed executor and fail compilation explicitly.
-
-Duplicate attributions within a lifecycle batch are suppressed by member/predicate identity.
-The classification and characterization executors cache success or failure per root transaction,
-event and support, so repeated scheduler visits do not repeat lifecycle work. Controlled tests
-cover member scopes, request identity, execution-before-child-commit ordering, no-model audit,
-failed resolution versus failed execution, typed invocation, duplicate visits, effect ordering,
-JSON transport and rollback of staged classifications. Live worldview, AMQP and the forthcoming
-characterization namespace remain C5 acceptance work.
-
-C4 validation: the six-module offline reactor passed 28 focused tests, including the existing
-embedded persistence/rollback suite (`target/c4-final-tests.log`). No live services were restarted
-or staging observations submitted during this milestone. `git diff --check` passed.
-
-**Completed-stage prompt:** “Implement C4: Runtime-owned characterization after classification, using an explicit
-no-model success outcome. Test per-member scopes, no duplicate lifecycle work, commit ordering
-and the distinction between missing explanation and failed execution.”
-
-### C5 — Live staging acceptance
-
-The rebuilt stack completes the classification scenario: the explainer is resolved, substantials
-are instantiated/resolved and concrete predicates are attributed as expected. This establishes the
-main classification path. Characterization with an explanatory model remains to be verified; the
-scenario without such a model does not establish that path. The authoritative process contracts
-are maintained in RESOLUTION.md, OBSERVABLES.md and KNOWLEDGE_GRAPH.md; the investigation history
-below remains implementation evidence rather than the reader-facing specification.
-
-**2026-09-14 diagnostic checkpoint (C5 remains open).** Inspected the deployed
-`staging.vxii.test.classification` namespace in the Resources workspace: it contains the Tanzania
-explainer, a separate PhysicalEnvironment classifier, and an `each earth:Region` instantiator.
-Read-only calls to the live Reasoner confirmed concrete ACKNOWLEDGEMENT for Tanzania Region,
-abstract CLASSIFICATION for PhysicalEnvironment of each Region, and INSTANTIATION for each Region.
-The root observable selects `substantial.direct` in the live service.
-
-A live `directInherent` call on `earth:PhysicalEnvironment of each earth:Region` returned singular
-`earth:Region` (ACKNOWLEDGEMENT). This loses the collective required by the `classification.members`
-pattern, preventing its member-resolving plan from being selected. In the Resolver, a failed
-mandatory classification dependency discards its enclosing model's contribution; an empty final
-substantial plan can then be accepted through the acknowledgment fallback. Consequently, an empty
-final graph does not establish that the explainer model was never looked up.
-
-`ReasonerService.directInherent` and `inherent` now recover explicitly stated inherence from parsed
-semantic syntax, preserving `each`, before falling back to OWL restrictions. OWL class restrictions
-alone cannot preserve the collective modifier. The seven-module offline reactor passed 14 tests:
-explicit collective/singular projection, eight classification pipeline cases, and five observation
-pipeline cases (`target/c5-inherent-tests.log`). The pipeline cases use controlled model/coverage
-boundaries. No live observation was submitted by this diagnostic run, and the patched service was
-not restarted. Repeat the staging submission after rebuilding/restarting the Reasoner; classifier
-execution, member commits and no-model characterization still require live acceptance evidence.
-
-**Follow-up after rebuild, 2026-09-14 (C5 remains open).** Read the active twin's persisted
-`testregion` (observation 628, context `ESA_INSTITUTIONAL.3c5nr70hlk`). Resources logs confirm
-that its 10:26 submission found `staging.vxii.test.classification.tanzania-region-explainer`.
-Live Reasoner calls now preserve `each earth:Region` and select `classification.members` with
-the expected `cohort` binding. However, the returned classifier semantics have type `NOTHING`
-and report that `each earth:Region` is incompatible with inherited `each earth:Region`.
-
-`SemanticsBuilder` normalized only the proposed modifier to singular before checking subsumption.
-With collective inherence now preserved, the inherited side remained collective, so the comparison
-failed and invalidated the classifier concept. Modifier restriction validation now compares both
-singular member types; this does not change the collective inherence used by strategy matching.
-The real-builder regression covers acceptance of the collective restriction and rejection of an
-incompatible member type. The focused reactor passed projection, classification pipeline and
-real-builder tests (`target/c5-collective-validation-tests.log`). No live mutation or service restart
-was performed. Rebuild/restart the Reasoner and reload/revalidate the staging namespace so that
-cached invalid semantics and model validation do not survive into the acceptance run.
-
-**Second follow-up after rebuild, 2026-09-14 (C5 remains open).** In context
-`ESA_INSTITUTIONAL.3ckx2ufsxo`, the 10:46 submission again found the Tanzania explainer.
-Read-only live calls confirm that the intended classifier now has valid predicate semantics
-with no notifications and selects `classification.members`. Retrieving the actual explainer
-from Resources exposed a different loss: its dependency's `KimConcept` retains `of each
-earth:Region`, but the enclosing `KimObservable.urn` contains `of earth:Region`.
-`ResolverService.annotatedObservable` resolves that outer URN, so the corrected semantic tree
-never reaches strategy selection. A live strategy query using this transported singular URN
-returns zero strategies, reproducing the failure independently of model search or execution.
-
-The installed `SemanticSyntaxImpl.encode` ignores the collective flag stored on restriction
-tuples. `LanguageAdapter.adaptObservable` now obtains the semantic prefix from the adapted
-`KimConcept` and retains the original observable suffix (mediators, observer and name). This
-keeps the transport URN consistent with its tree without requiring a language-library rebuild.
-Regression coverage checks collective and singular restrictions and suffix preservation.
-All 16 focused semantic/observable translation and classification pipeline tests passed in
-the seven-module reactor (`target/c5-observable-urn-tests.log`); `git diff --check` passed.
-The upstream encoder should also retain restriction-level collective flags when revised.
-Rebuild/restart Resources and reload/revalidate the namespace; restart Resolver to discard
-previously compiled models. This diagnostic did not mutate the live twin or restart services.
-Successful live classifier execution and commits remain unverified.
-
-**Third live follow-up, 2026-09-14 (C5 remains open).** The 11:04 submission in context
-`ESA_INSTITUTIONAL.3cymfft0v4` finds both the Tanzania explainer and the Region instantiator.
-The instantiator's runtime resource check succeeds. Additional calls through the existing
-Resolver API produce a complete standalone member plan, but an empty classification plan;
-these diagnostic plans were not executed. A missing classifier query log is not proof that
-the Resolver never attempted that query: `ModelKbox.observableQuery` exits before logging
-when compatible semantic candidate discovery returns no IDs.
-
-Live `Reasoner.resolving` on the classifier's core concept throws in `OWL.getParents`, because
-`each earth:Region` has no separately registered OWL class. The collective semantic projection
-must use its singular member's OWL class. `OWL.getOWLClass` now falls back to that class for
-collective views. `ReasonerService.resolving` traverses singular inherent parents and reapplies
-collectivity when building generalized candidates, retaining the classifier's member-binding
-contract. Tests now use universal model coverage and actual builder geometry propagation,
-including the staging request's spatial/temporal grid, alongside real OWL parent traversal.
-
-The warning about ignoring observation `-1` comes from commit synchronization of a query
-response. It is incidental to this model-search failure. `RuntimeClient` now skips commit
-ingestion for nonpersisted responses while retaining synchronization for positive IDs.
-The seven-module reactor passed all 16 focused tests (15 Resources/Reasoner pipeline cases
-and one common-client synchronization test; `target/c5-owl-collective-tests.log`).
-Rebuild/restart Reasoner and the services using the updated common client. Live classification
-execution, attribution commits and characterization acceptance still need verification.
-
-**Remote semantic-builder follow-up, 2026-09-14 (C5 remains open).** The 11:33 live
-Resources logs confirm discovery of the explainer, instantiator and classifier model. The
-submission now reaches Runtime classifier compilation, which fails in
-`MemberClassifierExecutor` while removing inherence from the classification observable:
-`ReasonerClient.buildConcept` was an unimplemented remote method. Characterization's
-construction of `Z of Y` uses the equally unimplemented `buildObservable` method.
-
-The existing portable `ObservableBuildStrategy` can now be deserialized through a no-argument
-transport constructor; its scope remains transient and is supplied by the receiving service.
-The Reasoner exposes `POST /api/v1/buildConcept` and `POST /api/v1/buildObservable`, and its
-client forwards the builder under the caller's scope. Both routes replay the existing
-`ReasonerService` semantic builder. These are semantic-construction operations, not resolution
-or runtime-mutation endpoints: classification and characterization still run exclusively through
-the resolved contextual Dataflow. Concept/Observable interface transport uses the shared
-`JacksonConfiguration`, with no Jackson annotations or dependencies added to semantic beans.
-Regression coverage includes transported classification predicate extraction, characterization
-construction, and HTTP controller routing with the authorized scope and interface results.
-All four real-builder tests and the controller HTTP regression passed. The final eight-module
-reactor succeeded (`target/c5-builder-controller-tests.log`); the builder test results are in
-`target/c5-remote-builder-tests.log`. `git diff --check` passed.
-Rebuild/restart the Reasoner server and the Runtime using the updated common client before
-repeating live acceptance; no patched service was restarted by this diagnostic.
-
-**Classifier closure follow-up, 2026-09-14 (C5 remains open).** Live closure queries reproduce
-`physical:Dissipation` among descendants of both `earth:PhysicalEnvironment` and the restricted
-classification directive. A live satisfiability query reports Dissipation as unsatisfiable.
-OWL includes all unsatisfiable named classes in the bottom equivalence node beneath every class.
-`OWL.getSemanticClosure` flattened this node and excluded only the literal `owl:Nothing`, leaking
-its other members into all closures. It now excludes the entire bottom node before flattening,
-while retaining all members of valid equivalence nodes.
-
-The generator was querying the restricted X-of-each-Y closure instead of X's predicate family.
-The accepted invocation contract passes the full observable unchanged. Predicate extraction
-belongs to `klab.generators.random.categories`: it removes `SemanticRole.INHERENT` through the
-semantic builder before requesting closure. Runtime separately extracts X for result validation,
-without changing the contextualizer arguments. This supersedes the initial proposal to strip
-inherence during parameter binding. Live filtering of the predicate closure leaves
-11 satisfiable concrete environment predicates, including Terrestrial, Freshwater and Marine.
-This excludes inconsistent ontology concepts from candidates; it does not repair their axioms.
-Tests exercise bottom-node filtering, typed invocation and the actual generator source, including
-empty closure and invalid-return handling. All 11 Runtime tests and three OWL/documentation tests
-passed, with no skips (`target/c5-closure-tests.log`, `target/c5-closure-owl-tests.log`), and
-`git diff --check` passed. After moving predicate extraction into the generator, all 11 Runtime
-tests passed again, including compilation and invocation of the actual updated generator source
-(`target/c5-classifier-invocation-tests.log`). Rebuild/restart Reasoner and Runtime and rebuild
-the generators component for live acceptance; these changes have not been executed in the
-deployed stack.
-
-Run the corrected staging namespace with the installed worldview and generator. Verify the
-classifier model is selected, Regions are queried/instantiated as necessary, each result is a
-concrete PhysicalEnvironment specialization, no classification observation appears, and existing
-members appear as modified in the commit. This namespace must succeed without characterization
-models. Add the forthcoming characterization namespace and check its member-specific execution.
-
-Test cohort partial coverage, zero members, repeat submissions, failure on one member, concurrent
-contexts, and provenance extraction/replay inputs. Update OBSERVATION.md, OBSERVABLES.md and the
-domain context pack only with runtime claims supported by this evidence.
-
-**Prompt:** “Complete C5 using the staging classification namespaces. Record live model selection,
-member identity/coverage, commits and typed provenance; distinguish test doubles from actual
-Runtime, Resources and knowledge graph evidence. Close stages only when their acceptance passes.”
-
-
-## Diagnostic visibility
-
-Accepted classification resolution graphs now travel as FlowChart metadata on the Dataflow and
-completed RESOLUTION Activity. Operation nodes expose contextualization and optional-dependency
-status; links expose member bindings and coverage. C3 additionally records per-member attribution
-audit data and typed effects during execution. See [resolution diagnostics](FLOWCHARTS.md#resolution-diagnostics) for the
-transport contract, validation and deferred ActivityCard rendering.
-
-### Empty spatial support and inherited client focus
-
-Disjoint member/request support is a valid empty intersection. Empty overlay results retain the
-operand projection so scale encoding and geometry-cache keys can represent them. Root substantial
-submissions clear inherited client observation focus before lookup, registration and execution;
-nested members retain their collective registration scope. Tests cover disjoint cached support,
-projected empty intersections/differences, and root versus nested/dependent submission scopes.
-Live acceptance of this correction remains to be confirmed after rebuilding.
-
-Member selection inspects the decoded extents of intersected support. A portable Geometry's
-non-empty flag and positive cardinality alone do not imply a non-empty encoded spatial shape.
-Disjoint cohort members must be excluded before classifier invocation, independently of any
-existing predicate they bear. Reclassification policy is not a substitute for support filtering.
-
-### Distributed-inherence contract validation
-
-The revised contract is covered by 45 focused tests across API transport, semantic distance,
-Reasoner ancestor enumeration, model-index candidate filtering, Prioritizer ordering, resolution
-capability direction, classifier invocation and characterization lifecycle. The actual generator
-source is compiled and invoked, including a concrete predicate with no children. All passed with
-no skips (`target/predicate-contextualization-tests.log`). These controlled tests do not establish
-live model discovery and characterization after deployment of the revised contract.
+Regression coverage includes semantic dispatch and transport, model matching, member invocation
+and reuse, support filtering, atomic persistence and rollback, cache invalidation, characterization
+scope and completion ordering, no-model outcomes, duplicate visits, and provenance. The maintainer
+has accepted the implementation following live testing. No classification staging acceptance work
+remains. General strategy composition and provenance-derived replay remain separate work described
+in [OBSERVATION.md](OBSERVATION.md) and [DATAFLOW.md](DATAFLOW.md).

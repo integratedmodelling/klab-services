@@ -59,7 +59,6 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   protected Geometry geometry;
   private transient Geometry standardizedGeometry;
-  public static WKBWriter wkbWriter = new WKBWriter();
   public static WKTReader wktReader = new WKTReader();
   public static org.integratedmodelling.klab.api.geometry.Geometry.Encoder wkbEncoder =
       new org.integratedmodelling.klab.api.geometry.Geometry.Encoder() {
@@ -76,7 +75,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         @Override
         public String encode(Object value) {
           if (value instanceof org.locationtech.jts.geom.Geometry geom) {
-            return WKBWriter.toHex(ShapeImpl.wkbWriter.write(geom));
+            return encodeWkb(geom);
           } else if (value instanceof String string && string.contains("(")) {
             var shape = ShapeImpl.create(string);
             return shape.asWKB();
@@ -627,10 +626,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
       } else {
         geometry = new WKBReader().read(WKBReader.hexToBytes(s));
       }
-    } catch (ParseException e) {
-      Logging.INSTANCE.error(
-          new KlabValidationException("error parsing " + (wkt ? "WKT" : "WBT") + ": " + s));
-      setShape(List.of(1L));
+    } catch (ParseException | IllegalArgumentException e) {
+      var failure = new KlabValidationException(
+          "error parsing " + (wkt ? "WKT" : "WKB") + ": " + s);
+      failure.initCause(e);
+      throw failure;
     }
 
     this.projection = new ProjectionImpl(pcode);
@@ -835,7 +835,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
    * @return the WKB code
    */
   public String getWKB() {
-    return WKBWriter.toHex(wkbWriter.write(canonicalGeometryForEncoding()));
+    return encodeWkb(canonicalGeometryForEncoding());
   }
 
   /**
@@ -863,8 +863,13 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     return makeValid(geometry).norm();
   }
 
+  private static String encodeWkb(Geometry geometry) {
+    // WKBWriter owns mutable output buffers: sharing it corrupts concurrent encodings.
+    return WKBWriter.toHex(new WKBWriter().write(geometry));
+  }
+
   private String asWKB(Geometry canonicalGeometry) {
-    return projection.getCode() + " " + WKBWriter.toHex(wkbWriter.write(canonicalGeometry));
+    return projection.getCode() + " " + encodeWkb(canonicalGeometry);
   }
 
   @Override
@@ -1032,15 +1037,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     if (jtsGeometry == null) {
       return emptyGeometry(SpaceImpl.gFactory);
     }
-    Geometry ret = jtsGeometry;
-    // Keep the historical normalization for non-areal geometries before overlay operations.
-    if ((jtsGeometry instanceof GeometryCollection
-            && !(jtsGeometry instanceof MultiLineString || jtsGeometry instanceof MultiPoint))
-        || jtsGeometry instanceof LineString
-        || jtsGeometry instanceof Point) {
-      ret = buffer(jtsGeometry, 0);
-    }
-    return makeValid(ret);
+    // A zero-width buffer erases points and lines. Repair only invalid geometries,
+    // preserving lower-dimensional substantial support during spatial operations.
+    return makeValid(jtsGeometry);
   }
 
   /**

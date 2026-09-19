@@ -18,6 +18,36 @@ import org.integratedmodelling.languages.worldview.Ontology;
 import org.junit.jupiter.api.Test;
 
 class WorldviewValidationTest {
+  @Test void editingCannotResolveForwardOrDeletedDeclarationsFromThePreviousSnapshot() throws Exception {
+    var prefix = "ontology test in domain root version 1.0.0; ";
+    var warm = new WorldviewValidationScope();
+    warm.addNamespace(adapt(prefix + "thing Later; thing Earlier is test:Later;"));
+    var imported = adapt("ontology external in domain root version 1.0.0; thing Imported;");
+    warm.addNamespace(imported);
+    var text = prefix + "thing Earlier is test:Later; thing Later;";
+    // Even a bean parsed against stale descriptors must fail the independent order check.
+    var stale = adapt(text, warm);
+    validate(stale);
+    var issue = stale.getNotifications().stream().filter(n -> n.getMessage().contains("before its declaration"))
+        .findFirst().orElseThrow();
+    assertEquals(text.indexOf("test:Later"), issue.getLexicalContext().getOffsetInDocument());
+    for (int i = 0; i < 3; i++) {
+      var isolated = warm.withoutNamespace("test");
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.VOID,
+          isolated.getConceptDescriptor("test:Later").mainType());
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.SUBJECT,
+          isolated.getConceptDescriptor("external:Imported").mainType());
+      var backward = adapt(prefix + "thing Later; thing Earlier is test:Later;", isolated);
+      validate(backward);
+      assertTrue(backward.getNotifications().isEmpty());
+      var deleted = adapt(prefix + "thing Earlier is test:Later;", warm.withoutNamespace("test"));
+      validate(deleted);
+      assertTrue(deleted.getNotifications().stream().anyMatch(n -> n.getMessage().contains("Undefined concept: test:Later")));
+    }
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.SUBJECT,
+        warm.getConceptDescriptor("test:Later").mainType());
+  }
+
   @Test void nestedAndTopLevelAliasesBothInstallDelegatesWithoutSubclassAxioms() throws Exception {
     var reasoner = org.mockito.Mockito.mock(
         org.integratedmodelling.klab.services.reasoner.ReasonerService.class,
@@ -135,10 +165,14 @@ class WorldviewValidationTest {
   }
 
   private org.integratedmodelling.klab.api.lang.kim.KimOntology adapt(String text) {
+    return adapt(text, new BasicObservableValidationScope());
+  }
+
+  private org.integratedmodelling.klab.api.lang.kim.KimOntology adapt(String text, BasicObservableValidationScope scope) {
     var parser = new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
     var parsed = parser.parse(new StringReader(text));
     assertFalse(parsed.hasSyntaxErrors());
-    var bean = new OntologySyntaxImpl((Ontology) parsed.getRootASTElement(), new BasicObservableValidationScope()) {
+    var bean = new OntologySyntaxImpl((Ontology) parsed.getRootASTElement(), scope) {
       @Override protected void logWarning(ParsedObject t, EObject o, EStructuralFeature f, String m) {}
       @Override protected void logError(ParsedObject t, EObject o, EStructuralFeature f, String m) { fail(m); }
     };

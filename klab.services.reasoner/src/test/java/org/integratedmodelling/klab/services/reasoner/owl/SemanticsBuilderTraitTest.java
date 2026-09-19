@@ -75,6 +75,35 @@ class SemanticsBuilderTraitTest {
         n.getLevel() == org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
   }
 
+  @Test void collectivePredicateApplicationsKeepTheirOwlIdentityAcrossRepeatedValidation() {
+    var scope = mock(Scope.class);
+    var owl = new OWL(scope);
+    owl.manager = org.semanticweb.owlapi.apibinding.OWLManager.createOWLOntologyManager();
+    var ontology = owl.requireOntology("test");
+    ontology.define(List.of(
+        org.integratedmodelling.common.lang.Axiom.ClassAssertion("Region", EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE)),
+        org.integratedmodelling.common.lang.Axiom.ClassAssertion("Terrestrial", EnumSet.of(SemanticType.ATTRIBUTE, SemanticType.PREDICATE)),
+        org.integratedmodelling.common.lang.Axiom.ClassAssertion("Freshwater", EnumSet.of(SemanticType.ATTRIBUTE, SemanticType.PREDICATE))));
+    owl.requireOntology("odo").define(List.of(org.integratedmodelling.common.lang.Axiom.ObjectPropertyAssertion("hasAttribute")));
+    var reasoner = mock(ReasonerService.class); when(reasoner.owl()).thenReturn(owl);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    when(reasoner.resolveConcept(anyString())).thenAnswer(call -> owl.getConcept(call.getArgument(0)));
+    for (int attempt = 0; attempt < 6; attempt++) {
+      for (String name : List.of("Freshwater", "Terrestrial")) {
+        var head = syntax("Region");
+        head.setType(EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
+        head.getTraits().add(syntax(name)); head.setCollective(true); head.resetDefinition();
+        var built = SemanticsBuilder.create(head, reasoner, scope).buildConcept();
+        assertNotNull(owl.getOWLClass(built));
+        assertEquals(owl.getOWLClass(built), owl.getOWLClass(built.singular()));
+        assertTrue(new OWLSemanticClauseSupport(owl).applicableTo(ontology.getConcept(name), built));
+        assertTrue(new OWLSemanticClauseSupport(owl).applicableTo(ontology.getConcept(name), built.singular()));
+        assertEquals(1, head.getTraits().size());
+      }
+    }
+    assertEquals("test:Region", ontology.getConcept("Region").getUrn());
+  }
+
   @Test void lexicalRootHandlesMissingConceptsAndCyclesWithoutHidingReachableRoots() {
     var reasoner = mock(ReasonerService.class);
     when(reasoner.lexicalRoot(any())).thenCallRealMethod();

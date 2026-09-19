@@ -8,6 +8,19 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.junit.jupiter.api.Test;
 
 class ShapeImplRobustOverlayTest {
+  @org.junit.jupiter.api.Test
+  void intersectionsPreservePointAndLineSupport() {
+    var region = ShapeImpl.create("EPSG:4326 POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))");
+    for (var wkt : java.util.List.of("POINT (1 1)", "LINESTRING (0.5 0.5, 1.5 1.5)")) {
+      var member = ShapeImpl.create("EPSG:4326 " + wkt);
+      for (var intersection : java.util.List.of(member.intersection(region), region.intersection(member))) {
+        org.junit.jupiter.api.Assertions.assertFalse(intersection.isEmpty());
+        org.junit.jupiter.api.Assertions.assertEquals(member.getGeometryType(), intersection.getGeometryType());
+      }
+      var remote = ShapeImpl.create("EPSG:4326 POLYGON ((3 3, 4 3, 4 4, 3 4, 3 3))");
+      org.junit.jupiter.api.Assertions.assertTrue(member.intersection(remote).isEmpty());
+    }
+  }
 
   private static final String BOWTIE =
       "EPSG:4326 POLYGON ((0 0, 2 2, 0 2, 2 0, 0 0))";

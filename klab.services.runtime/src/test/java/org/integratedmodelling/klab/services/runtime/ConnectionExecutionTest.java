@@ -20,6 +20,55 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class ConnectionExecutionTest {
+  @Test void connectionSeesPointMembersInParentTransaction() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var producer = observation(10, SemanticType.SUBJECT, true, false);
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    producer.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+            "EPSG:4326 POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))").encode()));
+    point.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POINT (1 1)").encode()));
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var twin = mock(DigitalTwin.class);
+    when(scope.getDigitalTwin()).thenReturn(twin);
+    var parent = mock(DigitalTwin.Transaction.class);
+    var child = mock(DigitalTwin.Transaction.class);
+    when(scope.getCurrentTransaction()).thenReturn(child);
+    when(child.getParent()).thenReturn(parent);
+    var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
+    when(parent.outgoing(cohort)).thenReturn(List.of(
+        new org.integratedmodelling.klab.api.data.impl.LinkImpl(cohort, point, GraphModel.Relationship.HAS_MEMBER)));
+    var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
+    doReturn(cohort).when(runtime).getCohortFor(any(), eq(scope), eq(false));
+    assertEquals(List.of(point), runtime.getMembers(producer, scope));
+  }
+
+  @Test void namedReferenceUsesTheProducerInstanceRegardlessOfPortOrder() throws Exception {
+    for (boolean referenceFirst : List.of(false, true)) {
+      var root = observation(-1, SemanticType.RELATIONSHIP, true, false);
+      var producer = observation(-2, SemanticType.SUBJECT, true, false);
+      var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+      var compiled = new CompiledDataflow(mock(RuntimeService.class), root, scope);
+      var rootActuator = new org.integratedmodelling.common.runtime.ActuatorImpl();
+      rootActuator.setObservation(root); rootActuator.setId(-1);
+      rootActuator.setActuatorType(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE);
+      var source = new org.integratedmodelling.common.runtime.ActuatorImpl();
+      source.setObservation(producer); source.setId(-2); source.setName("source");
+      source.setActuatorType(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE);
+      var target = new org.integratedmodelling.common.runtime.ActuatorImpl();
+      target.setObservation(Observation.forTransport(producer)); target.setId(-2); target.setName("target");
+      target.setActuatorType(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE);
+      rootActuator.getChildren().addAll(referenceFirst ? List.of(target, source) : List.of(source, target));
+      var field = CompiledDataflow.class.getDeclaredField("rootActuator"); field.setAccessible(true); field.set(compiled, rootActuator);
+      var method = CompiledDataflow.class.getDeclaredMethod("requireObservations", org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+      method.setAccessible(true); method.invoke(compiled, rootActuator);
+      field = CompiledDataflow.class.getDeclaredField("actuatorObservations"); field.setAccessible(true);
+      var bindings = (Map<?, ?>) field.get(compiled);
+      assertSame(bindings.get(source), bindings.get(target));
+    }
+  }
+
   static ObservationImpl observation(long id, SemanticType type, boolean collective, boolean bond) {
     var concept = new ConceptImpl();
     concept.setUrn("test:" + type + (bond ? "Bond" : ""));
@@ -33,6 +82,36 @@ class ConnectionExecutionTest {
     var result = new ObservationImpl(); result.setId(id); result.setObservable(observable);
     result.setUrn("test:instance" + id);
     return result;
+  }
+
+  @Test void collectiveRelationshipsUseCohortsAndTopLevelIndividualsNeedNoContext() throws Exception {
+    for (boolean bond : List.of(false, true)) {
+      var root = observation(-1, SemanticType.SUBJECT, false, false);
+      var producer = observation(-2, SemanticType.RELATIONSHIP, true, bond);
+      var individual = observation(-3, SemanticType.RELATIONSHIP, false, bond);
+      assertEquals(Observation.Role.COLLECTIVE_SUBSTANTIAL, Observation.classifyRole(producer));
+      assertEquals(Observation.Role.RELATIONAL, Observation.classifyRole(individual));
+      var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class, RETURNS_DEEP_STUBS);
+      when(scope.getContextObservation()).thenReturn(null);
+      var runtime = mock(RuntimeService.class);
+      var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
+      when(runtime.getCohortFor(any(), eq(scope), eq(true))).thenReturn(cohort);
+      var compiled = new CompiledDataflow(runtime, root, scope);
+      var dependencies = CompiledDataflow.class.getDeclaredField("dependentObservations");
+      dependencies.setAccessible(true);
+      @SuppressWarnings("unchecked")
+      var observations = (Map<Long, Observation>) dependencies.get(compiled);
+      observations.put(producer.getId(), producer);
+      observations.put(individual.getId(), individual);
+      var graphField = CompiledDataflow.class.getDeclaredField("dependencyGraph");
+      graphField.setAccessible(true);
+      graphField.set(compiled, mock(org.jgrapht.Graph.class));
+      var transaction = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.TransactionImpl.class);
+      assertTrue(compiled.store(transaction));
+      verify(transaction).link(producer, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
+      verify(transaction).link(scope.getDigitalTwin().getKnowledgeGraph().scope(), individual,
+          GraphModel.Relationship.HAS_CHILD);
+    }
   }
 
   @Test void everyConnectionIsAcknowledgedBetweenItsOwnParticipantsWithProducerConstraints() {

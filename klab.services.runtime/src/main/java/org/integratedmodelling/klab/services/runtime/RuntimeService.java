@@ -1121,8 +1121,13 @@ public class RuntimeService extends BaseService
       for (var member : graph.query(Observation.class, scope).source(cohort)
           .along(GraphModel.Relationship.HAS_MEMBER).run(scope)) members.put(querySourceKey(member), member);
     }
-    var transaction = scope.getCurrentTransaction();
-    if (transaction != null) {
+    // A contextualizer runs in a child transaction; completed prerequisites have merged
+    // their members into its ancestors but may not yet have reached the persistent graph.
+    var transactions = new ArrayList<DigitalTwin.Transaction>();
+    for (var transaction = scope.getCurrentTransaction(); transaction != null;
+        transaction = transaction.getParent()) transactions.add(transaction);
+    Collections.reverse(transactions);
+    for (var transaction : transactions) {
       for (var link : transaction.outgoing(cohort)) {
         if (link.type() == GraphModel.Relationship.HAS_MEMBER && link.target() instanceof Observation member)
           members.put(querySourceKey(member), member);
@@ -1752,9 +1757,10 @@ public class RuntimeService extends BaseService
       var canonicalCohortObservable = cohortObservable;
 
       // local uncommitted
-      if (scope.getCurrentTransaction() != null) {
+      for (var transaction = scope.getCurrentTransaction(); transaction != null;
+          transaction = transaction.getParent()) {
         var existing =
-            scope.getCurrentTransaction().assets().stream()
+            transaction.assets().stream()
                 .filter(
                     a ->
                         a instanceof Cohort cohort

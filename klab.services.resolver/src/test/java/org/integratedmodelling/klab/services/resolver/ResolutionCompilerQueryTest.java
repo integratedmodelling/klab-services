@@ -23,6 +23,37 @@ import org.junit.jupiter.api.Test;
 
 class ResolutionCompilerQueryTest {
 
+  @Test
+  void identicalCollectivePortsResolveOnlyOnceWithinAStrategy() {
+    var scope = mock(ContextScope.class);
+    when(scope.withResolutionConstraints(any())).thenReturn(scope);
+    var scale = GeometryRepository.INSTANCE.scale(Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}"));
+    var semantics = mock(Concept.class);
+    when(semantics.isCollective()).thenReturn(true);
+    when(semantics.getType()).thenReturn(EnumSet.of(SemanticType.SUBJECT));
+    var observable = mock(Observable.class);
+    when(observable.getSemantics()).thenReturn(semantics);
+    when(observable.getUrn()).thenReturn("each test:Junction");
+    var existing = mock(Observation.class);
+    when(existing.getId()).thenReturn(42L);
+    when(existing.getGeometry()).thenReturn(scale);
+    var compiler = org.mockito.Mockito.spy(new ResolutionCompiler(mock(ResolverService.class)));
+    org.mockito.Mockito.doReturn(new ResolutionCompiler.QueryMatch(existing, existing, scale, scale,
+        org.integratedmodelling.klab.api.services.resolver.Coverage.create(scale, 1)))
+        .when(compiler).query(observable, scale, scope);
+    var strategy = mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.class);
+    var source = mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.class);
+    var target = mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.class);
+    when(source.getId()).thenReturn("sources"); when(target.getId()).thenReturn("targets");
+    for (var operation : java.util.List.of(source, target)) {
+      when(operation.getObservable()).thenReturn(observable);
+      when(operation.getType()).thenReturn(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.Type.RESOLVE);
+    }
+    when(strategy.getOperations()).thenReturn(java.util.List.of(source, target));
+    compiler.resolve(strategy, scale, ResolutionGraph.create(scope), scope);
+    verify(compiler, org.mockito.Mockito.times(1)).query(observable, scale, scope);
+  }
+
   @BeforeAll
   static void configureKlab() {
     ServiceConfiguration.injectInstantiators();

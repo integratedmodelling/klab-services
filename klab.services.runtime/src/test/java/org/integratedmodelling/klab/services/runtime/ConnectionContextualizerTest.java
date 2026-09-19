@@ -28,13 +28,17 @@ class ConnectionContextualizerTest {
         Urn.of("connector:link"), source, target);
   }
 
+  public static void failingConnector(Data.Builder builder) {
+    throw new IllegalArgumentException("Invalid relationship endpoints");
+  }
+
   @Test void localConnectorReceivesNamedEndpointInputsAndEmitsIndividualObservations() throws Exception {
     ServiceConfiguration.injectInstantiators();
     var source = ConnectionExecutionTest.observation(-11, SemanticType.SUBJECT, false, false);
     var target = ConnectionExecutionTest.observation(-12, SemanticType.SUBJECT, false, false);
     var collective = ConnectionExecutionTest.observation(-10, SemanticType.RELATIONSHIP, true, false);
     collective.setGeometry(Geometry.UNIVERSAL);
-    var scope = mock(ContextScope.class);
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
     when(scope.observation(any(Observable.class))).thenAnswer(call -> new ObservationBuilderImpl(call.getArgument(0, Observable.class), scope) {
       public Observation register() { return build(); }
       public CompletableFuture<Observation> submit() { return CompletableFuture.completedFuture(build()); }
@@ -53,10 +57,18 @@ class ConnectionContextualizerTest {
         new CompiledDataflow.CallDescriptors(null, descriptor, null, null), collective,
         Map.of("source", source, "target", target), new ServiceCallImpl(), scope);
     var outcomes = new ContextualizationScopeImpl(collective, null);
-    assertTrue(executor.run(null, Map.of(), scope, outcomes));
+    assertTrue(executor.execute(null, scope, outcomes), () -> String.valueOf(executor.getCause()));
     assertEquals(1, outcomes.getOutcomes().size());
     var result = outcomes.getOutcomes().getFirst();
     assertFalse(result.isEmpty()); assertEquals("connector:link", result.getUrn());
     assertEquals(List.of(source, target), result.getParticipants());
+
+    implementation.method = getClass().getMethod("failingConnector", Data.Builder.class);
+    assertFalse(executor.execute(null, scope, new ContextualizationScopeImpl(collective, null)));
+    assertInstanceOf(IllegalArgumentException.class, executor.getCause());
+    assertEquals("Invalid relationship endpoints", executor.getCause().getMessage());
+    verify(scope).error(executor.getCause());
+    assertTrue(collective.getNotifications().stream().anyMatch(notification ->
+        notification.getMessage().contains("Invalid relationship endpoints")));
   }
 }

@@ -73,9 +73,9 @@ checks are distinct from a live resolver-to-graph-to-IDE acceptance test.
 
 ## Classification and characterization branch
 
-The [classification implementation guide](CLASSIFICATION.md) records the new semantic-update
-contract, source audit, implemented classification and characterization lifecycle, and remaining acceptance
-prompts. Collective classification dependencies and runtime-owned individual characterization
+The [classification implementation guide](CLASSIFICATION.md) documents the completed and accepted
+semantic-update contract, classifier invocation, atomic persistence, and provenance.
+Collective classification dependencies and runtime-owned individual characterization
 execute through portable update plans without registering directive observations.
 
 The existing resolution API returns a contextual **Dataflow** describing work within the current
@@ -660,8 +660,9 @@ The resulting Dataflow carries requirements and coverage to Runtime. Runtime com
 executors, commits resolution, schedules contextualization, and commits or fails submission.
 `submitContextualizationResult` resubmits instantiation outcomes in the collective's scope;
 classification executes through semantic-update nodes and Runtime-owned characterization;
-connection follow-up remains incomplete.
-Consequently, the semantic lifecycle in Section 1 is a contract with partially implemented paths.
+connections acknowledge each instance in a `between(source, target)` scope and await
+completion. The classification and connection lifecycles are complete and accepted;
+see [CLASSIFICATION.md](CLASSIFICATION.md) and [CONNECTION.md](CONNECTION.md).
 
 ## 3. Design requirements and decisions to review
 
@@ -1265,8 +1266,8 @@ idempotent identities and invalidation rules rather than repeated untracked appe
 
 General process scheduling and configuration detection are governed by their semantic lifecycles;
 the strategy language must not override them with a generic “execute all children immediately.”
-Respect the implemented classification/characterization lifecycle and complete connection gaps before claiming all collective predicate and
-relationship strategies work end to end.
+Preserve the accepted classification/characterization and connection lifecycles when extending
+collective predicate and relationship strategies.
 
 ### 7.1 Observation language as planning and execution source
 
@@ -1439,7 +1440,7 @@ grammar parses.
 | S3 | In progress: semantic adaptation and initial tier-0 Reasoner/Resolver boundary implemented; complete validation and composition pending | S1; align with S2 | Observation-local patterns/expressions, named-plan API, separate dataflow AST, validators, versioned transport |
 | S4 | In progress: tier-0 graph/context propagation accepted; full coverage, rollback and termination contracts pending | S2–S3 | Correct candidate coverage, graph identities, failure isolation, termination |
 | S5 | Direct resolution accepted; typed transformation pending | S4 | Direct resolution and quality transformation through typed composition |
-| S6 | Pending | S5 | Substantial predicate composition and mandatory lifecycle completion |
+| S6 | Complete; accepted 2026-09-19 | S5 | Substantial classification/characterization and connection lifecycle completion |
 | S7 | Pending | S6 | Arbitrary observed-context binding, scoped continuations, value operators, and `whose` |
 | S8 | Pending | S7 | Logical union/intersection with value-space contracts |
 | S9 | Pending | S7–S8 | Context bridges, per-inherent resolution, and validated aggregation |
@@ -1811,20 +1812,13 @@ and executable-result evidence and revise the example to actual accepted syntax.
 
 ### S6 — Complete substantial predicate and lifecycle behavior
 
-Implement collective and individual inherency, classification/characterization signatures, and
-Runtime's classification/characterization lifecycle and remaining connection follow-ups. Preserve cohort and identity contracts.
-Keep mandatory follow-ups distinct from authored continuations and ensure parent completion waits
-for required children.
-
-Acceptance: individual requests use existing inherents; collective requests discover members first;
-classification attributes concrete predicates and characterizes them; connections acknowledge
-their instances; zero outcomes terminate; child failure prevents false parent success. Use fake
-contracts plus a representative runtime integration fixture.
-
-**Continuation prompt:** “Implement S6 of docs/OBSERVATION.md with the approved predicate and
-lifecycle contracts. Cover collective and existing individual inherents, identity/cohort
-preservation, mandatory follow-ups, zero outcomes, and child failure. Coordinate OBSERVABLES.md
-with the now-implemented enum lifecycle and update the stage ledger.”
+Complete and accepted on 2026-09-19. Individual requests use existing inherents; collective
+requests resolve members first. Classification attributes concrete predicates and awaits individual
+characterization while preserving identity and cohort membership. Connections acknowledge their
+instances; identical endpoint semantics share one producer while retaining both named bindings.
+Zero outcomes terminate, and required child failure prevents parent success. These lifecycle
+obligations belong to Runtime rather than authored continuations. The classification staging plan
+is retired; see the [implementation reference](CLASSIFICATION.md).
 
 ### S7 — Add operators and scoped continuations
 
