@@ -213,7 +213,14 @@ public interface DigitalTwin extends RuntimeAsset {
   interface Executor {
 
     /** Validated portable plan, when compiled from a Dataflow. */
-    default org.integratedmodelling.klab.api.services.runtime.Actuator getActuator() { return null; }
+    default org.integratedmodelling.klab.api.services.runtime.Actuator getActuator() {
+      return null;
+    }
+
+    /** Bind prerequisites and execution to the same selected bearer. */
+    default ContextScope executionScope(ContextScope requested) {
+      return requested;
+    }
 
     List<ServiceCall> serialized();
 
@@ -255,19 +262,29 @@ public interface DigitalTwin extends RuntimeAsset {
     void registerExecutors();
 
     /** Transaction-local executor, including parent/child activities. */
-    default Executor getExecutor(Observation observation) { return null; }
+    default Executor getExecutor(Observation observation) {
+      return null;
+    }
 
     /** Run after asset IDs are assigned, before updates and the atomic graph commit. */
-    default void beforeCommit(Runnable action) { throw new UnsupportedOperationException(); }
+    default void beforeCommit(Runnable action) {
+      throw new UnsupportedOperationException();
+    }
 
     /** Run only after the root graph transaction has committed successfully. */
-    default void afterCommit(Runnable action) { throw new UnsupportedOperationException(); }
+    default void afterCommit(Runnable action) {
+      throw new UnsupportedOperationException();
+    }
 
     /** Release provisional state if any activity in the transaction tree fails. */
-    default void afterRollback(Runnable action) { throw new UnsupportedOperationException(); }
+    default void afterRollback(Runnable action) {
+      throw new UnsupportedOperationException();
+    }
 
     /** Stage event identity, completion receipt and publication intent in the same root commit. */
-    default void stageSchedulerJournal(SchedulerJournal journal) { throw new UnsupportedOperationException(); }
+    default void stageSchedulerJournal(SchedulerJournal journal) {
+      throw new UnsupportedOperationException();
+    }
 
     /**
      * Each transaction represents a provenance activity that cannot be null.

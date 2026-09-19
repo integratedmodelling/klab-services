@@ -88,7 +88,8 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     if (resolved == null) {
       resolved = resolveConceptInternal(normalized);
       // Preserve failure diagnostics for the caller, but allow subsequent attempts to retry.
-      if (resolved != null && !resolved.is(SemanticType.NOTHING)) concepts.put(normalized, resolved);
+      if (resolved != null && !resolved.is(SemanticType.NOTHING))
+        concepts.put(normalized, resolved);
     }
     return resolved == null ? Concept.nothing() : resolved;
   }
@@ -102,7 +103,8 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     Observable resolved = observables.getIfPresent(normalized);
     if (resolved == null) {
       resolved = resolveObservableInternal(normalized);
-      if (resolved != null && !resolved.is(SemanticType.NOTHING)) observables.put(normalized, resolved);
+      if (resolved != null && !resolved.is(SemanticType.NOTHING))
+        observables.put(normalized, resolved);
     }
     return resolved == null ? Observable.nothing(null) : resolved;
   }
@@ -116,7 +118,8 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   public Observable resolveObservableInternal(String definition) {
-    return client.postRequired(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
+    return client.postRequired(
+        ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
   }
 
   @Override
@@ -578,6 +581,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
+      Semantics semantics) {
+    return client.postCollection(
+        ServicesAPI.REASONER.INFLUENCES,
+        semantics.asConcept(),
+        org.integratedmodelling.klab.api.knowledge.SemanticInfluence.class);
+  }
+
+  @Override
   public Collection<Concept> created(Semantics semantics) {
     return client.postCollection(
         ServicesAPI.REASONER.CREATED, semantics.asConcept(), Concept.class);
@@ -656,8 +668,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   @Override
   public SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {
-    var response = client.withScope(scope).post(ServicesAPI.REASONER.VALIDATE_DOCUMENT, request,
-        SemanticValidationResponse.class);
+    var response =
+        client
+            .withScope(scope)
+            .post(
+                ServicesAPI.REASONER.VALIDATE_DOCUMENT, request, SemanticValidationResponse.class);
     if (response == null) {
       response = SemanticValidationResponse.forRequest(request);
       response.setReason("Semantic validation is unavailable from the selected reasoner");
@@ -673,7 +688,8 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     resolutionRequest.setObservation(Observation.forTransport(observation));
     resolutionRequest
         .getResolutionConstraints()
-        .addAll(scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
+        .addAll(
+            scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
     if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
       resolutionRequest
           .getResolutionConstraints()
@@ -714,14 +730,14 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
-    return client.withScope(scope).post(
-        ServicesAPI.REASONER.BUILD_CONCEPT, builder, Concept.class);
+    return client.withScope(scope).post(ServicesAPI.REASONER.BUILD_CONCEPT, builder, Concept.class);
   }
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-    return client.withScope(scope).post(
-        ServicesAPI.REASONER.BUILD_OBSERVABLE, builder, Observable.class);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.REASONER.BUILD_OBSERVABLE, builder, Observable.class);
   }
 
   @Override

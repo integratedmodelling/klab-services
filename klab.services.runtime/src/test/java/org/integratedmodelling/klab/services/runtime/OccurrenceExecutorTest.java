@@ -82,4 +82,37 @@ class OccurrenceExecutorTest {
           () -> new CompiledDataflow(runtime, process, scope).restoreOccurrenceExecutor(snapshot));
     }
   }
+
+  @Test void createdQualityRemainsADeclarationThroughRestoreAndInit() {
+    var scope = mock(ServiceContextScope.class);
+    var runtime = mock(RuntimeService.class);
+    var twin = mock(DigitalTwin.class);
+    when(scope.getDigitalTwin()).thenReturn(twin);
+    var process = observation("rainfall", SemanticType.PROCESS, 100);
+    var bearer = observation("region", SemanticType.SUBJECT, 200);
+    when(scope.getObservation(100)).thenReturn(process);
+    when(scope.getContextObservation()).thenReturn(bearer);
+    when(scope.within(bearer)).thenReturn(scope);
+    var plan = new ActuatorImpl(); plan.setObservation(process); plan.setName("rainfall");
+    plan.setExecutionRole(Actuator.ExecutionRole.PROCESS); plan.setActuatorType(Actuator.Type.RESOLVE);
+    plan.getOccurrenceSchedules().put(0, new OccurrenceSchedule(1, "", "", 1,
+        Time.Resolution.Type.MONTH, true, OccurrenceSchedule.Source.MODEL));
+    plan.getComputation().add(new ServiceCallImpl("klab.core.expression.resolver", "_targetId", "precipitation",
+        "expression", org.integratedmodelling.klab.api.lang.ExpressionCode.of("10", "groovy")));
+    var quality = observation("precipitation", SemanticType.QUALITY, -1).getObservable();
+    var bindings = new ProcessPlan(1, 200, "test:rainfallModel", java.util.List.of(
+        new ProcessPlan.Binding("precipitation", quality, ProcessPlan.Effect.CREATED, true, true)), java.util.List.of());
+    plan.getData().put(ProcessPlan.DATA_KEY, Utils.Json.asString(bindings));
+    var snapshot = Utils.Json.parseObject(Utils.Json.asString(CompiledDataflow.portableOccurrencePlan(plan)), Actuator.class);
+    var executor = new CompiledDataflow(runtime, process, scope).restoreOccurrenceExecutor(snapshot);
+    assertTrue(executor.run(process.getGeometry(), Scheduler.Event.initialization(), scope));
+    assertTrue(snapshot.getChildren().isEmpty());
+    verify(runtime, never()).getComputationBuilder(any(), any(), any(), anyMap());
+    verify(twin, never()).getStorageManager();
+    verify(twin, never()).getScheduler();
+    var invalidInput = new ActuatorImpl(); invalidInput.setName("precipitation");
+    invalidInput.setObservation(observation("precipitation", SemanticType.QUALITY, 300));
+    snapshot.getChildren().add(invalidInput);
+    assertThrows(IllegalArgumentException.class, () -> CompiledDataflow.validateSupportedPlan(snapshot));
+  }
 }

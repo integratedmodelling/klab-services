@@ -210,4 +210,26 @@ class OccurrenceRegistrationTest {
       assertNull(f.durableJournal);
     }
   }
+
+  @Test void causalFeedbackIsNotAnInitPrerequisiteAndWritersCannotCompete() throws Exception {
+    try (var f = new Fixture()) {
+      var influence = new LinkImpl(f.process, f.quality, GraphModel.Relationship.AFFECTS);
+      influence.properties().put(ProcessPlan.EDGE_ROLE, ProcessPlan.INFLUENCE);
+      when(f.kg.getLinks(f.quality, GraphModel.Relationship.Direction.INCOMING, f.scope,
+          GraphModel.Relationship.AFFECTS)).thenReturn(List.of(influence));
+      assertTrue(f.scheduler.submit(f.process, f.scope));
+      assertEquals(1, f.qualityInit.get());
+      f.transaction.linkProcessInfluence(f.process, f.quality, "test:model", "elevation");
+      var competitor = observation("OtherProcess", SemanticType.PROCESS, -30);
+      assertThrows(IllegalStateException.class,
+          () -> f.transaction.linkProcessInfluence(competitor, f.quality, "test:other", "elevation"));
+      var concurrent = f.twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), f.scope,
+          RuntimeAsset.PROVENANCE_ASSET, competitor);
+      assertThrows(IllegalStateException.class,
+          () -> concurrent.linkProcessInfluence(competitor, f.quality, "test:other", "elevation"));
+      f.transaction.fail(new IllegalStateException("rollback writer claim"));
+      assertDoesNotThrow(() -> concurrent.linkProcessInfluence(competitor, f.quality, "test:other", "elevation"));
+      concurrent.fail(new IllegalStateException("test cleanup"));
+    }
+  }
 }

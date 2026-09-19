@@ -51,7 +51,10 @@ public class ResolutionCompiler {
   private int modelQueries;
   private int matchedModels;
 
-  boolean hasNoExplanatoryModel() { return modelQueries > 0 && matchedModels == 0; }
+  boolean hasNoExplanatoryModel() {
+    return modelQueries > 0 && matchedModels == 0;
+  }
+
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
   private List<Notification> notifications = new ArrayList<>();
 
@@ -107,10 +110,16 @@ public class ResolutionCompiler {
 
     if (observation.getObservable().getContextualization() != null
         && observation.getObservable().getContextualization().modifiesExistingObservations()) {
-      var geometry = observation.getGeometry() == null && scope.getContextObservation() != null
-          ? scope.getContextObservation().getGeometry() : observation.getGeometry();
+      var geometry =
+          observation.getGeometry() == null && scope.getContextObservation() != null
+              ? scope.getContextObservation().getGeometry()
+              : observation.getGeometry();
       if (geometry == null || geometry.isEmpty()) return ResolutionGraph.empty();
-      return resolveOperation(observation.getObservable(), GeometryRepository.INSTANCE.scale(geometry, scope), parentGraph, scope);
+      return resolveOperation(
+          observation.getObservable(),
+          GeometryRepository.INSTANCE.scale(geometry, scope),
+          parentGraph,
+          scope);
     }
     return resolve(observation, scope, parentGraph, null);
   }
@@ -122,7 +131,10 @@ public class ResolutionCompiler {
   }
 
   private ResolutionGraph resolveOperation(
-      Observable observable, Scale scale, ResolutionGraph parent, ContextScope scope,
+      Observable observable,
+      Scale scale,
+      ResolutionGraph parent,
+      ContextScope scope,
       Observable modelDependency) {
     if (scope.getContextObservation() == null) return ResolutionGraph.empty();
     var target = new OperationTarget(observable, scope.getContextObservation(), modelDependency);
@@ -131,10 +143,13 @@ public class ResolutionCompiler {
     var builder = new Observation.NaiveBuilder(observable, scope);
     builder.geometry(scale.as(Geometry.class));
     var probe = builder.make();
-    for (var strategy : scope.getService(Reasoner.class).computeObservationStrategies(probe, scope)) {
+    for (var strategy :
+        scope.getService(Reasoner.class).computeObservationStrategies(probe, scope)) {
       if (observable.getContextualization() == Contextualization.CLASSIFICATION) {
-        var terminal = strategy.getOperations().isEmpty() ? null : strategy.getOperations().getLast();
-        if (terminal == null || terminal.getType() != ObservationStrategy.Operation.Type.OBSERVE
+        var terminal =
+            strategy.getOperations().isEmpty() ? null : strategy.getOperations().getLast();
+        if (terminal == null
+            || terminal.getType() != ObservationStrategy.Operation.Type.OBSERVE
             || !terminal.getInputs().containsKey("members")) continue;
       }
       var candidate = resolve(strategy, scale, result, scope, null);
@@ -258,7 +273,8 @@ public class ResolutionCompiler {
     // Named ports may request the same collective (e.g. both ends of a connection).
     // Share the producer within this strategy, before it exists in the runtime catalog.
     Map<String, ResolutionGraph> collectives = new LinkedHashMap<>();
-    boolean namedPlan = observationStrategy.getOperations().stream().allMatch(o -> o.getId() != null);
+    boolean namedPlan =
+        observationStrategy.getOperations().stream().allMatch(o -> o.getId() != null);
 
     for (var operation : observationStrategy.getOperations()) {
 
@@ -268,23 +284,27 @@ public class ResolutionCompiler {
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
 
           var observable = operation.getObservable();
-          boolean share = observable.getSemantics().isCollective()
-              && (observable.getContextualization() == null
-                  || !observable.getContextualization().modifiesExistingObservations());
+          boolean share =
+              observable.getSemantics().isCollective()
+                  && (observable.getContextualization() == null
+                      || !observable.getContextualization().modifiesExistingObservations());
           String key = observable.getUrn() + "|" + observable.getContextualization();
           var observableResolution = share ? collectives.get(key) : null;
-          if (observableResolution == null) observableResolution = resolve(
-                  operation.getObservable(),
-                  contextualizedScope.getSecond(),
-                  ret,
-                  contextualizedScope.getFirst());
+          if (observableResolution == null)
+            observableResolution =
+                resolve(
+                    operation.getObservable(),
+                    contextualizedScope.getSecond(),
+                    ret,
+                    contextualizedScope.getFirst());
           if (observableResolution.isEmpty() || !observableResolution.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
           }
           if (share) collectives.put(key, observableResolution);
           if (namedPlan) {
             produced.put(operation.getId(), observableResolution);
-            if (operation == observationStrategy.getOperations().getLast()) ret.merge(observableResolution);
+            if (operation == observationStrategy.getOperations().getLast())
+              ret.merge(observableResolution);
           } else ret.merge(observableResolution, operation.getId());
         }
         case OBSERVE -> {
@@ -316,7 +336,8 @@ public class ResolutionCompiler {
                 && SemanticType.isEnumerableSubstantial(
                     explainedObservation.getObservable().getSemantics().getType())
                 && java.util.Objects.equals(
-                    operation.getObservable().getUrn(), explainedObservation.getObservable().getUrn())) {
+                    operation.getObservable().getUrn(),
+                    explainedObservation.getObservable().getUrn())) {
               modelScope = modelScope.within(explainedObservation);
             }
             var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope);
@@ -326,12 +347,26 @@ public class ResolutionCompiler {
               // one contextualizer with exactly one declared base-input port.
               if (model.getComputation().size() != 1
                   || model.getComputation().getFirst().getServiceCall() == null) continue;
-              var prototype = modelResolution.getServiceInfo(
-                  model.getComputation().getFirst().getServiceCall().getUrn());
-              if (prototype == null || prototype.listInputs().stream().filter(input ->
-                  input.getTags().contains(org.integratedmodelling.klab.api.lang.ServiceInfo.Tag.INPUT)
-                      || input.getName().equals(operation.getTransformationTarget())).count() != 1) {
-                scope.warn("Transformer model requires exactly one declared base-input port: " + model.getUrn());
+              var prototype =
+                  modelResolution.getServiceInfo(
+                      model.getComputation().getFirst().getServiceCall().getUrn());
+              if (prototype == null
+                  || prototype.listInputs().stream()
+                          .filter(
+                              input ->
+                                  input
+                                          .getTags()
+                                          .contains(
+                                              org.integratedmodelling.klab.api.lang.ServiceInfo.Tag
+                                                  .INPUT)
+                                      || input
+                                          .getName()
+                                          .equals(operation.getTransformationTarget()))
+                          .count()
+                      != 1) {
+                scope.warn(
+                    "Transformer model requires exactly one declared base-input port: "
+                        + model.getUrn());
                 continue;
               }
             }
@@ -359,10 +394,14 @@ public class ResolutionCompiler {
           }
           if (operation.getTransformationTarget() != null) {
             var base = produced.get(operation.getTransformationTarget());
-            if (base == null || base.isEmpty() || !base.getCoverage().isComplete()
+            if (base == null
+                || base.isEmpty()
+                || !base.getCoverage().isComplete()
                 || operation.getObservable().getContextualization()
-                    != org.integratedmodelling.klab.api.knowledge.Contextualization.TRANSFORMATION) {
-              scope.error("Invalid transformation input graph " + operation.getTransformationTarget());
+                    != org.integratedmodelling.klab.api.knowledge.Contextualization
+                        .TRANSFORMATION) {
+              scope.error(
+                  "Invalid transformation input graph " + operation.getTransformationTarget());
               return ResolutionGraph.empty();
             }
             // Attach the base only after the transformer has independently resolved. Its graph
@@ -375,7 +414,9 @@ public class ResolutionCompiler {
           }
         }
         case APPLY -> {
-          if (operation.getType() == org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.Type.APPLY
+          if (operation.getType()
+                  == org.integratedmodelling.klab.api.knowledge.ObservationStrategy.Operation.Type
+                      .APPLY
               && !operation.getContextualizables().isEmpty()) {
             /**
              * We ask the runtime to resolve all the contextualizables as a single operation. This
@@ -441,6 +482,8 @@ public class ResolutionCompiler {
       Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope) {
 
     var ret = graph.createChild(model, scaleToCover);
+    var processPlan = ProcessModelBindings.analyze(model, scope);
+    ret.processPlan = processPlan;
 
     scope =
         scope.withResolutionConstraints(
@@ -468,12 +511,28 @@ public class ResolutionCompiler {
      */
     //    boolean complete = model.getDependencies().isEmpty();
     List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
-    for (var dependency : model.getDependencies()) {
+    var inputs = new ArrayList<>(model.getDependencies());
+    if (processPlan != null) {
+      for (var binding : processPlan.bindings()) {
+        if (!binding.dependency()
+            && binding.effect()
+                != org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.Effect.CREATED)
+          inputs.add(binding.observable());
+      }
+    }
+    for (var dependency : inputs) {
+      var binding =
+          processPlan == null ? null : processPlan.binding(ProcessModelBindings.name(dependency));
+      // An epiphenomenon is a transition output, never an observation/INIT prerequisite.
+      if (binding != null
+          && binding.effect()
+              == org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.Effect.CREATED) continue;
 
-      var dependencyResolution = dependency.getContextualization() != null
-              && dependency.getContextualization().modifiesExistingObservations()
-          ? resolveOperation(dependency, scaleToCover, ret, scope, dependency)
-          : resolve(dependency, scaleToCover, ret, scope);
+      var dependencyResolution =
+          dependency.getContextualization() != null
+                  && dependency.getContextualization().modifiesExistingObservations()
+              ? resolveOperation(dependency, scaleToCover, ret, scope, dependency)
+              : resolve(dependency, scaleToCover, ret, scope);
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
       //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCoverage merges to
@@ -524,7 +583,8 @@ public class ResolutionCompiler {
 
     if (observable.getContextualization() != null
         && observable.getContextualization().modifiesExistingObservations()) {
-      return resolveOperation(observable, contextualizedScope.getSecond(), graph, contextualizedScope.getFirst());
+      return resolveOperation(
+          observable, contextualizedScope.getSecond(), graph, contextualizedScope.getFirst());
     }
     var query = query(observable, contextualizedScope.getSecond(), contextualizedScope.getFirst());
     if (query.hasCoverage() && query.coverage().isComplete()) {
@@ -623,8 +683,12 @@ public class ResolutionCompiler {
       Observable observable, Concept contextObservable, ContextScope scope, Scale scale) {
 
     var prioritizer =
-        new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy(),
-            observable, contextObservable);
+        new PrioritizerImpl(
+            scope,
+            scale,
+            resolver.getServiceConfiguration().getRankingStrategy(),
+            observable,
+            contextObservable);
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models =
@@ -646,8 +710,8 @@ public class ResolutionCompiler {
             .reduce(ResourceSet.empty(), Utils.Resources::merge);
     // FIXME the notifications from the resource set must end up in the resolution output
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
-    if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(models.getNotifications()))
-      throw new KlabIllegalStateException("Model discovery failed");
+    if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(
+        models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
     modelQueries++;
     matchedModels += ret.size();
     ret.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
@@ -655,7 +719,6 @@ public class ResolutionCompiler {
     ret.sort(prioritizer);
     return ret;
   }
-
 
   /**
    * Register a provisional observation for the geometry that remains after the runtime query. The

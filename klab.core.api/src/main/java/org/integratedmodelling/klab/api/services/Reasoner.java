@@ -657,6 +657,33 @@ public interface Reasoner extends KlabService {
   Collection<Concept> affectedOrCreated(Semantics semantics);
 
   /**
+   * Typed inherited restriction evidence. Proportionality fillers influence the declaring
+   * observable.
+   */
+  default Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
+      Semantics semantics) {
+    var result =
+        new java.util.ArrayList<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
+    affected(semantics)
+        .forEach(
+            target ->
+                result.add(
+                    new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
+                        target,
+                        org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind
+                            .AFFECTS)));
+    created(semantics)
+        .forEach(
+            target ->
+                result.add(
+                    new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
+                        target,
+                        org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind
+                            .CREATES)));
+    return result;
+  }
+
+  /**
    * @param semantics
    * @return
    */
@@ -782,9 +809,8 @@ public interface Reasoner extends KlabService {
    * source occurrences, never cached concepts. Ontologies must match authoritative saved sources;
    * the reasoner may synchronize them and their imports from Resources before validation. The
    * response reports the resulting knowledge revision. Unsaved or unavailable sources return
-   * UNAVAILABLE; an obsolete expected revision returns STALE_KNOWLEDGE.
-   * Call asynchronously after parsing succeeds and
-   * discard responses superseded by an editor or knowledge revision.
+   * UNAVAILABLE; an obsolete expected revision returns STALE_KNOWLEDGE. Call asynchronously after
+   * parsing succeeds and discard responses superseded by an editor or knowledge revision.
    */
   default SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {

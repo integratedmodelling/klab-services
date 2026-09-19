@@ -196,6 +196,13 @@ public class DataflowCompiler {
 
       // There can be 1+ nodes: if OBS it's the result of a RESOLVE, otherwise a MODEL.
       if (child instanceof Model model) {
+        if (edge.processPlan != null) {
+          var encoded = org.integratedmodelling.klab.utilities.Utils.Json.asString(edge.processPlan);
+          var previous = observationActuator.getData().putIfAbsent(
+              org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY, encoded);
+          if (previous != null && !previous.equals(encoded))
+            throw new UnsupportedOperationException("Competing process model plans require temporal coverage selection");
+        }
         /**
          * Result of OBSERVE in the strategy. Depending on the model's description type, the result
          * may be transforming the dependencies and must be appropriately linked. This happens using
@@ -246,6 +253,12 @@ public class DataflowCompiler {
       String localName) {
 
     var occurrenceSchedule = compileOccurrenceSchedule(observationActuator, model);
+    if (observationActuator.getExecutionRole() == Actuator.ExecutionRole.PROCESS
+        && !observationActuator.getData().containsKey(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY)) {
+      var processPlan = ProcessModelBindings.analyze(model, scope);
+      observationActuator.getData().put(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(processPlan));
+    }
 
     if (observation != null && isMainObservable(observation.getObservable(), model)
         && observationActuator.getObservation() instanceof ObservationImpl target) {
@@ -520,8 +533,8 @@ public class DataflowCompiler {
 
     // TODO add remaining info from the contextualizable in the call's metadata
     // TODO more?
-    if (ret != null && contextualizer.getTarget() != null) {
-      ret.getParameters().put("_target", contextualizer.getTarget());
+    if (ret != null && contextualizer.getTargetId() != null) {
+      if (contextualizer.getTarget() != null) ret.getParameters().put("_target", contextualizer.getTarget());
       ret.getParameters().put("_targetId", contextualizer.getTargetId());
     }
 

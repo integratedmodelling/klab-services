@@ -4,8 +4,9 @@ Status: **development plan and target contract**, established 2026-09-19. CONNEC
 CLASSIFICATION are accepted foundations; occurrence execution is not yet implemented end to end.
 This document stages development, testing, and deployment. Requirements below are normative for
 the feature; proposed representations and explicitly open decisions are not claims about current
-behavior. S1 schedule metadata and the bounded S2 registration subset are now present; temporal
-execution remains gated pending S3–S4. See the implementation records for verification and remaining work.
+behavior. S1 schedule metadata, the bounded S2 registration subset, and S3 semantic/bearer bindings
+are now present. Temporal execution remains gated pending S4/S5. See the implementation records
+for verification and remaining work.
 
 Read with [observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md),
 [observable semantics](OBSERVABLES.md), [ontology declarations](ONTOLOGY_LANGUAGE.md),
@@ -48,11 +49,23 @@ an additional output or an `observing` dependency of the process model. The latt
 the inherent substantial/event's context; the substantial's own explanatory model need not declare
 it. Injection must be compatible with the context of both the quality and the process. The quality
 belongs to that bearer, not to the process itself. This supersedes the earlier output-only rule.
-Injected quality dependencies must go through their ordinary INIT contextualization on the bearer
+Injected ordinary quality dependencies must go through their ordinary INIT contextualization on the bearer
 and complete successfully before any process execution can read them. Suppressing process INIT must
 not suppress prerequisite INIT. A failed or incomplete initialization prevents process execution;
 registration alone is not evidence of a usable input state. Later transitions read the prior committed
 quality state and do not reinitialize it on every process invocation.
+
+**Creation exception (accepted 2026-09-19):** a quality that the process `creates` is an
+epiphenomenon of that process. It is borne by the affected substantial/event/functional relationship,
+but is not an independently initialized inherent state of that bearer. Retain its declared semantics,
+name, restrictions, optionality and computation as a creation obligation; do not query, allocate,
+acknowledge, initialize, or create storage for its observation during process registration. This also
+applies when the model lists it under `observing`, and takes precedence over an overlapping `affects`
+declaration or assignment. Its observation is materialized only in a successful temporal transition.
+Measured precipitation, expressed as water volume per area and time, is an example: it has support
+during the atmospheric process, not a fictitious zero or initialized value before it. A created
+output cannot supply a prior-state input before it exists. Reading such an output in a transition
+requires an explicitly available causal state; S5 must diagnose unavailable reads.
 
 | Process-model assignment | Required behavior |
 |---|---|
@@ -307,10 +320,24 @@ all connected properties are covered.
 
 Bind semantic targets to observations in the correct bearer, endpoint context where explicit,
 and temporal/spatial support. An unrelated instance with matching concept semantics is not a
-valid target. For `creates`, retain a creation obligation/plan until concrete output observations
-exist, then link those outputs. An `AFFECTS` edge must not point to an invented observation or
-silently turn creation into mutation. Specify whether unresolved targets trigger ordinary
-resolution immediately or remain pending before enabling this branch (O3).
+valid target. For `creates`, retain a creation obligation/plan until a temporal transition materializes
+the epiphenomenal quality, then link those outputs to their substantial bearer and causal process.
+There is no observation identity or INIT state at registration. An `AFFECTS` edge must not point to an
+invented observation or silently turn creation into mutation. Declared non-created quality bindings
+resolve ordinarily on the bearer. Undeclared semantic targets remain pending obligations; they do
+not trigger speculative resolution or broad matching of unrelated observations (S3 decision for O3).
+
+S3 stores computational edges with `occurrenceRole=PREREQUISITE` and process-to-quality effects
+with `occurrenceRole=INFLUENCE`. Edges retain model/name evidence and semantic relation kinds.
+`P increases with Q` and `P decreases with Q` describe Q-to-P influence; they do not imply that P
+writes Q. When Q is a declared input, that evidence accompanies its prerequisite edge. The Reasoner
+exports these inherited restrictions separately through `influences`, including remote transport;
+neither proportionality property is assumed to be a subproperty of `affects`.
+`marks` (`odo:marksQuality`) is outgoing influence and implies `affects` on a boolean quality
+(`PRESENCE`/`odo:Presence`). Preserve `MARKS` evidence separately from the normalized AFFECTED effect.
+The declaration validator rejects non-boolean marks targets, and the core ontology gives marksQuality
+an affects superproperty and Presence range. Marked qualities follow ordinary initialization unless
+the process also `creates` them, in which case the epiphenomenon rule takes precedence.
 
 Keep executable input prerequisites distinct from causal influence, even if both remain stored
 under `AFFECTS` with typed roles. Traversing all incoming edges recursively is unsafe. For a process
@@ -539,6 +566,60 @@ roles using Reasoner evidence, separating them from computational prerequisites.
 functional-relationship hosting and temporal feedback, validate inline process output assignments
 under Section 1.1, and preserve CONNECTION identity behavior.”
 
+**Implementation record (2026-09-19):** `ProcessModelBindings` validates process bearers and declared
+quality bindings before dependency resolution. Subjects, events and functional relationships are
+accepted; structural relationships and processes are rejected as hosts. Explicit incompatible
+inherence is diagnosed. Non-created dependencies and additional quality outputs resolve in the
+bearer's scope, without adding them to the substantial's explanatory model. Local names, optionality,
+observable restrictions, assignment targets and inherited semantic evidence survive in a versioned
+`ProcessPlan` attached to the model's resolution edge and portable actuator data.
+
+Created bindings are excluded from dependency resolution, including runtime queries and observation
+allocation. They remain declarations through plan serialization, restoration and INIT. Runtime
+validation rejects a created binding smuggled in as an observation child. Inline expression/literal
+targets must name a declared compatible quality; implicit process assignments and unknown,
+non-quality or ambiguous targets fail. The `_targetId` is retained even without a parsed target
+object. Target-quality expression compilation is deferred to S5, so registering a created output
+does not require a nonexistent quality observation or scanner.
+
+Runtime ownership uses the process's selected bearer rather than the dataflow root. Commit preparation
+replaces provisional bearer IDs with durable IDs before registration snapshots are stored. Ordinary
+injected qualities keep their substantial-quality lifecycle. Causal influence is excluded from INIT
+prerequisite traversal, making read/write feedback safe at registration. Input and output edges mark
+`PRIOR_COMMITTED` and `NEXT_COMMITTED` respectively; actual temporal state selection remains S4/S5.
+There is no same-transition numerical feedback solver. Competing process writers to one concrete
+quality are rejected against staged and committed edges; a per-twin transaction claim also rejects
+overlapping registrations and is released on commit or rollback. This is the supported single-runtime
+ownership policy, not a distributed writer-election protocol. Competing model/coverage plans remain
+explicitly unsupported.
+
+Unbound reasoner targets remain typed obligations, not fabricated graph nodes. `creates` takes
+precedence when a target is also affected or assigned. Creation of observations, temporal support,
+data/scanner allocation and publication are S4/S5 work and must happen in the same successful causal
+transaction. Epiphenomenal qualities must not be initialized indirectly through a future creation path.
+
+**Verification:** 69 focused and regression tests passed across Common, Core Services, Reasoner,
+Resolver, Resolver Server and Runtime. New resolver tests cover valid hosts, bearer compatibility, ambiguous/implicit/unknown
+and non-quality assignments, named optional binding transport, creation precedence, and proof that
+a created dependency is never queried/allocated at registration. Runtime tests cover nested-bearer
+ownership, durable bearer rebinding, deferred created-output restoration, no storage/scanner allocation
+on INIT, causal-feedback traversal and competing/concurrent writer rollback. An OWL fixture verifies
+inherited affects/creates/marks and separate increases/decreases restrictions with preserved direction;
+declaration and core-ontology tests enforce marks' boolean range and affects implication.
+These are component tests; no live k.IM namespace, distributed service restart or temporal execution
+is claimed. Existing occurrence, CONNECTION, CLASSIFICATION and transaction suites passed.
+
+Reproducible command (host environment):
+
+```powershell
+mvn -o -pl klab.services.resolver.server,klab.services.runtime,klab.services.reasoner.server -am '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=ProcessModelBindingsTest,ProcessOwnershipTest,ProcessInfluenceTest,ResolverControllerScopeTest,OccurrenceRegistrationTest,OccurrenceExecutorTest,OccurrenceCapabilityTest,OccurrenceScheduleTest,ComponentRegistryOccurrenceTest,OccurrenceCompilationTest,ClassificationTransactionTest,DigitalTwinCommitTest,ActuatorPersistenceTest,ConnectionExecutionTest,ConnectionContextualizerTest,ConnectionTransportTest,ClassificationExecutionTest,ClassificationPersistenceTest,SemanticUpdateTargetsTest,ResolutionCompilerQueryTest,WorldviewOwlRestrictionTest,WorldviewDeclarationSupportTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+Deploy updated API/Common, Reasoner and Resolver components together: typed influence discovery adds
+the Reasoner `/influences` endpoint, and the updated core ontology declares marksQuality's implication
+and range. Reload the worldview under that Reasoner before the live staging check. Temporal clocks
+and client consequences remain disabled; S4 is the next implementation stage.
+
 ### S4 — Deterministic simulated dispatch and catch-up
 
 **Depends on:** S2/S3. **Deliver:** connect TimeEmitter to scheduler dispatch; match schedules and
@@ -563,6 +644,8 @@ temporal Data/storage, retain old states, extend committed coverage, and publish
 Compile and execute inline `set x to []` process assignments over each output quality's localized
 current-time geometry. Deliver this simple-process path before advanced Java process contextualizers
 and their scanner matching by name/annotation after split and fill-curve negotiation.
+Materialize `creates` qualities only inside the temporal transaction, under their substantial bearer,
+without invoking INIT; a failed transition must expose neither the observation nor its data.
 
 **Gate:** assert distinct Data/shards across transitions, unchanged historical values, exact event
 geometry in local/remote invocations, durable flush before descriptor commit, no duplicate retry
@@ -571,6 +654,8 @@ Use an inline process model with model `@time` and no Java contextualizer. Check
 over nonuniform inputs and differing output supports, correct prior-state reads, multiple named
 quality outputs, expression type errors, restored expression execution, and no duplicate output
 computation. Verify location/value correspondence under supported split and fill-curve configurations.
+Include a created precipitation output: no pre-transition observation, no fabricated prior value,
+no INIT, correct transition support and bearer, and atomic rollback/retry of first materialization.
 
 **Prompt:** “Implement S5 of docs/OCCURRENCE.md. Follow semantic consequences into resolved quality
 actuators with transition geometry, persist new temporal states atomically with completion and

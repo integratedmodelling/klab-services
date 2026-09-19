@@ -324,6 +324,7 @@ public interface ServicesAPI {
     String AFFECTED = API_BASE + "/affected";
 
     String AFFECTED_OR_CREATED = API_BASE + "/affectedOrCreated";
+    String INFLUENCES = API_BASE + "/influences";
 
     String CREATED_BY = API_BASE + "/createdBy";
 

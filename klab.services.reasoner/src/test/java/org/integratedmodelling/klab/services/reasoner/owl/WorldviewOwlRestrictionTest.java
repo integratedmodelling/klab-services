@@ -18,6 +18,11 @@ class WorldviewOwlRestrictionTest {
         getClass().getResourceAsStream("/knowledge/odo.owl"));
     var f = manager.getOWLDataFactory();
     String ns = "http://integratedmodelling.org/odo#";
+    var marks = f.getOWLObjectProperty(IRI.create(ns + "marksQuality"));
+    assertTrue(ontology.containsAxiom(f.getOWLSubObjectPropertyOfAxiom(marks,
+        f.getOWLObjectProperty(IRI.create(ns + "affects")))));
+    assertTrue(ontology.containsAxiom(f.getOWLObjectPropertyRangeAxiom(marks,
+        f.getOWLClass(IRI.create(ns + "Presence")))));
     for (String kind : List.of("Identity", "Realm", "Extent", "Attribute")) {
       var property = f.getOWLObjectProperty(IRI.create(ns + "requires" + kind));
       assertTrue(ontology.containsAxiom(f.getOWLSubObjectPropertyOfAxiom(property,

@@ -26,29 +26,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "Reasoning", description = "Concept resolution, semantic relationships, and logical inference")
+@Tag(
+    name = "Reasoning",
+    description = "Concept resolution, semantic relationships, and logical inference")
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
-  @Operation(summary = "Validate document semantics", description = "Return source-bound diagnostics for a parsed document snapshot")
+  @Operation(
+      summary = "Validate document semantics",
+      description = "Return source-bound diagnostics for a parsed document snapshot")
   @PostMapping(ServicesAPI.REASONER.VALIDATE_DOCUMENT)
   public SemanticValidationResponse validateDocument(
-      @RequestBody SemanticValidationRequest request,
-      Principal principal) {
+      @RequestBody SemanticValidationRequest request, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      try { request.document(); }
-      catch (IllegalArgumentException e) {
+      try {
+        request.document();
+      } catch (IllegalArgumentException e) {
         throw new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
       }
       return reasoner.klabService().validateDocument(request, authorization.getScope());
     }
     throw new org.springframework.web.server.ResponseStatusException(
-        org.springframework.http.HttpStatus.FORBIDDEN, "Semantic validation requires an authorized scope");
+        org.springframework.http.HttpStatus.FORBIDDEN,
+        "Semantic validation requires an authorized scope");
   }
 
-  @Operation(summary = "Build a concept", description = "Replay a portable semantic builder; creates no observations")
+  @Operation(
+      summary = "Build a concept",
+      description = "Replay a portable semantic builder; creates no observations")
   @PostMapping(ServicesAPI.REASONER.BUILD_CONCEPT)
   public @ResponseBody Concept buildConcept(
       @RequestBody ObservableBuildStrategy builder, Principal principal) {
@@ -58,7 +65,9 @@ public class ReasonerController {
     throw new IllegalArgumentException("Semantic construction requires an authorized scope");
   }
 
-  @Operation(summary = "Build an observable", description = "Replay a portable semantic builder; creates no observations")
+  @Operation(
+      summary = "Build an observable",
+      description = "Replay a portable semantic builder; creates no observations")
   @PostMapping(ServicesAPI.REASONER.BUILD_OBSERVABLE)
   public @ResponseBody Observable buildObservable(
       @RequestBody ObservableBuildStrategy builder, Principal principal) {
@@ -124,7 +133,9 @@ public class ReasonerController {
       description = "Infers strategies for observing the specified resolution request")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Observation strategies computed successfully"),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Observation strategies computed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid resolution request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
@@ -152,7 +163,8 @@ public class ReasonerController {
   @ApiResponses(
       value = {
         @ApiResponse(
-            responseCode = "200", description = "Identification strategy computed successfully"),
+            responseCode = "200",
+            description = "Identification strategy computed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid resolution request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
@@ -1018,6 +1030,12 @@ public class ReasonerController {
   public Collection<Concept> affectedOrCreated(
       @Parameter(description = "Target concept") @RequestBody Concept semantics) {
     return reasoner.klabService().affectedOrCreated(semantics);
+  }
+
+  @PostMapping(ServicesAPI.REASONER.INFLUENCES)
+  public Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
+      @RequestBody Concept semantics) {
+    return reasoner.klabService().influences(semantics);
   }
 
   @Operation(

@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ResolutionGraph {
 
   private Resolvable target;
+  org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
   private Coverage targetCoverage;
   private ContextScope rootScope;
   // Two ports may reference the same observation (e.g. both relationship endpoints).
@@ -73,6 +74,7 @@ public class ResolutionGraph {
    * resolved successfully upstream and we only need to add a reference to it.
    */
   private Observation resolved;
+
   private long resolvedKey;
 
   private boolean empty;
@@ -217,6 +219,7 @@ public class ResolutionGraph {
     this.graph.addVertex(this.target);
     this.graph.addVertex(childGraph.target);
     var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
+    edge.processPlan = childGraph.processPlan;
     if (childGraph.getResolved() != null) {
       edge.observationId = childGraph.resolvedKey;
     } else {
@@ -258,12 +261,13 @@ public class ResolutionGraph {
 
   /**
    * Create an isolated graph for one resolution attempt. Context resources are snapshotted at the
-   * attempt boundary; observations, service prototypes, dependencies, graph structure and
-   * synthetic IDs are not shared with concurrent attempts.
+   * attempt boundary; observations, service prototypes, dependencies, graph structure and synthetic
+   * IDs are not shared with concurrent attempts.
    */
   public ResolutionGraph createAttempt() {
     if (parent != null) {
-      throw new KlabIllegalStateException("resolution attempts can only be created from a root graph");
+      throw new KlabIllegalStateException(
+          "resolution attempts can only be created from a root graph");
     }
     var ret = new ResolutionGraph(rootScope);
     ret.localResources.addAll(localResources);
@@ -364,6 +368,7 @@ public class ResolutionGraph {
    * >1 resolving nodes, successively covering the extents up to "sufficient" coverage.
    */
   public static class ResolutionEdge extends DefaultEdge {
+    org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
 
     public Coverage coverage;
     public String localName;

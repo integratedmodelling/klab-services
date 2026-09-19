@@ -13,6 +13,17 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 class WorldviewDeclarationSupportTest {
+  @Test void marksRejectsNonBooleanQualityBeforeWritingRestrictions() {
+    var owl = owl(); var ontology = owl.requireOntology("audit");
+    declare(ontology, "Owner", SemanticType.OBSERVABLE, SemanticType.PROCESS);
+    declare(ontology, "Numeric", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var statement = new KimConceptStatementImpl();
+    statement.getObservablesDescribed().add(new PairImpl<>(syntax("Numeric"), KimConceptStatement.DescriptionType.MARKS));
+    long before = ontology.getOWLOntology().getAxiomCount();
+    assertThrows(KlabValidationException.class, () -> WorldviewDeclarationSupport.compile(owl, ontology,
+        ontology.getConcept("Owner"), statement, value -> owl.getConcept(value.getName())));
+    assertEquals(before, ontology.getOWLOntology().getAxiomCount());
+  }
   private OWL owl() {
     var scope = (org.integratedmodelling.klab.api.scope.Scope) java.lang.reflect.Proxy.newProxyInstance(
         getClass().getClassLoader(), new Class<?>[]{org.integratedmodelling.klab.api.scope.Scope.class},
@@ -56,6 +67,7 @@ class WorldviewDeclarationSupportTest {
     var owl = owl(); var ontology = owl.requireOntology("audit");
     declare(ontology,"Owner",SemanticType.OBSERVABLE,SemanticType.PROCESS);
     declare(ontology,"Quality",SemanticType.OBSERVABLE,SemanticType.QUALITY);
+    declare(ontology,"BooleanQuality",SemanticType.OBSERVABLE,SemanticType.QUALITY,SemanticType.PRESENCE);
     declare(ontology,"Entity",SemanticType.OBSERVABLE,SemanticType.COUNTABLE,SemanticType.SUBJECT);
     for (var type : List.of(SemanticType.IDENTITY, SemanticType.REALM, SemanticType.EXTENT, SemanticType.ATTRIBUTE))
       declare(ontology,type.name(),type);
@@ -66,7 +78,8 @@ class WorldviewDeclarationSupportTest {
     statement.getRequiredExtents().add(syntax("EXTENT")); statement.getRequiredAttributes().add(syntax("ATTRIBUTE"));
     statement.getImpliedObservables().add(syntax("Quality")); statement.getEmergenceTriggers().add(syntax("Entity"));
     for (var type : KimConceptStatement.DescriptionType.values())
-      statement.getObservablesDescribed().add(new PairImpl<>(syntax("Quality"), type));
+      statement.getObservablesDescribed().add(new PairImpl<>(syntax(
+          type == KimConceptStatement.DescriptionType.MARKS ? "BooleanQuality" : "Quality"), type));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Entity")));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Quality")));
     // Exercise the Resources -> Reasoner wire representation, including nested generic pairs.
@@ -75,8 +88,9 @@ class WorldviewDeclarationSupportTest {
     var owner=ontology.getConcept("Owner");
     WorldviewDeclarationSupport.compile(owl,ontology,owner,statement,value -> owl.getConcept(value.getName()));
     for (String property : List.of("affects","impliesObservable","describesQuality","increasesWith",
-        "decreasesWith","marksQuality","classifiesQuality","discretizesQuality"))
+        "decreasesWith","classifiesQuality","discretizesQuality"))
       assertRestriction(owl,ontology,owner,property,ontology.getConcept("Quality"));
+    assertRestriction(owl,ontology,owner,"marksQuality",ontology.getConcept("BooleanQuality"));
     assertRestriction(owl,ontology,owner,"creates",ontology.getConcept("Entity"));
     for (String kind : List.of("Identity","Realm","Extent","Attribute"))
       assertRestriction(owl,ontology,owner,"requires"+kind,ontology.getConcept(kind.toUpperCase()));

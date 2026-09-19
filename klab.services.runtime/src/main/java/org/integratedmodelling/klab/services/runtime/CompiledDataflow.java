@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.data.mediation.classification.LookupTabl
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.digitaltwin.ProcessPlan;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -329,6 +330,20 @@ public class CompiledDataflow {
    * storage preparation. Classification dispatch uses the explicit operation contract.
    */
   static void validateSupportedPlan(Actuator actuator) {
+    var processPlan = processPlan(actuator);
+    if (processPlan != null) {
+      if (actuator.getExecutionRole() != Actuator.ExecutionRole.PROCESS)
+        throw new IllegalArgumentException("Process bindings require a process actuator");
+      for (var binding : processPlan.bindings()) {
+        var matches = actuator.getChildren().stream().filter(child -> binding.name().equals(child.getName())).toList();
+        if (binding.effect() == ProcessPlan.Effect.CREATED && !matches.isEmpty())
+          throw new IllegalArgumentException("Created quality cannot be an INIT observation: " + binding.name());
+        if (binding.effect() != ProcessPlan.Effect.CREATED && matches.isEmpty()
+            && (binding.assigned() || !binding.observable().isOptional()))
+          throw new IllegalArgumentException("Missing process quality binding: " + binding.name());
+        if (matches.size() > 1) throw new IllegalArgumentException("Ambiguous process input: " + binding.name());
+      }
+    }
     if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
       if (actuator.getComputation().isEmpty()
           || actuator.getOccurrenceSchedules().size() != actuator.getComputation().size())
@@ -391,6 +406,42 @@ public class CompiledDataflow {
     copy.setShardingStrategy(source.getShardingStrategy());
     for (var child : source.getChildren()) copy.getChildren().add(portableOccurrencePlan(child));
     return copy;
+  }
+
+  static ProcessPlan processPlan(Actuator actuator) {
+    var encoded = actuator.getData().get(ProcessPlan.DATA_KEY);
+    return encoded == null ? null : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded.toString(), ProcessPlan.class);
+  }
+
+  private Observation processBearer(ProcessPlan plan) {
+    var context = scope.getContextObservation();
+    if (context != null && context.getId() == plan.bearerId()) return context;
+    for (var entry : actuatorObservations.entrySet()) {
+      if (entry.getKey().getId() == plan.bearerId() || entry.getValue().getId() == plan.bearerId()) return entry.getValue();
+    }
+    var bearer = scope.getObservation(plan.bearerId());
+    if (bearer == null) throw new KlabInternalErrorException("Missing process bearer " + plan.bearerId());
+    return bearer;
+  }
+
+  private Map<Observation, Observation> processQualityBearers() {
+    Map<Observation, Observation> ret = new IdentityHashMap<>();
+    for (var actuator : actuatorObservations.keySet()) {
+      var plan = processPlan(actuator);
+      if (plan == null) continue;
+      var bearer = processBearer(plan);
+      for (var child : actuator.getChildren()) {
+        var binding = plan.binding(child.getName());
+        if (binding == null) continue;
+        var quality = actuatorObservations.get(child);
+        if (quality == null || !quality.getObservable().is(SemanticType.QUALITY))
+          throw new KlabInternalErrorException("Invalid process quality " + child.getName());
+        var previous = ret.put(quality, bearer);
+        if (previous != null && previous != bearer && previous.getId() != bearer.getId())
+          throw new KlabInternalErrorException("Quality cannot be rebound across process bearers");
+      }
+    }
+    return ret;
   }
 
   /** Restore a complete occurrence closure using durable observations, without allocation or INIT. */
@@ -608,6 +659,7 @@ public class CompiledDataflow {
     The links to be made depend on the reciprocal nature of the root and its dependents
      */
     var rootRole = Observation.classifyRole(rootObservation);
+    var qualityBearers = processQualityBearers();
 
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
     dependentObservations
@@ -622,6 +674,11 @@ public class CompiledDataflow {
               }
 
               var dependentRole = Observation.classifyRole(dependent);
+              if (qualityBearers.containsKey(dependent)) {
+                ((ObservationImpl) dependent).setSubstantialQuality(true);
+                transaction.link(qualityBearers.get(dependent), dependent, GraphModel.Relationship.HAS_CHILD);
+                return;
+              }
 
               if (rootRole == Observation.Role.DEPENDENT) {
                 switch (dependentRole) {
@@ -630,7 +687,8 @@ public class CompiledDataflow {
                         scope.getContextObservation(),
                         dependent,
                         GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                        ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   case COLLECTIVE_SUBSTANTIAL -> {
                     var cohort =
@@ -694,7 +752,8 @@ public class CompiledDataflow {
 
                     // AFFECTS and HAS_CHILD
                     transaction.link(rootObservation, dependent, GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                        ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   default ->
                       throw new KlabInternalErrorException(
@@ -772,10 +831,35 @@ public class CompiledDataflow {
       // A detached query view is an execution-time binding, never a graph asset. Positive-ID
       // references retain AFFECTS so that later events can still propagate from them.
       if (source != null && target != null && source.getId() != Observation.QUERY_ID) {
+        var processBindings = processPlan(aTarget);
+        var binding = processBindings == null ? null : processBindings.binding(aSource.getName());
         // TODO the execution coverage should be recorded when the partial-storage policy is known.
-        transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
+        transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order,
+            ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE, "readState",
+            aTarget.getExecutionRole() == Actuator.ExecutionRole.PROCESS ? "PRIOR_COMMITTED" : "CURRENT",
+            "semanticRelations", binding == null ? List.of() : binding.relations());
       }
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
+    }
+
+    for (var actuator : actuatorObservations.keySet()) {
+      var plan = processPlan(actuator);
+      if (plan == null) continue;
+      var bearer = processBearer(plan);
+      var process = actuatorObservations.get(actuator);
+      for (var child : actuator.getChildren()) {
+        var binding = plan.binding(child.getName());
+        if (binding == null || binding.effect() != ProcessPlan.Effect.AFFECTED) continue;
+        var quality = actuatorObservations.get(child);
+        transaction.linkProcessInfluence(process, quality, plan.model(), binding.name(), binding.relations());
+      }
+      // Replace the provisional bearer ID only after the root transaction assigns durable IDs.
+      var originalPlan = actuator.getData().get(ProcessPlan.DATA_KEY);
+      transaction.afterRollback(() -> actuator.getData().put(ProcessPlan.DATA_KEY, originalPlan));
+      transaction.beforeCommit(() -> actuator.getData().put(ProcessPlan.DATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(new ProcessPlan(1, bearer.getId(),
+              plan.model(), plan.bindings(), plan.obligations()))));
+      transaction.update(actuator);
     }
 
     return true;
@@ -836,6 +920,18 @@ public class CompiledDataflow {
       for (var call : actuator.getComputation()) {
         var lexicalConstraints = actuator.getComputationConstraints().getOrDefault(computationIndex++, List.of());
         int firstExecutor = executors.size();
+
+        var processBindings = processPlan(actuator);
+        if (processBindings != null && (RuntimeService.CoreFunctor.classify(call) == RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
+            || RuntimeService.CoreFunctor.classify(call) == RuntimeService.CoreFunctor.CONSTANT_RESOLVER)) {
+          var target = call.getParameters().get("_targetId", String.class);
+          var binding = target == null ? null : processBindings.binding(target);
+          if (binding == null || !binding.assigned())
+            throw new IllegalArgumentException("Invalid process assignment target: " + target);
+          // S5 compiles this against the target quality at transition time. In particular a
+          // CREATED target has no observation, storage or scanner during registration.
+          continue;
+        }
 
         var callInfo = getCallInfo(call, observation);
         Expression expression = null;
@@ -952,12 +1048,21 @@ public class CompiledDataflow {
     }
 
     @Override
+    public ContextScope executionScope(ContextScope requested) {
+      var bindings = processPlan(actuator);
+      if (bindings == null) return requested;
+      var bearer = processBearer(bindings);
+      return requested.getContextObservation() == bearer ? requested : requested.within(bearer);
+    }
+
+    @Override
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
       if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
         if (event.getType() != Scheduler.Event.Type.INITIALIZATION)
           throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+        contextScope = (ServiceContextScope) executionScope(contextScope);
         // A process has no INIT value. Its input qualities still require their ordinary INIT.
         for (var child : actuator.getChildren()) {
           var input = actuatorObservations.get(child);

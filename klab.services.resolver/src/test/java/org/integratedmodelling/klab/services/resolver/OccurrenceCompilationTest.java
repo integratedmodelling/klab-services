@@ -38,6 +38,12 @@ class OccurrenceCompilationTest {
 
   private Actuator compile(ModelImpl model) {
     var scope = mock(ContextScope.class);
+    var bearer = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+    bearer.setId(10);
+    bearer.setObservable(model(SemanticType.SUBJECT, false).getObservables().getFirst());
+    when(scope.getContextObservation()).thenReturn(bearer);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class))
+        .thenReturn(mock(org.integratedmodelling.klab.api.services.Reasoner.class));
     var graph = ResolutionGraph.create(scope);
     graph.graph().addVertex(model);
     var actuator = new ActuatorImpl();

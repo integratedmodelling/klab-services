@@ -58,6 +58,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
+  private Map<Object, TransactionImpl> processWriterClaims = new HashMap<>();
   private Cache<Long, KnowledgeGraph.Commit> commitCache =
       CacheBuilder.newBuilder()
           .maximumSize(/* TODO initialize from service settings */ 200)
@@ -128,21 +129,130 @@ public class DigitalTwinImpl implements DigitalTwin {
     private List<Runnable> beforeCommitActions = new ArrayList<>();
     private List<Runnable> afterCommitActions = new ArrayList<>();
     private List<Runnable> rollbackActions = new ArrayList<>();
-    private List<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> schedulerJournal = new ArrayList<>();
+    private List<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> schedulerJournal =
+        new ArrayList<>();
 
-    @Override public Executor getExecutor(Observation observation) { return contextualizers.get(observation); }
-    @Override public void beforeCommit(Runnable action) { synchronized (graph) { beforeCommitActions.add(action); } }
-    @Override public void afterCommit(Runnable action) { synchronized (graph) { afterCommitActions.add(action); } }
-    @Override public void afterRollback(Runnable action) { synchronized (graph) { rollbackActions.add(action); } }
-    @Override public void stageSchedulerJournal(org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal journal) {
+    @Override
+    public Executor getExecutor(Observation observation) {
+      return contextualizers.get(observation);
+    }
+
+    /** Claim a single semantic writer in this transaction and the committed graph. */
+    public void linkProcessInfluence(
+        Observation process, Observation quality, String model, String name) {
+      linkProcessInfluence(process, quality, model, name, List.of("AFFECTS"));
+    }
+
+    public void linkProcessInfluence(
+        Observation process,
+        Observation quality,
+        String model,
+        String name,
+        List<String> relations) {
+      synchronized (graph) {
+        var owner = this;
+        while (owner.parent != null) owner = owner.parent;
+        final var rootOwner = owner;
+        final Object key = quality.getId() > 0 ? Long.valueOf(quality.getId()) : quality;
+        synchronized (DigitalTwinImpl.this) {
+          if (processWriterClaims == null) processWriterClaims = new HashMap<>();
+          var claimed = processWriterClaims.putIfAbsent(key, rootOwner);
+          if (claimed != null && claimed != rootOwner)
+            throw new IllegalStateException("Concurrent process writer registration for " + name);
+          if (claimed == null) {
+            Runnable release =
+                () -> {
+                  synchronized (DigitalTwinImpl.this) {
+                    processWriterClaims.remove(key, rootOwner);
+                  }
+                };
+            afterCommit(release);
+            afterRollback(release);
+          }
+        }
+        if (quality.getId() > 0) {
+          for (var edge :
+              knowledgeGraph.getLinks(
+                  quality,
+                  GraphModel.Relationship.Direction.INCOMING,
+                  scope,
+                  GraphModel.Relationship.AFFECTS)) {
+            if (org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE.equals(
+                    edge.properties()
+                        .get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE))
+                && edge.source().getId() != process.getId())
+              throw new IllegalStateException("Competing process writers for " + name);
+          }
+        }
+        if (graph.containsVertex(quality)) {
+          for (var edge : graph.incomingEdgesOf(quality)) {
+            var writer = graph.getEdgeSource(edge);
+            if (edge.relationship == GraphModel.Relationship.AFFECTS
+                && org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE.equals(
+                    edge.properties.get(
+                        org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE))
+                && writer != process
+                && (process.getId() <= 0 || writer.getId() != process.getId()))
+              throw new IllegalStateException("Competing process writers for " + name);
+          }
+        }
+        link(
+            process,
+            quality,
+            GraphModel.Relationship.AFFECTS,
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE,
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE,
+            "effect",
+            "AFFECTED",
+            "model",
+            model,
+            "binding",
+            name,
+            "writeState",
+            "NEXT_COMMITTED",
+            "semanticRelations",
+            relations);
+      }
+    }
+
+    @Override
+    public void beforeCommit(Runnable action) {
+      synchronized (graph) {
+        beforeCommitActions.add(action);
+      }
+    }
+
+    @Override
+    public void afterCommit(Runnable action) {
+      synchronized (graph) {
+        afterCommitActions.add(action);
+      }
+    }
+
+    @Override
+    public void afterRollback(Runnable action) {
+      synchronized (graph) {
+        rollbackActions.add(action);
+      }
+    }
+
+    @Override
+    public void stageSchedulerJournal(
+        org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal journal) {
       if (journal.commitId() != 0) throw new IllegalArgumentException("Journal already committed");
-      synchronized (graph) { schedulerJournal.add(journal); }
+      synchronized (graph) {
+        schedulerJournal.add(journal);
+      }
     }
 
     private void rollbackSchedulerState() {
       synchronized (graph) {
         for (var action : rollbackActions.reversed()) {
-          try { action.run(); } catch (Throwable failure) { scope.error(failure); }
+          try {
+            action.run();
+          } catch (Throwable failure) {
+            scope.error(failure);
+          }
         }
         rollbackActions.clear();
         beforeCommitActions.clear();
@@ -180,10 +290,13 @@ public class DigitalTwinImpl implements DigitalTwin {
         var executor = contextualizers.get(observation);
         var previousExecution = observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY);
         observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, true);
-        afterRollback(() -> {
-          if (previousExecution == null) observation.getMetadata().remove(Scheduler.EXECUTION_METADATA_KEY);
-          else observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, previousExecution);
-        });
+        afterRollback(
+            () -> {
+              if (previousExecution == null)
+                observation.getMetadata().remove(Scheduler.EXECUTION_METADATA_KEY);
+              else
+                observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, previousExecution);
+            });
         update(observation);
         afterCommit(() -> scheduler.registerExecutor(observation, executor::run));
       }
@@ -521,13 +634,21 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void resolveWith(Observation observation, Executor executor) {
-      this.contextualizers.compute(observation, (key, previous) -> {
-        if (previous != null && previous != executor
-            && ((previous.getActuator() != null && previous.getActuator().getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION)
-                || (executor.getActuator() != null && executor.getActuator().getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION)))
-          throw new UnsupportedOperationException("Multiple occurrence plans for one observation require coverage selection");
-        return executor;
-      });
+      this.contextualizers.compute(
+          observation,
+          (key, previous) -> {
+            if (previous != null
+                && previous != executor
+                && ((previous.getActuator() != null
+                        && previous.getActuator().getExecutionRole()
+                            != Actuator.ExecutionRole.INITIALIZATION)
+                    || (executor.getActuator() != null
+                        && executor.getActuator().getExecutionRole()
+                            != Actuator.ExecutionRole.INITIALIZATION)))
+              throw new UnsupportedOperationException(
+                  "Multiple occurrence plans for one observation require coverage selection");
+            return executor;
+          });
     }
 
     @Override
@@ -564,8 +685,13 @@ public class DigitalTwinImpl implements DigitalTwin {
         // the object returned by submit() expose the same finalized lifecycle information.
         var commitId = knowledgeGraph.nextKey();
         if (!schedulerJournal.isEmpty()) {
-          activity.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal.METADATA_KEY,
-              schedulerJournal.stream().map(entry -> Utils.Json.asString(entry.committed(commitId))).toList());
+          activity
+              .getMetadata()
+              .put(
+                  org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal.METADATA_KEY,
+                  schedulerJournal.stream()
+                      .map(entry -> Utils.Json.asString(entry.committed(commitId)))
+                      .toList());
         }
         prepareObservationsForStorage(commitId);
         var activeObserver = scope.getObserver();
@@ -637,7 +763,8 @@ public class DigitalTwinImpl implements DigitalTwin {
                 // transactions contain transient activity edges that are intentionally skipped.
                 linked.add(Triple.of(source.getId(), target.getId(), edge.relationship.name()));
               }
-              if (activeObserver != null && target != null
+              if (activeObserver != null
+                  && target != null
                   && activeObserver.getId() != target.getId()) {
                 kgTransaction.perceive(activeObserver, target.getGeometry());
                 modified.add(activeObserver);
@@ -667,7 +794,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         for (var action : List.copyOf(afterCommitActions)) {
           // The graph is committed; failed activation is recovered from durable metadata.
-          try { action.run(); } catch (Throwable failure) { scope.error(failure); }
+          try {
+            action.run();
+          } catch (Throwable failure) {
+            scope.error(failure);
+          }
         }
         afterCommitActions.clear();
         beforeCommitActions.clear();
