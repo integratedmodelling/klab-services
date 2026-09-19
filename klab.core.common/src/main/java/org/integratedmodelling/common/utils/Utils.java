@@ -1532,7 +1532,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             fileExtension = "bin";
           }
 
-          var ret = File.createTempFile("klab", "." + fileExtension);
           var request = new HttpGet(URI.create(uri + apiCall + encodeParameters(params)));
           request.setHeader(HttpHeaders.ACCEPT, mediaType);
           if (authorization != null) {
@@ -1541,19 +1540,41 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           for (var header : headers.keySet()) {
             request.setHeader(header, headers.get(header));
           }
-          try (var client = HttpClientBuilder.create().build()) {
-            var response = client.execute(request);
+          try (var client = HttpClientBuilder.create().build();
+              var response = client.execute(request)) {
             HttpEntity entity = response.getEntity();
-            if (entity != null) {
+            int status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status >= 300) {
+              String detail = response.getStatusLine().getReasonPhrase();
+              if (entity != null) {
+                try (var input = entity.getContent()) {
+                  String body = new String(input.readNBytes(65536), StandardCharsets.UTF_8);
+                  try {
+                    var error = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+                    var problem = error.has("body") ? error.path("body") : error;
+                    detail = problem.path("detail").asText(detail);
+                  } catch (Exception ignored) {
+                    // The status remains useful when a proxy returns non-JSON content.
+                  }
+                }
+              }
+              throw new RequestFailure(status, "Download failed (HTTP " + status + "): "
+                  + Objects.toString(detail, "").lines().findFirst().orElse(""), null);
+            }
+            if (entity == null) throw new RequestFailure(status, "Download returned no content", null);
+            var ret = File.createTempFile("klab", "." + fileExtension);
+            try {
               try (var output = new FileOutputStream(ret)) {
                 entity.writeTo(output);
-              } catch (IOException exception) {
-                scope.error(exception);
-                return null;
               }
+            } catch (IOException exception) {
+              java.nio.file.Files.deleteIfExists(ret.toPath());
+              throw exception;
             }
             return ret;
           }
+        } catch (RequestFailure e) {
+          throw e;
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
@@ -2199,7 +2220,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               .append(k)
               .append("=")
               .append(
-                  UriUtils.encodeQueryParam(parameters.get(k).toString(), StandardCharsets.UTF_8));
+                  UriUtils.encodeQueryParam(parameters.get(k).toString(), StandardCharsets.UTF_8)
+                      .replace("+", "%2B"));
         }
         return ret.toString();
       }
