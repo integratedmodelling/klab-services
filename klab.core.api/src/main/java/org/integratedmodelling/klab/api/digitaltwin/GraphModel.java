@@ -45,6 +45,8 @@ public interface GraphModel {
     String STRATEGY = "strategy";
     String COMPUTATION = "computation";
     String ACTUATOR_SCHEMA_VERSION = "actuatorSchemaVersion";
+    String EXECUTION_ROLE = "executionRole";
+    String OCCURRENCE_SCHEDULES_JSON = "occurrenceSchedulesJson";
     String ACTUATOR_TYPE = "actuatorType";
     String COVERAGE = "coverage";
     String RESOLVED_COVERAGE = "resolvedCoverage";
@@ -151,6 +153,8 @@ public interface GraphModel {
             STRATEGY,
             COMPUTATION,
             ACTUATOR_SCHEMA_VERSION,
+            EXECUTION_ROLE,
+            OCCURRENCE_SCHEDULES_JSON,
             ACTUATOR_TYPE,
             COVERAGE,
             RESOLVED_COVERAGE,

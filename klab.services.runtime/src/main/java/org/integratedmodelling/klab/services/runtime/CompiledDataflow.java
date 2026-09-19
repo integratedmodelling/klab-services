@@ -329,6 +329,17 @@ public class CompiledDataflow {
    * storage preparation. Classification dispatch uses the explicit operation contract.
    */
   static void validateSupportedPlan(Actuator actuator) {
+    if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
+      if (actuator.getComputation().isEmpty()
+          || actuator.getOccurrenceSchedules().size() != actuator.getComputation().size())
+        throw new IllegalArgumentException("Occurrence plan requires a schedule for every computation");
+      for (int i = 0; i < actuator.getComputation().size(); i++)
+        if (!actuator.getOccurrenceSchedules().containsKey(i))
+          throw new IllegalArgumentException("Missing occurrence computation schedule " + i);
+      validateRestorableOccurrence(actuator);
+    } else if (!actuator.getOccurrenceSchedules().isEmpty()) {
+      throw new IllegalArgumentException("Static actuator cannot carry occurrence schedules");
+    }
     if (actuator.getActuatorType() == Actuator.Type.UPDATE
         || actuator.getEffect() == Actuator.Effect.SEMANTIC_UPDATE) {
       if (actuator.getActuatorType() != Actuator.Type.UPDATE
@@ -345,8 +356,73 @@ public class CompiledDataflow {
     for (var child : actuator.getChildren()) validateSupportedPlan(child);
   }
 
+  private static void validateRestorableOccurrence(Actuator actuator) {
+    if (actuator.getActuatorType() == Actuator.Type.UPDATE || actuator.getObservation() == null)
+      throw new UnsupportedOperationException("Occurrence closure cannot contain semantic UPDATE nodes yet");
+    if (actuator.getObservation().getId() == Observation.QUERY_ID)
+      throw new UnsupportedOperationException("Occurrence closure cannot retain detached query observations");
+    var coverage = actuator.getCoverage();
+    if (coverage != null && !coverage.isUniversal()
+        && !GeometryRepository.INSTANCE.scale(coverage).encode().equals(
+            GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).encode()))
+      throw new UnsupportedOperationException("Partial-coverage occurrence closure requires S4 coverage selection");
+    for (var child : actuator.getChildren()) validateRestorableOccurrence(child);
+  }
+
+  /** Snapshot complete bindings after observation IDs have been assigned, without runtime scales. */
+  public static ActuatorImpl portableOccurrencePlan(Actuator source) {
+    if (source.getObservation() == null || source.getObservation().getId() <= 0)
+      throw new KlabInternalErrorException("Occurrence plan binding has no durable observation: " + source.getName());
+    var copy = new ActuatorImpl();
+    copy.setName(source.getName());
+    copy.setType(source.getType());
+    copy.setActuatorType(source.getActuatorType());
+    copy.setObservation(Observation.forTransport(source.getObservation()));
+    copy.setId(source.getObservation().getId());
+    copy.setCoverage(Geometry.forTransport(source.getCoverage()));
+    copy.setStrategyUrn(source.getStrategyUrn());
+    copy.setExecutionRole(source.getExecutionRole());
+    copy.getOccurrenceSchedules().putAll(source.getOccurrenceSchedules());
+    copy.getComputation().addAll(source.getComputation());
+    copy.getComputationConstraints().putAll(source.getComputationConstraints());
+    copy.getData().putAll(source.getData());
+    copy.getData().replaceAll((key, value) -> Geometry.valueForTransport(value));
+    copy.getAnnotations().addAll(source.getAnnotations());
+    copy.setShardingStrategy(source.getShardingStrategy());
+    for (var child : source.getChildren()) copy.getChildren().add(portableOccurrencePlan(child));
+    return copy;
+  }
+
+  /** Restore a complete occurrence closure using durable observations, without allocation or INIT. */
+  public DigitalTwin.Executor restoreOccurrenceExecutor(Actuator plan) {
+    validateSupportedPlan(plan);
+    this.rootActuator = plan;
+    bindRestoredOccurrence(plan);
+    compileRestoredOccurrence(plan);
+    return operations.get(plan);
+  }
+
+  private void bindRestoredOccurrence(Actuator plan) {
+    var observation = scope.getObservation(plan.getObservation().getId());
+    if (observation == null || observation.getId() <= 0)
+      throw new KlabInternalErrorException("Missing durable occurrence input " + plan.getName());
+    ((ActuatorImpl) plan).setObservation(observation);
+    actuatorObservations.put(plan, observation);
+    for (var child : plan.getChildren()) bindRestoredOccurrence(child);
+  }
+
+  private void compileRestoredOccurrence(Actuator plan) {
+    for (var child : plan.getChildren()) compileRestoredOccurrence(child);
+    if (plan.getActuatorType() != Actuator.Type.REFERENCE) {
+      var operation = new ExecutorImpl(plan);
+      if (!operation.isOperational()) throw new KlabInternalErrorException("Cannot restore " + plan.getName());
+      operations.put(plan, operation);
+    }
+  }
+
   /** Recompile an already-bound leaf without allocating observations or changing native storage. */
   public DigitalTwin.Executor restoreLeafExecutor(Actuator actuator) {
+    validateSupportedPlan(actuator);
     if (!actuator.getChildren().isEmpty()
         || actuator.getChildrenCount() > 0
         || actuator.getObservation() == null
@@ -662,6 +738,8 @@ public class CompiledDataflow {
     }
 
     for (var actuator : dependencyGraph.vertexSet()) {
+      if (actuator instanceof ActuatorImpl implementation && actuatorObservations.containsKey(actuator))
+        implementation.setObservation(actuatorObservations.get(actuator));
       if (!actuator.getComputation().isEmpty()
           || actuator.getChildren().stream().anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
         transaction.add(actuator);
@@ -705,6 +783,8 @@ public class CompiledDataflow {
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
   class ExecutorImpl implements DigitalTwin.Executor {
+
+    @Override public Actuator getActuator() { return actuator; }
 
     private final Observation observation;
     private final Actuator actuator;
@@ -875,6 +955,17 @@ public class CompiledDataflow {
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
+      if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
+        if (event.getType() != Scheduler.Event.Type.INITIALIZATION)
+          throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+        // A process has no INIT value. Its input qualities still require their ordinary INIT.
+        for (var child : actuator.getChildren()) {
+          var input = actuatorObservations.get(child);
+          if (input != null && !digitalTwin.getScheduler().executeDependency(
+              input, input.getGeometry(), event, contextScope)) return false;
+        }
+        return true;
+      }
       if (characterizer != null) return runCharacterization(geometry, event, contextScope);
       if (classifier != null) return runClassification(geometry, event, contextScope);
       // Operation prerequisites have no observation and therefore no AFFECTS/scheduler entry.

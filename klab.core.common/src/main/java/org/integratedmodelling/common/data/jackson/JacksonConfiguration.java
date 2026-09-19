@@ -220,6 +220,11 @@ public class JacksonConfiguration {
 
     private Object deserialize(JsonNode node, JsonParser parser, Class<?> type) throws Exception {
 
+      // Concrete records in typed containers have no @class discriminator. Use their canonical
+      // constructor rather than returning an untyped map (e.g. actuator occurrence schedules).
+      if (type.isRecord() && node.isObject() && !node.has(CLASS_FIELD)) {
+        return parser.getCodec().treeToValue(node, type);
+      }
       if (node.isObject()) {
         return deserializeObject(node, parser, getObjectClass(node));
       } else if (node.isArray()) {

@@ -245,6 +245,8 @@ public class DataflowCompiler {
       Model model,
       String localName) {
 
+    var occurrenceSchedule = compileOccurrenceSchedule(observationActuator, model);
+
     if (observation != null && isMainObservable(observation.getObservable(), model)
         && observationActuator.getObservation() instanceof ObservationImpl target) {
       target.mergeAnnotations(model.getObservables().getFirst().getSemantics().getAnnotations(),
@@ -310,6 +312,10 @@ public class DataflowCompiler {
           org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
               org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
       observationActuator.getComputationConstraints().put(observationActuator.getComputation().size(), lexicalConstraints);
+      if (occurrenceSchedule != null) {
+        observationActuator.getOccurrenceSchedules().put(
+            observationActuator.getComputation().size(), occurrenceSchedule);
+      }
       observationActuator
           .getComputation()
           .add(adaptContextualizer(contextualizer, overriddenParameters));
@@ -351,6 +357,42 @@ public class DataflowCompiler {
                 }
               });
       ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
+    }
+  }
+
+  /** S1 metadata only: the runtime capability gate prevents premature INIT execution. */
+  private org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule compileOccurrenceSchedule(
+      Actuator actuator, Model model) {
+    if (model.getObservables().isEmpty()) return null;
+    var primary = model.getObservables().getFirst();
+    var role = primary.is(SemanticType.PROCESS) ? Actuator.ExecutionRole.PROCESS
+        : primary.is(SemanticType.EVENT) && primary.getSemantics().isCollective()
+            ? Actuator.ExecutionRole.EVENT_INSTANTIATOR : Actuator.ExecutionRole.INITIALIZATION;
+    if (role == Actuator.ExecutionRole.INITIALIZATION) return null;
+    if (!(actuator instanceof ActuatorImpl implementation)) {
+      throw new KlabIllegalStateException("Occurrence compilation requires a portable actuator");
+    }
+    try {
+      var declared = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromModel(model.getAnnotations());
+      var javaSchedules = new ArrayList<org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>();
+      for (var computation : model.getComputation()) {
+        if (computation.getServiceCall() != null) {
+          var prototype = resolutionGraph.getServiceInfo(computation.getServiceCall().getUrn());
+          if (prototype != null && prototype.getOccurrenceSchedule() != null) {
+            javaSchedules.add(prototype.getOccurrenceSchedule());
+          }
+        }
+      }
+      var selected = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.select(declared, javaSchedules);
+      if (model.getComputation().isEmpty()) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+            "Scheduled occurrence model has no executable computation");
+      }
+      implementation.setExecutionRole(role);
+      return selected;
+    } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException e) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+          "Occurrence schedule for model " + model.getUrn() + ": " + e.getMessage());
     }
   }
 

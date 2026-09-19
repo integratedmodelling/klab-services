@@ -1292,6 +1292,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // Legacy textual computations are not a lossless executable representation. Leave them
         // unavailable rather than fabricating runnable calls from incomplete historical nodes.
         if (node.get(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION).asInt(0) == 1) {
+          if (!node.get(GraphModel.Fields.EXECUTION_ROLE).isNull()) {
+            instance.setExecutionRole(
+                Actuator.ExecutionRole.valueOf(
+                    node.get(GraphModel.Fields.EXECUTION_ROLE).asString()));
+          }
+          if (!node.get(GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON).isNull()) {
+            for (var json :
+                node.get(GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON)
+                    .asList(value -> value.asString())) {
+              var entry =
+                  Utils.Json.parseObject(
+                      json,
+                      org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.Computation
+                          .class);
+              instance.getOccurrenceSchedules().put(entry.index(), entry.schedule());
+            }
+          }
           if (!node.get(GraphModel.Fields.DATA_JSON).isNull()) {
             instance.setData(
                 Utils.Json.parseObject(
@@ -1834,7 +1851,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       var shape = scale.getSpace().getGeometricShape().transform(Projection.getLatLon());
       if (shape instanceof ShapeImpl shape1) {
         // The graph stores binary WKB; the text geometry encoder returns hexadecimal instead.
-        props.put(GraphModel.Fields.SHAPE,
+        props.put(
+            GraphModel.Fields.SHAPE,
             new org.locationtech.jts.io.WKBWriter().write(shape1.getJTSGeometry()));
         var xy = shape1.getCenter(true);
         props.put(GraphModel.Fields.LATITUDE, xy[1]);

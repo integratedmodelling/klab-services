@@ -125,6 +125,32 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
     private Map<Concept, Scale> cohortGeometries = new HashMap<>();
+    private List<Runnable> beforeCommitActions = new ArrayList<>();
+    private List<Runnable> afterCommitActions = new ArrayList<>();
+    private List<Runnable> rollbackActions = new ArrayList<>();
+    private List<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> schedulerJournal = new ArrayList<>();
+
+    @Override public Executor getExecutor(Observation observation) { return contextualizers.get(observation); }
+    @Override public void beforeCommit(Runnable action) { synchronized (graph) { beforeCommitActions.add(action); } }
+    @Override public void afterCommit(Runnable action) { synchronized (graph) { afterCommitActions.add(action); } }
+    @Override public void afterRollback(Runnable action) { synchronized (graph) { rollbackActions.add(action); } }
+    @Override public void stageSchedulerJournal(org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal journal) {
+      if (journal.commitId() != 0) throw new IllegalArgumentException("Journal already committed");
+      synchronized (graph) { schedulerJournal.add(journal); }
+    }
+
+    private void rollbackSchedulerState() {
+      synchronized (graph) {
+        for (var action : rollbackActions.reversed()) {
+          try { action.run(); } catch (Throwable failure) { scope.error(failure); }
+        }
+        rollbackActions.clear();
+        beforeCommitActions.clear();
+        afterCommitActions.clear();
+        schedulerJournal.clear();
+        contextualizers.clear();
+      }
+    }
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -151,8 +177,15 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void registerExecutors() {
       for (var observation : contextualizers.keySet()) {
-        scheduler.registerExecutor(
-            observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
+        var executor = contextualizers.get(observation);
+        var previousExecution = observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY);
+        observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, true);
+        afterRollback(() -> {
+          if (previousExecution == null) observation.getMetadata().remove(Scheduler.EXECUTION_METADATA_KEY);
+          else observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, previousExecution);
+        });
+        update(observation);
+        afterCommit(() -> scheduler.registerExecutor(observation, executor::run));
       }
     }
 
@@ -229,6 +262,10 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.failures = parent.failures;
       this.cohortGeometries = parent.cohortGeometries;
       this.contextualizers = parent.contextualizers;
+      this.beforeCommitActions = parent.beforeCommitActions;
+      this.afterCommitActions = parent.afterCommitActions;
+      this.rollbackActions = parent.rollbackActions;
+      this.schedulerJournal = parent.schedulerJournal;
 
       synchronized (graph) {
         this.graph.addVertex(activity);
@@ -484,13 +521,20 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void resolveWith(Observation observation, Executor executor) {
-      this.contextualizers.put(observation, executor);
+      this.contextualizers.compute(observation, (key, previous) -> {
+        if (previous != null && previous != executor
+            && ((previous.getActuator() != null && previous.getActuator().getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION)
+                || (executor.getActuator() != null && executor.getActuator().getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION)))
+          throw new UnsupportedOperationException("Multiple occurrence plans for one observation require coverage selection");
+        return executor;
+      });
     }
 
     @Override
     public long commit() {
 
       if (!failures.isEmpty()) {
+        rollbackSchedulerState();
         failures.forEach(t -> scope.error(t));
         return -1;
       }
@@ -519,6 +563,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         // Reserve the commit identity before storing assets so the durable observation metadata and
         // the object returned by submit() expose the same finalized lifecycle information.
         var commitId = knowledgeGraph.nextKey();
+        if (!schedulerJournal.isEmpty()) {
+          activity.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal.METADATA_KEY,
+              schedulerJournal.stream().map(entry -> Utils.Json.asString(entry.committed(commitId))).toList());
+        }
         prepareObservationsForStorage(commitId);
         var activeObserver = scope.getObserver();
         var kgTransaction = knowledgeGraph.createTransaction(scope);
@@ -547,6 +595,8 @@ public class DigitalTwinImpl implements DigitalTwin {
                   stored.add(asset);
                 }
               }
+
+              for (var action : List.copyOf(beforeCommitActions)) action.run();
 
               for (var asset :
                   modified.stream()
@@ -598,6 +648,7 @@ public class DigitalTwinImpl implements DigitalTwin {
             throw failure;
           }
         } catch (Exception e) {
+          rollbackSchedulerState();
           attributions.clear();
           scope.error(e);
           kgTransaction.fail(e);
@@ -613,6 +664,15 @@ public class DigitalTwinImpl implements DigitalTwin {
         var commit =
             createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
         commitCache.put(commit.getId(), commit);
+
+        for (var action : List.copyOf(afterCommitActions)) {
+          // The graph is committed; failed activation is recovered from durable metadata.
+          try { action.run(); } catch (Throwable failure) { scope.error(failure); }
+        }
+        afterCommitActions.clear();
+        beforeCommitActions.clear();
+        rollbackActions.clear();
+        schedulerJournal.clear();
 
         ret = commit.getId();
       }
@@ -850,6 +910,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public Transaction fail(Throwable compilationError) {
+      rollbackSchedulerState();
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " FAIL");
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());

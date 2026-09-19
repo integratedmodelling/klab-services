@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -34,13 +33,18 @@ class ActuatorPersistenceTest {
     actuator.setStrategyUrn("strategy.test");
     actuator.setCoverage(Geometry.UNIVERSAL);
     actuator.getData().put("factor", 3);
+    actuator.setExecutionRole(Actuator.ExecutionRole.PROCESS);
+    actuator.getOccurrenceSchedules().put(0,
+        new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule(1, "", "", 1,
+            org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type.MONTH,
+            true, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.Source.MODEL));
     var observation = new ObservationImpl();
-    observation.setObservable((Observable) Proxy.newProxyInstance(
-        Observable.class.getClassLoader(), new Class<?>[] {Observable.class},
-        (proxy, method, args) -> {
-          if (method.getName().equals("getUrn")) return "test:Value";
-          throw new AssertionError(method);
-        }));
+    var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    concept.setUrn("test:Value");
+    concept.setName("Value");
+    concept.setNamespace("test");
+    concept.getType().add(org.integratedmodelling.klab.api.knowledge.SemanticType.PROCESS);
+    observation.setObservable(org.integratedmodelling.common.knowledge.ObservableImpl.promote(concept, null));
     actuator.setObservation(observation);
     actuator.getComputation().add(new ServiceCallImpl("test.function",
         "value", 7, "label", "quoted \"value\"", "__internal", List.of(1, 2)));
@@ -53,6 +57,8 @@ class ActuatorPersistenceTest {
     assertEquals(Actuator.Type.RESOLVE, restored.getActuatorType());
     assertEquals(Artifact.Type.NUMBER, restored.getType());
     assertEquals("strategy.test", restored.getStrategyUrn());
+    assertEquals(Actuator.ExecutionRole.PROCESS, restored.getExecutionRole());
+    assertEquals(actuator.getOccurrenceSchedules(), restored.getOccurrenceSchedules());
     assertEquals(3, restored.getData().get("factor", 0));
     assertEquals(1, restored.getComputation().size());
     var call = restored.getComputation().getFirst();

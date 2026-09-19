@@ -156,6 +156,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
         case ActuatorImpl actuator -> {
           ret.put(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION, 1);
+          ret.put(GraphModel.Fields.EXECUTION_ROLE, actuator.getExecutionRole().name());
+          ret.put(GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON, actuator.getOccurrenceSchedules().entrySet().stream()
+              .sorted(Map.Entry.comparingByKey())
+              .map(entry -> Utils.Json.asString(
+                  new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.Computation(
+                      entry.getKey(), entry.getValue())))
+              .toList());
           ret.put(GraphModel.Fields.ID, actuator.getId());
           ret.put(GraphModel.Fields.NAME, actuator.getName());
           ret.put(

@@ -1572,7 +1572,7 @@ public class ComponentRegistry {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
+                namespacePrefix, clss.getAnnotation(KlabFunction.class), null, clss);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } else if (clss.isAnnotationPresent(Actor.class)) {
         var descriptor =
@@ -1592,7 +1592,7 @@ public class ComponentRegistry {
           && method.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, method.getAnnotation(KlabFunction.class), method);
+                namespacePrefix, method.getAnnotation(KlabFunction.class), method, cls);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
@@ -1631,7 +1631,7 @@ public class ComponentRegistry {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, clss.getAnnotation(KlabFunction.class), null);
+                namespacePrefix, clss.getAnnotation(KlabFunction.class), null, clss);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } /*else if (clss.isAnnotationPresent(Verb.class)) {
           var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
@@ -1653,7 +1653,7 @@ public class ComponentRegistry {
           && method.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
             createContextualizerPrototype(
-                namespacePrefix, method.getAnnotation(KlabFunction.class), method);
+                namespacePrefix, method.getAnnotation(KlabFunction.class), method, cls);
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
@@ -2319,7 +2319,7 @@ public class ComponentRegistry {
   }
 
   private ServiceInfoImpl createContextualizerPrototype(
-      String namespacePrefix, KlabFunction annotation, Method method) {
+      String namespacePrefix, KlabFunction annotation, Method method, Class<?> owner) {
 
     var ret = new ServiceInfoImpl();
 
@@ -2331,6 +2331,11 @@ public class ComponentRegistry {
     ret.setLabel(annotation.dataflowLabel());
     ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.FUNCTION);
+
+    var temporal = method == null ? null : method.getAnnotation(Contextualizer.class);
+    if (temporal == null) temporal = owner.getAnnotation(Contextualizer.class);
+    ret.setOccurrenceSchedule(
+        org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromJava(temporal));
 
     var distribution = new Data.ShardingStrategy();
     distribution.setCurve(annotation.fillCurve());

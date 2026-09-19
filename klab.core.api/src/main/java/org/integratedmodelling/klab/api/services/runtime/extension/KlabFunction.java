@@ -17,9 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Contextualization;
  * Library} annotation, which supplies the load point in a component and the namespace for the
  * service call.
  *
- * <p>If used on a class, the interface implemented by the class defines the type of use. Normally
- * the annotation is used with a subinterface of {@link Contextualizer} to produce stateful
- * contextualizers.
+ * <p>If used on a class, the interface implemented by the class defines the type of use.
  *
  * <p>If used on a method, the arguments and the geometry are used to classify the context of use
  * for the call.

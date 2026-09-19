@@ -1,22 +1,43 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
-import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.scope.ContextScope;
+import java.lang.annotation.*;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 
-/**
- * Contextualizers should be static, public classes annotated with {@link KlabFunction} embedded in static
- * superclasses tagged with {@link @Library} that provide the namespace for the associated function. These are
- * implemented and deployed as components which are served by the
- * {@link org.integratedmodelling.klab.api.services.ResourcesService} to the
- * {@link org.integratedmodelling.klab.api.services.RuntimeService} that needs it.
- * <p>
- * If a contextualizer has a constructor that takes a {@link ServiceCall} and a {@link ContextScope}, that
- * constructor will be called at initialization with the declaring function call so that state can be kept
- * across calls. Otherwise the reentrant attribute in the tagging function will be used to decide if the
- * contextualizer should be kept around across calls or not.
- *
- * @author Ferd
- */
-public interface Contextualizer {
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface Contextualizer {
 
+  /**
+   * Start time where the contextualizer is valid, as an ISO-8601 instant with offset.
+   * Empty means the contextual extent's start.
+   *
+   * @return
+   */
+  String timeStart() default "";
+
+  /**
+   * End time where the contextualizer is valid, as an ISO-8601 instant with offset.
+   * Empty means the contextual extent's end.
+   *
+   * @return
+   */
+  String timeEnd() default "";
+
+  /**
+   * Time step in {@link #timeUnit()} unit.
+   *
+   * @return
+   */
+  long timeStep() default -1L;
+
+  /**
+   * Time unit for {@link #timeStep()}.
+   *
+   * @return
+   */
+  Time.Resolution.Type timeUnit() default Time.Resolution.Type.MILLISECOND;
+
+  /** Whether a model's @time may replace this schedule. */
+  boolean timeOverridable() default true;
 }

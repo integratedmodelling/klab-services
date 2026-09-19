@@ -4,7 +4,8 @@ Status: **development plan and target contract**, established 2026-09-19. CONNEC
 CLASSIFICATION are accepted foundations; occurrence execution is not yet implemented end to end.
 This document stages development, testing, and deployment. Requirements below are normative for
 the feature; proposed representations and explicitly open decisions are not claims about current
-behavior. The initial delivery is documentation scaffolding, with no runtime behavior change.
+behavior. S1 schedule metadata and the bounded S2 registration subset are now present; temporal
+execution remains gated pending S3–S4. See the implementation records for verification and remaining work.
 
 Read with [observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md),
 [observable semantics](OBSERVABLES.md), [ontology declarations](ONTOLOGY_LANGUAGE.md),
@@ -42,20 +43,29 @@ Explicitly different dependency inherence must be honored or diagnosed, never si
 ### 1.1 Inline scalar expressions for process outputs
 
 k.IM process models must support inline scalar expressions for inherent variables, without requiring
-a Java process contextualizer. The primary model observable is the process; additional observables
-listed after it declare the model's outputs. A named quality output belongs to the process's inherent
-bearer, not to the process itself.
+a Java process contextualizer. The primary model observable is the process. A named quality may be
+an additional output or an `observing` dependency of the process model. The latter is injected into
+the inherent substantial/event's context; the substantial's own explanatory model need not declare
+it. Injection must be compatible with the context of both the quality and the process. The quality
+belongs to that bearer, not to the process itself. This supersedes the earlier output-only rule.
+Injected quality dependencies must go through their ordinary INIT contextualization on the bearer
+and complete successfully before any process execution can read them. Suppressing process INIT must
+not suppress prerequisite INIT. A failed or incomplete initialization prevents process execution;
+registration alone is not evidence of a usable input state. Later transitions read the prior committed
+quality state and do not reinitialize it on every process invocation.
 
 | Process-model assignment | Required behavior |
 |---|---|
 | `set to []` | Illegal: the implicit target is the primary process, which cannot be assigned a scalar value |
-| `set x to []` | Accepted when `x` identifies a known output observable quality listed after the primary process observable |
-| Named assignment to the process, a non-quality, an unknown name, or an input-only dependency | Reject with a target-specific diagnostic |
+| `set x to []` | Accepted when `x` identifies a known quality declared as an additional output or `observing` dependency, with compatible bearer/context |
+| Named assignment to the process, a non-quality, an unknown/ambiguous name, or an incompatible dependency | Reject with a target-specific diagnostic |
 
 Here `[]` denotes an inline scalar-expression body, not a prescribed empty expression. Resolve `x`
-against the model's declared output names, retain its observable semantics and bearer binding, and
+against the model's declared output and dependency names, retain its semantics and bearer binding, and
 validate the expression's inputs and result against the target quality's data contract. Ambiguous
-output names must be diagnosed. Enforce these rules at runtime validation and expose the same
+names must be diagnosed. Reading and writing the same named dependency reads its prior causal state
+and writes its next state; it does not require a second alias for the same quality. Enforce these
+rules at runtime validation and expose the same
 diagnostics through the future k.IM semantic/contextualization-chain validator.
 
 Compile the expression into the resolved executable plan and evaluate it over the localized geometry
@@ -81,7 +91,8 @@ machinery, without depending on completion of that later Java scanner-matching f
 
 ## 2. Repository baseline and gaps
 
-The following findings come from source inspection, not an end-to-end temporal test run.
+The following S0 findings come from source inspection, not an end-to-end temporal test run.
+The S1 implementation record below supersedes the metadata/transport gaps addressed since then.
 Paths below are relative to the repository root.
 
 | Area and implementation seam | Existing foundation | Missing work |
@@ -144,10 +155,19 @@ validator diagnoses it earlier. Reject invalid candidates before activating any 
 | Present, locked | Present and incompatible | Error identifying the locked contextualizer and source annotation |
 | Present, locked | Present and equivalent | Proposed: accept as redundant, with Java provenance retained |
 
-Use a specific runtime-retained temporal annotation alongside `@KlabFunction`, or a nested
-declaration inside it. The exact Java and k.IM field names remain an O1 decision. Do not publish
-examples that imply an unimplemented `@time(...)` syntax. Java reflection metadata must be copied
-into the portable service specification; a remote Resolver must not require the Java class.
+The first-stage contract uses model `@time(step=1.month)`, with a typed `Quantity`, and the
+runtime-retained Java `@Contextualizer` alongside `@KlabFunction`. Java fields are `timeStart`,
+`timeEnd`, `timeStep`, `timeUnit` (k.LAB `Time.Resolution.Type`, including MONTH/YEAR), and
+`timeOverridable` (default true). Blank bounds inherit the complete contextual time extent. Explicit
+bounds, when supplied, currently require ISO-8601 instant strings with an offset. Model `start`/`end`
+strings have the same representation. Initial integration tests need only inherited bounds.
+
+`OccurrenceSchedule` retains the cadence unit and multiplier, source, schema version, bounds and
+override permission. Quantity conversion uses `Time.Resolution.of(Quantity)`. Java metadata is
+copied into `ServiceInfo`, with method annotation taking precedence over the containing class
+annotation. Effective model schedules are carried on actuators by computation index, alongside an
+execution role distinguishing processes, event instantiators and initialization. The Resolver
+selects schedules using portable metadata, without loading contextualizer classes.
 
 Proposed normalized contract, independent of source syntax:
 
@@ -160,12 +180,54 @@ Proposed normalized contract, independent of source syntax:
 | Bound support | Intersection with model, actuator and observation support; preserve original declaration separately |
 | Plan identity | Stable actuator/plan revision and execution role, not a live executor or Java scope |
 
-Recommended first milestone: bounded fixed-duration schedules with explicit anchors and complete
-periods. Use half-open intervals `[start,end)` and execute a period when its end is reached; reject
-unsupported calendar recurrence and ambiguous open bounds rather than approximating months as
-milliseconds. Instantaneous observed events need a distinct point-membership rule, not an empty
-interval. O1 must settle trailing partial periods and the instantiation-time convention before
-implementation. Empty support must be reported as unschedulable, not as successful computation.
+The first milestone includes calendar cadence declarations, specifically monthly execution over a
+daily context grid. Inherited start is the phase anchor; the context grid step is not the process
+cadence. Do not turn a month into 30 days: use native Time/TimeInstant calendar operations when S4
+implements dispatch. Calendar multipliers currently require positive integers; regular units require
+a positive integral millisecond span within range. Open contexts remain unsupported by first-stage
+binding. Respect native TimePeriod boundary conventions (currently exclusive start/inclusive end);
+O1 must settle trailing partial periods, point membership and instantiation time before dispatch.
+Empty support must be reported as unschedulable, not as successful computation.
+
+### 3.1 Minimal namespace for staged acceptance
+
+The supplied test namespace is sufficient for scaffolding with the clarified dependency-assignment
+contract. Make the local name explicit for the test. The test project must also provide or discover
+an initial Elevation model; the Region model need not list Elevation. The fixture is an acceptance
+target for S3/S5, not a claim that inline process execution already works in S1.
+
+```kim
+namespace staging.vxii.test.process.basic
+    version 1.0;
+
+@test
+define observation testregion as {
+    semantics: earth:Terrestrial earth:Region
+    space: {
+        shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7.086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
+        grid: 1.km
+    }
+    time: {
+        year: 2014
+        step: 1.day
+    }
+};
+
+model earth:Terrestrial earth:Region
+    observing earth:Erosion;
+
+@time(step=1.month)
+model earth:Erosion
+    observing geography:Elevation in m named elevation
+    set elevation to [elevation - 10];
+```
+
+The target scalar contract automatically promotes a quality expression when it references scalar
+context, as this expression does; `#[...]` forces scalar evaluation when needed. An expression with
+no scalar-context reference need not be promoted automatically. At each monthly transition the
+expression reads the prior elevation at each localized quality location and writes its new state.
+No `set to [...]` shorthand is valid for the primary process. The supplied external test project
+has not been edited or run by this scaffolding change.
 
 For a composed contextualization chain, define one effective schedule per executable temporal unit.
 Validate every participating contextualizer's limitations and locked declarations. Conflicting
@@ -305,7 +367,7 @@ Record the chosen alternative, compatibility impact, and test evidence here as s
 
 | ID | Decision and recommendation | Gate |
 |---|---|---|
-| O1 | Final annotation/DTO syntax, override granularity (whole schedule recommended initially), context-relative bounds, interval boundaries, instantiation instant, partial periods, point events, calendar/time-zone and open-time policy | S1; calendar/open-time extensions may remain explicitly unsupported until S8 |
+| O1 | S1 fixes Quantity cadence, matching Java units, whole-schedule override and inherited context bounds. Remaining: dispatch boundaries, instantiation instant, partial periods, point events, calendar anchor/time-zone edge cases and open-time policy | Metadata in S1; execution decisions before S4; open-time extensions in S8 |
 | O2 | Journal/receipt storage, atomic commit/outbox boundary, monotonic ordering, plan version retention, checkpoint and client-history retention | S2 |
 | O3 | `AFFECTS` role/direction mapping, reasoner closure, `creates` target resolution, prior-state reads, competing writers and feedback | S3 before semantic dispatch |
 | O4 | Atomic event batch versus partial success, future-start activation, cascade limits, user-facing consequence criterion and message schema | S6/S7 |
@@ -318,11 +380,11 @@ and remaining decisions. Do not mark a stage complete on unit tests alone when i
 restart, persistence, distributed execution, or a live client. Do not expand accepted CONNECTION or
 CLASSIFICATION scope incidentally. The prompts below are intended to be used in order.
 
-### S0 — Baseline and contract inventory (this delivery)
+### S0 — Baseline and contract inventory (original documentation delivery)
 
 - Completed: source inventory, required behavior, open decisions, implementation sequence and
   verification/deployment gates documented here.
-- Not completed: runtime scaffolding, new annotations/DTOs, migrations, or occurrence execution.
+- Not completed at S0: runtime scaffolding, new annotations/DTOs, migrations, or occurrence execution.
 - Verification: all seven relative documentation links resolve; Markdown fence balance and trailing
   whitespace checked. No Java tests were run for this documentation-only delivery.
 - Next: S1. Runtime changes are deliberately staged because schedule syntax, event identity and
@@ -330,7 +392,7 @@ CLASSIFICATION scope incidentally. The prompts below are intended to be used in 
 
 ### S1 — Portable schedule and execution-role contracts
 
-**Deliver:** close O1 for the bounded fixed-duration subset; Java declaration, model annotation
+**Deliver:** close O1 for bounded contexts with fixed or calendar cadence; Java declaration, model annotation
 adapter, normalized serializable schedule and execution role; portable function metadata; structured
 runtime validation and diagnostics suitable for later language-validator reuse. Preserve absent
 metadata for existing static models. Missing occurrence schedules must fail explicitly.
@@ -344,6 +406,38 @@ specifications before selecting syntax. Record O1 decisions for the first suppor
 schedule and execution-role metadata through ComponentRegistry, model adaptation and portable
 actuators, and add boundary validation/serialization tests. Keep temporal execution disabled.”
 
+**Implementation record:** `OccurrenceSchedule` now normalizes model Quantity and Java declarations,
+validates cadence/bounds and chain override conflicts, and offers binding to a bounded Time extent.
+ComponentRegistry exports class/method metadata through ServiceInfo. DataflowCompiler validates
+scheduled models and adds execution roles and per-computation schedules to portable actuators.
+Graph persistence adds `executionRole` and `occurrenceSchedulesJson` properties, with static defaults
+for legacy nodes. Typed record deserialization preserves schedules inside actuator maps. Static models and singular
+event acknowledgement retain initialization metadata. S1 initially rejected temporal plans before
+observation allocation; S2 supersedes that gate with registration and an executor-level INIT guard.
+No live test namespace execution is claimed.
+
+Full language-validator diagnostics and source-span diagnostics are still pending. Runtime registration
+and bound activation are described under S2. The S1 tests cover the typed adapted model boundary; parser and
+live Resources-service acceptance of the fixture require the language/test-project environment.
+
+**Verification (2026-09-19):** 19 focused tests passed across common, core services, Resolver and
+Runtime: `OccurrenceScheduleTest`, `ComponentRegistryOccurrenceTest`, `OccurrenceCompilationTest`,
+`OccurrenceCapabilityTest`, `DataflowAnnotationsTest`, `ActuatorPersistenceTest`,
+`ObservationAnnotationsSerializationTest`, `ResolverTransportSerializationTest`, and
+`SemanticUpdateTargetsTest`. The graph persistence test exercises property encoding/decoding using
+the existing fixture, not a live Neo4j restart. Calendar addition, Quantity annotation transport,
+schedule precedence/validation, class/method metadata, execution roles, legacy defaults and the
+runtime capability gate are covered. No external staging namespace or live service/IDE run occurred.
+
+Exact successful command (host environment; a clean build was needed after sandbox/classpath issues):
+
+```powershell
+mvn -o -pl klab.services.resolver,klab.services.runtime -am '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=OccurrenceScheduleTest,ComponentRegistryOccurrenceTest,OccurrenceCompilationTest,OccurrenceCapabilityTest,DataflowAnnotationsTest,ActuatorPersistenceTest,ObservationAnnotationsSerializationTest,ResolverTransportSerializationTest,SemanticUpdateTargetsTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+S3/S5 remain responsible for injecting the quality into its bearer and executing the fixture's
+scalar assignment; S1/S2 do not claim those gates.
+
 ### S2 — Durable registration and INIT separation
 
 **Depends on:** S1 and O2. **Deliver:** persist pending registrations atomically with validated plans;
@@ -355,26 +449,89 @@ receipts and journal/outbox schema without advancing live clocks.
 and explicit prerequisites; relationships and event individuals retain normal lifecycle; rollback
 leaves no live subscription; restart restores registration without initialization or lost bindings;
 registration does not claim computed coverage. Schema round trips include multiple/partial plans.
+Specifically, an injected Elevation dependency on Region must run its quality INIT before the first
+Erosion step, while Erosion runs zero times under INIT. Failure of Elevation INIT must block Erosion;
+successful later steps must reuse prior state without repeating quality INIT.
 
 **Prompt:** “Implement S2 of docs/OCCURRENCE.md. Separate temporal registration from initialization
 at the shared execution boundary, preserve static prerequisite initialization, persist and restore
 registration and complete actuator bindings, and establish atomic event/receipt publication storage.
 Test rollback and restart; do not enable temporal dispatch until these gates pass.”
 
+**Implementation record (2026-09-19):** the first S2 subset stores a versioned
+`OccurrenceRegistration` in observation metadata (`klab.scheduler.occurrence`). It contains a stable
+registration ID, plan revision, execution role, bearer ID, bound per-computation schedules, and a
+portable snapshot of the entire actuator closure with durable observation IDs and local names.
+Snapshotting occurs after IDs are assigned and before the root graph transaction commits. Activation
+occurs only after successful commit; child commits cannot activate it. Rollback removes pending
+registrations and restores scheduler metadata and prerequisite event timestamps.
+
+Executors are available inside the current transaction for prerequisite INIT; publishing their cache
+entries and subscriptions is delayed until commit. The shared compiled executor boundary returns
+from occurrence INIT after initializing its explicit inputs, before invoking any process or event
+instantiator contextualizer, creating a contextualization activity, or allocating its output storage.
+Scheduler traversal also initializes graph prerequisites. A prerequisite failure prevents registration.
+Registration writes no occurrence execution timestamp and does not claim a computed temporal slice.
+Automatic bearer injection and semantic influence separation remain S3 requirements: the S2 tests
+provide an already-bound quality, rather than claiming the pasted k.IM fixture runs end to end.
+
+On restart, committed registrations load without INIT. Complete actuator snapshots can be recompiled
+with named inputs rebound to current durable observations and their bearer scope; missing inputs or
+bearers fail explicitly. Compilation is lazy, so installed contextualizer availability is checked on
+restoration, not by starting computations during scheduler construction. The supported subset is one
+complete plan per observation, including reference inputs. Partial coverage, competing occurrence
+plans, detached query bindings, and semantic UPDATE nodes inside occurrence closures are explicitly
+rejected. Coverage selection and historical revision retention remain prerequisites for S4.
+
+`SchedulerJournal` introduces a versioned event/completion/publication envelope with event and causal
+IDs, interval, registration/revision, support, commit identity, changed assets and publication-pending
+state. `Transaction.stageSchedulerJournal` stores these envelopes on the root Activity in the same
+graph transaction, assigning its commit ID. This is schema and atomic storage groundwork: event
+production, receipt lookup/idempotency, ordering/checkpoints, durable publication acknowledgement,
+history retention and client delivery remain S4/S7 work. Changed-asset IDs must already be durable;
+the envelope does not translate provisional observation IDs. No occurrence clock or temporal dispatch
+is enabled; explicit non-INIT executor calls fail until S4.
+
+**Verification:** 51 tests passed across common, core services, Resolver, Resolver Server and Runtime.
+Focused tests cover registration commit/rollback, failed prerequisites, child commit,
+graph commit failure, scheduler reconstruction without INIT, full plan JSON transport, named durable
+input rebinding, process/event-instantiator INIT guards, unavailable inputs, unsupported closure
+shapes, and journal commit/rollback. Existing CONNECTION, CLASSIFICATION and transaction tests also
+pass. Scheduler restart and transaction failures use a mocked graph fixture; a live service restart,
+the external namespace, temporal data production and IDE messaging have not been tested here.
+
+Reproducible command (host environment):
+
+```powershell
+mvn -o -pl klab.services.resolver.server,klab.services.runtime -am '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=ResolverControllerScopeTest,OccurrenceRegistrationTest,OccurrenceExecutorTest,OccurrenceCapabilityTest,OccurrenceScheduleTest,ComponentRegistryOccurrenceTest,OccurrenceCompilationTest,ClassificationTransactionTest,DigitalTwinCommitTest,ActuatorPersistenceTest,ConnectionExecutionTest,ConnectionContextualizerTest,ConnectionTransportTest,ClassificationExecutionTest,ClassificationPersistenceTest,SemanticUpdateTargetsTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+**Static-model failure investigated alongside S2:** the supplied stack trace fails in
+`ResolverController.resolveObservation` because `EngineAuthorization.getScope(ContextScope.class)`
+returns null, before the Resolver receives the model or compiles a dataflow. S1 did not change this
+path. Scope reconstruction can fail for an unavailable/stale context, missing originating Runtime
+information, or inability to retrieve its configuration; the trace alone cannot identify which or
+prove the problem transient. The controller now reports HTTP 409 with reconnect/retry guidance for
+an unavailable context, including its contextual-resource endpoints, instead of throwing an NPE.
+Two tests cover missing and valid contexts. This improves the failure contract without fabricating
+a context or claiming to repair the underlying distributed scope failure. If it recurs after
+reconnection, correlate Resolver scope-reconstruction logs with the originating Runtime/context IDs.
+
 ### S3 — Process bearer and semantic influence
 
 **Depends on:** S1/S2 and O3. **Deliver:** process model inputs resolve on their inherent bearer;
 functional/structural hosting rules are explicit; reasoner relationships bind to typed concrete
 influence edges and creation obligations; prerequisite and causal traversals are separated.
-Bind additional process-model output qualities to their bearer and validate named inline assignment
+Bind process-model output and dependency qualities to their bearer and validate named inline assignment
 targets as specified in Section 1.1; reject implicit assignment to the primary process.
 
 **Gate:** process on subject, event, and functional relationship; structural-host rejection; no
 process-owned quality; same-named qualities on different bearers stay distinct; named/optional inputs
 survive transport; inherited semantic effects and `creates` work without spurious targets; feedback
 reads the prior slice; same-time cycles and unsupported competing writers fail deterministically.
-Include accepted `set x to []` for a declared output quality and rejected `set to []`, unknown,
-ambiguous, input-only and non-quality targets; preserve output bindings across plan transport.
+Include accepted `set x to []` for a declared output or compatible dependency quality and rejected
+`set to []`, unknown, ambiguous, incompatible and non-quality targets; preserve bindings across
+plan transport. The Region explanation must not need to declare the injected Elevation dependency.
 
 **Prompt:** “Implement S3 of docs/OCCURRENCE.md. Bind process quality dependencies to the inherent
 substantial/event while preserving explicit restrictions. Normalize and persist semantic AFFECTS
@@ -396,7 +553,8 @@ execution result or coverage; concurrent resolution cannot skip a tick. Use a co
 **Prompt:** “Implement S4 of docs/OCCURRENCE.md for bounded simulated time. Wire emitter output,
 per-registration filtering, fresh transactions, causal dispatch and durable catch-up. Test newly
 introduced historical cadence, restart, retry, equal-time identities and cache restoration against
-an uninterrupted reference run. Keep unsupported real-time/calendar behavior explicitly rejected.”
+an uninterrupted reference run. Include monthly calendar cadence over the daily fixture geometry;
+keep unsupported real-time behavior explicitly rejected.”
 
 ### S5 — Versioned quality data and committed geometry
 
@@ -455,8 +613,8 @@ geometry/data. Verify Timeline with a live client and record compatible protocol
 
 **Depends on:** S1–S7. **Deliver:** supported open-time and simulated-to-real-time policy, bounded
 catch-up/backpressure, cancellation/shutdown, migrations and capability gating, observability and
-operational recovery. Calendar recurrence can be a separately gated extension if explicitly rejected
-by the first release. Integrate k.IM validator diagnostics in the language-owning repository when
+operational recovery. Monthly calendar recurrence belongs to the basic fixture and S4; advanced
+calendar/time-zone policies may be separately gated. Integrate k.IM validator diagnostics when
 available; runtime validation remains mandatory regardless of editor deployment.
 
 **Gate:** controllable-clock real-time tests, outage/catch-up and clock-switch continuity; database
@@ -474,7 +632,7 @@ Use a small deterministic fixture: a substantial with initialized quality Q; a p
 substantial that reads Q's prior state; a two-step schedule; an event instantiator emitting zero
 events on one transition and one event on another; that event affects Q and has a future end.
 Implement the first process fixture through k.IM inline `set x to []`, with `x` declared as an output
-quality after the primary process observable and an explicit model `@time`. Use a deterministic scalar
+quality or compatible `observing` dependency and an explicit model `@time`. Use a deterministic scalar
 expression over nonuniform inherent inputs to verify computation at each quality location and time;
 no Java process contextualizer is required. Include a rejected `set to []` fixture. Repeat with a
 functional relationship bearer and reject a structural bearer. Add advanced Java scanner-bound

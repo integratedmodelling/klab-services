@@ -17,6 +17,17 @@ import java.util.*;
 
 public class ServiceInfoImpl implements ServiceInfo {
 
+  private org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule occurrenceSchedule;
+
+  @Override
+  public org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule getOccurrenceSchedule() {
+    return occurrenceSchedule;
+  }
+
+  public void setOccurrenceSchedule(org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule value) {
+    occurrenceSchedule = value;
+  }
+
   @Serial private static final long serialVersionUID = -9168391783660976848L;
 
   public static class ArgumentImpl implements ServiceInfo.Argument {

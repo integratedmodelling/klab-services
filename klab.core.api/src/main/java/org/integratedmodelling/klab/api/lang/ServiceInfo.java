@@ -25,6 +25,11 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
  */
 public interface ServiceInfo extends Serializable {
 
+  /** Portable Java temporal declaration; null for functions with no declared schedule. */
+  default org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule getOccurrenceSchedule() {
+    return null;
+  }
+
   /**
    * The role this prototype is playing. At the moment these can be functions for
    * contextualizations, k.Actors verbs, or annotations.

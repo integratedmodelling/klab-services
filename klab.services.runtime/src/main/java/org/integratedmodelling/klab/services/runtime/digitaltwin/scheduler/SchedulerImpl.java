@@ -52,6 +52,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   private Event initializationEvent;
   private final reactor.core.Disposable.Composite subscriptions = Disposables.composite();
   private boolean hasTimeBounds;
+  private final Map<Long, OccurrenceRegistration> occurrences = new ConcurrentHashMap<>();
+  private final Map<DigitalTwin.Transaction, Set<Observation>> pending = new IdentityHashMap<>();
+
+  public Map<Long, OccurrenceRegistration> getOccurrenceRegistrations() { return Map.copyOf(occurrences); }
 
   /*
    * The event processor is a fully replayable multicast with synchronized behavior.
@@ -83,6 +87,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     // Restore committed registrations without rerunning initialization or changing timestamps.
     // Clock replay/resumption still needs a durable event-completion cursor and execution policy.
     for (var observation : knowledgeGraph.getScheduledObservations(rootScope)) {
+      if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
+        activateOccurrence(observation);
+        continue;
+      }
       var time = register(observation.getGeometry());
       subscriptions.add(subscribe(new Registration(observation,
           SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
@@ -100,28 +108,20 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
-      var timeData = register(observation.getGeometry());
-      var registration =
-          new Registration(
-              observation,
-              SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
-              timeData.getFirst(),
-              timeData.getSecond(),
-              timeData.getThird(),
-              serviceContextScope);
-      if (observation.getObservable().is(SemanticType.EVENT)) {
-        // TODO EVENT! Post it
-      } else if (observation.getObservable().is(SemanticType.PROCESS)) {
-        // TODO PROCESS! Time events will affect it
-      }
-      var subscription = subscribe(registration);
       var initialized = initialize(observation, serviceContextScope);
-      if (!initialized) {
-        subscription.dispose();
-      } else {
-        subscriptions.add(subscription);
+      if (initialized) {
+        var previous = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
         observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
-        scope.getCurrentTransaction().update(observation);
+        var transaction = scope.getCurrentTransaction();
+        transaction.update(observation);
+        transaction.afterRollback(() -> restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previous));
+        transaction.afterCommit(() -> {
+          if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) return;
+          var time = register(observation.getGeometry());
+          subscriptions.add(subscribe(new Registration(observation,
+              SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
+              time.getFirst(), time.getSecond(), time.getThird(), rootScope)));
+        });
       }
       return initialized;
     }
@@ -144,6 +144,9 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   @Override
   public boolean switchToRealTime(long until) {
+
+    if (!occurrences.isEmpty())
+      throw new UnsupportedOperationException("Occurrence clocks are disabled until S4");
 
     if (System.currentTimeMillis() < epochEnd) {
       return false;
@@ -272,7 +275,24 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     /*
      * The actual execution for self
      */
-    var executor = executors.getIfPresent(observation);
+    var transactionExecutor = scope.getCurrentTransaction() == null ? null
+        : scope.getCurrentTransaction().getExecutor(observation);
+    TriFunction<Geometry, Event, ContextScope, Boolean> executor = transactionExecutor == null
+        ? executors.getIfPresent(observation) : transactionExecutor::run;
+    if (transactionExecutor != null && transactionExecutor.getActuator() != null
+        && transactionExecutor.getActuator().getExecutionRole()
+            != org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole.INITIALIZATION) {
+      if (causingEvent.getType() != Event.Type.INITIALIZATION)
+        throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+      if (!transactionExecutor.run(geometry, causingEvent, scope)) return false;
+      stageOccurrence(observation, transactionExecutor.getActuator(), scope);
+      return true;
+    }
+    if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
+      if (causingEvent.getType() != Event.Type.INITIALIZATION)
+        throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+      return true;
+    }
     if (executor == null && observation.getId() > 0) {
       executor = restoreExecutor(observation, scope);
       if (executor != null) {
@@ -295,6 +315,18 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   private TriFunction<Geometry, Event, ContextScope, Boolean> restoreExecutor(
       Observation observation, ServiceContextScope scope) {
+    if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
+      var registration = readOccurrence(observation);
+      var plan = Utils.Json.parseObject(registration.plan(), org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+      var boundScope = scope;
+      if (registration.bearerId() > 0) {
+        var bearer = scope.getObservation(registration.bearerId());
+        if (bearer == null) throw new IllegalStateException("Missing occurrence bearer " + registration.bearerId());
+        boundScope = scope.within(bearer);
+      }
+      var compiled = new CompiledDataflow(scope.getService(RuntimeService.class), observation, boundScope);
+      return compiled.restoreOccurrenceExecutor(plan)::run;
+    }
     var implementations = knowledgeGraph.getLinks(observation,
         GraphModel.Relationship.Direction.OUTGOING, scope, GraphModel.Relationship.CONTEXTUALIZED_BY);
     if (implementations.isEmpty()) {
@@ -333,6 +365,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     subscriptions.dispose();
     processor.tryEmitComplete();
     executors.invalidateAll();
+    occurrences.clear();
+    synchronized (pending) { pending.clear(); }
   }
 
   private boolean execute(
@@ -341,6 +375,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       Geometry geometry,
       Scheduler.Event event,
       ServiceContextScope scope) {
+    if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
+      var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
+      scope.getCurrentTransaction().afterRollback(() -> concrete.setEventTimestamps(previousTimestamps));
+    }
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
@@ -371,7 +409,62 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     return false;
   }
 
+  private static void restoreMetadata(Observation observation, String key, Object previous) {
+    if (previous == null) observation.getMetadata().remove(key);
+    else observation.getMetadata().put(key, previous);
+  }
+
+  private OccurrenceRegistration readOccurrence(Observation observation) {
+    return Utils.Json.parseObject(observation.getMetadata().get(OccurrenceRegistration.METADATA_KEY, String.class),
+        OccurrenceRegistration.class);
+  }
+
+  private void activateOccurrence(Observation observation) {
+    occurrences.put(observation.getId(), readOccurrence(observation));
+  }
+
+  private void stageOccurrence(Observation observation,
+      org.integratedmodelling.klab.api.services.runtime.Actuator plan, ServiceContextScope scope) {
+    var transaction = scope.getCurrentTransaction();
+    while (transaction.getParent() != null) transaction = transaction.getParent();
+    final var root = transaction;
+    var schedules = plan.getOccurrenceSchedules().entrySet().stream().sorted(Map.Entry.comparingByKey())
+        .map(entry -> new OccurrenceRegistration.Schedule(entry.getKey(), entry.getValue(),
+            entry.getValue().bind(GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime())))
+        .toList();
+    synchronized (pending) {
+      if (!pending.computeIfAbsent(root, ignored -> Collections.newSetFromMap(new IdentityHashMap<>()))
+          .add(observation)) return;
+    }
+    var id = UUID.randomUUID().toString();
+    var previous = observation.getMetadata().get(OccurrenceRegistration.METADATA_KEY);
+    var previousRegistered = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
+    Runnable release = () -> { synchronized (pending) {
+      var values = pending.get(root);
+      if (values != null && values.remove(observation) && values.isEmpty()) pending.remove(root);
+    }};
+    root.afterRollback(() -> {
+      restoreMetadata(observation, OccurrenceRegistration.METADATA_KEY, previous);
+      restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previousRegistered);
+      release.run();
+    });
+    root.update(observation);
+    root.beforeCommit(() -> {
+      if (observation.getId() <= 0) throw new KlabIllegalStateException("Occurrence has no durable identity");
+      var registration = new OccurrenceRegistration(1, id, id, plan.getExecutionRole(),
+          scope.getContextObservation() == null ? 0 : scope.getContextObservation().getId(), schedules,
+          Utils.Json.asString(CompiledDataflow.portableOccurrencePlan(plan)));
+      observation.getMetadata().put(OccurrenceRegistration.METADATA_KEY, Utils.Json.asString(registration));
+      observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
+    });
+    root.afterCommit(() -> { try { activateOccurrence(observation); } finally { release.run(); } });
+  }
+
   private boolean checkEvent(Observation observation, Event event) {
+    if (event.getType() == Event.Type.INITIALIZATION
+        && (observation.getObservable().is(SemanticType.PROCESS)
+            || (observation.getObservable().is(SemanticType.EVENT)
+                && observation.getObservable().getSemantics().isCollective()))) return false;
     var timestamps = observation.getEventTimestamps();
     if (event.getType() == Event.Type.INITIALIZATION
         && observation instanceof ObservationImpl observation1

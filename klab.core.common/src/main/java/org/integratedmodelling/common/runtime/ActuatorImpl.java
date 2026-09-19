@@ -17,6 +17,21 @@ import java.util.List;
 
 public class ActuatorImpl implements Actuator {
 
+  private ExecutionRole executionRole = ExecutionRole.INITIALIZATION;
+  private java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>
+      occurrenceSchedules = new java.util.HashMap<>();
+
+  public ExecutionRole getExecutionRole() { return executionRole; }
+  public void setExecutionRole(ExecutionRole value) {
+    executionRole = value == null ? ExecutionRole.INITIALIZATION : value;
+  }
+  public java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>
+      getOccurrenceSchedules() { return occurrenceSchedules; }
+  public void setOccurrenceSchedules(
+      java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule> value) {
+    occurrenceSchedules = value == null ? new java.util.HashMap<>() : value;
+  }
+
   @Serial private static final long serialVersionUID = 2500101522003062757L;
   private String name;
   private Artifact.Type type;

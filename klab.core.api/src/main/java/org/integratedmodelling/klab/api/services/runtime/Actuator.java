@@ -62,6 +62,14 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
+  enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR }
+
+  default ExecutionRole getExecutionRole() { return ExecutionRole.INITIALIZATION; }
+
+  /** Effective model schedules keyed by computation index, like computation constraints. */
+  default java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>
+      getOccurrenceSchedules() { return java.util.Map.of(); }
+
   enum Type {
     /** Execute a semantic update; has no result observation or observation ID. */
     UPDATE,

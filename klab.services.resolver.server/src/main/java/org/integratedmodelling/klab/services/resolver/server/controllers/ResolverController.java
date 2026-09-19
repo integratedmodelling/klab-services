@@ -19,6 +19,8 @@ import org.integratedmodelling.klab.services.application.security.ServiceAuthori
 import org.integratedmodelling.klab.services.resolver.server.ResolverServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,6 +39,7 @@ public class ResolverController {
       value = {
         @ApiResponse(responseCode = "200", description = "Resolution job submitted successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "409", description = "Context unavailable; reconnect the digital twin"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
@@ -46,8 +49,7 @@ public class ResolverController {
       Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope =
-          authorization
-              .getScope(ContextScope.class)
+          requireContext(authorization)
               .withResolutionConstraints(
                   resolutionRequest
                       .getResolutionConstraints()
@@ -63,6 +65,17 @@ public class ResolverController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  /** Scope reconstruction may fail after a service restart; never turn that into an NPE. */
+  static ContextScope requireContext(EngineAuthorization authorization) {
+    var scope = authorization.getScope(ContextScope.class);
+    if (scope == null) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT,
+          "Resolver context is unavailable. Reconnect the digital twin and retry; "
+              + "check scope and originating Runtime service headers if the problem persists.");
+    }
+    return scope;
+  }
+
   @Operation(
       summary = "Submit a contextual resource",
       description = "Make an observation available as a resource in the authorized context")
@@ -70,7 +83,7 @@ public class ResolverController {
   public @ResponseBody Resource submitResource(
       @RequestBody Observation observation, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      var contextScope = authorization.getScope(ContextScope.class);
+      var contextScope = requireContext(authorization);
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
         return resolverServer.klabService().submitResource(observation, contextScope);
       }
@@ -84,7 +97,7 @@ public class ResolverController {
   @GetMapping(ServicesAPI.RESOLVER.GET_SUBMITTED_RESOURCES)
   public @ResponseBody List<Resource> submitResource(Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      var contextScope = authorization.getScope(ContextScope.class);
+      var contextScope = requireContext(authorization);
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
         return resolverServer.klabService().getSubmittedResources(contextScope);
       }
