@@ -48,17 +48,9 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     // FIXME the input data should be injected by name
     var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope, null);
 
-    if (scanner != null) {
-      for (var entry : dependencies.keySet()) {
-        Observation observation =
-            dependencies.get(entry); // TODO get the obs with the keyed observable
-        if (observation != null) {
-          var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
-          var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
-          scanner = shards.get(scanner.shard().getShardIndex());
-        }
-      }
-    }
+    // The executor supplies the writable output shard. Dependency scanners are prepared
+    // separately upstream; rescanning here would replace the output with a read-only input
+    // (including SELF) and discard the scanner class selected by the sharding strategy.
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.

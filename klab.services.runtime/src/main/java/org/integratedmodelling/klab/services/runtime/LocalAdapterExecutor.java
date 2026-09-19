@@ -42,12 +42,13 @@ public class LocalAdapterExecutor extends AbstractExecutor
       RuntimeService.ContextualizationScope contextualizationScope) {
 
     var res = resource;
+    var scanner = scanners == null ? null : scanners.get(Dataflow.SELF_ID);
     if (adapter.hasContextualizer()) {
       try {
         res =
             adapter.contextualize(
                 resource,
-                scanners == null ? null : scanners.get(Dataflow.SELF_ID).shard().getGeometry(),
+                scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(),
                 scope);
       } catch (Throwable e) {
         observation.getNotifications().add(Notification.error(e));
@@ -64,7 +65,7 @@ public class LocalAdapterExecutor extends AbstractExecutor
     try {
       // TODO this cannot be the simple executor, needs the scanner to be passed after
       return contextualizer.contextualize(
-          scanners == null ? null : scanners.get(Dataflow.SELF_ID),
+          scanner,
           event,
           scope,
           contextualizationScope);
